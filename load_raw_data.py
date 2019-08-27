@@ -10,12 +10,14 @@ import sciris as sc
 #datafile = '/u/cliffk/idm/fp/data/DHS/example/SNPR6RFL.DTA'
 #datafile = '/u/cliffk/idm/fp/data/DHS/example3/SNIR61FL.DTA'
 datafile = '/u/cliffk/idm/fp/data/test_load/NGIR6ADT/NGIR6AFL.DTA'
-calfile = 'calendar.txt'
+calfile = 'NGIR6A_calendar.txt'
 
+# Takes about 2-3 min
 sc.tic()
 df = pd.read_stata(datafile,convert_categoricals=False)
 sc.toc()
 
+# Pull out the calendar
 calendar = df['vcal_1'].to_list()
 calstring = '\n'.join(calendar)
 
