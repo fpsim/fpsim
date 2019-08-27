@@ -48,16 +48,13 @@ dhs.raw.N<-read_dta("/home/idm_user/idm/Dropbox/fp-dhs-data/nigeria/NGIR61DT/NGI
 data.input <- function(dhs.raw, key){
   #keep only necessary data points
   dhs.min <- dhs.raw %>%
-    dplyr::select("v000", #"awfactt", 
-        "v001", "v005", "v008", "v010", "v011", "v012",  "v013", "v017", "v024", "v025",
+    dplyr::select("v000", "awfactt", "v001", "v005", "v008", "v010", "v011", "v012",  "v013", "v017", "v024", "v025",
                   "v106", "v133", "v190", "v191",
-                  "v201", "v211", "v212", "v213", "v220", #"v221", 
-                  "v222", #"v225",
-                  #"v312", 
-                  #"v313",
-                  #"v502", "v509","v511", "v525", "v527", "v528", "v529", "v536",
-                  #"v605", "v623", "v625a", "v626a",
-                  #"v714", "v721", "v731",
+                  "v201", "v211", "v212", "v213", "v220", "v221", "v222", "v225",
+                  "v312", "v313",
+                  "v502", "v509","v511", "v525", "v527", "v528", "v529", "v536",
+                  "v605", "v623", "v625a", "v626a",
+                  "v714", "v721", "v731",
                   starts_with("bidx_"), starts_with("b2_"), starts_with("b3_"), starts_with("b5_"), starts_with("b7_"), starts_with("b11_"),
                   starts_with("m10_"), starts_with("vcal_"), starts_with("v3a08")) %>%
     left_join(key, by = "v001")
