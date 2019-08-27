@@ -4,38 +4,34 @@ Convert the calendar text file to an object and save.
 
 '''
 
+import pylab as pl
 import sciris as sc
+import calobj as co
 
 dataname = 'NGIR6A'
 infile = f'{dataname}_calendar.txt'
 outfile = f'{dataname}_calendar.obj'
 
-# Map DHS entries to numbers and descriptions
-mapping = {
-         '0': [ 0,''],
-         '1': [ 1,''],
-         '2': [ 2,''],
-         '3': [ 3,''],
-         '4': [ 4,''],
-         '5': [ 5,''],
-         '6': [ 6,''],
-         '7': [ 7,''],
-         '8': [ 8,''],
-         '9': [ 9,''],
-         'B': [10,''],
-         'C': [11,''],
-         'F': [12,''],
-         'K': [13,''],
-         'L': [14,''],
-         'M': [15,''],
-         'N': [16,''],
-         'P': [17,''],
-         'T': [18,''],
-         'W': [19,'']}
-        }
+calobj = co.CalObj()
 
 # Load the string
 with open(infile) as f:
-    rawstring = f.readlines()
+    rawlines = f.readlines()
+
+# Parse the string
+data = []
+for l,line in enumerate(rawlines):
+    sc.percentcomplete(l, len(rawlines))
+    data.append([])
+    for char in line:
+        try:
+            number = calobj.mapping.DHS6[char][0]
+            data[-1].append(number)
+        except Exception as E:
+            if char not in ['\n']: # Skip space and newline, we know to ignore those
+                raise Exception(f'Could not parse character "{char}" on line {l} ({str(E)})')
+
+
+sc.saveobj(outfile, pl.array(data))
 
 print('Done.')
