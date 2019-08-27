@@ -1,5 +1,6 @@
 #!/usr/bin/python
 
+import os
 from CampaignClass import *
 from CampaignEnum import *
 #from InterventionClass import *
@@ -445,7 +446,7 @@ if __name__ == "__main__":
     
     c = GenerateCampaignFP( con_list, rc_list )
     #c.save_to_file("/work/dev/trunk1/Regression/FP/2_FP_SimpleCampaign/campaign")
-    c.save_to_file("./campaign")
+    c.save_to_file(os.path.join("output", "campaign-RCM"))
     
     print("Done")
     
