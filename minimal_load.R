@@ -32,4 +32,11 @@ key.N <- as.data.frame(shape.N) #%>% select(v001, DHSREGEN)
 # -- read individual recode data -- #
 
 #dhs.raw.R<-read_dta("Data/RwandaDHS/2014/RWIR70DT/RWIR70FL.DTA")
-dhs.raw.N<-read_dta("/home/idm_user/idm/Dropbox/fp-dhs-data/nigeria/NGIR61DT/NGIR61FL.DTA") # CK
+#dhs.raw.N<-read_dta("/home/idm_user/idm/Dropbox/fp-dhs-data/nigeria/NGIR61DT/NGIR61FL.DTA") # CK
+dhs.raw.N<-read_dta("/u/cliffk/idm/fp/data/test_load/NGIR6ADT/NGIR6AFL.DTA")
+
+# This works (returns columns)
+worked <- dhs.raw.N %>% select(starts_with("v"))
+
+# But this doesn't...
+failed <- dhs.raw.N %>% select(starts_with("vcal_"))
