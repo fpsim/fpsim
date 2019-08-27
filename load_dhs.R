@@ -14,10 +14,10 @@ library(jtools)         #visualize regression results
 library(latticeExtra)   #3d bar charts
 library(ggridges)       #formatting continuous ggplot
 library(viridis)        #shading figures
-#library(sf)             #spatial mapping # CK
+library(sf)             #spatial mapping
 library(gridExtra)      #combine multiple plots
 library(scales)         # formatting graph axes
-#library(factoextra)     #plotting clusters # CK
+library(factoextra)     #plotting clusters
 
 # ----------------------------------------------------------------------------- #
 # -- Preparing the dataset -- #
@@ -33,33 +33,36 @@ setwd("/u/cliffk/idm/fp/fp_analyses") # CK
 # -- read shapefiles -- #
 
 # Nigeria # CK
-# pts.N <- st_read("Data/NigeriaDHS/2013/NGGE6AFL", layer = "NGGE6AFL") # read in cluster shape
-# shape2.N <- st_read("Data/NigeriaDHS/2013/sdr_subnational_boundaries/shps/sdr_subnational_boundaries2.shp") # read in state shape
-# shape.N <- shape2.N %>% st_join(pts.N) %>% mutate(v001 = DHSCLUST) # join all shape files
-# key.N <- as.data.frame(shape.N) %>% select(v001, DHSREGEN)
+pts.N <- st_read("/u/cliffk/idm/Dropbox/fp-dhs-data/nigeria/NGGE6AFL", layer = "NGGE6AFL") # read in cluster shape # CK
+shape2.N <- st_read("/home/idm_user/idm/Dropbox/fp-dhs-data/nigeria/NGGE6AFL/NGGE6AFL.shp") # read in state shape # CK
+shape.N <- shape2.N %>% st_join(pts.N) #%>% mutate(v001 = DHSCLUST) # join all shape files
+key.N <- as.data.frame(shape.N) #%>% select(v001, DHSREGEN)
 
 # -- read individual recode data -- #
 
 #dhs.raw.R<-read_dta("Data/RwandaDHS/2014/RWIR70DT/RWIR70FL.DTA")
-dhs.raw.N<-read_dta("/u/cliffk/idm/fp/data/DHS/example3/SNIR61FL.DTA") # CK
+dhs.raw.N<-read_dta("/home/idm_user/idm/Dropbox/fp-dhs-data/nigeria/NGIR61DT/NGIR61FL.DTA") # CK
 
 # -- Create working dataset -- #
 
 data.input <- function(dhs.raw, key){
   #keep only necessary data points
   dhs.min <- dhs.raw %>%
-    dplyr::select("v000", "awfactt", "v001", "v005", "v008", "v010", "v011", "v012",  "v013", "v017", "v024", "v025",
+    dplyr::select("v000", #"awfactt", 
+        "v001", "v005", "v008", "v010", "v011", "v012",  "v013", "v017", "v024", "v025",
                   "v106", "v133", "v190", "v191",
-                  "v201", "v211", "v212", "v213", "v220", "v221", "v222", "v225",
-                  "v312", "v313",
-                  "v502", "v509","v511", "v525", "v527", "v528", "v529", "v536",
-                  "v605", "v623", "v625a", "v626a",
-                  "v714", "v721", "v731",
+                  "v201", "v211", "v212", "v213", "v220", #"v221", 
+                  "v222", #"v225",
+                  #"v312", 
+                  #"v313",
+                  #"v502", "v509","v511", "v525", "v527", "v528", "v529", "v536",
+                  #"v605", "v623", "v625a", "v626a",
+                  #"v714", "v721", "v731",
                   starts_with("bidx_"), starts_with("b2_"), starts_with("b3_"), starts_with("b5_"), starts_with("b7_"), starts_with("b11_"),
                   starts_with("m10_"), starts_with("vcal_"), starts_with("v3a08")) %>%
     left_join(key, by = "v001")
 }
-#dhs.min.N <- data.input(dhs.raw = dhs.raw.N, key = key.N) # CK
+dhs.min.N <- data.input(dhs.raw = dhs.raw.N, key = key.N) # CK
 
 # ------------------------------------------------------------------------ #
 # -- start analyzing survey -- #
@@ -68,7 +71,7 @@ data.input <- function(dhs.raw, key){
 # This is the all women factor, if it is not there we add it
 # it will only be in surveys that ONLY survey married women
 data.svyvars <- function(dhs){
-  # if(!("awfctt"%in%names(dhs))){dhs$awfactt<-100} # CK
+  if(!("awfctt"%in%names(dhs))){dhs$awfactt<-100} # CK
   
   dhs<-dhs%>%mutate(wt=v005/1000000, # have to scale the weight
                     year_cmc=floor((v008-1)/12)+1900, # finding the year based on Century Month Codes
@@ -79,7 +82,7 @@ data.svyvars <- function(dhs){
                     aw=awfactt/100*wt) # the all woman factor
 }
 
-# dhs.svy.N <- data.svyvars(dhs = dhs.min.N) # CK
+dhs.svy.N <- data.svyvars(dhs = dhs.min.N) # CK
 
 # ------------------------------------------------------------------------ #
 # -- recode the variables of interest -- #
