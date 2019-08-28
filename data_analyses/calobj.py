@@ -29,14 +29,16 @@ class CalObj(sc.prettyobj):
         Create object with the mapping, and load the data if supplied
         '''
         self.which = which
+        self.skipmissing = skipmissing
         self.originaldatafile = None
         self.filename = None
         self.mapping = None
         self.nmethods = None
-        self.skipmissing = skipmissing
+        self.results = None
         self._set_mapping() # Could be here, but cleaner to separate out
         if filename is not None:
             self.load(filename)
+            self.make_results()
         return
 
     def _set_mapping(self):
@@ -80,15 +82,22 @@ class CalObj(sc.prettyobj):
     
     @property
     def numkeys(self):
-        return pl.array(self._parse_keys(0))
+        indices = pl.array(self._parse_keys(0))
+        return indices
     
     @property
     def shortkeys(self):
-        return self._parse_keys(1)
+        keys = self._parse_keys(1)
+        return keys
     
     @property
     def longkeys(self):
-        return self._parse_keys(2)
+        keys = self._parse_keys(2)
+        return keys
+    
+    def keytoind(self, key):
+        ind = self.shortkeys.index(key)
+        return ind
     
     
     def load(self, filename='', rawlines=None, which='DHS6'):
@@ -160,13 +169,10 @@ class CalObj(sc.prettyobj):
         return filename
     
     
-    def plot_transitions(self, figsize=None):
-        ''' Plot all transitions in the contraception calendar '''
-        zero_to_nan = False # Set zero rows
-        always_log = False # Use log for both plots
-        if figsize is None: figsize = (30,14)
+    def make_results(self, always_log=False, zero_to_nan=False):
+        self.results = sc.objdict()
         
-        # Calculate
+        # Calculate counts
         counts = pl.zeros((self.nmethods, self.nmethods))
         for pp,person in enumerate(self.cal):
             sc.percentcomplete(pp, len(self.cal))
@@ -175,9 +181,7 @@ class CalObj(sc.prettyobj):
                 current = person[month+1]
                 if previous != -1 and current != -1: # Transition occurred, data aren't missing
                     counts[current, previous] += 1
-        
-        # Calculate log counts for panel A
-        log_counts = pl.log10(counts)
+        self.results.counts = counts # Store
         
         # Calculate relative proportions for panel B
         rel_props = sc.dcp(counts)
@@ -194,33 +198,68 @@ class CalObj(sc.prettyobj):
             rel_props = pl.log10(rel_props)
         else:
             rel_props *= 100 # Convert to percentage
-            
+        self.results.rel_props = rel_props # Store
+        return self.results
+    
+    def _set_axis_labels(self, ax, which=None, offset=0):
+        if which is None: which = ['x', 'y']
+        which = sc.promotetolist(which)
+        if 'x' in which:
+            ax.set_xticks(self.numkeys+offset)
+            ax.set_xticklabels(self.shortkeys)
+        if 'y' in which:
+            ax.set_yticks(self.numkeys+offset)
+            ax.set_yticklabels(self.shortkeys)
+        return
+    
+    def plot_transitions(self, figsize=None):
+        ''' Plot all transitions in the contraception calendar '''
+        if figsize is None: figsize = (30,14)
+        
         # Create figure and set tick marks on top
         fig = pl.figure(figsize=figsize)
         pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = True
         pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = True
         
-        
         # Plot total counts
         ax1 = fig.add_subplot(121)
-        im1 = pl.imshow(log_counts, cmap=sc.parulacolormap()) # , edgecolors=[0.8]*3
-        ax1.set_xticks(self.numkeys) # +0.5
-        ax1.set_xticklabels(self.shortkeys)
-        ax1.set_yticks(self.numkeys)
-        ax1.set_yticklabels(self.shortkeys)
+        im1 = pl.imshow(pl.log10(self.results.counts), cmap=sc.parulacolormap()) # , edgecolors=[0.8]*3
+        self._set_axis_labels(ax=ax1)
         ax1.set_title('Total number of transitions in calendar (log scale, white=0)', fontweight='bold')
         ca1 = fig.add_axes([0.05, 0.11, 0.03, 0.75])
         fig.colorbar(im1, cax=ca1)
         
         # Plot relative counts
         ax2 = fig.add_subplot(122)
-        im2 = pl.imshow(rel_props, cmap='jet') # , edgecolors=[0.8]*3
-        ax2.set_xticks(self.numkeys) # +0.5
-        ax2.set_xticklabels(self.shortkeys)
-        ax2.set_yticks(self.numkeys)
-        ax2.set_yticklabels(self.shortkeys)
+        im2 = pl.imshow(self.results.rel_props, cmap='jet') # , edgecolors=[0.8]*3
+        self._set_axis_labels(ax=ax1)
         ax2.set_title('Relative proportion of each transition, diagonal removed (%)', fontweight='bold')
         ca2 = fig.add_axes([0.95, 0.11, 0.03, 0.75])
         fig.colorbar(im2, cax=ca2)
         return fig
+    
+    
+    def plot_slice(self, key, orientation='row', figsize=None):
+        ''' Plot a single slice through the matrix '''
+        if figsize is None: figsize = (20,16)
+        fig = pl.figure(figsize=figsize)
+        
+        for use_log in [False, True]:
+            ax = fig.add_subplot(2,1,use_log+1)
+            if orientation == 'row':
+                data = self.results.counts[self.keytoind(key),:]
+                preposition = 'from' # For plotting, set the word in the title
+            elif orientation == 'col':
+                data = self.results.counts[:,self.keytoind(key)]
+                preposition = 'to'
+            if use_log: data = pl.log10(data)
+            pl.bar(self.numkeys, data, edgecolor='none')
+            self._set_axis_labels(ax=ax, which='x')
+            pl.xlabel('Method', fontweight='bold')
+            if use_log: pl.ylabel('log10(Transition count)', fontweight='bold')
+            else:       pl.ylabel('Transition count', fontweight='bold')
+            pl.title(f'Number of transitions {preposition} method "{key}"', fontweight='bold')
+        return fig
+        
+        
             
