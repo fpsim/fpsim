@@ -24,7 +24,7 @@ class CalObj(sc.prettyobj):
     >>> calobj.plot_transitions()
     '''
     
-    def __init__(self, filename=None, which='DHS6'):
+    def __init__(self, filename=None, which='DHS6', skipmissing=True):
         '''
         Create object with the mapping, and load the data if supplied
         '''
@@ -32,7 +32,8 @@ class CalObj(sc.prettyobj):
         self.originaldatafile = None
         self.filename = None
         self.mapping = None
-        self.nmethods = -1
+        self.nmethods = None
+        self.skipmissing = skipmissing
         self._set_mapping() # Could be here, but cleaner to separate out
         if filename is not None:
             self.load(filename)
@@ -69,20 +70,25 @@ class CalObj(sc.prettyobj):
                      'T': [18, 'Term',  'Termination'],
                      'W': [19, 'OTrad', 'Other traditional']
                     })
-        self.nmethods = len(self.mapping)
+        self.nmethods = len(self.mapping) - self.skipmissing
         return
+    
+    def _parse_keys(self, ind):
+        startind = 1 if self.skipmissing else 0
+        output = [val[ind] for val in list(self.mapping.values())[startind:]]
+        return output
     
     @property
     def numkeys(self):
-        return pl.array([val[0] for val in self.mapping.values()])
+        return pl.array(self._parse_keys(0))
     
     @property
     def shortkeys(self):
-        return [val[1] for val in self.mapping.values()]
+        return self._parse_keys(1)
     
     @property
     def longkeys(self):
-        return [val[2] for val in self.mapping.values()]
+        return self._parse_keys(2)
     
     
     def load(self, filename='', rawlines=None, which='DHS6'):
@@ -154,7 +160,61 @@ class CalObj(sc.prettyobj):
     
     
     def plot_transitions(self, figsize=None):
-        if figsize is None: figsize = (16,14)
+        zero_to_nan = False # Set zero rows
+        always_log = False # Use log for both plots
+        if figsize is None: figsize = (30,14)
         fig = pl.figure(figsize=figsize)
+        
+        # Calculate
+        counts = pl.zeros((self.nmethods, self.nmethods))
+        for pp,person in enumerate(self.cal):
+            sc.percentcomplete(pp, len(self.cal))
+            for month in range(len(person)-1):
+                previous = person[month]
+                current = person[month+1]
+                if previous != -1 and current != -1: # Transition occurred, data aren't missing
+                    counts[current, previous] += 1
+        
+        # Calculate log counts for panel A
+        log_counts = pl.log10(counts)
+        
+        # Calculate relative proportions for panel B
+        rel_props = sc.dcp(counts)
+        for m in range(self.nmethods):
+            rel_props[m,m] = 0 # Remove diagonal
+            totalcount = rel_props[m,:].sum()
+            if totalcount:
+                rel_props[m,:] /= totalcount # Normalize to percentage
+            else:
+                if zero_to_nan:
+                    rel_props[m,:] = pl.nan
+                    print(f'No count for {self.shortkeys[m]}')
+        if always_log:
+            rel_props = pl.log10(rel_props)
+        else:
+            rel_props *= 100 # Convert to percentage
+        
+        
+        # Plot total counts
+        ax1 = fig.add_subplot(121)
+        im1 = pl.imshow(log_counts, cmap=sc.parulacolormap()) # , edgecolors=[0.8]*3
+        ax1.set_xticks(self.numkeys) # +0.5
+        ax1.set_xticklabels(self.shortkeys)
+        ax1.set_yticks(self.numkeys)
+        ax1.set_yticklabels(self.shortkeys)
+        ax1.set_title('Total number of transitions in calendar (log scale, white=0)', fontweight='bold')
+        ca1 = fig.add_axes([0.05, 0.11, 0.03, 0.75])
+        fig.colorbar(im1, cax=ca1)
+        
+        # Plot relative counts
+        ax2 = fig.add_subplot(122)
+        im2 = pl.imshow(rel_props, cmap='jet') # , edgecolors=[0.8]*3
+        ax2.set_xticks(self.numkeys) # +0.5
+        ax2.set_xticklabels(self.shortkeys)
+        ax2.set_yticks(self.numkeys)
+        ax2.set_yticklabels(self.shortkeys)
+        ax2.set_title('Relative proportion of each transition, diagonal removed (%)', fontweight='bold')
+        ca2 = fig.add_axes([0.95, 0.11, 0.03, 0.75])
+        fig.colorbar(im2, cax=ca2)
         return fig
             
