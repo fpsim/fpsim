@@ -92,7 +92,7 @@ class CalObj(sc.prettyobj):
     
     
     def load(self, filename='', rawlines=None, which='DHS6'):
-        ''' Load a contraceptive calendar from the original STATA file or one of several processed forms '''
+        ''' Load a contraceptive calendar from the original Stata file or one of several processed forms '''
         # Load a preprocessed object file
         if filename.endswith('cal'):
             print('Loading saved CalObj...')
@@ -151,6 +151,7 @@ class CalObj(sc.prettyobj):
     
     
     def save(self, filename=None):
+        ''' Save object to disk '''
         if filename is None:
             basename = os.path.splitext(self.filename)
             filename = basename + '.cal'
@@ -160,10 +161,10 @@ class CalObj(sc.prettyobj):
     
     
     def plot_transitions(self, figsize=None):
+        ''' Plot all transitions in the contraception calendar '''
         zero_to_nan = False # Set zero rows
         always_log = False # Use log for both plots
         if figsize is None: figsize = (30,14)
-        fig = pl.figure(figsize=figsize)
         
         # Calculate
         counts = pl.zeros((self.nmethods, self.nmethods))
@@ -193,6 +194,11 @@ class CalObj(sc.prettyobj):
             rel_props = pl.log10(rel_props)
         else:
             rel_props *= 100 # Convert to percentage
+            
+        # Create figure and set tick marks on top
+        fig = pl.figure(figsize=figsize)
+        pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = True
+        pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = True
         
         
         # Plot total counts
