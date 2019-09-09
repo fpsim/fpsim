@@ -392,12 +392,17 @@ def CreateRandomChoiceList():
 # -----------------------------------------------------------------------------
 
 def CreateRandomChoiceMatrixList():
+    # Hardcoded values for filters works as an example only.
+    # ToDo: If one of the filter is empty, we need to add "Filters": [] in the campaign file manually. Otherwise,
+    # we will meet this exception since [] is the default value to Filters so dtk_tools will not save it to json:
+    #   "MissingParameterFromConfigurationException:
+    #     Exception in utils\Configure.cpp at 1097 in Kernel::JsonConfigurable::handleMissingParam.
+    #     Parameter 'Filters of RandomChoiceMatrix' not found in input file 'campaign-RCM.json'."
     filters = []
     filters.append(Filter(Properties=["CurrentStatus:PILL", "Knowledge:NO"], Multipliers = [ 0, 0, 1 ]))
     filters.append(Filter(Properties=["CurrentStatus:NONE", "Knowledge:NO"], Multipliers = [ 0, 1, 2 ]))
     filters.append(Filter(Properties=["CurrentStatus:PILL", "Knowledge:YES"], Multipliers = [ 1, 1, 2 ]))
     filters.append(Filter(Properties=["CurrentStatus:NONE", "Knowledge:YES"], Multipliers = [ 1, 1, 1 ]))
-
 
     # initialize contraceptive in the population.
     pm_norplant = [
@@ -456,11 +461,6 @@ def CreateRandomChoiceMatrixList():
     
     filters_under_age = filters
 
-    # ToDo: If your one of the filter is empty, we need to add "Filters": [] in the campaign file manually. Otherwise,
-    # we will meet this exception since [] is the default value to Filters so dtk_tools will not save it to json:
-    # "MissingParameterFromConfigurationException:
-    # Exception in utils\Configure.cpp at 1097 in Kernel::JsonConfigurable::handleMissingParam.
-    # Parameter 'Filters of RandomChoiceMatrix' not found in input file 'campaign-RCM.json'."
     rcm_from_under_age = RandomChoiceMatrix( Choices=choices_under_age, Filters=filters_under_age,  use_defaults=True )
 
     # Post_Partum
