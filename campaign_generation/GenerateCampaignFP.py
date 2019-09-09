@@ -85,7 +85,7 @@ IP_NORPLANT    = "CurrentStatus:NORPLANT"
 IP_PILL        = "CurrentStatus:PILL"
 IP_WITHDRAWAL  = "CurrentStatus:WITHDRAWAL"
 IP_NONE        = "CurrentStatus:NONE"
-        
+
 Should_Not_Be_Broadcasted = "Should_Not_Be_Broadcasted"
 Choose_Next_Method_Currently_Under_Age     = "Choose_Next_Method_Currently_Under_Age"
 Choose_Next_Method_Currently_Post_Partum   = "Choose_Next_Method_Currently_Post_Partum"
@@ -98,7 +98,10 @@ USE_NORPLANT   = "Use_Norplant"
 USE_PILL       = "Use_Pill"
 USE_WITHDRAWAL = "Use_Withdrawal"
 USE_NONE       = "Use_None"
+GO_POST_Partum = "Go_Post_Partum"
 
+possible_mother_min_age = 15.0
+possible_mother_max_age = 50.0
 
 # -----------------------------------------------------------------------------
 # --- POPULATION INITIALIZATION - Functions for initializing the population
@@ -109,19 +112,20 @@ USE_NONE       = "Use_None"
 # they choose a contraceptive about the time they turn 15.
 # !!! COULD PROBABLY USE REFINEMENT !!!
 
+
 def InitializeUnderAgeWomen( campaign ):
     be_cnm_under_age = BroadcastEvent(Choose_Next_Method_Currently_Under_Age)
-    
+
     mean_delay_list = [ 13.0*365.0, 8.0*365.0, 3.0*365.0 ]
     age = 0.0
-    
+
     for mean in mean_delay_list:
         delay = DelayedIntervention( Delay_Period_Distribution = DelayedIntervention_Delay_Period_Distribution_Enum.GAUSSIAN_DISTRIBUTION,
                                      Delay_Period_Gaussian_Mean = mean,
                                      Delay_Period_Gaussian_Std_Dev = 180.0,
                                      New_Property_Value = IP_UNDER_AGE,
                                      Actual_IndividualIntervention_Configs = [be_cnm_under_age] )
-                                      
+
         ce = distributeIntervention( Target_Demographic = "ExplicitAgeRangesAndGender",
                                      Target_Gender = "Female",
                                      Target_Age_Min = age,
@@ -138,8 +142,8 @@ def InitializeUnderAgeWomen( campaign ):
 def InitializePossibleMothers( campaign ):
     ce = distributeIntervention( Target_Demographic = "ExplicitAgeRangesAndGender",
                                  Target_Gender = "Female",
-                                 Target_Age_Min = 15.0,
-                                 Target_Age_Max = 50.0,
+                                 Target_Age_Min = possible_mother_min_age,
+                                 Target_Age_Max = possible_mother_max_age,
                                  Intervention_Config = BroadcastEvent(Choose_Next_Method_Currently_Under_Age) )
     campaign.add_campaign_event( ce )
 
@@ -160,13 +164,13 @@ def InitializePossibleMothers( campaign ):
 
 def DistributeDelayToNewBorns( campaign ):
     be_cnm_under_age = BroadcastEvent(Choose_Next_Method_Currently_Under_Age)
-    
+
     delay = DelayedIntervention( Delay_Period_Distribution = DelayedIntervention_Delay_Period_Distribution_Enum.GAUSSIAN_DISTRIBUTION,
-                                 Delay_Period_Gaussian_Mean = 15.0*365.0,
+                                 Delay_Period_Gaussian_Mean = possible_mother_min_age*365.0,
                                  Delay_Period_Gaussian_Std_Dev = 180.0,
                                  New_Property_Value = IP_UNDER_AGE,
                                  Actual_IndividualIntervention_Configs = [be_cnm_under_age] )
-                                  
+
     ce = distributeInterventionOnEvent( Target_Demographic = "ExplicitGender",
                                         Target_Gender = "Female",
                                         Trigger_Condition_List=["Births"],
@@ -181,6 +185,7 @@ def DistributeDelayToNewBorns( campaign ):
 # ??? WE DON'T NEED TO USE 'CONTRACEPTIVE'.  WE COULD USE BroadcastEvent.
 # ??? WE JUST NEED SOMETHING TO CHANGE THE CurrentStatus to PREGNANT.
 
+
 def DistributeContraceptiveToPregnantMothers( campaign ):
 
     con_pregnant = Contraceptive( Intervention_Name="Pregnant",
@@ -190,18 +195,19 @@ def DistributeContraceptiveToPregnantMothers( campaign ):
                                   Usage_Duration_Distribution=Contraceptive_Usage_Duration_Distribution_Enum.CONSTANT_DISTRIBUTION,
                                   Usage_Duration_Period = 10000,
                                   Usage_Expiration_Event = Should_Not_Be_Broadcasted )
-                                  
+
     ce = distributeInterventionOnEvent( Target_Demographic = "ExplicitGender",
                                         Target_Gender = "Female",
                                         Trigger_Condition_List=["Pregnant"],
                                         Intervention_Config = con_pregnant )
     campaign.add_campaign_event( ce )
 
-    
+
 # Distribute a "post partunm" contraceptive to women when they give birth.
 
 # !!! THIS WOULD BE THE FUNCTION TO MODIFY/REPLACE/OVERRIDE IF WE WANTED
 # !!! SOME WOMEN TO USE AN IUD.
+
 
 def DistributeContraceptiveToPostPartumMothers( campaign ):
     con_post_partum = Contraceptive( Intervention_Name="Post_Partum",
@@ -215,8 +221,21 @@ def DistributeContraceptiveToPostPartumMothers( campaign ):
 
     ce = distributeInterventionOnEvent( Target_Demographic = "ExplicitGender",
                                         Target_Gender = "Female",
-                                        Trigger_Condition_List=["GaveBirth"],
+                                        Trigger_Condition_List=[GO_POST_Partum],
                                         Intervention_Config = con_post_partum )
+    campaign.add_campaign_event( ce )
+
+
+
+# Need an momentary step between pregnant and post-partum since we want pregnancy to stop post-partum and post-partum
+# to stop pregnancy.
+def MovePostPartumMothersToPostPartumState(campaign):
+    be_go_post_partum = BroadcastEvent(Broadcast_Event=GO_POST_Partum, New_Property_Value=IP_POST_PARTUM)
+
+    ce = distributeInterventionOnEvent(Target_Demographic="ExplicitGender",
+                                       Target_Gender="Female",
+                                       Trigger_Condition_List=["GaveBirth"],
+                                       Intervention_Config=be_go_post_partum)
     campaign.add_campaign_event( ce )
 
 
@@ -232,7 +251,7 @@ def DistributeInterventionList( campaign, eventInterventionPairList ):
                                             Intervention_Config = interven )
         campaign.add_campaign_event( ce )
 
-        
+
 # -----------------------------------------------------------------------------
 # --- CAMPAIGN GENERATION
 # -----------------------------------------------------------------------------
@@ -246,17 +265,18 @@ def DistributeInterventionList( campaign, eventInterventionPairList ):
 
 def GenerateCampaignFP( contraceptiveList, randomChoiceList ):
     campaign = Campaign( Campaign_Name="Simple FP Campaign" )
-    
+
     InitializeUnderAgeWomen( campaign )
     InitializePossibleMothers( campaign )
     DistributeDelayToNewBorns( campaign )
 
     DistributeInterventionList( campaign, randomChoiceList )
     DistributeInterventionList( campaign, contraceptiveList )
-    
+
     DistributeContraceptiveToPregnantMothers( campaign )
+    MovePostPartumMothersToPostPartumState(campaign)
     DistributeContraceptiveToPostPartumMothers( campaign )
-    
+
     return campaign
 
 
@@ -275,7 +295,7 @@ def GenerateCampaignFP( contraceptiveList, randomChoiceList ):
 #       node waiting for the event.
 
 def CreateContraceptives():
-    
+
     con_norplant   = Contraceptive( Intervention_Name="Norplant",
                                     New_Property_Value=IP_NORPLANT,
                                     Disqualifying_Properties=[ IP_PREGNANT ],
@@ -302,7 +322,7 @@ def CreateContraceptives():
                                     Usage_Duration_Gaussian_Mean = 180,
                                     Usage_Duration_Gaussian_Std_Dev = 10,
                                     Usage_Expiration_Event = Choose_Next_Method_Currently_On_Withdrawal )
-                                  
+
     con_none       = Contraceptive( Intervention_Name="None",
                                     New_Property_Value=IP_NONE,
                                     Disqualifying_Properties=[ IP_PREGNANT ],
@@ -311,13 +331,13 @@ def CreateContraceptives():
                                     Usage_Duration_Gaussian_Mean = 365,
                                     Usage_Duration_Gaussian_Std_Dev = 3,
                                     Usage_Expiration_Event = Choose_Next_Method_Currently_On_None )
-                                    
+
     con_list = []
     con_list.append( (USE_NORPLANT  , con_norplant  ) )
     con_list.append( (USE_PILL      , con_pill      ) )
     con_list.append( (USE_WITHDRAWAL, con_withdrawal) )
     con_list.append( (USE_NONE      , con_none      ) )
-    
+
     return con_list
 
 
@@ -346,7 +366,7 @@ def CreateRandomChoiceList():
                                         Choice_Probabilities=[          0.1,      0.1,            0.4,      0.4 ] )
     rc_from_none        = RandomChoice( Choice_Names        =[ USE_NORPLANT, USE_PILL, USE_WITHDRAWAL, USE_NONE ],
                                         Choice_Probabilities=[          0.1,      0.2,            0.2,      0.5 ] )
-                                        
+
     rc_list = []
     rc_list.append( ( Choose_Next_Method_Currently_Under_Age    , rc_from_under_age   ) )
     rc_list.append( ( Choose_Next_Method_Currently_Post_Partum  , rc_from_post_partum ) )
@@ -354,8 +374,317 @@ def CreateRandomChoiceList():
     rc_list.append( ( Choose_Next_Method_Currently_On_Pill      , rc_from_pill        ) )
     rc_list.append( ( Choose_Next_Method_Currently_On_Withdrawal, rc_from_withdrawal  ) )
     rc_list.append( ( Choose_Next_Method_Currently_On_None      , rc_from_none        ) )
-    
+
     return rc_list
+
+# -----------------------------------------------------------------------------
+# --- RANDOM CHOICES MATRIX
+# -----------------------------------------------------------------------------
+
+def CreateRandomChoiceMatrixList():
+    # initialize contraceptive in the population.
+    pm_norplant = [
+        [
+            [ 0.1, 0.2 ],
+            [ 0.3, 0.4 ],
+            [ 0.5, 0.6 ]
+        ],
+        [
+            [ 0.3, 0.4 ],
+            [ 0.5, 0.6 ],
+            [ 0.7, 0.8 ]
+        ],
+    ]
+    under_age_norplant = Choice( Broadcast_Event=USE_NORPLANT,
+                                 Years=[ 1990, 2000 ],
+                                 Ages=[ 15, 25, 40 ],
+                                 Parity=[ 0, 3 ],
+                                 ProbabilityMatrix=pm_norplant )
+
+    pm_pill = [
+        [
+            [ 0.1, 0.2, 0.3 ],
+            [ 0.5, 0.6, 0.7 ]
+        ],
+        [
+            [ 0.7, 0.6, 0.5 ],
+            [ 0.4, 0.3, 0.2 ]
+        ]
+    ]
+    under_age_pill = Choice( Broadcast_Event=USE_PILL,
+                             Years=[ 1992, 2050 ],
+                             Ages=[ 20, 50 ],
+                             Parity=[ 0, 2, 4 ],
+                             ProbabilityMatrix=pm_pill )
+
+    pm_withdrawal = [
+        [
+            [ 0.8 ]
+        ],
+        [
+            [ 0.2 ]
+        ]
+    ]
+    under_age_withdrawal = Choice( Broadcast_Event=USE_WITHDRAWAL,
+                                   Years=[ 1992, 2050 ],
+                                   Ages=[ 50 ],
+                                   Parity=[ 10 ],
+                                   ProbabilityMatrix=pm_withdrawal )
+
+
+    choices_under_age = []
+    choices_under_age.append( under_age_norplant )
+    choices_under_age.append( under_age_pill )
+    choices_under_age.append( under_age_withdrawal )
+
+    filters_under_age = []
+
+    rcm_from_under_age = RandomChoiceMatrix( Choices=choices_under_age, Filters=filters_under_age )
+
+    # Post_Partum
+    pm_post_partum_to_norplant = [
+        [
+            [0.6, 0.5],
+            [0.4, 0.3],
+            [0.2, 0.1]
+        ],
+        [
+            [0.1, 0.4],
+            [0.2, 0.5],
+            [0.3, 0.6]
+        ],
+    ]
+    post_partum_to_norplant = Choice(Broadcast_Event=USE_NORPLANT,
+                                Years=[1995, 2005],
+                                Ages=[15, 25, 35],
+                                Parity=[0, 5],
+                                ProbabilityMatrix=pm_post_partum_to_norplant)
+
+    pm_post_partum_to_pill = [
+        [
+            [0.0, 0.1, 0.2],
+            [0.7, 0.8, 0.9]
+        ],
+        [
+            [0.8, 0.6, 0.4],
+            [0.2, 0.4, 0.8]
+        ]
+    ]
+    post_partum_to_pill = Choice(Broadcast_Event=USE_PILL,
+                            Years=[1995, 2020],
+                            Ages=[20, 40],
+                            Parity=[0, 2, 6],
+                            ProbabilityMatrix=pm_post_partum_to_pill)
+
+    pm_post_partum_to_withdrawal = [
+        [
+            [0.1]
+        ],
+        [
+            [0.9]
+        ]
+    ]
+    post_partum_to_withdrawal = Choice(Broadcast_Event=USE_WITHDRAWAL,
+                                  Years=[1990, 2030],
+                                  Ages=[20],
+                                  Parity=[4],
+                                  ProbabilityMatrix=pm_post_partum_to_withdrawal)
+
+    choices_post_partum = []
+    choices_post_partum.append(post_partum_to_norplant)
+    choices_post_partum.append(post_partum_to_pill)
+    choices_post_partum.append(post_partum_to_withdrawal)
+
+    filters_post_partum = []
+
+    rcm_from_post_partum = RandomChoiceMatrix(Choices=choices_post_partum, Filters=filters_post_partum)
+
+    # On Norplant
+    pm_norplant_to_norplant = [
+        [
+            [0.1, 0.5],
+            [0.4, 0.2],
+            [0.6, 0.1]
+        ],
+        [
+            [0.1, 0.0],
+            [0.1, 0.6],
+            [0.3, 0.6]
+        ],
+    ]
+    norplant_to_norplant = Choice(Broadcast_Event=USE_NORPLANT,
+                                Years=[1995, 2005],
+                                Ages=[15, 25, 35],
+                                Parity=[0, 5],
+                                ProbabilityMatrix=pm_norplant_to_norplant)
+
+    pm_norplant_to_pill = [
+        [
+            [0.1]
+        ],
+        [
+            [0.9]
+        ]
+    ]
+    norplant_to_pill = Choice(Broadcast_Event=USE_PILL,
+                            Years=[1995, 2020],
+                            Ages=[20],
+                            Parity=[0],
+                            ProbabilityMatrix=pm_norplant_to_pill)
+
+    pm_norplant_to_withdrawal = [
+        [
+            [0.0, 0.1, 0.2],
+            [0.7, 0.8, 0.9]
+        ],
+        [
+            [0.8, 0.6, 0.4],
+            [0.2, 0.4, 0.8]
+        ]
+    ]
+    norplant_to_withdrawal = Choice(Broadcast_Event=USE_WITHDRAWAL,
+                                  Years=[1990, 2030],
+                                  Ages=[20, 50],
+                                  Parity=[0, 2, 4],
+                                  ProbabilityMatrix=pm_norplant_to_withdrawal)
+
+    choices_norplant = []
+    choices_norplant.append(norplant_to_norplant)
+    choices_norplant.append(norplant_to_pill)
+    choices_norplant.append(norplant_to_withdrawal)
+
+    filters_norplant = []
+
+    rcm_from_norplant = RandomChoiceMatrix(Choices=choices_norplant, Filters=filters_norplant)
+
+    # On Pill
+    pm_pill_to_norplant = [
+        [
+            [0.0, 0.4],
+            [0.4, 0.2],
+            [0.3, 0.1]
+        ],
+        [
+            [0.1, 0.0],
+            [0.9, 0.6],
+            [0.3, 0.2]
+        ],
+    ]
+    pill_to_norplant = Choice(Broadcast_Event=USE_NORPLANT,
+                                Years=[1990, 2053],
+                                Ages=[15, 35, 55],
+                                Parity=[0, 3],
+                                ProbabilityMatrix=pm_pill_to_norplant)
+
+    pm_pill_to_pill = [
+        [
+            [0.8]
+        ],
+        [
+            [0.5]
+        ]
+    ]
+    pill_to_pill = Choice(Broadcast_Event=USE_PILL,
+                            Years=[1990, 2020],
+                            Ages=[20],
+                            Parity=[0],
+                            ProbabilityMatrix=pm_pill_to_pill)
+
+    pm_pill_to_withdrawal = [
+        [
+            [0.0, 0.1, 0.2],
+            [0.7, 0.2, 0.9]
+        ],
+        [
+            [0.8, 0.9, 0.4],
+            [0.2, 0.3, 0.8]
+        ]
+    ]
+    pill_to_withdrawal = Choice(Broadcast_Event=USE_WITHDRAWAL,
+                                  Years=[1990, 2030],
+                                  Ages=[20, 45],
+                                  Parity=[0, 1, 2],
+                                  ProbabilityMatrix=pm_pill_to_withdrawal)
+
+    choices_pill = []
+    choices_pill.append(pill_to_norplant)
+    choices_pill.append(pill_to_pill)
+    choices_pill.append(pill_to_withdrawal)
+
+    filters_pill = []
+
+    rcm_from_pill = RandomChoiceMatrix(Choices=choices_pill, Filters=filters_pill)
+
+    # On Withdrawal
+    pm_withdrawal_to_norplant = [
+        [
+            [0.0, 0.4],
+            [0.4, 0.6],
+            [0.9, 0.2]
+        ],
+        [
+            [0.1, 1.0],
+            [0.6, 0.6],
+            [0.3, 0.2]
+        ],
+    ]
+    withdrawal_to_norplant = Choice(Broadcast_Event=USE_NORPLANT,
+                                Years=[1990, 2053],
+                                Ages=[15, 35, 55],
+                                Parity=[0, 3],
+                                ProbabilityMatrix=pm_withdrawal_to_norplant)
+
+    pm_withdrawal_to_pill = [
+        [
+            [0.8]
+        ],
+        [
+            [0.6]
+        ]
+    ]
+    withdrawal_to_pill = Choice(Broadcast_Event=USE_PILL,
+                            Years=[1990, 2020],
+                            Ages=[20],
+                            Parity=[0],
+                            ProbabilityMatrix=pm_withdrawal_to_pill)
+
+    pm_withdrawal_to_withdrawal = [
+        [
+            [0.0, 0.1, 0.2],
+            [0.7, 0.2, 0.9]
+        ],
+        [
+            [0.1, 0.9, 0.1],
+            [0.2, 0.5, 0.8]
+        ]
+    ]
+    withdrawal_to_withdrawal = Choice(Broadcast_Event=USE_WITHDRAWAL,
+                                  Years=[1990, 2030],
+                                  Ages=[20, 45],
+                                  Parity=[0, 1, 2],
+                                  ProbabilityMatrix=pm_withdrawal_to_withdrawal)
+
+    choices_withdrawal = []
+    choices_withdrawal.append(pm_withdrawal_to_norplant)
+    choices_withdrawal.append(withdrawal_to_pill)
+    choices_withdrawal.append(withdrawal_to_withdrawal)
+
+    filters_withdrawal  = []
+
+    rcm_from_withdrawal = RandomChoiceMatrix(Choices=choices_withdrawal, Filters=filters_withdrawal)
+
+    rcm_list = []
+
+    # we need to load the matrix from a file with defined format and turn it into rcm_list automatically.
+    rcm_list.append( ( Choose_Next_Method_Currently_Under_Age    , rcm_from_under_age   ) )
+    rcm_list.append( ( Choose_Next_Method_Currently_Post_Partum  , rcm_from_post_partum ) )
+    rcm_list.append( ( Choose_Next_Method_Currently_On_Norplant  , rcm_from_norplant    ) )
+    rcm_list.append( ( Choose_Next_Method_Currently_On_Pill      , rcm_from_pill        ) )
+    rcm_list.append( ( Choose_Next_Method_Currently_On_Withdrawal, rcm_from_withdrawal  ) )
+    #rcm_list.append( ( Choose_Next_Method_Currently_On_None      , rcm_from_none        ) )
+
+    return rcm_list
+
 
 # -----------------------------------------------------------------------------
 # --- MAIN
@@ -371,4 +700,4 @@ if __name__ == "__main__":
     c.save_to_file(os.path.join("output", "campaign-FP"))
     
     print("Done")
-    
+
