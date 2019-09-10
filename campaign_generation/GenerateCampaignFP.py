@@ -85,7 +85,7 @@ IP_NORPLANT    = "CurrentStatus:NORPLANT"
 IP_PILL        = "CurrentStatus:PILL"
 IP_WITHDRAWAL  = "CurrentStatus:WITHDRAWAL"
 IP_NONE        = "CurrentStatus:NONE"
-        
+
 Should_Not_Be_Broadcasted = "Should_Not_Be_Broadcasted"
 Choose_Next_Method_Currently_Under_Age     = "Choose_Next_Method_Currently_Under_Age"
 Choose_Next_Method_Currently_Post_Partum   = "Choose_Next_Method_Currently_Post_Partum"
@@ -98,7 +98,10 @@ USE_NORPLANT   = "Use_Norplant"
 USE_PILL       = "Use_Pill"
 USE_WITHDRAWAL = "Use_Withdrawal"
 USE_NONE       = "Use_None"
+GO_POST_Partum = "Go_Post_Partum"
 
+possible_mother_min_age = 15.0
+possible_mother_max_age = 50.0
 
 # -----------------------------------------------------------------------------
 # --- POPULATION INITIALIZATION - Functions for initializing the population
@@ -109,19 +112,20 @@ USE_NONE       = "Use_None"
 # they choose a contraceptive about the time they turn 15.
 # !!! COULD PROBABLY USE REFINEMENT !!!
 
+
 def InitializeUnderAgeWomen( campaign ):
     be_cnm_under_age = BroadcastEvent(Choose_Next_Method_Currently_Under_Age)
-    
+
     mean_delay_list = [ 13.0*365.0, 8.0*365.0, 3.0*365.0 ]
     age = 0.0
-    
+
     for mean in mean_delay_list:
         delay = DelayedIntervention( Delay_Period_Distribution = DelayedIntervention_Delay_Period_Distribution_Enum.GAUSSIAN_DISTRIBUTION,
                                      Delay_Period_Gaussian_Mean = mean,
                                      Delay_Period_Gaussian_Std_Dev = 180.0,
                                      New_Property_Value = IP_UNDER_AGE,
                                      Actual_IndividualIntervention_Configs = [be_cnm_under_age] )
-                                      
+
         ce = distributeIntervention( Target_Demographic = "ExplicitAgeRangesAndGender",
                                      Target_Gender = "Female",
                                      Target_Age_Min = age,
@@ -138,8 +142,8 @@ def InitializeUnderAgeWomen( campaign ):
 def InitializePossibleMothers( campaign ):
     ce = distributeIntervention( Target_Demographic = "ExplicitAgeRangesAndGender",
                                  Target_Gender = "Female",
-                                 Target_Age_Min = 15.0,
-                                 Target_Age_Max = 50.0,
+                                 Target_Age_Min = possible_mother_min_age,
+                                 Target_Age_Max = possible_mother_max_age,
                                  Intervention_Config = BroadcastEvent(Choose_Next_Method_Currently_Under_Age) )
     campaign.add_campaign_event( ce )
 
@@ -160,13 +164,13 @@ def InitializePossibleMothers( campaign ):
 
 def DistributeDelayToNewBorns( campaign ):
     be_cnm_under_age = BroadcastEvent(Choose_Next_Method_Currently_Under_Age)
-    
+
     delay = DelayedIntervention( Delay_Period_Distribution = DelayedIntervention_Delay_Period_Distribution_Enum.GAUSSIAN_DISTRIBUTION,
-                                 Delay_Period_Gaussian_Mean = 15.0*365.0,
+                                 Delay_Period_Gaussian_Mean = possible_mother_min_age*365.0,
                                  Delay_Period_Gaussian_Std_Dev = 180.0,
                                  New_Property_Value = IP_UNDER_AGE,
                                  Actual_IndividualIntervention_Configs = [be_cnm_under_age] )
-                                  
+
     ce = distributeInterventionOnEvent( Target_Demographic = "ExplicitGender",
                                         Target_Gender = "Female",
                                         Trigger_Condition_List=["Births"],
@@ -181,6 +185,7 @@ def DistributeDelayToNewBorns( campaign ):
 # ??? WE DON'T NEED TO USE 'CONTRACEPTIVE'.  WE COULD USE BroadcastEvent.
 # ??? WE JUST NEED SOMETHING TO CHANGE THE CurrentStatus to PREGNANT.
 
+
 def DistributeContraceptiveToPregnantMothers( campaign ):
 
     con_pregnant = Contraceptive( Intervention_Name="Pregnant",
@@ -190,18 +195,19 @@ def DistributeContraceptiveToPregnantMothers( campaign ):
                                   Usage_Duration_Distribution=Contraceptive_Usage_Duration_Distribution_Enum.CONSTANT_DISTRIBUTION,
                                   Usage_Duration_Period = 10000,
                                   Usage_Expiration_Event = Should_Not_Be_Broadcasted )
-                                  
+
     ce = distributeInterventionOnEvent( Target_Demographic = "ExplicitGender",
                                         Target_Gender = "Female",
                                         Trigger_Condition_List=["Pregnant"],
                                         Intervention_Config = con_pregnant )
     campaign.add_campaign_event( ce )
 
-    
+
 # Distribute a "post partunm" contraceptive to women when they give birth.
 
 # !!! THIS WOULD BE THE FUNCTION TO MODIFY/REPLACE/OVERRIDE IF WE WANTED
 # !!! SOME WOMEN TO USE AN IUD.
+
 
 def DistributeContraceptiveToPostPartumMothers( campaign ):
     con_post_partum = Contraceptive( Intervention_Name="Post_Partum",
@@ -215,8 +221,21 @@ def DistributeContraceptiveToPostPartumMothers( campaign ):
 
     ce = distributeInterventionOnEvent( Target_Demographic = "ExplicitGender",
                                         Target_Gender = "Female",
-                                        Trigger_Condition_List=["GaveBirth"],
+                                        Trigger_Condition_List=[GO_POST_Partum],
                                         Intervention_Config = con_post_partum )
+    campaign.add_campaign_event( ce )
+
+
+
+# Need an momentary step between pregnant and post-partum since we want pregnancy to stop post-partum and post-partum
+# to stop pregnancy.
+def MovePostPartumMothersToPostPartumState(campaign):
+    be_go_post_partum = BroadcastEvent(Broadcast_Event=GO_POST_Partum, New_Property_Value=IP_POST_PARTUM)
+
+    ce = distributeInterventionOnEvent(Target_Demographic="ExplicitGender",
+                                       Target_Gender="Female",
+                                       Trigger_Condition_List=["GaveBirth"],
+                                       Intervention_Config=be_go_post_partum)
     campaign.add_campaign_event( ce )
 
 
@@ -232,7 +251,7 @@ def DistributeInterventionList( campaign, eventInterventionPairList ):
                                             Intervention_Config = interven )
         campaign.add_campaign_event( ce )
 
-        
+
 # -----------------------------------------------------------------------------
 # --- CAMPAIGN GENERATION
 # -----------------------------------------------------------------------------
@@ -246,17 +265,18 @@ def DistributeInterventionList( campaign, eventInterventionPairList ):
 
 def GenerateCampaignFP( contraceptiveList, randomChoiceList ):
     campaign = Campaign( Campaign_Name="Simple FP Campaign" )
-    
+
     InitializeUnderAgeWomen( campaign )
     InitializePossibleMothers( campaign )
     DistributeDelayToNewBorns( campaign )
 
     DistributeInterventionList( campaign, randomChoiceList )
     DistributeInterventionList( campaign, contraceptiveList )
-    
+
     DistributeContraceptiveToPregnantMothers( campaign )
+    MovePostPartumMothersToPostPartumState(campaign)
     DistributeContraceptiveToPostPartumMothers( campaign )
-    
+
     return campaign
 
 
@@ -275,7 +295,7 @@ def GenerateCampaignFP( contraceptiveList, randomChoiceList ):
 #       node waiting for the event.
 
 def CreateContraceptives():
-    
+
     con_norplant   = Contraceptive( Intervention_Name="Norplant",
                                     New_Property_Value=IP_NORPLANT,
                                     Disqualifying_Properties=[ IP_PREGNANT ],
@@ -302,7 +322,7 @@ def CreateContraceptives():
                                     Usage_Duration_Gaussian_Mean = 180,
                                     Usage_Duration_Gaussian_Std_Dev = 10,
                                     Usage_Expiration_Event = Choose_Next_Method_Currently_On_Withdrawal )
-                                  
+
     con_none       = Contraceptive( Intervention_Name="None",
                                     New_Property_Value=IP_NONE,
                                     Disqualifying_Properties=[ IP_PREGNANT ],
@@ -311,13 +331,13 @@ def CreateContraceptives():
                                     Usage_Duration_Gaussian_Mean = 365,
                                     Usage_Duration_Gaussian_Std_Dev = 3,
                                     Usage_Expiration_Event = Choose_Next_Method_Currently_On_None )
-                                    
+
     con_list = []
     con_list.append( (USE_NORPLANT  , con_norplant  ) )
     con_list.append( (USE_PILL      , con_pill      ) )
     con_list.append( (USE_WITHDRAWAL, con_withdrawal) )
     con_list.append( (USE_NONE      , con_none      ) )
-    
+
     return con_list
 
 
@@ -346,7 +366,7 @@ def CreateRandomChoiceList():
                                         Choice_Probabilities=[          0.1,      0.1,            0.4,      0.4 ] )
     rc_from_none        = RandomChoice( Choice_Names        =[ USE_NORPLANT, USE_PILL, USE_WITHDRAWAL, USE_NONE ],
                                         Choice_Probabilities=[          0.1,      0.2,            0.2,      0.5 ] )
-                                        
+
     rc_list = []
     rc_list.append( ( Choose_Next_Method_Currently_Under_Age    , rc_from_under_age   ) )
     rc_list.append( ( Choose_Next_Method_Currently_Post_Partum  , rc_from_post_partum ) )
@@ -354,8 +374,9 @@ def CreateRandomChoiceList():
     rc_list.append( ( Choose_Next_Method_Currently_On_Pill      , rc_from_pill        ) )
     rc_list.append( ( Choose_Next_Method_Currently_On_Withdrawal, rc_from_withdrawal  ) )
     rc_list.append( ( Choose_Next_Method_Currently_On_None      , rc_from_none        ) )
-    
+
     return rc_list
+
 
 # -----------------------------------------------------------------------------
 # --- MAIN
@@ -371,4 +392,4 @@ if __name__ == "__main__":
     c.save_to_file(os.path.join("output", "campaign-FP"))
     
     print("Done")
-    
+
