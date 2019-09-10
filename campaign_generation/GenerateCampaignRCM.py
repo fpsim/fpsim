@@ -446,7 +446,7 @@ if __name__ == "__main__":
     
     c = GenerateCampaignFP( con_list, rc_list )
     #c.save_to_file("/work/dev/trunk1/Regression/FP/2_FP_SimpleCampaign/campaign")
-    c.save_to_file(os.path.join("output", "campaign-RCM"))
+    c.save_to_file(os.path.join("json", "campaign"))
     
     print("Done")
     

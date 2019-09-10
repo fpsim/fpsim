@@ -142,3 +142,8 @@ ENV/
 # mypy
 .mypy_cache/
 output/
+
+# EMOD specific
+status.txt
+config.json
+campaign.json
