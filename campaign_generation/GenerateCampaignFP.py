@@ -368,7 +368,7 @@ if __name__ == "__main__":
     rc_list = CreateRandomChoiceList()
     
     c = GenerateCampaignFP( con_list, rc_list )
-    c.save_to_file(os.path.join("output", "campaign-FP"))
+    c.save_to_file(os.path.join("json", "campaign-FP"))
     
     print("Done")
     
