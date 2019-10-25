@@ -114,52 +114,6 @@ def map_sample_to_model_input_fn(config_builder, sample_idx, replicate_idx, samp
 
     return { '[SAMPLE] %s'%k : v for k,v in sample_dict.items() }
 
-    # For calibration use, only
-    #return templates.mod_dynamic_parameters(config_builder, table) # returns tags
-
-
-'''
-def map_sample_to_model_input(sample_dict, sample_idx, replicate_idx, random_run_number=True):
-    """
-    This method is used directly by the scenario-running script. Do not change its name or argument list.
-    s is a dict of user parameters that need mapping to actual model parameters
-    """
-
-    table = base_table_for_scenario(template_set_name=template_set_name, scenario_name=scenario_name,
-                                    campaign_filename=campaign_filename)
-
-    table['TAGS'].update({'__sample_index__': sample_idx, '__replicate_index__': replicate_idx})
-
-    if random_run_number:
-        table['Run_Number'] = random.randint(0, 65535)  # Random random number seed
-
-    sample = copy.deepcopy(sample_dict)
-
-    table['TAGS'].update({
-        '[SAMPLE] %s'%k : v
-        for k,v in sample.items()
-    })
-
-    table['Config_Name'] = '%s: Sample %d Rep %d'%(scenario_name, sample_idx, replicate_idx)
-
-    if 'PillEfficacy' in sample:
-        value = sample.pop('PillEfficacy')
-        table['PillEfficacy'] = np.exp(value)
-
-    for param_name,p in params.iterrows():
-        if param_name in sample and 'MapTo' in p:
-            if isinstance(p['MapTo'],float) and math.isnan(p['MapTo']):
-                continue
-            table[p['MapTo']] = sample.pop( param_name )
-
-    # Verify all parameters were mapped
-    for name, value in sample.items():
-        print('UNUSED PARAMETER:', name)
-    assert(len(sample) == 0)  # All params used
-
-    return table
-'''
-
 
 exp_builder = ModBuilder.from_combos(
     [
