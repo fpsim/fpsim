@@ -19,7 +19,7 @@ These classes can be generated using dtk-tools via the following command:
 dtk generate_classes -e /path/to/Eradication.exe -d -o .
 ```
 
-N.B. dtk-tools currently has these classes at `dtk/utils/Campaign`.  This is problematic as the classes are specific to the version of the DTK you are using.  To get dtk-tools to work, you must overwrite these two files within dtk-tools.
+N.B. dtk-tools currently has these classes at `dtk/utils/Campaign`.  This is problematic as the classes are specific to the version of the DTK you are using.  To get dtk-tools to work, you must overwrite these two files within dtk-tools. See issue [Campaign generation blocks commissioning of non-standard DTK model #1890]https://github.com/InstituteforDiseaseModeling/dtk-tools/issues/1890.
 
 N.B. [generate_classes is not compatible with Linux]https://github.com/InstituteforDiseaseModeling/dtk-tools/issues/1886
 
