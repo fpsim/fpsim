@@ -131,7 +131,6 @@ def InitializeUnderAgeWomen( campaign, num_age_steps = 4 ):
                                      Target_Age_Max = age+age_step,
                                      Intervention_Config = delay )
         campaign.add_campaign_event( ce )
-        age += age_step
 
 
 # Initialize the possible mothers at the start of the simulation with a contraceptive.

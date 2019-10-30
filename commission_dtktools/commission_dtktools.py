@@ -11,7 +11,7 @@ from simtools.ModBuilder import ModBuilder, ModFn
 from dtk.utils.core.DTKConfigBuilder import DTKConfigBuilder
 from simtools.SetupParser import SetupParser
 
-import GenerateCampaignRCM
+from GenerateCampaignRCM import *
 
 exp_name = 'Family Planning Workflow Development'
 config_fn = os.path.join('inputs', 'fp_default_config.json')
@@ -100,15 +100,16 @@ def constraint_satisfied(sample):
 def map_sample_to_model_input_fn(config_builder, sample_idx, replicate_idx, sample_dict):
 
     config_builder.config['Run_Number'] = random.randint(0, 65535)  # Random random number seed
-    print(config_builder.config)
 
-    con_list = GenerateCampaignRCM.CreateContraceptives()
-    pill_contraceptive = next(x[1] for x in con_list if x[0] == GenerateCampaignRCM.USE_PILL)
+    con_list = CreateContraceptives()
+
+    pill_contraceptive = next(x[1] for x in con_list if x[0] == USE_PILL)
     pill_contraceptive.Waning_Config.Initial_Effect = sample_dict['PillEfficacy']
 
-    rc_list = GenerateCampaignRCM.CreateRandomChoiceMatrixList()
+    rc_list = CreateRandomChoiceMatrixList()
 
-    campaign = GenerateCampaignRCM.GenerateCampaignFP( con_list, rc_list )
+    campaign = GenerateCampaignFP( con_list, rc_list )
+    print('map_sample_to_model_input_fn Clen', len(campaign.to_json()))
 
     config_builder.campaign = campaign
 
