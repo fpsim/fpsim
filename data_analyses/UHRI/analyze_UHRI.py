@@ -1,46 +1,84 @@
-# https://www.onlinedoctranslator.com/en/translationprocess
+import os
+import seaborn as sns
+import matplotlib.pyplot as plt # for plt.show()
 import pandas as pd
-from googletrans import Translator
 
-translator = Translator()
+cachefn = 'store.hdf'
+store = pd.HDFStore(cachefn)
 
-filenames = [
-    '/home/dklein/Dropbox (IDM)/URHI/Senegal/Baseline/SEN_base_wm_20160427.dta',
-    '/home/dklein/Dropbox (IDM)/URHI/Senegal/Midline/SEN_mid_wm_match_20160609.dta',
-    '/home/dklein/Dropbox (IDM)/URHI/Senegal/Endline/SEN_end_wm_match_20160505.dta'
-]
+force_read = False
 
-data = pd.read_stata(filename)
+if (not force_read) and os.path.isfile(cachefn) and 'women' in store:
+    women = store['women']
+else:
+    filenames = [
+        '/home/dklein/Dropbox (IDM)/URHI/Senegal/Baseline/SEN_base_wm_20160427.dta',
+        '/home/dklein/Dropbox (IDM)/URHI/Senegal/Midline/SEN_mid_wm_match_20160609.dta',
+        '/home/dklein/Dropbox (IDM)/URHI/Senegal/Endline/SEN_end_wm_match_20160505.dta'
+    ]
 
-print(data.iloc[0])
+    datalist = []
+    for wave, filename in enumerate(filenames):
+        print('-'*80)
+        print(f'On wave {wave}, reading {filename}')
+        data = pd.read_stata(filename, convert_categoricals=False)
 
-def translate(data):
-    if data[0].isdigit() and ' ' in data:
-        data = ' '.join(data.split(' ')[1:])
-    try:
-        trns = translator.translate(data, src='fr').text
-    except:
-        trns = 'N/A'
-    return trns
+        values = pd.io.stata.StataReader(filename).value_labels()
+        codebook = pd.io.stata.StataReader(filename).variable_labels()
 
-codebook = pd.io.stata.StataReader(filename).variable_labels()
-codebook_df = pd.DataFrame({'key':list(codebook.keys()), 'description':list(codebook.values())}) \
-    .set_index('key')
+        data['UID'] = data['location_code'].astype(str) + '.' + data['hhnum'].astype(str) + '.' + data['line'].astype(str)
+        data['Wave'] = wave
 
+        # w102 is age, w208 is parity
+        datalist.append( data[['UID', 'Wave', 'w102', 'w208', 'w310', 'w311a', 'w312', 'method']] )
 
-#print('\n'.join(list(codebook.values())))
+    print('Done reading, concat now.')
+    women = pd.concat(datalist)
+    nRecords = women.groupby(['UID']).size()
 
-#codebook_df['translation'] = codebook_df['description'].apply(translate)
-#codebook_df.to_csv('codebook_trans.csv')
+    women = women.set_index(['UID', 'Wave']).sort_index()
 
-# Age
-#print(codebook['w102']) # 102 Age
+    women = women \
+        .loc[nRecords[nRecords==3].index] \
+        .replace({
+            'method': values['method'],
+            'w310': values['W310'],
+            'w312': values['W312'],
+        })
+        #'w311a': values['W311A'],
 
-# Parity
-#print(codebook['w208']) # 208 Nombre total d'enfants nés
+    store['women'] = women
 
-print(data['method'].unique().tolist()) # ['No method', 'Injectables', 'Natural methods', 'Daily pill', 'Implants', 'Other traditional method', 'Male condom', 'Breastfeeding/LAM', 'iucd', 'Female sterilization', 'Female condom', 'Other modern method', 'Emergency pill']
+store.close()
 
-print(data['methodtype'].unique().tolist()) # ['No method', 'Modern', 'Traditional']
+print(women.head(100))
 
-print(data['age5'].unique().tolist()) # ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
+methods = women['method'].unique()
+
+# Define switching matrix.  Rows are FROM, columns are TO
+switching = pd.DataFrame(index=methods, columns=methods).fillna(0)
+
+def extract_switches(w):
+    uid = w.index.get_level_values('UID').values[0]
+    waves = w.index.get_level_values('Wave').values
+    for wave in range(3):
+        if wave in waves and wave+1 in waves:
+            frm = w.loc[(uid, wave), 'method']
+            to = w.loc[(uid, wave+1), 'method']
+            if frm != to:
+                print(frm, to)
+                print(w)
+                exit()
+            switching.loc[frm, to] += 1 # Use weights
+
+women.groupby('UID').apply(extract_switches)
+
+# Normalize by row-sum (FROM)
+switching_normalized_from = switching.div(switching.sum(axis=1), axis=0)
+
+sns.heatmap(switching_normalized_from, square=True, cmap='jet')
+plt.xlabel('TO')
+plt.ylabel('FROM')
+plt.suptitle('Senegal longitudinal switching, normalized by FROM')
+plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+plt.show()
