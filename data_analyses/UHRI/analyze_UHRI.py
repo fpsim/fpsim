@@ -1,5 +1,4 @@
 import os
-import pwd
 import seaborn as sns
 sns.set()
 import matplotlib.pyplot as plt # for plt.show()
@@ -17,7 +16,7 @@ uid = None # '96.66.16' # Put a UID here to get see data for one individual acro
 if (not force_read) and os.path.isfile(cachefn) and 'women' in store:
     women = store['women']
 else:
-    username = pwd.getpwuid(os.getuid())[0]+'sdf'
+    username = os.path.split(os.path.expanduser('~'))[-1]
     folderdict = {'dklein': '/home/dklein/Dropbox (IDM)/URHI/Senegal',
                   'cliffk': '/home/cliffk/idm/fp/data/Senegal',
                  }
