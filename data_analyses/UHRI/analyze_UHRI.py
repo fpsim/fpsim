@@ -17,14 +17,14 @@ uid = None # '96.66.16' # Put a UID here to get see data for one individual acro
 if (not force_read) and os.path.isfile(cachefn) and 'women' in store:
     women = store['women']
 else:
-
-    username = pwd.getpwuid(os.getuid())[0]
-    if username == 'dklein':
-        basedir = '/home/dklein/Dropbox (IDM)/URHI/Senegal'
-    elif username == 'cliffk':
-        basedir = '/home/cliffk/idm/fp/data/Senegal'
-    else:
-        raise Exception(f'User {username} not found, cannot find data folder')
+    username = pwd.getpwuid(os.getuid())[0]+'sdf'
+    folderdict = {'dklein': '/home/dklein/Dropbox (IDM)/URHI/Senegal',
+                  'cliffk': '/home/cliffk/idm/fp/data/Senegal',
+                 }
+    try:
+        basedir = folderdict[username]
+    except:
+        raise Exception(f'User {username} not found among users {list(folderdict.keys())}, cannot find data folder')
 
     filenames = [
         os.path.join(basedir, 'Baseline', 'SEN_base_wm_20160427.dta'),
