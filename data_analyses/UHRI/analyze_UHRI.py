@@ -127,4 +127,31 @@ plt.suptitle(title)
 plt.xticks(rotation=45, horizontalalignment='right') # , fontsize='x-large'
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
+exit()
+
+import numpy as np
+from mpl_toolkits.mplot3d import Axes3D
+
+fig = plt.figure()
+ax = fig.add_subplot(projection='3d')
+
+_age = np.linspace(women3['Age'].min(), women3['Age'].max())
+_parity = np.linspace(women3['Parity'].min(), women3['Parity'].max())
+
+print(_age)
+print(_parity)
+exit()
+_xx, _yy = np.meshgrid(_x, _y)
+x, y = _xx.ravel(), _yy.ravel()
+
+tmp = women3.reset_index().groupby(['Age', 'Parity']).size().sort_index().reset_index()
+
+#top = women3[]
+bottom = np.zeros_like(top)
+width = depth = 1
+
+ax.bar3d(x, y, bottom, width, depth, top, shade=True)
+ax.set_title('Shaded')
+
+
 plt.show()
