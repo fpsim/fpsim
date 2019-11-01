@@ -1,4 +1,5 @@
 import os
+import pwd
 import seaborn as sns
 sns.set()
 import matplotlib.pyplot as plt # for plt.show()
@@ -16,11 +17,21 @@ uid = None # '96.66.16' # Put a UID here to get see data for one individual acro
 if (not force_read) and os.path.isfile(cachefn) and 'women' in store:
     women = store['women']
 else:
+
+    username = pwd.getpwuid(os.getuid())[0]
+    if username == 'dklein':
+        basedir = '/home/dklein/Dropbox (IDM)/URHI/Senegal'
+    elif username == 'cliffk':
+        basedir = '/home/cliffk/idm/fp/data/Senegal'
+    else:
+        raise Exception(f'User {username} not found, cannot find data folder')
+
     filenames = [
-        '/home/dklein/Dropbox (IDM)/URHI/Senegal/Baseline/SEN_base_wm_20160427.dta',
-        '/home/dklein/Dropbox (IDM)/URHI/Senegal/Midline/SEN_mid_wm_match_20160609.dta',
-        '/home/dklein/Dropbox (IDM)/URHI/Senegal/Endline/SEN_end_wm_match_20160505.dta'
+        os.path.join(basedir, 'Baseline', 'SEN_base_wm_20160427.dta'),
+        os.path.join(basedir, 'Midline', 'SEN_mid_wm_match_20160609.dta'),
+        os.path.join(basedir, 'Endline', 'SEN_end_wm_match_20160505.dta')
     ]
+
 
     datalist = []
     datalist_UID = []
