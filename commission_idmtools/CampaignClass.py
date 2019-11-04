@@ -1,9 +1,338 @@
-from dtk.utils.Campaign.ClassValidator import ClassValidator
-from dtk.utils.Campaign.utils.BaseCampaign import BaseCampaign
+import base64
+import json
+
+import pandas as pd
+# Turn On/Off class members validation
+VALIDATE = True
+
 try:
     from CampaignEnum import *
 except ImportError:
     from .CampaignEnum import *
+
+import json
+from enum import Enum
+import numpy as np
+
+class NumpyEncoder(json.JSONEncoder):
+    def default(self, obj):
+        """If input object is an ndarray it will be converted into a dict
+        holding dtype, shape and the data, base64 encoded.
+        """
+        if isinstance(obj, np.int64):
+            return int(obj)  # because JSON doesn't know what to do with np.int64 (on Windows)
+        elif isinstance(obj, np.int32):
+            return int(obj) # because JSON doesn't know what to do with np.int32 (on Windows)
+        elif isinstance(obj, np.ndarray):
+            if obj.flags['C_CONTIGUOUS']:
+                obj_data = obj.data
+            else:
+                cont_obj = np.ascontiguousarray(obj)
+                assert(cont_obj.flags['C_CONTIGUOUS'])
+                obj_data = cont_obj.data
+            data_b64 = base64.b64encode(obj_data).decode('utf-8')
+            return dict(__ndarray__=data_b64,
+                        dtype=str(obj.dtype),
+                        shape=obj.shape)
+        elif isinstance(obj, pd.DataFrame):
+            return json.loads(obj.to_json())
+        try:
+            # Let the base class default method raise the TypeError
+            return super(NumpyEncoder, self).default(obj)
+        except TypeError:
+            return str(obj)
+
+class ClassValidator:
+    """
+    Validate class members against class definition
+    """
+
+    def __init__(self, definition, cls_name=None):
+        self.definition = definition
+        self.cls_name = cls_name
+
+    def output_definition(self, details=None):
+
+        details = details or self.definition
+        if isinstance(details, dict):
+            return json.dumps(details, indent=3, cls=NumpyEncoder)
+        elif isinstance(details, list):
+            details = [" - {}".format(i) for i in details if i != 'class']
+            return '\n'.join(details)
+        else:
+            return details
+
+    def validate(self, key, value):
+        if key in self.definition:
+            valid = self.definition[key]
+
+            if isinstance(valid, list):
+                self.validate_list(key, value)
+            elif isinstance(valid, dict):
+                self.validate_dict(key, value)
+            else:
+                self.validate_other(key, value)
+        else:
+            # For now we just take user's inputs and not throw exception
+            pass
+            # raise Exception("'{}' is not a member of the given class ({}). Please check available member list: "
+            #                 "\n\n{} ".format(key, self.cls_name, self.output_definition(list(self.definition.keys()))))
+
+    def validate_dict(self, key, value):
+        """
+        value definition is dict
+        """
+        valid = self.definition[key]
+        value_type = valid.get('type', None)
+
+        if value_type is None:
+            return         # no validation
+
+        # member definition details
+        json_script = {key: valid}
+
+        if value_type in ('bool', 'Bool', 'boolean'):
+            if not isinstance(value, bool):
+                if isinstance(value, int) or isinstance(value, float):
+                    return  # no validation here, but will cast value to bool type in __setattr__ (CampaignBaseClass)
+
+                raise Exception("'{}' value ({}) is not a bool. Please check the class member details: "
+                                "\n\n{} ".format(key, value, self.output_definition(json_script)))
+        elif value_type in ('int', 'float'):
+            if value is None:
+                return
+
+            if 'max' in valid and value > valid["max"]:
+                raise Exception("'{}' value ({}) is TOO HIGH. Please check the class member details: "
+                                "\n\n{} ".format(key, value, self.output_definition(json_script)))
+
+            if 'min' in valid and value < valid["min"]:
+                raise Exception("'{}' value ({}) is TOO LOW. Please check the class member details: "
+                                "\n\n{} ".format(key, value, self.output_definition(json_script)))
+        elif value_type in ('str', 'string'):
+            if not isinstance(value, str):
+                raise Exception("'{}' value ({}) is not a string. Please check the class member details: "
+                                "\n\n{} ".format(key, value, self.output_definition(json_script)))
+        elif value_type in ('enum', 'Enum'):
+            enum_name = "{}_{}_Enum".format(self.cls_name, key)
+            if not isinstance(value, Enum):
+                if isinstance(value, str):
+                    if value not in valid['enum']:
+                        raise Exception(
+                            "'{}' value ({}) is not a member of enum. Please check the class member details: "
+                            "\n\n{} ".format(key, value, self.output_definition(json_script)))
+                else:
+                    raise Exception("'{}' value ({}) is not a member of enum. Please check the class member details: "
+                                "\n\n{} ".format(key, value, self.output_definition(json_script)))
+            elif value.__class__.__name__ != enum_name:
+                raise Exception("'{}' value ({}) is not same enum type as defined. Please check the class member details: "
+                                    "\n\n{} ".format(key, value, self.output_definition(json_script)))
+            else:
+                pass
+        elif value_type in ('dict', 'Dict'):
+            if not isinstance(value, dict):
+                raise Exception("'{}' value ({}) is not a dict. Please check the class member details: "
+                                "\n\n{} ".format(key, value, self.output_definition(json_script)))
+        elif value_type in ('list', 'Dynamic String Set'):
+            if value and not isinstance(value, list):
+                raise Exception("'{}' value ({}) is not a list. Please check the class member details: "
+                                "\n\n{} ".format(key, value, self.output_definition(json_script)))
+        else:
+            pass
+
+        return None
+
+    def validate_list(self, key, value):
+        """
+        value definition is list
+        """
+        valid = self.definition[key]
+
+        if value and not isinstance(value, list):
+            json_script = {key: valid}
+            raise Exception("'{}' value ({}) is not a list. Please check the class member details: "
+                            "\n\n{} ".format(key, value, self.output_definition(json_script)))
+
+    def validate_other(self, key, value):
+        """
+        value definition is not a list or dict
+        Note: not sure we have this case
+        """
+        valid = self.definition[key]
+
+        if type(valid) != type(value):
+            json_script = {key: valid}
+            raise Exception("'{}' value ({}) is not the required type. Please check the class member details: "
+                            "\n\n{} ".format(key, value, self.output_definition(json_script)))
+
+
+
+class CampaignEncoder(json.JSONEncoder):
+    """
+    Class to JSON
+    """
+
+    def __init__(self, use_defaults=True):
+        super(CampaignEncoder, self).__init__()
+        self.Use_Defaults = use_defaults
+
+    def default(self, o):
+        """
+        Specially handle cases:
+          - np.int32 and np.int64
+          - Enum
+          - bool
+          - Campaign class
+          - RawCampaignObject
+        """
+
+        # handle Number case
+        if isinstance(o, np.int32) or isinstance(o, np.int64):
+            return int(o)
+
+        if isinstance(o, RawCampaignObject):
+            return o.get_json_object()
+
+        # First get the dict
+        object_dict = o.__dict__
+
+        # If the object does not have a _definition attribute, we cannot continue
+        if not hasattr(o, "_definition"):
+            raise Exception(f"Parsing cannot continue as the object {o} provided does not have a _definition")
+
+        # Root campaign ? If we are at the root of the campaign, we will output parameters regardless of defaults
+        campaign_root = o.__class__.__name__ == 'Campaign'
+
+        # Retrieve the object definition
+        definition = o._definition
+
+        result = {}
+        for key, val in object_dict.items():
+            # If the attribute is not in the definition, we assume it is a user-defined
+            # attribute and simply add it to the return dict
+            if key not in definition:
+                result[key] = val
+                continue
+
+            # Retrieve the default value from the definition for the current field
+            validation = definition[key]
+            default_value = validation.get('default', None) if isinstance(validation, dict) else validation
+
+            # If the value is a boolean
+            if isinstance(val, bool):
+                converted_value = self.convert_bool(val)
+                if campaign_root or not (self.Use_Defaults and converted_value == default_value):
+                    result[key] = converted_value
+
+            elif isinstance(val, Enum):
+                if campaign_root or not (self.Use_Defaults and val.name == default_value):
+                    result[key] = val
+
+            else:
+                if campaign_root or not (self.Use_Defaults and val == default_value):
+                    result[key] = val
+
+        # for Campaign class we defined, don't output class
+        if not campaign_root:
+            result["class"] = o.__class__.__name__
+
+        return result
+
+    @staticmethod
+    def convert_bool(val):
+        """
+        Map: True/False to 1/0
+        """
+        return 1 if val else 0
+
+
+
+class RawCampaignObject(object):
+    _definition = {"json_object": {}, "class": "RawCampaignObject"}
+    _validator = ClassValidator(_definition, 'RawCampaignObject')
+
+    def __init__(self, json_object={}):
+        self.json_object = self.load_json_object(json_object)
+        self.Use_Defaults = json_object["Use_Defaults"] == "1" if "Use_Defaults" in json_object else True
+
+    @staticmethod
+    def load_json_object(json_object):
+        if isinstance(json_object, str):
+            return json.loads(json_object)
+        else:
+            return json_object
+
+    def get_json_object(self):
+        return self.json_object
+
+    def to_json(self, use_defaults=True, human_readability=True):
+        ec = CampaignEncoder(use_defaults)
+        t = ec.encode(self)
+        w = json.loads(t)
+        if human_readability:
+            return json.dumps(w, sort_keys=True, indent=3)
+        else:
+            return json.dumps(w, sort_keys=True)
+
+class BaseCampaign:
+
+    def __init__(self, **kwargs):
+        for key, value in kwargs.items():
+            setattr(self, key, value)
+
+    def __setattr__(self, key, value):
+        if VALIDATE:
+            self._validator.validate(key, value)
+
+        # Special case
+        if isinstance(value, RawCampaignObject):
+            super().__setattr__(key, value)
+            return
+
+        valid = self._definition.get(key)
+        if not isinstance(valid, dict):
+            super().__setattr__(key, value)
+            return
+
+        value_type = valid.get('type', None)
+
+        if value_type is None:
+            super().__setattr__(key, value)
+            return
+
+        if value_type in ('bool', 'Bool', 'boolean'):
+            if isinstance(value, bool):
+                super().__setattr__(key, value)
+            elif isinstance(value, int) or isinstance(value, float):
+                super().__setattr__(key, True if value else False)
+        elif value_type in ('enum', 'Enum'):
+            if isinstance(value, str):
+                super().__setattr__(key, value)
+            elif isinstance(value, Enum):
+                super().__setattr__(key, value.name)
+            else:
+                super().__setattr__(key, value)
+        else:
+            super().__setattr__(key, value)
+
+    def to_json(self, use_defaults=True, human_readability=True):
+        ec = CampaignEncoder(use_defaults)
+        t = ec.encode(self)
+        w = json.loads(t)
+        if human_readability:
+            return json.dumps(w, sort_keys=True, indent=3)
+        else:
+            return json.dumps(w, sort_keys=True)
+
+    def save_to_file(self, filename=None, use_defaults=True):
+        if filename is None:
+            filename = 'output_class'
+        content = self.to_json(use_defaults=use_defaults)
+        f = open('{}.json'.format(filename), 'w')
+        f.write(content)
+        f.close()
+
+
 
 
 
