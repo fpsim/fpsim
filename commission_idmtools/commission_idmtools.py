@@ -1,6 +1,6 @@
 import random
 
-from GenerateCampaignRCM import *
+from GenerateCampaignRCM import * # TODO: refactor
 from idmtools.builders import ExperimentBuilder
 from idmtools.core.platform_factory import Platform
 from idmtools.managers import ExperimentManager
@@ -79,7 +79,7 @@ def change_seed(simulation, seed):
 
 if __name__ == "__main__":
     # Choose where to run
-    platform = Platform("COMPS2")
+    platform = Platform("COMPS")
 
     # Prepare the path for the exe and demographics needed
     eradication_path = os.path.join("bin", "Eradication_FPOngoing_a4be1893d72d4df3de568217ecc63ecfcaee17cf.exe")
