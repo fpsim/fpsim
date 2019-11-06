@@ -51,11 +51,14 @@ else:
         # w102 is age, w208 is parity
         # 310 current use of contraception
         if wave == 0:
-            cols = {'w102':'Age', 'w208':'Parity', 'method':'Method', 'wm_allcity_wt':'Weight', 'city':'City'}
+            cols = {'w102':'Age', 'w208':'Parity', 'method':'Method', 'wm_allcity_wt':'Weight', 'city':'City', 'unmet_cmw': 'Unmet'}
+            city_key = 'city'
         elif wave == 1:
-            cols = {'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'wm_allcity_wt':'Weight', 'mcity':'City'}
+            cols = {'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'wm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet'}
+            city_key = 'MCITY'
         elif wave == 2:
-            cols = {'ew102':'Age', 'ew208':'Parity', 'emethod':'Method', 'ewoman_weight_6city':'Weight', 'ecity':'City'}
+            cols = {'ew102':'Age', 'ew208':'Parity', 'emethod':'Method', 'ewoman_weight_6city':'Weight', 'ecity':'City', 'eunmet_cmw': 'Unmet'}
+            city_key = 'ECITY'
 
         for c in cols.keys():
             if c not in data.columns:
@@ -65,10 +68,11 @@ else:
             .rename(columns=cols) \
             .replace({
                 'Method': values['method'],
+                'City': values[city_key],
+                'Unmet': values['unmet_cmw'],
             })
-            # 'City': values['City'],
 
-        datalist.append( data[['UID', 'Wave', 'Age', 'Parity', 'Method', 'Weight', 'City']] ) # 'w102', 'w208', 'w310', 'w311x', 'w312', 'w339', 'w510c', 'method'
+        datalist.append( data[['UID', 'Wave', 'Age', 'Parity', 'Method', 'Weight', 'City', 'Unmet']] ) # 'w102', 'w208', 'w310', 'w311x', 'w312', 'w339', 'w510c', 'method'
 
     print('Done reading, concat now.')
     women = pd.concat(datalist)
@@ -82,7 +86,10 @@ else:
 store.close()
 
 print(f'Women data contains {women.shape[0]:,} rows.')
+print('\nDescription by city:')
 print(women.groupby('City').describe().T)
+print('\nCrosstab of Method and Unmet need, values are weight sums:')
+print(pd.pivot_table(women, index='Method', columns='Unmet', values='Weight', aggfunc=sum))
 
 ###############################################################################
 # Data cleaning and variations ################################################
@@ -110,6 +117,12 @@ method_mapping = {
     'Other modern method': 'Other',
 }
 women['MethodClass'] = women['Method'].replace(method_mapping)
+
+age_edges = list(range(15,55,5)) + [99]
+women['AgeBin'] = pd.cut(women['Age'], bins = age_edges, right=False)
+
+parity_edges = list(range(6+1)) + [99]
+women['ParityBin'] = pd.cut(women['Parity'], bins = parity_edges, right=False)
 
 # Keep only women seen in all three waves (reduces data to 3 of 6 cities)
 nRecordsPerWoman = women.groupby(['UID']).size()
@@ -168,6 +181,22 @@ plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 
 ###############################################################################
+# PLOT: Stacked bar ###########################################################
+###############################################################################
+data = women.copy(deep=True)
+pivot_by_age = data \
+    .groupby(['AgeBin', 'MethodClass'])['Weight'].sum() \
+    .reset_index() \
+    .pivot(index='AgeBin', columns='MethodClass', values='Weight')
+pivot_by_age.plot.bar(stacked=True, figsize=(10,10))
+
+pivot_by_parity = data \
+    .groupby(['ParityBin', 'MethodClass'])['Weight'].sum() \
+    .reset_index() \
+    .pivot(index='ParityBin', columns='MethodClass', values='Weight')
+pivot_by_parity.plot.bar(stacked=True, figsize=(10,10))
+
+###############################################################################
 # PLOT: Skyscraper ############################################################
 ###############################################################################
 def skyscraper(data, label, ax=None):
@@ -177,13 +206,8 @@ def skyscraper(data, label, ax=None):
     ax.view_init(elev=37, azim=-31)
 
     data['Parity'] = data['Parity'].fillna(0).astype(int)
-    age_edges = list(range(15,55,5)) + [99]
-    parity_edges = list(range(6+1)) + [99]
 
-
-    data['AgeBin'] = pd.cut(data['Age'], bins = age_edges, right=False) #include_lowest=True)
     data['AgeBinCode'] = data['AgeBin'].cat.codes
-    data['ParityBin'] = pd.cut(data['Parity'], bins = parity_edges, right=False) #include_lowest=True)
     data['ParityBinCode'] = data['ParityBin'].cat.codes
     age_bin_codes = sorted(list(data['AgeBinCode'].unique()))
     parity_bin_codes = sorted(list(data['ParityBinCode'].unique()))
