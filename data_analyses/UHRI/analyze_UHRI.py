@@ -1,7 +1,11 @@
 import os
 import seaborn as sns
 sns.set()
-import matplotlib.pyplot as plt # for plt.show()
+import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
+import matplotlib.colors as colors
+import numpy as np
 import pandas as pd
 
 cachefn = 'store.hdf'
@@ -11,7 +15,6 @@ force_read = False
 normalize_by_from = True
 write_codebooks = False
 uid = None # '96.66.16' # Put a UID here to get see data for one individual across waves or None to disable.
-
 
 if (not force_read) and os.path.isfile(cachefn) and 'women' in store:
     women = store['women']
@@ -137,31 +140,52 @@ plt.suptitle(title)
 plt.xticks(rotation=45, horizontalalignment='right') # , fontsize='x-large'
 plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 
-exit()
-
-import numpy as np
-from mpl_toolkits.mplot3d import Axes3D
-
-fig = plt.figure()
+# "Skyscraper" plots
+fig = plt.figure(figsize=(10,10))
 ax = fig.add_subplot(projection='3d')
+ax.view_init(elev=37, azim=-31)
 
-_age = np.linspace(women3['Age'].min(), women3['Age'].max())
-_parity = np.linspace(women3['Parity'].min(), women3['Parity'].max())
+women3['Parity'] = women3['Parity'].fillna(0).astype(int)
+age_edges = list(range(15,55,5)) + [99]
+parity_edges = list(range(6+1)) + [99]
 
-print(_age)
-print(_parity)
-exit()
-_xx, _yy = np.meshgrid(_x, _y)
-x, y = _xx.ravel(), _yy.ravel()
 
-tmp = women3.reset_index().groupby(['Age', 'Parity']).size().sort_index().reset_index()
+women3['AgeBin'] = pd.cut(women3['Age'], bins = age_edges, right=False) #include_lowest=True)
+women3['AgeBinCode'] = women3['AgeBin'].cat.codes
+women3['ParityBin'] = pd.cut(women3['Parity'], bins = parity_edges, right=False) #include_lowest=True)
+women3['ParityBinCode'] = women3['ParityBin'].cat.codes
+age_bin_codes = sorted(list(women3['AgeBinCode'].unique()))
+parity_bin_codes = sorted(list(women3['ParityBinCode'].unique()))
 
-#top = women3[]
-bottom = np.zeros_like(top)
-width = depth = 1
+age_mesh, parity_mesh = np.meshgrid(age_bin_codes, parity_bin_codes)
+age_flat, parity_flat = age_mesh.ravel(), parity_mesh.ravel()
 
-ax.bar3d(x, y, bottom, width, depth, top, shade=True)
-ax.set_title('Shaded')
+age_parity = pd.DataFrame({'AgeBinCode': age_flat, 'ParityBinCode': parity_flat, 'Weight': np.zeros_like(age_flat)})
+age_parity = pd.concat([age_parity, women3]).groupby(['AgeBinCode', 'ParityBinCode'])['Weight'].sum().sort_index().reset_index()
 
+bottom = 0
+width = depth = 0.75
+
+dz = age_parity['Weight']
+offset = dz + np.abs(dz.min())
+fracs = offset.astype(float)/offset.max()
+norm = colors.Normalize(fracs.min(), fracs.max())
+color_values = cm.jet(norm(fracs.tolist()))
+
+ax.bar3d(age_parity['AgeBinCode'], age_parity['ParityBinCode'], bottom, width, depth, age_parity['Weight'], color=color_values) # , shade=True
+age_bin_labels = list(women3['AgeBin'].cat.categories)
+age_bin_labels[-1] = f'{age_edges[-2]}+'
+ax.set_xlabel('Age')
+ax.set_xticks(age_bin_codes)
+ax.set_xticklabels(age_bin_labels)
+
+parity_bin_labels = parity_edges[:-1]
+parity_bin_labels[-1] = f'{parity_edges[-2]}+'
+ax.set_ylabel('Parity')
+ax.set_yticks(parity_bin_codes)
+ax.set_yticklabels(parity_bin_labels)
+
+ax.set_zlabel('Women (weighted)')
+ax.set_title('Age-Parity Skyscraper')
 
 plt.show()
