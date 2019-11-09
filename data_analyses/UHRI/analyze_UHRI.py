@@ -1,10 +1,7 @@
 import os
 import seaborn as sns
 sns.set()
-import matplotlib.pyplot as plt
-from mpl_toolkits.mplot3d import Axes3D
-from matplotlib import cm
-import matplotlib.colors as colors
+import pylab as pl
 import numpy as np
 import pandas as pd
 import sciris as sc
@@ -150,18 +147,18 @@ bardat = data.reset_index()
 bardat['Wave'] = bardat['Wave'].astype(str)
 #sns.countplot(data=data.reset_index(), x='Method', hue='Wave')
 g = sns.catplot(data=data.reset_index(), x='Method', hue='Wave', col='City', kind='count', height=4, aspect=0.7, legend_out=False, sharex=True, sharey=False) # , col_wrap=3
-plt.suptitle('Method by Wave')
+pl.suptitle('Method by Wave')
 g.set_xticklabels(rotation=45, horizontalalignment='right') # , fontsize='x-large'
 #g.legend(loc='upper right')
-#plt.legend(loc='upper right')#,bbox_to_anchor=(1,0.5))
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+#pl.legend(loc='upper right')#,bbox_to_anchor=(1,0.5))
+pl.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 
 ###############################################################################
 # PLOT: Method switching ######################################################
 ###############################################################################
 data = women3.copy(deep=True)
-fig, ax = plt.subplots()
+fig, ax = pl.subplots()
 methods = data['Method'].unique()
 
 # Define switching matrix.  Rows are FROM, columns are TO
@@ -180,17 +177,18 @@ def extract_switches(w):
 data.groupby('UID').apply(extract_switches) # Fills switching matrix
 
 # Normalize by row-sum (FROM)
+print('WARNING, seems to be something wrong with the switching data...!')
 title = 'Senegal longitudinal switching'
 if normalize_by_from:
     switching = switching.div(switching.sum(axis=1), axis=0)
-    title += 'normalize by FROM'
+    title += ' normalize by FROM'
 
 sns.heatmap(switching, square=True, cmap='jet', xticklabels=methods, yticklabels=methods, ax=ax)
-plt.xlabel('TO')
-plt.ylabel('FROM')
-plt.suptitle(title)
-plt.xticks(rotation=45, horizontalalignment='right') # , fontsize='x-large'
-plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+pl.xlabel('TO')
+pl.ylabel('FROM')
+pl.suptitle(title)
+pl.xticks(rotation=45, horizontalalignment='right') # , fontsize='x-large'
+pl.tight_layout(rect=[0, 0.03, 1, 0.95])
 
 
 ###############################################################################
@@ -214,7 +212,7 @@ pivot_by_parity.plot.bar(stacked=True, figsize=(10,10))
 ###############################################################################
 def skyscraper(data, label, ax=None):
     if ax == None:
-        fig = plt.figure(figsize=(10,10))
+        fig = pl.figure(figsize=(10,10))
         ax = fig.add_subplot(projection='3d')
     ax.view_init(elev=37, azim=-31)
 
@@ -234,11 +232,6 @@ def skyscraper(data, label, ax=None):
     bottom = 0
     width = depth = 0.75
 
-#    dz = age_parity['Weight']
-#    offset = dz + np.abs(dz.min())
-#    fracs = offset.astype(float)/offset.max()
-#    norm = colors.Normalize(fracs.min(), fracs.max())
-#    color_values = cm.jet(norm(fracs.tolist()))
     color_values = sc.vectocolor(age_parity['Weight'])
 
     ax.bar3d(age_parity['AgeBinCode'], age_parity['ParityBinCode'], bottom, width, depth, age_parity['Weight'], color=color_values) # , shade=True
@@ -258,9 +251,10 @@ def skyscraper(data, label, ax=None):
     ax.set_title(label)
 
 
+sc.ax3d(silent=True) # Enable 3D plotting
 nrows = 2
 ncols = women['MethodClass'].nunique() // nrows +1
-fig = plt.figure(figsize=(10,10))
+fig = pl.figure(figsize=(10,10))
 idx = 0
 for label, raw in women.groupby('MethodClass'):
     idx += 1
@@ -270,4 +264,4 @@ for label, raw in women.groupby('MethodClass'):
 
 ax = fig.add_subplot(nrows, ncols, idx+1, projection='3d')
 skyscraper(women, 'All women', ax)
-plt.show()
+pl.show()
