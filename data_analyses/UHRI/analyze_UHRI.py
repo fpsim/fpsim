@@ -54,7 +54,7 @@ else:
             cols = {'w102':'Age', 'w208':'Parity', 'method':'Method', 'wm_allcity_wt':'Weight', 'city':'City', 'unmet_cmw': 'Unmet'}
             city_key = 'city'
         elif wave == 1:
-            cols = {'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'wm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet'}
+            cols = {'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'mwm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet'}
             city_key = 'MCITY'
         elif wave == 2:
             cols = {'ew102':'Age', 'ew208':'Parity', 'emethod':'Method', 'ewoman_weight_6city':'Weight', 'ecity':'City', 'eunmet_cmw': 'Unmet'}
@@ -117,6 +117,7 @@ method_mapping = {
     'Other modern method': 'Other',
 }
 women['MethodClass'] = women['Method'].replace(method_mapping)
+women.loc[women['Unmet']=='Unmet need', 'MethodClass'] = 'Unmet'
 
 age_edges = list(range(15,55,5)) + [99]
 women['AgeBin'] = pd.cut(women['Age'], bins = age_edges, right=False)
@@ -124,9 +125,11 @@ women['AgeBin'] = pd.cut(women['Age'], bins = age_edges, right=False)
 parity_edges = list(range(6+1)) + [99]
 women['ParityBin'] = pd.cut(women['Parity'], bins = parity_edges, right=False)
 
+women3 = women.xs(2, level=1)
+
 # Keep only women seen in all three waves (reduces data to 3 of 6 cities)
 nRecordsPerWoman = women.groupby(['UID']).size()
-women3 = women.loc[nRecordsPerWoman[nRecordsPerWoman==3].index]
+women123 = women.loc[nRecordsPerWoman[nRecordsPerWoman==3].index]
 
 
 ###############################################################################
@@ -134,9 +137,7 @@ women3 = women.loc[nRecordsPerWoman[nRecordsPerWoman==3].index]
 ###############################################################################
 data = women.copy(deep=True)
 bardat = data.reset_index()
-bardat['Wave'] = bardat['Wave'].astype(str)
-#sns.countplot(data=data.reset_index(), x='Method', hue='Wave')
-g = sns.catplot(data=data.reset_index(), x='Method', hue='Wave', col='City', kind='count', height=4, aspect=0.7, legend_out=False, sharex=True, sharey=False) # , col_wrap=3
+g = sns.catplot(data=data.reset_index(), x='Method', hue='Wave', kind='count', height=4, aspect=0.7, legend_out=False, sharex=True, sharey=False) # , col_wrap=3 , col='Wave'
 plt.suptitle('Method by Wave')
 g.set_xticklabels(rotation=45, horizontalalignment='right') # , fontsize='x-large'
 #g.legend(loc='upper right')
@@ -147,7 +148,7 @@ plt.tight_layout(rect=[0, 0.03, 1, 0.95])
 ###############################################################################
 # PLOT: Method switching ######################################################
 ###############################################################################
-data = women3.copy(deep=True)
+data = women123.copy(deep=True)
 fig, ax = plt.subplots()
 methods = data['Method'].unique()
 
@@ -195,6 +196,7 @@ pivot_by_parity = data \
     .reset_index() \
     .pivot(index='ParityBin', columns='MethodClass', values='Weight')
 pivot_by_parity.plot.bar(stacked=True, figsize=(10,10))
+
 
 ###############################################################################
 # PLOT: Skyscraper ############################################################
@@ -245,10 +247,21 @@ def skyscraper(data, label, ax=None):
 
 
 nrows = 2
-ncols = women['MethodClass'].nunique() // nrows +1
-fig = plt.figure(figsize=(10,10))
-for idx, (label, raw) in enumerate(women.groupby('MethodClass')):
+ncols = women3['MethodClass'].nunique() // nrows
+fig = plt.figure(figsize=(12,8))
+for idx, (label, raw) in enumerate(women3.groupby('MethodClass')):
     data = raw.copy(deep=True) # Just to be safe
     ax = fig.add_subplot(nrows, ncols, idx+1, projection='3d')
     skyscraper(data, label, ax)
+
+data = women3.copy(deep=True) # Just to be safe
+fig = plt.figure(figsize=(12,8))
+ax = fig.add_subplot(1, 1, 1, projection='3d')
+skyscraper(data, "Women on Wave 3", ax)
+
+data = women.copy(deep=True) # Just to be safe
+fig = plt.figure(figsize=(12,8))
+ax = fig.add_subplot(1, 1, 1, projection='3d')
+skyscraper(data, "All Women", ax)
+
 plt.show()
