@@ -11,9 +11,11 @@ import pandas as pd
 cachefn = 'store.hdf'
 store = pd.HDFStore(cachefn)
 
-force_read = False
+force_read = True
 normalize_by_from = True
+exclude_missing_parity = True
 write_codebooks = False
+do_plot = False
 
 if (not force_read) and os.path.isfile(cachefn) and 'women' in store:
     women = store['women']
@@ -80,6 +82,16 @@ else:
     women = women. \
         set_index(['UID', 'Wave']). \
         sort_index()
+        
+    # Fix inconsistencies
+    women = women.replace({'City':'Guédiawaye'}, 'Guediawaye')
+    women = women.replace({'Unmet':np.nan}, 'Missing') # Think this is right?
+    if exclude_missing_parity:
+        original_size = women.shape[0]
+        women = women.dropna(subset=['Parity'])
+        new_size= women.shape[0]
+        print(f'Dropped {original_size-new_size} rows out of {original_size} due to missing parity data')
+    print(women['Parity'].unique())
 
     store['women'] = women
 
@@ -247,8 +259,13 @@ def skyscraper(data, label, ax=None):
 nrows = 2
 ncols = women['MethodClass'].nunique() // nrows +1
 fig = plt.figure(figsize=(10,10))
-for idx, (label, raw) in enumerate(women.groupby('MethodClass')):
+idx = 0
+for label, raw in women.groupby('MethodClass'):
+    idx += 1
     data = raw.copy(deep=True) # Just to be safe
-    ax = fig.add_subplot(nrows, ncols, idx+1, projection='3d')
+    ax = fig.add_subplot(nrows, ncols, idx, projection='3d')
     skyscraper(data, label, ax)
+
+ax = fig.add_subplot(nrows, ncols, idx+1, projection='3d')
+skyscraper(women, 'All women', ax)
 plt.show()
