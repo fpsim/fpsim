@@ -7,6 +7,7 @@ from matplotlib import cm
 import matplotlib.colors as colors
 import numpy as np
 import pandas as pd
+import sciris as sc
 
 cachefn = 'store.hdf'
 store = pd.HDFStore(cachefn)
@@ -221,8 +222,8 @@ def skyscraper(data, label, ax=None):
 
     data['AgeBinCode'] = data['AgeBin'].cat.codes
     data['ParityBinCode'] = data['ParityBin'].cat.codes
-    age_bin_codes = sorted(list(data['AgeBinCode'].unique()))
-    parity_bin_codes = sorted(list(data['ParityBinCode'].unique()))
+    age_bin_codes = np.array(sorted(list(data['AgeBinCode'].unique())))
+    parity_bin_codes = np.array(sorted(list(data['ParityBinCode'].unique())))
 
     age_mesh, parity_mesh = np.meshgrid(age_bin_codes, parity_bin_codes)
     age_flat, parity_flat = age_mesh.ravel(), parity_mesh.ravel()
@@ -233,23 +234,24 @@ def skyscraper(data, label, ax=None):
     bottom = 0
     width = depth = 0.75
 
-    dz = age_parity['Weight']
-    offset = dz + np.abs(dz.min())
-    fracs = offset.astype(float)/offset.max()
-    norm = colors.Normalize(fracs.min(), fracs.max())
-    color_values = cm.jet(norm(fracs.tolist()))
+#    dz = age_parity['Weight']
+#    offset = dz + np.abs(dz.min())
+#    fracs = offset.astype(float)/offset.max()
+#    norm = colors.Normalize(fracs.min(), fracs.max())
+#    color_values = cm.jet(norm(fracs.tolist()))
+    color_values = sc.vectocolor(age_parity['Weight'])
 
     ax.bar3d(age_parity['AgeBinCode'], age_parity['ParityBinCode'], bottom, width, depth, age_parity['Weight'], color=color_values) # , shade=True
     age_bin_labels = list(data['AgeBin'].cat.categories)
     age_bin_labels[-1] = f'{age_edges[-2]}+'
     ax.set_xlabel('Age')
-    ax.set_xticks(age_bin_codes)
+    ax.set_xticks(age_bin_codes+0.5) # To center the tick marks
     ax.set_xticklabels(age_bin_labels)
 
     parity_bin_labels = parity_edges[:-1]
     parity_bin_labels[-1] = f'{parity_edges[-2]}+'
     ax.set_ylabel('Parity')
-    ax.set_yticks(parity_bin_codes)
+    ax.set_yticks(parity_bin_codes+0.5)
     ax.set_yticklabels(parity_bin_labels)
 
     ax.set_zlabel('Women (weighted)')
