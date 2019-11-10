@@ -270,7 +270,7 @@ if exclude_missing_parity:
 
 fig = pl.figure(figsize=(20,14))
 nrows = 2
-ncols = (women['MethodClass'].nunique()+1) // nrows
+ncols = (women['MethodClass'].nunique()+1) // nrows + 1
 idx = 0
 for label, raw in parity_data.groupby('MethodClass'):
     idx += 1
