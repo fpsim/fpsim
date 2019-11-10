@@ -6,10 +6,12 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 
+T = sc.tic()
+
 cachefn = 'store.hdf'
 store = pd.HDFStore(cachefn)
 
-force_read = True
+force_read = False
 normalize_by_from = True
 exclude_missing_parity = True
 write_codebooks = False
@@ -36,10 +38,10 @@ else:
     datalist = []
     datalist_UID = []
     for wave, filename in enumerate(filenames):
-        print('-'*80)
-        print(f'On wave {wave}, reading {filename}')
+        sc.heading(f'Processing wave {wave+1}/{len(filenames)}')
+        print(f'File: {filename}...')
         data = pd.read_stata(filename, convert_categoricals=False)
-
+        
         values = pd.io.stata.StataReader(filename).value_labels()
         if write_codebooks:
             codebook = pd.io.stata.StataReader(filename).variable_labels()
@@ -74,7 +76,7 @@ else:
 
         datalist.append( data[['UID', 'Wave', 'Age', 'Parity', 'Method', 'Weight', 'City', 'Unmet']] ) # 'w102', 'w208', 'w310', 'w311x', 'w312', 'w339', 'w510c', 'method'
 
-    print('Done reading, concat now.')
+    print('\n\nDone reading, concat now.')
     women = pd.concat(datalist)
 
     women = women. \
@@ -83,21 +85,24 @@ else:
         
     # Fix inconsistencies
     women = women.replace({'City':'Guédiawaye'}, 'Guediawaye')
-    women = women.replace({'Unmet':np.nan}, 'Missing') # Think this is right?
+    women = women.replace({'Unmet':np.nan}, 'Missing')
 
     store['women'] = women
 
 store.close()
+sc.toc(reset=True)
 
 print(f'Women data contains {women.shape[0]:,} rows.')
-print('\nDescription by city:')
+sc.heading('Description by city:')
 print(women.groupby('City').describe().T)
-print('\nCrosstab of Method and Unmet need, values are weight sums:')
+sc.heading('Crosstab of Method and Unmet need, values are weight sums:')
 print(pd.pivot_table(women, index='Method', columns='Unmet', values='Weight', aggfunc=sum))
 
 ###############################################################################
 # Data cleaning and variations ################################################
 ###############################################################################
+
+sc.heading('Cleaning data')
 
 method_mapping = {
     'No method': 'No method', # Unmet?  Not quite...
@@ -132,10 +137,13 @@ women['ParityBin'] = pd.cut(women['Parity'], bins = parity_edges, right=False)
 nRecordsPerWoman = women.groupby(['UID']).size()
 women3 = women.loc[nRecordsPerWoman[nRecordsPerWoman==3].index]
 
+sc.toc(reset=True)
+
 
 ###############################################################################
 # PLOT: Method mix ############################################################
 ###############################################################################
+sc.heading('Plotting method mix')
 data = women.copy(deep=True)
 bardat = data.reset_index()
 bardat['Wave'] = bardat['Wave'].astype(str)
@@ -147,10 +155,13 @@ g.set_xticklabels(rotation=45, horizontalalignment='right') # , fontsize='x-larg
 #pl.legend(loc='upper right')#,bbox_to_anchor=(1,0.5))
 pl.tight_layout(rect=[0, 0.03, 1, 0.95])
 
+sc.toc(reset=True)
+
 
 ###############################################################################
 # PLOT: Method switching ######################################################
 ###############################################################################
+sc.heading('Plotting method switching')
 switching_data = women3.copy(deep=True)
 fig, ax = pl.subplots()
 methods = switching_data['Method'].unique()
@@ -168,6 +179,7 @@ def extract_switches(w):
             weight = w.loc[(uid, wave), 'Weight']
             switching.loc[frm, to] += weight # Use weights
 
+print('Calculating switching (takes ~10 s)')
 switching_data.groupby('UID').apply(extract_switches) # Fills switching matrix
 
 # Normalize by row-sum (FROM)
@@ -176,6 +188,7 @@ if normalize_by_from:
     switching = switching.div(switching.sum(axis=1), axis=0)
     title += ' normalize by FROM'
 
+
 sns.heatmap(switching, square=True, cmap='jet', xticklabels=methods, yticklabels=methods, ax=ax)
 pl.xlabel('TO')
 pl.ylabel('FROM')
@@ -183,10 +196,13 @@ pl.suptitle(title)
 pl.xticks(rotation=45, horizontalalignment='right') # , fontsize='x-large'
 pl.tight_layout(rect=[0, 0.03, 1, 0.95])
 
+sc.toc(reset=True)
+
 
 ###############################################################################
 # PLOT: Stacked bar ###########################################################
 ###############################################################################
+sc.heading('Plotting stacked bars')
 data = women.copy(deep=True)
 pivot_by_age = data \
     .groupby(['AgeBin', 'MethodClass'])['Weight'].sum() \
@@ -200,34 +216,27 @@ pivot_by_parity = data \
     .pivot(index='ParityBin', columns='MethodClass', values='Weight')
 pivot_by_parity.plot.bar(stacked=True, figsize=(10,10))
 
+sc.toc(reset=True)
+
+
 ###############################################################################
 # PLOT: Skyscraper ############################################################
 ###############################################################################
-def skyscraper(data, label, ax=None):
-    if ax == None:
-        fig = pl.figure(figsize=(10,10))
-        ax = fig.add_subplot(projection='3d')
-    ax.view_init(elev=37, azim=-31)
-
-    data['Parity'] = data['Parity'].fillna(0).astype(int)
-
+def skyscraper(data, label=None, fig=None, nrows=None, ncols=None, idx=None, figkwargs=None, axkwargs=None):
     data['AgeBinCode'] = data['AgeBin'].cat.codes
     data['ParityBinCode'] = data['ParityBin'].cat.codes
     age_bin_codes = np.array(sorted(list(data['AgeBinCode'].unique())))
     parity_bin_codes = np.array(sorted(list(data['ParityBinCode'].unique())))
-
-    age_mesh, parity_mesh = np.meshgrid(age_bin_codes, parity_bin_codes)
-    age_flat, parity_flat = age_mesh.ravel(), parity_mesh.ravel()
-
-    age_parity = pd.DataFrame({'AgeBinCode': age_flat, 'ParityBinCode': parity_flat, 'Weight': np.zeros_like(age_flat)})
-    age_parity = pd.concat([age_parity, data]).groupby(['AgeBinCode', 'ParityBinCode'])['Weight'].sum().sort_index().reset_index()
-
-    bottom = 0
-    width = depth = 0.75
-
-    color_values = sc.vectocolor(age_parity['Weight'])
-
-    ax.bar3d(age_parity['AgeBinCode'], age_parity['ParityBinCode'], bottom, width, depth, age_parity['Weight'], color=color_values) # , shade=True
+    age_parity_data = np.zeros((len(age_bin_codes), len(parity_bin_codes)))
+    
+    for i,row in data.iterrows():
+        age_index = row['AgeBinCode']
+        parity_index = row['ParityBinCode']
+        weight = row['Weight']
+        age_parity_data[age_index, parity_index] += weight
+    
+    axkwargs = dict(elev=37, azim=-31, nrows=nrows, ncols=ncols, index=idx)
+    ax = sc.bar3d(fig=fig, data=age_parity_data, cmap='jet', axkwargs=axkwargs)
     age_bin_labels = list(data['AgeBin'].cat.categories)
     age_bin_labels[-1] = f'{age_edges[-2]}+'
     ax.set_xlabel('Age')
@@ -242,13 +251,10 @@ def skyscraper(data, label, ax=None):
 
     ax.set_zlabel('Women (weighted)')
     ax.set_title(label)
+    return age_parity_data
 
 
-sc.ax3d(silent=True) # Enable 3D plotting
-nrows = 2
-ncols = women['MethodClass'].nunique() // nrows +1
-fig = pl.figure(figsize=(10,10))
-idx = 0
+sc.heading('Skyscraper plots')
 parity_data = women.copy(deep=True)
 if exclude_missing_parity:
     original_size = parity_data.shape[0]
@@ -257,12 +263,18 @@ if exclude_missing_parity:
     print(f'Dropped {original_size-new_size} rows out of {original_size} due to missing parity data')
     print(parity_data['Parity'].unique())
 
+fig = pl.figure(figsize=(20,14))
+nrows = 2
+ncols = (women['MethodClass'].nunique()+1) // nrows
+idx = 0
 for label, raw in parity_data.groupby('MethodClass'):
     idx += 1
     data = raw.copy(deep=True) # Just to be safe
-    ax = fig.add_subplot(nrows, ncols, idx, projection='3d')
-    skyscraper(data, label, ax)
+    skyscraper(data=data, label=label, fig=fig, nrows=nrows, ncols=ncols, idx=idx)
 
-ax = fig.add_subplot(nrows, ncols, idx+1, projection='3d')
-skyscraper(women, 'All women', ax)
+all_women_age_parity = skyscraper(data=parity_data, label='All women', fig=fig, nrows=nrows, ncols=ncols, idx=idx+1)
 pl.show()
+
+sc.toc(start=T)
+
+print('Done.')
