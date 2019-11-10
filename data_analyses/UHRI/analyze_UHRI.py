@@ -6,6 +6,11 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 
+# Check versions
+sciris_version = sc.__version__
+min_version = '0.14.10'
+assert sc.compareversions(sciris_version, min_version)>=0, f'Please upgrade Sciris from {sciris_version} to at least {min_version}'
+
 T = sc.tic()
 
 cachefn = 'store.hdf'
