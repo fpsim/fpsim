@@ -84,12 +84,6 @@ else:
     # Fix inconsistencies
     women = women.replace({'City':'Guédiawaye'}, 'Guediawaye')
     women = women.replace({'Unmet':np.nan}, 'Missing') # Think this is right?
-    if exclude_missing_parity:
-        original_size = women.shape[0]
-        women = women.dropna(subset=['Parity'])
-        new_size= women.shape[0]
-        print(f'Dropped {original_size-new_size} rows out of {original_size} due to missing parity data')
-    print(women['Parity'].unique())
 
     store['women'] = women
 
@@ -157,9 +151,9 @@ pl.tight_layout(rect=[0, 0.03, 1, 0.95])
 ###############################################################################
 # PLOT: Method switching ######################################################
 ###############################################################################
-data = women3.copy(deep=True)
+switching_data = women3.copy(deep=True)
 fig, ax = pl.subplots()
-methods = data['Method'].unique()
+methods = switching_data['Method'].unique()
 
 # Define switching matrix.  Rows are FROM, columns are TO
 switching = pd.DataFrame(index=methods, columns=methods).fillna(0)
@@ -174,10 +168,9 @@ def extract_switches(w):
             weight = w.loc[(uid, wave), 'Weight']
             switching.loc[frm, to] += weight # Use weights
 
-data.groupby('UID').apply(extract_switches) # Fills switching matrix
+switching_data.groupby('UID').apply(extract_switches) # Fills switching matrix
 
 # Normalize by row-sum (FROM)
-print('WARNING, seems to be something wrong with the switching data...!')
 title = 'Senegal longitudinal switching'
 if normalize_by_from:
     switching = switching.div(switching.sum(axis=1), axis=0)
@@ -256,7 +249,15 @@ nrows = 2
 ncols = women['MethodClass'].nunique() // nrows +1
 fig = pl.figure(figsize=(10,10))
 idx = 0
-for label, raw in women.groupby('MethodClass'):
+parity_data = women.copy(deep=True)
+if exclude_missing_parity:
+    original_size = parity_data.shape[0]
+    parity_data = parity_data.dropna(subset=['Parity'])
+    new_size= parity_data.shape[0]
+    print(f'Dropped {original_size-new_size} rows out of {original_size} due to missing parity data')
+    print(parity_data['Parity'].unique())
+
+for label, raw in parity_data.groupby('MethodClass'):
     idx += 1
     data = raw.copy(deep=True) # Just to be safe
     ax = fig.add_subplot(nrows, ncols, idx, projection='3d')
