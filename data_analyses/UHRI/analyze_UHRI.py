@@ -20,7 +20,6 @@ force_read = False
 normalize_by_from = True
 exclude_missing_parity = True
 write_codebooks = False
-do_plot = False
 
 if (not force_read) and os.path.isfile(cachefn) and 'women' in store:
     women = store['women']
@@ -61,7 +60,7 @@ else:
             cols = {'w102':'Age', 'w208':'Parity', 'method':'Method', 'wm_allcity_wt':'Weight', 'city':'City', 'unmet_cmw': 'Unmet'}
             city_key = 'city'
         elif wave == 1:
-            cols = {'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'wm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet'}
+            cols = {'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'mwm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet'}
             city_key = 'MCITY'
         elif wave == 2:
             cols = {'ew102':'Age', 'ew208':'Parity', 'emethod':'Method', 'ewoman_weight_6city':'Weight', 'ecity':'City', 'eunmet_cmw': 'Unmet'}
@@ -131,6 +130,7 @@ method_mapping = {
     'Other modern method': 'Other',
 }
 women['MethodClass'] = women['Method'].replace(method_mapping)
+women.loc[women['Unmet']=='Unmet need', 'MethodClass'] = 'Unmet'
 
 age_edges = list(range(15,55,5)) + [99]
 women['AgeBin'] = pd.cut(women['Age'], bins = age_edges, right=False)
@@ -138,9 +138,11 @@ women['AgeBin'] = pd.cut(women['Age'], bins = age_edges, right=False)
 parity_edges = list(range(6+1)) + [99]
 women['ParityBin'] = pd.cut(women['Parity'], bins = parity_edges, right=False)
 
+women3 = women.xs(2, level=1)
+
 # Keep only women seen in all three waves (reduces data to 3 of 6 cities)
 nRecordsPerWoman = women.groupby(['UID']).size()
-women3 = women.loc[nRecordsPerWoman[nRecordsPerWoman==3].index]
+women123 = women.loc[nRecordsPerWoman[nRecordsPerWoman==3].index]
 
 sc.toc(reset=True)
 
@@ -151,9 +153,7 @@ sc.toc(reset=True)
 sc.heading('Plotting method mix')
 data = women.copy(deep=True)
 bardat = data.reset_index()
-bardat['Wave'] = bardat['Wave'].astype(str)
-#sns.countplot(data=data.reset_index(), x='Method', hue='Wave')
-g = sns.catplot(data=data.reset_index(), x='Method', hue='Wave', col='City', kind='count', height=4, aspect=0.7, legend_out=False, sharex=True, sharey=False) # , col_wrap=3
+g = sns.catplot(data=data.reset_index(), x='Method', hue='Wave', kind='count', height=4, aspect=0.7, legend_out=False, sharex=True, sharey=False) # , col_wrap=3 , col='Wave'
 pl.suptitle('Method by Wave')
 g.set_xticklabels(rotation=45, horizontalalignment='right') # , fontsize='x-large'
 #g.legend(loc='upper right')
@@ -167,7 +167,7 @@ sc.toc(reset=True)
 # PLOT: Method switching ######################################################
 ###############################################################################
 sc.heading('Plotting method switching')
-switching_data = women3.copy(deep=True)
+switching_data = women123.copy(deep=True)
 fig, ax = pl.subplots()
 methods = switching_data['Method'].unique()
 
