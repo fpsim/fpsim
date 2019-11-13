@@ -1,6 +1,5 @@
 import os
 import numpy as np
-import sciris as sc; assert sc.compareversions(sc.__version__, '0.15.1')>=0 # Ensure correct version
 import pyemod as em
 
 # TODO: This should be emod_api
