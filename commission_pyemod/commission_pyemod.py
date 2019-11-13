@@ -10,6 +10,7 @@ exp_name = 'Family Planning Workflow Development'
 inputs = 'inputs'
 config_file = os.path.join(inputs, 'config.json') # TODO: Remove boilerplate
 demographics_file = os.path.join(inputs, 'demographics.json')
+overlay_file = os.path.join(inputs, 'IP_Overlay.json') # TODO: find a better way of doing this
 
 # Commonly modified calibration variables and configuration
 BASE_POPULATION_SCALE_FACTOR = 0.0033  # For quick test simulations, this is set to a very low value
@@ -18,7 +19,8 @@ N_REPLICATES = 1  # replicates, 1 is highly recommended.
 
 samples = np.linspace(0, 1, N_SAMPLES)
 
-base_sim= em.Simulation(config=config_file, demographics=demographics_file)
+base_sim = em.Simulation(config=config_file, demographics=demographics_file)
+base_sim.demographics.update(pars=overlay_file) # TODO: make this simpler, or avoid it altogether
 
 # TODO: This should mostly be emod_api
 def make_campaign(pill_efficacy):
@@ -35,6 +37,7 @@ sims = []
 for value in samples:
     sim = base_sim.copy()
     sim.campaign = make_campaign(pill_efficacy=value)
+    print(sim.working_dir)
     sims.append(sim)
 
 exp = em.Experiment(sims=sims)
