@@ -37,9 +37,8 @@ sims = []
 for value in samples:
     sim = base_sim.copy()
     sim.campaign = make_campaign(pill_efficacy=value)
-    print(sim.working_dir)
     sims.append(sim)
 
 exp = em.Experiment(sims=sims)
-results = exp.run()
+results = exp.run(how='serial')
 exp.plot()
