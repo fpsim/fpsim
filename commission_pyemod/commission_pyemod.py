@@ -1,5 +1,6 @@
 import os
 import numpy as np
+import sciris as sc; assert sc.compareversions(sc.__version__, '0.15.1')>=0 # Ensure correct version
 import pyemod as em
 
 # TODO: This should be emod_api
@@ -14,12 +15,12 @@ overlay_file = os.path.join(inputs, 'IP_Overlay.json') # TODO: find a better way
 
 # Commonly modified calibration variables and configuration
 BASE_POPULATION_SCALE_FACTOR = 0.0033  # For quick test simulations, this is set to a very low value
-N_SAMPLES = 3  # the number of distinct parameter sets to run per iteration
-N_REPLICATES = 1  # replicates, 1 is highly recommended.
-
-samples = np.linspace(0, 1, N_SAMPLES)
+n_samples = 3  # the number of distinct parameter sets to run per iteration
+n_replicates = 1  # replicates, 1 is highly recommended.
+samples = np.linspace(0, 1, n_samples)
 
 base_sim = em.Simulation(config=config_file, demographics=demographics_file)
+base_sim.config['parameters']['Base_Population_Scale_Factor'] = BASE_POPULATION_SCALE_FACTOR
 base_sim.demographics.update(pars=overlay_file) # TODO: make this simpler, or avoid it altogether
 
 # TODO: This should mostly be emod_api
@@ -34,10 +35,11 @@ def make_campaign(pill_efficacy):
     return campaign
 
 sims = []
-for value in samples:
-    sim = base_sim.copy()
-    sim.campaign = make_campaign(pill_efficacy=value)
-    sims.append(sim)
+for replicate in range(n_replicates):
+    for value in samples:
+        sim = base_sim.copy()
+        sim.campaign = make_campaign(pill_efficacy=value)
+        sims.append(sim)
 
 exp = em.Experiment(sims=sims)
 results = exp.run(how='serial')
