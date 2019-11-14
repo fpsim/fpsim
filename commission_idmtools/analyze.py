@@ -60,7 +60,7 @@ class Tags_Analyzer(IAnalyzer):
 
 def analyze():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--id', '-I', action='store', dest='exp_id')
+    parser.add_argument('--id', '-I', action='store', dest='exp_id', required=True)
     parser.add_argument('--platform', '-P', action='store', dest='platform', default='COMPS')
     parse = parser.parse_args()
 
