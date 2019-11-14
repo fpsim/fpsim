@@ -1,6 +1,7 @@
 import os
 import numpy as np
 import pyemod as em
+from emod_api.campaign import GenerateCampaignRCM as gencam
 
 # TODO: This should be emod_api
 import json
