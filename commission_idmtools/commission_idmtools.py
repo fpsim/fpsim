@@ -4,7 +4,7 @@ import os
 import pandas as pd
 import numpy as np
 import json
-import GenerateCampaignRCM as gencam
+from emod_api.campaign import GenerateCampaignRCM as gencam
 from idmtools.builders import ExperimentBuilder
 from idmtools.core.platform_factory import Platform
 from idmtools.managers import ExperimentManager
