@@ -1,6 +1,10 @@
 import random
 
-from GenerateCampaignRCM import *
+import os
+import pandas as pd
+import numpy as np
+import json
+import GenerateCampaignRCM as gencam
 from idmtools.builders import ExperimentBuilder
 from idmtools.core.platform_factory import Platform
 from idmtools.managers import ExperimentManager
@@ -72,13 +76,13 @@ static_params = {
 
 
 def map_sample_to_model_input_fn(simulation, sample_dict):
-    con_list = CreateContraceptives()
+    con_list = gencam.CreateContraceptives()
 
-    pill_contraceptive = next(x[1] for x in con_list if x[0] == USE_PILL)
+    pill_contraceptive = next(x[1] for x in con_list if x[0] == gencam.USE_PILL)
     pill_contraceptive.Waning_Config.Initial_Effect = sample_dict['PillEfficacy']
 
-    rc_list = CreateRandomChoiceMatrixList()
-    campaign = GenerateCampaignFP(con_list, rc_list)
+    rc_list = gencam.CreateRandomChoiceMatrixList()
+    campaign = gencam.GenerateCampaignFP(con_list, rc_list)
 
     simulation.campaign = json.loads(campaign.to_json())
 
