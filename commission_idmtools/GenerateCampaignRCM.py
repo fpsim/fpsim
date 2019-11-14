@@ -302,10 +302,11 @@ def CreateContraceptives():
     con_pill       = Contraceptive( Intervention_Name = "Pill",
                                     New_Property_Value = IP_PILL,
                                     Disqualifying_Properties =[ IP_PREGNANT ],
-                                    Waning_Config = WaningEffectBox(Initial_Effect=0.9, Box_Duration=90),
+                                    Waning_Config = WaningEffectConstant(Initial_Effect=0.9),
                                     Usage_Duration_Distribution = Contraceptive_Usage_Duration_Distribution_Enum.UNIFORM_DISTRIBUTION,
                                     Usage_Duration_Constant = 90,
                                     Usage_Expiration_Event = Choose_Next_Method_Currently_On_Pill )
+    # Waning_Config = WaningEffectBox(Initial_Effect=0.9, Box_Duration=90),
 
     con_withdrawal = Contraceptive( Intervention_Name = "Withdrawal",
                                     New_Property_Value = IP_WITHDRAWAL,
