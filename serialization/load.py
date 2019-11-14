@@ -1,24 +1,37 @@
 import sys
+# Ugly!
 sys.path.insert(0, "/home/dklein/GIT/DtkTrunk/Scripts/serialization")
 
-import json
+import pprint
 import dtkFileTools as dft
 
-dtk = dft.read('output/state-00479.dtk')
+# state file from https://comps.idmod.org/#explore/Simulations?filters=Id=3aa0faf8-7306-ea11-a2c3-c4346bcb1551&offset=0&count=100&selectedId=3aa0faf8-7306-ea11-a2c3-c4346bcb1551
+data = dft.read('state-00059.dtk')
 
-print(dir(dtk))
+print(f'This serialization contains {len(data.nodes)} node(s)')
+for idx, node in enumerate(data.nodes):
+    print(f'* Node {idx} contains {len(node.individualHumans)} particle(s)')
+print('HEADER:')
+for k,v in data.header.items():
+    print(f'* {k} : {v}')
 
-print('NODES:\n', dir(dtk.nodes))
-print('NODES:\n', dtk.nodes)
-print('NODES:\n', dir(dtk.nodes.__parent__))
-print('SIMULATION:\n', dtk.simulation.keys()) # ['serializationMask', 'infectionSuidGenerator', 'm_RngFactory', 'rng', 'campaignFilename', 'custom_reports_filename', 'sim_type', 'demographic_tracking', 'enable_spatial_output', 'enable_property_output', 'enable_default_report', 'enable_event_report', 'enable_node_event_report', 'enable_coordinator_event_report', 'enable_surveillance_event_report', 'loadbalance_filename']
+pp = pprint.PrettyPrinter(indent=2)
+#pp.pprint(data.nodes[0].individualHumans[0])
 
-print('SIMULATION:\n', dtk.simulation['serializationMask']) # ['serializationMask', 'infectionSuidGenerator', 'm_RngFactory', 'rng', 'campaignFilename', 'custom_reports_filename', 'sim_type', 'demographic_tracking', 'enable_spatial_output', 'enable_property_output', 'enable_default_report', 'enable_event_report', 'enable_node_event_report', 'enable_coordinator_event_report', 'enable_surveillance_event_report', 'loadbalance_filename']
-print('HEADER:\n', dtk.header)
-print('DATE:\n', dtk.date)
-print('OBJECTS:\n', dir(dtk.objects))
-print('CONTENTS:\n', dir(dtk.contents))
-print('VERSION:\n', dtk.version)
+# Find an individual on PILL
+h = next(h for h in data.nodes[0].individualHumans if 'PILL' in h['Properties'][0])
+#h = next(h for h in data.nodes[0].individualHumans if 'IMPLANT' in h['Properties'][0])
+pp.pprint(h)
+exit()
 
-print(dtk.nodes[0])
+for p in data.nodes[0].individualHumans:
+    print(f"Individual with id = {p['suid']['id']}")
+    if 'interventions' in p:
+        ic = p['interventions']
+        print('birth_rate_mod:', ic['birth_rate_mod'])
+
+        for intv in ic['interventions']:
+            if intv['__class__'] == 'Contraceptive':
+                print('currentEffect', intv['m_pWaningEffect']['currentEffect'])
+
 
