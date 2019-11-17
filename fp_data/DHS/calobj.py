@@ -203,6 +203,7 @@ class CalObj(sc.prettyobj):
     
     
     def make_results(self, always_log=False, zero_to_nan=False):
+        print('Generating results...')
         self.results = sc.objdict()
         
         # Calculate counts
