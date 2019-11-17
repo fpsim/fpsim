@@ -97,7 +97,7 @@ class CalObj(sc.prettyobj):
                      'E': [19, 'SDays', 'Standard days'],
                      'S': [20, 'Foam',  'Foam and jelly'],
                      'M': [21, 'OModr', 'Other modern'],
-                     '?': [22, 'Unknw', 'Unknown'],
+#                     '?': [22, 'Unknw', 'Unknown'], # Seems to be zero?
                     })
         self.nmethods = len(self.mapping) - self.skipmissing
         return
@@ -235,7 +235,7 @@ class CalObj(sc.prettyobj):
         self.results.rel_props = rel_props # Store
         return self.results
     
-    def _set_axis_labels(self, ax, which=None, offset=0):
+    def _set_axis_labels(self, ax, which=None, offset=0.0):
         if which is None: which = ['x', 'y']
         which = sc.promotetolist(which)
         if 'x' in which:
@@ -250,6 +250,9 @@ class CalObj(sc.prettyobj):
         ''' Plot all transitions in the contraception calendar '''
         if figsize is None: figsize = (30,14)
         
+        offset = 0.5
+        labeloffset = 0.0
+        
         # Create figure and set tick marks on top
         fig = pl.figure(figsize=figsize)
         pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = True
@@ -258,17 +261,21 @@ class CalObj(sc.prettyobj):
         # Plot total counts
         ax1 = fig.add_subplot(121)
         im1 = pl.imshow(pl.log10(self.results.counts), cmap=sc.parulacolormap()) # , edgecolors=[0.8]*3
-        self._set_axis_labels(ax=ax1)
+        self._set_axis_labels(ax=ax1, offset=labeloffset)
         ax1.set_title('Total number of transitions in calendar (log scale, white=0)', fontweight='bold')
         ca1 = fig.add_axes([0.05, 0.11, 0.03, 0.75])
+        ax1.set_xlim([-offset, self.nmethods-offset])
+        ax1.set_ylim([-offset, self.nmethods-offset])
         fig.colorbar(im1, cax=ca1)
         
         # Plot relative counts
         ax2 = fig.add_subplot(122)
         im2 = pl.imshow(self.results.rel_props, cmap='jet') # , edgecolors=[0.8]*3
-        self._set_axis_labels(ax=ax1)
+        self._set_axis_labels(ax=ax2, offset=labeloffset)
         ax2.set_title('Relative proportion of each transition, diagonal removed (%)', fontweight='bold')
         ca2 = fig.add_axes([0.95, 0.11, 0.03, 0.75])
+        ax2.set_xlim([-offset, self.nmethods-offset])
+        ax2.set_ylim([-offset, self.nmethods-offset])
         fig.colorbar(im2, cax=ca2)
         return fig
     
