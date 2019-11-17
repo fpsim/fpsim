@@ -48,7 +48,7 @@ class CalObj(sc.prettyobj):
         
         Entries represent: original (e.g. 'C'), numeric (11), short ('FCond'), full ('Female condom')
         '''
-        if self.which == 'DHS6': # DHS6 or DHS7
+        if self.which == 'DHS6':
             self.mapping = sc.odict({
                      ' ': [-1, 'Miss',  'Missing'],
                      '0': [ 0, 'None',  'Non-use'],
@@ -71,6 +71,33 @@ class CalObj(sc.prettyobj):
                      'P': [17, 'Preg',  'Pregnancy'],
                      'T': [18, 'Term',  'Termination'],
                      'W': [19, 'OTrad', 'Other traditional']
+                    })
+        elif self.which == 'DHS7': # See recode version -- contraceptive calendar tutorial PDF p. 25, table 3
+            self.mapping = sc.odict({
+                     ' ': [-1, 'Miss',  'Missing'],
+                     'B': [ 0, 'Birth', 'Birth'],
+                     'T': [ 1, 'Term',  'Termination'],
+                     'P': [ 2, 'Preg',  'Pregnancy'],
+                     '0': [ 3, 'None',  'Non-use'],
+                     '1': [ 4, 'Pill',  'Pill'],
+                     '2': [ 5, 'IUD',   'IUD'],
+                     '3': [ 6, 'Injct', 'Injectables'],
+                     '4': [ 7, 'Diaph', 'Diaphragm'],
+                     '5': [ 8, 'Cond',  'Condom'],
+                     '6': [ 9, 'FSter', 'Female sterilization'],
+                     '7': [10, 'MSter', 'Male sterilization'],
+                     '8': [11, 'Rhyth', 'Rhythm'],
+                     '9': [12, 'Withd', 'Withdrawal'],
+                     'W': [13, 'OTrad', 'Other traditional'],
+                     'N': [14, 'Impla', 'Implants'],
+                     'A': [15, 'Abst', 'Abstinence'],
+                     'L': [16, 'Lact',  'Lactational amenorrhea'],
+                     'C': [17, 'FCond', 'Female condom'],
+                     'F': [18, 'Foam',  'Foam and jelly'],
+                     'E': [19, 'SDays', 'Standard days'],
+                     'S': [20, 'Foam',  'Foam and jelly'],
+                     'M': [21, 'OModr', 'Other modern'],
+                     '?': [22, 'Unknw', 'Unknown'],
                     })
         self.nmethods = len(self.mapping) - self.skipmissing
         return
@@ -131,16 +158,22 @@ class CalObj(sc.prettyobj):
             
             # Parse the string
             cal = []
+            failed = sc.odict()
             for l,line in enumerate(rawlines):
                 sc.percentcomplete(l, len(rawlines))
                 cal.append([])
                 for char in line:
-                    try:
+                    if char in self.mapping:
                         number = self.mapping[char][0] 
                         cal[-1].append(number)
-                    except Exception as E:
+                    else:
                         if char not in ['\n']: # Skip space and newline, we know to ignore those
-                            raise Exception(f'Could not parse character "{char}" on line {l} ({str(E)})')
+                            if char not in failed:
+                                failed[char] = []
+                            else:
+                                failed[char].append(l)
+            if failed:
+                raise Exception(f'Failed to parse keys: {failed.keys()}')
             self.cal = pl.array(cal)
         
         # Load directly from the STATA file
