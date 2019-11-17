@@ -8,7 +8,7 @@ import sciris as sc
 # Comment/uncomment these to run different analyses
 torun = [
 #        'loadsave',
-#        'plot_matrix',
+        'plot_matrix',
         'plot_slice',
         ]
 
