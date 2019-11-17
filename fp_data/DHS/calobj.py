@@ -246,7 +246,7 @@ class CalObj(sc.prettyobj):
             ax.set_yticklabels(self.shortkeys)
         return
     
-    def plot_transitions(self, figsize=None):
+    def plot_transitions(self, projection='2d', figsize=None):
         ''' Plot all transitions in the contraception calendar '''
         if figsize is None: figsize = (30,14)
         
@@ -259,24 +259,35 @@ class CalObj(sc.prettyobj):
         pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = True
         
         # Plot total counts
-        ax1 = fig.add_subplot(121)
-        im1 = pl.imshow(pl.log10(self.results.counts), cmap=sc.parulacolormap()) # , edgecolors=[0.8]*3
+        
+        if projection != '3d':
+            data = pl.log10(self.results.counts)
+            ax1 = fig.add_subplot(121)
+            im1 = pl.imshow(data, cmap=sc.parulacolormap()) # , edgecolors=[0.8]*3
+            ca1 = fig.add_axes([0.05, 0.11, 0.03, 0.75])
+            fig.colorbar(im1, cax=ca1)
+        else:
+            data = pl.log10(self.results.counts+1)
+            ax1 = sc.bar3d(data=data, fig=fig, axkwargs={'nrows':1, 'ncols':2, 'index':1})
         self._set_axis_labels(ax=ax1, offset=labeloffset)
         ax1.set_title('Total number of transitions in calendar (log scale, white=0)', fontweight='bold')
-        ca1 = fig.add_axes([0.05, 0.11, 0.03, 0.75])
         ax1.set_xlim([-offset, self.nmethods-offset])
         ax1.set_ylim([-offset, self.nmethods-offset])
-        fig.colorbar(im1, cax=ca1)
         
         # Plot relative counts
-        ax2 = fig.add_subplot(122)
-        im2 = pl.imshow(self.results.rel_props, cmap='jet') # , edgecolors=[0.8]*3
+        data = self.results.rel_props
+        if projection != '3d':
+            ax2 = fig.add_subplot(122)
+            im2 = pl.imshow(data, cmap='jet') # , edgecolors=[0.8]*3
+            ca2 = fig.add_axes([0.95, 0.11, 0.03, 0.75])
+            fig.colorbar(im2, cax=ca2)
+        else:
+            ax2 = sc.bar3d(data=data, fig=fig, cmap='jet', axkwargs={'nrows':1, 'ncols':2, 'index':2})
         self._set_axis_labels(ax=ax2, offset=labeloffset)
         ax2.set_title('Relative proportion of each transition, diagonal removed (%)', fontweight='bold')
-        ca2 = fig.add_axes([0.95, 0.11, 0.03, 0.75])
         ax2.set_xlim([-offset, self.nmethods-offset])
         ax2.set_ylim([-offset, self.nmethods-offset])
-        fig.colorbar(im2, cax=ca2)
+        
         return fig
     
     
