@@ -13,10 +13,10 @@ dhs_file = os.path.join(os.pardir, 'DHS', 'senegal.cal')
 #%% Loading data
 sc.heading('Loading data...')
 uhri = sc.loadobj(uhri_file)
-dhs = co.CalObj(dhs_file) # Create from saved data
-#f1 = dhs.plot_transitions()
+dhs = co.load(dhs_file) # Create from saved data
+f1 = dhs.plot_transitions()
 f2 = dhs.plot_transitions(projection='3d')
-#f2 = dhs.plot_slice()
+f3 = dhs.plot_slice('None')
 
 
 
