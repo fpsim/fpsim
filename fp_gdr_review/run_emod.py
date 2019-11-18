@@ -1,4 +1,3 @@
-import os
 import pyemod as em
 from emod_api.campaign import GenerateCampaignRCM as gencam
 
@@ -29,5 +28,5 @@ for replicate in range(n_replicates):
     sims.append(sim)
 
 exp = em.Experiment(sims=sims)
-results = exp.run(how='parallel')
+results = exp.run(how='serial')
 exp.plot()
