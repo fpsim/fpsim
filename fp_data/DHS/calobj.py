@@ -94,8 +94,8 @@ class CalObj(sc.prettyobj):
                      'L': [16, 'Lact',  'Lactational amenorrhea'],
                      'C': [17, 'FCond', 'Female condom'],
                      'F': [18, 'Foam',  'Foam and jelly'],
-                     'E': [19, 'SDays', 'Standard days'],
-                     'S': [20, 'Foam',  'Foam and jelly'],
+                     'E': [19, 'Emerg', 'Emergency contraception'],
+                     'S': [20, 'SDays', 'Standard days'],
                      'M': [21, 'OModr', 'Other modern'],
 #                     '?': [22, 'Unknw', 'Unknown'], # Seems to be zero?
                     })
