@@ -25,7 +25,7 @@ def skyscraper(data, label=None, fig=None, nrows=None, ncols=None, idx=None, fig
         .sum() \
         .unstack('Parity')
 
-    # WIP
+    # WIP - want to merge with skyscraper plotting from data_analysis
     import seaborn as sns
     sns.heatmap(age_parity_data)
     pl.show()
