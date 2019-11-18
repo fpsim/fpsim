@@ -19,7 +19,7 @@ sc.heading('Setting up simulations...')
 
 
 # Commonly modified calibration variables and configuration
-n_replicates = 10  # replicates, 1 is highly recommended.
+n_replicates = 6  # replicates, 1 is highly recommended.
 
 base_sim = em.Simulation(config=config_file, demographics=demographics_file)
 base_sim.demographics.update(pars=overlay_file) # TODO: make this simpler, or avoid it altogether

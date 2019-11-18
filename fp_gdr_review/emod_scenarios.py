@@ -22,9 +22,12 @@ def make_campaign(use_contraception=True):
     return campaign
 
 sims = []
-for use_contraception in [False, True]:
+count = 0
+for use_contraception in [True, True]:
     for replicate in range(n_replicates):
+        count += 1
         sim = base_sim.copy()
+        sim.config['parameters']['Run_Number'] = count
         sim.campaign = make_campaign(use_contraception)
         sims.append(sim)
 
