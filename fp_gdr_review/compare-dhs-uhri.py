@@ -1,6 +1,6 @@
 import pylab as pl
 import sciris as sc
-import fp_data.DHS.calobj as co
+import fp_utils.calobj as co
 
 sc.heading('Setting parameters...')
 

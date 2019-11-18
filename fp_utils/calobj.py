@@ -6,6 +6,18 @@ import sciris as sc
 
 def load(*args, **kwargs):
     ''' Tiny alias to sc.loadobj() to load saved calendar objects '''
+    
+    import sys
+    import types
+    import fp_data
+    
+    # First, add any placeholder modules that have been subsequently removed
+    fp_data.DHS = types.ModuleType('DHS') 
+    fp_data.DHS.calobj = types.ModuleType('calobj') 
+    sys.modules['fp_data.DHS'] = fp_data.DHS
+    sys.modules['fp_data.DHS.calobj'] = fp_data.DHS.calobj
+    fp_data.DHS.calobj.CalObj = CalObj
+
     cal = sc.loadobj(*args, **kwargs)
     assert isinstance(cal, CalObj)
     return cal
