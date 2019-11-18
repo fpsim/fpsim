@@ -1,21 +1,22 @@
 import os
 import pylab as pl
-import pandas as pd
 import sciris as sc
 import fp_data.DHS.calobj as co
 
 sc.heading('Setting parameters...')
 
-plot_dhs = False
-plot_pies = True
+plot_dhs  = 1
+plot_pies = 0
+save_figs = 1
 uhri_file = os.path.join(os.pardir, 'UHRI', 'senegal_women.obj')
-dhs_file = os.path.join(os.pardir, 'DHS', 'senegal.cal')
+dhs_file  = os.path.join(os.pardir, 'DHS', 'senegal.cal')
 
 
 #%% Loading data
 sc.heading('Loading data...')
 uhri = sc.loadobj(uhri_file)
 dhs = co.load(dhs_file) # Create from saved data
+dhs.make_results()
 
 #%% Processing
 sc.heading('Processing data...')
@@ -96,23 +97,35 @@ sc.heading('Plotting...')
 if plot_dhs:
     f1 = dhs.plot_transitions()
     f2 = dhs.plot_transitions(projection='3d')
-    f3 = dhs.plot_slice('None')
+    f3 = dhs.plot_slice('None', stacking='sidebyside')
+    if save_figs:
+        f1.savefig('dhs_transitions_2d.png', bbox_inches='tight')
+        f2.savefig('dhs_transitions_3d.png', bbox_inches='tight')
+        f3.savefig('dhs_transitions_slice.png', bbox_inches='tight')
 
 if plot_pies:
     keys1 = ['UHRI', 'DHS']
-    keys2 = ['All', 'On method']
+    keys2 = ['All women', 'Women on a method']
     fig = pl.figure(figsize=(24,18))
     axs = sc.odict()
     off = 0.05
     wid = 0.45
     hei = 0.45
-    pie_props = dict(startangle=0, counterclock=True, colors=method_colors)
     for k1,key1 in enumerate(keys1):
         for k2,key2 in enumerate(keys2):
             ax = fig.add_axes([off+wid*k1, (off+hei)*(1-k2), wid, hei])
-            ax.pie(prop_data[key1][k2:], labels=prop_data[key1].keys()[k2:], explode=0.02*pl.ones(n_classes)[k2:], **pie_props)
+            data = prop_data[key1][k2:]
+            labels = [f'{key} (n={val})' for key,val in prop_data[key1].items()][k2:]
+            colors = method_colors[k2:]
+            explode = 0.02*pl.ones(n_classes)[k2:]
+            _, _, autotexts = ax.pie(data, labels=labels, colors=colors, explode=explode, autopct='%0.1f%%')
+            for autotext in autotexts:
+                autotext.set_color('white')
             ax.set_title(f'{key1} data: {key2}', fontweight='bold')
             axs[key1+key2] = ax
+    if save_figs:
+        pl.savefig('uhri_vs_dhs_pies.png', bbox_inches='tight')
+    
             
 
 print('Done.')

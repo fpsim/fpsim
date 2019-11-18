@@ -235,31 +235,35 @@ class CalObj(sc.prettyobj):
         self.results.rel_props = rel_props # Store
         return self.results
     
-    def _set_axis_labels(self, ax, which=None, offset=0.0):
+    def _set_axis_labels(self, ax, which=None, offset=0.0, xrotation=90.0, yrotation=0.0):
         if which is None: which = ['x', 'y']
         which = sc.promotetolist(which)
         if 'x' in which:
             ax.set_xticks(self.numkeys+offset)
-            ax.set_xticklabels(self.shortkeys)
+            ax.set_xticklabels(self.shortkeys, rotation=xrotation)
         if 'y' in which:
             ax.set_yticks(self.numkeys+offset)
-            ax.set_yticklabels(self.shortkeys)
+            ax.set_yticklabels(self.shortkeys, rotation=yrotation)
         return
     
     def plot_transitions(self, projection='2d', figsize=None):
         ''' Plot all transitions in the contraception calendar '''
-        if figsize is None: figsize = (30,14)
+        if figsize is None: figsize = (36,16)
         
         offset = 0.5
         labeloffset = 0.0
-        
+        yrotation = 90 if projection == '3d' else 0
+            
         # Create figure and set tick marks on top
         fig = pl.figure(figsize=figsize)
-        pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = True
-        pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = True
+        if projection != '3d':
+            pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = True
+            pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = True
+        else:
+            pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = False
+            pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = False
         
         # Plot total counts
-        
         if projection != '3d':
             data = pl.log10(self.results.counts)
             ax1 = fig.add_subplot(121)
@@ -269,10 +273,7 @@ class CalObj(sc.prettyobj):
         else:
             data = pl.log10(self.results.counts+1)
             ax1 = sc.bar3d(data=data, fig=fig, axkwargs={'nrows':1, 'ncols':2, 'index':1})
-        self._set_axis_labels(ax=ax1, offset=labeloffset)
         ax1.set_title('Total number of transitions in calendar (log scale, white=0)', fontweight='bold')
-        ax1.set_xlim([-offset, self.nmethods-offset])
-        ax1.set_ylim([-offset, self.nmethods-offset])
         
         # Plot relative counts
         data = self.results.rel_props
@@ -283,21 +284,31 @@ class CalObj(sc.prettyobj):
             fig.colorbar(im2, cax=ca2)
         else:
             ax2 = sc.bar3d(data=data, fig=fig, cmap='jet', axkwargs={'nrows':1, 'ncols':2, 'index':2})
-        self._set_axis_labels(ax=ax2, offset=labeloffset)
         ax2.set_title('Relative proportion of each transition, diagonal removed (%)', fontweight='bold')
-        ax2.set_xlim([-offset, self.nmethods-offset])
-        ax2.set_ylim([-offset, self.nmethods-offset])
+            
+        for ax in [ax1,ax2]:
+            self._set_axis_labels(ax=ax, offset=labeloffset, yrotation=yrotation)
+            ax.set_xlim([-offset, self.nmethods-offset])
+            ax.set_ylim([-offset, self.nmethods-offset])
         
         return fig
     
     
-    def plot_slice(self, key, orientation='row', figsize=None):
+    def plot_slice(self, key, orientation='row', stacking='ontop', figsize=None):
         ''' Plot a single slice through the matrix '''
-        if figsize is None: figsize = (20,16)
+        if stacking == 'ontop':
+            nrows = 2
+            ncols = 1
+            default_figsize = (20,16)
+        else:
+            nrows = 1
+            ncols = 2
+            default_figsize = (30,10)
+        if figsize is None: figsize = default_figsize
         fig = pl.figure(figsize=figsize)
         
         for use_log in [False, True]:
-            ax = fig.add_subplot(2,1,use_log+1)
+            ax = fig.add_subplot(nrows,ncols,use_log+1)
             if orientation == 'row':
                 data = self.results.counts[self.keytoind(key),:]
                 preposition = 'from' # For plotting, set the word in the title
