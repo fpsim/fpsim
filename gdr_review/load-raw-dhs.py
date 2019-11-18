@@ -1,6 +1,6 @@
 import os
 import sciris as sc
-import fp_data.DHS.calobj as co
+import fp_utils.calobj as co
 
 # Add your username here -- raw data file is 98 MB
 raw_dhs_files = {'cliffk': '/home/cliffk/idm/fp/data/DHS/SNIR7ZDT/SNIR7ZFL.DTA',
