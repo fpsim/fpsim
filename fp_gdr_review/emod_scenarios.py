@@ -11,6 +11,7 @@ n_replicates = 1  # replicates, 1 is highly recommended.
 
 base_sim = em.Simulation(config=config_file, demographics=demographics_file)
 base_sim.demographics.update(pars=overlay_file) # TODO: make this simpler, or avoid it altogether
+base_sim.demographics['Defaults']['IndividualAttributes']['FertilityDistribution']['ResultScaleFactor'] = 1e-5
 
 def make_campaign(use_contraception=True):
     campaign = em.make_campaign()
