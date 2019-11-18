@@ -11,7 +11,7 @@ try:
     print('Loading original data and saving...')
     username = os.path.split(os.path.expanduser('~'))[-1]
     calobj = co.CalObj(raw_dhs_files[username], which='DHS7')
-    calobj.save('../DHS/senegal.cal')
+    calobj.save('../fp_data/DHS/senegal.cal')
 except:
     print('Loading failed :(')
     sc.toc()

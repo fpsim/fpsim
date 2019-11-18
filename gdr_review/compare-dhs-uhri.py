@@ -1,4 +1,3 @@
-import os
 import pylab as pl
 import sciris as sc
 import fp_data.DHS.calobj as co
@@ -8,8 +7,8 @@ sc.heading('Setting parameters...')
 plot_dhs  = 1
 plot_pies = 0
 save_figs = 1
-uhri_file = os.path.join(os.pardir, 'UHRI', 'senegal_women.obj')
-dhs_file  = os.path.join(os.pardir, 'DHS', 'senegal.cal')
+uhri_file = '../fp_data/UHRI/senegal_women.obj' # Not Windows friendly but simpler and neither is later code
+dhs_file  = '../fp_data/DHS/senegal.cal'
 
 
 #%% Loading data
@@ -99,9 +98,9 @@ if plot_dhs:
     f2 = dhs.plot_transitions(projection='3d')
     f3 = dhs.plot_slice('None', stacking='sidebyside')
     if save_figs:
-        f1.savefig('dhs_transitions_2d.png', bbox_inches='tight')
-        f2.savefig('dhs_transitions_3d.png', bbox_inches='tight')
-        f3.savefig('dhs_transitions_slice.png', bbox_inches='tight')
+        f1.savefig('figs/dhs_transitions_2d.png', bbox_inches='tight')
+        f2.savefig('figs/dhs_transitions_3d.png', bbox_inches='tight')
+        f3.savefig('figs/dhs_transitions_slice.png', bbox_inches='tight')
 
 if plot_pies:
     keys1 = ['UHRI', 'DHS']
@@ -124,7 +123,7 @@ if plot_pies:
             ax.set_title(f'{key1} data: {key2}', fontweight='bold')
             axs[key1+key2] = ax
     if save_figs:
-        pl.savefig('uhri_vs_dhs_pies.png', bbox_inches='tight')
+        pl.savefig('figs/uhri_vs_dhs_pies.png', bbox_inches='tight')
     
             
 
