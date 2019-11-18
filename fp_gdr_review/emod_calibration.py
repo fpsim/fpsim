@@ -115,20 +115,21 @@ if do_plot:
     yscale = 5.583e-3 # From senegal_data.py
     
     fig = pl.figure(figsize=(20,8))
-    orig_col  = [0.6, 0.6, 0.6]
-    calib_col = [1.0, 0.6, 0.0]
-    data_col  = [0.0, 0.0, 0.5]
+    orig_col  = (0.6, 0.6, 0.6)
+    calib_col = (1.0, 0.6, 0.0)
+    data_col  = (0.0, 0.0, 0.5)
     for r in range(n_replicates):
         pl.plot(xax, yscale*orig.sim_full[r,:], c=orig_col, lw=2, alpha=0.2)
         pl.plot(xax, yscale*calib.sim_full[r,:], c=calib_col, lw=2, alpha=0.2)
-    pl.scatter(xax, yscale*calib.data_y, c=data_col, s=100, alpha=0.8, zorder=100)
-    pl.plot(xax, yscale*calib.sim_y, c=calib_col, lw=4, alpha=1.0, zorder=150)
-    pl.plot(xax, yscale*orig.sim_y, c=orig_col, lw=4, alpha=1.0, zorder=200)
+    pl.scatter(xax, yscale*calib.data_y, c=data_col, s=100, alpha=0.8, zorder=100, label='Data')
+    pl.plot(xax, yscale*calib.sim_y, c=calib_col, lw=4, alpha=1.0, zorder=150, label='Calibrated')
+    pl.plot(xax, yscale*orig.sim_y, c=orig_col, lw=4, alpha=1.0, zorder=200, label='Uncalibrated')
+    pl.legend()
     
     sc.setylim()
     pl.xlim([1979,2021])
     sc.boxoff()
-    pl.title('Calibration of Senegal demographics', fontweight='bold')
+#    pl.title('Calibration of Senegal demographics', fontweight='bold')
     pl.xlabel('Year', fontweight='bold')
     pl.ylabel('Population (millions)', fontweight='bold')
     if save_fig:
