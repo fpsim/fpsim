@@ -1,7 +1,11 @@
+import sciris as sc
 import pyemod as em
 from emod_api.campaign import GenerateCampaignRCM as gencam
+import senegal_data as sd
 
-exp_name = 'Family planning GDR review test runs'
+sc.tic()
+
+exp_name          = 'Family planning GDR review test runs'
 config_file       = 'inputs/config.json'
 demographics_file = 'inputs/demographics.json'
 overlay_file      = 'inputs/IP_Overlay.json'
@@ -20,13 +24,20 @@ def make_campaign(use_contraception=True):
         campaign.pars = gencam.GenerateCampaignFP(con_list, rc_list)
     return campaign
 
-sims = []
-for use_contraception in [False, True]:
-    for replicate in range(n_replicates):
-        sim = base_sim.copy()
-        sim.campaign = make_campaign(use_contraception)
-        sims.append(sim)
+#sims = []
+#for use_contraception in [False, True]:
+#    for replicate in range(n_replicates):
+#        sim = base_sim.copy()
+#        sim.campaign = make_campaign(use_contraception)
+#        sims.append(sim)
+#
+#exp = em.Experiment(sims=sims)
+#results = exp.run(how='parallel')
+#exp.plot()
 
-exp = em.Experiment(sims=sims)
-results = exp.run(how='parallel')
-exp.plot()
+
+sc.heading('Loading data...')
+data = sc.loadobj('senegal_data.obj')
+
+sc.toc()
+print('Done.')
