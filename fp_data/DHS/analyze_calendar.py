@@ -2,6 +2,7 @@
 Simple script to run analyses using the heavy-lifting CalObj class.
 '''
 
+import pylab as pl
 import calobj as co
 import sciris as sc
 
@@ -40,5 +41,4 @@ if 'plot_slice' in torun:
 sc.toc()
 print('Done')
 
-import matplotlib.pyplot as plt
-plt.show()
+pl.show()

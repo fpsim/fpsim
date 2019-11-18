@@ -48,7 +48,7 @@ class CalObj(sc.prettyobj):
         
         Entries represent: original (e.g. 'C'), numeric (11), short ('FCond'), full ('Female condom')
         '''
-        if self.which == 'DHS6': # DHS6 or DHS7
+        if self.which == 'DHS6':
             self.mapping = sc.odict({
                      ' ': [-1, 'Miss',  'Missing'],
                      '0': [ 0, 'None',  'Non-use'],
@@ -71,6 +71,33 @@ class CalObj(sc.prettyobj):
                      'P': [17, 'Preg',  'Pregnancy'],
                      'T': [18, 'Term',  'Termination'],
                      'W': [19, 'OTrad', 'Other traditional']
+                    })
+        elif self.which == 'DHS7': # See recode version -- contraceptive calendar tutorial PDF p. 25, table 3
+            self.mapping = sc.odict({
+                     ' ': [-1, 'Miss',  'Missing'],
+                     'B': [ 0, 'Birth', 'Birth'],
+                     'T': [ 1, 'Term',  'Termination'],
+                     'P': [ 2, 'Preg',  'Pregnancy'],
+                     '0': [ 3, 'None',  'Non-use'],
+                     '1': [ 4, 'Pill',  'Pill'],
+                     '2': [ 5, 'IUD',   'IUD'],
+                     '3': [ 6, 'Injct', 'Injectables'],
+                     '4': [ 7, 'Diaph', 'Diaphragm'],
+                     '5': [ 8, 'Cond',  'Condom'],
+                     '6': [ 9, 'FSter', 'Female sterilization'],
+                     '7': [10, 'MSter', 'Male sterilization'],
+                     '8': [11, 'Rhyth', 'Rhythm'],
+                     '9': [12, 'Withd', 'Withdrawal'],
+                     'W': [13, 'OTrad', 'Other traditional'],
+                     'N': [14, 'Impla', 'Implants'],
+                     'A': [15, 'Abst', 'Abstinence'],
+                     'L': [16, 'Lact',  'Lactational amenorrhea'],
+                     'C': [17, 'FCond', 'Female condom'],
+                     'F': [18, 'Foam',  'Foam and jelly'],
+                     'E': [19, 'Emerg', 'Emergency contraception'],
+                     'S': [20, 'SDays', 'Standard days'],
+                     'M': [21, 'OModr', 'Other modern'],
+#                     '?': [22, 'Unknw', 'Unknown'], # Seems to be zero?
                     })
         self.nmethods = len(self.mapping) - self.skipmissing
         return
@@ -131,16 +158,22 @@ class CalObj(sc.prettyobj):
             
             # Parse the string
             cal = []
+            failed = sc.odict()
             for l,line in enumerate(rawlines):
                 sc.percentcomplete(l, len(rawlines))
                 cal.append([])
                 for char in line:
-                    try:
+                    if char in self.mapping:
                         number = self.mapping[char][0] 
                         cal[-1].append(number)
-                    except Exception as E:
+                    else:
                         if char not in ['\n']: # Skip space and newline, we know to ignore those
-                            raise Exception(f'Could not parse character "{char}" on line {l} ({str(E)})')
+                            if char not in failed:
+                                failed[char] = []
+                            else:
+                                failed[char].append(l)
+            if failed:
+                raise Exception(f'Failed to parse keys: {failed.keys()}')
             self.cal = pl.array(cal)
         
         # Load directly from the STATA file
@@ -170,6 +203,7 @@ class CalObj(sc.prettyobj):
     
     
     def make_results(self, always_log=False, zero_to_nan=False):
+        print('Generating results...')
         self.results = sc.objdict()
         
         # Calculate counts
@@ -201,51 +235,80 @@ class CalObj(sc.prettyobj):
         self.results.rel_props = rel_props # Store
         return self.results
     
-    def _set_axis_labels(self, ax, which=None, offset=0):
+    def _set_axis_labels(self, ax, which=None, offset=0.0, xrotation=90.0, yrotation=0.0):
         if which is None: which = ['x', 'y']
         which = sc.promotetolist(which)
         if 'x' in which:
             ax.set_xticks(self.numkeys+offset)
-            ax.set_xticklabels(self.shortkeys)
+            ax.set_xticklabels(self.shortkeys, rotation=xrotation)
         if 'y' in which:
             ax.set_yticks(self.numkeys+offset)
-            ax.set_yticklabels(self.shortkeys)
+            ax.set_yticklabels(self.shortkeys, rotation=yrotation)
         return
     
-    def plot_transitions(self, figsize=None):
+    def plot_transitions(self, projection='2d', figsize=None):
         ''' Plot all transitions in the contraception calendar '''
-        if figsize is None: figsize = (30,14)
+        if figsize is None: figsize = (36,16)
         
+        offset = 0.5
+        labeloffset = 0.0
+        yrotation = 90 if projection == '3d' else 0
+            
         # Create figure and set tick marks on top
         fig = pl.figure(figsize=figsize)
-        pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = True
-        pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = True
+        if projection != '3d':
+            pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = True
+            pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = True
+        else:
+            pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = False
+            pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = False
         
         # Plot total counts
-        ax1 = fig.add_subplot(121)
-        im1 = pl.imshow(pl.log10(self.results.counts), cmap=sc.parulacolormap()) # , edgecolors=[0.8]*3
-        self._set_axis_labels(ax=ax1)
+        if projection != '3d':
+            data = pl.log10(self.results.counts)
+            ax1 = fig.add_subplot(121)
+            im1 = pl.imshow(data, cmap=sc.parulacolormap()) # , edgecolors=[0.8]*3
+            ca1 = fig.add_axes([0.05, 0.11, 0.03, 0.75])
+            fig.colorbar(im1, cax=ca1)
+        else:
+            data = pl.log10(self.results.counts+1)
+            ax1 = sc.bar3d(data=data, fig=fig, axkwargs={'nrows':1, 'ncols':2, 'index':1})
         ax1.set_title('Total number of transitions in calendar (log scale, white=0)', fontweight='bold')
-        ca1 = fig.add_axes([0.05, 0.11, 0.03, 0.75])
-        fig.colorbar(im1, cax=ca1)
         
         # Plot relative counts
-        ax2 = fig.add_subplot(122)
-        im2 = pl.imshow(self.results.rel_props, cmap='jet') # , edgecolors=[0.8]*3
-        self._set_axis_labels(ax=ax1)
+        data = self.results.rel_props
+        if projection != '3d':
+            ax2 = fig.add_subplot(122)
+            im2 = pl.imshow(data, cmap='jet') # , edgecolors=[0.8]*3
+            ca2 = fig.add_axes([0.95, 0.11, 0.03, 0.75])
+            fig.colorbar(im2, cax=ca2)
+        else:
+            ax2 = sc.bar3d(data=data, fig=fig, cmap='jet', axkwargs={'nrows':1, 'ncols':2, 'index':2})
         ax2.set_title('Relative proportion of each transition, diagonal removed (%)', fontweight='bold')
-        ca2 = fig.add_axes([0.95, 0.11, 0.03, 0.75])
-        fig.colorbar(im2, cax=ca2)
+            
+        for ax in [ax1,ax2]:
+            self._set_axis_labels(ax=ax, offset=labeloffset, yrotation=yrotation)
+            ax.set_xlim([-offset, self.nmethods-offset])
+            ax.set_ylim([-offset, self.nmethods-offset])
+        
         return fig
     
     
-    def plot_slice(self, key, orientation='row', figsize=None):
+    def plot_slice(self, key, orientation='row', stacking='ontop', figsize=None):
         ''' Plot a single slice through the matrix '''
-        if figsize is None: figsize = (20,16)
+        if stacking == 'ontop':
+            nrows = 2
+            ncols = 1
+            default_figsize = (20,16)
+        else:
+            nrows = 1
+            ncols = 2
+            default_figsize = (30,10)
+        if figsize is None: figsize = default_figsize
         fig = pl.figure(figsize=figsize)
         
         for use_log in [False, True]:
-            ax = fig.add_subplot(2,1,use_log+1)
+            ax = fig.add_subplot(nrows,ncols,use_log+1)
             if orientation == 'row':
                 data = self.results.counts[self.keytoind(key),:]
                 preposition = 'from' # For plotting, set the word in the title
