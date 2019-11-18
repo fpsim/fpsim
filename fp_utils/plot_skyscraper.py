@@ -13,8 +13,6 @@ def load(exp_id):
 
     data = tags.join(data)
 
-    print(data.head())
-    print(data.dtypes)
     return data
 
 
@@ -27,6 +25,7 @@ def skyscraper(data, label=None, fig=None, nrows=None, ncols=None, idx=None, fig
         .sum() \
         .unstack('Parity')
 
+    # WIP
     import seaborn as sns
     sns.heatmap(age_parity_data)
     pl.show()
@@ -46,8 +45,3 @@ def skyscraper(data, label=None, fig=None, nrows=None, ncols=None, idx=None, fig
     ax.set_yticks(parity_bin_codes+0.5)
     ax.set_yticklabels(parity_bin_labels)
     '''
-
-if __name__ == "__main__":
-    load()
-    skyscraper()
-
