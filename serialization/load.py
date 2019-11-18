@@ -19,9 +19,13 @@ pp = pprint.PrettyPrinter(indent=2)
 #pp.pprint(data.nodes[0].individualHumans[0])
 
 # Find an individual on PILL
-h = next(h for h in data.nodes[0].individualHumans if 'PILL' in h['Properties'][0])
-#h = next(h for h in data.nodes[0].individualHumans if 'IMPLANT' in h['Properties'][0])
-pp.pprint(h)
+
+for i in range(100):
+    print('-'*80)
+    h = next(h for h in data.nodes[0].individualHumans if 'PILL' in h['Properties'][0])
+    #h = next(h for h in data.nodes[0].individualHumans if 'IMPLANT' in h['Properties'][0])
+    pp.pprint(h)
+
 exit()
 
 for p in data.nodes[0].individualHumans:

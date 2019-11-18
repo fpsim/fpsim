@@ -61,7 +61,6 @@ static_params = {
     'Report_FP_ByAgeAndParity': 1,
     'Report_FP_ByAgeAndParity_Collect_Age_Bins_Data': [0, 15, 20, 25, 30, 35, 40, 45],
     'Report_FP_ByAgeAndParity_Collect_Parity_Bins_Data': [0, 1, 2, 3, 4, 5, 6],
-    'Report_FP_ByAgeAndParity_Collect_Gender_Data': 0,
     'Report_FP_ByAgeAndParity_Collect_Intervention_Data': [],
     'Report_FP_ByAgeAndParity_Collect_IP_Data': ['CurrentStatus', 'Knowledge'],
     'Report_FP_ByAgeAndParity_Event_Counter_List': ['Pregnant', 'GaveBirth'],

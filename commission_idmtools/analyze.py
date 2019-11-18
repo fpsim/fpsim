@@ -58,26 +58,22 @@ class Tags_Analyzer(IAnalyzer):
         results.to_csv( os.path.join( exp_id, self.__class__.__name__+'.csv') )
 
 
-def analyze():
-    parser = argparse.ArgumentParser()
-    parser.add_argument('--id', '-I', action='store', dest='exp_id', required=True)
-    parser.add_argument('--platform', '-P', action='store', dest='platform', default='COMPS')
-    parse = parser.parse_args()
+def analyze(exp_id, platform):
 
-    print(f'Analyzing experiment on {parse.platform} with id = {parse.exp_id}')
+    print(f'Analyzing experiment on {platform} with id = {exp_id}')
 
-    platform = Platform(parse.platform)
+    platform = Platform(platform)
 
     ReportFPBAP = CSV_Analyzer(filenames = ["output/ReportFPByAgeAndParity.csv"])
     Tags = Tags_Analyzer()
     '''
     ReportFPBAP_anlayzer = DownloadAnalyzer(
         filenames=['output/ReportFPByAgeAndParity.csv'],
-        output_path = parse.exp_id
+        output_path = exp_id
     )
     '''
 
-    experiment_tuple = (parse.exp_id, ItemType.EXPERIMENT)
+    experiment_tuple = (exp_id, ItemType.EXPERIMENT)
 
     manager = AnalyzeManager(platform=platform, ids=[experiment_tuple])
     manager.add_analyzer(Tags)
@@ -85,4 +81,9 @@ def analyze():
     manager.analyze()
 
 if __name__ == "__main__":
-    analyze()
+    parser = argparse.ArgumentParser()
+    parser.add_argument('--exp_id', '-I', action='store', dest='exp_id', required=True)
+    parser.add_argument('--platform', '-P', action='store', dest='platform', default='COMPS')
+    parse = parser.parse_args()
+
+    analyze(parse.exp_id, parse.platform)
