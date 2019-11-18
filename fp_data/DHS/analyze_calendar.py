@@ -28,7 +28,7 @@ else:
     print('Loading presaved object...')
     #calobj = co.load(filename) # Load saved object
     calobj = co.CalObj(filename) # Create from saved data
-   
+
 
 if 'plot_matrix' in torun:
     calobj.plot_transitions()
@@ -36,7 +36,7 @@ if 'plot_matrix' in torun:
 
 if 'plot_slice' in torun:
     calobj.plot_slice(key='None')
-    
+
 
 sc.toc()
 print('Done')
