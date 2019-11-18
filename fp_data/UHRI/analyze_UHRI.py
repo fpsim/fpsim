@@ -14,6 +14,7 @@ assert sc.compareversions(sciris_version, min_version)>=0, f'Please upgrade Scir
 T = sc.tic()
 
 cachefn = 'store.hdf'
+pickle_filename = 'senegal_women.obj'
 store = pd.HDFStore(cachefn)
 
 force_read = False
@@ -94,6 +95,7 @@ else:
     store['women'] = women
 
 store.close()
+sc.saveobj(pickle_filename, store['women']) # Also save in Sciris/pickle format
 sc.toc(reset=True)
 
 print(f'Women data contains {women.shape[0]:,} rows.')
