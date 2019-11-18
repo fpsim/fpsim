@@ -48,10 +48,7 @@ def run_fn(x, sim):
     print('hi!')
     print(sim)
     sim.demographics['Defaults']['IndividualAttributes']['FertilityDistribution']['ResultScaleFactor'] = x[0]
-#    for v,val in enumerate(x):
-#        par_name = parameters[v]['name']
-#        sim.config['parameters'][par_name] = val
-    sim.run(verbose=True)
+    results = sim.run(verbose=True)
     error = pl.rand() # objective_fn(sim)
     return error    
 
