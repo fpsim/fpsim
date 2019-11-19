@@ -18,11 +18,13 @@ BASE_POPULATION_SCALE_FACTOR = 0.00333333333333333  # For quick test simulations
 N_SAMPLES = 3  # the number of distinct parameter sets to run per iteration
 N_REPLICATES = 1  # replicates, 1 is highly recommended.
 
-samples = pd.DataFrame({'PillEfficacy': np.linspace(0.2, 0.95, N_SAMPLES)})
+samples = pd.DataFrame({'PillEfficacy': [0.575]}) # np.linspace(0.2, 0.95, N_SAMPLES)
 
+burn_in_years = 50
 static_params = {
+    "Base_Year": 2011 - burn_in_years,
     'Base_Population_Scale_Factor': BASE_POPULATION_SCALE_FACTOR,
-    'Simulation_Duration': 5*365,
+    'Simulation_Duration': (5+burn_in_years)*365,
     'Custom_Individual_Events': [
         'Should_Not_Be_Broadcasted',
         'Choose_Next_Method_Currently_Under_Age',
@@ -59,19 +61,19 @@ static_params = {
         'CurrentStatus'
     ],
     'Report_FP_ByAgeAndParity': 1,
-    'Report_FP_ByAgeAndParity_Collect_Age_Bins_Data': [0, 15, 20, 25, 30, 35, 40, 45],
-    'Report_FP_ByAgeAndParity_Collect_Parity_Bins_Data': [0, 1, 2, 3, 4, 5, 6],
+    'Report_FP_ByAgeAndParity_Collect_Age_Bins_Data': [0] + list(range(15,50+5,5)),
+    'Report_FP_ByAgeAndParity_Collect_Parity_Bins_Data': list(range(6+1)),
     'Report_FP_ByAgeAndParity_Collect_Intervention_Data': [],
     'Report_FP_ByAgeAndParity_Collect_IP_Data': ['CurrentStatus', 'Knowledge'],
     'Report_FP_ByAgeAndParity_Event_Counter_List': ['Pregnant', 'GaveBirth'],
-    'Report_FP_ByAgeAndParity_Start_Year': 1900,
+    'Report_FP_ByAgeAndParity_Start_Year': 2011,
     'Report_FP_ByAgeAndParity_Stop_Year': 2100,
     'Report_FP_ByAgeAndParity_Period': 365,
     'logLevel_RandomChoiceMatrix': 'ERROR',
-
-    'Serialization_Time_Steps': [ -1 ],
-    'Serialization_Type': 'TIMESTEP'
 }
+
+#'Serialization_Time_Steps': [ -1 ],
+#'Serialization_Type': 'TIMESTEP'
 
 
 def map_sample_to_model_input_fn(simulation, sample_dict):
@@ -83,7 +85,7 @@ def map_sample_to_model_input_fn(simulation, sample_dict):
     rc_list = gencam.CreateRandomChoiceMatrixList()
     campaign = gencam.GenerateCampaignFP(con_list, rc_list)
 
-    simulation.campaign = json.loads(campaign.to_json())
+    simulation.campaign = campaign
 
     sample_index = sample_dict.pop('sample_index')
     return {'sample_index': sample_index, **{'[SAMPLE] %s' % k: v for k, v in sample_dict.items()}}
