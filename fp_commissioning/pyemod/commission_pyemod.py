@@ -3,11 +3,7 @@ import numpy as np
 import pyemod as em
 from emod_api.campaign import GenerateCampaignRCM as gencam
 
-# TODO: This should be emod_api
-import json
-import GenerateCampaignRCM as gencam
-
-exp_name = 'Family Planning Workflow Development'
+exp_name = 'Family Planning Workflow Development from PyEMOD'
 inputs = 'inputs'
 config_file = os.path.join(inputs, 'config.json') # TODO: Remove boilerplate
 demographics_file = os.path.join(inputs, 'demographics.json')
@@ -31,7 +27,7 @@ def make_campaign(pill_efficacy):
     pill_contraceptive.Waning_Config.Initial_Effect = pill_efficacy
     rc_list = gencam.CreateRandomChoiceMatrixList()
     campaign_pars = gencam.GenerateCampaignFP(con_list, rc_list)
-    campaign.pars = json.loads(campaign_pars.to_json())
+    campaign.pars = campaign_pars
     return campaign
 
 sims = []
@@ -42,5 +38,7 @@ for replicate in range(n_replicates):
         sims.append(sim)
 
 exp = em.Experiment(sims=sims)
-results = exp.run(how='serial')
+emod_path = os.path.abspath(os.path.join('..', 'idmtools', 'bin', 'Eradication_FP-Ongoing-ReportFPByAgeAndParity_8a43a9fb7b6db784aa00a3f4a7d0972cc4ae493a.exe'))
+em.configure(emod_path = emod_path)
+results = exp.run(how='COMPS', emod_path = emod_path)
 exp.plot()
