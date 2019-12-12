@@ -139,6 +139,20 @@ if do_skyscrapers:
     pl.xlabel('Age')
     pl.ylabel('Parity')
     pl.gca().set_xticklabels(age_bins)
+    pl.gca().set_xlim([-1,7])
+    
+    fig = pl.figure(figsize=(20,14))
+    pl.subplot(2,1,1)
+    parity_data = data.sum(axis=0)
+    parity_data = parity_data/parity_data.sum()
+    pl.bar(parity_bins, parity_data)
+    
+    pl.subplot(2,1,2)
+    age_data = data.sum(axis=1)
+    age_data = age_data/parity_data.sum()
+    pl.bar(age_bins, age_data)
+    
+    
             
     
 print('Done.')
