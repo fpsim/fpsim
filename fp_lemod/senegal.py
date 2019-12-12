@@ -33,7 +33,7 @@ if do_run:
         
         # Population size plot
         ax = fig.axes[-1] 
-        ax.scatter(years, popsize, c='k', label='Data')
+        ax.scatter(years, popsize, c='k', label='Data', zorder=1000)
         pl.legend()
     
         # Age pyrmaid
