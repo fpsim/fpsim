@@ -6,7 +6,7 @@ import sciris as sc
 import lemod_fp as lfp
 
 # Set parameters
-do_run = False
+do_run = True
 do_plot = True
 do_save = False
 do_skyscrapers = True
@@ -123,6 +123,22 @@ if do_skyscrapers:
 #        skyscraper(data=data, label=label, fig=fig, nrows=nrows, ncols=ncols, idx=idx)
     
     all_women_age_parity = skyscraper(data=parity_data, label='All women', fig=fig, nrows=nrows, ncols=ncols, idx=idx+1)
+    
+    # Plot data
+    age_bins = pl.arange(15,55,5)
+    parity_bins = pl.arange(0,7)
+    data = pl.zeros((len(age_bins), len(parity_bins)))
+    for person in people:
+        if not person.sex and person.age>=15 and person.age<50:
+            age_bin = sc.findinds(age_bins<=person.age)[-1]
+            parity_bin = sc.findinds(parity_bins<=person.parity)[-1]
+            data[age_bin, parity_bin] += 1
+    
+    fig = pl.figure(figsize=(20,14))
+    sc.bar3d(fig=fig, data=data, cmap='jet')
+    pl.xlabel('Age')
+    pl.ylabel('Parity')
+    pl.gca().set_xticklabels(age_bins)
             
     
 print('Done.')
