@@ -53,8 +53,9 @@ if do_run:
         counts = pl.zeros(len(bins))
         people = sim.people.values()
         for person in people:
-            binind = sc.findinds(bins<=person.age)[-1]
-            counts[binind] += 1
+            if person.alive:
+                binind = sc.findinds(bins<=person.age)[-1]
+                counts[binind] += 1
         counts = counts/counts.sum()
         pl.plot(bins, counts, c='g', label='Model', **plotstyle)
         pl.legend()
