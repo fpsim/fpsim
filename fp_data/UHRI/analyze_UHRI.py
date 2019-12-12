@@ -283,6 +283,7 @@ for label, raw in parity_data.groupby('MethodClass'):
     skyscraper(data=data, label=label, fig=fig, nrows=nrows, ncols=ncols, idx=idx)
 
 all_women_age_parity = skyscraper(data=parity_data, label='All women', fig=fig, nrows=nrows, ncols=ncols, idx=idx+1)
+sc.saveobj('senegal_parity_data.obj', parity_data)
 pl.show()
 
 sc.toc(start=T)
