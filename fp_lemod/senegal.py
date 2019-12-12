@@ -51,7 +51,7 @@ if do_run:
         pl.plot(bins, F, c='r', label='Females', **plotstyle)
         
         counts = pl.zeros(len(bins))
-        people = sim.people.values()
+        people = list(sim.people.values())
         for person in people:
             if person.alive:
                 binind = sc.findinds(bins<=person.age)[-1]
