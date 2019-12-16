@@ -143,6 +143,10 @@ if do_skyscrapers:
     # Plot data
     age_bins = pl.arange(15,55,5)
     parity_bins = pl.arange(0,7)
+    n_age = len(age_bins)
+    n_parity = len(parity_bins)
+    x_age = pl.arange(n_age)
+    x_parity = pl.arange(n_parity) # Should be the same
     data = pl.zeros((len(age_bins), len(parity_bins)))
     for person in people:
         if not person.sex and person.age>=15 and person.age<50:
@@ -154,23 +158,35 @@ if do_skyscrapers:
     sc.bar3d(fig=fig, data=data, cmap='jet')
     pl.xlabel('Age')
     pl.ylabel('Parity')
+    pl.gca().set_xticks(pl.arange(n_age))
+    pl.gca().set_yticks(pl.arange(n_parity))
     pl.gca().set_xticklabels(age_bins)
     pl.gca().set_yticklabels(parity_bins)
     # pl.gca().set_xlim([-1,7])
     
-
-if do_age_parity:
+    # Age-parity
     fig = pl.figure(figsize=(20,14))
     pl.subplot(2,1,1)
     parity_data = data.sum(axis=0)
     parity_data = parity_data/parity_data.sum()
-    pl.bar(parity_bins, parity_data)
+    pl.bar(x_parity, parity_data, width=0.4, label='Model')
+    parity_urhi = all_women_age_parity.sum(axis=0)
+    parity_urhi = parity_urhi/parity_urhi.sum()
+    pl.bar(x_parity+0.4, parity_urhi, width=0.4, label='Data')
     pl.xlabel('Parity')
+    pl.legend()
     
     pl.subplot(2,1,2)
     age_data = data.sum(axis=1)
     age_data = age_data/age_data.sum()
-    pl.bar(age_bins, age_data)
+    pl.bar(x_age, age_data, width=0.4, label='Model')
+    age_urhi = all_women_age_parity.sum(axis=1)
+    age_urhi[-1] = 0 # For similarity with model, exlude >50
+    age_urhi = age_urhi/age_urhi.sum()
+    pl.bar(x_age+0.4, age_urhi, width=0.4, label='Data')
+    pl.gca().set_xticks(x_age)
+    pl.gca().set_xticklabels(age_bins)
+    pl.legend()
     pl.xlabel('Age')
     
     
