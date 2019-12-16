@@ -10,6 +10,7 @@ do_run = True
 do_plot = True
 do_save = False
 do_skyscrapers = True
+do_age_parity = True
 pop_pyr_1982_fn = 'data/senegal-population-pyramid-1982.csv'
 pop_pyr_2015_fn = 'data/senegal-population-pyramid-2015.csv'
 popsize_tfr_fn = 'data/senegal-popsize-tfr.csv'
@@ -157,16 +158,20 @@ if do_skyscrapers:
     pl.gca().set_yticklabels(parity_bins)
     # pl.gca().set_xlim([-1,7])
     
+
+if do_age_parity:
     fig = pl.figure(figsize=(20,14))
     pl.subplot(2,1,1)
     parity_data = data.sum(axis=0)
     parity_data = parity_data/parity_data.sum()
     pl.bar(parity_bins, parity_data)
+    pl.xlabel('Parity')
     
     pl.subplot(2,1,2)
     age_data = data.sum(axis=1)
-    age_data = age_data/parity_data.sum()
+    age_data = age_data/age_data.sum()
     pl.bar(age_bins, age_data)
+    pl.xlabel('Age')
     
     
             
