@@ -46,7 +46,7 @@ if do_run:
         pl.legend()
     
         # Age pyramid
-        fig2 = pl.figure(figsize=(20,14))
+        fig2 = pl.figure(figsize=(16,16))
         
         M = pop_pyr_2015.loc[:,'M'].to_numpy()
         F = pop_pyr_2015.loc[:,'F'].to_numpy()
@@ -54,11 +54,7 @@ if do_run:
         F = F/F.sum()
         bins = 5*pl.arange(len(M))
         
-        plotstyle = {'marker':'o', 'lw':2}
-        
-        pl.plot(M, bins, c='b', label='Males', **plotstyle)
-        pl.plot(F, bins, c='r', label='Females', **plotstyle)
-        
+        plotstyle = {'marker':'o', 'lw':3}
         
         counts = pl.zeros(len(bins))
         people = list(sim.people.values())
@@ -67,10 +63,20 @@ if do_run:
                 binind = sc.findinds(bins<=person.age)[-1]
                 counts[binind] += 1
         counts = counts/counts.sum()
-        pl.plot(bins, counts, c='g', label='Model', **plotstyle)
+        
+        x = pl.hstack([bins, bins[::-1]])
+        MM = pl.hstack([M,-M[::-1]])
+        FF = pl.hstack([F,-F[::-1]])
+        CC = pl.hstack([counts,-counts[::-1]])
+        
+        pl.plot(MM, x, c='b', label='Males', **plotstyle)
+        pl.plot(FF, x, c='r', label='Females', **plotstyle)
+        pl.plot(CC, x, c='g', label='Model', **plotstyle)
+        
         pl.legend()
-        pl.xlabel('Age')
-        pl.ylabel('Proportion')
+        pl.xlabel('Proportion')
+        pl.ylabel('Age')
+        sc.setylim()
        
 
 if do_skyscrapers:
@@ -148,7 +154,8 @@ if do_skyscrapers:
     pl.xlabel('Age')
     pl.ylabel('Parity')
     pl.gca().set_xticklabels(age_bins)
-    pl.gca().set_xlim([-1,7])
+    pl.gca().set_yticklabels(parity_bins)
+    # pl.gca().set_xlim([-1,7])
     
     fig = pl.figure(figsize=(20,14))
     pl.subplot(2,1,1)
