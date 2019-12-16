@@ -26,7 +26,15 @@ popsize = popsize_tfr.iloc[1,:].to_numpy() / scale_factor
 
 if do_run:
     sim = lfp.Sim()
+    
+    def add_long_acting(people):
+        print('Added long-acting intervention')
+        for person in people.values():
+            person.method = 'long'
+    
+    # sim.add_intervention(intervention=add_long_acting, year=2010)
     sim.run()
+    
     if do_plot:
         
         # Default plots
@@ -37,7 +45,7 @@ if do_run:
         ax.scatter(years, popsize, c='k', label='Data', zorder=1000)
         pl.legend()
     
-        # Age pyrmaid
+        # Age pyramid
         fig2 = pl.figure(figsize=(20,14))
         
         M = pop_pyr_2015.loc[:,'M'].to_numpy()
@@ -48,8 +56,9 @@ if do_run:
         
         plotstyle = {'marker':'o', 'lw':2}
         
-        pl.plot(bins, M, c='b', label='Males', **plotstyle)
-        pl.plot(bins, F, c='r', label='Females', **plotstyle)
+        pl.plot(M, bins, c='b', label='Males', **plotstyle)
+        pl.plot(F, bins, c='r', label='Females', **plotstyle)
+        
         
         counts = pl.zeros(len(bins))
         people = list(sim.people.values())
