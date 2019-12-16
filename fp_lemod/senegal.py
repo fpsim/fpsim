@@ -21,7 +21,7 @@ pop_pyr_2015 = pd.read_csv(pop_pyr_2015_fn)
 popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
 
 # Handle population size
-scale_factor = 1000
+scale_factor = 100
 years = popsize_tfr.iloc[0,:].to_numpy()
 popsize = popsize_tfr.iloc[1,:].to_numpy() / scale_factor
 
