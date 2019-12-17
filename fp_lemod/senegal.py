@@ -21,19 +21,32 @@ pop_pyr_2015 = pd.read_csv(pop_pyr_2015_fn)
 popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
 
 # Handle population size
-scale_factor = 100
+scale_factor = 1000
 years = popsize_tfr.iloc[0,:].to_numpy()
 popsize = popsize_tfr.iloc[1,:].to_numpy() / scale_factor
 
 if do_run:
     sim = lfp.Sim()
     
-    def add_long_acting(people):
+    def add_long_acting(sim):
         print('Added long-acting intervention')
-        for person in people.values():
-            person.method = 'long'
+        for person in sim.people.values():
+            person.method = 'implant'
     
-    # sim.add_intervention(intervention=add_long_acting, year=2010)
+    def urhi(sim):
+        print('Added URHI')
+        switching = sim.pars['switching']
+        print(switching)
+        for i,method1 in enumerate(switching.keys()):
+            switching[method1][0] *= 0.0
+            switching[method1][:] = switching[method1][:]/switching[method1][:].sum()
+        sim.pars['switching'] = switching
+        print(switching)
+        for person in sim.people.values():
+            person.pars = sim.pars
+    
+    sim.add_intervention(intervention=add_long_acting, year=2000)
+    # sim.add_intervention(intervention=urhi, year=2000)
     sim.run()
     
     if do_plot:
