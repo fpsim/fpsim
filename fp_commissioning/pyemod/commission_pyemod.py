@@ -13,10 +13,19 @@ overlay_file = os.path.join(inputs, 'IP_Overlay.json') # TODO: find a better way
 BASE_POPULATION_SCALE_FACTOR = 0.0033  # For quick test simulations, this is set to a very low value
 n_samples = 3  # the number of distinct parameter sets to run per iteration
 n_replicates = 1  # replicates, 1 is highly recommended.
-samples = np.linspace(0, 1, n_samples)
+samples = [0.575] #np.linspace(0, 1, n_samples)
 
 base_sim = em.Simulation(config=config_file, demographics=demographics_file)
-base_sim.config['parameters']['Base_Population_Scale_Factor'] = BASE_POPULATION_SCALE_FACTOR
+
+burn_in_years = 50
+static_params = {
+    "Base_Year": 2011 - burn_in_years,
+    'Base_Population_Scale_Factor': BASE_POPULATION_SCALE_FACTOR,
+    'Simulation_Duration': (5+burn_in_years)*365,
+    'Report_Event_Recorder': 0,
+}
+
+base_sim.config['parameters'].update(static_params)
 base_sim.demographics.update(pars=overlay_file) # TODO: make this simpler, or avoid it altogether
 
 # TODO: This should mostly be emod_api

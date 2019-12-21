@@ -46,7 +46,7 @@ else:
         sc.heading(f'Processing wave {wave+1}/{len(filenames)}')
         print(f'File: {filename}...')
         data = pd.read_stata(filename, convert_categoricals=False)
-        
+
         values = pd.io.stata.StataReader(filename).value_labels()
         if write_codebooks:
             codebook = pd.io.stata.StataReader(filename).variable_labels()
@@ -87,15 +87,15 @@ else:
     women = women. \
         set_index(['UID', 'Wave']). \
         sort_index()
-        
+
     # Fix inconsistencies
     women = women.replace({'City':'Guédiawaye'}, 'Guediawaye')
     women = women.replace({'Unmet':np.nan}, 'Missing')
 
     store['women'] = women
 
-store.close()
 sc.saveobj(pickle_filename, store['women']) # Also save in Sciris/pickle format
+store.close()
 sc.toc(reset=True)
 
 print(f'Women data contains {women.shape[0]:,} rows.')
@@ -171,23 +171,26 @@ sc.toc(reset=True)
 sc.heading('Plotting method switching')
 switching_data = women123.copy(deep=True)
 fig, ax = pl.subplots()
-methods = switching_data['Method'].unique()
+
+method_col = 'MethodClass' # or 'Method'
+methods = switching_data[method_col].unique()
 
 # Define switching matrix.  Rows are FROM, columns are TO
 switching = pd.DataFrame(index=methods, columns=methods).fillna(0)
 
-def extract_switches(w):
+def extract_switches(w, method_col = 'Method'):
     uid = w.index.get_level_values('UID').values[0]
     waves = w.index.get_level_values('Wave').values
     for wave in range(3):
         if wave in waves and wave+1 in waves:
-            frm = w.loc[(uid, wave), 'Method']
-            to = w.loc[(uid, wave+1), 'Method']
+            frm = w.loc[(uid, wave), method_col]
+            to = w.loc[(uid, wave+1), method_col]
             weight = w.loc[(uid, wave), 'Weight']
             switching.loc[frm, to] += weight # Use weights
 
 print('Calculating switching (takes ~10 s)')
-switching_data.groupby('UID').apply(extract_switches) # Fills switching matrix
+from functools import partial
+switching_data.groupby('UID').apply(partial(extract_switches,method_col=method_col)) # Fills switching matrix
 
 # Normalize by row-sum (FROM)
 title = 'Senegal longitudinal switching'
@@ -195,7 +198,7 @@ if normalize_by_from:
     switching = switching.div(switching.sum(axis=1), axis=0)
     title += ' normalize by FROM'
 
-
+switching.to_csv('switching.csv')
 sns.heatmap(switching, square=True, cmap='jet', xticklabels=methods, yticklabels=methods, ax=ax)
 pl.xlabel('TO')
 pl.ylabel('FROM')
@@ -280,6 +283,7 @@ for label, raw in parity_data.groupby('MethodClass'):
     skyscraper(data=data, label=label, fig=fig, nrows=nrows, ncols=ncols, idx=idx)
 
 all_women_age_parity = skyscraper(data=parity_data, label='All women', fig=fig, nrows=nrows, ncols=ncols, idx=idx+1)
+sc.saveobj('senegal_parity_data.obj', parity_data)
 pl.show()
 
 sc.toc(start=T)

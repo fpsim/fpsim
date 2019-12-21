@@ -15,12 +15,13 @@ config_fn = os.path.join('inputs', 'config_fp.json')
 
 # Commonly modified calibration variables and configuration
 BASE_POPULATION_SCALE_FACTOR = 0.00333333333333333  # For quick test simulations, this is set to a very low value
-N_SAMPLES = 3  # the number of distinct parameter sets to run per iteration
+BASE_POPULATION_SCALE_FACTOR = 0.0001
 N_REPLICATES = 1  # replicates, 1 is highly recommended.
 
+#N_SAMPLES = 3  # the number of distinct parameter sets to run per iteration
 samples = pd.DataFrame({'PillEfficacy': [0.575]}) # np.linspace(0.2, 0.95, N_SAMPLES)
 
-burn_in_years = 50
+burn_in_years = 150
 static_params = {
     "Base_Year": 2011 - burn_in_years,
     'Base_Population_Scale_Factor': BASE_POPULATION_SCALE_FACTOR,
@@ -38,6 +39,7 @@ static_params = {
         'Use_Pill',
         'Use_Withdrawal',
         'Use_None',
+        'Go_Post_Partum',
     ],
     'Enable_Property_Output': 0,
     'Report_Event_Recorder': 1,
@@ -55,6 +57,7 @@ static_params = {
         'Use_Pill',
         'Use_Withdrawal',
         'Use_None',
+        'Go_Post_Partum',
     ],
     'Report_Event_Recorder_Ignore_Events_In_List': 0,
     'Report_Event_Recorder_Individual_Properties': [
@@ -80,7 +83,7 @@ def map_sample_to_model_input_fn(simulation, sample_dict):
     con_list = gencam.CreateContraceptives()
 
     pill_contraceptive = next(x[1] for x in con_list if x[0] == gencam.USE_PILL)
-    pill_contraceptive.Waning_Config.Initial_Effect = sample_dict['PillEfficacy']
+    pill_contraceptive.Actual_IndividualIntervention_Configs[0].Waning_Config.Initial_Effect = sample_dict['PillEfficacy']
 
     rc_list = gencam.CreateRandomChoiceMatrixList()
     campaign = gencam.GenerateCampaignFP(con_list, rc_list)
