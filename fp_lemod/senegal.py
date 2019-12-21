@@ -44,9 +44,18 @@ if do_run:
         print(switching)
         for person in sim.people.values():
             person.pars = sim.pars
+
+    def serialize(sim):
+        sc.saveobj('serialized_pop.obj', sim.people)
+
+    def deserialize(sim):
+        sim.people = sc.loadobj('serialized_pop.obj')
+
     
-    sim.add_intervention(intervention=add_long_acting, year=2000)
+    # sim.add_intervention(intervention=add_long_acting, year=2000)
     # sim.add_intervention(intervention=urhi, year=2000)
+    sim.add_intervention(intervention=serialize, year=2000)
+    sim.add_intervention(intervention=deserialize, year=2010)
     sim.run()
     
     if do_plot:
