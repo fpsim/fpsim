@@ -141,7 +141,7 @@ if do_skyscrapers:
         ax.set_title(label)
         return age_parity_data
     
-    women = sc.loadobj('../fp_data/UHRI/senegal_parity_data.obj')
+    women = sc.loadobj('../fp_data/URHI/senegal_parity_data.obj')
     parity_data = women.copy(deep=True)
     exclude_missing_parity = True
     if exclude_missing_parity:
