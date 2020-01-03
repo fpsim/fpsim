@@ -1,11 +1,13 @@
 # DJK, Dec 20, 2019
 # Purpose is to decode the calendars that appear in the women's report of the URHI final (2015) wave
 
+from scipy.sparse import coo_matrix
 import os
 from pathlib import Path
 import seaborn as sns
 sns.set()
 import glob
+import itertools
 import pylab as pl
 import numpy as np
 import pandas as pd
@@ -24,7 +26,7 @@ store = pd.HDFStore(cachefn)
 force_read = False
 
 username = os.path.split(os.path.expanduser('~'))[-1]
-folderdict = {'dklein': '/home/dklein/Dropbox (IDM)/URHI/Senegal',
+folderdict = {'dklein': os.path.join( os.getenv("HOME"), 'Dropbox (IDM)', 'URHI', 'Senegal'),
               'cliffk': '/home/cliffk/idm/fp/data/Senegal',
              }
 try:
@@ -32,7 +34,7 @@ try:
 except:
     raise Exception(f'User {username} not found among users {list(folderdict.keys())}, cannot find data folder')
 
-
+'''
 cipher_method = {
     'B': 'Birth',
     'T': 'Terminated pregnancy/non-live birth',
@@ -52,7 +54,7 @@ cipher_method = {
 #   'G': 'Pregnant', # <-- Total guess, see 'G' 8x after N (Implants???) and 2x after each F (Foam and Jelly)
     'A': 'Abstinence',
     'L': 'Lactational amenorrhea method (LAM)',
-    'C': 'Female condom',
+    'C': 'Female cggondom',
     'F': 'Foam and Jelly',
     'E': 'Emergency contraception (DHSVI)',
     'S': 'Standard days method (DHSVI)',
@@ -61,6 +63,34 @@ cipher_method = {
     'ß2': 'Country-specific method 2',
     'τ2': 'Country-specific method 3',
     '?': 'Unknown method/missing data',
+}
+'''
+
+cipher_method = {
+    'N': 'Birth',
+    'G': 'Pregnancy',
+    'F': 'Miscarriage',
+    'M': 'Stillbirth',
+    'A': 'Abortion',
+
+    '0': 'No Method',
+    '1': 'Female sterilization',
+    '2': 'Male sterilization',
+    '3': 'Implant',
+    '4': 'IUD',
+    '5': 'Injectables',
+    '6': 'Pill',
+    '7': 'Emergency contraception',
+    '8': 'Male condom',
+    '9': 'Female condom',
+
+    'H': 'Menstrual cycle collar',
+    'L': 'Lactational amenorrhea method (LAM)',
+    'X': 'Other modern method',
+
+    'R': 'Rhythm method',
+    'W': 'Withdrawl',
+    'Y': 'Other traditional method',
 }
 
 cipher_discontinuation = {
@@ -160,14 +190,72 @@ else:
     cal_3o	Column 3 of calendar - Other reason for discontinuation specified
     '''
 
-    store['cal'] = data[['UID', 'cal_1', 'cal_2', 'cal_3', 'cal_4', 'cal_1o', 'cal_2o', 'cal_3o']]
+    #print( '\n'.join(data.columns) )
+    store['cal'] = data[['UID', 'cal_1', 'cal_2', 'cal_3', 'cal_4', 'cal_1o', 'cal_2o', 'cal_3o', 'ewoman_weight']]
+
+store.close()
+
+print(f'Data has {data.shape[0]} rows.')
+
+chr_to_idx = {}
+def build_chr_to_idx(dat):
+    for c in dat['cal_1'].strip():
+        if c not in chr_to_idx:
+            chr_to_idx[c] = len(chr_to_idx)
+
+def build_switching_matrix(dat):
+    inds = [chr_to_idx[c] for c in dat['cal_1'].strip() ]
+
+    row, col = itertools.tee(inds)
+    next(col, None)
+
+    rows = np.array(list(row)[:-1])
+    cols = np.array(list(col))
+    vals = np.ones_like(rows)
+    vals_weighted = dat['ewoman_weight'] * np.ones_like(rows)
+
+    #return coo_matrix((vals_weighted, (row, col)), shape=(row.max()+1, col.max()+1))
+    return rows, cols, vals, vals_weighted
+
+
+data.apply(build_chr_to_idx, axis=1)
+
+rows = []
+cols = []
+vals = []
+vals_weighted = []
+
+for idx, dat in data.iterrows():
+    r, c, v, vw = build_switching_matrix(dat)
+    rows.append(r)
+    cols.append(c)
+    vals.append(v)
+    vals_weighted.append(vw)
+
+
+index = [cipher_method[k] for k in chr_to_idx.keys()]
+
+rows = np.concatenate(rows)
+cols = np.concatenate(cols)
+vals_weighted = np.concatenate(vals_weighted)
+def form_switching_matrix(rows,  cols, vals, fn = None):
+    M = coo_matrix((vals_weighted, (rows, cols)), shape=(rows.max()+1, cols.max()+1)).todense()
+    M = pd.DataFrame(M, index = index, columns = index)
+    if fn is not None:
+        M.to_csv(fn)
+
+    return M
+
+M = form_switching_matrix(rows, cols, vals, 'SwitchingMatrix_Unweighted.csv')
+W = form_switching_matrix(rows, cols, vals_weighted, 'SwitchingMatrix_Weighted.csv')
 
 
 with pd.option_context('display.max_colwidth', -1):
+    print(M)
+    exit()
+
     # Let's decode some record
     data.iloc[range(500,600)].apply(decrypt, axis=1)
-
-store.close()
 
 sc.toc(start=T)
 
