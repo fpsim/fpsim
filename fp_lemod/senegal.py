@@ -1,9 +1,15 @@
 # Simple example usage for LEMOD-FP
 
+import os
 import pylab as pl
 import pandas as pd
 import sciris as sc
 import lemod_fp as lfp
+
+def abspath(path):
+    cwd = os.path.abspath(os.path.dirname(__file__))
+    output = os.path.join(cwd, path)
+    return output
 
 # Set parameters
 do_run = True
@@ -11,9 +17,10 @@ do_plot = True
 do_save = False
 do_skyscrapers = True
 do_age_parity = True
-pop_pyr_1982_fn = 'data/senegal-population-pyramid-1982.csv'
-pop_pyr_2015_fn = 'data/senegal-population-pyramid-2015.csv'
-popsize_tfr_fn = 'data/senegal-popsize-tfr.csv'
+
+pop_pyr_1982_fn = abspath('data/senegal-population-pyramid-1982.csv')
+pop_pyr_2015_fn = abspath('data/senegal-population-pyramid-2015.csv')
+popsize_tfr_fn = abspath('data/senegal-popsize-tfr.csv')
 
 # Load data
 pop_pyr_1982 = pd.read_csv(pop_pyr_1982_fn)
@@ -46,10 +53,10 @@ if do_run:
             person.pars = sim.pars
 
     def serialize(sim):
-        sc.saveobj('serialized_pop.obj', sim.people)
+        sc.saveobj(abspath('serialized_pop.obj'), sim.people)
 
     def deserialize(sim):
-        sim.people = sc.loadobj('serialized_pop.obj')
+        sim.people = sc.loadobj(abspath('serialized_pop.obj'))
 
     
     # sim.add_intervention(intervention=add_long_acting, year=2000)
@@ -141,7 +148,7 @@ if do_skyscrapers:
         ax.set_title(label)
         return age_parity_data
     
-    women = sc.loadobj('../fp_data/UHRI/senegal_parity_data.obj')
+    women = sc.loadobj(abspath('../fp_data/URHI/senegal_parity_data.obj'))
     parity_data = women.copy(deep=True)
     exclude_missing_parity = True
     if exclude_missing_parity:
