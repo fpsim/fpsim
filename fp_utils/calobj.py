@@ -6,14 +6,14 @@ import sciris as sc
 
 def load(*args, **kwargs):
     ''' Tiny alias to sc.loadobj() to load saved calendar objects '''
-    
+
     import sys
     import types
     import fp_data
-    
+
     # First, add any placeholder modules that have been subsequently removed
-    fp_data.DHS = types.ModuleType('DHS') 
-    fp_data.DHS.calobj = types.ModuleType('calobj') 
+    fp_data.DHS = types.ModuleType('DHS')
+    fp_data.DHS.calobj = types.ModuleType('calobj')
     sys.modules['fp_data.DHS'] = fp_data.DHS
     sys.modules['fp_data.DHS.calobj'] = fp_data.DHS.calobj
     fp_data.DHS.calobj.CalObj = CalObj
@@ -26,16 +26,16 @@ def load(*args, **kwargs):
 class CalObj(sc.prettyobj):
     '''
     Class for contraceptive calendar data/methods.
-    
+
     Examples
     -------
     # Load data
     >>> calobj = CalObj(filename='data/DHS/NGIR6ADT/NGIR6AFL.DTA', which='DHS6')
-    
+
     # Plot data
     >>> calobj.plot_transitions()
     '''
-    
+
     def __init__(self, filename=None, which='DHS6', skipmissing=True):
         '''
         Create object with the mapping, and load the data if supplied
@@ -55,9 +55,9 @@ class CalObj(sc.prettyobj):
 
     def _set_mapping(self):
         '''
-        Map DHS entries to numbers and descriptions, see 
+        Map DHS entries to numbers and descriptions, see
         https://dhsprogram.com/data/calendar-tutorial/ module 2
-        
+
         Entries represent: original (e.g. 'C'), numeric (11), short ('FCond'), full ('Female condom')
         '''
         if self.which == 'DHS6':
@@ -113,34 +113,35 @@ class CalObj(sc.prettyobj):
                     })
         self.nmethods = len(self.mapping) - self.skipmissing
         return
-    
+
     def _parse_keys(self, ind):
         startind = 1 if self.skipmissing else 0
         output = [val[ind] for val in list(self.mapping.values())[startind:]]
         return output
-    
+
     @property
     def numkeys(self):
         indices = pl.array(self._parse_keys(0))
         return indices
-    
+
     @property
     def shortkeys(self):
         keys = self._parse_keys(1)
         return keys
-    
+
     @property
     def longkeys(self):
         keys = self._parse_keys(2)
         return keys
-    
+
     def keytoind(self, key):
         ind = self.shortkeys.index(key)
         return ind
-    
-    
+
+
     def load(self, filename='', rawlines=None, which='DHS6'):
         ''' Load a contraceptive calendar from the original Stata file or one of several processed forms '''
+        print(filename)
         # Load a preprocessed object file
         if filename.endswith('cal'):
             print('Loading saved CalObj...')
@@ -150,7 +151,7 @@ class CalObj(sc.prettyobj):
             for attr in ['cal', 'mapping', 'nmethods']:
                 value = getattr(obj, attr)
                 setattr(self, attr, value)
-        
+
         elif filename.endswith('obj'):
             print('Loading calendar data from object...')
             obj = sc.loadobj(filename)
@@ -158,16 +159,16 @@ class CalObj(sc.prettyobj):
                 self.cal = obj # The loaded object is just the calendar
             else:
                 raise Exception(f'Not sure what to do with an object of type {type(obj)}, expecting array')
-            
+
         # Load a calendar that has been exported directly to a text array
         elif filename.endswith('txt') or rawlines is not None:
             print('Loading calendar data from text...')
-            
+
             # Load the string
             if rawlines is None:
                 with open(filename) as f:
                     rawlines = f.readlines()
-            
+
             # Parse the string
             cal = []
             failed = sc.odict()
@@ -176,7 +177,7 @@ class CalObj(sc.prettyobj):
                 cal.append([])
                 for char in line:
                     if char in self.mapping:
-                        number = self.mapping[char][0] 
+                        number = self.mapping[char][0]
                         cal[-1].append(number)
                     else:
                         if char not in ['\n']: # Skip space and newline, we know to ignore those
@@ -187,23 +188,23 @@ class CalObj(sc.prettyobj):
             if failed:
                 raise Exception(f'Failed to parse keys: {failed.keys()}')
             self.cal = pl.array(cal)
-        
+
         # Load directly from the STATA file
         elif filename.endswith('dta') or filename.endswith('DTA'):
             print('Loading calendar data from Stata...')
             df = pd.read_stata(filename, convert_categoricals=False)
             rawlines = df['vcal_1'].to_list()
             self.load(rawlines=rawlines) # Call this function again, loading as a string this time
-        
+
         # Handle exceptions
         else:
             raise Exception(f'File must end in cal, obj, txt, or dta: {filename} not recognized')
-        
+
         print(f'Data loaded from {filename}.')
         self.originaldatafile = filename
         return
-    
-    
+
+
     def save(self, filename=None):
         ''' Save object to disk '''
         if filename is None:
@@ -212,12 +213,12 @@ class CalObj(sc.prettyobj):
         self.filename = filename
         sc.saveobj(filename, self, verbose=True)
         return filename
-    
-    
+
+
     def make_results(self, always_log=False, zero_to_nan=False):
         print('Generating results...')
         self.results = sc.objdict()
-        
+
         # Calculate counts
         counts = pl.zeros((self.nmethods, self.nmethods))
         for pp,person in enumerate(self.cal):
@@ -228,7 +229,7 @@ class CalObj(sc.prettyobj):
                 if previous != -1 and current != -1: # Transition occurred, data aren't missing
                     counts[current, previous] += 1
         self.results.counts = counts # Store
-        
+
         # Calculate relative proportions for panel B
         rel_props = sc.dcp(counts)
         for m in range(self.nmethods):
@@ -246,7 +247,7 @@ class CalObj(sc.prettyobj):
             rel_props *= 100 # Convert to percentage
         self.results.rel_props = rel_props # Store
         return self.results
-    
+
     def _set_axis_labels(self, ax, which=None, offset=0.0, xrotation=90.0, yrotation=0.0):
         if which is None: which = ['x', 'y']
         which = sc.promotetolist(which)
@@ -257,15 +258,15 @@ class CalObj(sc.prettyobj):
             ax.set_yticks(self.numkeys+offset)
             ax.set_yticklabels(self.shortkeys, rotation=yrotation)
         return
-    
+
     def plot_transitions(self, projection='2d', figsize=None):
         ''' Plot all transitions in the contraception calendar '''
         if figsize is None: figsize = (36,16)
-        
+
         offset = 0.5
         labeloffset = 0.0
         yrotation = 90 if projection == '3d' else 0
-            
+
         # Create figure and set tick marks on top
         fig = pl.figure(figsize=figsize)
         if projection != '3d':
@@ -274,7 +275,7 @@ class CalObj(sc.prettyobj):
         else:
             pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = False
             pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = False
-        
+
         # Plot total counts
         if projection != '3d':
             data = pl.log10(self.results.counts)
@@ -286,7 +287,7 @@ class CalObj(sc.prettyobj):
             data = pl.log10(self.results.counts+1)
             ax1 = sc.bar3d(data=data, fig=fig, axkwargs={'nrows':1, 'ncols':2, 'index':1})
         ax1.set_title('Total number of transitions in calendar (log scale, white=0)', fontweight='bold')
-        
+
         # Plot relative counts
         data = self.results.rel_props
         if projection != '3d':
@@ -297,15 +298,15 @@ class CalObj(sc.prettyobj):
         else:
             ax2 = sc.bar3d(data=data, fig=fig, cmap='jet', axkwargs={'nrows':1, 'ncols':2, 'index':2})
         ax2.set_title('Relative proportion of each transition, diagonal removed (%)', fontweight='bold')
-            
+
         for ax in [ax1,ax2]:
             self._set_axis_labels(ax=ax, offset=labeloffset, yrotation=yrotation)
             ax.set_xlim([-offset, self.nmethods-offset])
             ax.set_ylim([-offset, self.nmethods-offset])
-        
+
         return fig
-    
-    
+
+
     def plot_slice(self, key, orientation='row', stacking='ontop', figsize=None):
         ''' Plot a single slice through the matrix '''
         if stacking == 'ontop':
@@ -318,7 +319,7 @@ class CalObj(sc.prettyobj):
             default_figsize = (30,10)
         if figsize is None: figsize = default_figsize
         fig = pl.figure(figsize=figsize)
-        
+
         for use_log in [False, True]:
             ax = fig.add_subplot(nrows,ncols,use_log+1)
             if orientation == 'row':
@@ -335,6 +336,4 @@ class CalObj(sc.prettyobj):
             else:       pl.ylabel('Transition count', fontweight='bold')
             pl.title(f'Number of transitions {preposition} method "{key}"', fontweight='bold')
         return fig
-        
-        
-            
+
