@@ -230,6 +230,7 @@ def main(force_read = False):
 
         fn = name.replace(" ","_")
         weighted.set_index('SurveyYear').to_csv(os.path.join(results_dir, f'{fn}_{value}.csv'))
+        plt.savefig(os.path.join(results_dir, f'{fn}_{value}.png'))
 
     def boolean_plot_by(name, value, by, data=data, ax=None):
         gb = data.groupby(['SurveyYear', by])
@@ -243,6 +244,7 @@ def main(force_read = False):
 
         fn = name.replace(" ","_")
         weighted.set_index(['SurveyYear', by]).to_csv(os.path.join(results_dir, f'{fn}_{value}_by_{by}.csv'))
+        plt.savefig(os.path.join(results_dir, f'{fn}_{value}.png'))
 
 
     def multi_plot(name, value, data=data, ax=None):
@@ -260,6 +262,7 @@ def main(force_read = False):
 
         fn = name.replace(" ","_")
         stacked.set_index('SurveyYear').to_csv(os.path.join(results_dir, f'{fn}_{value}.csv'))
+        plt.savefig(os.path.join(results_dir, f'{fn}_{value}.png'))
 
 
     # CURRENTLY PREGNANT
