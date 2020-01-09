@@ -8,12 +8,10 @@ import senegal_parameters as sp
 
 # Set parameters
 do_run              = 1
-do_plot_popsize     = 0
-do_plot_pyramids    = 0
-do_plot_skyscrapers = 1
+do_plot_popsize     = 1
+do_plot_pyramids    = 1
+do_plot_skyscrapers = 0
 do_save             = 0
-
-pl.seed(1)
 
 if do_run:
     pars = sp.make_pars()
