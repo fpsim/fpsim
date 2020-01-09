@@ -158,7 +158,7 @@ def make_pars():
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
     pars['verbose'] = True
-    pars['seed'] = 1 # Random seed
+    pars['seed'] = 1 # Random seed, if None, don't reset
     
     pars['methods'] = default_methods()
     pars['age_pyramid'] = default_age_pyramid()
