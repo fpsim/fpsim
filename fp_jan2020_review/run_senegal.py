@@ -7,12 +7,11 @@ import lemod_fp as lfp
 import senegal_parameters as sp
 
 # Set parameters
-do_run = True
-do_plot_popsize = True
-do_plot_pyramids = True
-do_plot_skyscrapers = False
-do_age_parity = True
-do_save = False
+do_run              = 1
+do_plot_popsize     = 1
+do_plot_pyramids    = 1
+do_plot_skyscrapers = 0
+do_save             = 1
 
 if do_run:
     pars = sp.make_pars()
@@ -51,12 +50,14 @@ if do_run:
     if do_plot_popsize:
         
         # Default plots
-        fig = sim.plot(dosave=do_save)
+        fig = sim.plot()
         
         # Population size plot
         ax = fig.axes[-1] 
         ax.scatter(sp.years, sp.popsize, c='k', label='Data', zorder=1000)
         pl.legend()
+        if do_save:
+            pl.savefig(sp.abspath('figs/senegal_popsize.png'))
     
     if do_plot_pyramids:
         fig2 = pl.figure(figsize=(16,16))
@@ -93,6 +94,10 @@ if do_run:
         pl.xlabel('Proportion')
         pl.ylabel('Age')
         sc.setylim()
+        
+        if do_save:
+            pl.savefig(sp.abspath('figs/senegal_pyramids.png'))
+            
        
 
 if do_plot_skyscrapers:
