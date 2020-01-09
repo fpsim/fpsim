@@ -9,12 +9,13 @@ import senegal_parameters as sp
 # Set parameters
 do_run = True
 do_plot = True
-do_save = False
 do_skyscrapers = True
 do_age_parity = True
+do_save = False
 
 if do_run:
-    sim = lfp.Sim()
+    pars = sp.make_pars()
+    sim = lfp.Sim(pars=pars)
     
     def add_long_acting(sim):
         print('Added long-acting intervention')
@@ -42,8 +43,8 @@ if do_run:
     
     # sim.add_intervention(intervention=add_long_acting, year=2000)
     # sim.add_intervention(intervention=urhi, year=2000)
-    sim.add_intervention(intervention=serialize, year=2000)
-    sim.add_intervention(intervention=deserialize, year=2010)
+    # sim.add_intervention(intervention=serialize, year=2000)
+    # sim.add_intervention(intervention=deserialize, year=2010)
     sim.run()
     
     if do_plot:
