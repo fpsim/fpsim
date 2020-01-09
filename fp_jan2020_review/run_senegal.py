@@ -8,8 +8,9 @@ import senegal_parameters as sp
 
 # Set parameters
 do_run = True
-do_plot = True
-do_skyscrapers = True
+do_plot_popsize = True
+do_plot_pyramids = True
+do_plot_skyscrapers = False
 do_age_parity = True
 do_save = False
 
@@ -47,7 +48,7 @@ if do_run:
     # sim.add_intervention(intervention=deserialize, year=2010)
     sim.run()
     
-    if do_plot:
+    if do_plot_popsize:
         
         # Default plots
         fig = sim.plot(dosave=do_save)
@@ -57,14 +58,18 @@ if do_run:
         ax.scatter(sp.years, sp.popsize, c='k', label='Data', zorder=1000)
         pl.legend()
     
-        # Age pyramid
+    if do_plot_pyramids:
         fig2 = pl.figure(figsize=(16,16))
         
-        M = sp.pop_pyr_2015.loc[:,'M'].to_numpy()
-        F = sp.pop_pyr_2015.loc[:,'F'].to_numpy()
-        M = M/M.sum()
-        F = F/F.sum()
-        bins = 5*pl.arange(len(M))
+        # Load 2015 population pyramid from DHS
+        min_age = 15
+        max_age = 50
+        bin_size = 5
+        pop_pyr_2015_fn = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
+        pop_pyr_2015  = pd.read_csv(pop_pyr_2015_fn, header=None)
+        pop_pyr_2015 = pop_pyr_2015[pop_pyr_2015[0]=='2017']
+        bins = pl.arange(min_age, max_age, bin_size)
+        pop_props_2015 = pop_pyr_2015[2].to_numpy()
         
         plotstyle = {'marker':'o', 'lw':3}
         
@@ -72,17 +77,16 @@ if do_run:
         people = list(sim.people.values())
         for person in people:
             if person.alive:
-                binind = sc.findinds(bins<=person.age)[-1]
-                counts[binind] += 1
+                bininds = sc.findinds(bins<=person.age) # Could be refactored
+                if len(bininds) and person.age < max_age:
+                    counts[bininds[-1]] += 1
         counts = counts/counts.sum()
         
         x = pl.hstack([bins, bins[::-1]])
-        MM = pl.hstack([M,-M[::-1]])
-        FF = pl.hstack([F,-F[::-1]])
+        PP = pl.hstack([pop_props_2015,-pop_props_2015[::-1]])
         CC = pl.hstack([counts,-counts[::-1]])
         
-        pl.plot(MM, x, c='b', label='Males', **plotstyle)
-        pl.plot(FF, x, c='r', label='Females', **plotstyle)
+        pl.plot(PP, x, c='b', label='2015 data', **plotstyle)
         pl.plot(CC, x, c='g', label='Model', **plotstyle)
         
         pl.legend()
@@ -91,7 +95,7 @@ if do_run:
         sc.setylim()
        
 
-if do_skyscrapers:
+if do_plot_skyscrapers:
     def skyscraper(data, label=None, fig=None, nrows=None, ncols=None, idx=None, figkwargs=None, axkwargs=None):
         
         age_edges = list(range(15,55,5)) + [99]
