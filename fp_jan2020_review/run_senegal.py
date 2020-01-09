@@ -13,6 +13,8 @@ do_plot_pyramids    = 1
 do_plot_skyscrapers = 0
 do_save             = 1
 
+pl.seed(1)
+
 if do_run:
     pars = sp.make_pars()
     sim = lfp.Sim(pars=pars)
