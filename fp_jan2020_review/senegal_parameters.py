@@ -168,8 +168,8 @@ def make_pars():
     pars['method_efficacy'] = default_efficacy()
     pars['barriers'] = default_barriers()
     pars['switching'] = default_switching() #pars['initial'], 
-    pars['mortality_factor'] = 1.5
-    pars['fertility_factor'] = 33 # This is suspiciously close to 12/2, but the math seems right...
+    pars['mortality_factor'] = 2.7
+    pars['fertility_factor'] = 32 # This is suspiciously close to 12/2, but the math seems right...
     pars['method_age'] = 15
     pars['max_age'] = 99
     
