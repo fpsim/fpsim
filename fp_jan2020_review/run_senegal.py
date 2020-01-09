@@ -1,15 +1,10 @@
-# Simple example usage for LEMOD-FP
+# Run all analyses for Senegal
 
-import os
 import pylab as pl
 import pandas as pd
 import sciris as sc
 import lemod_fp as lfp
-
-def abspath(path):
-    cwd = os.path.abspath(os.path.dirname(__file__))
-    output = os.path.join(cwd, path)
-    return output
+import senegal_parameters as sp
 
 # Set parameters
 do_run = True
@@ -17,20 +12,6 @@ do_plot = True
 do_save = False
 do_skyscrapers = True
 do_age_parity = True
-
-pop_pyr_1982_fn = abspath('data/senegal-population-pyramid-1982.csv')
-pop_pyr_2015_fn = abspath('data/senegal-population-pyramid-2015.csv')
-popsize_tfr_fn = abspath('data/senegal-popsize-tfr.csv')
-
-# Load data
-pop_pyr_1982 = pd.read_csv(pop_pyr_1982_fn)
-pop_pyr_2015 = pd.read_csv(pop_pyr_2015_fn)
-popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
-
-# Handle population size
-scale_factor = 1000
-years = popsize_tfr.iloc[0,:].to_numpy()
-popsize = popsize_tfr.iloc[1,:].to_numpy() / scale_factor
 
 if do_run:
     sim = lfp.Sim()
@@ -53,10 +34,10 @@ if do_run:
             person.pars = sim.pars
 
     def serialize(sim):
-        sc.saveobj(abspath('serialized_pop.obj'), sim.people)
+        sc.saveobj(sp.abspath('serialized_pop.obj'), sim.people)
 
     def deserialize(sim):
-        sim.people = sc.loadobj(abspath('serialized_pop.obj'))
+        sim.people = sc.loadobj(sp.abspath('serialized_pop.obj'))
 
     
     # sim.add_intervention(intervention=add_long_acting, year=2000)
@@ -72,14 +53,14 @@ if do_run:
         
         # Population size plot
         ax = fig.axes[-1] 
-        ax.scatter(years, popsize, c='k', label='Data', zorder=1000)
+        ax.scatter(sp.years, sp.popsize, c='k', label='Data', zorder=1000)
         pl.legend()
     
         # Age pyramid
         fig2 = pl.figure(figsize=(16,16))
         
-        M = pop_pyr_2015.loc[:,'M'].to_numpy()
-        F = pop_pyr_2015.loc[:,'F'].to_numpy()
+        M = sp.pop_pyr_2015.loc[:,'M'].to_numpy()
+        F = sp.pop_pyr_2015.loc[:,'F'].to_numpy()
         M = M/M.sum()
         F = F/F.sum()
         bins = 5*pl.arange(len(M))
@@ -148,7 +129,7 @@ if do_skyscrapers:
         ax.set_title(label)
         return age_parity_data
     
-    women = sc.loadobj(abspath('../fp_data/URHI/senegal_parity_data.obj'))
+    women = sc.loadobj(sp.abspath('../fp_data/URHI/senegal_parity_data.obj'))
     parity_data = women.copy(deep=True)
     exclude_missing_parity = True
     if exclude_missing_parity:
