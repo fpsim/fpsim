@@ -51,16 +51,16 @@ def load(x):
     print(f'File: {filename} ...')
     data = pd.read_stata(filename, convert_categoricals=False)
 
-    data['SurveyYear'] = year
+    data['SurveyName'] = year
     found_keys = []
     for k in indicators[year].keys():
         if k not in data.columns:
-            print(f'Survey {year} is missing {k}')
+            print(f'SurveyName {year} is missing {k}')
         else:
             found_keys.append(k)
 
 
-    data = data[['SurveyYear'] + found_keys]
+    data = data[['SurveyName'] + found_keys]
 
     values = pd.io.stata.StataReader(filename).value_labels()
     replace_dict = {k: values[k.upper()] if k.upper() in values else values[k] for k in found_keys if k in values or k.upper() in values}
@@ -148,7 +148,7 @@ def main(force_read = False):
 
     # Figure out the mean time point of each survey in years - this is remarkably slow!
     data['Date'] = data['Year'] + data['Month']/12
-    year_to_date = data.groupby('SurveyYear').apply( partial(wmean, value='Date', weight='Weight') )
+    year_to_date = data.groupby('SurveyName').apply( partial(wmean, value='Date', weight='Weight') )
     year_to_date.name = 'Date'
 
 
@@ -159,12 +159,12 @@ def main(force_read = False):
     labels = [f'{c}-{d}' for c,d in zip(a,b)]
     data['AgeBinCoarse'] = pd.cut(data['Age'], bins = age_edges, labels=labels, right=False)
     print(data.iloc[0])
-    tmp = data.groupby(['SurveyYear', 'AgeBin', 'Method'])['Weight'].sum().reset_index('Method')
-    weight_sum = data.groupby(['SurveyYear', 'AgeBin'])['Weight'].sum()
+    tmp = data.groupby(['SurveyName', 'AgeBin', 'Method'])['Weight'].sum().reset_index('Method')
+    weight_sum = data.groupby(['SurveyName', 'AgeBin'])['Weight'].sum()
     print(tmp)
     print(weight_sum)
     tmp['Weight'] = 100*tmp['Weight'].divide(weight_sum)
-    tmp = pd.merge(tmp.reset_index(), year_to_date, on='SurveyYear')
+    tmp = pd.merge(tmp.reset_index(), year_to_date, on='SurveyName')
     fig, ax = plt.subplots(1,8, figsize=fs)
     for i, (agebin, d) in enumerate(tmp.groupby('AgeBin')):
         sns.lineplot(data=d, x='Date', y='Weight', hue='Method', ax=ax[i])
@@ -174,59 +174,59 @@ def main(force_read = False):
     exit()
 
     def boolean_plot(name, value, data=data, ax=None):
-        gb = data.groupby(['SurveyYear'])
+        gb = data.groupby(['SurveyName'])
         weighted = 100 * gb.apply( partial(wmean, value=value, weight='Weight') )
         weighted.name = name
-        weighted =  pd.merge(weighted.reset_index(), year_to_date, on='SurveyYear')
+        weighted =  pd.merge(weighted.reset_index(), year_to_date, on='SurveyName')
         if ax == None:
             fig, ax = plt.subplots(figsize=fs)
         sns.lineplot(data = weighted, x='Date', y=name, ax=ax)
         ax.set_title(f'{name} ({value})')
 
         fn = name.replace(" ","_")
-        weighted.set_index('SurveyYear').to_csv(os.path.join(results_dir, f'{fn}_{value}.csv'))
+        weighted.set_index('SurveyName').to_csv(os.path.join(results_dir, f'{fn}_{value}.csv'))
         plt.savefig(os.path.join(results_dir, f'{fn}_{value}.png'))
 
     def boolean_plot_by(name, value, by, data=data, ax=None):
-        gb = data.groupby(['SurveyYear', by])
+        gb = data.groupby(['SurveyName', by])
         weighted = 100 * gb.apply( partial(wmean, value=value, weight='Weight') )
         weighted.name = name
-        weighted =  pd.merge(weighted.reset_index(), year_to_date, on='SurveyYear')
+        weighted =  pd.merge(weighted.reset_index(), year_to_date, on='SurveyName')
         if ax == None:
             fig, ax = plt.subplots(figsize=fs)
         sns.lineplot(data = weighted, x='Date', y=name, hue=by, ax=ax)
         ax.set_title(f'{name} ({value} by {by})')
 
         fn = name.replace(" ","_")
-        weighted.set_index(['SurveyYear', by]).to_csv(os.path.join(results_dir, f'{fn}_{value}_by_{by}.csv'))
+        weighted.set_index(['SurveyName', by]).to_csv(os.path.join(results_dir, f'{fn}_{value}_by_{by}.csv'))
         plt.savefig(os.path.join(results_dir, f'{fn}_{value}.png'))
 
 
     def multi_plot(name, value, data=data, ax=None):
-        unstacked = data.groupby(['SurveyYear', value])['Weight'].sum().unstack(value)
+        unstacked = data.groupby(['SurveyName', value])['Weight'].sum().unstack(value)
         stacked = 100 * unstacked \
             .divide(unstacked.sum(axis=1), axis=0) \
             .stack()
 
         stacked.name = name
 
-        stacked =  pd.merge(stacked.reset_index(), year_to_date, on='SurveyYear')
+        stacked =  pd.merge(stacked.reset_index(), year_to_date, on='SurveyName')
         if ax == None:
             fig, ax = plt.subplots(figsize=fs)
         sns.lineplot(data = stacked, x='Date', y=name, hue=value, ax=ax)
         ax.set_title(f'{name.replace(" ","_")} ({value})')
 
         fn = name.replace(" ","_")
-        stacked.set_index('SurveyYear').to_csv(os.path.join(results_dir, f'{fn}_{value}.csv'))
+        stacked.set_index('SurveyName').to_csv(os.path.join(results_dir, f'{fn}_{value}.csv'))
         plt.savefig(os.path.join(results_dir, f'{fn}_{value}.png'))
 
 
     def age_pyramid_plot(name, data):
-        age_pyramid = data.groupby(['SurveyYear', 'AgeBin'])['Weight'].sum()
-        year_sum = data.groupby(['SurveyYear'])['Weight'].sum()
+        age_pyramid = data.groupby(['SurveyName', 'AgeBin'])['Weight'].sum()
+        year_sum = data.groupby(['SurveyName'])['Weight'].sum()
         age_pyramid = age_pyramid.divide(year_sum)
         age_pyramid.name = 'Percent'
-        g = sns.catplot(x='Percent', y='AgeBin', hue='SurveyYear', data=age_pyramid.reset_index(), kind='point')
+        g = sns.catplot(x='Percent', y='AgeBin', hue='SurveyName', data=age_pyramid.reset_index(), kind='point')
         for a in g.axes.flat:
             a.invert_yaxis()
         g.fig.set_size_inches(fs[0], fs[1], forward=True)
@@ -237,13 +237,13 @@ def main(force_read = False):
         plt.savefig(os.path.join(results_dir, f'{fn}.png'))
 
     def skyscraper(data, name, savefig=True, savedata=True):
-        age_parity = data.groupby(['SurveyYear', 'AgeBin', 'ParityBin'])['Weight'].sum()
-        total = data.groupby(['SurveyYear'])['Weight'].sum()
+        age_parity = data.groupby(['SurveyName', 'AgeBin', 'ParityBin'])['Weight'].sum()
+        total = data.groupby(['SurveyName'])['Weight'].sum()
         age_parity = 100 * age_parity.divide(total).fillna(0)
         age_parity.name = 'Percent'
         fig, ax_vec = plt.subplots(1, 2, figsize=fs)
 
-        for i, (year, d) in enumerate(age_parity.groupby('SurveyYear')):
+        for i, (year, d) in enumerate(age_parity.groupby('SurveyName')):
             ax = ax_vec[i]
 
             age_bins = d.index.get_level_values('AgeBin').unique().tolist()
@@ -270,10 +270,10 @@ def main(force_read = False):
 
     def plot_pie(title, data):
         fig, ax = plt.subplots(1,3,figsize=(16,6))
-        N = data['SurveyYear'].nunique()
-        #for i, (sy, dat) in enumerate(tmp.groupby('SurveyYear')):
+        N = data['SurveyName'].nunique()
+        #for i, (sy, dat) in enumerate(tmp.groupby('SurveyName')):
         for i, sy in enumerate(yeardict.keys()): # Keep in order
-            dat = data.loc[data['SurveyYear']==sy]
+            dat = data.loc[data['SurveyName']==sy]
             ans = dat.groupby('Method')['Weight'].sum()
             ax[i].pie(ans.values, labels=ans.index.tolist())
             ax[i].set_title(f'{title}: {sy}')
@@ -311,7 +311,7 @@ def main(force_read = False):
     age_pyramid_plot('Population Pyramid - URHI', data)
 
     # Skyscraper images
-    skyscraper(data.loc[data['SurveyYear']!='Midline'], 'URHI')
+    skyscraper(data.loc[data['SurveyName']!='Midline'], 'URHI')
 
     plt.show()
 
@@ -325,5 +325,5 @@ if __name__ == '__main__':
     main(force_read = args.force)
 
 
-#print(pd.crosstab(data['SurveyYear'], data['v102'], data['v213']*data['Weight']/1e6, aggfunc=sum))
+#print(pd.crosstab(data['SurveyName'], data['v102'], data['v213']*data['Weight']/1e6, aggfunc=sum))
 #with pd.option_context('display.precision', 1, 'display.max_rows', 1000): # 'display.precision',2, 

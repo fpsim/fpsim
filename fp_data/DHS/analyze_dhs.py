@@ -1,4 +1,5 @@
 import os
+import itertools
 import argparse
 from multiprocessing import Pool
 from functools import partial
@@ -33,8 +34,10 @@ yeardict = {
 }
 
 indicators = {
+    'caseid': 'Case identification',
     'v005': "Weight",
     'v007': "Year of survey",
+    'v011': "Date of birth (cmc)",
     #'v012': "Respondent's current age",
     'v013': "Age in 5-year groups",
     'v008': "Date of interview (cmc)",
@@ -155,15 +158,16 @@ def load(x):
     fn = Path(filename).resolve().stem
     print(f'File: {filename} ...')
     data = pd.read_stata(filename, convert_categoricals=False)
+    print('CASEID:\n', data['caseid'].head())
 
-    data['SurveyYear'] = year
+    data['SurveyName'] = year
     found_keys = []
     for k in indicators.keys():
         if k not in data.columns:
-            print(f'Survey {year} is missing {k}')
+            print(f'SurveyName {year} is missing {k}')
         else:
             found_keys.append(k)
-    data = data[['SurveyYear'] + found_keys]
+    data = data[['SurveyName'] + found_keys]
 
     values = pd.io.stata.StataReader(filename).value_labels()
     replace_dict = {k: values[k.upper()] if k.upper() in values else values[k] for k in found_keys if k in values or k.upper() in values}
@@ -179,9 +183,9 @@ def load(x):
         try:
             data[k] = pd.Categorical.from_codes(data[k], categories = [unidecode.unidecode(v[1]) for v in sorted(replace_dict[k].items(), key = lambda x: x[0])] )
         except:
-            print('Difficulty:', year, k, data[k].unique(), replace_dict[k])
+            #print('Difficulty:', year, k, data[k].unique(), replace_dict[k])
             data[k] = data[k].replace(replace_dict[k]).map(str) #.astype('category')
-            print(data[k])
+            #print(data[k])
 
     if False: # TODO: Make argparse flag
         values = pd.io.stata.StataReader(filename).value_labels()
@@ -195,14 +199,14 @@ def read():
     with Pool(16) as p:
         data_list = p.map(load, yeardict.items())
 
-    data = pd.concat(data_list)
+    data = pd.concat(data_list).set_index('caseid')
     data.to_hdf(cachefn, key='data', format='t')
 
     # Build barriers from reasons for non-use questions
     keys = [k for k in indicators.keys() if k[:5] == 'v3a08']
     barriers = pd.DataFrame(index=yeardict.keys(), columns=keys).fillna(0)
     print(data[keys].describe())
-    for year, dat in data.groupby('SurveyYear'):
+    for year, dat in data.groupby('SurveyName'):
         ret = {}
         wsum = dat['v005'].sum()
         for k in keys:
@@ -221,11 +225,26 @@ def read():
     barriers.rename(columns=new_colname_dict, inplace=True)
     barriers = barriers.stack()
     barriers.name = 'Percent'
-    barriers = barriers.reset_index().rename(columns={'level_0':'SurveyYear','level_1':'Barrier'})
+    barriers = barriers.reset_index().rename(columns={'level_0':'SurveyName','level_1':'Barrier'})
 
     barriers.to_hdf(cachefn, key='barriers', format='t')
 
-    return data, barriers
+    # BIRTH SPACING
+    birth_keys = [f'b3_{i:02}' for i in range(20,0,-1)]
+    data_births = data.loc[data['v201'] > 0]
+    birth_spacing = np.full((data_births.shape[0],20), fill_value = np.NaN)
+    for i, (caseid, d) in enumerate(data_births.iterrows()):
+        a,b = itertools.tee(d[['v011'] + birth_keys].dropna())
+        a = list(a)[:-1]
+        next(b)
+        bs = np.array([b-a for i, (a,b) in enumerate(zip(a,b))])
+        birth_spacing[i,:len(bs)] = bs
+    birth_spacing = pd.DataFrame(birth_spacing, columns = list(range(20)))
+    birth_spacing.index = data_births.index
+
+    birth_spacing.to_hdf(cachefn, key='birth_spacing', format='t')
+
+    return data, barriers, birth_spacing
 
 
 import math
@@ -234,6 +253,7 @@ def cmc_to_year(data, cmc_col='v008'): # v008 is date of interview
     cmc = data[cmc_col]
     if math.isnan(cmc):
         return np.nan
+
     if v007 < 100:
         year = 1900 + int((cmc-1)/12)
         month = cmc - (v007*12)
@@ -252,99 +272,169 @@ def wmean(data, value, weight):
 
 
 def main(force_read = False):
-
+    # Read in the data, from file if necessary or requested
     if force_read:
-        data, barriers = read()
+        data, barriers, birth_spacing = read()
     else:
         try:
-            data = pd.read_hdf(cachefn, key='data')
-            barriers = pd.read_hdf(cachefn, key='barriers')
+            store = pd.HDFStore(cachefn)
+            data = store['data'] #pd.read_hdf(cachefn, key='data')
+            barriers = store['barriers'] #pd.read_hdf(cachefn, key='barriers')
+            birth_spacing = store['birth_spacing'] #pd.read_hdf(cachefn, key='birth_spacing')
         except:
-            data, barriers = read()
+            store.close()
+            data, barrier, birth_spacing = read()
 
-    ''''
-    # Extracting birth spacing
-    print(data.iloc[0])
-    for i in range(1,20+1):
-        # TODO: Use CMC directly as it's in months... maybe
-        #data[f'b3_{i:02}y'] = data[['v007']].apply(partial(cmc_to_year, cmc_col = f'b3_{i:02}'), axis=1)
-        year = 1900 + (data[f'b3_{i:02}']-1)//12
-        data[f'b3_{i:02}y'] = year + data[f'b3_{i:02}']/12 - (year-1900)
-        print(f'b3_{i:02}', data.iloc[0][[f'b3_{i:02}', f'b3_{i:02}y']])
-    exit()
+    data.loc[data['v312']=='gris - gris', 'v312'] = 'gris-gris'
+    data.loc[data['v312']=='diaphragm /foam/jelly', 'v312'] = 'diaphragm/foam/jelly'
+    data.loc[data['v312']=='lactational amenorrhea (lam)', 'v312'] = 'lactational amenorrhea'
+    data.loc[data['v312']=='norplant', 'v312'] = 'implants/norplant'
+
+
+    # Calculate the mean time point of each survey in years
     '''
-
-    # Shows method classification
-    print(pd.crosstab(data['v312'], data['v313'], values=data['v005']/1e6, aggfunc=sum))
-
-    # Figure out the mean time point of each survey in years - this is remarkably slow!
+    # Accounts for weight, but is remarkably slow!
     data['Date'] = data.apply(cmc_to_year, axis=1)
-    year_to_date = data.groupby('SurveyYear').apply( partial(wmean, value='Date', weight='v005') )
+    year_to_date = data.groupby('SurveyName').apply( partial(wmean, value='Date', weight='v005') )
+    year_to_date.name = 'Date'
+    '''
+    # Faster, but un-weighted, year_to_date calculation
+    year_to_date = data.groupby('SurveyName')['v007', 'v008'].mean().apply(cmc_to_year, axis=1) # mean CMC
     year_to_date.name = 'Date'
 
+
+    # -------------------------------------------------------------------------
+    # Build survey subsets
+    # -------------------------------------------------------------------------
+    data['Subset'] = 'All DHS'
     dakar_urban = data.loc[ (data['v101'].isin(['dakar'])) & (data['v102'] == 'urban') ]
+    dakar_urban['Subset'] = 'Dakar-urban'
     urhi_like = data.loc[ (data['v101'].isin(['west', 'dakar', 'kaolack', 'thies'])) & (data['v102'] == 'urban') ]
-
+    urhi_like['Subset'] = 'URHI-like'
     urban = data.loc[ (data['v102'] == 'urban') ]
+    urban['Subset'] = 'Urban'
     rural = data.loc[ (data['v102'] == 'rural') ]
+    rural['Subset'] = 'Rural'
 
 
+    # Display method classification (crosstab of v312 with v313)
+    print(pd.crosstab(data['v312'], data['v313'], values=data['v005']/1e6, aggfunc=sum))
 
+    # -------------------------------------------------------------------------
+    # BIRTH SPACING
+    # -------------------------------------------------------------------------
+    # Data cleaning
+    birth_spacing = pd.melt( birth_spacing.reset_index(), id_vars = ['caseid'], value_vars=range(20), var_name='Birth Order', value_name='Birth Spacing')
+    birth_spacing['Birth Spacing'] = birth_spacing['Birth Spacing'] / 12 # Months to years
+    birth_spacing = birth_spacing.loc[birth_spacing['Birth Spacing'] > 0]
+    birth_spacing = pd.merge(birth_spacing, data[['SurveyName', 'v102']], how='left', on='caseid')
+
+    # Save to file
+    birth_spacing.set_index('SurveyName').to_csv(os.path.join(results_dir, 'BirthSpacing.csv'))
+
+    # PLOT: Birth spacing by survey year [birth order]
+    g = sns.FacetGrid(data=birth_spacing.loc[birth_spacing['Birth Order']<9],
+                      hue='Birth Order', col='SurveyName', col_wrap=5, col_order=yeardict.keys())
+    g.map(sns.distplot, 'Birth Spacing', kde=True, hist=False) \
+        .add_legend() \
+        .set_xlabels('Birth Spacing (yr)') \
+        .set_ylabels('Frequency')
+    g.fig.suptitle('Birth spacing by survey year [birth order]')
+    g.fig.subplots_adjust(top=0.90, wspace=0.3)
+    g.savefig(os.path.join(results_dir, f'BirthSpacing_year_order.png'))
+
+    # PLOT: First birth by survey year
+    g = sns.FacetGrid(data=birth_spacing.loc[birth_spacing['Birth Order']==0], hue='SurveyName', hue_order=yeardict.keys(), legend_out=True, height=8, aspect=1)
+    g = g.map(sns.distplot, 'Birth Spacing', kde=True, hist=False) \
+        .add_legend() \
+        .set_xlabels('Birth Spacing (yr)') \
+        .set_ylabels('Frequency')
+    g.fig.suptitle('First birth by survey year')
+    g.fig.subplots_adjust(top=0.93, wspace=0.3)
+    g.savefig(os.path.join(results_dir, f'FirstBirth_year.png'))
+
+    # PLOT: Birth spacing by birth order [survey year]
+    g = sns.FacetGrid(data=birth_spacing.loc[(birth_spacing['Birth Order']>0) & (birth_spacing['Birth Order']<10)], hue='SurveyName', hue_order=yeardict.keys(), col='Birth Order', col_wrap=3, legend_out=True)
+    g = g.map(sns.distplot, 'Birth Spacing', kde=True, hist=False)\
+        .add_legend() \
+        .set_xlabels('Birth Spacing (yr)') \
+        .set_ylabels('Frequency')
+    g.fig.suptitle('Birth spacing by birth order [survey year]')
+    g.fig.subplots_adjust(top=0.93, wspace=0.3)
+    g.savefig(os.path.join(results_dir, f'BirthSpacing_order_year.png'))
+
+    # PLOT: Birth spacing birth order [urban vs rural]
+    g = sns.FacetGrid(data=birth_spacing.loc[birth_spacing['Birth Order']<9], hue='v102', col='Birth Order', col_wrap=3, legend_out=True)
+    g = g.map(sns.distplot, 'Birth Spacing', kde=True, hist=False) \
+        .add_legend() \
+        .set_xlabels('Birth Spacing (yr)') \
+        .set_ylabels('Frequency')
+    g.fig.suptitle('Birth spacing birth order [urban vs rural]')
+    g.fig.subplots_adjust(top=0.93, wspace=0.3)
+    g.savefig(os.path.join(results_dir, f'BirthSpacing_urban_rural.png'))
+
+    plt.close('all')
+
+
+    # -------------------------------------------------------------------------
+    # PLOTTING FUNCTIONS
+    # -------------------------------------------------------------------------
     def boolean_plot(name, value, data=data, ax=None):
-        gb = data.groupby(['SurveyYear'])
+        gb = data.groupby(['SurveyName'])
         weighted = 100 * gb.apply( partial(wmean, value=value, weight='v005') )
         weighted.name = name
-        weighted =  pd.merge(weighted.reset_index(), year_to_date, on='SurveyYear')
+        weighted =  pd.merge(weighted.reset_index(), year_to_date, on='SurveyName')
         if ax == None:
             fig, ax = plt.subplots(figsize=fs)
         sns.lineplot(data = weighted, x='Date', y=name, ax=ax)
         ax.set_title(f'{name} ({value})')
 
         fn = name.replace(" ","_")
-        weighted.set_index('SurveyYear').to_csv(os.path.join(results_dir, f'{fn}_{value}.csv'))
+        weighted.set_index('SurveyName').to_csv(os.path.join(results_dir, f'{fn}_{value}.csv'))
         plt.savefig(os.path.join(results_dir, f'{fn}_{value}.png'))
 
+
     def boolean_plot_by(name, value, by, data=data, ax=None):
-        gb = data.groupby(['SurveyYear', by])
+        gb = data.groupby(['SurveyName', by])
         weighted = 100 * gb.apply( partial(wmean, value=value, weight='v005') )
         weighted.name = name
-        weighted =  pd.merge(weighted.reset_index(), year_to_date, on='SurveyYear')
+        weighted =  pd.merge(weighted.reset_index(), year_to_date, on='SurveyName')
         if ax == None:
             fig, ax = plt.subplots(figsize=fs)
         sns.lineplot(data = weighted, x='Date', y=name, hue=by, ax=ax)
         ax.set_title(f'{name} ({value} by {by})')
 
         fn = name.replace(" ","_")
-        weighted.set_index(['SurveyYear', by]).to_csv(os.path.join(results_dir, f'{fn}_{value}_by_{by}.csv'))
+        weighted.set_index(['SurveyName', by]).to_csv(os.path.join(results_dir, f'{fn}_{value}_by_{by}.csv'))
         plt.savefig(os.path.join(results_dir, f'{fn}_{value}.png'))
 
 
     def multi_plot(name, value, data=data, ax=None):
-        unstacked = data.groupby(['SurveyYear', value])['v005'].sum().unstack(value)
+        unstacked = data.groupby(['SurveyName', value])['v005'].sum().unstack(value)
         stacked = 100 * unstacked \
             .divide(unstacked.sum(axis=1), axis=0) \
             .stack()
         stacked.name = name
 
-        stacked =  pd.merge(stacked.reset_index(), year_to_date, on='SurveyYear')
+        stacked =  pd.merge(stacked.reset_index(), year_to_date, on='SurveyName')
         if ax == None:
             fig, ax = plt.subplots(figsize=fs)
         sns.lineplot(data = stacked, x='Date', y=name, hue=value, ax=ax)
         ax.set_title(f'{name.replace(" ","_")} ({value})')
 
         fn = name.replace(" ","_")
-        stacked.set_index('SurveyYear').to_csv(os.path.join(results_dir, f'{fn}_{value}.csv'))
+        stacked.set_index('SurveyName').to_csv(os.path.join(results_dir, f'{fn}_{value}.csv'))
         plt.savefig(os.path.join(results_dir, f'{fn}_{value}.png'))
 
 
     def age_pyramid_plot(name, data, ax=None):
-        age_pyramid = data.groupby(['SurveyYear', 'v013'])['v005'].sum()
-        year_sum = data.groupby(['SurveyYear'])['v005'].sum()
+        age_pyramid = data.groupby(['SurveyName', 'v013'])['v005'].sum()
+        year_sum = data.groupby(['SurveyName'])['v005'].sum()
         age_pyramid = age_pyramid.divide(year_sum)
         age_pyramid.name = 'Percent'
         if ax == None:
             fig, ax = plt.subplots(figsize=fs)
-        g = sns.catplot(x='Percent', y='v013', hue='SurveyYear', data=age_pyramid.reset_index(), kind='point', ax=ax)
+        g = sns.catplot(x='Percent', y='v013', hue='SurveyName', data=age_pyramid.reset_index(), kind='point', ax=ax)
         for a in g.axes.flat:
             a.invert_yaxis()
         g.fig.set_size_inches(fs[0], fs[1], forward=True)
@@ -354,13 +444,14 @@ def main(force_read = False):
         age_pyramid.to_csv(os.path.join(results_dir, f'{fn}.csv'))
         plt.savefig(os.path.join(results_dir, f'{fn}.png'))
 
+
     def skyscraper(data, name, savefig=True, savedata=True):
-        age_parity = data.groupby(['SurveyYear', 'v013', 'v201'])['v005'].sum()
-        total = data.groupby(['SurveyYear'])['v005'].sum()
+        age_parity = data.groupby(['SurveyName', 'v013', 'v201'])['v005'].sum()
+        total = data.groupby(['SurveyName'])['v005'].sum()
         age_parity = 100 * age_parity.divide(total).fillna(0)
         age_parity.name = 'Percent'
         fig, ax = plt.subplots(2,5, figsize=fs)
-        for i, (year, d) in enumerate(age_parity.groupby('SurveyYear')):
+        for i, (year, d) in enumerate(age_parity.groupby('SurveyName')):
             row = i//5
             col = i%5
             age_bins = d.index.get_level_values('v013').unique().tolist()
@@ -389,40 +480,61 @@ def main(force_read = False):
             age_parity.to_csv(os.path.join(results_dir, f'Skyscrapers-{name}.csv'))
         return fig
 
-    def plot_pie(title, data):
-        fig, ax = plt.subplots(1,len(yeardict),figsize=(16,6))
-        N = data['SurveyYear'].nunique()
-        #for i, (sy, dat) in enumerate(tmp.groupby('SurveyYear')):
-        for i, sy in enumerate(yeardict.keys()): # Keep in order
-            dat = data.loc[data['SurveyYear']==sy]
-            ans = dat.groupby('v312')['v005'].sum()
-            ax[i].pie(ans.values, labels=ans.index.tolist())
-            ax[i].set_title(f'{title}: {sy}')
-        plt.tight_layout()
+
+    def plot_pie(*args, **kwargs):
+        data = kwargs.pop('data')
+        key = kwargs.pop('key')
+        labels = kwargs.pop('labels')
+        ans = data.groupby(key)['v005'].sum()
+        for label in labels:
+            if label not in ans.index: # for key consistency in v313, TODO: generalize
+                ans.loc[label] = 0
+        ans.sort_index(inplace=True)
+        plt.pie(ans.values, labels=ans.index.tolist(), labeldistance=None, explode=0.1*np.ones_like(ans.values))
 
 
-    plot_pie('All women', data)
-    plt.savefig(os.path.join(results_dir, f'Pie-All.png'))
+    def weighted_lineplot(*args, **kwargs):
+        data = kwargs.pop('data')
+        gb = data.groupby(['SurveyName'])
+        weighted = 100 * gb.apply( partial(wmean, value=kwargs['value'], weight='v005') )
+        weighted.name = 'Weighted'
+        weighted = pd.merge(weighted.reset_index(), year_to_date, on='SurveyName')
+        plt.plot(weighted['Date'], weighted['Weighted'], color=kwargs['color'], label=kwargs['label'])
 
-    tmp = data.loc[data['v313']=='modern method']
-    #tmp['v313'] = tmp.v313.cat.remove_unused_categories()
-    print(tmp.groupby('v312')['v005'].sum())
-    plot_pie('Modern', tmp)
-    plt.savefig(os.path.join(results_dir, f'Pie-Modern.png'))
 
+    # -------------------------------------------------------------------------
+    # Plot method use pies
+    # -------------------------------------------------------------------------
+    key = 'v312'
+    g = sns.FacetGrid(data=data[['SurveyName', 'v005', key]], col='SurveyName', col_wrap=5, col_order=yeardict.keys())
+    g.map_dataframe(plot_pie, key=key, labels=data[key].unique()).add_legend().set_titles('{col_name}')
+    g.fig.suptitle('Method type by survey')
+    g.fig.subplots_adjust(top=0.90, wspace=0.3)
+    g.savefig(os.path.join(results_dir, 'MethodPie.png'))
 
-    # CURRENTLY PREGNANT
-    fig, ax = plt.subplots(1,3, figsize=fs)
-    boolean_plot('Currently pregnant', 'v213', ax=ax[0])
-    boolean_plot('Currently pregnant (dakar-urban)', 'v213', data=dakar_urban, ax=ax[1])
-    boolean_plot('Currently pregnant (URHI-like)', 'v213', data=urhi_like, ax=ax[2])
-    plt.tight_layout()
+    key = 'v313'
+    dat = data[['SurveyName', 'v005', key]]
+    dat.loc[dat['v313']=='folkloric method', 'v313'] = 'traditional method' # Lump folkloric with traditional
+    dat.dropna(inplace=True)
+    g = sns.FacetGrid(data=dat, col='SurveyName', col_wrap=5, col_order=yeardict.keys())
+    g.map_dataframe(plot_pie, key=key, labels=dat[key].unique()).add_legend().set_titles('{col_name}')
+    g.fig.suptitle('Method type by survey')
+    g.fig.subplots_adjust(top=0.90, wspace=0.3)
+    g.savefig(os.path.join(results_dir, 'MethodTypePie.png'))
 
-    boolean_plot_by('Currently pregnant', 'v213', 'v101')
-    boolean_plot_by('Currently pregnant', 'v213', 'v102')
+    key = 'v313'
+    dat = urhi_like[['SurveyName', 'v005', key]]
+    dat.loc[dat['v313']=='folkloric method', 'v313'] = 'traditional method' # Lump folkloric with traditional
+    dat.dropna(inplace=True)
+    g = sns.FacetGrid(data=dat, col='SurveyName', col_wrap=5, col_order=yeardict.keys())
+    g.map_dataframe(plot_pie, key=key, labels=dat[key].unique()).add_legend().set_titles('{col_name}')
+    g.fig.suptitle('Method type by survey (URHI-like)')
+    g.fig.subplots_adjust(top=0.90, wspace=0.3)
+    g.savefig(os.path.join(results_dir, 'MethodTypePie_URHI-like.png'))
 
-    multi_plot('Unmet need', 'v624')
-
+    # -------------------------------------------------------------------------
+    # Method type
+    # -------------------------------------------------------------------------
     fig, ax = plt.subplots(1,4, sharey=True, figsize=fs)
     multi_plot('Method type', 'v313', ax=ax[0])
     multi_plot('Method type (URHI-like)', 'v313', data=urhi_like, ax=ax[1])
@@ -434,6 +546,50 @@ def main(force_read = False):
     multi_plot('Method', 'v312', ax=ax[0])
     multi_plot('Method (URHI-like)', 'v312', data=urhi_like, ax=ax[1])
     plt.tight_layout()
+
+    # -------------------------------------------------------------------------
+    # Plot currently pregnant
+    # -------------------------------------------------------------------------
+    key = 'v213'
+    dat = pd.concat([
+        data[['SurveyName', 'v005', key, 'Subset']],
+        urhi_like[['SurveyName', 'v005', key, 'Subset']],
+        dakar_urban[['SurveyName', 'v005', key, 'Subset']]
+    ])
+    g = sns.FacetGrid(data=dat, hue='Subset', legend_out=False, height=fs[1], aspect=fs[0]/fs[1])
+    g.map_dataframe(weighted_lineplot, value=key).add_legend().set_titles('{col_name}') \
+        .set_xlabels('Date') \
+        .set_ylabels('Currently Pregnant')
+    g.fig.suptitle('Currently Pregnant')
+    g.fig.subplots_adjust(top=0.90, wspace=0.3)
+    g.fig.tight_layout()
+    g.savefig(os.path.join(results_dir, 'CurrentlyPregnant.png'))
+
+    # by v101 (Place)
+    g = sns.FacetGrid(data=data[['SurveyName', 'v005', key, 'v101']], hue='v101', height=fs[1], aspect=fs[0]/fs[1])
+    g.map_dataframe(weighted_lineplot, value=key).add_legend().set_titles('{col_name}') \
+        .set_xlabels('Date') \
+        .set_ylabels('Currently Pregnant')
+    g.fig.suptitle('Currently Pregnant by Region')
+    g.fig.subplots_adjust(top=0.90, wspace=0.3)
+    g.fig.tight_layout()
+    g.savefig(os.path.join(results_dir, 'CurrentlyPregnant_v101.png'))
+
+    # by v102 (urban / rural)
+    g = sns.FacetGrid(data=data[['SurveyName', 'v005', key, 'v102']], hue='v102', legend_out=False, height=fs[1], aspect=fs[0]/fs[1])
+    g.map_dataframe(weighted_lineplot, value=key).add_legend().set_titles('{col_name}') \
+        .set_xlabels('Date') \
+        .set_ylabels('Currently Pregnant')
+    g.fig.suptitle('Currently Pregnant by Cluster Type')
+    g.fig.subplots_adjust(top=0.90, wspace=0.3)
+    g.fig.tight_layout()
+    g.savefig(os.path.join(results_dir, 'CurrentlyPregnant_v102.png'))
+
+
+    # -------------------------------------------------------------------------
+    # Unmet need
+    # -------------------------------------------------------------------------
+    multi_plot('Unmet need', 'v624')
 
     # Age pyramids
     fig, ax = plt.subplots(1,4, sharey=True, figsize=fs)
@@ -449,7 +605,7 @@ def main(force_read = False):
     skyscraper(rural, 'Rural')
 
     fig, ax = plt.subplots(1,1, figsize=fs)
-    tmp = barriers.merge(year_to_date, on='SurveyYear')
+    tmp = barriers.merge(year_to_date, on='SurveyName')
     tmp = tmp.loc[tmp['Date'] > 2003]
     sns.lineplot(data = tmp, x='Date', y='Percent', hue='Barrier', ax=ax)
     last_date = max(year_to_date)
@@ -473,5 +629,5 @@ if __name__ == '__main__':
     main(force_read = args.force)
 
 
-#print(pd.crosstab(data['SurveyYear'], data['v102'], data['v213']*data['v005']/1e6, aggfunc=sum))
+#print(pd.crosstab(data['SurveyName'], data['v102'], data['v213']*data['v005']/1e6, aggfunc=sum))
 #with pd.option_context('display.precision', 1, 'display.max_rows', 1000): # 'display.precision',2, 
