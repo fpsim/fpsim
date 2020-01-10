@@ -14,7 +14,7 @@ fs=(12,8)
 username = os.path.split(os.path.expanduser('~'))[-1]
 folderdict = {
     #'dklein': os.path.join( os.getenv("HOME"), 'Dropbox (IDM)', 'FP Dynamic Modeling', 'DHS', 'Country data', 'Nigeria', '2013', 'NGIR6ADT', 'NGIR6AFL.DTA'),
-    'dklein': '/home/dklein/sdb2/Dropbox (IDM)/FP Dynamic Modeling/DHS/Country data/Senegal/',
+    'dklein': '/home/dklein/Dropbox (IDM)/FP Dynamic Modeling/DHS/Country data/Senegal/',
     'cliffk': '/u/cliffk/idm/fp/data/DHS/NGIR6ADT/NGIR6AFL.DTA',
 }
 
@@ -112,6 +112,27 @@ indicators = {
     'v626a': "unmet need for contraception (definition 3)",
 
     # vcol_1 vcol_2 vcol_3 vcol_4 vcol_5 vcol_6 vcol_7 vcol_8 vcol_9 vcal_1 vcal_2 vcal_3 vcal_4 vcal_5 vcal_6 vcal_7 vcal_8 vcal_9
+
+    'b3_01': 'date of birth (cmc)',
+    'b3_02': 'date of birth (cmc)',
+    'b3_03': 'date of birth (cmc)',
+    'b3_04': 'date of birth (cmc)',
+    'b3_05': 'date of birth (cmc)',
+    'b3_06': 'date of birth (cmc)',
+    'b3_07': 'date of birth (cmc)',
+    'b3_08': 'date of birth (cmc)',
+    'b3_09': 'date of birth (cmc)',
+    'b3_10': 'date of birth (cmc)',
+    'b3_11': 'date of birth (cmc)',
+    'b3_12': 'date of birth (cmc)',
+    'b3_13': 'date of birth (cmc)',
+    'b3_14': 'date of birth (cmc)',
+    'b3_15': 'date of birth (cmc)',
+    'b3_16': 'date of birth (cmc)',
+    'b3_17': 'date of birth (cmc)',
+    'b3_18': 'date of birth (cmc)',
+    'b3_19': 'date of birth (cmc)',
+    'b3_20': 'date of birth (cmc)',
 }
 
 Path("cache").mkdir(exist_ok=True)
@@ -162,7 +183,7 @@ def load(x):
             data[k] = data[k].replace(replace_dict[k]).map(str) #.astype('category')
             print(data[k])
 
-    if False:
+    if False: # TODO: Make argparse flag
         values = pd.io.stata.StataReader(filename).value_labels()
         codebook = pd.io.stata.StataReader(filename).variable_labels()
 
@@ -171,7 +192,7 @@ def load(x):
     return data
 
 def read():
-    with Pool(4) as p:
+    with Pool(16) as p:
         data_list = p.map(load, yeardict.items())
 
     data = pd.concat(data_list)
@@ -207,9 +228,12 @@ def read():
     return data, barriers
 
 
-def cmc_to_year(data):
+import math
+def cmc_to_year(data, cmc_col='v008'): # v008 is date of interview
     v007 = data['v007']
-    cmc = data['v008']
+    cmc = data[cmc_col]
+    if math.isnan(cmc):
+        return np.nan
     if v007 < 100:
         year = 1900 + int((cmc-1)/12)
         month = cmc - (v007*12)
@@ -237,6 +261,18 @@ def main(force_read = False):
             barriers = pd.read_hdf(cachefn, key='barriers')
         except:
             data, barriers = read()
+
+    ''''
+    # Extracting birth spacing
+    print(data.iloc[0])
+    for i in range(1,20+1):
+        # TODO: Use CMC directly as it's in months... maybe
+        #data[f'b3_{i:02}y'] = data[['v007']].apply(partial(cmc_to_year, cmc_col = f'b3_{i:02}'), axis=1)
+        year = 1900 + (data[f'b3_{i:02}']-1)//12
+        data[f'b3_{i:02}y'] = year + data[f'b3_{i:02}']/12 - (year-1900)
+        print(f'b3_{i:02}', data.iloc[0][[f'b3_{i:02}', f'b3_{i:02}y']])
+    exit()
+    '''
 
     # Shows method classification
     print(pd.crosstab(data['v312'], data['v313'], values=data['v005']/1e6, aggfunc=sum))
@@ -374,9 +410,6 @@ def main(force_read = False):
     plot_pie('Modern', tmp)
     plt.savefig(os.path.join(results_dir, f'Pie-Modern.png'))
 
-    plt.show()
-    exit()
-
 
     # CURRENTLY PREGNANT
     fig, ax = plt.subplots(1,3, figsize=fs)
@@ -414,8 +447,6 @@ def main(force_read = False):
     skyscraper(urhi_like, 'URHI-like')
     skyscraper(urban, 'Urban')
     skyscraper(rural, 'Rural')
-
-    plt.close('all')
 
     fig, ax = plt.subplots(1,1, figsize=fs)
     tmp = barriers.merge(year_to_date, on='SurveyYear')

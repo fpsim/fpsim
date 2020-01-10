@@ -14,7 +14,7 @@ fs=(12,8)
 
 username = os.path.split(os.path.expanduser('~'))[-1]
 folderdict = {
-    'dklein': '/home/dklein/sdb2/Dropbox (IDM)/URHI/Senegal',
+    'dklein': '/home/dklein/Dropbox (IDM)/URHI/Senegal',
     'cliffk': '/home/cliffk/idm/fp/data/Senegal'
 }
 
@@ -152,6 +152,27 @@ def main(force_read = False):
     year_to_date.name = 'Date'
 
 
+    age_edges = list(range(15,45+1,15)) + [99]
+    a,b = itertools.tee(age_edges)
+    a = list(a)[:-1]
+    next(b)
+    labels = [f'{c}-{d}' for c,d in zip(a,b)]
+    data['AgeBinCoarse'] = pd.cut(data['Age'], bins = age_edges, labels=labels, right=False)
+    print(data.iloc[0])
+    tmp = data.groupby(['SurveyYear', 'AgeBin', 'Method'])['Weight'].sum().reset_index('Method')
+    weight_sum = data.groupby(['SurveyYear', 'AgeBin'])['Weight'].sum()
+    print(tmp)
+    print(weight_sum)
+    tmp['Weight'] = 100*tmp['Weight'].divide(weight_sum)
+    tmp = pd.merge(tmp.reset_index(), year_to_date, on='SurveyYear')
+    fig, ax = plt.subplots(1,8, figsize=fs)
+    for i, (agebin, d) in enumerate(tmp.groupby('AgeBin')):
+        sns.lineplot(data=d, x='Date', y='Weight', hue='Method', ax=ax[i])
+        ax[i].set_title(agebin)
+    plt.show()
+
+    exit()
+
     def boolean_plot(name, value, data=data, ax=None):
         gb = data.groupby(['SurveyYear'])
         weighted = 100 * gb.apply( partial(wmean, value=value, weight='Weight') )
@@ -257,7 +278,6 @@ def main(force_read = False):
             ax[i].pie(ans.values, labels=ans.index.tolist())
             ax[i].set_title(f'{title}: {sy}')
         plt.tight_layout()
-
 
 
     # CURRENTLY PREGNANT
