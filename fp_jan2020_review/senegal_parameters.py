@@ -60,9 +60,11 @@ def default_age_mortality():
 
 def default_age_fertility():
     ''' Less-developed countries, WPP2019_MORT_F15_3_LIFE_TABLE_SURVIVORS_FEMALE.xlsx, 1990-1995 '''
+    f15 = 0.003 # Adjustment factor for women aged 15-20
+    f20 = 0.15 # Adjustment factor for women aged 20-25
     fertility = sc.odict([
             ('bins', pl.array([ 0,  5, 10,      15,     20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95])), 
-            ('f',    pl.array([ 0,  0,  0, 0.003*0.0706, 0.3*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]))])
+            ('f',    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]))])
     fertility['m'] = 0*fertility['f'] # Men don't have fertility -- probably could be handled differently!
     return fertility
 
@@ -168,8 +170,9 @@ def make_pars():
     pars['barriers'] = default_barriers()
     pars['switching'] = default_switching() #pars['initial'], 
     pars['mortality_factor'] = 2.7
-    pars['fertility_factor'] = 32 # This is suspiciously close to 12/2, but the math seems right...
-    pars['method_age'] = 15
+    pars['fertility_factor'] = 32 # No idea why this needs to be so high
+    pars['fertility_variation'] = [0.5,1.5] # Multiplicative range of fertility factors
+    pars['method_age'] = 15 # When people start choosing a method (sexual debut)
     pars['max_age'] = 99
     
     return pars
