@@ -5,7 +5,9 @@ from multiprocessing import Pool
 from pathlib import Path
 import pandas as pd
 
-class URHI:
+from base import Base
+
+class URHI(Base):
 
     yeardict = {
         'Baseline':    os.path.join('Baseline', 'SEN_base_wm_20160427.dta'),
@@ -20,16 +22,20 @@ class URHI:
     }
 
     def __init__(self, foldername, force_read=False, cores=8):
-        self.cores = cores
-        self.foldername = foldername
-        self.force_read = force_read
-        Path("cache").mkdir(exist_ok=True)
         self.cachefn = os.path.join('cache', 'urhi.hdf')
-
         self.results_dir = os.path.join('results', 'URHI')
-        Path(self.results_dir).mkdir(parents=True, exist_ok=True)
+
+        super().__init__(foldername, force_read, cores)
 
         self.cache_read()
+        self._clean()
+
+        surveyname_to_date = self.data.groupby('SurveyName')[['Year', 'Month']].mean().apply(lambda x: x['Year'] + x['Month']/12, axis=1)
+        surveyname_to_date.name = 'Date'
+        self.data = pd.merge(self.data, surveyname_to_date, on='SurveyName')
+
+        self.create_bins()
+        self.data['Survey'] = 'URHI'
 
 
     def cache_read(self):
@@ -128,3 +134,30 @@ class URHI:
         data.to_hdf(self.cachefn, key='data', format='t')
 
         return data
+
+    def _clean(self):
+        self.raw = self.data
+        self.data.replace(
+            {
+                'Method': {
+                    #'Female sterilization': '',
+                    #'No method': '',
+                    #'Daily pill': '',
+
+                    'Injectables': 'Injectable',
+                    'Breastfeeding/LAM': 'LAM',
+                    'iucd': 'IUD',
+                    'Female condom': 'Condom',
+                    'Male condom': 'Condom',
+                    'Implants': 'Implant',
+
+                    'Natural methods': 'Traditional',
+                    'Other traditional method': 'Traditional',
+
+                    'sdm': 'Other modern',
+                    'Other modern method': 'Other modern',
+                    'Emergency pill': 'Other modern',
+                }
+            },
+            inplace=True
+        )

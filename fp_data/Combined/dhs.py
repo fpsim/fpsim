@@ -5,7 +5,9 @@ from multiprocessing import Pool
 from pathlib import Path
 import pandas as pd
 
-class DHS:
+from base import Base
+
+class DHS(Base):
 
     yeardict = {
         '1986':     os.path.join('1986',    'SNIR02DT', 'SNIR02FL.DTA'), # Missing v025
@@ -24,9 +26,10 @@ class DHS:
     indicators = {
         'caseid': 'Case identification',
         'v005': "Weight",
+        'v006': "Month of survey",
         'v007': "Year of survey",
         'v011': "Date of birth (cmc)",
-        #'v012': "Respondent's current age",
+        'v012': "Respondent's current age",
         'v013': "Age in 5-year groups",
         'v008': "Date of interview (cmc)",
         'v101': "De facto region of residence",
@@ -128,18 +131,29 @@ class DHS:
 
 
     def __init__(self, foldername, force_read=False, cores=8):
-        self.cores = cores
-        self.foldername = foldername
-        self.force_read = force_read
-        Path("cache").mkdir(exist_ok=True)
         self.cachefn = os.path.join('cache', 'dhs.hdf')
-
         self.results_dir = os.path.join('results', 'DHS')
-        Path(self.results_dir).mkdir(parents=True, exist_ok=True)
+
+        super().__init__(foldername, force_read, cores)
 
         self.cache_read()
-
         self._clean()
+
+        year_to_date = self.data.groupby('SurveyName')['SurveyYear', 'InterviewDateCMC'].mean().apply(self.cmc_to_year, axis=1) # mean CMC
+        year_to_date.name = 'Date'
+        self.data = pd.merge(self.data, year_to_date, on='SurveyName')
+
+        self.create_bins()
+        self.data['Survey'] = 'DHS'
+
+        self.dakar_urban = self.data.loc[ (self.data['v101'].isin(['dakar'])) & (self.data['v102'] == 'urban') ]
+        self.dakar_urban['Survey'] = 'DHS: Dakar-urban'
+        self.urhi_like = self.data.loc[ (self.data['v101'].isin(['west', 'dakar', 'kaolack', 'thies'])) & (self.data['v102'] == 'urban') ]
+        self.urhi_like['Survey'] = 'DHS: URHI-like'
+        self.urban = self.data.loc[ (self.data['v102'] == 'urban') ]
+        self.urban['Survey'] = 'DHS: Urban'
+        self.rural = self.data.loc[ (self.data['v102'] == 'rural') ]
+        self.rural['Survey'] = 'DHS: Rural'
 
 
     def cache_read(self):
@@ -256,13 +270,21 @@ class DHS:
         return data, barriers, birth_spacing
 
     def _clean(self):
-        self.clean = self.data\
+        self.raw = self.data
+        self.data = self.raw\
             .rename(columns={
                 'v312':'Method',
-                'v313':'MethodType'
+                'v313':'MethodType',
+                'v005': 'Weight',
+                'v006': 'SurveyMonth',
+                'v007': 'SurveyYear',
+                'v008': 'InterviewDateCMC',
+                'v012': 'Age',
+                'v201': 'Parity',
             })
 
-        self.clean.replace(
+
+        self.data.replace(
             {
                 'MethodType': {
                     'no method': 'No method',
@@ -270,6 +292,34 @@ class DHS:
                     'traditional method': 'Traditional',
                     'folkloric method': 'Traditional',
                     'modern method': 'Modern',
+                },
+                'Method': {
+                    'not using': 'No method',
+                    'iud': 'IUD',
+                    'pill': 'Daily pill',
+                    'condom': 'Condom',
+                    'injections': 'Injectable',
+                    'lactational amenorrhea': 'LAM',
+                    'norplant': 'Implant',
+                    'implants/norplant': 'Implant',
+                    'lactational amenorrhea (lam)': 'LAM',
+                    'male condom': 'Condom',
+                    'female condom': 'Condom',
+                    'female sterilization': 'Female sterilization',
+
+                    'other traditional': 'Traditional',
+                    'withdrawal': 'Traditional',
+                    'gris-gris': 'Traditional',
+                    'gris - gris': 'Traditional',
+                    'abstinence': 'Traditional',
+                    'periodic abstinence': 'Traditional',
+                    'other': 'Traditional',
+                    'medicinal plants': 'Traditional',
+
+                    'diaphragm/foam/jelly': 'Other modern',
+                    'diaphragm /foam/jelly': 'Other modern',
+                    'other modern method': 'Other modern',
+                    'collier (cs)': 'Other modern',
                 }
             },
             inplace=True
