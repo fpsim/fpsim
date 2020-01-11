@@ -1,4 +1,5 @@
 import os
+import math
 import itertools
 import argparse
 from multiprocessing import Pool
@@ -247,7 +248,6 @@ def read():
     return data, barriers, birth_spacing
 
 
-import math
 def cmc_to_year(data, cmc_col='v008'): # v008 is date of interview
     v007 = data['v007']
     cmc = data[cmc_col]
@@ -281,6 +281,7 @@ def main(force_read = False):
             data = store['data'] #pd.read_hdf(cachefn, key='data')
             barriers = store['barriers'] #pd.read_hdf(cachefn, key='barriers')
             birth_spacing = store['birth_spacing'] #pd.read_hdf(cachefn, key='birth_spacing')
+            store.close()
         except:
             store.close()
             data, barrier, birth_spacing = read()
