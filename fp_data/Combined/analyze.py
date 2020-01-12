@@ -1,4 +1,5 @@
 import os
+from pathlib import Path
 import itertools
 import argparse
 import numpy as np
@@ -7,8 +8,9 @@ import unidecode
 import seaborn as sns
 import matplotlib.pyplot as plt
 
-from dhs import DHS
-from urhi import URHI
+from fp_utils.dhs import DHS
+from fp_utils.urhi import URHI
+from fp_utils import plot_line, plot_pie, plot_pop_pyramid, plot_skyscraper
 
 fs=(12,8)
 
@@ -25,56 +27,56 @@ folderdict = {
 }
 
 
-def plot_line(*args, **kwargs):
-    data = kwargs.pop('data')
-    by = kwargs.pop('by')
-    tmp = data.groupby(['Survey', 'SurveyName', 'Date', by])['Weight'].sum().reset_index(by)
-    weight_sum = data.groupby(['Survey', 'SurveyName', 'Date'])['Weight'].sum()
-    tmp['Percent'] = 100*tmp['Weight'].divide(weight_sum)
-
-    # Ugh, have to make all levels have a value to avoid color or linetype errors
-    tmp = tmp.set_index(by, append=True).unstack(fill_value=-1).stack().reset_index()#.sort_values(['Survey', by, 'Date'])
-    tmp.loc[tmp['Percent']<0,'Percent'] = np.NaN
-
-    sns.lineplot(data=tmp, x='Date', y='Percent', hue=by, style='Survey', **kwargs)
-
-
-def plot_pie(*args, **kwargs):
-    data = kwargs.pop('data')
-    by = kwargs.pop('by')
-    ans = data.groupby(by)['Weight'].sum()
-    plt.pie(ans.values, labels=ans.index.tolist(), labeldistance=None, explode=0.1*np.ones_like(ans.values))
-
-
 def main(force_read = False):
+    results_dir = os.path.join('results', 'Combined')
+    Path(results_dir).mkdir(parents=True, exist_ok=True)
+
     d = DHS(folderdict[username]['DHS'], force_read)
-    print(d.data['MethodType'].unique())
     u = URHI(folderdict[username]['URHI'], force_read)
-    print(u.data['MethodType'].unique())
 
     # Useful to see which methods are classified as modern / traditional
     print(pd.crosstab(index=d.data['Method'], columns=d.data['MethodType'], values=d.data['Weight']/1e6, aggfunc=sum))
     print(pd.crosstab(index=u.data['Method'], columns=u.data['MethodType'], values=u.data['Weight'], aggfunc=sum))
 
-
-    cols = ['Survey', 'SurveyName', 'AgeBin', 'AgeBinCoarse', 'Method', 'MethodType', 'Weight', 'Date', 'ParityBin']
+    cols = ['Survey', 'SurveyName', 'AgeBin', 'AgeBinCoarse', 'Method', 'MethodType', 'Weight', 'Date', 'ParityBin', 'Unmet', 'UID']
     #c = pd.concat((d.dakar_urban[cols], u.data[cols]))
     c = pd.concat((d.urhi_like[cols], u.data[cols]))
     #c = pd.concat((d.data[cols], u.data[cols]))
 
-    plot_line(data=c, by='MethodType')
 
-    # Take out Midline beacuse it's weird
-    c_no_midline = c.loc[c['SurveyName']!='Midline']
-    g = sns.FacetGrid(data=c_no_midline, col='AgeBinCoarse', height=5)
+    # Age pyramid
+    g = sns.FacetGrid(data=c, hue='SurveyName', height=5)
+    g.map_dataframe(plot_pop_pyramid).add_legend().set_xlabels('Percent').set_ylabels('Age Bin')
+    g.savefig(os.path.join(u.results_dir, 'PopulationPyramid.png'))
+
+
+    ###########################################################################
+    # UNMET NEED
+    ###########################################################################
+    g = sns.FacetGrid(data=c.loc[(c['Date']>1990) & (c['Unmet']!='Unknown')], height=5)
+    g.map_dataframe(plot_line, by='Unmet').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(results_dir, 'UnmetNeed.png'))
+
+
+    ###########################################################################
+    # METHOD TYPE LINES
+    ###########################################################################
+    g = sns.FacetGrid(data=c, height=5)
     g.map_dataframe(plot_line, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
-    #g.savefig(os.path.join(results_dir, f'BirthSpacing_year_order.png'))
+    g.savefig(os.path.join(results_dir, 'MethodType.png'))
 
-    g = sns.FacetGrid(data=c_no_midline, col='ParityBin', col_wrap=4, height=3)
+    g = sns.FacetGrid(data=c, col='AgeBinCoarse', height=5)
     g.map_dataframe(plot_line, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
-    #g.savefig(os.path.join(results_dir, f'BirthSpacing_year_order.png'))
+    g.savefig(os.path.join(results_dir, 'MethodType_by_AgeBinCoarse.png'))
+
+    g = sns.FacetGrid(data=c, col='ParityBin', col_wrap=4, height=3)
+    g.map_dataframe(plot_line, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(results_dir, 'MethodType_by_ParityBin.png'))
 
 
+    ###########################################################################
+    # METHOD PIES
+    ###########################################################################
     dat2011 = pd.concat( [
         #d.data[cols].loc[d.data['SurveyName']=='2010-11'],
         d.urhi_like[cols].loc[d.urhi_like['SurveyName']=='2010-11'], # URHI-like
@@ -95,10 +97,61 @@ def main(force_read = False):
 
     g = sns.FacetGrid(data=dat, col='Survey', row='Year', height=5)
     g.map_dataframe(plot_pie, by='MethodType').add_legend()#.set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(results_dir, 'MethodPies_by_Survey_Year.png'))
 
     mod = dat.loc[dat['MethodType']=='Modern']
     g = sns.FacetGrid(data=mod, col='Survey', row='Year', height=5)
     g.map_dataframe(plot_pie, by='Method').add_legend()#.set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(results_dir, 'ModernMethodPies_by_Survey_Year.png'))
+
+    # Skyscraper images
+    g = sns.FacetGrid(data=dat, col='Survey', row='Year', height=5)
+    g.map_dataframe(plot_skyscraper, age='AgeBin', parity='ParityBin', vmax=20).set_xlabels('Parity').set_ylabels('Age')
+    g.savefig(os.path.join(u.results_dir, 'Skyscraper.png'))
+
+
+
+    ###########################################################################
+    # MODERN METHOD LINES
+    ###########################################################################
+
+    mod = c.loc[(c['MethodType']=='Modern') & (c['Date']>1990)]
+
+    g = sns.FacetGrid(data=mod, height=5)
+    g.map_dataframe(plot_line, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(results_dir, 'ModernMethod.png'))
+
+    g = sns.FacetGrid(data=mod, col='AgeBinCoarse', height=5)
+    g.map_dataframe(plot_line, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(results_dir, 'ModernMethod_by_AgeBinCoarse.png'))
+
+    g = sns.FacetGrid(data=mod, col='ParityBin', col_wrap=4, height=3)
+    g.map_dataframe(plot_line, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(results_dir, 'ModernMethod_by_Parity.png'))
+
+
+    ###########################################################################
+    # URHI - who converted to implants?
+    ###########################################################################
+    implant_end = u.data.loc[(u.data['Method']=='Implant') & (u.data['SurveyName']=='Endline')]
+    switchers = u.data.loc[u.data['SurveyName']=='Baseline'] \
+        .set_index('UID') \
+        .loc[implant_end['UID']]
+    switchers = switchers.loc[switchers['Method'] != 'Implant']
+
+    ct = pd.crosstab(index=switchers['AgeBin'], columns=switchers['ParityBin'], values=switchers['Weight'], aggfunc=sum)
+    ct = 100 * ct / ct.sum().sum()
+    ct.fillna(0, inplace=True)
+    ct.to_csv(os.path.join(results_dir, 'URHI_EndImplants_FromAgeParity.csv'))
+
+    switch_from = 100 * switchers.groupby('Method')['Weight'].sum() / switchers['Weight'].sum()
+    switch_from.to_csv(os.path.join(results_dir, 'URHI_EndImplants_FromMethods.csv'))
+
+    with pd.option_context('display.max_rows', 1000, 'display.float_format', '{:.0f}'.format): # 'display.precision',2, 
+        print(ct)
+        print('Switched to implants from:')
+        print(switch_from)
+
 
     plt.show()
 

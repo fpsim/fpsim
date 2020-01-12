@@ -5,7 +5,7 @@ from multiprocessing import Pool
 from pathlib import Path
 import pandas as pd
 
-from base import Base
+from fp_utils.base import Base
 
 class DHS(Base):
 
@@ -180,7 +180,6 @@ class DHS(Base):
         fn = Path(filename).resolve().stem
         print(f'File: {filename} ...')
         data = pd.read_stata(filename, convert_categoricals=False)
-        print('CASEID:\n', data['caseid'].head())
 
         data['SurveyName'] = year
         found_keys = []
@@ -271,18 +270,19 @@ class DHS(Base):
 
     def _clean(self):
         self.raw = self.data
-        self.data = self.raw\
-            .rename(columns={
-                'v312':'Method',
-                'v313':'MethodType',
+        self.data = self.raw.reset_index()\
+            .rename(columns = {
+                'v312': 'Method',
+                'v313': 'MethodType',
                 'v005': 'Weight',
                 'v006': 'SurveyMonth',
                 'v007': 'SurveyYear',
                 'v008': 'InterviewDateCMC',
                 'v012': 'Age',
                 'v201': 'Parity',
+                'v624': 'Unmet',
+                'caseid': 'UID',
             })
-
 
         self.data.replace(
             {
@@ -320,6 +320,27 @@ class DHS(Base):
                     'diaphragm /foam/jelly': 'Other modern',
                     'other modern method': 'Other modern',
                     'collier (cs)': 'Other modern',
+                },
+                'Unmet': {
+                    np.NaN: 'Unknown',
+                    '0.0': 'No', # Likely never had sex.
+                    'using to space': 'No',
+                    'desire birth < 2 yrs': 'No',
+                    '-1.0': 'Unknown',
+                    'limiting failure': 'No',
+                    'unmet need to space': 'Yes',
+                    'unmet need to limit': 'Yes',
+                    'infecund, menopausal': 'No',
+                    'never had sex': 'No',
+                    'no sex, want to wait': 'No',
+                    'using to limit': 'No',
+                    'no unmet need': 'No',
+                    'unmet need for limiting': 'Yes',
+                    'unmet need for spacing': 'Yes',
+                    'using for limiting': 'No',
+                    'not married and no sex in last 30 days': 'No', # Maybe Yes?
+                    'using for spacing': 'No',
+                    'spacing failure': 'No',
                 }
             },
             inplace=True

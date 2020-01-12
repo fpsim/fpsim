@@ -10,169 +10,37 @@ import unidecode
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+from fp_utils.urhi import URHI
+from fp_utils import plot_line, plot_pie, plot_pop_pyramid, plot_skyscraper
+
 fs=(12,8)
 
 username = os.path.split(os.path.expanduser('~'))[-1]
 folderdict = {
-    'dklein': '/home/dklein/Dropbox (IDM)/URHI/Senegal',
+    'dklein': '/home/dklein/sdb2/Dropbox (IDM)/URHI/Senegal',
     'cliffk': '/home/cliffk/idm/fp/data/Senegal'
 }
 
-try:
-    foldername = folderdict[username]
-except:
-    raise Exception(f'User {username} not found among users {list(filedict.keys())}, cannot find data.')
-
-yeardict = {
-    'Baseline':     os.path.join(foldername, 'Baseline', 'SEN_base_wm_20160427.dta'),
-    'Midline':     os.path.join(foldername, 'Midline', 'SEN_mid_wm_match_20160609.dta'),
-    'Endline':     os.path.join(foldername, 'Endline', 'SEN_end_wm_match_20160505.dta'),
-}
-
-indicators = {
-    'Baseline': {'iyear':'Year', 'imon':'Month', 'w102':'Age', 'w208':'Parity', 'method':'Method', 'methodtype':'MethodType', 'wm_allcity_wt':'Weight', 'city':'City', 'unmet_cmw': 'Unmet'},
-    'Midline': {'mwiyear':'Year', 'mwimon':'Month', 'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'mmethodtype':'MethodType', 'mwm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet'},
-    'Endline': {'ewiyear':'Year', 'ewimon':'Month', 'ew102':'Age', 'ew208':'Parity', 'emethod':'Method', 'emethodtype':'MethodType', 'ewoman_weight_6city':'Weight', 'ecity':'City', 'eunmet_cmw': 'Unmet'},
-}
-
-Path("cache").mkdir(exist_ok=True)
-cachefn = os.path.join('cache', 'urhi.hdf')
-
-results_dir = 'results'
-Path(results_dir).mkdir(exist_ok=True)
-
-
-def load(x):
-    year, path = x
-    filename = os.path.join(foldername, path)
-    print(f'Loading {year} from file {filename}')
-
-    fn = Path(filename).resolve().stem
-    print(f'File: {filename} ...')
-    data = pd.read_stata(filename, convert_categoricals=False)
-
-    data['SurveyName'] = year
-    found_keys = []
-    for k in indicators[year].keys():
-        if k not in data.columns:
-            print(f'SurveyName {year} is missing {k}')
-        else:
-            found_keys.append(k)
-
-
-    data = data[['SurveyName'] + found_keys]
-
-    values = pd.io.stata.StataReader(filename).value_labels()
-    replace_dict = {k: values[k.upper()] if k.upper() in values else values[k] for k in found_keys if k in values or k.upper() in values}
-
-    # Ugh
-    if year == 'Midline':
-        replace_dict['mmethodtype'] = values['methodtype'] # Doesn't appear to be an entry for mmethodtype?
-    elif year == 'Endline':
-        replace_dict['emethod'] = values['method'] # Doesn't appear to be an entry for emethod?
-        replace_dict['emethodtype'] = values['methodtype'] # Doesn't appear to be an entry for emethodtype?
-
-    for k in replace_dict.keys():
-        if indicators[year][k] == 'Parity':
-            print('Skipping parity')
-            continue
-
-        if 0 in replace_dict[k]:
-            # zero-based
-            data[k] = data[k].fillna(-1)
-        else:
-            # assume one-based
-            data[k] = data[k].fillna(0) - 1
-
-        try:
-            data[k] = pd.Categorical.from_codes(data[k], categories = [unidecode.unidecode(v[1]) for v in sorted(replace_dict[k].items(), key = lambda x: x[0])] )
-        except:
-            print('Difficulty:', year, k, data[k].unique(), replace_dict[k])
-            data[k] = data[k].replace(replace_dict[k]).map(str) #.astype('category')
-            print(data[k])
-
-    data.rename(columns=indicators[year], inplace=True)
-
-    age_edges = list(range(15,55,5)) + [99]
-    a,b = itertools.tee(age_edges)
-    a = list(a)[:-1]
-    next(b)
-    labels = [f'{c}-{d}' for c,d in zip(a,b)]
-    data['AgeBin'] = pd.cut(data['Age'], bins = age_edges, labels=labels, right=False)
-
-    parity_edges = list(range(6+1)) + [99]
-    a,b = itertools.tee(parity_edges)
-    a = list(a)[:-1]
-    next(b)
-    labels = [f'{c}-{d}' for c,d in zip(a,b)]
-    data['ParityBin'] = pd.cut(data['Parity'], bins = parity_edges, labels=labels, right=False)
-
-    if True:
-        values = pd.io.stata.StataReader(filename).value_labels()
-        codebook = pd.io.stata.StataReader(filename).variable_labels()
-
-        pd.DataFrame({'keys': list(codebook.keys()), 'values': list(codebook.values())}).set_index('keys').to_csv(f'codebook_{fn}.csv')
-
-    return data
-
-def read():
-    with Pool(3) as p:
-        data_list = p.map(load, yeardict.items())
-
-    data = pd.concat(data_list)
-
-    #data['Parity'] = data['Parity']].map(str) #Ugh
-    data.to_hdf(cachefn, key='women', format='t')
-
-    return data
-
-
-def wmean(data, value, weight):
-    if data[value].dtype.name == 'category':
-        return  np.sum(data[weight] * data[value].cat.codes) / np.sum(data[weight])
-    return  np.sum(data[weight] * data[value]) / np.sum(data[weight])
-
-
 def main(force_read = False):
 
-    if force_read:
-        data = read()
-    else:
-        try:
-            data = pd.read_hdf(cachefn, key='women')
-        except:
-            data = read()
+    u = URHI(folderdict[username], force_read)
+
 
     # Useful to see which methods are classified as modern / traditional
-    print(pd.crosstab(index=data['Method'], columns=data['MethodType'], values=data['Weight'], aggfunc=sum))
+    print(pd.crosstab(index=u.data['Method'], columns=u.data['MethodType'], values=u.data['Weight'], aggfunc=sum))
 
-    # Figure out the mean time point of each survey in years - this is remarkably slow!
-    data['Date'] = data['Year'] + data['Month']/12
-    year_to_date = data.groupby('SurveyName').apply( partial(wmean, value='Date', weight='Weight') )
-    year_to_date.name = 'Date'
+    g = sns.FacetGrid(data=u.data[['MethodType', 'Year', 'Weight', 'Survey', 'SurveyName', 'Date', 'Parity']], height=5)
+    g.map_dataframe(plot_line, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(u.results_dir, 'MethodType.png'))
 
 
-    age_edges = list(range(15,45+1,15)) + [99]
-    a,b = itertools.tee(age_edges)
-    a = list(a)[:-1]
-    next(b)
-    labels = [f'{c}-{d}' for c,d in zip(a,b)]
-    data['AgeBinCoarse'] = pd.cut(data['Age'], bins = age_edges, labels=labels, right=False)
-    print(data.iloc[0])
-    tmp = data.groupby(['SurveyName', 'AgeBin', 'Method'])['Weight'].sum().reset_index('Method')
-    weight_sum = data.groupby(['SurveyName', 'AgeBin'])['Weight'].sum()
-    print(tmp)
-    print(weight_sum)
-    tmp['Weight'] = 100*tmp['Weight'].divide(weight_sum)
-    tmp = pd.merge(tmp.reset_index(), year_to_date, on='SurveyName')
-    fig, ax = plt.subplots(1,8, figsize=fs)
-    for i, (agebin, d) in enumerate(tmp.groupby('AgeBin')):
-        sns.lineplot(data=d, x='Date', y='Weight', hue='Method', ax=ax[i])
-        ax[i].set_title(agebin)
-    plt.show()
+    g = sns.FacetGrid(data=u.data, col='AgeBinCoarse', col_wrap=4, height=5)
+    g.map_dataframe(plot_line, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(u.results_dir, 'Method_by_AgeBinCoarse.png'))
 
-    exit()
 
+
+    '''
     def boolean_plot(name, value, data=data, ax=None):
         gb = data.groupby(['SurveyName'])
         weighted = 100 * gb.apply( partial(wmean, value=value, weight='Weight') )
@@ -278,40 +146,28 @@ def main(force_read = False):
             ax[i].pie(ans.values, labels=ans.index.tolist())
             ax[i].set_title(f'{title}: {sy}')
         plt.tight_layout()
-
-
-    # CURRENTLY PREGNANT
-    '''
-    fig, ax = plt.subplots(1,1, figsize=fs)
-    boolean_plot('Currently pregnant', 'v213', ax=ax[0])
-    plt.tight_layout()
-
-    boolean_plot_by('Currently pregnant', 'v213', 'v101')
-    boolean_plot_by('Currently pregnant', 'v213', 'v102')
-
-    multi_plot('Unmet need', 'v624')
-
-    fig, ax = plt.subplots(1,4, sharey=True, figsize=fs)
-    multi_plot('Method type', 'v313', ax=ax[0])
-    plt.tight_layout()
     '''
 
-    multi_plot('ByMethod', 'Method')
-    plt.tight_layout()
 
-    plot_pie('All women', data)
-    plt.savefig(os.path.join(results_dir, f'Pie-All.png'))
+    g = sns.FacetGrid(data=u.data, col='SurveyName', height=5)
+    g.map_dataframe(plot_pie, by='MethodType').add_legend()#.set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(u.results_dir, 'MethodTypePies_by_Year.png'))
 
-    tmp = data.loc[data['MethodType']=='Modern']
-    tmp['Method'] = tmp.Method.cat.remove_unused_categories()
-    plot_pie('Modern', tmp)
-    plt.savefig(os.path.join(results_dir, f'Pie-Modern.png'))
+    g = sns.FacetGrid(data=u.data[u.data['MethodType']=='Modern'], col='SurveyName', height=5)
+    g.map_dataframe(plot_pie, by='Method').add_legend()#.set_xlabels('Year').set_ylabels('Percent')
+    g.savefig(os.path.join(u.results_dir, 'ModernMethodPies_by_Year.png'))
 
-    # Age pyramids
-    age_pyramid_plot('Population Pyramid - URHI', data)
+
+    # Age pyramid
+    g = sns.FacetGrid(data=u.data, hue='SurveyName', height=5)
+    g.map_dataframe(plot_pop_pyramid).add_legend().set_xlabels('Percent').set_ylabels('Age Bin')
+    g.savefig(os.path.join(u.results_dir, 'PopulationPyramid.png'))
+
 
     # Skyscraper images
-    skyscraper(data.loc[data['SurveyName']!='Midline'], 'URHI')
+    g = sns.FacetGrid(data=u.data.loc[u.data['SurveyName']!='Midline'], col='SurveyName', height=5)
+    g.map_dataframe(plot_skyscraper, age='AgeBin', parity='ParityBin', vmax=20).set_xlabels('Parity').set_ylabels('Age')
+    g.savefig(os.path.join(u.results_dir, 'Skyscraper.png'))
 
     plt.show()
 

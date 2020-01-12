@@ -26,7 +26,7 @@ store = pd.HDFStore(cachefn)
 force_read = False
 
 username = os.path.split(os.path.expanduser('~'))[-1]
-folderdict = {'dklein': os.path.join( os.getenv("HOME"), 'Dropbox (IDM)', 'URHI', 'Senegal'),
+folderdict = {'dklein': os.path.join( os.getenv("HOME"), 'sdb2', 'Dropbox (IDM)', 'URHI', 'Senegal'),
               'cliffk': '/home/cliffk/idm/fp/data/Senegal',
              }
 try:
@@ -288,17 +288,13 @@ for name in diag_names:
 w = 100*W.div(W.sum(axis=1), axis=0)
 w['Total'] = W.sum(axis=1)
 print(w)
-w.to_csv('test.csv')
+w.to_csv('SwitchingMatrix_Weighted_Normalized.csv')
 
 
 
-exit()
 with pd.option_context('display.max_columns', -1):
-    print(W)
-    exit()
-
     # Let's decode some record
-    cal.iloc[range(500,600)].apply(decrypt, axis=1)
+    cal.iloc[range(100,105)].apply(decrypt, axis=1)
 
 sc.toc(start=T)
 

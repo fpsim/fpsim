@@ -5,7 +5,7 @@ from multiprocessing import Pool
 from pathlib import Path
 import pandas as pd
 
-from base import Base
+from fp_utils.base import Base
 
 class URHI(Base):
 
@@ -16,9 +16,9 @@ class URHI(Base):
     }
 
     indicators = {
-        'Baseline': {'line':'Line', 'iyear':'Year', 'imon':'Month', 'w102':'Age', 'w208':'Parity', 'method':'Method', 'methodtype':'MethodType', 'wm_allcity_wt':'Weight', 'city':'City', 'unmet_cmw': 'Unmet'},
-        'Midline': {'line':'Line', 'mwiyear':'Year', 'mwimon':'Month', 'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'mmethodtype':'MethodType', 'mwm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet'},
-        'Endline': {'line':'Line', 'ewiyear':'Year', 'ewimon':'Month', 'ew102':'Age', 'ew208':'Parity', 'emethod':'Method', 'emethodtype':'MethodType', 'ewoman_weight_6city':'Weight', 'ecity':'City', 'eunmet_cmw': 'Unmet'},
+        'Baseline': {'line':'Line', 'hhnum': 'HHNUM', 'iyear':'Year', 'imon':'Month', 'w102':'Age', 'w208':'Parity', 'method':'Method', 'methodtype':'MethodType', 'wm_allcity_wt':'Weight', 'city':'City', 'unmet_cmw': 'Unmet'},
+        'Midline': {'line':'Line', 'hhnum': 'HHNUM', 'mwiyear':'Year', 'mwimon':'Month', 'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'mmethodtype':'MethodType', 'mwm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet'},
+        'Endline': {'line':'Line', 'hhnum': 'HHNUM', 'ewiyear':'Year', 'ewimon':'Month', 'ew102':'Age', 'ew208':'Parity', 'emethod':'Method', 'emethodtype':'MethodType', 'ewoman_weight_6city':'Weight', 'ecity':'City', 'eunmet_cmw': 'Unmet'},
     }
 
     def __init__(self, foldername, force_read=False, cores=8):
@@ -130,13 +130,24 @@ class URHI(Base):
         with Pool(self.cores) as p:
             data_list = p.map(self.load, self.yeardict.items())
 
-        data = pd.concat(data_list).set_index('Line')
+        data = pd.concat(data_list)
+        data['UID'] = data.apply(lambda x: str(x['HHNUM']) + ' ' + str(x['Line']), axis=1)
+        data.set_index('UID', inplace=True)
+
+        data.drop(['HHNUM', 'Line'], axis=1, inplace=True)
+
         data.to_hdf(self.cachefn, key='data', format='t')
 
         return data
 
+
     def _clean(self):
         self.raw = self.data
+
+        # Parity is all [NaN or 0] at Midline?!  Causes seaborn ploting problems, so fill -1.
+        self.data.loc[self.data['SurveyName']=='Midline', 'Parity'] = \
+            self.data.loc[self.data['SurveyName']=='Midline', 'Parity'].fillna(0)
+
         self.data.replace(
             {
                 'Method': {
@@ -157,7 +168,15 @@ class URHI(Base):
                     'sdm': 'Other modern',
                     'Other modern method': 'Other modern',
                     'Emergency pill': 'Other modern',
+                },
+                'Unmet': {
+                    '-1.0': 'Unknown',
+                    'No unmet need': 'No',
+                    'Unmet need': 'Yes',
+                    'Missing': 'Unknown',
                 }
             },
             inplace=True
         )
+
+        self.data.reset_index(inplace=True)

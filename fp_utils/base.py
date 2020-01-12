@@ -55,7 +55,6 @@ class Base:
         self.data['ParityBin'] = pd.cut(self.data['Parity'], bins = parity_edges, labels=labels, right=False)
 
 
-
     def cmc_to_year(self, data, survey_year_col='SurveyYear', cmc_col='InterviewDateCMC'): # v008 is date of interview
         survey_year = data[survey_year_col]
         cmc = data[cmc_col]
