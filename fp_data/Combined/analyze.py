@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from fp_utils.dhs import DHS
 from fp_utils.urhi import URHI
-from fp_utils import plot_line, plot_pie, plot_pop_pyramid, plot_skyscraper
+from fp_utils import plot_line_percent, plot_pie, plot_pop_pyramid, plot_skyscraper
 
 fs=(12,8)
 
@@ -34,6 +34,9 @@ def main(force_read = False):
     d = DHS(folderdict[username]['DHS'], force_read)
     u = URHI(folderdict[username]['URHI'], force_read)
 
+    individual_barriers = d.compute_individual_barriers()
+    individual_barriers.to_csv(os.path.join(results_dir, 'DHSIndividualBarriers.csv'))
+
     # Useful to see which methods are classified as modern / traditional
     print(pd.crosstab(index=d.data['Method'], columns=d.data['MethodType'], values=d.data['Weight']/1e6, aggfunc=sum))
     print(pd.crosstab(index=u.data['Method'], columns=u.data['MethodType'], values=u.data['Weight'], aggfunc=sum))
@@ -42,6 +45,13 @@ def main(force_read = False):
     #c = pd.concat((d.dakar_urban[cols], u.data[cols]))
     c = pd.concat((d.urhi_like[cols], u.data[cols]))
     #c = pd.concat((d.data[cols], u.data[cols]))
+
+    # Data stats
+    '''
+    g = sns.FacetGrid(data=c, hue='SurveyName', height=5)
+    g.map_dataframe(plot_line_percent).add_legend()#.set_xlabels('Percent').set_ylabels('Age Bin')
+    g.savefig(os.path.join(u.results_dir, 'PopulationPyramid.png'))
+    '''
 
 
     # Age pyramid
@@ -54,7 +64,7 @@ def main(force_read = False):
     # UNMET NEED
     ###########################################################################
     g = sns.FacetGrid(data=c.loc[(c['Date']>1990) & (c['Unmet']!='Unknown')], height=5)
-    g.map_dataframe(plot_line, by='Unmet').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='Unmet').add_legend().set_xlabels('Year').set_ylabels('Percent')
     g.savefig(os.path.join(results_dir, 'UnmetNeed.png'))
 
 
@@ -62,15 +72,15 @@ def main(force_read = False):
     # METHOD TYPE LINES
     ###########################################################################
     g = sns.FacetGrid(data=c, height=5)
-    g.map_dataframe(plot_line, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
     g.savefig(os.path.join(results_dir, 'MethodType.png'))
 
     g = sns.FacetGrid(data=c, col='AgeBinCoarse', height=5)
-    g.map_dataframe(plot_line, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
     g.savefig(os.path.join(results_dir, 'MethodType_by_AgeBinCoarse.png'))
 
     g = sns.FacetGrid(data=c, col='ParityBin', col_wrap=4, height=3)
-    g.map_dataframe(plot_line, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
     g.savefig(os.path.join(results_dir, 'MethodType_by_ParityBin.png'))
 
 
@@ -118,15 +128,15 @@ def main(force_read = False):
     mod = c.loc[(c['MethodType']=='Modern') & (c['Date']>1990)]
 
     g = sns.FacetGrid(data=mod, height=5)
-    g.map_dataframe(plot_line, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
     g.savefig(os.path.join(results_dir, 'ModernMethod.png'))
 
     g = sns.FacetGrid(data=mod, col='AgeBinCoarse', height=5)
-    g.map_dataframe(plot_line, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
     g.savefig(os.path.join(results_dir, 'ModernMethod_by_AgeBinCoarse.png'))
 
     g = sns.FacetGrid(data=mod, col='ParityBin', col_wrap=4, height=3)
-    g.map_dataframe(plot_line, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
     g.savefig(os.path.join(results_dir, 'ModernMethod_by_Parity.png'))
 
 

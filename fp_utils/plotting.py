@@ -8,16 +8,21 @@ import pylab as pl
 
 fs=(12,8)
 
-def plot_line(*args, **kwargs):
+def plot_line_percent(*args, **kwargs):
     data = kwargs.pop('data')
     by = kwargs.pop('by')
+
     tmp = data.groupby(['Survey', 'SurveyName', 'Date', by])['Weight'].sum().reset_index(by)
     weight_sum = data.groupby(['Survey', 'SurveyName', 'Date'])['Weight'].sum()
     tmp['Percent'] = 100*tmp['Weight'].divide(weight_sum)
 
+    print('Normalized?\n', tmp)
+
     # Ugh, have to make all levels have a value to avoid color or linetype errors
-    tmp = tmp.set_index(by, append=True).unstack(fill_value=-1).stack().reset_index()#.sort_values(['Survey', by, 'Date'])
+    tmp = tmp.set_index(by, append=True).unstack(fill_value=0).stack().reset_index()#.sort_values(['Survey', by, 'Date']) # 0 or -1???
     tmp.loc[tmp['Percent']<0,'Percent'] = np.NaN
+
+    print('Post fill and 0?\n', tmp)
 
     sns.lineplot(data=tmp, x='Date', y='Percent', hue=by, style='Survey', **kwargs)
 
@@ -31,28 +36,12 @@ def plot_pie(*args, **kwargs):
 
 def plot_pop_pyramid(*args, **kwargs):
     data = kwargs.pop('data')
-
-    '''
-    try:
-        fn = kwargs.pop('fn')
-        results_dir = kwargs.pop('results_dir')
-        save = True
-    except KeyError as e:
-        save = False
-    '''
-
     ap = data.groupby(['SurveyName', 'AgeBin'])['Weight'].sum()
     year_sum = data.groupby(['SurveyName'])['Weight'].sum()
     ap = ap.divide(year_sum)
     ap.name = 'Percent'
 
     pl.plot(ap.values, ap.index.get_level_values('AgeBin'), **kwargs)
-
-    '''
-    if save:
-        ap.to_csv(os.path.join(results_dir, f'{fn}.csv'))
-        pl.savefig(os.path.join(results_dir, f'{fn}.png'))
-    '''
 
 
 ###############################################################################
