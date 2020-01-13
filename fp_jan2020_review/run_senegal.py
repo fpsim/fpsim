@@ -13,9 +13,9 @@ do_plot_pyramids    = 1
 do_plot_skyscrapers = 1
 do_save             = 1
 
-year_str = '2015'
-pop_pyr_2015_fn = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
-skyscrapers_fn = sp.abspath('dropbox/Skyscrapers-All-DHS.csv')
+year_str = '2010-11'
+pop_pyr_2015_fn = sp.abspath('dropbox/Population_Pyramid_-_URHI-Like.csv')
+skyscrapers_fn = sp.abspath('dropbox/Skyscrapers-URHI-like.csv')
 
 if do_run:
     pars = sp.make_pars()
