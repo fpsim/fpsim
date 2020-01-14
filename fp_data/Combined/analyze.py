@@ -10,7 +10,7 @@ import matplotlib.pyplot as plt
 
 from fp_utils.dhs import DHS
 from fp_utils.urhi import URHI
-from fp_utils import plot_line_percent, plot_pie, plot_pop_pyramid, plot_skyscraper
+from fp_utils import *
 
 fs=(12,8)
 
@@ -43,22 +43,33 @@ def main(force_read = False):
 
     cols = ['Survey', 'SurveyName', 'AgeBin', 'AgeBinCoarse', 'Method', 'MethodType', 'Weight', 'Date', 'ParityBin', 'Unmet', 'UID']
     #c = pd.concat((d.dakar_urban[cols], u.data[cols]))
-    c = pd.concat((d.urhi_like[cols], u.data[cols]))
+    #c = pd.concat((d.urhi_like[cols], u.data[cols]))
     #c = pd.concat((d.data[cols], u.data[cols]))
+    c = pd.concat((d.data[cols], d.urhi_like[cols], u.data[cols]))
 
-    # Data stats
-    '''
-    g = sns.FacetGrid(data=c, hue='SurveyName', height=5)
-    g.map_dataframe(plot_line_percent).add_legend()#.set_xlabels('Percent').set_ylabels('Age Bin')
-    g.savefig(os.path.join(u.results_dir, 'PopulationPyramid.png'))
-    '''
+    ###########################################################################
+    # SURVEY SIZE
+    ###########################################################################
+    tmp = c.groupby(['Survey', 'Date']).size()#.reset_index()
+    tmp.name = 'Count'
+    sns.lineplot(data = tmp.reset_index(), x='Date', y='Count', hue='Survey')
+    g.savefig(os.path.join(u.results_dir, 'SurveySize.png'))
 
+    ###########################################################################
+    # MCPR - All women only for now
+    ###########################################################################
+    # TODO: pull out married women, or exposed
+    c['Modern'] = c['MethodType'] == 'Modern'
+    g = sns.FacetGrid(data=c, hue='Survey', height=5)
+    g.map_dataframe(plot_line_percent, by='Modern', values=[True]).add_legend().set_xlabels('Year').set_ylabels('mCPR-AW')
+    g.savefig(os.path.join(u.results_dir, 'mCPR.png'))
 
-    # Age pyramid
+    ###########################################################################
+    # POPULATION PYRAMID BY AGE
+    ###########################################################################
     g = sns.FacetGrid(data=c, hue='SurveyName', height=5)
     g.map_dataframe(plot_pop_pyramid).add_legend().set_xlabels('Percent').set_ylabels('Age Bin')
     g.savefig(os.path.join(u.results_dir, 'PopulationPyramid.png'))
-
 
     ###########################################################################
     # UNMET NEED
@@ -66,7 +77,6 @@ def main(force_read = False):
     g = sns.FacetGrid(data=c.loc[(c['Date']>1990) & (c['Unmet']!='Unknown')], height=5)
     g.map_dataframe(plot_line_percent, by='Unmet').add_legend().set_xlabels('Year').set_ylabels('Percent')
     g.savefig(os.path.join(results_dir, 'UnmetNeed.png'))
-
 
     ###########################################################################
     # METHOD TYPE LINES
@@ -82,7 +92,6 @@ def main(force_read = False):
     g = sns.FacetGrid(data=c, col='ParityBin', col_wrap=4, height=3)
     g.map_dataframe(plot_line_percent, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
     g.savefig(os.path.join(results_dir, 'MethodType_by_ParityBin.png'))
-
 
     ###########################################################################
     # METHOD PIES

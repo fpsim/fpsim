@@ -16,15 +16,23 @@ def plot_line_percent(*args, **kwargs):
     weight_sum = data.groupby(['Survey', 'SurveyName', 'Date'])['Weight'].sum()
     tmp['Percent'] = 100*tmp['Weight'].divide(weight_sum)
 
-    print('Normalized?\n', tmp)
-
     # Ugh, have to make all levels have a value to avoid color or linetype errors
     tmp = tmp.set_index(by, append=True).unstack(fill_value=0).stack().reset_index()#.sort_values(['Survey', by, 'Date']) # 0 or -1???
     tmp.loc[tmp['Percent']<0,'Percent'] = np.NaN
 
-    print('Post fill and 0?\n', tmp)
+    if 'values' in kwargs:
+        values = kwargs.pop('values')
+        tmp = tmp.loc[tmp[by].isin(values)]
 
-    sns.lineplot(data=tmp, x='Date', y='Percent', hue=by, style='Survey', **kwargs)
+        if len(values) > 1:
+            kwargs['hue'] = by
+    else:
+        kwargs['hue'] = by
+
+    if 'Survey' in tmp and tmp['Survey'].nunique() > 1:
+        kwargs['style'] = 'Survey'
+
+    sns.lineplot(data=tmp, x='Date', y='Percent', **kwargs) # hue=by, style='Survey',
 
 
 def plot_pie(*args, **kwargs):
