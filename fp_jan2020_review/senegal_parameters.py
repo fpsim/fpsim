@@ -80,8 +80,8 @@ def default_age_mortality():
 
 def default_age_fertility():
     ''' Less-developed countries, WPP2019_MORT_F15_3_LIFE_TABLE_SURVIVORS_FEMALE.xlsx, 1990-1995 '''
-    f15 = 1#0.003 # Adjustment factor for women aged 15-20
-    f20 = 1#0.25 # Adjustment factor for women aged 20-25
+    f15 = 0.003 # Adjustment factor for women aged 15-20
+    f20 = 0.25 # Adjustment factor for women aged 20-25
     fertility = sc.odict([
             ('bins', pl.array([ 0,  5, 10,      15,     20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95])), 
             ('f',    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]))])
@@ -109,7 +109,7 @@ def default_switching():
     
     matrix[0,0] *= 0.53
     
-    switching = sc.odict()
+    switching = {}
     for i,method1 in enumerate(default_methods()):
         switching[method1] = matrix[i,:] / matrix[i,:].sum() # Normalize now
     
@@ -131,7 +131,7 @@ def default_efficacy():
             'Other':5.5,
             'Traditional':13.4,
             })
-    method_efficacy[:] = 100
+    # method_efficacy[:] = 100
     
     for key,value in method_efficacy.items():
         method_efficacy[key] = method_efficacy[key]/100
@@ -153,7 +153,7 @@ def default_barriers():
     return barriers
 
 def make_pars():
-    pars = sc.odict()
+    pars = {}
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
@@ -171,9 +171,9 @@ def make_pars():
     pars['method_efficacy'] = default_efficacy()
     pars['barriers'] = default_barriers()
     pars['switching'] = default_switching() #pars['initial'], 
-    pars['mortality_factor'] = 1#2.7
-    pars['fertility_factor'] = 8#0.1*33 # No idea why this needs to be so high
-    pars['fertility_variation'] = [1,1]#[0.3,2.0] # Multiplicative range of fertility factors
+    pars['mortality_factor'] = 2.7
+    pars['fertility_factor'] = 33 # No idea why this needs to be so high
+    pars['fertility_variation'] = [0.3,2.0] # Multiplicative range of fertility factors
     pars['method_age'] = 15 # When people start choosing a method (sexual debut)
     pars['max_age'] = 99
     
