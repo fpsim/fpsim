@@ -169,6 +169,8 @@ if do_run:
         fig = pl.figure(figsize=(20,14))
         labels = ['Parity', 'Age']
         x_axes = [x_parity, x_age]
+        x_labels = [['0','1','2','3','4','5','6+'],
+                    ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']]
         offsets = [0, 0.4]
         for i in range(2):
             pl.subplot(2,1,i+1)
@@ -176,6 +178,8 @@ if do_run:
                 y_data = sky_arr[key].sum(axis=i)
                 # y_data = y_data/y_data.sum()
                 pl.bar(x_axes[i]+offsets[k], y_data, width=0.4, label=key)
+                pl.gca().set_xticks(x_axes[i]+0.2)
+                pl.gca().set_xticklabels(x_labels[i])
                 pl.xlabel(labels[i])
                 pl.ylabel('Percentage of population')
                 pl.title(f'Population by: {labels[i]}')
