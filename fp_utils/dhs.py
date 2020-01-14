@@ -152,13 +152,13 @@ class DHS(Base):
         self.data['Survey'] = 'DHS'
 
         self.dakar_urban = self.data.loc[ (self.data['v101'].isin(['dakar'])) & (self.data['v102'] == 'urban') ]
-        self.dakar_urban['Survey'] = 'DHS: Dakar-urban'
+        self.dakar_urban.loc[:,'Survey'] = 'DHS: Dakar-urban'
         self.urhi_like = self.data.loc[ (self.data['v101'].isin(['west', 'dakar', 'kaolack', 'thies'])) & (self.data['v102'] == 'urban') ]
-        self.urhi_like['Survey'] = 'DHS: URHI-like'
+        self.urhi_like.loc[:,'Survey'] = 'DHS: URHI-like'
         self.urban = self.data.loc[ (self.data['v102'] == 'urban') ]
-        self.urban['Survey'] = 'DHS: Urban'
+        self.urban.loc[:,'Survey'] = 'DHS: Urban'
         self.rural = self.data.loc[ (self.data['v102'] == 'rural') ]
-        self.rural['Survey'] = 'DHS: Rural'
+        self.rural.loc[:,'Survey'] = 'DHS: Rural'
 
 
     def cache_read(self):
@@ -305,8 +305,17 @@ class DHS(Base):
         }
 
         coarse_barrier_map = {k:barrier_map[v] for k,v in self.barrier_map.items()}
-        dat = self.data.set_index(['SurveyName', 'Age', 'Parity', 'Weight', 'Unmet', 'Method', 'MethodType'])
-        B = ~dat[self.barrier_keys].isin(['no', np.NaN, '-1.0'])
+        dat = self.data.set_index(['UID', 'SurveyName', 'Age', 'Parity', 'Weight', 'Unmet', 'Method', 'MethodType'])
+
+        B = ~(dat[self.barrier_keys] == 'no')
+
+        # UGLY!
+        N = dat[self.barrier_keys].isna()
+        Z = dat[self.barrier_keys] == '-1.0'
+
+        for k in self.barrier_keys:
+            B.loc[N[k]==True,k] = np.NaN
+            B.loc[Z[k]==True,k] = np.NaN
 
         B = B.rename(columns=coarse_barrier_map)
         B = B.stack()
@@ -335,6 +344,14 @@ class DHS(Base):
                 'caseid': 'UID',
             })
 
+        self.data.loc[:,'MethodDurability'] = self.data['Method']
+
+        NO_METHOD = 'No method'
+        SHORT = 'Short-term'
+        LONG = 'Long-term'
+        INJECTION = 'Injection'
+        OTHER = 'Other'
+
         self.data.replace(
             {
                 'MethodType': {
@@ -345,6 +362,7 @@ class DHS(Base):
                     'modern method': 'Modern',
                 },
                 'Method': {
+                    '-1.0': 'No method',
                     'not using': 'No method',
                     'iud': 'IUD',
                     'pill': 'Daily pill',
@@ -357,6 +375,7 @@ class DHS(Base):
                     'male condom': 'Condom',
                     'female condom': 'Condom',
                     'female sterilization': 'Female sterilization',
+                    'male sterilization': 'Male sterilization',
 
                     'other traditional': 'Traditional',
                     'withdrawal': 'Traditional',
@@ -367,10 +386,52 @@ class DHS(Base):
                     'other': 'Traditional',
                     'medicinal plants': 'Traditional',
 
+                    'other modern method': 'Other modern',
+                    'standard days method (sdm)': 'Other modern',
+                    'diaphragm': 'Other modern',
+                    'emergency contraception': 'Other modern',
+                    'foam or jelly': 'Other modern',
                     'diaphragm/foam/jelly': 'Other modern',
                     'diaphragm /foam/jelly': 'Other modern',
-                    'other modern method': 'Other modern',
+                    'oher modern method': 'Other modern', # Yes, oher
                     'collier (cs)': 'Other modern',
+                },
+                'MethodDurability': {
+                    '-1.0': NO_METHOD,
+                    'not using': NO_METHOD,
+                    'gris-gris': NO_METHOD, # Short?
+                    'gris - gris': NO_METHOD, # Short?
+                    'abstinence': NO_METHOD, # Short?
+                    'periodic abstinence': NO_METHOD, # Short?
+                    'medicinal plants': NO_METHOD, # Short?
+
+                    'male condom': SHORT,
+                    'female condom':  SHORT,
+                    'diaphragm/foam/jelly': SHORT,
+                    'diaphragm /foam/jelly': SHORT,
+                    'diaphragm': SHORT,
+                    'foam or jelly': SHORT,
+                    'pill': SHORT,
+                    'condom': SHORT,
+
+                    'iud': LONG,
+                    'norplant': LONG,
+                    'implants/norplant': LONG,
+                    'female sterilization': LONG,
+                    'male sterilization': LONG,
+
+                    'injections': INJECTION,
+
+                    'standard days method (sdm)': OTHER, # Could be SHORT
+                    'collier (cs)': OTHER, # Maybe could be SHORT?
+                    'withdrawal': OTHER,
+                    'lactational amenorrhea': OTHER,
+                    'other traditional': OTHER,
+                    'other': OTHER,
+                    'lactational amenorrhea (lam)': OTHER,
+                    'other modern method': OTHER,
+                    'emergency contraception': OTHER,
+                    'oher modern method': OTHER, # Yes, oher
                 },
                 'Unmet': {
                     np.NaN: 'Unknown',
