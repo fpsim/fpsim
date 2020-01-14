@@ -13,7 +13,7 @@ do_plot_pyramids    = 1
 do_plot_skyscrapers = 1
 do_save             = 0
 
-year_str = '2010-11'
+year_str = '2015'
 pop_pyr_year_fn = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
 skyscrapers_fn = sp.abspath('dropbox/Skyscrapers-All-DHS.csv')
 
