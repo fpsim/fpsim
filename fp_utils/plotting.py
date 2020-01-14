@@ -34,12 +34,33 @@ def plot_line_percent(*args, **kwargs):
 
     sns.lineplot(data=tmp, x='Date', y='Percent', **kwargs) # hue=by, style='Survey',
 
+def plot_stack(*args, **kwargs):
+    data = kwargs.pop('data')
+    by = kwargs.pop('by')
+
+    tmp = data.groupby(['Survey', 'SurveyName', 'Date', by])['Weight'].sum().reset_index(by)
+    weight_sum = data.groupby(['Survey', 'SurveyName', 'Date'])['Weight'].sum()
+    tmp['Percent'] = 100*tmp['Weight'].divide(weight_sum)
+
+    # Ugh, have to make all levels have a value to avoid color or linetype errors
+    tmp = tmp.set_index(by, append=True).unstack(fill_value=0).stack().reset_index()#.sort_values(['Survey', by, 'Date']) # 0 or -1???
+    tmp.loc[tmp['Percent']<0,'Percent'] = np.NaN
+
+    if 'order' in kwargs:
+        order = kwargs.pop('order')
+    else:
+        order = tmp[by].unique()
+
+    tmp.set_index(['Date', by])['Percent'].unstack(by)[order].plot.area(ax=pl.gca(), linewidth=0) #x='Date', y='Percent'
+
 
 def plot_pie(*args, **kwargs):
     data = kwargs.pop('data')
     by = kwargs.pop('by')
     ans = data.groupby(by)['Weight'].sum()
-    pl.pie(ans.values, labels=ans.index.tolist(), labeldistance=None, explode=0.1*np.ones_like(ans.values))
+    print(ans)
+    kwargs.pop('color')
+    pl.pie(ans.values, labels=ans.index.tolist(), labeldistance=1.1, explode=0.1*np.ones_like(ans.values), autopct='%1.0f%%', **kwargs)
 
 
 def plot_pop_pyramid(*args, **kwargs):

@@ -148,6 +148,16 @@ class URHI(Base):
         self.data.loc[self.data['SurveyName']=='Midline', 'Parity'] = \
             self.data.loc[self.data['SurveyName']=='Midline', 'Parity'].fillna(0)
 
+        NO_METHOD = 'No method'
+        SHORT = 'Short-term'
+        LONG = 'Long-term'
+        INJECTION = 'Injection'
+        OTHER = 'Other'
+
+        self.data.loc[:,'MethodDurability'] = self.data['Method']
+
+        print(self.data.head())
+
         self.data.replace(
             {
                 'Method': {
@@ -169,6 +179,28 @@ class URHI(Base):
                     'Other modern method': 'Other modern',
                     'Emergency pill': 'Other modern',
                 },
+
+                'MethodDurability': {
+                    #'No method': NO_METHOD, # Causes...  "ValueError: Replacement not allowed with overlapping keys and values"
+
+                    'Daily pill': SHORT,
+                    'Female condom': SHORT,
+                    'Male condom': SHORT,
+
+                    'Injectables': INJECTION,
+
+                    'Female sterilization': LONG,
+                    'iucd': LONG,
+                    'Implants': LONG,
+
+                    'Natural methods': OTHER,
+                    'Breastfeeding/LAM': OTHER,
+                    'Other traditional method': OTHER,
+                    'sdm': OTHER,
+                    'Other modern method': OTHER,
+                    'Emergency pill': OTHER,
+                },
+
                 'Unmet': {
                     '-1.0': 'Unknown',
                     'No unmet need': 'No',
