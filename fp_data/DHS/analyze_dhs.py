@@ -16,7 +16,7 @@ fs=(12,8)
 username = os.path.split(os.path.expanduser('~'))[-1]
 folderdict = {
     #'dklein': os.path.join( os.getenv("HOME"), 'Dropbox (IDM)', 'FP Dynamic Modeling', 'DHS', 'Country data', 'Nigeria', '2013', 'NGIR6ADT', 'NGIR6AFL.DTA'),
-    'dklein': '/home/dklein/Dropbox (IDM)/FP Dynamic Modeling/DHS/Country data/Senegal/',
+    'dklein': '/home/dklein/sdb2/Dropbox (IDM)/FP Dynamic Modeling/DHS/Country data/Senegal/',
     'cliffk': '/u/cliffk/idm/fp/data/DHS/NGIR6ADT/NGIR6AFL.DTA',
 }
 
@@ -208,18 +208,23 @@ def read():
     barriers = pd.DataFrame(index=yeardict.keys(), columns=keys).fillna(0)
     print(data[keys].describe())
     for year, dat in data.groupby('SurveyName'):
-        ret = {}
-        wsum = dat['v005'].sum()
         for k in keys:
-            #print(year, k, dat[k].unique())  # nan, no, yes, not married
-
+            print(year, k, dat[k].unique())  # nan, no, yes, not married
             tmp = dat[[k,'v005']].dropna()
             if tmp.shape[0] == 0:
                 print('NaN', year, k, indicators[k], dat[k].unique())
                 continue
             ans = 100 * np.dot(~(tmp[k] == 'no'), tmp['v005']) / tmp['v005'].sum()
+            print('%.2f'%ans, year, k, indicators[k], tmp[k].unique())
+            if len(tmp[k].unique()) == 1 and ans < 99:
+                print('Huh')
+                print(tmp)
+                print(tmp.shape)
+                print('Not no:', ~(tmp[k] == 'no'))
+                print('Num:', np.dot(~(tmp[k] == 'no'), tmp['v005']))
+                print('Den:', tmp['v005'].sum())
+                exit()
             barriers.loc[year, k] = ans
-            print('%.2f'%ans, year, k, indicators[k], dat[k].unique())
 
 
     new_colname_dict = {k: v.split(':')[1][1:] for k,v in indicators.items() if k in keys}

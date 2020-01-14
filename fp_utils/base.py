@@ -72,5 +72,3 @@ class Base:
             raise Exception('Help!')
 
         return year + month/12
-
-

@@ -131,12 +131,17 @@ class DHS(Base):
 
 
     def __init__(self, foldername, force_read=False, cores=8):
+
+        self.barrier_keys = [k for k in self.indicators.keys() if k[:5] == 'v3a08']
+        self.barrier_map = {k: v.split(':')[1][1:] for k,v in self.indicators.items() if k in self.barrier_keys}
+
         self.cachefn = os.path.join('cache', 'dhs.hdf')
         self.results_dir = os.path.join('results', 'DHS')
 
         super().__init__(foldername, force_read, cores)
 
         self.cache_read()
+
         self._clean()
 
         year_to_date = self.data.groupby('SurveyName')['SurveyYear', 'InterviewDateCMC'].mean().apply(self.cmc_to_year, axis=1) # mean CMC
@@ -172,6 +177,7 @@ class DHS(Base):
                 self.data, self.barrier, self.birth_spacing = self.read()
 
 
+
     def load(self, x):
         year, path = x
         filename = os.path.join(self.foldername, path)
@@ -191,10 +197,10 @@ class DHS(Base):
         data = data[['SurveyName'] + found_keys]
 
         values = pd.io.stata.StataReader(filename).value_labels()
-        replace_dict = {k: values[k.upper()] if k.upper() in values else values[k] for k in found_keys if k in values or k.upper() in values}
-        for k in replace_dict.keys():
-            #data[k] = data[k].replace(replace_dict[k]).astype('category')
-            if 0 in replace_dict[k]:
+        replace_map = {k: values[k.upper()] if k.upper() in values else values[k] for k in found_keys if k in values or k.upper() in values}
+        for k in replace_map.keys():
+            #data[k] = data[k].replace(replace_map[k]).astype('category')
+            if 0 in replace_map[k]:
                 # zero-based
                 data[k] = data[k].fillna(-1)
             else:
@@ -202,10 +208,10 @@ class DHS(Base):
                 data[k] = data[k].fillna(0) - 1
 
             try:
-                data[k] = pd.Categorical.from_codes(data[k], categories = [unidecode.unidecode(v[1]) for v in sorted(replace_dict[k].items(), key = lambda x: x[0])] )
+                data[k] = pd.Categorical.from_codes(data[k], categories = [unidecode.unidecode(v[1]) for v in sorted(replace_map[k].items(), key = lambda x: x[0])] )
             except:
-                #print('Difficulty:', year, k, data[k].unique(), replace_dict[k])
-                data[k] = data[k].replace(replace_dict[k]).map(str) #.astype('category')
+                #print('Difficulty:', year, k, data[k].unique(), replace_map[k])
+                data[k] = data[k].replace(replace_map[k]).map(str) #.astype('category')
                 #print(data[k])
 
         if False: # TODO: Make argparse flag
@@ -225,13 +231,9 @@ class DHS(Base):
         data.to_hdf(self.cachefn, key='data', format='t')
 
         # Build barriers from reasons for non-use questions
-        keys = [k for k in self.indicators.keys() if k[:5] == 'v3a08']
-        barriers = pd.DataFrame(index=self.yeardict.keys(), columns=keys).fillna(0)
-        print(data[keys].describe())
+        barriers = pd.DataFrame(index=self.yeardict.keys(), columns=self.barrier_keys).fillna(0)
         for year, dat in data.groupby('SurveyName'):
-            ret = {}
-            wsum = dat['v005'].sum()
-            for k in keys:
+            for k in self.barrier_keys:
                 #print(year, k, dat[k].unique())  # nan, no, yes, not married
 
                 tmp = dat[[k,'v005']].dropna()
@@ -242,14 +244,13 @@ class DHS(Base):
                 barriers.loc[year, k] = ans
                 print('%.2f'%ans, year, k, self.indicators[k], dat[k].unique())
 
-
-        new_colname_dict = {k: v.split(':')[1][1:] for k,v in self.indicators.items() if k in keys}
-        barriers.rename(columns=new_colname_dict, inplace=True)
+        barriers.rename(columns=self.barrier_map, inplace=True)
         barriers = barriers.stack()
         barriers.name = 'Percent'
         barriers = barriers.reset_index().rename(columns={'level_0':'SurveyName','level_1':'Barrier'})
 
         barriers.to_hdf(self.cachefn, key='barriers', format='t')
+
 
         # BIRTH SPACING
         birth_keys = [f'b3_{i:02}' for i in range(20,0,-1)]
@@ -267,6 +268,56 @@ class DHS(Base):
         birth_spacing.to_hdf(self.cachefn, key='birth_spacing', format='t')
 
         return data, barriers, birth_spacing
+
+
+    def compute_individual_barriers(self):
+        # INDIVIDUAL BARRIERS
+        barrier_map = {
+            "not married": "No need",
+            "not having sex": "No need",
+            "infrequent sex": "No need",
+            "menopausal/hysterectomy": "No need",
+            "subfecund/infecund": "No need",
+            "postpartum amenorrheic": "No need",
+            "breastfeeding": "No need",
+            "fatalistic": "Opposition",
+            "respondent opposed": "Opposition",
+            "husband/partner opposed": "Opposition",
+            "others opposed": "Opposition",
+            "religious prohibition": "Opposition",
+            "knows no method": "Knowledge",
+            "knows no source": "Access",
+            "health concerns": "Health",
+            "fear of side effects/health concerns": "Health",
+            "lack of access/too far": "Access",
+            "costs too much": "Access",
+            "inconvenient to use": "Health",
+            "interferes with body's processes": "Health",
+            "preferred method not available": "Access",
+            "no method available": "Access",
+            "cs": "N/A",
+            "cs": "N/A",
+            "cs": "N/A",
+            "cs": "N/A",
+            "cs": "N/A",
+            "other": "N/A",
+            "don't know": "N/A",
+        }
+
+        coarse_barrier_map = {k:barrier_map[v] for k,v in self.barrier_map.items()}
+        dat = self.data.set_index(['SurveyName', 'Age', 'Parity', 'Weight', 'Unmet', 'Method', 'MethodType'])
+        B = ~dat[self.barrier_keys].isin(['no', np.NaN, '-1.0'])
+
+        B = B.rename(columns=coarse_barrier_map)
+        B = B.stack()
+        B.index = B.index.rename(level=B.index.names.index(None), names='BarrierBin')
+        individual_barriers = B.groupby(dat.index.names + ['BarrierBin']).sum().unstack('BarrierBin')
+
+        # Might as well cache
+        individual_barriers.to_hdf(self.cachefn, key='individual_barriers', format='t')
+
+        return individual_barriers
+
 
     def _clean(self):
         self.raw = self.data
