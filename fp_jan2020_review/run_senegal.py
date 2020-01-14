@@ -11,10 +11,10 @@ do_run              = 1
 do_plot_popsize     = 1
 do_plot_pyramids    = 1
 do_plot_skyscrapers = 1
-do_save             = 1
+do_save             = 0
 
-year_str = '2015'
-pop_pyr_2015_fn = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
+year_str = '2010-11'
+pop_pyr_year_fn = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
 skyscrapers_fn = sp.abspath('dropbox/Skyscrapers-All-DHS.csv')
 
 if do_run:
@@ -67,14 +67,14 @@ if do_run:
     if do_plot_pyramids:
         fig2 = pl.figure(figsize=(16,16))
         
-        # Load 2015 population pyramid from DHS
+        # Load population pyramid from DHS
         min_age = 15
         max_age = 50
         bin_size = 5
-        pop_pyr_2015  = pd.read_csv(pop_pyr_2015_fn, header=None)
-        pop_pyr_2015 = pop_pyr_2015[pop_pyr_2015[0]==year_str]
+        pop_pyr_year  = pd.read_csv(pop_pyr_year_fn, header=None)
+        pop_pyr_year = pop_pyr_year[pop_pyr_year[0]==year_str]
         bins = pl.arange(min_age, max_age, bin_size)
-        pop_props_2015 = pop_pyr_2015[2].to_numpy()
+        pop_props_year = pop_pyr_year[2].to_numpy()
         
         plotstyle = {'marker':'o', 'lw':3}
         
@@ -87,10 +87,10 @@ if do_run:
         counts = counts/counts.sum()
         
         x = pl.hstack([bins, bins[::-1]])
-        PP = pl.hstack([pop_props_2015,-pop_props_2015[::-1]])
+        PP = pl.hstack([pop_props_year,-pop_props_year[::-1]])
         CC = pl.hstack([counts,-counts[::-1]])
         
-        pl.plot(PP, x, c='b', label='2015 data', **plotstyle)
+        pl.plot(PP, x, c='b', label=f'{year_str} data', **plotstyle)
         pl.plot(CC, x, c='g', label='Model', **plotstyle)
         
         pl.legend()
