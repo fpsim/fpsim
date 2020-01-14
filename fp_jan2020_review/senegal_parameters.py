@@ -61,7 +61,7 @@ def default_age_mortality():
 def default_age_fertility():
     ''' Less-developed countries, WPP2019_MORT_F15_3_LIFE_TABLE_SURVIVORS_FEMALE.xlsx, 1990-1995 '''
     f15 = 0.003 # Adjustment factor for women aged 15-20
-    f20 = 0.15 # Adjustment factor for women aged 20-25
+    f20 = 0.25 # Adjustment factor for women aged 20-25
     fertility = sc.odict([
             ('bins', pl.array([ 0,  5, 10,      15,     20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95])), 
             ('f',    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]))])
