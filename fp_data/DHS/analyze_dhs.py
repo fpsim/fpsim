@@ -379,8 +379,6 @@ def main(force_read = False):
     g.fig.subplots_adjust(top=0.93, wspace=0.3)
     g.savefig(os.path.join(results_dir, f'BirthSpacing_urban_rural.png'))
 
-    plt.close('all')
-
 
     # -------------------------------------------------------------------------
     # PLOTTING FUNCTIONS

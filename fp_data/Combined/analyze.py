@@ -30,16 +30,16 @@ folderdict = {
 }
 
 
-def main(force_read = False):
+def main(show_plots = False, force_read = False, individual_barriers = False):
     results_dir = os.path.join('results', 'Combined')
     Path(results_dir).mkdir(parents=True, exist_ok=True)
 
     d = DHS(folderdict[username]['DHS'], force_read)
     u = URHI(folderdict[username]['URHI'], force_read)
 
-    individual_barriers = d.compute_individual_barriers()
-    individual_barriers.to_csv(os.path.join(results_dir, 'DHSIndividualBarriers.csv'))
-    exit()
+    if individual_barriers:
+        ib = d.compute_individual_barriers()
+        ib.to_csv(os.path.join(results_dir, 'DHSIndividualBarriers.csv'))
 
     # Useful to see which methods are classified as modern / traditional
     print(pd.crosstab(index=d.data['Method'], columns=d.data['MethodType'], values=d.data['Weight']/1e6, aggfunc=sum))
@@ -135,7 +135,7 @@ def main(force_read = False):
     # TODO: pull out married women, or exposed
     dhs_urhi['Modern'] = dhs_urhi['MethodType'] == 'Modern'
     g = sns.FacetGrid(data=dhs_urhi, hue='Survey', height=5)
-    g.map_dataframe(plot_line_percent, by='Modern', values=[True]).add_legend().set_xlabels('Year').set_ylabels('mCPR-AW')
+    g.map_dataframe(plot_line_percent, by='Modern', values=[True]).add_legend().set_xlabels('Year').set_ylabels('mCPR-AW').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'mCPR.png'))
 
     ###########################################################################
@@ -149,22 +149,31 @@ def main(force_read = False):
     # UNMET NEED
     ###########################################################################
     g = sns.FacetGrid(data=urhi_like, height=5)
-    g.map_dataframe(plot_line_percent, by='Unmet').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='Unmet').add_legend().set_xlabels('Year').set_ylabels('Percent').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'UnmetNeed.png'))
+
+    # Move Unknown to No, only affects URHI.  Should compute my own Unmet Need column
+    #print(u.data.loc[u.data['Unmet']=='Unknown', ['Method']])
+    tmp = dhs_urhi.loc[dhs_urhi['Date']>2005,:]
+    tmp.loc[tmp['Unmet'] == 'Unknown', 'Unmet'] = 'No'
+    g = sns.FacetGrid(data=tmp, hue='Survey', height=6)
+    g.map_dataframe(plot_line_percent, by='Unmet', values=['Yes']).add_legend().set_xlabels('Year').set_ylabels('Unmet Need').set(ylim=(0,None))
+    g.savefig(os.path.join(results_dir, 'Unmet_UnknownAsNo.png'))
+
 
     ###########################################################################
     # METHOD TYPE LINES
     ###########################################################################
     g = sns.FacetGrid(data=urhi_like, height=5)
-    g.map_dataframe(plot_line_percent, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'MethodType.png'))
 
     g = sns.FacetGrid(data=urhi_like, col='AgeBinCoarse', height=5)
-    g.map_dataframe(plot_line_percent, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'MethodType_by_AgeBinCoarse.png'))
 
     g = sns.FacetGrid(data=urhi_like, col='ParityBin', col_wrap=4, height=3)
-    g.map_dataframe(plot_line_percent, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='MethodType').add_legend().set_xlabels('Year').set_ylabels('Percent').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'MethodType_by_ParityBin.png'))
 
 
@@ -219,20 +228,20 @@ def main(force_read = False):
     mod = data.loc[(data['MethodType']=='Modern') & (data['Date']>1995)]
 
     g = sns.FacetGrid(data=mod, height=5)
-    g.map_dataframe(plot_line_percent, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'ModernMethod.png'))
 
     g = sns.FacetGrid(data=mod, col='AgeBinCoarse', height=5)
-    g.map_dataframe(plot_line_percent, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'ModernMethod_by_AgeBinCoarse.png'))
 
     g = sns.FacetGrid(data=mod, col='ParityBin', col_wrap=4, height=3)
-    g.map_dataframe(plot_line_percent, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='Method').add_legend().set_xlabels('Year').set_ylabels('Percent').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'ModernMethod_by_Parity.png'))
 
     mod.loc[mod['Method'].isin(['Female sterilization', 'LAM', 'IUD', 'Condom']), 'Method'] = 'Other modern'
     g = sns.FacetGrid(data=mod, height=5)
-    g.map_dataframe(plot_line_percent, by='Method', hue_order=['Injectable', 'Daily pill', 'Other modern', 'Implant'], marker='o').add_legend().set_xlabels('Year').set_ylabels('Percent')
+    g.map_dataframe(plot_line_percent, by='Method', hue_order=['Injectable', 'Daily pill', 'Other modern', 'Implant']).add_legend().set_xlabels('Year').set_ylabels('Percent').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'ModernMethodCoarse.png'))
 
     ###########################################################################
@@ -323,16 +332,19 @@ def main(force_read = False):
     plt.tight_layout()
     '''
 
-    plt.show()
+    if show_plots:
+        plt.show()
 
 
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--force', default=False, action='store_true')
+    parser.add_argument('--barriers', default=False, action='store_true')
+    parser.add_argument('--plot', default=False, action='store_true')
     args = parser.parse_args()
 
-    main(force_read = args.force)
+    main(show_plots = args.plot, force_read = args.force, individual_barriers = args.barriers)
 
 
 #print(pd.crosstab(data['SurveyName'], data['v102'], data['v213']*data['Weight']/1e6, aggfunc=sum))
