@@ -10,11 +10,11 @@ def abspath(path):
     output = os.path.join(cwd, path)
     return output
 
-pop_pyr_1982_fn = abspath('data/senegal-population-pyramid-1982.csv')
+# pop_pyr_1982_fn = abspath('data/senegal-population-pyramid-1982.csv')
 popsize_tfr_fn = abspath('data/senegal-popsize-tfr.csv')
 
 # Load data
-pop_pyr_1982 = pd.read_csv(pop_pyr_1982_fn)
+# pop_pyr_1982 = pd.read_csv(pop_pyr_1982_fn)
 popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
 
 # Handle population size
@@ -28,24 +28,44 @@ popsize = popsize_tfr.iloc[1,:].to_numpy() / scale_factor
 #%% Set parameters for the simulation
 
 def default_age_pyramid():
-    ''' Starting age bin, male population, female population -- based on Senegal 1982 '''
-    pyramid = pl.array([[0,  579035, 567499],
-                        [5,  459255, 452873],
-                        [10, 364432, 359925],
-                        [15, 294589, 292235],
-                        [20, 239825, 241363],
-                        [25, 195652, 198326],
-                        [30, 155765, 158950],
-                        [35, 135953, 137097],
-                        [40, 124615, 122950],
-                        [45, 107622, 106116],
-                        [50,  89533, 89654],
-                        [55,  70781, 73290],
-                        [60,  52495, 57330],
-                        [65,  36048, 41585],
-                        [70,  21727, 26383],
-                        [75,  10626, 13542],
-                        [80,   4766,  6424]])   
+    # ''' Starting age bin, male population, female population -- based on Senegal 1982 '''
+    # pyramid = pl.array([[0,  579035, 567499],
+    #                     [5,  459255, 452873],
+    #                     [10, 364432, 359925],
+    #                     [15, 294589, 292235],
+    #                     [20, 239825, 241363],
+    #                     [25, 195652, 198326],
+    #                     [30, 155765, 158950],
+    #                     [35, 135953, 137097],
+    #                     [40, 124615, 122950],
+    #                     [45, 107622, 106116],
+    #                     [50,  89533, 89654],
+    #                     [55,  70781, 73290],
+    #                     [60,  52495, 57330],
+    #                     [65,  36048, 41585],
+    #                     [70,  21727, 26383],
+    #                     [75,  10626, 13542],
+    #                     [80,   4766,  6424]])
+    
+    pyramid = pl.array([ [0,  318225,  314011], # Senegal 1962
+                         [5,  249054,  244271],
+                        [10,  191209,  190998],
+                        [15,  157800,  159536],
+                        [20,  141480,  141717],
+                        [25,  125002,  124293],
+                        [30,  109339,  107802],
+                        [35,  93359,   92119],
+                        [40,  77605,   78231],
+                        [45,  63650,   66117],
+                        [50,  51038,   54934],
+                        [55,  39715,   44202],
+                        [60,  29401,   33497],
+                        [65,  19522,   23019],
+                        [70,  11686,   14167],
+                        [75,  5985,    7390],
+                        [80,  2875,    3554],
+                    ])
+    
     return pyramid
     
 
@@ -61,7 +81,7 @@ def default_age_mortality():
 def default_age_fertility():
     ''' Less-developed countries, WPP2019_MORT_F15_3_LIFE_TABLE_SURVIVORS_FEMALE.xlsx, 1990-1995 '''
     f15 = 0.003 # Adjustment factor for women aged 15-20
-    f20 = 0.15 # Adjustment factor for women aged 20-25
+    f20 = 0.25 # Adjustment factor for women aged 20-25
     fertility = sc.odict([
             ('bins', pl.array([ 0,  5, 10,      15,     20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95])), 
             ('f',    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0]))])
@@ -70,41 +90,24 @@ def default_age_fertility():
 
 
 def default_methods():
-    return ['none', 'lactation', 'implant', 'injectable', 'iud', 'pill', 'condom', 'other', 'traditional']
+    return ['None', 'Lactation', 'Implants', 'Injectables', 'IUDs', 'Pill', 'Condoms', 'Other', 'Traditional']
 
 
     
 def default_switching():
     
     matrix = pl.array([
-       [8.81230657e-01, 0.00000000e+00, 9.56761433e-04, 1.86518124e-03,
-        1.44017774e-04, 8.45978530e-04, 1.80273996e-04, 1.61138768e-05,
-        1.46032008e-04],
-       [2.21565806e-05, 1.52074712e-04, 2.01423460e-06, 3.02135189e-06,
-        0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
-        0.00000000e+00],
-       [3.45441233e-04, 0.00000000e+00, 3.29206502e-02, 1.61138768e-05,
-        5.03558649e-06, 1.40996422e-05, 2.01423460e-06, 0.00000000e+00,
-        1.00711730e-06],
-       [1.22767599e-03, 0.00000000e+00, 3.02135189e-05, 4.28810403e-02,
-        1.40996422e-05, 6.94910936e-05, 8.05693838e-06, 0.00000000e+00,
-        6.04270379e-06],
-       [3.52491054e-05, 0.00000000e+00, 2.01423460e-06, 3.02135189e-06,
-        6.10715929e-03, 5.03558649e-06, 0.00000000e+00, 0.00000000e+00,
-        0.00000000e+00],
-       [6.33476780e-04, 0.00000000e+00, 1.30925249e-05, 5.03558649e-05,
-        6.04270379e-06, 1.97092855e-02, 4.02846919e-06, 1.00711730e-06,
-        6.04270379e-06],
-       [8.35907357e-05, 0.00000000e+00, 5.03558649e-06, 6.04270379e-06,
-        2.01423460e-06, 3.02135189e-06, 3.94689269e-03, 2.01423460e-06,
-        1.00711730e-06],
-       [1.20854076e-05, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,
-        0.00000000e+00, 0.00000000e+00, 3.02135189e-06, 1.74432716e-03,
-        1.00711730e-06],
-       [4.93487476e-05, 0.00000000e+00, 2.01423460e-06, 4.02846919e-06,
-        0.00000000e+00, 2.01423460e-06, 0.00000000e+00, 0.00000000e+00,
-        4.45145846e-03]])
+       [8.81230657e-01, 0.00000000e+00, 9.56761433e-04, 1.86518124e-03,        1.44017774e-04, 8.45978530e-04, 1.80273996e-04, 1.61138768e-05,        1.46032008e-04],
+       [2.21565806e-05, 1.52074712e-04, 2.01423460e-06, 3.02135189e-06,        0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,        0.00000000e+00],
+       [3.45441233e-04, 0.00000000e+00, 3.29206502e-02, 1.61138768e-05,        5.03558649e-06, 1.40996422e-05, 2.01423460e-06, 0.00000000e+00,        1.00711730e-06],
+       [1.22767599e-03, 0.00000000e+00, 3.02135189e-05, 4.28810403e-02,        1.40996422e-05, 6.94910936e-05, 8.05693838e-06, 0.00000000e+00,        6.04270379e-06],
+       [3.52491054e-05, 0.00000000e+00, 2.01423460e-06, 3.02135189e-06,        6.10715929e-03, 5.03558649e-06, 0.00000000e+00, 0.00000000e+00,        0.00000000e+00],
+       [6.33476780e-04, 0.00000000e+00, 1.30925249e-05, 5.03558649e-05,        6.04270379e-06, 1.97092855e-02, 4.02846919e-06, 1.00711730e-06,        6.04270379e-06],
+       [8.35907357e-05, 0.00000000e+00, 5.03558649e-06, 6.04270379e-06,        2.01423460e-06, 3.02135189e-06, 3.94689269e-03, 2.01423460e-06,        1.00711730e-06],
+       [1.20854076e-05, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,        0.00000000e+00, 0.00000000e+00, 3.02135189e-06, 1.74432716e-03,        1.00711730e-06],
+       [4.93487476e-05, 0.00000000e+00, 2.01423460e-06, 4.02846919e-06,        0.00000000e+00, 2.01423460e-06, 0.00000000e+00, 0.00000000e+00,        4.45145846e-03]])
     
+    matrix[0,0] *= 0.53
     
     switching = sc.odict()
     for i,method1 in enumerate(default_methods()):
@@ -118,15 +121,15 @@ def default_efficacy():
     
     # Expressed as failure rates
     method_efficacy = sc.odict({
-            'none':100.0, # WARNING, should this be 0.3, the pregnancy rate per act?
-            'lactation':10.0,
-            'implant':0.6,
-            'injectable':1.7,
-            'iud':1.4,
-            'pill':5.5,
-            'condom':5.4,
-            'other':5.5,
-            'traditional':13.4,
+            'None':100.0, # WARNING, should this be 0.3, the pregnancy rate per act?
+            'Lactation':10.0,
+            'Implants':0.6,
+            'Injectables':1.7,
+            'IUDs':1.4,
+            'Pill':5.5,
+            'Condoms':5.4,
+            'Other':5.5,
+            'Traditional':13.4,
             })
     
     for key,value in method_efficacy.items():
@@ -139,15 +142,13 @@ def default_efficacy():
 
 def default_barriers():
     barriers = sc.odict({
-        'noneed':45.6,
-        'problem':30.1,
-        'pregnant':10.0,
-        'husband':2.7,
-        'supply':0.5,
-        'other':11.1,
+        'No need':45.6,
+        'Opposition':30.1,
+        'Knowledge':10.0,
+        'Access':2.7,
+        'Health':11.6,
         })
-    barriers[:] /= 100
-    
+    barriers[:] /= barriers[:].sum() # Ensure it adds to 1    
     return barriers
 
 def make_pars():
@@ -170,8 +171,8 @@ def make_pars():
     pars['barriers'] = default_barriers()
     pars['switching'] = default_switching() #pars['initial'], 
     pars['mortality_factor'] = 2.7
-    pars['fertility_factor'] = 32 # No idea why this needs to be so high
-    pars['fertility_variation'] = [0.5,1.5] # Multiplicative range of fertility factors
+    pars['fertility_factor'] = 33 # No idea why this needs to be so high
+    pars['fertility_variation'] = [0.3,2.0] # Multiplicative range of fertility factors
     pars['method_age'] = 15 # When people start choosing a method (sexual debut)
     pars['max_age'] = 99
     
