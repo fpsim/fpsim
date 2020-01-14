@@ -10,11 +10,11 @@ def abspath(path):
     output = os.path.join(cwd, path)
     return output
 
-pop_pyr_1982_fn = abspath('data/senegal-population-pyramid-1982.csv')
+# pop_pyr_1982_fn = abspath('data/senegal-population-pyramid-1982.csv')
 popsize_tfr_fn = abspath('data/senegal-popsize-tfr.csv')
 
 # Load data
-pop_pyr_1982 = pd.read_csv(pop_pyr_1982_fn)
+# pop_pyr_1982 = pd.read_csv(pop_pyr_1982_fn)
 popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
 
 # Handle population size
@@ -28,24 +28,44 @@ popsize = popsize_tfr.iloc[1,:].to_numpy() / scale_factor
 #%% Set parameters for the simulation
 
 def default_age_pyramid():
-    ''' Starting age bin, male population, female population -- based on Senegal 1982 '''
-    pyramid = pl.array([[0,  579035, 567499],
-                        [5,  459255, 452873],
-                        [10, 364432, 359925],
-                        [15, 294589, 292235],
-                        [20, 239825, 241363],
-                        [25, 195652, 198326],
-                        [30, 155765, 158950],
-                        [35, 135953, 137097],
-                        [40, 124615, 122950],
-                        [45, 107622, 106116],
-                        [50,  89533, 89654],
-                        [55,  70781, 73290],
-                        [60,  52495, 57330],
-                        [65,  36048, 41585],
-                        [70,  21727, 26383],
-                        [75,  10626, 13542],
-                        [80,   4766,  6424]])   
+    # ''' Starting age bin, male population, female population -- based on Senegal 1982 '''
+    # pyramid = pl.array([[0,  579035, 567499],
+    #                     [5,  459255, 452873],
+    #                     [10, 364432, 359925],
+    #                     [15, 294589, 292235],
+    #                     [20, 239825, 241363],
+    #                     [25, 195652, 198326],
+    #                     [30, 155765, 158950],
+    #                     [35, 135953, 137097],
+    #                     [40, 124615, 122950],
+    #                     [45, 107622, 106116],
+    #                     [50,  89533, 89654],
+    #                     [55,  70781, 73290],
+    #                     [60,  52495, 57330],
+    #                     [65,  36048, 41585],
+    #                     [70,  21727, 26383],
+    #                     [75,  10626, 13542],
+    #                     [80,   4766,  6424]])
+    
+    pyramid = pl.array([ [0,  318225,  314011], # Senegal 1962
+                         [5,  249054,  244271],
+                        [10,  191209,  190998],
+                        [15,  157800,  159536],
+                        [20,  141480,  141717],
+                        [25,  125002,  124293],
+                        [30,  109339,  107802],
+                        [35,  93359,   92119],
+                        [40,  77605,   78231],
+                        [45,  63650,   66117],
+                        [50,  51038,   54934],
+                        [55,  39715,   44202],
+                        [60,  29401,   33497],
+                        [65,  19522,   23019],
+                        [70,  11686,   14167],
+                        [75,  5985,    7390],
+                        [80,  2875,    3554],
+                    ])
+    
     return pyramid
     
 
