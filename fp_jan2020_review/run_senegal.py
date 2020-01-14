@@ -8,10 +8,11 @@ import senegal_parameters as sp
 
 # Set parameters
 do_run              = 1
-do_plot_popsize     = 1
-do_plot_pyramids    = 1
-do_plot_skyscrapers = 1
-do_plot_methods     = 1
+do_plot_popsize     = 0
+do_plot_pyramids    = 0
+do_plot_skyscrapers = 0
+do_plot_methods     = 0
+do_plot_spacing     = 1
 do_save             = 1
 
 min_age = 15
@@ -21,6 +22,7 @@ year_str = '2010-11'
 pop_pyr_year_file = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
 skyscrapers_file = sp.abspath('dropbox/Skyscrapers-All-DHS.csv')
 methods_file = sp.abspath('dropbox/Method_v312.csv')
+spacing_file = sp.abspath('dropbox/BirthSpacing.csv')
 
 if do_run:
     pars = sp.make_pars()
@@ -280,6 +282,53 @@ if do_run:
         
         if do_save:
             pl.savefig(sp.abspath(f'figs/senegal_method_mix.png'))
+    
+    
+    if do_plot_spacing:
+        
+        spacing_bins = sc.odict({'0-12':0,'12-24':1,'24-36':2,'>36':3}) # Spacing bins in years
+        
+        # From data
+        data = pd.read_csv(spacing_file)
+
+        right_year = data['SurveyYear']=='2010-11'
+        not_first = data['Birth Order'] != 0
+        
+        filtered = data[right_year][not_first]
+        spacing = filtered['Birth Spacing'].to_numpy()
+        sorted_spacing = sorted(spacing)
+        
+        x_ax = pl.linspace(0,100,len(sorted_spacing))
+        
+        # From model
+        model_spacing = []
+        model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+        for person in people:
+            if len(person.dobs)>1:
+                for d in range(len(person.dobs)-1):
+                    space = person.dobs[d+1] - person.dobs[d]
+                    ind = sc.findinds(space>spacing_bins[:])[-1]
+                    model_spacing_counts[ind] += 1
+                    
+                    model_spacing.append(space)
+        
+        model_ax = pl.linspace(0,100,len(model_spacing))
+        
+        # Plotting
+        fig = pl.figure(figsize=(16,12))
+        
+        pl.plot(x_ax, sorted(spacing), c='k', label='Data', lw=3)
+        pl.plot(model_ax, sorted(model_spacing), c=(0.2,0.7,0.1), label='Model', lw=3)
+        pl.xlim([0,100.1])
+        sc.setylim()
+        pl.xlabel('Probability (%)')
+        pl.ylabel('Birth spacing (years)')
+        pl.title(f'Birth spacing is: data={pl.mean(spacing):0.2f}±{pl.std(spacing):0.2f} years, model={pl.mean(model_spacing):0.2f}±{pl.std(model_spacing):0.2f} years')
+        pl.legend()
+        
+        if do_save:
+            pl.savefig(sp.abspath(f'figs/senegal_birth_spacing.png'))
+        
     
     
             
