@@ -190,8 +190,8 @@ def make_pars():
     pars['barriers'] = default_barriers()
     pars['switching'] = default_switching() #pars['initial'], 
     pars['mortality_factor'] = 2.7
-    pars['fertility_factor'] = 32 # No idea why this needs to be so high
-    pars['fertility_variation'] = [0.5,1.5] # Multiplicative range of fertility factors
+    pars['fertility_factor'] = 30 # No idea why this needs to be so high
+    pars['fertility_variation'] = [0.3,2.0] # Multiplicative range of fertility factors
     pars['method_age'] = 15 # When people start choosing a method (sexual debut)
     pars['max_age'] = 99
     
