@@ -11,7 +11,7 @@ do_run              = 1
 do_plot_popsize     = 1
 do_plot_pyramids    = 1
 do_plot_skyscrapers = 1
-do_save             = 0
+do_save             = 1
 
 year_str = '2010-11'
 pop_pyr_year_fn = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
