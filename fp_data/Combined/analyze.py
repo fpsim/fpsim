@@ -34,8 +34,8 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     results_dir = os.path.join('results', 'Combined')
     Path(results_dir).mkdir(parents=True, exist_ok=True)
 
-    d = DHS(folderdict[username]['DHS'], force_read)
     u = URHI(folderdict[username]['URHI'], force_read)
+    d = DHS(folderdict[username]['DHS'], force_read)
 
 
     if individual_barriers:
@@ -55,6 +55,61 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     dhs_urhi = pd.concat((d.data[cols], d.urhi_like[cols], u.data[cols]))
 
     all_data = pd.concat((d.data[cols], d.urhi_like[cols], d.urban[cols], d.rural[cols], u.data[cols]))
+
+
+    ###########################################################################
+    # URHI - who converted to implants?
+    ###########################################################################
+    implant_end = u.data.loc[(u.data['Method']=='Implant') & (u.data['SurveyName']=='Endline')]
+    switchers = u.data.loc[u.data['SurveyName']=='Baseline'] \
+        .set_index('UID') \
+        .loc[implant_end['UID']]
+    switchers = switchers.loc[switchers['Method'] != 'Implant']
+
+    switchers_ct_raw = pd.crosstab(index=switchers['AgeBin'], columns=switchers['ParityBin'], values=switchers['Weight'], aggfunc=sum)
+    ct_distribution = 100 * switchers_ct_raw / switchers_ct_raw.sum().sum()
+    ct_distribution.fillna(0, inplace=True)
+    ct_distribution.to_csv(os.path.join(results_dir, 'URHI_SwitchedToImplants_FromAgeParity_Distribution.csv'))
+
+    switch_from = 100 * switchers.groupby('Method')['Weight'].sum() .divide( switchers['Weight'].sum() ).fillna(0)
+
+    endline = u.data.loc[u.data['SurveyName']=='Endline']
+    total = u.data.loc[u.data['SurveyName']=='Baseline'] \
+        .set_index('UID') \
+        .loc[endline['UID']]
+    total = total.loc[total['Method'] != 'Implant']
+
+    ct_total = pd.crosstab(index=total['AgeBin'], columns=total['ParityBin'], values=total['Weight'], aggfunc=sum)
+
+    switch_frac = 100*switchers_ct_raw.divide(ct_total).fillna(0)
+    switch_parity_frac = 100 * switchers_ct_raw.sum(axis=0).divide(ct_total.sum(axis=0)).fillna(0)
+    switch_age_frac = 100 * switchers_ct_raw.sum(axis=1).divide(ct_total.sum(axis=1)).fillna(0)
+
+    num_by_method = switchers.groupby('Method')['Weight'].sum()
+    den_by_method =total.groupby('Method')['Weight'].sum()
+
+    switch_from_popfrac = 100 * num_by_method.divide(den_by_method).fillna(0)
+
+
+    switchers_ct_raw.to_csv(os.path.join(results_dir, 'URHI_SwitchedToImplants_FromAgeParity_Counts.csv'))
+    ct_total.to_csv(os.path.join(results_dir, 'URHI_SwitchedToImplants_FromAgeParity_PopTotals.csv'))
+    switch_frac.to_csv(os.path.join(results_dir, 'URHI_SwitchedToImplants_FromAgeParity_PopFraction.csv'))
+    switch_parity_frac.to_csv(os.path.join(results_dir, 'URHI_SwitchedToImplants_FromParity_PopFraction.csv'))
+    switch_age_frac.to_csv(os.path.join(results_dir, 'URHI_SwitchedToImplants_FromAge_PopFraction.csv'))
+
+    switch_from.to_csv(os.path.join(results_dir, 'URHI_SwitchedToImplants_FromMethods_Distribution.csv'))
+    switch_from_popfrac.to_csv(os.path.join(results_dir, 'URHI_SwitchedToImplants_FromMethods_PopFrac.csv'))
+
+    with pd.option_context('display.max_rows', 1000, 'display.float_format', '{:.1f}'.format): # 'display.precision',2, 
+        print('Switchers CT:\n', switchers_ct_raw)
+        print('Switchers CT distribution\n:', ct_distribution)
+        print('Total CT:\n', ct_total)
+        print('Switchers fraction of Total:\n', switch_parity_frac)
+        print( switch_parity_frac )
+        print( switch_age_frac )
+
+        print('Switched to implants from [Distribution]:\n', switch_from)
+        print('Switched to implants from [Pop Frac]:\n', switch_from_popfrac)
 
 
     dat2011 = pd.concat( [
@@ -128,12 +183,13 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     # SURVEY SIZE
     ###########################################################################
     print(dhs_urhi.groupby(['Survey', 'SurveyName', 'Date']).size())
-    fig, ax = plt.subplots(1,1,figsize=(12,6))
+    fig, ax = plt.subplots(1,1,figsize=(8,5))
     tmp = dhs_urhi.groupby(['Survey', 'Date']).size()#.reset_index()
     tmp.name = 'Count'
     sns.lineplot(data = tmp.reset_index(), x='Date', y='Count', hue='Survey', marker='o')
     plt.ylim((0,None))
     plt.savefig(os.path.join(results_dir, 'SurveySize.png'))
+    exit()
 
     ###########################################################################
     # MCPR - All women only for now
@@ -297,29 +353,6 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     g = sns.FacetGrid(data=dat_unmet, col='Survey', row='Year', height=5)
     g.map_dataframe(plot_skyscraper, age='AgeBin', parity='ParityBin', vmax=20).set_xlabels('Parity').set_ylabels('Age')
     g.savefig(os.path.join(results_dir, 'SkyscraperUnmet.png'))
-
-
-    ###########################################################################
-    # URHI - who converted to implants?
-    ###########################################################################
-    implant_end = u.data.loc[(u.data['Method']=='Implant') & (u.data['SurveyName']=='Endline')]
-    switchers = u.data.loc[u.data['SurveyName']=='Baseline'] \
-        .set_index('UID') \
-        .loc[implant_end['UID']]
-    switchers = switchers.loc[switchers['Method'] != 'Implant']
-
-    ct = pd.crosstab(index=switchers['AgeBin'], columns=switchers['ParityBin'], values=switchers['Weight'], aggfunc=sum)
-    ct = 100 * ct / ct.sum().sum()
-    ct.fillna(0, inplace=True)
-    ct.to_csv(os.path.join(results_dir, 'URHI_SwitchedToImplants_FromAgeParity.csv'))
-
-    switch_from = 100 * switchers.groupby('Method')['Weight'].sum() / switchers['Weight'].sum()
-    switch_from.to_csv(os.path.join(results_dir, 'URHI_SwitchedToImplants_FromMethods.csv'))
-
-    with pd.option_context('display.max_rows', 1000, 'display.float_format', '{:.0f}'.format): # 'display.precision',2, 
-        print(ct)
-        print('Switched to implants from:')
-        print(switch_from)
 
 
 
