@@ -9,9 +9,9 @@ import lemod_fp as lfp
 import senegal_parameters as sp
 
 # Set what to run
-run_implants = 1
+run_implants = 0
 run_health   = 0
 
 
-if run_implants:
+# if run_implants:
     
