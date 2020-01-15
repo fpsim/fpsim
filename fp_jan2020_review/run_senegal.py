@@ -8,7 +8,9 @@ import sciris as sc
 import lemod_fp as lfp
 import senegal_parameters as sp
 
+# Housekeeping
 sc.tic()
+pl.rcParams['font.size'] = 16
 
 # Set parameters
 do_run              = 1
@@ -17,7 +19,7 @@ do_plot_pyramids    = 1
 do_plot_skyscrapers = 1
 do_plot_methods     = 1
 do_plot_spacing     = 1
-do_save             = 0
+do_save             = 1
 
 min_age = 15
 max_age = 50
@@ -117,7 +119,7 @@ if do_run:
         pl.legend()
         pl.xlabel('Proportion')
         pl.ylabel('Age')
-        pl.title('Age pyramid')
+        pl.title('Age pyramid', fontweight='bold')
         sc.setylim()
         
         if do_save:
@@ -173,9 +175,9 @@ if do_run:
             fig = pl.figure(figsize=(20,14))
             
             sc.bar3d(fig=fig, data=sky_arr[key], cmap='jet')
-            pl.xlabel('Age')
-            pl.ylabel('Parity')
-            pl.title(f'Age-parity plot for {key}')
+            pl.xlabel('Age', fontweight='bold')
+            pl.ylabel('Parity', fontweight='bold')
+            pl.title(f'Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
             pl.gca().set_xticks(pl.arange(n_age))
             pl.gca().set_yticks(pl.arange(n_parity))
             pl.gca().set_xticklabels(age_bins)
@@ -203,7 +205,7 @@ if do_run:
                 pl.gca().set_xticklabels(x_labels[i])
                 pl.xlabel(labels[i])
                 pl.ylabel('Percentage of population')
-                pl.title(f'Population by: {labels[i]}')
+                pl.title(f'Population by: {labels[i]}', fontweight='bold')
                 pl.legend()
                 if do_save:
                     pl.savefig(sp.abspath(f'figs/senegal_age_parity_sums.png'))
@@ -259,13 +261,13 @@ if do_run:
         fig = pl.figure(figsize=(20,14))
         pl.subplot(2,2,1)
         pl.pie(data_method_counts[:], labels=data_labels)
-        pl.title('Data')
+        pl.title('Method use (DHS data)', fontweight='bold')
         
-        pl.legend(data_method_counts.keys(), loc='upper right', bbox_to_anchor=(1.5,1))
+        pl.legend(data_method_counts.keys(), loc='upper right', bbox_to_anchor=(1.7,0.2))
         
         pl.subplot(2,2,2)
         pl.pie(model_method_counts[:], labels=model_labels)
-        pl.title('Model')
+        pl.title('Method use (model)', fontweight='bold')
         
         # Remake without None
         data_method_counts['None'] = 0.0
@@ -289,13 +291,13 @@ if do_run:
         
         pl.subplot(2,2,3)
         pl.pie(data_method_counts[:], labels=data_labels)
-        pl.title('Data -- excluding no method')
+        pl.title('Method use among users (DHS data)', fontweight='bold')
         
         # pl.legend(data_method_counts.keys(), loc='upper right', bbox_to_anchor=(1,1.5))
         
         pl.subplot(2,2,4)
         pl.pie(model_method_counts[:], labels=model_labels)
-        pl.title('Model -- excluding no method')
+        pl.title('Method use among users (model)', fontweight='bold')
         
         if do_save:
             pl.savefig(sp.abspath(f'figs/senegal_method_mix.png'))
