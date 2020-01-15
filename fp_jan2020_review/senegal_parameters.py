@@ -109,7 +109,7 @@ def default_switching():
     
     matrix[0,0] *= 0.53
     
-    switching = sc.odict()
+    switching = {}
     for i,method1 in enumerate(default_methods()):
         switching[method1] = matrix[i,:] / matrix[i,:].sum() # Normalize now
     
@@ -131,6 +131,7 @@ def default_efficacy():
             'Other':5.5,
             'Traditional':13.4,
             })
+    # method_efficacy[:] = 100
     
     for key,value in method_efficacy.items():
         method_efficacy[key] = method_efficacy[key]/100
@@ -152,7 +153,7 @@ def default_barriers():
     return barriers
 
 def make_pars():
-    pars = sc.odict()
+    pars = {}
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
