@@ -129,13 +129,6 @@ def default_age_fertility():
 def default_methods():
     methods = {}
     
-    def normalize_matrix(matrix):
-        for i in range(len(matrix)):
-            matrix[i] = matrix[i,:] / matrix[i,:].sum() # Normalize so probabilities add to 1
-        return matrix
-    
-    methods['norm_fn'] = normalize_matrix
-    
     methods['map'] = {'None':0, 
                     'Lactation':1, 
                     'Implants':2, 
@@ -145,7 +138,7 @@ def default_methods():
                     'Condoms':6, 
                     'Other':7, 
                     'Traditional':8} # Add 'Novel'?
-    methods['names'] = methods['map'].keys()
+    methods['names'] = list(methods['map'].keys())
     
     methods['matrix'] = pl.array([
        [8.81230657e-01, 0.00000000e+00, 9.56761433e-04, 1.86518124e-03,        1.44017774e-04, 8.45978530e-04, 1.80273996e-04, 1.61138768e-05,        1.46032008e-04],
@@ -162,8 +155,9 @@ def default_methods():
     
     methods['mcpr_years'] = pl.array([1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
     
-    methods['mcpr_rates'] = pl.array([2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
-    methods['mcpr_rates'] /= 100
+    mcpr_rates = pl.array([2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
+    mcpr_rates /= 100
+    methods['mcpr_multipliers'] = (1-mcpr_rates)**4
     
     return methods
 

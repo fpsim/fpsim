@@ -195,7 +195,7 @@ if do_run:
     
     
     if do_plot_methods:
-        data_method_counts = sc.odict().make(keys=sim.pars['methods'], vals=0.0)
+        data_method_counts = sc.odict().make(keys=sim.pars['methods']['names'], vals=0.0)
         model_method_counts = sc.dcp(data_method_counts)
         
         # Load data from DHS -- from dropbox/Method_v312.csv
