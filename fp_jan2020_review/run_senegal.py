@@ -28,6 +28,7 @@ skyscrapers_file = sp.abspath('dropbox/Skyscrapers-All-DHS.csv')
 methods_file = sp.abspath('dropbox/Method_v312.csv')
 spacing_file = sp.abspath('dropbox/BirthSpacing.csv')
 popsize_file = sp.abspath('data/senegal-popsize-tfr.csv')
+barriers_file = sp.abspath('dropbox/DHSIndividualBarriers.csv')
 
 if do_run:
     pars = sp.make_pars()
