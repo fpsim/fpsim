@@ -36,11 +36,12 @@ class CalObj(sc.prettyobj):
     >>> calobj.plot_transitions()
     '''
 
-    def __init__(self, filename=None, which='DHS6', skipmissing=True):
+    def __init__(self, filename=None, which='DHS6', key='vcal_1', skipmissing=True):
         '''
         Create object with the mapping, and load the data if supplied
         '''
         self.which = which
+        self.key = key
         self.skipmissing = skipmissing
         self.originaldatafile = None
         self.filename = None
@@ -62,55 +63,84 @@ class CalObj(sc.prettyobj):
         '''
         if self.which == 'DHS6':
             self.mapping = sc.odict({
-                     ' ': [-1, 'Miss',  'Missing'],
-                     '0': [ 0, 'None',  'Non-use'],
-                     '1': [ 1, 'Pill',  'Pill'],
-                     '2': [ 2, 'IUD',   'IUD'],
-                     '3': [ 3, 'Injct', 'Injectables'],
-                     '4': [ 4, 'Diaph', 'Diaphragm'],
-                     '5': [ 5, 'Cond',  'Condom'],
-                     '6': [ 6, 'FSter', 'Female sterilization'],
-                     '7': [ 7, 'MSter', 'Male sterilization'],
-                     '8': [ 8, 'Rhyth', 'Rhythm'],
-                     '9': [ 9, 'Withd', 'Withdrawal'],
-                     'B': [10, 'Birth', 'Birth'],
-                     'C': [11, 'FCond', 'Female condom'],
-                     'F': [12, 'Foam',  'Foam and jelly'],
-                     'K': [13, 'Unknw', 'Unknown'],
-                     'L': [14, 'Lact',  'Lactational amenorrhea'],
-                     'M': [15, 'OModr', 'Other modern'],
-                     'N': [16, 'Impla', 'Implants'],
-                     'P': [17, 'Preg',  'Pregnancy'],
-                     'T': [18, 'Term',  'Termination'],
-                     'W': [19, 'OTrad', 'Other traditional']
-                    })
+                ' ': [-1, 'Miss',  'Missing'],
+                '0': [ 0, 'None',  'Non-use'],
+                '1': [ 1, 'Pill',  'Pill'],
+                '2': [ 2, 'IUD',   'IUD'],
+                '3': [ 3, 'Injct', 'Injectables'],
+                '4': [ 4, 'Diaph', 'Diaphragm'],
+                '5': [ 5, 'Cond',  'Condom'],
+                '6': [ 6, 'FSter', 'Female sterilization'],
+                '7': [ 7, 'MSter', 'Male sterilization'],
+                '8': [ 8, 'Rhyth', 'Rhythm'],
+                '9': [ 9, 'Withd', 'Withdrawal'],
+                'B': [10, 'Birth', 'Birth'],
+                'C': [11, 'FCond', 'Female condom'],
+                'F': [12, 'Foam',  'Foam and jelly'],
+                'K': [13, 'Unknw', 'Unknown'],
+                'L': [14, 'Lact',  'Lactational amenorrhea'],
+                'M': [15, 'OModr', 'Other modern'],
+                'N': [16, 'Impla', 'Implants'],
+                'P': [17, 'Preg',  'Pregnancy'],
+                'T': [18, 'Term',  'Termination'],
+                'W': [19, 'OTrad', 'Other traditional']
+            })
         elif self.which == 'DHS7': # See recode version -- contraceptive calendar tutorial PDF p. 25, table 3
             self.mapping = sc.odict({
-                     ' ': [-1, 'Miss',  'Missing'],
-                     'B': [ 0, 'Birth', 'Birth'],
-                     'T': [ 1, 'Term',  'Termination'],
-                     'P': [ 2, 'Preg',  'Pregnancy'],
-                     '0': [ 3, 'None',  'Non-use'],
-                     '1': [ 4, 'Pill',  'Pill'],
-                     '2': [ 5, 'IUD',   'IUD'],
-                     '3': [ 6, 'Injct', 'Injectables'],
-                     '4': [ 7, 'Diaph', 'Diaphragm'],
-                     '5': [ 8, 'Cond',  'Condom'],
-                     '6': [ 9, 'FSter', 'Female sterilization'],
-                     '7': [10, 'MSter', 'Male sterilization'],
-                     '8': [11, 'Rhyth', 'Rhythm'],
-                     '9': [12, 'Withd', 'Withdrawal'],
-                     'W': [13, 'OTrad', 'Other traditional'],
-                     'N': [14, 'Impla', 'Implants'],
-                     'A': [15, 'Abst', 'Abstinence'],
-                     'L': [16, 'Lact',  'Lactational amenorrhea'],
-                     'C': [17, 'FCond', 'Female condom'],
-                     'F': [18, 'Foam',  'Foam and jelly'],
-                     'E': [19, 'Emerg', 'Emergency contraception'],
-                     'S': [20, 'SDays', 'Standard days'],
-                     'M': [21, 'OModr', 'Other modern'],
+                ' ': [-1, 'Miss',  'Missing'],
+                'B': [ 0, 'Birth', 'Birth'],
+                'T': [ 1, 'Term',  'Termination'],
+                'P': [ 2, 'Preg',  'Pregnancy'],
+                '0': [ 3, 'None',  'Non-use'],
+                '1': [ 4, 'Pill',  'Pill'],
+                '2': [ 5, 'IUD',   'IUD'],
+                '3': [ 6, 'Injct', 'Injectables'],
+                '4': [ 7, 'Diaph', 'Diaphragm'],
+                '5': [ 8, 'Cond',  'Condom'],
+                '6': [ 9, 'FSter', 'Female sterilization'],
+                '7': [10, 'MSter', 'Male sterilization'],
+                '8': [11, 'Rhyth', 'Rhythm'],
+                '9': [12, 'Withd', 'Withdrawal'],
+                'W': [13, 'OTrad', 'Other traditional'],
+                'N': [14, 'Impla', 'Implants'],
+                'A': [15, 'Abst',  'Abstinence'],
+                'L': [16, 'Lact',  'Lactational amenorrhea'],
+                'C': [17, 'FCond', 'Female condom'],
+                'F': [18, 'Foam',  'Foam and jelly'],
+                'E': [19, 'Emerg', 'Emergency contraception'],
+                'S': [20, 'SDays', 'Standard days'],
+                'M': [21, 'OModr', 'Other modern'],
 #                     '?': [22, 'Unknw', 'Unknown'], # Seems to be zero?
-                    })
+            })
+        elif self.which == 'URHI':
+            self.mapping = sc.odict({
+                ' ': [-1, 'Miss',  'Missing'],
+                'N': [ 0, 'Birth', 'Birth'],
+                'F': [ 1, 'Mis',   'Miscarriage'],
+                'G': [ 2, 'Preg',  'Pregnancy'],
+                'M': [ 3, 'Still', 'Stillbirth'],
+                'A': [ 4, 'Abort', 'Abortion'],
+
+                '0': [ 5, 'None',  'No method'],
+                '1': [ 6, 'FSter', 'Female sterilization'],
+                '2': [ 7, 'MSter', 'Male sterilization'],
+                '3': [ 8, 'Impla', 'Implant'],
+                '4': [ 9, 'IUD',   'IUD'],
+                '5': [10, 'Injct', 'Injectables'],
+                '6': [11, 'Pill',  'Pill'],
+                '7': [12, 'Emerg', 'Emergency contraception'],
+                '8': [13, 'MCond', 'Male condom'],
+                '9': [14, 'FCond', 'Female condom'],
+
+                'H': [15, 'SDays', 'Standard days method'],
+                'L': [16, 'Lact',  'Lactational amenorrhea method (LAM)'],
+                'X': [17, 'OModr', 'Other modern method'],
+
+                'R': [18, 'Rhyth', 'Rhythm method'],
+                'W': [19, 'Withd', 'Withdrawl'],
+                'Y': [20, 'OTrad', 'Other traditional method'],
+            })
+
         self.nmethods = len(self.mapping) - self.skipmissing
         return
 
@@ -193,7 +223,7 @@ class CalObj(sc.prettyobj):
         elif filename.endswith('dta') or filename.endswith('DTA'):
             print('Loading calendar data from Stata...')
             df = pd.read_stata(filename, convert_categoricals=False)
-            rawlines = df['vcal_1'].to_list()
+            rawlines = df[self.key].to_list()
             self.load(rawlines=rawlines) # Call this function again, loading as a string this time
 
         # Handle exceptions

@@ -34,6 +34,7 @@ def plot_line_percent(*args, **kwargs):
 
     sns.lineplot(data=tmp, x='Date', y='Percent', **kwargs) # hue=by, style='Survey',
 
+
 def plot_stack(*args, **kwargs):
     data = kwargs.pop('data')
     by = kwargs.pop('by')

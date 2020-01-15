@@ -9,22 +9,44 @@ import sciris as sc
 
 # Comment/uncomment these to run different analyses
 torun = [
-        #'loadsave',
-        #'plot_matrix',
-        'plot_slice',
-        ]
+    #'loadsave',
+    'plot_matrix',
+    #'plot_slice',
+]
+
+# Choose a case to analyze
+#case = 'Senegal-URHI'
+case = 'Senegal-DHS2017'
+
 
 sc.tic()
 
-# Nigeria 2013 DHS
 username = os.path.split(os.path.expanduser('~'))[-1]
-filedict = {
-    #'dklein': os.path.join( os.getenv("HOME"), 'Dropbox (IDM)', 'FP Dynamic Modeling', 'DHS', 'Country data', 'Nigeria', '2013', 'NGIR6ADT', 'NGIR6AFL.DTA'),
-    'dklein': os.path.join( 'Senegal', 'SNIR7ZFL.DTA'),
-    'cliffk': '/u/cliffk/idm/fp/data/DHS/NGIR6ADT/NGIR6AFL.DTA',
+
+scenarios = {
+    'Senegal-URHI': {
+        'filedict': {
+            'dklein': os.path.join( os.getenv("HOME"), 'sdb2', 'Dropbox (IDM)', 'URHI', 'Senegal', 'Endline', 'SEN_end_wm_match_20160505.dta'),
+            #'cliffk': '/u/cliffk/idm/fp/data/DHS/NGIR6ADT/NGIR6AFL.DTA',
+        },
+        'cache' : os.path.join('data', f'{case}.cal'),
+        'which' : 'URHI',
+        'key'   : 'cal_1',
+    },
+    'Senegal-DHS2017': {
+        'filedict': {
+            'dklein': os.path.join( os.getenv("HOME"), 'sdb2', 'Dropbox (IDM)', 'FP Dynamic Modeling', 'DHS', 'Country data', 'Senegal', '2017', 'SNIR7ZDT', 'SNIR7ZFL.DTA'),
+            #'cliffk': '/u/cliffk/idm/fp/data/DHS/NGIR6ADT/NGIR6AFL.DTA',
+        },
+        'cache': os.path.join('data', f'{case}.cal'),
+        'which': 'DHS7',
+        'key'  : 'vcal_1',
+    },
 }
 
-cache = os.path.join('data', 'senegal.cal')
+scenario = scenarios[case]
+cache = scenario['cache']
+filedict = scenario['filedict']
 
 try:
     filename = filedict[username]
@@ -33,7 +55,7 @@ except:
 
 def load_from_file():
     print(f'Loading calobj from file {filename}')
-    calobj = fpu.CalObj(filename) # Create from saved data
+    calobj = fpu.CalObj(filename, which=scenario['which'], key=scenario['key']) # Create from saved data
     print(f'Saving to cache {cache}')
     calobj.save(cache)
 
@@ -53,6 +75,9 @@ else:
 
 if 'plot_matrix' in torun:
     calobj.plot_transitions()
+    basename = os.path.splitext(cache)[0]
+    filename = basename + '.png'
+    pl.savefig(filename)
 
 
 if 'plot_slice' in torun:

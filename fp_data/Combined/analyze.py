@@ -44,6 +44,7 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
         print(d.data.loc[d.data['MethodType']=='No method'].shape[0])
         print(ib.shape[0])
 
+
     # Useful to see which methods are classified as modern / traditional
     print(pd.crosstab(index=d.data['Method'], columns=d.data['MethodType'], values=d.data['Weight']/1e6, aggfunc=sum))
     print(pd.crosstab(index=u.data['Method'], columns=u.data['MethodType'], values=u.data['Weight'], aggfunc=sum))
@@ -55,6 +56,24 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     dhs_urhi = pd.concat((d.data[cols], d.urhi_like[cols], u.data[cols]))
 
     all_data = pd.concat((d.data[cols], d.urhi_like[cols], d.urban[cols], d.rural[cols], u.data[cols]))
+
+    ###########################################################################
+    # DHS Barriers
+    ###########################################################################
+    ib = d.get_individual_barriers()
+    stacked = ib.stack()
+    #stacked.name = 'Stack'
+    stacked.index.rename('Barrier', level=8, inplace=True)
+    stacked.name = 'Count'
+    stacked = stacked.reset_index('Weight')
+    stacked.loc[:,'WeightCount'] = stacked['Weight'] * stacked['Count']
+    bar = stacked.groupby(['SurveyName', 'Barrier'])['WeightCount'].sum()
+    print(bar)
+    fig, ax = plt.subplots(1,1,figsize=fs)
+    bar.unstack('SurveyName').plot.bar(rot=0, ax=ax)
+    ax.set_ylabel('Weighted Barrier Count')
+    fig.savefig(os.path.join(results_dir, 'Barriers.png'))
+    exit()
 
 
     ###########################################################################
@@ -184,12 +203,13 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     ###########################################################################
     print(dhs_urhi.groupby(['Survey', 'SurveyName', 'Date']).size())
     fig, ax = plt.subplots(1,1,figsize=(8,5))
-    tmp = dhs_urhi.groupby(['Survey', 'Date']).size()#.reset_index()
-    tmp.name = 'Count'
-    sns.lineplot(data = tmp.reset_index(), x='Date', y='Count', hue='Survey', marker='o')
+    tmp = pd.concat((d.data[cols], d.urhi_like[cols], d.urban[cols], u.data[cols])) \
+        .groupby(['Survey', 'Date']).size()
+    tmp.name = 'Sample Size'
+    sns.lineplot(data = tmp.reset_index(), x='Date', y='Sample Size', hue='Survey', marker='o', markersize=10)
     plt.ylim((0,None))
+    plt.tight_layout()
     plt.savefig(os.path.join(results_dir, 'SurveySize.png'))
-    exit()
 
     ###########################################################################
     # MCPR - All women only for now
@@ -197,7 +217,8 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     # TODO: pull out married women, or exposed
     tmp = all_data.copy()
     tmp['Modern'] = tmp['MethodType'] == 'Modern'
-    g = sns.FacetGrid(data=tmp, hue='Survey', height=5)
+
+    g = sns.FacetGrid(data=tmp, hue='Survey', height=5, legend_out=False, aspect=7/5)
     g.map_dataframe(plot_line_percent, by='Modern', values=[True]).add_legend().set_xlabels('Year').set_ylabels('mCPR-All Women').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'mCPR.png'))
 
@@ -218,8 +239,8 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     # Move Unknown to No, only affects URHI.  Should compute my own Unmet Need column
     #print(u.data.loc[u.data['Unmet']=='Unknown', ['Method']])
     tmp = dhs_urhi.loc[dhs_urhi['Date']>2005,:]
-    tmp.loc[tmp['Unmet'] == 'Unknown', 'Unmet'] = 'No'
-    g = sns.FacetGrid(data=tmp, hue='Survey', height=6)
+    tmp = tmp.loc[tmp['Unmet'].isin(['Yes', 'No'])]
+    g = sns.FacetGrid(data=tmp, hue='Survey', height=8, legend_out=False, aspect=7/5)
     g.map_dataframe(plot_line_percent, by='Unmet', values=['Yes']).add_legend().set_xlabels('Year').set_ylabels('Unmet Need').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'Unmet_UnknownAsNo.png'))
 
