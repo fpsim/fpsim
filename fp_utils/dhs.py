@@ -152,15 +152,12 @@ class DHS(Base):
         self.create_bins()
         self.data['Survey'] = 'DHS'
 
-        print('UR:\n', self.data['v102'].unique())
-
         self.dakar_urban = self.data.loc[ (self.data['v101'].isin(['dakar'])) & (self.data['v102'] == 'urban') ]
         self.dakar_urban.loc[:,'Survey'] = 'DHS: Dakar-urban'
         self.urhi_like = self.data.loc[ (self.data['v101'].isin(['west', 'dakar', 'kaolack', 'thies'])) & (self.data['v102'] == 'urban') ]
         self.urhi_like.loc[:,'Survey'] = 'DHS: URHI-like'
         self.urban = self.data.loc[ (self.data['v102'] == 'urban') ]
         self.urban.loc[:,'Survey'] = 'DHS: Urban'
-        print('UR:\n', self.data['v102'].unique())
         self.rural = self.data.loc[ (self.data['v102'] == 'rural') ]
         self.rural.loc[:,'Survey'] = 'DHS: Rural'
 
@@ -343,6 +340,17 @@ class DHS(Base):
         return data, barriers, birth_spacing
 
 
+    def get_individual_barriers(self):
+        try:
+            store = pd.HDFStore(self.cachefn)
+            individual_barriers = store['individual_barriers']
+            store.close()
+        except:
+            store.close()
+            individual_barriers = self.compute_individual_barriers()
+
+        return individual_barriers
+
     def compute_individual_barriers(self):
         # INDIVIDUAL BARRIERS
         barrier_map = {
@@ -421,6 +429,7 @@ class DHS(Base):
                 'v012': 'Age',
                 'v201': 'Parity',
                 'v624': 'Unmet',
+                'v501': 'Married',
                 'caseid': 'UID',
             })
 

@@ -17,9 +17,9 @@ class URHI(Base):
     }
 
     indicators = {
-        'Baseline': {'location_code':'Cluster', 'line':'Line', 'hhnum': 'HHNUM', 'iyear':'Year', 'imon':'Month', 'w102':'Age', 'w208':'Parity', 'method':'Method', 'methodtype':'MethodType', 'wm_allcity_wt':'Weight', 'city':'City', 'unmet_cmw': 'Unmet'},
-        'Midline': {'location_code':'Cluster', 'line':'Line', 'hhnum': 'HHNUM', 'mwiyear':'Year', 'mwimon':'Month', 'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'mmethodtype':'MethodType', 'mwm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet'},
-        'Endline': {'location_code':'Cluster', 'line':'Line', 'hhnum': 'HHNUM', 'ewiyear':'Year', 'ewimon':'Month', 'ew102':'Age', 'ew208':'Parity', 'emethod':'Method', 'emethodtype':'MethodType', 'ewoman_weight_6city':'Weight', 'ecity':'City', 'eunmet_cmw': 'Unmet'},
+        'Baseline': {'location_code':'Cluster', 'line':'Line', 'hhnum': 'HHNUM', 'iyear':'Year', 'imon':'Month', 'w102':'Age', 'w208':'Parity', 'method':'Method', 'methodtype':'MethodType', 'wm_allcity_wt':'Weight', 'city':'City', 'unmet_cmw': 'Unmet', 'w512': 'Married'},
+        'Midline': {'location_code':'Cluster', 'line':'Line', 'hhnum': 'HHNUM', 'mwiyear':'Year', 'mwimon':'Month', 'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'mmethodtype':'MethodType', 'mwm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet', 'mw512': 'Married'},
+        'Endline': {'location_code':'Cluster', 'line':'Line', 'hhnum': 'HHNUM', 'ewiyear':'Year', 'ewimon':'Month', 'ew102':'Age', 'ew208':'Parity', 'emethod':'Method', 'emethodtype':'MethodType', 'ewoman_weight_6city':'Weight', 'ecity':'City', 'eunmet_cmw': 'Unmet', 'ew512': 'Married'},
     }
 
     def __init__(self, foldername, force_read=False, cores=8):
@@ -249,7 +249,7 @@ class URHI(Base):
 
         self.data.loc[:,'MethodDurability'] = self.data['Method']
 
-        print(self.data.head())
+        self.data.loc[:,'Unmet'].fillna('Missing', inplace=True) # Needed for plotting
 
         self.data.replace(
             {
