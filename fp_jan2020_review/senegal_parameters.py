@@ -100,8 +100,8 @@ def default_age_mortality():
 
 def default_age_fertility():
     ''' Less-developed countries, WPP2019_MORT_F15_3_LIFE_TABLE_SURVIVORS_FEMALE.xlsx, 1990-1995 '''
-    f15 = 1#0.1#0.003 # Adjustment factor for women aged 15-20
-    f20 = 1#0.5#0.25 # Adjustment factor for women aged 20-25
+    f15 = 0.1 # Adjustment factor for women aged 15-20
+    f20 = 0.5 # Adjustment factor for women aged 20-25
     fertility = {
             'bins': pl.array([ 0.,  5, 10,         15,         20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]), 
             # 'f':    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
@@ -246,7 +246,7 @@ def make_pars():
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = 500*10 # Number of people in the simulation -- for comparing data from Impact 2
+    pars['n'] = 500*1 # Number of people in the simulation -- for comparing data from Impact 2
     pars['start_year'] = 1950
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
@@ -265,7 +265,7 @@ def make_pars():
     
     # User-tunable parameters
     pars['mortality_factor']    = 1.0*(2**2) # These weird factors are since mortality and fertility scale differently to keep population growth the same
-    pars['fertility_factor']    = 0.6*1.65*(1.1**2)
+    pars['fertility_factor']    = 1.65*(1.1**2)
     pars['fertility_variation'] = [0.5,1.5] # Multiplicative range of fertility factors
     pars['method_age']          = 15 # When people start choosing a method (sexual debut)
     pars['max_age']             = 99
