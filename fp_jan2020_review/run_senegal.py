@@ -1,4 +1,6 @@
-# Run all analyses for Senegal
+'''
+Run all analyses for Senegal.
+'''
 
 import pylab as pl
 import pandas as pd

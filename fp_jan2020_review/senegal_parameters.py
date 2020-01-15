@@ -1,3 +1,7 @@
+'''
+Set the parameters for LEMOD-FP.
+'''
+
 import os
 import pylab as pl
 import pandas as pd
