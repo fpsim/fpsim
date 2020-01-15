@@ -81,7 +81,7 @@ if do_run:
         fig = sim.plot()
         
         # Population size plot
-        ax = fig.axes[-1] 
+        ax = fig.axes[0] # First axis on plot
         ax.scatter(pop_years, popsize, c='k', label='Data', zorder=1000)
         pl.legend()
         if do_save:

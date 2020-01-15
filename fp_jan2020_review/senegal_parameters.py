@@ -55,7 +55,7 @@ def default_age_pyramid():
                         [70,  11686,   14167],
                         [75,  5985,    7390],
                         [80,  2875,    3554],
-                    ])
+                    ], dtype=float)
     
     return pyramid
     
@@ -63,12 +63,12 @@ def default_age_pyramid():
 def default_age_mortality():
     ''' Age-dependent mortality rates -- see age_dependent_mortality.py in the fp_analyses repository '''
     mortality = {
-            'bins': pl.array([ 0,  5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]), 
+            'bins': pl.array([ 0.,  5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]), 
             'm': pl.array([0.01365168, 0.00580404, 0.00180847, 0.0012517 , 0.00171919, 0.00226466, 0.00258822, 0.00304351, 0.00377434, 0.00496091, 0.00694581, 0.01035062, 0.01563918, 0.02397286, 0.03651509,0.05578357, 0.08468156, 0.12539009, 0.17939655, 0.24558742]), 
             'f': pl.array([0.01213076, 0.00624896, 0.0017323 , 0.00114656, 0.00143726, 0.00175446, 0.00191577, 0.00214836, 0.00251644, 0.00315836, 0.00439748, 0.00638658, 0.00965512, 0.01506286, 0.02361487, 0.03781285, 0.06007898, 0.09345669, 0.14091699, 0.20357825]), }
     
     # TODO! WARNING! Using fertility trend data for now (!). Need to replace with mortality rate changes
-    mortality['years'] = pl.array([1950, 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
+    mortality['years'] = pl.array([1950., 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
     mortality['trend'] = pl.array([194.3, 197.1, 202.9, 207.1, 207.1, 207.1, 207.1, 191.4, 177.1, 162.9, 150.0, 145.7, 142.9, 132.9, 125, 120, 115]) # Last 3 are projected!!
     mortality['trend'] /= mortality['trend'][-1]
     return mortality
@@ -103,12 +103,12 @@ def default_age_fertility():
     f15 = 0.1#0.003 # Adjustment factor for women aged 15-20
     f20 = 0.5#0.25 # Adjustment factor for women aged 20-25
     fertility = {
-            'bins': pl.array([ 0,  5, 10,         15,         20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]), 
+            'bins': pl.array([ 0.,  5, 10,         15,         20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]), 
             # 'f':    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
-            'f':    pl.array([ 0,  0,  0,   f15*72.7,  f20*180.2,  220.7,  200.0,   152.3,    82.1,    22.0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
+            'f':    pl.array([ 0.,  0,  0,   f15*72.7,  f20*180.2,  220.7,  200.0,   152.3,    82.1,    22.0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
     fertility['f'] /= 1000 # Births per thousand to births per woman
     fertility['m'] = 0*fertility['f'] # Men don't have fertility -- probably could be handled differently!
-    fertility['years'] = pl.array([1950, 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
+    fertility['years'] = pl.array([1950., 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
     fertility['trend'] = pl.array([194.3, 197.1, 202.9, 207.1, 207.1, 207.1, 207.1, 191.4, 177.1, 162.9, 150.0, 145.7, 142.9, 132.9, 125, 120, 115]) # Last 3 are projected!!
     fertility['trend'] /= fertility['trend'][-1]
     return fertility
@@ -117,9 +117,9 @@ def default_age_fertility():
 def default_maternal_mortality():
     ''' From Impact 2 '''
     maternal_mortality = {}
-    maternal_mortality['years'] = pl.array([1985, 1990, 1995, 2000, 2005, 2010, 2015])
-    maternal_mortality['data']  = pl.array([ 711,   540, 509,  488,  427,  375,  315])
-    maternal_mortality['data'] /= 1e5
+    maternal_mortality['years'] = pl.array([1985., 1990, 1995, 2000, 2005, 2010, 2015])
+    maternal_mortality['probs'] = pl.array([ 711.,   540, 509,  488,  427,  375,  315])
+    maternal_mortality['probs'] /= 1e5
     return maternal_mortality
 
 
@@ -156,7 +156,7 @@ def default_child_mortality():
     
     child_mortality = {}
     child_mortality['space'] = data[data[:,0]/12.0]
-    child_mortality['prob'] = data[data[:,1]]
+    child_mortality['probs'] = data[data[:,1]]
     
     return child_mortality
     
