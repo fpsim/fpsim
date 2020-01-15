@@ -13,7 +13,7 @@ do_plot_pyramids    = 1
 do_plot_skyscrapers = 1
 do_plot_methods     = 1
 do_plot_spacing     = 1
-do_save             = 1
+do_save             = 0
 
 min_age = 15
 max_age = 50
@@ -293,8 +293,7 @@ if do_run:
 
         right_year = data['SurveyYear']=='2010-11'
         not_first = data['Birth Order'] != 0
-        
-        filtered = data[right_year][not_first]
+        filtered = data[(right_year) & (not_first)]
         spacing = filtered['Birth Spacing'].to_numpy()
         sorted_spacing = sorted(spacing)
         
