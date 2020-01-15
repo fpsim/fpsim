@@ -114,21 +114,54 @@ def default_age_fertility():
     return fertility
 
 
-def maternal_mortality():
+def default_maternal_mortality():
     ''' From Impact 2 '''
+    maternal_mortality = {}
     maternal_mortality['years'] = pl.array([1985, 1990, 1995, 2000, 2005, 2010, 2015])
     maternal_mortality['data']  = pl.array([ 711,   540, 509,  488,  427,  375,  315])
     maternal_mortality['data'] /= 1e5
     return maternal_mortality
 
-def child_mortality_birth_spacing():
+
+def default_child_mortality():
     ''' From "When and Where Birth Spacing Matters for Child Survival: An International Comparison Using the DHS", Fig. 1 '''
     
+    data = [
+            [13.3032, 0.1502],
+            [14.0506, 0.1456],
+            [15.1708, 0.1384],
+            [16.1011, 0.1311],
+            [17.0384, 0.1265],
+            [18.1615, 0.1203],
+            [20.0332, 0.11],
+            [22.0963, 0.1002],
+            [24.1651, 0.0925],
+            [24.1637, 0.092],
+            [24.3522, 0.0915],
+            [24.5408, 0.0909],
+            [24.5394, 0.0904],
+            [24.728, 0.0899],
+            [24.7266, 0.0894],
+            [24.7252, 0.0889],
+            [24.9138, 0.0884],
+            [28.1181, 0.0791],
+            [32.0809, 0.0693],
+            [38.1334, 0.0594],
+            [44.0057, 0.0532],
+            [50.075, 0.0496],
+            [60.1336, 0.0459],
+            [70.0023, 0.0422],
+            [80.0567, 0.037],
+        ]
+    
+    child_mortality = {}
+    child_mortality['space'] = data[data[:,0]/12.0]
+    child_mortality['prob'] = data[data[:,1]]
+    
+    return child_mortality
     
     
     
-
-
 def default_methods():
     methods = {}
     
@@ -204,6 +237,7 @@ def default_barriers():
     barriers[:] /= barriers[:].sum() # Ensure it adds to 1    
     return barriers
 
+
 def make_pars():
     pars = {}
 
@@ -216,18 +250,22 @@ def make_pars():
     pars['verbose'] = True
     pars['seed'] = 1 # Random seed, if None, don't reset
     
-    pars['methods'] = default_methods()
-    pars['age_pyramid'] = default_age_pyramid()
-    pars['age_mortality'] = default_age_mortality()
-    pars['age_fertility'] = default_age_fertility()
-    pars['method_efficacy'] = default_efficacy()
-    pars['barriers'] = default_barriers()
-    pars['mortality_factor'] = 1.0*(2**2)
-    pars['fertility_factor'] = 1.45*(1.1**2)
-    pars['fertility_variation'] = [0.5,1.5]# [0.5,1.5] # Multiplicative range of fertility factors
-    pars['method_age'] = 15 # When people start choosing a method (sexual debut)
-    pars['max_age'] = 99
-    pars['preg_dur'] = [9,9] # Duration of a pregnancy, in months
+    # Complicated parameters
+    pars['methods']            = default_methods()
+    pars['age_pyramid']        = default_age_pyramid()
+    pars['age_mortality']      = default_age_mortality()
+    pars['age_fertility']      = default_age_fertility()
+    pars['method_efficacy']    = default_efficacy()
+    pars['barriers']           = default_barriers()
+    pars['maternal_mortality'] = default_maternal_mortality()
+    pars['child_mortality']    = default_maternal_mortality()
     
+    # User-tunable parameters
+    pars['mortality_factor']    = 1.0*(2**2) # These weird factors are since mortality and fertility scale differently to keep population growth the same
+    pars['fertility_factor']    = 1.45*(1.1**2)
+    pars['fertility_variation'] = [0.5,1.5] # Multiplicative range of fertility factors
+    pars['method_age']          = 15 # When people start choosing a method (sexual debut)
+    pars['max_age']             = 99
+    pars['preg_dur']            = [9,9] # Duration of a pregnancy, in months
     
     return pars
