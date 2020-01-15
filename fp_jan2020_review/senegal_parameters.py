@@ -114,6 +114,21 @@ def default_age_fertility():
     return fertility
 
 
+def maternal_mortality():
+    ''' From Impact 2 '''
+    maternal_mortality['years'] = pl.array([1985, 1990, 1995, 2000, 2005, 2010, 2015])
+    maternal_mortality['data']  = pl.array([ 711,   540, 509,  488,  427,  375,  315])
+    maternal_mortality['data'] /= 1e5
+    return maternal_mortality
+
+def child_mortality_birth_spacing():
+    ''' From "When and Where Birth Spacing Matters for Child Survival: An International Comparison Using the DHS", Fig. 1 '''
+    
+    
+    
+    
+
+
 def default_methods():
     methods = {}
     
