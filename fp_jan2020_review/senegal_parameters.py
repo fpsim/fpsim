@@ -189,8 +189,8 @@ def make_pars():
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = int(1274*0.49) # Number of people in the simulation -- from Impact 2 / 1000
-    pars['start_year'] = 1962
+    pars['n'] = int(1274*0.3) # Number of people in the simulation -- from Impact 2 / 1000
+    pars['start_year'] = 1950
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
     pars['verbose'] = True
