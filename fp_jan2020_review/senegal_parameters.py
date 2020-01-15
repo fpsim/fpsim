@@ -189,7 +189,7 @@ def make_pars():
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = int(1274*0.3) # Number of people in the simulation -- from Impact 2 / 1000
+    pars['n'] = int(1274*0.28) # Number of people in the simulation -- from Impact 2 / 1000
     pars['start_year'] = 1950
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
@@ -203,10 +203,12 @@ def make_pars():
     pars['method_efficacy'] = default_efficacy()
     pars['barriers'] = default_barriers()
     pars['switching'] = default_switching() #pars['initial'], 
-    pars['mortality_factor'] = 2.7
-    pars['fertility_factor'] = 33 # No idea why this needs to be so high
-    pars['fertility_variation'] = [0.3,2.0] # Multiplicative range of fertility factors
+    pars['mortality_factor'] = 2.0
+    pars['fertility_factor'] = 35 # No idea why this needs to be so high
+    pars['fertility_variation'] = [1.0,1.0] # Multiplicative range of fertility factors
     pars['method_age'] = 15 # When people start choosing a method (sexual debut)
     pars['max_age'] = 99
+    pars['preg_dur'] = [9,9] # Duration of a pregnancy, in months
+    
     
     return pars
