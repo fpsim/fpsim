@@ -180,11 +180,11 @@ def default_efficacy():
 
 def default_barriers():
     barriers = sc.odict({
-        'No need':45.6,
-        'Opposition':30.1,
-        'Knowledge':10.0,
-        'Access':2.7,
-        'Health':11.6,
+          'No need'   :  54.2,
+          'Opposition':  30.5,
+          'Knowledge' :   1.7,
+          'Access'    :   4.5,
+          'Health'    :  12.9,
         })
     barriers[:] /= barriers[:].sum() # Ensure it adds to 1    
     return barriers
@@ -194,7 +194,7 @@ def make_pars():
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = 500*10 # Number of people in the simulation -- for comparing data from Impact 2
+    pars['n'] = 500*1 # Number of people in the simulation -- for comparing data from Impact 2
     pars['start_year'] = 1950
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
