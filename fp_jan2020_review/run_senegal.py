@@ -8,6 +8,8 @@ import sciris as sc
 import lemod_fp as lfp
 import senegal_parameters as sp
 
+sc.tic()
+
 # Set parameters
 do_run              = 1
 do_plot_popsize     = 1
@@ -25,6 +27,7 @@ pop_pyr_year_file = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
 skyscrapers_file = sp.abspath('dropbox/Skyscrapers-All-DHS.csv')
 methods_file = sp.abspath('dropbox/Method_v312.csv')
 spacing_file = sp.abspath('dropbox/BirthSpacing.csv')
+popsize_file = sp.abspath('data/senegal-popsize-tfr.csv')
 
 if do_run:
     pars = sp.make_pars()
@@ -58,18 +61,16 @@ if do_run:
     # sim.add_intervention(intervention=urhi, year=2000)
     # sim.add_intervention(intervention=serialize, year=2000)
     # sim.add_intervention(intervention=deserialize, year=2010)
+    
+    # sim = lfp.multi_run(sim, n=1)
     sim.run()
     people = list(sim.people.values()) # Pull out people
     
     
     if do_plot_popsize:
         
-        # pop_pyr_1982_fn = abspath('data/senegal-population-pyramid-1982.csv')
-        popsize_tfr_fn = sp.abspath('data/senegal-popsize-tfr.csv')
-        
         # Load data
-        # pop_pyr_1982 = pd.read_csv(pop_pyr_1982_fn)
-        popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
+        popsize_tfr  = pd.read_csv(popsize_file, header=None)
         
         # Handle population size
         pop_years = popsize_tfr.iloc[0,:].to_numpy()
@@ -344,8 +345,8 @@ if do_run:
             pl.savefig(sp.abspath(f'figs/senegal_birth_spacing.png'))
         
     
-    
-            
+
+sc.toc()        
     
 print('Done.')
 

@@ -199,7 +199,7 @@ def make_pars():
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
     pars['verbose'] = True
-    pars['seed'] = 2 # Random seed, if None, don't reset
+    pars['seed'] = 1 # Random seed, if None, don't reset
     
     pars['methods'] = default_methods()
     pars['age_pyramid'] = default_age_pyramid()
@@ -207,9 +207,9 @@ def make_pars():
     pars['age_fertility'] = default_age_fertility()
     pars['method_efficacy'] = default_efficacy()
     pars['barriers'] = default_barriers()
-    pars['mortality_factor'] = 1.0
-    pars['fertility_factor'] = 1.4
-    pars['fertility_variation'] = [1,1]# [0.5,1.5] # Multiplicative range of fertility factors
+    pars['mortality_factor'] = 1.0*(2**2)
+    pars['fertility_factor'] = 1.45*(1.1**2)
+    pars['fertility_variation'] = [0.5,1.5]# [0.5,1.5] # Multiplicative range of fertility factors
     pars['method_age'] = 15 # When people start choosing a method (sexual debut)
     pars['max_age'] = 99
     pars['preg_dur'] = [9,9] # Duration of a pregnancy, in months
