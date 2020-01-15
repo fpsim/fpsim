@@ -189,11 +189,14 @@ def default_methods():
     
     methods['matrix'][0,0] *= 0.53 # Correct for 2015
     
-    methods['mcpr_years'] = pl.array([1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
+    methods['mcpr_years'] = pl.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
     
-    mcpr_rates = pl.array([2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
-    mcpr_rates /= 100
-    methods['mcpr_multipliers'] = (1-mcpr_rates)**2.0
+    mcpr_rates = pl.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
+    # mcpr_rates /= 100
+    # methods['mcpr_multipliers'] = (1-mcpr_rates)**2.0
+    
+    methods['mcpr_multipliers'] = 10/mcpr_rates # No idea why it should be this...
+    
     
     return methods
 
@@ -243,12 +246,12 @@ def make_pars():
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = 500*10 # Number of people in the simulation -- for comparing data from Impact 2
+    pars['n'] = 500*1 # Number of people in the simulation -- for comparing data from Impact 2
     pars['start_year'] = 1950
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
     pars['verbose'] = True
-    pars['seed'] = 1 # Random seed, if None, don't reset
+    pars['seed'] = 10923 # Random seed, if None, don't reset
     
     # Complicated parameters
     pars['methods']            = default_methods()

@@ -19,7 +19,7 @@ do_plot_pyramids    = 1
 do_plot_skyscrapers = 1
 do_plot_methods     = 1
 do_plot_spacing     = 1
-do_save             = 1
+do_save             = 0
 
 min_age = 15
 max_age = 50
@@ -88,6 +88,14 @@ if do_run:
         pl.legend()
         if do_save:
             pl.savefig(sp.abspath('figs/senegal_popsize.png'))
+            
+        # MCPR -- TODO, copied from senegal_parameters.py
+        mcpr_years = pl.array([1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
+        mcpr_rates = pl.array([2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
+        
+        ax = fig.axes[1] # Second axis on plot
+        ax.scatter(mcpr_years, mcpr_rates, c='k', label='Data', zorder=1000)
+        pl.legend()
     
     
     if do_plot_pyramids:
