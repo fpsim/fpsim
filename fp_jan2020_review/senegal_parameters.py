@@ -22,7 +22,7 @@ popsize_tfr_fn = abspath('data/senegal-popsize-tfr.csv')
 popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
 
 # Handle population size
-scale_factor = 20
+scale_factor = 2
 years = popsize_tfr.iloc[0,:].to_numpy()
 popsize = popsize_tfr.iloc[1,:].to_numpy() / 1000 * scale_factor
 
@@ -32,7 +32,8 @@ popsize = popsize_tfr.iloc[1,:].to_numpy() / 1000 * scale_factor
 #%% Set parameters for the simulation
 
 def default_age_pyramid():
-    # ''' Starting age bin, male population, female population -- based on Senegal 1982 '''
+    ''' Starting age bin, male population, female population ''' 
+    # Based on Senegal 1982
     # pyramid = pl.array([[0,  579035, 567499],
     #                     [5,  459255, 452873],
     #                     [10, 364432, 359925],
@@ -126,13 +127,27 @@ def default_age_fertility():
 
 
 def default_methods():
-    return ['None', 'Lactation', 'Implants', 'Injectables', 'IUDs', 'Pill', 'Condoms', 'Other', 'Traditional']
-
-
+    methods = {}
     
-def default_switching():
+    def normalize_matrix(matrix):
+        for i in range(len(matrix)):
+            matrix[i] = matrix[i,:] / matrix[i,:].sum() # Normalize so probabilities add to 1
+        return matrix
     
-    matrix = pl.array([
+    methods['norm_fn'] = normalize_matrix
+    
+    methods['map'] = {'None':0, 
+                    'Lactation':1, 
+                    'Implants':2, 
+                    'Injectables':3, 
+                    'IUDs':4, 
+                    'Pill':5, 
+                    'Condoms':6, 
+                    'Other':7, 
+                    'Traditional':8} # Add 'Novel'?
+    methods['names'] = methods['map'].keys()
+    
+    methods['matrix'] = pl.array([
        [8.81230657e-01, 0.00000000e+00, 9.56761433e-04, 1.86518124e-03,        1.44017774e-04, 8.45978530e-04, 1.80273996e-04, 1.61138768e-05,        1.46032008e-04],
        [2.21565806e-05, 1.52074712e-04, 2.01423460e-06, 3.02135189e-06,        0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,        0.00000000e+00],
        [3.45441233e-04, 0.00000000e+00, 3.29206502e-02, 1.61138768e-05,        5.03558649e-06, 1.40996422e-05, 2.01423460e-06, 0.00000000e+00,        1.00711730e-06],
@@ -143,36 +158,40 @@ def default_switching():
        [1.20854076e-05, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,        0.00000000e+00, 0.00000000e+00, 3.02135189e-06, 1.74432716e-03,        1.00711730e-06],
        [4.93487476e-05, 0.00000000e+00, 2.01423460e-06, 4.02846919e-06,        0.00000000e+00, 2.01423460e-06, 0.00000000e+00, 0.00000000e+00,        4.45145846e-03]])
     
-    matrix[0,0] *= 0.53
+    methods['matrix'][0,0] *= 0.53 # Correct for 2015
     
-    switching = {}
-    for i,method1 in enumerate(default_methods()):
-        switching[method1] = matrix[i,:] / matrix[i,:].sum() # Normalize now
+    methods['mcpr_years'] = pl.array([1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
     
-    return switching # initial
+    methods['mcpr_rates'] = pl.array([2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
+    methods['mcpr_rates'] /= 100
     
+    return methods
 
+
+    
 def default_efficacy():
     ''' From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf '''
     
     # Expressed as failure rates
     method_efficacy = sc.odict({
-            'None':100.0, # WARNING, should this be 0.3, the pregnancy rate per act?
-            'Lactation':10.0,
-            'Implants':0.6,
-            'Injectables':1.7,
-            'IUDs':1.4,
-            'Pill':5.5,
-            'Condoms':5.4,
-            'Other':5.5,
-            'Traditional':13.4,
+            "None":        0.0,
+            "Lactation":   90.0,
+            "Implants":    99.4,
+            "Injectables": 98.3,
+            "IUDs":        98.6,
+            "Pill":        94.5,
+            "Condoms":     94.6,
+            "Other":       94.5,
+            "Traditional": 86.6,
             })
-    # method_efficacy[:] = 100
+    # method_efficacy[:] = 100 # To disable contraception
     
-    for key,value in method_efficacy.items():
-        method_efficacy[key] = method_efficacy[key]/100
+    method_efficacy = method_efficacy[:]/100
     
-    assert method_efficacy.keys() == default_methods() # Ensure ordering
+    # for key,value in method_efficacy.items():
+    #     method_efficacy[key] = method_efficacy[key]/100
+    
+    # assert method_efficacy.keys() == default_methods() # Ensure ordering
     
     return method_efficacy
 
@@ -206,7 +225,6 @@ def make_pars():
     pars['age_fertility'] = default_age_fertility()
     pars['method_efficacy'] = default_efficacy()
     pars['barriers'] = default_barriers()
-    pars['switching'] = default_switching() #pars['initial'], 
     pars['mortality_factor'] = 3.0
     pars['fertility_factor'] = 40 # No idea why this needs to be so high
     pars['fertility_variation'] = [0.5,1.5] # Multiplicative range of fertility factors
