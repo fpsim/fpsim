@@ -246,7 +246,7 @@ def make_pars():
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = 500*1 # Number of people in the simulation -- for comparing data from Impact 2
+    pars['n'] = 500*5 # Number of people in the simulation -- for comparing data from Impact 2
     pars['start_year'] = 1950
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
