@@ -18,7 +18,7 @@ popsize_tfr_fn = abspath('data/senegal-popsize-tfr.csv')
 popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
 
 # Handle population size
-scale_factor = 10
+scale_factor = 20
 years = popsize_tfr.iloc[0,:].to_numpy()
 popsize = popsize_tfr.iloc[1,:].to_numpy() / 1000 * scale_factor
 
