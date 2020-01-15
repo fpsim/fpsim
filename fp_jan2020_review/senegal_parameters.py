@@ -18,9 +18,9 @@ popsize_tfr_fn = abspath('data/senegal-popsize-tfr.csv')
 popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
 
 # Handle population size
-scale_factor = 1000
+scale_factor = 3
 years = popsize_tfr.iloc[0,:].to_numpy()
-popsize = popsize_tfr.iloc[1,:].to_numpy() / scale_factor
+popsize = popsize_tfr.iloc[1,:].to_numpy() / 1000 * scale_factor
 
 
 
@@ -189,7 +189,7 @@ def make_pars():
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = int(1274*0.28) # Number of people in the simulation -- from Impact 2 / 1000
+    pars['n'] = int(1274*0.28*scale_factor) # Number of people in the simulation -- from Impact 2 / 1000
     pars['start_year'] = 1950
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
@@ -203,8 +203,8 @@ def make_pars():
     pars['method_efficacy'] = default_efficacy()
     pars['barriers'] = default_barriers()
     pars['switching'] = default_switching() #pars['initial'], 
-    pars['mortality_factor'] = 2.0
-    pars['fertility_factor'] = 35 # No idea why this needs to be so high
+    pars['mortality_factor'] = 3.0
+    pars['fertility_factor'] = 38 # No idea why this needs to be so high
     pars['fertility_variation'] = [1.0,1.0] # Multiplicative range of fertility factors
     pars['method_age'] = 15 # When people start choosing a method (sexual debut)
     pars['max_age'] = 99
