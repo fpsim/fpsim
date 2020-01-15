@@ -126,7 +126,7 @@ def default_maternal_mortality():
 def default_child_mortality():
     ''' From "When and Where Birth Spacing Matters for Child Survival: An International Comparison Using the DHS", Fig. 1 '''
     
-    data = [
+    data = pl.array([
             [13.3032, 0.1502],
             [14.0506, 0.1456],
             [15.1708, 0.1384],
@@ -152,11 +152,11 @@ def default_child_mortality():
             [60.1336, 0.0459],
             [70.0023, 0.0422],
             [80.0567, 0.037],
-        ]
+        ])
     
     child_mortality = {}
-    child_mortality['space'] = data[data[:,0]/12.0]
-    child_mortality['probs'] = data[data[:,1]]
+    child_mortality['space'] = data[:,0]/12.0
+    child_mortality['probs'] = data[:,1]
     
     return child_mortality
     
@@ -243,7 +243,7 @@ def make_pars():
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = 500*1 # Number of people in the simulation -- for comparing data from Impact 2
+    pars['n'] = 500*10 # Number of people in the simulation -- for comparing data from Impact 2
     pars['start_year'] = 1950
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
@@ -258,11 +258,11 @@ def make_pars():
     pars['method_efficacy']    = default_efficacy()
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()
-    pars['child_mortality']    = default_maternal_mortality()
+    pars['child_mortality']    = default_child_mortality()
     
     # User-tunable parameters
     pars['mortality_factor']    = 1.0*(2**2) # These weird factors are since mortality and fertility scale differently to keep population growth the same
-    pars['fertility_factor']    = 1.45*(1.1**2)
+    pars['fertility_factor']    = 1.65*(1.1**2)
     pars['fertility_variation'] = [0.5,1.5] # Multiplicative range of fertility factors
     pars['method_age']          = 15 # When people start choosing a method (sexual debut)
     pars['max_age']             = 99
