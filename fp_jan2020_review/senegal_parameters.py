@@ -4,28 +4,14 @@ Set the parameters for LEMOD-FP.
 
 import os
 import pylab as pl
-import pandas as pd
 import sciris as sc
 
-#%% Parameters for the calibration etc.
+#%% Helper function
 
 def abspath(path):
     cwd = os.path.abspath(os.path.dirname(__file__))
     output = os.path.join(cwd, path)
     return output
-
-# pop_pyr_1982_fn = abspath('data/senegal-population-pyramid-1982.csv')
-popsize_tfr_fn = abspath('data/senegal-popsize-tfr.csv')
-
-# Load data
-# pop_pyr_1982 = pd.read_csv(pop_pyr_1982_fn)
-popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
-
-# Handle population size
-scale_factor = 2
-years = popsize_tfr.iloc[0,:].to_numpy()
-popsize = popsize_tfr.iloc[1,:].to_numpy() / 1000 * scale_factor
-
 
 
 
@@ -84,7 +70,7 @@ def default_age_mortality():
     # TODO! WARNING! Using fertility trend data for now (!). Need to replace with mortality rate changes
     mortality['years'] = pl.array([1950, 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
     mortality['trend'] = pl.array([194.3, 197.1, 202.9, 207.1, 207.1, 207.1, 207.1, 191.4, 177.1, 162.9, 150.0, 145.7, 142.9, 132.9, 125, 120, 115]) # Last 3 are projected!!
-    mortality['trend'] /= mortality['trend'].mean()
+    mortality['trend'] /= mortality['trend'][-1]
     return mortality
 
 
@@ -124,7 +110,7 @@ def default_age_fertility():
     fertility['m'] = 0*fertility['f'] # Men don't have fertility -- probably could be handled differently!
     fertility['years'] = pl.array([1950, 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
     fertility['trend'] = pl.array([194.3, 197.1, 202.9, 207.1, 207.1, 207.1, 207.1, 191.4, 177.1, 162.9, 150.0, 145.7, 142.9, 132.9, 125, 120, 115]) # Last 3 are projected!!
-    fertility['trend'] /= fertility['trend'].mean()
+    fertility['trend'] /= fertility['trend'][-1]
     return fertility
 
 
@@ -208,7 +194,7 @@ def make_pars():
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = int(1274*0.28*scale_factor) # Number of people in the simulation -- from Impact 2 / 1000
+    pars['n'] = 500*10 # Number of people in the simulation -- for comparing data from Impact 2
     pars['start_year'] = 1950
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
@@ -221,8 +207,8 @@ def make_pars():
     pars['age_fertility'] = default_age_fertility()
     pars['method_efficacy'] = default_efficacy()
     pars['barriers'] = default_barriers()
-    pars['mortality_factor'] = 2.0
-    pars['fertility_factor'] = 2.2 # No idea why this needs to be so high
+    pars['mortality_factor'] = 1.0
+    pars['fertility_factor'] = 1.4
     pars['fertility_variation'] = [1,1]# [0.5,1.5] # Multiplicative range of fertility factors
     pars['method_age'] = 15 # When people start choosing a method (sexual debut)
     pars['max_age'] = 99

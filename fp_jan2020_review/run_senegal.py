@@ -61,17 +61,30 @@ if do_run:
     sim.run()
     people = list(sim.people.values()) # Pull out people
     
+    
     if do_plot_popsize:
+        
+        # pop_pyr_1982_fn = abspath('data/senegal-population-pyramid-1982.csv')
+        popsize_tfr_fn = sp.abspath('data/senegal-popsize-tfr.csv')
+        
+        # Load data
+        # pop_pyr_1982 = pd.read_csv(pop_pyr_1982_fn)
+        popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
+        
+        # Handle population size
+        pop_years = popsize_tfr.iloc[0,:].to_numpy()
+        popsize = popsize_tfr.iloc[1,:].to_numpy() / 350434.0 * sim.pars['n'] # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500
         
         # Default plots
         fig = sim.plot()
         
         # Population size plot
         ax = fig.axes[-1] 
-        ax.scatter(sp.years, sp.popsize, c='k', label='Data', zorder=1000)
+        ax.scatter(pop_years, popsize, c='k', label='Data', zorder=1000)
         pl.legend()
         if do_save:
             pl.savefig(sp.abspath('figs/senegal_popsize.png'))
+    
     
     if do_plot_pyramids:
         fig2 = pl.figure(figsize=(16,16))
