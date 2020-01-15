@@ -1,4 +1,5 @@
 import os
+import unidecode
 import itertools
 import numpy as np
 from multiprocessing import Pool
@@ -130,7 +131,7 @@ class DHS(Base):
     }
 
 
-    def __init__(self, foldername, force_read=False, cores=8):
+    def __init__(self, foldername, force_read=False, cores=4):
 
         self.barrier_keys = [k for k in self.indicators.keys() if k[:5] == 'v3a08']
         self.barrier_map = {k: v.split(':')[1][1:] for k,v in self.indicators.items() if k in self.barrier_keys}
@@ -151,12 +152,15 @@ class DHS(Base):
         self.create_bins()
         self.data['Survey'] = 'DHS'
 
+        print('UR:\n', self.data['v102'].unique())
+
         self.dakar_urban = self.data.loc[ (self.data['v101'].isin(['dakar'])) & (self.data['v102'] == 'urban') ]
         self.dakar_urban.loc[:,'Survey'] = 'DHS: Dakar-urban'
         self.urhi_like = self.data.loc[ (self.data['v101'].isin(['west', 'dakar', 'kaolack', 'thies'])) & (self.data['v102'] == 'urban') ]
         self.urhi_like.loc[:,'Survey'] = 'DHS: URHI-like'
         self.urban = self.data.loc[ (self.data['v102'] == 'urban') ]
         self.urban.loc[:,'Survey'] = 'DHS: Urban'
+        print('UR:\n', self.data['v102'].unique())
         self.rural = self.data.loc[ (self.data['v102'] == 'rural') ]
         self.rural.loc[:,'Survey'] = 'DHS: Rural'
 
@@ -196,28 +200,97 @@ class DHS(Base):
                 found_keys.append(k)
         data = data[['SurveyName'] + found_keys]
 
+        def remove_dup_replacement_values(d, rm):
+            l = list( rm.values() )
+            lsl = list(set(l))
+            if len(l) == len(lsl): # No dups
+                return d, rm
+
+            #print('FIXING DUPs!')
+            #print('Unequal lengths', len(l), len(lsl))
+            #print('RM:', rm)
+            #P = pd.DataFrame({'Keys': list(rm.keys()), 'Values': list(rm.values())})
+            #print('PPP:\n', P)
+
+            # Find keys associates with repeated values
+            unique = {}
+            dup = {}
+            for kk,v in rm.items():
+                if v not in unique.keys():
+                    # New value!
+                    unique[v] = kk
+                else:
+                    dup[kk] = unique[v]
+
+            #print('U:', unique)
+            #print('D:', dup)
+            #print('Data unique before:', data[k].unique())
+            #print('Data unique after:', data[k].replace(dup).unique())
+
+            d = d.replace(dup)
+            for kk in dup.keys(): # Could reverse unique
+                #print(f'Removing {kk} from replace_map[{k}]')
+                del rm[kk]
+
+            return d, rm
+
+        def fill_replacement_keys(d, rm):
+            #print( 'U:', sorted(d.unique()) )
+            #print( 'RM:', rm )
+            #print( 'RM Keys:', list(set(rm.keys())) )
+            all_keys_in_replace_map = all([(kk in rm) or (kk==-1) for kk in d.unique()])
+            #print(all_keys_in_replace_map)
+            if all_keys_in_replace_map: # and largest_data_index > len(d.unique()):
+                #print('FIXING REPLACEMENT!')
+                # OK, we can fix it - just add the missing entries to the replace_map[k], that way codes are preserved
+                largest_index = int(d.unique().max())
+                #print('LI:', largest_index)
+                for i in range(largest_index+1):
+                    if i not in rm:
+                        rm[i] = f'Dummy{i}'
+                return d, rm
+            return d, rm
+
+
         values = pd.io.stata.StataReader(filename).value_labels()
         replace_map = {k: values[k.upper()] if k.upper() in values else values[k] for k in found_keys if k in values or k.upper() in values}
         for k in replace_map.keys():
             #data[k] = data[k].replace(replace_map[k]).astype('category')
+
+            data[k] = data[k].fillna(-1)
+
+            data[k], replace_map[k] = remove_dup_replacement_values(data[k], replace_map[k])
+            data[k], replace_map[k] = fill_replacement_keys(data[k], replace_map[k])
+            '''
+            # -1 should get mapped to NaN in the Categorical below
             if 0 in replace_map[k]:
                 # zero-based
                 data[k] = data[k].fillna(-1)
             else:
                 # assume one-based
-                data[k] = data[k].fillna(0) - 1
+                min_key = sorted(replace_map[k].items(), key = lambda x: x[0])[0][0] # Lame
+                if min_key == 1:
+                    data[k] = data[k].fillna(0) - 1
+                else:
+                    print('MIN KEY NOT 1:\n', sorted(replace_map[k].items(), key = lambda x: x[0]))
+                    print('UNIQUE BEFORE:', data[k].unique())
+                    data[k] = data[k].replace(replace_map[k]).map(str) #.astype('category')
+                    print('UNIQUE AFTER:', data[k].unique())
+                    continue
+                '''
 
             try:
                 data[k] = pd.Categorical.from_codes(data[k], categories = [unidecode.unidecode(v[1]) for v in sorted(replace_map[k].items(), key = lambda x: x[0])] )
-            except:
-                #print('Difficulty:', year, k, data[k].unique(), replace_map[k])
+            except Exception as e:
+                print('Difficulty:', year, k, data[k].unique(), replace_map[k])
+                print('--> ', e)
+                print('--> ', 'Handling via simple replacement')
                 data[k] = data[k].replace(replace_map[k]).map(str) #.astype('category')
-                #print(data[k])
+
 
         if False: # TODO: Make argparse flag
             values = pd.io.stata.StataReader(filename).value_labels()
             codebook = pd.io.stata.StataReader(filename).variable_labels()
-
             pd.DataFrame({'keys': list(codebook.keys()), 'values': list(codebook.values())}).set_index('keys').to_csv(f'codebook_{fn}.csv')
 
         return data
@@ -307,20 +380,27 @@ class DHS(Base):
         coarse_barrier_map = {k:barrier_map[v] for k,v in self.barrier_map.items()}
         dat = self.data.set_index(['UID', 'SurveyName', 'Age', 'Parity', 'Weight', 'Unmet', 'Method', 'MethodType'])
 
-        B = ~(dat[self.barrier_keys] == 'no')
+        dat = dat.loc[dat.index.get_level_values('MethodType') == 'No method'] # Only keep barriers for "No method"
 
-        # UGLY!
-        N = dat[self.barrier_keys].isna()
-        Z = dat[self.barrier_keys] == '-1.0'
+        coarse_barriers = list(set(coarse_barrier_map.values()))
 
-        for k in self.barrier_keys:
-            B.loc[N[k]==True,k] = np.NaN
-            B.loc[Z[k]==True,k] = np.NaN
+        # Code goes row-by-row, very slow and inefficient
+        # Due to handling of NaN below
+        def dan_sum(d):
+            e = d.rename(coarse_barrier_map)
+            ans = np.zeros(6)
+            for i, cb in enumerate(coarse_barriers):
+                vec = e.loc[[cb]]
+                if all(vec.isna()):
+                    #All NaN, take NaN
+                    ans[i] = np.NaN
+                else:
+                    #Some non-nan, taking sum of number of entries outside set ['no', '-1.0', np.NaN]
+                    ans[i] = (~(vec.isin(['no', '-1.0', np.NaN]))).sum()
+            ret = pd.Series(ans, index=coarse_barriers)
+            return ret
 
-        B = B.rename(columns=coarse_barrier_map)
-        B = B.stack()
-        B.index = B.index.rename(level=B.index.names.index(None), names='BarrierBin')
-        individual_barriers = B.groupby(dat.index.names + ['BarrierBin']).sum().unstack('BarrierBin')
+        individual_barriers = dat[self.barrier_keys].apply(dan_sum, axis=1)
 
         # Might as well cache
         individual_barriers.to_hdf(self.cachefn, key='individual_barriers', format='t')

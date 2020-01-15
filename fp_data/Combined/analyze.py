@@ -37,9 +37,12 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     d = DHS(folderdict[username]['DHS'], force_read)
     u = URHI(folderdict[username]['URHI'], force_read)
 
+
     if individual_barriers:
         ib = d.compute_individual_barriers()
-        ib.to_csv(os.path.join(results_dir, 'DHSIndividualBarriers.csv'))
+        ib.to_csv(os.path.join(results_dir, 'DHSIndividualBarriers.csv'), na_rep='NaN')
+        print(d.data.loc[d.data['MethodType']=='No method'].shape[0])
+        print(ib.shape[0])
 
     # Useful to see which methods are classified as modern / traditional
     print(pd.crosstab(index=d.data['Method'], columns=d.data['MethodType'], values=d.data['Weight']/1e6, aggfunc=sum))
@@ -50,6 +53,8 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     urhi_like = pd.concat((d.urhi_like[cols], u.data[cols]))
     #c = pd.concat((d.data[cols], u.data[cols]))
     dhs_urhi = pd.concat((d.data[cols], d.urhi_like[cols], u.data[cols]))
+
+    all_data = pd.concat((d.data[cols], d.urhi_like[cols], d.urban[cols], d.rural[cols], u.data[cols]))
 
 
     dat2011 = pd.concat( [
@@ -127,15 +132,17 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     tmp = dhs_urhi.groupby(['Survey', 'Date']).size()#.reset_index()
     tmp.name = 'Count'
     sns.lineplot(data = tmp.reset_index(), x='Date', y='Count', hue='Survey', marker='o')
+    plt.ylim((0,None))
     plt.savefig(os.path.join(results_dir, 'SurveySize.png'))
 
     ###########################################################################
     # MCPR - All women only for now
     ###########################################################################
     # TODO: pull out married women, or exposed
-    dhs_urhi['Modern'] = dhs_urhi['MethodType'] == 'Modern'
-    g = sns.FacetGrid(data=dhs_urhi, hue='Survey', height=5)
-    g.map_dataframe(plot_line_percent, by='Modern', values=[True]).add_legend().set_xlabels('Year').set_ylabels('mCPR-AW').set(ylim=(0,None))
+    tmp = all_data.copy()
+    tmp['Modern'] = tmp['MethodType'] == 'Modern'
+    g = sns.FacetGrid(data=tmp, hue='Survey', height=5)
+    g.map_dataframe(plot_line_percent, by='Modern', values=[True]).add_legend().set_xlabels('Year').set_ylabels('mCPR-All Women').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'mCPR.png'))
 
     ###########################################################################
