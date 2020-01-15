@@ -114,11 +114,13 @@ def default_age_mortality():
 
 def default_age_fertility():
     ''' Less-developed countries, WPP2019_MORT_F15_3_LIFE_TABLE_SURVIVORS_FEMALE.xlsx, 1990-1995 '''
-    f15 = 0.003 # Adjustment factor for women aged 15-20
-    f20 = 0.25 # Adjustment factor for women aged 20-25
+    f15 = 0.1#0.003 # Adjustment factor for women aged 15-20
+    f20 = 0.5#0.25 # Adjustment factor for women aged 20-25
     fertility = {
-            'bins': pl.array([ 0,  5, 10,      15,     20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]), 
-            'f':    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
+            'bins': pl.array([ 0,  5, 10,         15,         20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]), 
+            # 'f':    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
+            'f':    pl.array([ 0,  0,  0,   f15*72.7,  f20*180.2,  220.7,  200.0,   152.3,    82.1,    22.0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
+    fertility['f'] /= 1000 # Births per thousand to births per woman
     fertility['m'] = 0*fertility['f'] # Men don't have fertility -- probably could be handled differently!
     fertility['years'] = pl.array([1950, 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
     fertility['trend'] = pl.array([194.3, 197.1, 202.9, 207.1, 207.1, 207.1, 207.1, 191.4, 177.1, 162.9, 150.0, 145.7, 142.9, 132.9, 125, 120, 115]) # Last 3 are projected!!
@@ -157,7 +159,7 @@ def default_methods():
     
     mcpr_rates = pl.array([2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
     mcpr_rates /= 100
-    methods['mcpr_multipliers'] = (1-mcpr_rates)**4
+    methods['mcpr_multipliers'] = (1-mcpr_rates)**2.0
     
     return methods
 
@@ -211,7 +213,7 @@ def make_pars():
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
     pars['verbose'] = True
-    pars['seed'] = 1 # Random seed, if None, don't reset
+    pars['seed'] = 2 # Random seed, if None, don't reset
     
     pars['methods'] = default_methods()
     pars['age_pyramid'] = default_age_pyramid()
@@ -219,9 +221,9 @@ def make_pars():
     pars['age_fertility'] = default_age_fertility()
     pars['method_efficacy'] = default_efficacy()
     pars['barriers'] = default_barriers()
-    pars['mortality_factor'] = 3.0
-    pars['fertility_factor'] = 40 # No idea why this needs to be so high
-    pars['fertility_variation'] = [0.5,1.5] # Multiplicative range of fertility factors
+    pars['mortality_factor'] = 2.0
+    pars['fertility_factor'] = 2.2 # No idea why this needs to be so high
+    pars['fertility_variation'] = [1,1]# [0.5,1.5] # Multiplicative range of fertility factors
     pars['method_age'] = 15 # When people start choosing a method (sexual debut)
     pars['max_age'] = 99
     pars['preg_dur'] = [9,9] # Duration of a pregnancy, in months
