@@ -18,7 +18,7 @@ popsize_tfr_fn = abspath('data/senegal-popsize-tfr.csv')
 popsize_tfr  = pd.read_csv(popsize_tfr_fn, header=None)
 
 # Handle population size
-scale_factor = 3
+scale_factor = 10
 years = popsize_tfr.iloc[0,:].to_numpy()
 popsize = popsize_tfr.iloc[1,:].to_numpy() / 1000 * scale_factor
 
@@ -204,8 +204,8 @@ def make_pars():
     pars['barriers'] = default_barriers()
     pars['switching'] = default_switching() #pars['initial'], 
     pars['mortality_factor'] = 3.0
-    pars['fertility_factor'] = 38 # No idea why this needs to be so high
-    pars['fertility_variation'] = [1.0,1.0] # Multiplicative range of fertility factors
+    pars['fertility_factor'] = 40 # No idea why this needs to be so high
+    pars['fertility_variation'] = [0.5,1.5] # Multiplicative range of fertility factors
     pars['method_age'] = 15 # When people start choosing a method (sexual debut)
     pars['max_age'] = 99
     pars['preg_dur'] = [9,9] # Duration of a pregnancy, in months
