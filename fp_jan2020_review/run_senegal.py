@@ -19,7 +19,7 @@ do_plot_pyramids    = 1
 do_plot_skyscrapers = 1
 do_plot_methods     = 1
 do_plot_spacing     = 1
-do_save             = 1
+do_save             = 0
 
 min_age = 15
 max_age = 50

@@ -4,8 +4,10 @@ import sciris as sc
 
 #%% Load data
 fn = '/home/idm_user/idm/Dropbox/FP Dynamic Modeling/Calibration/Senegal-DHS/DHSIndividualBarriers.csv'
-d = pd.read_csv(fn, low_memory=False)
-d = d.dropna()
+d_raw = pd.read_csv(fn, low_memory=False)
+d_raw.dropna()
+# d_raw2017 = d_raw[d_raw['SurveyName']=='2017']
+# d = d_raw2017.dropna()
 
 keys = ['No need',
         'Opposition',
