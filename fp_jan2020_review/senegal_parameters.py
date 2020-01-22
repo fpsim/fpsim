@@ -246,7 +246,7 @@ def make_pars():
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = 500*1 # Number of people in the simulation -- for comparing data from Impact 2
+    pars['n'] = 500*10 # Number of people in the simulation -- for comparing data from Impact 2
     pars['start_year'] = 1950
     pars['end_year'] = 2015
     pars['timestep'] = 3 # Timestep in months
@@ -266,7 +266,7 @@ def make_pars():
     # User-tunable parameters
     pars['mortality_factor']    = 1.0*(2**2) # These weird factors are since mortality and fertility scale differently to keep population growth the same
     pars['fertility_factor']    = 1.65*(1.1**2)
-    pars['fertility_variation'] = [0.5,1.5] # Multiplicative range of fertility factors
+    pars['fertility_variation'] = [0.3,1.5] # Multiplicative range of fertility factors
     pars['method_age']          = 15 # When people start choosing a method (sexual debut)
     pars['max_age']             = 99
     pars['preg_dur']            = [9,9] # Duration of a pregnancy, in months
