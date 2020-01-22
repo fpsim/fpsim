@@ -19,6 +19,7 @@ do_plot_pyramids    = 1
 do_plot_skyscrapers = 1
 do_plot_methods     = 1
 do_plot_spacing     = 1
+do_plot_age_first   = 1
 do_save             = 0
 
 min_age = 15
@@ -117,17 +118,20 @@ if do_run:
                     counts[bininds[-1]] += 1
         counts = counts/counts.sum()
         
-        x = pl.hstack([bins, bins[::-1]])
-        PP = pl.hstack([pop_props_year,-pop_props_year[::-1]])
-        CC = pl.hstack([counts,-counts[::-1]])
+        # x = pl.hstack([bins, bins[::-1]])
+        # PP = pl.hstack([pop_props_year,-pop_props_year[::-1]])
+        # CC = pl.hstack([counts,-counts[::-1]])
         
-        pl.plot(PP, x, c='b', label=f'{year_str} data', **plotstyle)
-        pl.plot(CC, x, c='g', label='Model', **plotstyle)
+        # pl.plot(PP, x, c='b', label=f'{year_str} data', **plotstyle)
+        # pl.plot(CC, x, c='g', label='Model', **plotstyle)
+        
+        pl.plot(pop_props_year, bins, c='b', label=f'{year_str} data', **plotstyle)
+        pl.plot(counts, bins, c='g', label='Model', **plotstyle)
         
         pl.legend()
         pl.xlabel('Proportion')
         pl.ylabel('Age')
-        pl.title('Age pyramid', fontweight='bold')
+        pl.title('Age pyramid, 15-49, females only', fontweight='bold')
         sc.setylim()
         
         if do_save:
@@ -320,16 +324,25 @@ if do_run:
 
         right_year = data['SurveyYear']=='2010-11'
         not_first = data['Birth Order'] != 0
+        is_first = data['Birth Order'] == 0
         filtered = data[(right_year) & (not_first)]
         spacing = filtered['Birth Spacing'].to_numpy()
         sorted_spacing = sorted(spacing)
         
+        first_filtered = data[(right_year) & (is_first)]
+        first = first_filtered['Birth Spacing'].to_numpy()
+        sorted_first = sorted(first)
+        
         x_ax = pl.linspace(0,100,len(sorted_spacing))
+        x_ax_first = pl.linspace(0,100,len(sorted_first))
         
         # From model
+        model_age_first = []
         model_spacing = []
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         for person in people:
+            if len(person.dobs):
+                model_age_first.append(person.dobs[0])
             if len(person.dobs)>1:
                 for d in range(len(person.dobs)-1):
                     space = person.dobs[d+1] - person.dobs[d]
@@ -340,9 +353,21 @@ if do_run:
         
         model_ax = pl.linspace(0,100,len(model_spacing))
         
-        # Plotting
-        fig = pl.figure(figsize=(16,12))
+        model_age_ax = pl.linspace(0,100,len(model_age_first))
         
+        # Plotting
+        fig = pl.figure(figsize=(30,12))
+        
+        # tmpfig = pl.figure()
+        # data_y, data_x, _ = pl.hist(spacing, bins=20)
+        # model_y, model_x, _ = pl.hist(model_spacing, bins=20)
+        # pl.close(tmpfig)
+        # data_y /= data_y.sum()/100.0
+        # model_y /= model_y.sum()/100.0
+        # pl.plot(data_x[:-1], data_y, c='k', label='Data', lw=3)
+        # pl.plot(model_x[:-1], model_y, c=(0.2,0.7,0.1), label='Model', lw=3)
+        
+        pl.subplot(1,2,1)
         pl.plot(x_ax, sorted(spacing), c='k', label='Data', lw=3)
         pl.plot(model_ax, sorted(model_spacing), c=(0.2,0.7,0.1), label='Model', lw=3)
         pl.xlim([0,100.1])
@@ -352,8 +377,20 @@ if do_run:
         pl.title(f'Birth spacing is: data={pl.mean(spacing):0.2f}±{pl.std(spacing):0.2f} years, model={pl.mean(model_spacing):0.2f}±{pl.std(model_spacing):0.2f} years')
         pl.legend()
         
+        pl.subplot(1,2,2)
+        pl.plot(x_ax_first, sorted(first), c='k', label='Data', lw=3)
+        pl.plot(model_age_ax, sorted(model_age_first), c=(0.2,0.7,0.1), label='Model', lw=3)
+        pl.xlim([0,100.1])
+        sc.setylim()
+        pl.xlabel('Probability (%)')
+        pl.ylabel('Age at first birth (years)')
+        pl.title(f'Age at first birth: data={pl.mean(first):0.2f}±{pl.std(first):0.2f} years, model={pl.mean(model_age_first):0.2f}±{pl.std(model_age_first):0.2f} years')
+        pl.legend()
+        
         if do_save:
             pl.savefig(sp.abspath(f'figs/senegal_birth_spacing.png'))
+    
+    
         
     
 
