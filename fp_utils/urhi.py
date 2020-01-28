@@ -12,17 +12,159 @@ class URHI(Base):
 
     yeardict = {
         'Baseline':    os.path.join('Baseline', 'SEN_base_wm_20160427.dta'),
-        'Midline':     os.path.join('Midline', 'SEN_mid_wm_match_20160609.dta'),
-        'Endline':     os.path.join('Endline', 'SEN_end_wm_match_20160505.dta'),
+        'Midline':     os.path.join('Midline',  'SEN_mid_wm_match_20160609.dta'),
+        'Endline':     os.path.join('Endline',  'SEN_end_wm_match_20160505.dta'),
+    }
+
+    shared_indicators = {
+        'location_code':    'Cluster',
+        'line':             'Line',
+        'hhnum':            'HHNUM',
     }
 
     indicators = {
-        'Baseline': {'location_code':'Cluster', 'line':'Line', 'hhnum': 'HHNUM', 'iyear':'Year', 'imon':'Month', 'w102':'Age', 'w208':'Parity', 'method':'Method', 'methodtype':'MethodType', 'wm_allcity_wt':'Weight', 'city':'City', 'unmet_cmw': 'Unmet', 'w512': 'Married'},
-        'Midline': {'location_code':'Cluster', 'line':'Line', 'hhnum': 'HHNUM', 'mwiyear':'Year', 'mwimon':'Month', 'mw102':'Age', 'mw208b':'Parity', 'mmethod':'Method', 'mmethodtype':'MethodType', 'mwm_allcity_wt':'Weight', 'mcity':'City', 'munmet_cmw': 'Unmet', 'mw512': 'Married'},
-        'Endline': {'location_code':'Cluster', 'line':'Line', 'hhnum': 'HHNUM', 'ewiyear':'Year', 'ewimon':'Month', 'ew102':'Age', 'ew208':'Parity', 'emethod':'Method', 'emethodtype':'MethodType', 'ewoman_weight_6city':'Weight', 'ecity':'City', 'eunmet_cmw': 'Unmet', 'ew512': 'Married'},
+        'Baseline': {
+            'iyear':               'Year',
+            'imon':                'Month',
+            'w102':                Base.AGE,
+            'w208':                Base.PARITY,
+            'method':              Base.METHOD,
+            'methodtype':          Base.METHODTYPE,
+            'wm_allcity_wt':       Base.WEIGHT,
+            'city':                'City',
+            'unmet_cmw':           Base.UNMET,
+            'w512':                Base.MARRIED,
+
+            'w347a':  "Raison n'utilise pas la PF: Peu/pas de rapports sexuels",
+            'w347b':  "Raison n'utilise pas la PF: Partenaire/mari absent",
+            'w347c':  "Raison n'utilise pas la PF: Ménopause/hystérectomie",
+            'w347d':  "Raison n'utilise pas la PF: Déjà enceinte",
+            'w347e':  "Raison n'utilise pas la PF: Allaitement",
+            'w347f':  "Raison n'utilise pas la PF: Ne peut pas avoir d'enfants",
+            'w347g':  "Raison n'utilise pas la PF: Souhaite avoir autant d'enfants que possible",
+            'w347h':  "Raison n'utilise pas la PF: Souhaite tomber/essaye de tomber enceinte",
+            'w347i':  "Raison n'utilise pas la PF: Amenorrhée postpartum",
+            'w347j':  "Raison n'utilise pas la PF: L__enquêtée est opposée",
+            'w347k':  "Raison n'utilise pas la PF: Le partenaire est opposée",
+            'w347l':  "Raison n'utilise pas la PF: D__autres personnes sont opposées",
+            'w347m':  "Raison n'utilise pas la PF: Interdiction religieuse",
+            'w347n':  "Raison n'utilise pas la PF: Ne sait pas comment utiliser une methode",
+            'w347o':  "Raison n'utilise pas la PF: Ne connait aucune source",
+            'w347p':  "Raison n'utilise pas la PF: Problèmes de santé",
+            'w347q':  "Raison n'utilise pas la PF: Peur des effets secondaires",
+            'w347r':  "Raison n'utilise pas la PF: Manque d'accès/trop éloigné",
+            'w347s':  "Raison n'utilise pas la PF: Coûte trop chère",
+            'w347t':  "Raison n'utilise pas la PF: Pas pratique à utiliser",
+            'w347u':  "Raison n'utilise pas la PF: N__aime pas les méthodes existantes",
+            'w347v':  "Raison n'utilise pas la PF: Expérience malheureuse avec méth. existantes",
+            'w347w':  "Raison n'utilise pas la PF: Fataliste: dépend de Dieu",
+            'w347x':  "Raison n'utilise pas la PF: Autre réponse",
+            'w347z':  "Raison n'utilise pas la PF: Ne sait pas",
+            'w347xs': "Raison n'utilise pas la PF: Autre réponse spécifiée",
+            **shared_indicators
+        },
+        'Midline': {
+            'mwiyear':             'Year',
+            'mwimon':              'Month',
+            'mw102':               Base.AGE,
+            'mw208b':              Base.PARITY,
+            'mmethod':             Base.METHOD,
+            'mmethodtype':         Base.METHODTYPE,
+            'mwm_allcity_wt':      Base.WEIGHT,
+            'mcity':               'City',
+            'munmet_cmw':          Base.UNMET,
+            'mw512':               Base.MARRIED,
+
+
+            'mw318a':   "Raison n'utilise pas la PF: Pas de rapports sexuels",
+            'mw318b':   "Raison n'utilise pas la PF: Rapports sexuels non fréquents",
+            'mw318c':   "Raison n'utilise pas la PF: Pas encore mariée/pas de partenaire",
+            'mw318d':   "Raison n'utilise pas la PF: Partenaire/mari absent",
+            'mw318e':   "Raison n'utilise pas la PF: Déjà enceinte",
+            'mw318f':   "Raison n'utilise pas la PF: Allaitement",
+            'mw318g':   "Raison n'utilise pas la PF: Récemment eu un bébé",
+            'mw318h':   "Raison n'utilise pas la PF: Veut plus d'enfant/tomber enceinte",
+            'mw318i':   "Raison n'utilise pas la PF: Ménopause/hystérectomie",
+            'mw318j':   "Raison n'utilise pas la PF: Ne peut pas avoir d'enfants",
+            'mw318k':   "Raison n'utilise pas la PF: L__enquêtée est opposée",
+            'mw318l':   "Raison n'utilise pas la PF: La partenaire est opposée",
+            'mw318m':   "Raison n'utilise pas la PF: D__autres personnes sont opposées",
+            'mw318n':   "Raison n'utilise pas la PF: Interdiction religieuse",
+            'mw318o':   "Raison n'utilise pas la PF: Ne sait pas quelle méthode utiliser",
+            'mw318p':   "Raison n'utilise pas la PF: Ne sait pas comment utiliser une methode",
+            'mw318q':   "Raison n'utilise pas la PF: Ne connait aucune source",
+            'mw318r':   "Raison n'utilise pas la PF: Problèmes de santé",
+            'mw318s':   "Raison n'utilise pas la PF: Peur des effets secondaires",
+            'mw318t':   "Raison n'utilise pas la PF: Manque d'accès/trop éloigné",
+            'mw318u':   "Raison n'utilise pas la PF: Coûte trop chère",
+            'mw318v':   "Raison n'utilise pas la PF: Pas pratique à utiliser",
+            'mw318w':   "Raison n'utilise pas la PF: N__aime pas les méthodes existantes",
+            'mw318x':   "Raison n'utilise pas la PF: Expérience malheureuse avec méth. existantes",
+            'mw318y':   "Raison n'utilise pas la PF: Fataliste: dépend de Dieu",
+            'mw318ww':  "Raison n'utilise pas la PF: Autre réponse #1",
+            'mw318xx':  "Raison n'utilise pas la PF: Autre réponse #2",
+            'mw318yy':  "Raison n'utilise pas la PF: Autre réponse #3",
+            'mw318zz':  "Raison n'utilise pas la PF: Ne sait pas",
+            'mw318wws': "Raison n'utilise pas la PF: Autre réponse spécifiée #1",
+            'mw318xxs': "Raison n'utilise pas la PF: Autre réponse spécifiée #2",
+            'mw318yys': "Raison n'utilise pas la PF: Autre réponse spécifiée #3",
+            **shared_indicators
+        },
+        'Endline': {
+            'ewiyear':             'Year',
+            'ewimon':              'Month',
+            'ew102':               Base.AGE,
+            'ew208':               Base.PARITY,
+            'emethod':             Base.METHOD,
+            'emethodtype':         Base.METHODTYPE,
+            'ewoman_weight_6city': Base.WEIGHT,
+            'ecity':               'City',
+            'eunmet_cmw':          Base.UNMET,
+            'ew512':               Base.MARRIED,
+
+
+            'ew339a':   "Raison n'utilise pas la PF: Pas de rapports sexuels",
+            'ew339b':   "Raison n'utilise pas la PF: Rapports sexuels non fréquents",
+            'ew339c':   "Raison n'utilise pas la PF: Pas encore mariée/pas de partenaire",
+            'ew339d':   "Raison n'utilise pas la PF: Partenaire/mari absent",
+            'ew339e':   "Raison n'utilise pas la PF: Déjà enceinte",
+            'ew339f':   "Raison n'utilise pas la PF: Allaitement",
+            'ew339g':   "Raison n'utilise pas la PF: Récemment eu un bébé",
+            'ew339h':   "Raison n'utilise pas la PF: Veut plus d'enfant/tomber enceinte",
+            'ew339i':   "Raison n'utilise pas la PF: Ménopause/hystérectomie",
+            'ew339j':   "Raison n'utilise pas la PF: Ne peut pas avoir d'enfants",
+            'ew339k':   "Raison n'utilise pas la PF: L'__enquêtée est opposée",
+            'ew339l':   "Raison n'utilise pas la PF: La partenaire est opposée",
+            'ew339m':   "Raison n'utilise pas la PF: D__'autres personnes sont opposées",
+            'ew339n':   "Raison n'utilise pas la PF: Interdiction religieuse",
+            'ew339o':   "Raison n'utilise pas la PF: Ne connait pas de méthode",
+            'ew339p':   "Raison n'utilise pas la PF: Ne sait pas quelle méthode utiliser",
+            'ew339q':   "Raison n'utilise pas la PF: Ne sait pas comment utiliser une méthode",
+            'ew339r':   "Raison n'utilise pas la PF: Ne connait aucune source",
+            'ew339s':   "Raison n'utilise pas la PF: Problèmes de santé",
+            'ew339t':   "Raison n'utilise pas la PF: Peur des effets secondaires",
+            'ew339u':   "Raison n'utilise pas la PF: Manque d'accès/trop éloigné",
+            'ew339v':   "Raison n'utilise pas la PF: Coûte trop chère",
+            'ew339w':   "Raison n'utilise pas la PF: Pas pratique à utiliser",
+            'ew339x':   "Raison n'utilise pas la PF: N'__aime pas les méthodes existantes",
+            'ew339y':   "Raison n'utilise pas la PF: Expérience malheureuse avec méth. existantes",
+            'ew339z':   "Raison n'utilise pas la PF: Fataliste: dépend de Dieu",
+            'ew339ww':  "Raison n'utilise pas la PF: Autre réponse #1",
+            'ew339xx':  "Raison n'utilise pas la PF: Autre réponse #2",
+            'ew339yy':  "Raison n'utilise pas la PF: Autre réponse #3",
+            'ew339zz':  "Raison n'utilise pas la PF: Ne sait pas",
+            'ew339wws': "Raison n'utilise pas la PF: Autre réponse spécifiée #1",
+            'ew339xxs': "Raison n'utilise pas la PF: Autre réponse spécifiée #2",
+            'ew339yys': "Raison n'utilise pas la PF: Autre réponse spécifiée #3",
+            **shared_indicators
+        },
     }
 
+
     def __init__(self, foldername, force_read=False, cores=8):
+        self.barrier_keys = [k for k in self.indicators.keys() if k[:4] == 'w347' or k[:5] == 'mw318' or k[:5]=='ew339']
+        self.barrier_map = {k: v.split(':')[1][1:] for k,v in self.indicators.items() if k in self.barrier_keys}
+
         self.cachefn = os.path.join('cache', 'urhi.hdf')
         self.results_dir = os.path.join('results', 'URHI')
 
@@ -73,78 +215,6 @@ class URHI(Base):
 
         data = data[['SurveyName'] + found_keys]
 
-        '''
-        for k in replace_map.keys():
-            if self.indicators[year][k] == 'Parity':
-                print('Skipping parity')
-                continue
-
-            if 0 in replace_map[k]:
-                # zero-based
-                data[k] = data[k].fillna(-1)
-            else:
-                # assume one-based
-                data[k] = data[k].fillna(0) - 1
-
-            try:
-                data[k] = pd.Categorical.from_codes(data[k], categories = [unidecode.unidecode(v[1]) for v in sorted(replace_map[k].items(), key = lambda x: x[0])] )
-            except:
-                print('Difficulty:', year, k, data[k].unique(), replace_map[k])
-                data[k] = data[k].replace(replace_map[k]).map(str) #.astype('category')
-                print(data[k])
-        '''
-        def remove_dup_replacement_values(d, rm):
-            l = list( rm.values() )
-            lsl = list(set(l))
-            if len(l) == len(lsl): # No dups
-                return d, rm
-
-            print('FIXING DUPs!')
-            #print('Unequal lengths', len(l), len(lsl))
-            #print('RM:', rm)
-            #P = pd.DataFrame({'Keys': list(rm.keys()), 'Values': list(rm.values())})
-            #print('PPP:\n', P)
-
-            # Find keys associates with repeated values
-            unique = {}
-            dup = {}
-            for kk,v in rm.items():
-                if v not in unique.keys():
-                    # New value!
-                    unique[v] = kk
-                else:
-                    dup[kk] = unique[v]
-
-            #print('U:', unique)
-            #print('D:', dup)
-            #print('Data unique before:', data[k].unique())
-            #print('Data unique after:', data[k].replace(dup).unique())
-
-            d = d.replace(dup)
-            for kk in dup.keys(): # Could reverse unique
-                #print(f'Removing {kk} from replace_map[{k}]')
-                del rm[kk]
-
-            return d, rm
-
-        def fill_replacement_keys(d, rm):
-            #print( 'U:', sorted(d.unique()) )
-            #print( 'RM:', rm )
-            #print( 'RM Keys:', list(set(rm.keys())) )
-            all_keys_in_replace_map = all([(kk in rm) or (kk==-1) for kk in d.unique()])
-            #print(all_keys_in_replace_map)
-            if all_keys_in_replace_map: # and largest_data_index > len(d.unique()):
-                print('FIXING REPLACEMENT!')
-                # OK, we can fix it - just add the missing entries to the replace_map[k], that way codes are preserved
-                largest_index = int(d.unique().max())
-                #print('LI:', largest_index)
-                for i in range(largest_index+1):
-                    if i not in rm:
-                        rm[i] = f'Dummy{i}'
-                return d, rm
-            return d, rm
-
-
         values = pd.io.stata.StataReader(filename).value_labels()
         replace_map = {k: values[k.upper()] if k.upper() in values else values[k] for k in found_keys if k in values or k.upper() in values}
 
@@ -156,14 +226,14 @@ class URHI(Base):
             replace_map['emethodtype'] = values['methodtype'] # Doesn't appear to be an entry for emethodtype? # emethodtypevl is ~same (icud vs iud)
 
         for k in replace_map.keys():
-            if self.indicators[year][k] == 'Parity':
+            if self.indicators[year][k] == self.PARITY:
                 print('Skipping parity')
                 continue
 
             data[k] = data[k].fillna(-1)
 
-            data[k], replace_map[k] = remove_dup_replacement_values(data[k], replace_map[k])
-            data[k], replace_map[k] = fill_replacement_keys(data[k], replace_map[k])
+            data[k], replace_map[k] = Base.remove_dup_replacement_values(data[k], replace_map[k])
+            data[k], replace_map[k] = Base.fill_replacement_keys(data[k], replace_map[k])
             '''
             # -1 should get mapped to NaN in the Categorical below
             if 0 in replace_map[k]:
@@ -180,7 +250,7 @@ class URHI(Base):
                     data[k] = data[k].replace(replace_map[k]).map(str) #.astype('category')
                     print('UNIQUE AFTER:', data[k].unique())
                     continue
-                '''
+            '''
 
             try:
                 data[k] = pd.Categorical.from_codes(data[k], categories = [unidecode.unidecode(v[1]) for v in sorted(replace_map[k].items(), key = lambda x: x[0])] )
@@ -198,14 +268,14 @@ class URHI(Base):
         a = list(a)[:-1]
         next(b)
         labels = [f'{c}-{d}' for c,d in zip(a,b)]
-        data['AgeBin'] = pd.cut(data['Age'], bins = age_edges, labels=labels, right=False)
+        data['AgeBin'] = pd.cut(data[self.AGE], bins = age_edges, labels=labels, right=False)
 
         parity_edges = list(range(6+1)) + [99]
         a,b = itertools.tee(parity_edges)
         a = list(a)[:-1]
         next(b)
         labels = [f'{c}-{d}' for c,d in zip(a,b)]
-        data['ParityBin'] = pd.cut(data['Parity'], bins = parity_edges, labels=labels, right=False)
+        data['ParityBin'] = pd.cut(data[self.PARITY], bins = parity_edges, labels=labels, right=False)
 
         if True:
             values = pd.io.stata.StataReader(filename).value_labels()
@@ -227,8 +297,8 @@ class URHI(Base):
         data.drop(['Cluster', 'HHNUM', 'Line'], axis=1, inplace=True)
 
         print(data.dtypes)
-        print(sorted(data['Method'].head(25)))
-        print(sorted(data['MethodType'].unique()))
+        print(sorted(data[self.METHOD].head(25)))
+        print(sorted(data[self.METHODTYPE].unique()))
         data.to_hdf(self.cachefn, key='data', format='t')
 
         return data
@@ -238,67 +308,61 @@ class URHI(Base):
         self.raw = self.data
 
         # Parity is all [NaN or 0] at Midline?!  Causes seaborn ploting problems, so fill -1.
-        self.data.loc[self.data['SurveyName']=='Midline', 'Parity'] = \
-            self.data.loc[self.data['SurveyName']=='Midline', 'Parity'].fillna(0)
+        self.data.loc[self.data['SurveyName']=='Midline', self.PARITY] = \
+            self.data.loc[self.data['SurveyName']=='Midline', self.PARITY].fillna(0)
 
-        NO_METHOD = 'No method'
-        SHORT = 'Short-term'
-        LONG = 'Long-term'
-        INJECTION = 'Injection'
-        OTHER = 'Other'
+        self.data.loc[:,self.METHODDURABILITY] = self.data[self.METHOD]
 
-        self.data.loc[:,'MethodDurability'] = self.data['Method']
-
-        self.data.loc[:,'Unmet'].fillna('Missing', inplace=True) # Needed for plotting
+        self.data.loc[:,self.UNMET].fillna('Missing', inplace=True) # Needed for plotting
 
         self.data.replace(
             {
-                'Method': {
+                self.METHOD: {
                     #'Female sterilization': '',
                     #'No method': '',
                     #'Daily pill': '',
 
-                    'Injectables': 'Injectable',
-                    'Breastfeeding/LAM': 'LAM',
-                    'iucd': 'IUD',
-                    'Female condom': 'Condom',
-                    'Male condom': 'Condom',
-                    'Implants': 'Implant',
+                    'Injectables':              'Injectable',
+                    'Breastfeeding/LAM':        'LAM',
+                    'iucd':                     'IUD',
+                    'Female condom':            'Condom',
+                    'Male condom':              'Condom',
+                    'Implants':                 'Implant',
 
-                    'Natural methods': 'Traditional',
+                    'Natural methods':          'Traditional',
                     'Other traditional method': 'Traditional',
 
-                    'sdm': 'Other modern',
-                    'Other modern method': 'Other modern',
-                    'Emergency pill': 'Other modern',
+                    'sdm':                      'Other modern',
+                    'Other modern method':      'Other modern',
+                    'Emergency pill':           'Other modern',
                 },
 
-                'MethodDurability': {
+                self.METHODDURABILITY: {
                     #'No method': NO_METHOD, # Causes...  "ValueError: Replacement not allowed with overlapping keys and values"
 
-                    'Daily pill': SHORT,
-                    'Female condom': SHORT,
-                    'Male condom': SHORT,
+                    'Daily pill':               self.SHORT,
+                    'Female condom':            self.SHORT,
+                    'Male condom':              self.SHORT,
 
-                    'Injectables': INJECTION,
+                    'Injectables':              self.INJECTION,
 
-                    'Female sterilization': LONG,
-                    'iucd': LONG,
-                    'Implants': LONG,
+                    'Female sterilization':     self.LONG,
+                    'iucd':                     self.LONG,
+                    'Implants':                 self.LONG,
 
-                    'Natural methods': OTHER,
-                    'Breastfeeding/LAM': OTHER,
-                    'Other traditional method': OTHER,
-                    'sdm': OTHER,
-                    'Other modern method': OTHER,
-                    'Emergency pill': OTHER,
+                    'Natural methods':          self.OTHER,
+                    'Breastfeeding/LAM':        self.OTHER,
+                    'Other traditional method': self.OTHER,
+                    'sdm':                      self.OTHER,
+                    'Other modern method':      self.OTHER,
+                    'Emergency pill':           self.OTHER,
                 },
 
-                'Unmet': {
-                    '-1.0': 'Unknown',
-                    'No unmet need': 'No',
-                    'Unmet need': 'Yes',
-                    'Missing': 'Unknown',
+                self.UNMET: {
+                    '-1.0':             'Unknown',
+                    'No unmet need':    'No',
+                    'Unmet need':       'Yes',
+                    'Missing':          'Unknown',
                 }
             },
             inplace=True
