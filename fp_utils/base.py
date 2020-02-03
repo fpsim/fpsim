@@ -4,7 +4,25 @@ import pandas as pd
 from functools import partial
 from pathlib import Path
 
+
 class Base:
+    AGE                 = 'Age'
+    PARITY              = 'Parity'
+    METHOD              = 'Method'
+    METHODTYPE          = 'MethodType'
+    METHODDURABILITY    = 'MethodDurability'
+    WEIGHT              = 'Weight'
+    UNMET               = 'Unmet'
+    MARRIED             = 'Married'
+
+
+    NO_METHOD = 'No method'
+    SHORT = 'Short-term'
+    LONG = 'Long-term'
+    INJECTION = 'Injection'
+    OTHER = 'Other'
+
+
     def __init__(self, foldername, force_read=False, cores=8):
         self.cores = cores
         self.foldername = foldername
@@ -72,3 +90,43 @@ class Base:
             raise Exception('Help!')
 
         return year + month/12
+
+
+    @staticmethod
+    def remove_dup_replacement_values(d, rm):
+        l = list( rm.values() )
+        lsl = list(set(l))
+        if len(l) == len(lsl): # No dups
+            return d, rm
+
+        print('Fixing duplicates')
+
+        # Find keys associates with repeated values
+        unique = {}
+        dup = {}
+        for kk,v in rm.items():
+            if v not in unique.keys():
+                # New value!
+                unique[v] = kk
+            else:
+                dup[kk] = unique[v]
+
+        d = d.replace(dup)
+        for kk in dup.keys(): # Could reverse unique
+            #print(f'Removing {kk} from replace_map[{k}]')
+            del rm[kk]
+
+        return d, rm
+
+    @staticmethod
+    def fill_replacement_keys(d, rm):
+        all_keys_in_replace_map = all([(kk in rm) or (kk==-1) for kk in d.unique()])
+        if all_keys_in_replace_map:
+            print('Fixing missing replacement keys')
+            # OK, we can fix it - just add the missing entries to the replace_map[k], that way codes are preserved
+            largest_index = int(d.unique().max())
+            for i in range(largest_index+1):
+                if i not in rm:
+                    rm[i] = f'Dummy{i}'
+            return d, rm
+        return d, rm

@@ -20,8 +20,8 @@ fs=(12,8)
 username = os.path.split(os.path.expanduser('~'))[-1]
 folderdict = {
     'dklein': {
-        'DHS': '/home/dklein/sdb2/Dropbox (IDM)/FP Dynamic Modeling/DHS/Country data/Senegal/',
-        'URHI': '/home/dklein/sdb2/Dropbox (IDM)/URHI/Senegal',
+        'DHS': '/Users/dklein/Dropbox (IDM)/FP Dynamic Modeling/DHS/Country data/Senegal/',
+        'URHI': '/Users/dklein/Dropbox (IDM)/URHI/Senegal',
     },
     'cliffk': {
         'DHS': '/u/cliffk/idm/fp/data/DHS/NGIR6ADT/NGIR6AFL.DTA',
@@ -73,6 +73,8 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     bar.unstack('SurveyName').plot.bar(rot=0, ax=ax)
     ax.set_ylabel('Weighted Barrier Count')
     fig.savefig(os.path.join(results_dir, 'Barriers.png'))
+
+    plt.show()
     exit()
 
 
