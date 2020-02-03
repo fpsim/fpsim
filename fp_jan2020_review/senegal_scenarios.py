@@ -23,7 +23,7 @@ if run_implants:
     
     def urhi(sim):
         print('Added URHI')
-        sim.pars['methods']['matrix'][0,0] *= 0.5
+        sim.pars['methods']['matrix'][0,0] *= 0.80
         # switching = sim.pars['switching']
         # print(switching)
         # for i,method1 in enumerate(switching.keys()):
@@ -33,10 +33,23 @@ if run_implants:
         # print(switching)
         # for person in sim.people.values():
         #     person.pars = sim.pars
-            
-    sim2.add_intervention(intervention=urhi, year=2020)
     
+    # def anti_urhi(sim):
+    #     print('Added anti-URHI')
+    #     sim.pars['methods']['matrix'][0,0] *= 1.5
+        
+    # for year in [2011]:
+    #     sim1.add_intervention(intervention=anti_urhi, year=year)
+    
+    # for year in [2011, 2015]:
+    #     sim1.add_intervention(intervention=urhi, year=year)
+    
+    for year in [2011, 2015]:
+        sim2.add_intervention(intervention=urhi, year=year)
+    
+    lfp.set_seed(1)
     sim1.run()
+    lfp.set_seed(1)
     sim2.run()
     
     fig = pl.figure(figsize=(26,14))
@@ -49,14 +62,22 @@ if run_implants:
     pl.xlabel('Year')
     pl.ylabel('Percentage')
     pl.title('MCPR', fontweight='bold')
+    sc.setylim()
+    pl.xlim([1960, 2030])
     pl.legend()
     
     pl.subplot(1,2,2)
-    pl.plot(years, pl.cumsum(sim1.results['child_deaths']), label='Baseline', lw=2)
-    pl.plot(years, pl.cumsum(sim2.results['child_deaths']), label='Intervention', lw=2)
+    factor = 16e6/sim1.pars['n']/10/10
+    s1d = pl.cumsum(sim1.results['child_deaths'])*factor
+    s2d = pl.cumsum(sim2.results['child_deaths'])*factor
+    pl.plot(years, s1d, label='Baseline', lw=2)
+    pl.plot(years, s2d, label='Intervention', lw=2)
     pl.xlabel('Year')
     pl.ylabel('Count')
-    pl.title('Child mortality', fontweight='bold')
+    string = sc.sigfig(s1d[-1]-s2d[-1], sigfigs=3, sep=True)
+    pl.title(f'Child mortality; deaths averted={string}', fontweight='bold')
+    sc.setylim()
+    pl.xlim([1960, 2030])
     pl.legend()
     
     pl.savefig('figs/senegal_scenarios.png')
