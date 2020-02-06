@@ -217,6 +217,7 @@ def read():
             ans = 100 * np.dot(~(tmp[k] == 'no'), tmp['v005']) / tmp['v005'].sum()
             print('%.2f'%ans, year, k, indicators[k], tmp[k].unique())
             if len(tmp[k].unique()) == 1 and ans < 99:
+                # Not sure what to do in this scenario
                 print('Huh')
                 print(tmp)
                 print(tmp.shape)
@@ -350,14 +351,27 @@ def main(force_read = False):
     g.savefig(os.path.join(results_dir, f'BirthSpacing_year_order.png'))
 
     # PLOT: First birth by survey year
-    g = sns.FacetGrid(data=birth_spacing.loc[birth_spacing['Birth Order']==0], hue='SurveyName', hue_order=yeardict.keys(), legend_out=True, height=8, aspect=1)
+    survey_names = ['1986', '1997', '2014', '2017'] # yeardict.keys()
+    g = sns.FacetGrid(data=birth_spacing.loc[(birth_spacing['Birth Order']==0) & (birth_spacing['SurveyName'].isin(survey_names))], hue='SurveyName', hue_order=survey_names, legend_out=True, height=8, aspect=1, xlim=(10,35))
     g = g.map(sns.distplot, 'Birth Spacing', kde=True, hist=False) \
         .add_legend() \
-        .set_xlabels('Birth Spacing (yr)') \
+        .set_xlabels('Age at First Birth (yr)') \
         .set_ylabels('Frequency')
     g.fig.suptitle('First birth by survey year')
     g.fig.subplots_adjust(top=0.93, wspace=0.3)
     g.savefig(os.path.join(results_dir, f'FirstBirth_year.png'))
+
+    # PLOT: Subsequent births by survey year
+    survey_names = ['1986', '1997', '2014', '2017'] # yeardict.keys()
+    g = sns.FacetGrid(data=birth_spacing.loc[(birth_spacing['Birth Order']>0) & (birth_spacing['SurveyName'].isin(survey_names))], hue='SurveyName', hue_order=survey_names, legend_out=True, height=8, aspect=1, xlim=(0,10))
+    g = g.map(sns.distplot, 'Birth Spacing', kde=True, hist=False) \
+        .add_legend() \
+        .set_xlabels('Inter-Birth Interval (yr)') \
+        .set_ylabels('Frequency')
+    g.fig.suptitle('Inter-birth Interval')
+    g.fig.subplots_adjust(top=0.93, wspace=0.3)
+    g.savefig(os.path.join(results_dir, f'BirthSpacing_year.png'))
+
 
     # PLOT: Birth spacing by birth order [survey year]
     g = sns.FacetGrid(data=birth_spacing.loc[(birth_spacing['Birth Order']>0) & (birth_spacing['Birth Order']<10)], hue='SurveyName', hue_order=yeardict.keys(), col='Birth Order', col_wrap=3, legend_out=True)

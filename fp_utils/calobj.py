@@ -112,6 +112,35 @@ class CalObj(sc.prettyobj):
                 'M': [21, 'OModr', 'Other modern'],
 #                     '?': [22, 'Unknw', 'Unknown'], # Seems to be zero?
             })
+        elif self.which == 'URHI-brief':
+            self.mapping = sc.odict({
+                ' ': [-1, 'Miss',  'Missing'],
+                'N': [ 0, 'Birth', 'Birth'],
+                'F': [ 1, 'Term',  'Termination'],
+                'M': [ 1, 'Term',  'Termination'],
+                'A': [ 1, 'Term',  'Termination'],
+                'G': [ 2, 'Preg',  'Pregnancy'],
+                '0': [ 3, 'None',  'No method'],
+                '6': [ 4, 'Pill',  'Pill'],
+                '4': [ 5, 'IUD',   'IUD'],
+                '5': [ 6, 'Injct', 'Injectables'],
+                '?': [ 7, 'Diaph', 'Diaphragm'],
+                '8': [ 8, 'Cond',  'Condom'],
+                '1': [ 9, 'FSter', 'Female sterilization'],
+                '2': [10, 'MSter', 'Male sterilization'],
+                'R': [11, 'Rhyth', 'Rhythm method'],
+                'W': [12, 'Withd', 'Withdrawl'],
+                'Y': [13, 'OTrad', 'Other traditional method'],
+                '3': [14, 'Impla', 'Implant'],
+                '?': [15, 'Abst',  'Abstinence'],
+                'L': [16, 'Lact',  'Lactational amenorrhea method (LAM)'],
+                '9': [17, 'FCond',  'Female condom'],
+                '?': [18, 'Foam',  'Foam and jelly'],
+                '7': [19, 'Emerg', 'Emergency contraception'],
+                'H': [20, 'SDays', 'Standard days method'],
+                'X': [21, 'OModr', 'Other modern method'],
+
+            })
         elif self.which == 'URHI':
             self.mapping = sc.odict({
                 ' ': [-1, 'Miss',  'Missing'],
@@ -288,6 +317,42 @@ class CalObj(sc.prettyobj):
             ax.set_yticks(self.numkeys+offset)
             ax.set_yticklabels(self.shortkeys, rotation=yrotation)
         return
+
+
+    def plot_prop(self, projection='2d', figsize=None):
+        ''' Plot all transitions in the contraception calendar '''
+        if figsize is None: figsize = (36,16)
+
+        offset = 0.5
+        labeloffset = 0.0
+        yrotation = 90 if projection == '3d' else 0
+
+        # Create figure and set tick marks on top
+        #fig = pl.figure(figsize=figsize)
+        fig, ax1 = pl.subplots(1,1,figsize=figsize)
+        if projection != '3d':
+            pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = True
+            pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = True
+        else:
+            pl.rcParams['xtick.top'] = pl.rcParams['xtick.labeltop'] = False
+            pl.rcParams['ytick.right'] = pl.rcParams['ytick.labelright'] = False
+
+        # Plot relative counts
+        data = self.results.rel_props
+        if projection != '3d':
+            #ax1 = fig.add_subplot(122)
+            im2 = pl.imshow(data, cmap='jet', vmin=0, vmax=100) # , edgecolors=[0.8]*3
+            ca2 = fig.add_axes([0.91, 0.11, 0.03, 0.75])
+            fig.colorbar(im2, cax=ca2)
+        else:
+            ax1 = sc.bar3d(data=data, fig=fig, cmap='jet', axkwargs={'nrows':1, 'ncols':2, 'index':2})
+        ax1.set_title('Relative proportion of each transition, diagonal removed (%)', fontweight='bold')
+
+        self._set_axis_labels(ax=ax1, offset=labeloffset, yrotation=yrotation)
+        ax1.set_xlim([-offset, self.nmethods-offset])
+        ax1.set_ylim([-offset, self.nmethods-offset])
+
+        return fig
 
     def plot_transitions(self, projection='2d', figsize=None):
         ''' Plot all transitions in the contraception calendar '''

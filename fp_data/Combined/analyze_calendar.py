@@ -15,8 +15,9 @@ torun = [
 ]
 
 # Choose a case to analyze
-#case = 'Senegal-URHI'
-case = 'Senegal-DHS2017'
+case = 'Senegal-URHI'
+#case = 'Senegal-DHS2010-11'
+#case = 'Senegal-DHS2017'
 
 
 sc.tic()
@@ -26,20 +27,29 @@ username = os.path.split(os.path.expanduser('~'))[-1]
 scenarios = {
     'Senegal-URHI': {
         'filedict': {
-            'dklein': os.path.join( os.getenv("HOME"), 'sdb2', 'Dropbox (IDM)', 'URHI', 'Senegal', 'Endline', 'SEN_end_wm_match_20160505.dta'),
+            'dklein': os.path.join( os.getenv("HOME"), 'Dropbox (IDM)', 'URHI', 'Senegal', 'Endline', 'SEN_end_wm_match_20160505.dta'),
             #'cliffk': '/u/cliffk/idm/fp/data/DHS/NGIR6ADT/NGIR6AFL.DTA',
         },
         'cache' : os.path.join('data', f'{case}.cal'),
-        'which' : 'URHI',
+        'which' : 'URHI-brief',
         'key'   : 'cal_1',
     },
     'Senegal-DHS2017': {
         'filedict': {
-            'dklein': os.path.join( os.getenv("HOME"), 'sdb2', 'Dropbox (IDM)', 'FP Dynamic Modeling', 'DHS', 'Country data', 'Senegal', '2017', 'SNIR7ZDT', 'SNIR7ZFL.DTA'),
+            'dklein': os.path.join( os.getenv("HOME"), 'Dropbox (IDM)', 'FP Dynamic Modeling', 'DHS', 'Country data', 'Senegal', '2017', 'SNIR7ZDT', 'SNIR7ZFL.DTA'),
             #'cliffk': '/u/cliffk/idm/fp/data/DHS/NGIR6ADT/NGIR6AFL.DTA',
         },
         'cache': os.path.join('data', f'{case}.cal'),
         'which': 'DHS7',
+        'key'  : 'vcal_1',
+    },
+    'Senegal-DHS2010-11': {
+        'filedict': {
+            'dklein': os.path.join( os.getenv("HOME"), 'Dropbox (IDM)', 'FP Dynamic Modeling', 'DHS', 'Country data', 'Senegal', '2010-11', 'SNIR61DT', 'SNIR61FL.DTA'),
+            #'cliffk': '/u/cliffk/idm/fp/data/DHS/NGIR6ADT/NGIR6AFL.DTA',
+        },
+        'cache': os.path.join('data', f'{case}.cal'),
+        'which': 'DHS7', # DHS6
         'key'  : 'vcal_1',
     },
 }
@@ -74,7 +84,8 @@ else:
     calobj = load_from_file()
 
 if 'plot_matrix' in torun:
-    calobj.plot_transitions()
+    #calobj.plot_transitions(projection='2d', figsize=(16,10))
+    calobj.plot_prop(projection='2d', figsize=(8,8))
     basename = os.path.splitext(cache)[0]
     filename = basename + '.png'
     pl.savefig(filename)
