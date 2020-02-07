@@ -60,20 +60,51 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     ###########################################################################
     # DHS Barriers
     ###########################################################################
+
+
+    #print(dhs_urhi.groupby(['Survey', 'SurveyName', 'Date'])['Weight'].sum()/1e6)
+    #exit()
+
     ib = d.get_individual_barriers()
+
     stacked = ib.stack()
     #stacked.name = 'Stack'
     stacked.index.rename('Barrier', level=8, inplace=True)
     stacked.name = 'Count'
     stacked = stacked.reset_index('Weight')
-    stacked.loc[:,'WeightCount'] = stacked['Weight'] * stacked['Count']
-    bar = stacked.groupby(['SurveyName', 'Barrier'])['WeightCount'].sum()
-    print(bar)
+    stacked.loc[:,'WeightCount'] = stacked['Weight'] * stacked['Count'] / 1e6
+
+    stacked.reset_index(inplace=True)
+
+    stacked_barriers_weight_sum = stacked.groupby(['SurveyName', 'Barrier'])['WeightCount'].sum()
+    no_method_weight_sum = d.data.loc[d.data['Method']=='No method'].groupby('SurveyName')['Weight'].sum() / 1e6
+    weight_sum = d.data.groupby('SurveyName')['Weight'].sum() / 1e6
+
     fig, ax = plt.subplots(1,1,figsize=fs)
-    bar.unstack('SurveyName').plot.bar(rot=0, ax=ax)
-    ax.set_ylabel('Weighted Barrier Count')
+    percent_on_no_method = 100 *no_method_weight_sum.divide(weight_sum)
+    percent_on_no_method.plot(ax=ax)
+    ax.set_xlabel('Survey')
+    ax.set_ylabel('Women Not Using Any Method (%)')
+    #ax.set_ylim(bottom=0, top=100)
+    fig.savefig(os.path.join(results_dir, 'NonUse.png'))
+
+
+    barrier_percent_of_no_need = 100 * stacked_barriers_weight_sum.divide(no_method_weight_sum)
+
+    #bar_data = stacked.groupby(['SurveyName', 'Barrier'])['WeightCount'].sum()
+    print(barrier_percent_of_no_need)
+    print(barrier_percent_of_no_need.groupby('SurveyName').sum())
+
+    unstack_for_total = barrier_percent_of_no_need.unstack('Barrier')
+    unstack_for_total['N/A'] = unstack_for_total['N/A'] + 100 - unstack_for_total.sum(axis=1)
+    unstack_for_total.rename(columns={'N/A':'Missing'}, inplace=True)
+    unstack_for_total.name = 'Percent'
+    barrier_percent_of_no_need_with_missing = unstack_for_total.stack()
+
+    fig, ax = plt.subplots(1,1,figsize=fs)
+    barrier_percent_of_no_need_with_missing.unstack('SurveyName').plot.bar(rot=0, ax=ax)
+    ax.set_ylabel('Barriers reported (percent of non users)')
     fig.savefig(os.path.join(results_dir, 'Barriers.png'))
-    exit()
 
 
     ###########################################################################
