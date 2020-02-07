@@ -106,8 +106,10 @@ class DHS(Base):
         'v625a': "exposure to need for contraception (definition 3)",
         'v626a': "unmet need for contraception (definition 3)",
 
+        # Calendar
         # vcol_1 vcol_2 vcol_3 vcol_4 vcol_5 vcol_6 vcol_7 vcol_8 vcol_9 vcal_1 vcal_2 vcal_3 vcal_4 vcal_5 vcal_6 vcal_7 vcal_8 vcal_9
 
+        # Birth spacing
         'b3_01': 'date of birth (cmc)',
         'b3_02': 'date of birth (cmc)',
         'b3_03': 'date of birth (cmc)',
@@ -197,58 +199,6 @@ class DHS(Base):
                 found_keys.append(k)
         data = data[['SurveyName'] + found_keys]
 
-        def remove_dup_replacement_values(d, rm):
-            l = list( rm.values() )
-            lsl = list(set(l))
-            if len(l) == len(lsl): # No dups
-                return d, rm
-
-            #print('FIXING DUPs!')
-            #print('Unequal lengths', len(l), len(lsl))
-            #print('RM:', rm)
-            #P = pd.DataFrame({'Keys': list(rm.keys()), 'Values': list(rm.values())})
-            #print('PPP:\n', P)
-
-            # Find keys associates with repeated values
-            unique = {}
-            dup = {}
-            for kk,v in rm.items():
-                if v not in unique.keys():
-                    # New value!
-                    unique[v] = kk
-                else:
-                    dup[kk] = unique[v]
-
-            #print('U:', unique)
-            #print('D:', dup)
-            #print('Data unique before:', data[k].unique())
-            #print('Data unique after:', data[k].replace(dup).unique())
-
-            d = d.replace(dup)
-            for kk in dup.keys(): # Could reverse unique
-                #print(f'Removing {kk} from replace_map[{k}]')
-                del rm[kk]
-
-            return d, rm
-
-        def fill_replacement_keys(d, rm):
-            #print( 'U:', sorted(d.unique()) )
-            #print( 'RM:', rm )
-            #print( 'RM Keys:', list(set(rm.keys())) )
-            all_keys_in_replace_map = all([(kk in rm) or (kk==-1) for kk in d.unique()])
-            #print(all_keys_in_replace_map)
-            if all_keys_in_replace_map: # and largest_data_index > len(d.unique()):
-                #print('FIXING REPLACEMENT!')
-                # OK, we can fix it - just add the missing entries to the replace_map[k], that way codes are preserved
-                largest_index = int(d.unique().max())
-                #print('LI:', largest_index)
-                for i in range(largest_index+1):
-                    if i not in rm:
-                        rm[i] = f'Dummy{i}'
-                return d, rm
-            return d, rm
-
-
         values = pd.io.stata.StataReader(filename).value_labels()
         replace_map = {k: values[k.upper()] if k.upper() in values else values[k] for k in found_keys if k in values or k.upper() in values}
         for k in replace_map.keys():
@@ -256,8 +206,8 @@ class DHS(Base):
 
             data[k] = data[k].fillna(-1)
 
-            data[k], replace_map[k] = remove_dup_replacement_values(data[k], replace_map[k])
-            data[k], replace_map[k] = fill_replacement_keys(data[k], replace_map[k])
+            data[k], replace_map[k] = Base.remove_dup_replacement_values(data[k], replace_map[k])
+            data[k], replace_map[k] = Base.fill_replacement_keys(data[k], replace_map[k])
             '''
             # -1 should get mapped to NaN in the Categorical below
             if 0 in replace_map[k]:
@@ -353,42 +303,42 @@ class DHS(Base):
 
     def compute_individual_barriers(self):
         # INDIVIDUAL BARRIERS
-        barrier_map = {
-            "not married": "No need",
-            "not having sex": "No need",
-            "infrequent sex": "No need",
-            "menopausal/hysterectomy": "No need",
-            "subfecund/infecund": "No need",
-            "postpartum amenorrheic": "No need",
-            "breastfeeding": "No need",
-            "fatalistic": "Opposition",
-            "respondent opposed": "Opposition",
-            "husband/partner opposed": "Opposition",
-            "others opposed": "Opposition",
-            "religious prohibition": "Opposition",
-            "knows no method": "Knowledge",
-            "knows no source": "Access",
-            "health concerns": "Health",
+        coarse_barrier_map = {
+            "not married":                          "No need",
+            "not having sex":                       "No need",
+            "infrequent sex":                       "No need",
+            "menopausal/hysterectomy":              "No need",
+            "subfecund/infecund":                   "No need",
+            "postpartum amenorrheic":               "No need",
+            "breastfeeding":                        "No need",
+            "fatalistic":                           "Opposition",
+            "respondent opposed":                   "Opposition",
+            "husband/partner opposed":              "Opposition",
+            "others opposed":                       "Opposition",
+            "religious prohibition":                "Opposition",
+            "knows no method":                      "Knowledge",
+            "knows no source":                      "Access",
+            "health concerns":                      "Health",
             "fear of side effects/health concerns": "Health",
-            "lack of access/too far": "Access",
-            "costs too much": "Access",
-            "inconvenient to use": "Health",
-            "interferes with body's processes": "Health",
-            "preferred method not available": "Access",
-            "no method available": "Access",
-            "cs": "N/A",
-            "cs": "N/A",
-            "cs": "N/A",
-            "cs": "N/A",
-            "cs": "N/A",
-            "other": "N/A",
-            "don't know": "N/A",
+            "lack of access/too far":               "Access",
+            "costs too much":                       "Access",
+            "inconvenient to use":                  "Health",
+            "interferes with body's processes":     "Health",
+            "preferred method not available":       "Access",
+            "no method available":                  "Access",
+            "cs":                                   "N/A",
+            "cs":                                   "N/A",
+            "cs":                                   "N/A",
+            "cs":                                   "N/A",
+            "cs":                                   "N/A",
+            "other":                                "N/A",
+            "don't know":                           "N/A",
         }
 
-        coarse_barrier_map = {k:barrier_map[v] for k,v in self.barrier_map.items()}
-        dat = self.data.set_index(['UID', 'SurveyName', 'Age', 'Parity', 'Weight', 'Unmet', 'Method', 'MethodType'])
+        coarse_barrier_map = {k:coarse_barrier_map[v] for k,v in self.barrier_map.items()}
+        dat = self.data.set_index(['UID', 'SurveyName', self.AGE, self.PARITY, self.WEIGHT, self.UNMET, self.METHOD, self.METHODTYPE])
 
-        dat = dat.loc[dat.index.get_level_values('MethodType') == 'No method'] # Only keep barriers for "No method"
+        dat = dat.loc[dat.index.get_level_values(self.METHODTYPE) == 'No method'] # Only keep barriers for "No method"
 
         coarse_barriers = list(set(coarse_barrier_map.values()))
 
@@ -420,128 +370,122 @@ class DHS(Base):
         self.raw = self.data
         self.data = self.raw.reset_index()\
             .rename(columns = {
-                'v312': 'Method',
-                'v313': 'MethodType',
-                'v005': 'Weight',
-                'v006': 'SurveyMonth',
-                'v007': 'SurveyYear',
-                'v008': 'InterviewDateCMC',
-                'v012': 'Age',
-                'v201': 'Parity',
-                'v624': 'Unmet',
-                'v501': 'Married',
-                'caseid': 'UID',
+                'v312':     self.METHOD,
+                'v313':     self.METHODTYPE,
+                'v005':     self.WEIGHT,
+                'v006':     'SurveyMonth',
+                'v007':     'SurveyYear',
+                'v008':     'InterviewDateCMC',
+                'v012':     self.AGE,
+                'v201':     self.PARITY,
+                'v624':     self.UNMET,
+                'v501':     self.MARRIED,
+                'caseid':   'UID',
             })
 
-        self.data.loc[:,'MethodDurability'] = self.data['Method']
-
-        NO_METHOD = 'No method'
-        SHORT = 'Short-term'
-        LONG = 'Long-term'
-        INJECTION = 'Injection'
-        OTHER = 'Other'
+        self.data.loc[:,self.METHODDURABILITY] = self.data[self.METHOD]
 
         self.data.replace(
             {
-                'MethodType': {
-                    'no method': 'No method',
-                    '-1.0': 'No method',
-                    'traditional method': 'Traditional',
-                    'folkloric method': 'Traditional',
-                    'modern method': 'Modern',
+                self.METHODTYPE: {
+                    'no method':            'No method',
+                    '-1.0':                 'No method',
+                    'traditional method':   'Traditional',
+                    'folkloric method':     'Traditional',
+                    'modern method':        'Modern',
                 },
-                'Method': {
-                    '-1.0': 'No method',
-                    'not using': 'No method',
-                    'iud': 'IUD',
-                    'pill': 'Daily pill',
-                    'condom': 'Condom',
-                    'injections': 'Injectable',
-                    'lactational amenorrhea': 'LAM',
-                    'norplant': 'Implant',
-                    'implants/norplant': 'Implant',
+                self.METHOD: {
+                    '-1.0':                         'No method',
+                    'not using':                    'No method',
+                    'iud':                          'IUD',
+                    'pill':                         'Daily pill',
+                    'condom':                       'Condom',
+                    'injections':                   'Injectable',
+                    'lactational amenorrhea':       'LAM',
+                    'norplant':                     'Implant',
+                    'implants/norplant':            'Implant',
                     'lactational amenorrhea (lam)': 'LAM',
-                    'male condom': 'Condom',
-                    'female condom': 'Condom',
-                    'female sterilization': 'Female sterilization',
-                    'male sterilization': 'Male sterilization',
+                    'male condom':                  'Condom',
+                    'female condom':                'Condom',
+                    'female sterilization':         'Female sterilization',
+                    'male sterilization':           'Male sterilization',
 
-                    'other traditional': 'Traditional',
-                    'withdrawal': 'Traditional',
-                    'gris-gris': 'Traditional',
-                    'gris - gris': 'Traditional',
-                    'abstinence': 'Traditional',
-                    'periodic abstinence': 'Traditional',
-                    'other': 'Traditional',
-                    'medicinal plants': 'Traditional',
+                    'other traditional':    'Traditional',
+                    'withdrawal':           'Traditional',
+                    'gris-gris':            'Traditional',
+                    'gris - gris':          'Traditional',
+                    'abstinence':           'Traditional',
+                    'periodic abstinence':  'Traditional',
+                    'other':                'Traditional',
+                    'medicinal plants':     'Traditional',
 
-                    'other modern method': 'Other modern',
-                    'standard days method (sdm)': 'Other modern',
-                    'diaphragm': 'Other modern',
-                    'emergency contraception': 'Other modern',
-                    'foam or jelly': 'Other modern',
-                    'diaphragm/foam/jelly': 'Other modern',
-                    'diaphragm /foam/jelly': 'Other modern',
-                    'oher modern method': 'Other modern', # Yes, oher
-                    'collier (cs)': 'Other modern',
+                    'other modern method':          'Other modern',
+                    'standard days method (sdm)':   'Other modern',
+                    'diaphragm':                    'Other modern',
+                    'emergency contraception':      'Other modern',
+                    'foam or jelly':                'Other modern',
+                    'diaphragm/foam/jelly':         'Other modern',
+                    'diaphragm /foam/jelly':        'Other modern',
+                    'oher modern method':           'Other modern', # Yes, oher
+                    'collier (cs)':                 'Other modern',
                 },
-                'MethodDurability': {
-                    '-1.0': NO_METHOD,
-                    'not using': NO_METHOD,
-                    'gris-gris': NO_METHOD, # Short?
-                    'gris - gris': NO_METHOD, # Short?
-                    'abstinence': NO_METHOD, # Short?
-                    'periodic abstinence': NO_METHOD, # Short?
-                    'medicinal plants': NO_METHOD, # Short?
+                self.METHODDURABILITY: {
+                    '-1.0':                     self.NO_METHOD,
+                    'not using':                self.NO_METHOD,
+                    'gris-gris':                self.NO_METHOD, # Short?
+                    'gris - gris':              self.NO_METHOD, # Short?
+                    'abstinence':               self.NO_METHOD, # Short?
+                    'periodic abstinence':      self.NO_METHOD, # Short?
+                    'medicinal plants':         self.NO_METHOD, # Short?
 
-                    'male condom': SHORT,
-                    'female condom':  SHORT,
-                    'diaphragm/foam/jelly': SHORT,
-                    'diaphragm /foam/jelly': SHORT,
-                    'diaphragm': SHORT,
-                    'foam or jelly': SHORT,
-                    'pill': SHORT,
-                    'condom': SHORT,
+                    'male condom':              self.SHORT,
+                    'female condom':            self.SHORT,
+                    'diaphragm/foam/jelly':     self.SHORT,
+                    'diaphragm /foam/jelly':    self.SHORT,
+                    'diaphragm':                self.SHORT,
+                    'foam or jelly':            self.SHORT,
+                    'pill':                     self.SHORT,
+                    'condom':                   self.SHORT,
 
-                    'iud': LONG,
-                    'norplant': LONG,
-                    'implants/norplant': LONG,
-                    'female sterilization': LONG,
-                    'male sterilization': LONG,
+                    'iud':                      self.LONG,
+                    'norplant':                 self.LONG,
+                    'implants/norplant':        self.LONG,
+                    'female sterilization':     self.LONG,
+                    'male sterilization':       self.LONG,
 
-                    'injections': INJECTION,
+                    'injections':               self.INJECTION,
 
-                    'standard days method (sdm)': OTHER, # Could be SHORT
-                    'collier (cs)': OTHER, # Maybe could be SHORT?
-                    'withdrawal': OTHER,
-                    'lactational amenorrhea': OTHER,
-                    'other traditional': OTHER,
-                    'other': OTHER,
-                    'lactational amenorrhea (lam)': OTHER,
-                    'other modern method': OTHER,
-                    'emergency contraception': OTHER,
-                    'oher modern method': OTHER, # Yes, oher
+                    'standard days method (sdm)':   self.OTHER, # Could be SHORT
+                    'collier (cs)':                 self.OTHER, # Maybe could be SHORT?
+                    'withdrawal':                   self.OTHER,
+                    'lactational amenorrhea':       self.OTHER,
+                    'other traditional':            self.OTHER,
+                    'other':                        self.OTHER,
+                    'lactational amenorrhea (lam)': self.OTHER,
+                    'other modern method':          self.OTHER,
+                    'emergency contraception':      self.OTHER,
+                    'oher modern method':           self.OTHER, # Yes, oher
                 },
-                'Unmet': {
-                    np.NaN: 'Unknown',
-                    '0.0': 'No', # Likely never had sex.
-                    'using to space': 'No',
-                    'desire birth < 2 yrs': 'No',
-                    '-1.0': 'Unknown',
-                    'limiting failure': 'No',
-                    'unmet need to space': 'Yes',
-                    'unmet need to limit': 'Yes',
-                    'infecund, menopausal': 'No',
-                    'never had sex': 'No',
-                    'no sex, want to wait': 'No',
-                    'using to limit': 'No',
-                    'no unmet need': 'No',
-                    'unmet need for limiting': 'Yes',
-                    'unmet need for spacing': 'Yes',
-                    'using for limiting': 'No',
-                    'not married and no sex in last 30 days': 'No', # Maybe Yes?
-                    'using for spacing': 'No',
-                    'spacing failure': 'No',
+                self.UNMET: {
+                    np.NaN:                                     'Unknown',
+                    '0.0':                                      'No', # Likely never had sex.
+                    'using to space':                           'No',
+                    'desire birth < 2 yrs':                     'No',
+                    '-1.0':                                     'Unknown',
+                    'limiting failure':                         'No',
+                    'unmet need to space':                      'Yes',
+                    'unmet need to limit':                      'Yes',
+                    'infecund, menopausal':                     'No',
+                    'never had sex':                            'No',
+                    'no sex, want to wait':                     'No',
+                    'using to limit':                           'No',
+                    'no unmet need':                            'No',
+                    'unmet need for limiting':                  'Yes',
+                    'unmet need for spacing':                   'Yes',
+                    'using for limiting':                       'No',
+                    'not married and no sex in last 30 days':   'No', # Maybe Yes?
+                    'using for spacing':                        'No',
+                    'spacing failure':                          'No',
                 }
             },
             inplace=True
