@@ -7,6 +7,7 @@ import pandas as pd
 import unidecode
 import seaborn as sns
 import matplotlib.pyplot as plt
+import multiprocessing
 
 from fp_utils.dhs import DHS
 from fp_utils.urhi import URHI
@@ -20,8 +21,8 @@ fs=(12,8)
 username = os.path.split(os.path.expanduser('~'))[-1]
 folderdict = {
     'dklein': {
-        'DHS': '/Users/dklein/Dropbox (IDM)/FP Dynamic Modeling/DHS/Country data/Senegal/',
-        'URHI': '/Users/dklein/Dropbox (IDM)/URHI/Senegal',
+        'DHS': '/home/dklein/Dropbox (IDM)/FP Dynamic Modeling/DHS/Country data/Senegal/',
+        'URHI': '/home/dklein/Dropbox (IDM)/URHI/Senegal',
     },
     'cliffk': {
         'DHS': '/u/cliffk/idm/fp/data/DHS/NGIR6ADT/NGIR6AFL.DTA',
@@ -34,9 +35,9 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     results_dir = os.path.join('results', 'Combined')
     Path(results_dir).mkdir(parents=True, exist_ok=True)
 
-    u = URHI(folderdict[username]['URHI'], force_read)
-    d = DHS(folderdict[username]['DHS'], force_read)
-
+    cores = multiprocessing.cpu_count()
+    u = URHI(folderdict[username]['URHI'], cores=cores, force_read = force_read)
+    d = DHS(folderdict[username]['DHS'], cores=cores, force_read = force_read)
 
     if individual_barriers:
         ib = d.compute_individual_barriers()
@@ -60,22 +61,54 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     ###########################################################################
     # DHS Barriers
     ###########################################################################
+
+
+    #print(dhs_urhi.groupby(['Survey', 'SurveyName', 'Date'])['Weight'].sum()/1e6)
+    #exit()
+
     ib = d.get_individual_barriers()
+
     stacked = ib.stack()
     #stacked.name = 'Stack'
     stacked.index.rename('Barrier', level=8, inplace=True)
     stacked.name = 'Count'
     stacked = stacked.reset_index('Weight')
-    stacked.loc[:,'WeightCount'] = stacked['Weight'] * stacked['Count']
-    bar = stacked.groupby(['SurveyName', 'Barrier'])['WeightCount'].sum()
-    print(bar)
-    fig, ax = plt.subplots(1,1,figsize=fs)
-    bar.unstack('SurveyName').plot.bar(rot=0, ax=ax)
-    ax.set_ylabel('Weighted Barrier Count')
-    fig.savefig(os.path.join(results_dir, 'Barriers.png'))
 
-    plt.show()
-    exit()
+    stacked.loc[:,'WeightCount'] = stacked['Weight'] * stacked['Count'] / 1e6
+
+    stacked.reset_index(inplace=True)
+
+    stacked_barriers_weight_sum = stacked.groupby(['SurveyName', 'Barrier'])['WeightCount'].sum()
+    no_method_weight_sum = d.data.loc[d.data['Method']=='No method'].groupby('SurveyName')['Weight'].sum() / 1e6
+    weight_sum = d.data.groupby('SurveyName')['Weight'].sum() / 1e6
+
+    fig, ax = plt.subplots(1,1,figsize=fs)
+    percent_on_no_method = 100 *no_method_weight_sum.divide(weight_sum)
+    percent_on_no_method.plot(ax=ax)
+    ax.set_xlabel('Survey')
+    ax.set_ylabel('Women Not Using Any Method (%)')
+    #ax.set_ylim(bottom=0, top=100)
+    fig.savefig(os.path.join(results_dir, 'NonUse.png'))
+
+
+    barrier_percent_of_no_need = 100 * stacked_barriers_weight_sum.divide(no_method_weight_sum)
+
+    #bar_data = stacked.groupby(['SurveyName', 'Barrier'])['WeightCount'].sum()
+    print(barrier_percent_of_no_need)
+    print(barrier_percent_of_no_need.groupby('SurveyName').sum())
+
+    unstack_for_total = barrier_percent_of_no_need.unstack('Barrier')
+    unstack_for_total['N/A'] = unstack_for_total['N/A'] + 100 - unstack_for_total.sum(axis=1)
+    unstack_for_total.rename(columns={'N/A':'Missing'}, inplace=True)
+    unstack_for_total.name = 'Percent'
+    barrier_percent_of_no_need_with_missing = unstack_for_total.stack()
+
+    #stacked.loc[:,'WeightCount'] = stacked['Weight'] * stacked['Count']
+    #bar = stacked.groupby(['SurveyName', 'Barrier'])['WeightCount'].sum()
+    fig, ax = plt.subplots(1,1,figsize=fs)
+    barrier_percent_of_no_need_with_missing.unstack('SurveyName').plot.bar(rot=0, ax=ax)
+    ax.set_ylabel('Barriers reported (percent of non users)')
+    fig.savefig(os.path.join(results_dir, 'Barriers.png'))
 
 
     ###########################################################################
@@ -141,7 +174,7 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     ])
     dat2011['Year'] = 2011
 
-###
+    ### Stacked bar code is SUPER UGLY - TODO
     fig, ax = plt.subplots(1,1,figsize=(12,6))
     tmp = dat2011.groupby(['Survey', 'MethodType', 'AgeBin'])['Weight'].sum()
     wsum = dat2011.groupby(['Survey'])['Weight'].sum()
@@ -170,7 +203,7 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     plt.legend()
     fig.savefig(os.path.join(results_dir, 'MethodTypeBar_by_AgeBin.png'))
 
-###
+    ### Stacked bar code is SUPER UGLY - TODO
     fig, ax = plt.subplots(1,1,figsize=(12,6))
     tmp = dat2011.groupby(['Survey', 'MethodType', 'ParityBin'])['Weight'].sum()
     wsum = dat2011.groupby(['Survey'])['Weight'].sum()
@@ -220,16 +253,18 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     tmp = all_data.copy()
     tmp['Modern'] = tmp['MethodType'] == 'Modern'
 
-    g = sns.FacetGrid(data=tmp, hue='Survey', height=5, legend_out=False, aspect=7/5)
+    g = sns.FacetGrid(data=tmp, hue='Survey', height=8, legend_out=False, aspect=0.75)
     g.map_dataframe(plot_line_percent, by='Modern', values=[True]).add_legend().set_xlabels('Year').set_ylabels('mCPR-All Women').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'mCPR.png'))
 
     ###########################################################################
     # POPULATION PYRAMID BY AGE
     ###########################################################################
+    '''
     g = sns.FacetGrid(data=urhi_like, hue='SurveyName', height=5)
     g.map_dataframe(plot_pop_pyramid).add_legend().set_xlabels('Percent').set_ylabels('Age Bin')
     g.savefig(os.path.join(results_dir, 'PopulationPyramid.png'))
+    '''
 
     ###########################################################################
     # UNMET NEED
@@ -326,28 +361,28 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     g.savefig(os.path.join(results_dir, 'ModernMethod_by_Parity.png'))
 
     mod.loc[mod['Method'].isin(['Female sterilization', 'LAM', 'IUD', 'Condom']), 'Method'] = 'Other modern'
-    g = sns.FacetGrid(data=mod, height=5)
+    g = sns.FacetGrid(data=mod, height=8)
     g.map_dataframe(plot_line_percent, by='Method', hue_order=['Injectable', 'Daily pill', 'Other modern', 'Implant']).add_legend().set_xlabels('Year').set_ylabels('Percent').set(ylim=(0,None))
     g.savefig(os.path.join(results_dir, 'ModernMethodCoarse.png'))
 
     ###########################################################################
     # METHODTYPE STACK
     ###########################################################################
-    g = sns.FacetGrid(data=dhs_urhi, col='Survey', height=8, sharex=False)
+    g = sns.FacetGrid(data=urhi_like, col='Survey', height=10, aspect=0.8, sharex=False, legend_out=False)
     g.map_dataframe(plot_stack, by='MethodType', order=['Modern', 'Traditional', 'No method']).add_legend().set_xlabels('Year').set_ylabels('Percent') \
         .set(xlim=(d.data['Date'].min(), d.data['Date'].max()))
     plt.subplots_adjust(right=0.9)
     g.savefig(os.path.join(results_dir, 'MethodTypeStack.png'))
 
     #Using - want vs Not using by want to vs Not using  do not want to - add to 100%
-    data = dhs_urhi.copy()
+    data = urhi_like.copy()
     data.loc[data['MethodType']=='Modern','Use'] = 'Modern'
     data.loc[data['MethodType']=='Traditional','Use'] = 'Traditional'
     data.loc[ (data['MethodType']=='No method') & (data['Unmet']=='Yes'),'Use'] = 'None-Unmet'
     data.loc[ (data['MethodType']=='No method') & (data['Unmet']=='Unknown'),'Use'] = 'None-Unknown'
     data.loc[ (data['MethodType']=='No method') & (data['Unmet']=='No'),'Use'] = 'None-Met'
 
-    g = sns.FacetGrid(data=data, col='Survey', height=8, sharex=False)
+    g = sns.FacetGrid(data=data, col='Survey', height=10, aspect=0.8, sharex=False, legend_out=False)
     g.map_dataframe(plot_stack, by='Use', order=['Modern', 'Traditional', 'None-Unmet', 'None-Met', 'None-Unknown']).add_legend().set_xlabels('Year').set_ylabels('Percent') \
         .set(xlim=(data['Date'].min(), data['Date'].max()))
     plt.subplots_adjust(right=0.9)
@@ -358,11 +393,12 @@ def main(show_plots = False, force_read = False, individual_barriers = False):
     data.loc[data['Use'].isin(['Female sterilization', 'LAM', 'IUD', 'Condom']), 'Use'] = 'Other modern'
     data = data.loc[data['Date'] > 2005]
     data = data.loc[data['Survey'] == 'URHI']
-    g = sns.FacetGrid(data=data, col='Survey', height=8, sharex=False)
+    g = sns.FacetGrid(data=data, col='Survey', height=10, aspect=0.8, sharex=False)
     g.map_dataframe(plot_stack, by='Use', order=['Daily pill', 'Other modern', 'Injectable', 'Implant', 'Traditional', 'None-Unmet', 'None-Met', 'None-Unknown']).add_legend().set_xlabels('Year').set_ylabels('Percent') \
         .set(xlim=(data['Date'].min(), data['Date'].max()))
     plt.subplots_adjust(right=0.9)
     g.savefig(os.path.join(results_dir, 'MethodUseStackWithModern.png'))
+
 
 
     ###########################################################################
