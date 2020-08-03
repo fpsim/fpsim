@@ -111,7 +111,22 @@ def default_age_fertility():
     fertility['years'] = pl.array([1950., 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
     fertility['trend'] = pl.array([194.3, 197.1, 202.9, 207.1, 207.1, 207.1, 207.1, 191.4, 177.1, 162.9, 150.0, 145.7, 142.9, 132.9, 125, 120, 115]) # Last 3 are projected!!
     fertility['trend'] /= fertility['trend'][-1]
-    return fertility
+
+
+    '''
+    Change to fecundity rate from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+    Fecundity rate in 15-20 age bin estimated around 10% of 20-25 for rough calibration
+    45-50 age bin also rough estimate
+    '''
+    fecundity = {
+        'bins': pl.array([0., 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
+        'f': pl.array([0., 0, 0, 60, 568, 620, 607, 511, 276, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+    fecundity['f'] /= 1000  # Conceptions per thousand to conceptions per woman
+    fecundity['f'] = (
+                1 - ((1 - fecundity['f']) ** (1 / 6)))  # convert 6 month rate of conception to monthly probability
+    fecundity['m'] = 0 * fecundity['f']
+
+    return fecundity
 
 
 def default_maternal_mortality():
@@ -257,7 +272,7 @@ def make_pars():
     pars['methods']            = default_methods()
     pars['age_pyramid']        = default_age_pyramid()
     pars['age_mortality']      = default_age_mortality()
-    pars['age_fertility']      = default_age_fertility()
+    pars['age_fecundity']      = default_age_fertility()  # Changed to age_fecundity for now from age_fertility for use with LEMOD
     pars['method_efficacy']    = default_efficacy()
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()
@@ -270,5 +285,8 @@ def make_pars():
     pars['method_age']          = 15 # When people start choosing a method (sexual debut)
     pars['max_age']             = 99
     pars['preg_dur']            = [9,9] # Duration of a pregnancy, in months
+    pars['breastfeeding_dur'] = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
+    pars['age_limit_fecundity'] = 50
+    pars['postpartum_length'] = 24
     
     return pars
