@@ -118,9 +118,11 @@ def default_age_fertility():
     Fecundity rate in 15-20 age bin estimated around 10% of 20-25 for rough calibration
     45-50 age bin also rough estimate
     '''
+    f15 = 0.1  # Adjustment factor for women aged 15-20
+    f20 = 0.5  # Adjustment factor for women aged 20-25
     fecundity = {
-        'bins': pl.array([0., 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
-        'f': pl.array([0., 0, 0, 60, 568, 620, 607, 511, 276, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+        'bins': pl.array([0., 5, 10, 15,    20,     25,   30, 35,  40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
+        'f': pl.array([0., 0,  0, f15*500, f20*568, 620, 607, 511, 276, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
     fecundity['f'] /= 1000  # Conceptions per thousand to conceptions per woman
     fecundity['f'] = (
                 1 - ((1 - fecundity['f']) ** (1 / 6)))  # convert 6 month rate of conception to monthly probability
@@ -285,8 +287,10 @@ def make_pars():
     pars['method_age']          = 15 # When people start choosing a method (sexual debut)
     pars['max_age']             = 99
     pars['preg_dur']            = [9,9] # Duration of a pregnancy, in months
-    pars['breastfeeding_dur'] = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
+    pars['breastfeeding_dur']   = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
     pars['age_limit_fecundity'] = 50
-    pars['postpartum_length'] = 24
-    
+    pars['postpartum_length']   = 24 # Extended postpartum period, for tracking
+    pars['postpartum_infecund_0-5'] = 0.35  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
+    pars['postpartum_infecund_6-11'] = 0.75
+
     return pars
