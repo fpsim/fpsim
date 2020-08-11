@@ -115,24 +115,31 @@ def default_age_fertility():
 
     '''
     Change to fecundity rate from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
-    Fecundity rate in 15-20 age bin estimated around 10% of 20-25 for rough calibration
-    45-50 age bin also rough estimate
+    Fecundity rate in 15-20 age bin estimated at 0.329 of fecundity of 25-27 yr olds, based on fertility data above
+    45-50 age bin also estimated at 0.10 of fecundity of 25-27 yr olds, based on fertility data
     '''
     f15 = 0.1  # Adjustment factor for women aged 15-20
     f20 = 0.5  # Adjustment factor for women aged 20-25
     fecundity = {
-        'bins': pl.array([0., 5, 10, 15,    20,     25,   30, 35,  40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
-        'f': pl.array([0., 0,  0, f15*500, f20*568, 620, 607, 511, 276, 50, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
-    fecundity['f'] /= 1000  # Conceptions per thousand to conceptions per woman
-    fecundity['f'] = (
-                1 - ((1 - fecundity['f']) ** (1 / 6)))  # convert 6 month rate of conception to monthly probability
+        'bins': pl.array([0., 5, 10, 15,    20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
+        'f': pl.array([0.,    0,  0, 26.1, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+    fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
     fecundity['m'] = 0 * fecundity['f']
 
     return fecundity
 
 
 def default_maternal_mortality():
-    ''' From Impact 2 '''
+    ''' From Impact 2 (?) <- Not sure what this refers to
+    I believe this is a maternal mortality ratio (MMR)
+    # of maternal deaths per 100,000 live births
+    Matches this data: https://knoema.com/WBWDI2019Jan/world-development-indicators-wdi
+    From WHO website:  https://www.who.int/data/gho/indicator-metadata-registry/imr-details/26
+    Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
+    or its management (excluding accidental or incidental causes) during pregnancy and childbirth or within
+    42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
+    expressed per 100,000 live births, for a specified time period.
+    '''
     maternal_mortality = {}
     maternal_mortality['years'] = pl.array([1985., 1990, 1995, 2000, 2005, 2010, 2015])
     maternal_mortality['probs'] = pl.array([ 711.,   540, 509,  488,  427,  375,  315])
@@ -274,7 +281,7 @@ def make_pars():
     pars['methods']            = default_methods()
     pars['age_pyramid']        = default_age_pyramid()
     pars['age_mortality']      = default_age_mortality()
-    pars['age_fecundity']      = default_age_fertility()  # Changed to age_fecundity for now from age_fertility for use with LEMOD
+    pars['age_fertility']      = default_age_fertility()  # Changed to age_fecundity for now from age_fertility for use with LEMOD
     pars['method_efficacy']    = default_efficacy()
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()
@@ -290,7 +297,7 @@ def make_pars():
     pars['breastfeeding_dur']   = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
     pars['age_limit_fecundity'] = 50
     pars['postpartum_length']   = 24 # Extended postpartum period, for tracking
-    pars['postpartum_infecund_0-5'] = 0.35  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
-    pars['postpartum_infecund_6-11'] = 0.75
+    pars['postpartum_infecund_0-5'] = 0.65  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
+    pars['postpartum_infecund_6-11'] = 0.25
 
     return pars
