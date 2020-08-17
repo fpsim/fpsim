@@ -5,6 +5,11 @@ Set the parameters for LEMOD-FP.
 import os
 import pylab as pl
 import sciris as sc
+import pandas as pd
+from scipy import interpolate as si
+
+resolution = 100
+max_age = 99
 
 #%% Helper function
 
@@ -105,7 +110,7 @@ def default_age_fertility():
     fertility = {
             'bins': pl.array([ 0.,  5, 10,         15,         20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]), 
             # 'f':    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
-            'f':    pl.array([ 0.,  0,  0,   f15*72.7,  f20*180.2,  220.7,  200.0,   152.3,    82.1,    22.0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
+            'f':    pl.array([ 0.,  0,  0,   72.7,  180.2,  220.7,  200.0,   152.3,    82.1,    22.0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
     fertility['f'] /= 1000 # Births per thousand to births per woman
     fertility['m'] = 0*fertility['f'] # Men don't have fertility -- probably could be handled differently!
     fertility['years'] = pl.array([1950., 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
@@ -264,9 +269,45 @@ def default_barriers():
     barriers[:] /= barriers[:].sum() # Ensure it adds to 1    
     return barriers
 
+def default_sexual_activity():
+    '''
+    Returns a spline of rates of female sexual activity, defined as
+    percentage women who have had sex within the last year.
+    From STAT Complier DHS https://www.statcompiler.com/en/
+    Using indicator "Timing of sexual intercourse"
+    Includes women who have had sex "within the last four weeks" or "within the last year"
+    Data taken from 2018 DHS, no trend over years for now
+    '''
+
+    sexually_active = pl.array([[0, 5, 10, 15,  18,   20,   25,  30, 35, 40,    45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95],
+                                [0, 0,  0, 10, 34.5, 50.2, 78.9, 80, 83, 88.1, 82.6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+    df_activity = pd.DataFrame(sexually_active)
+    df_activity.iloc[1] /= 100 # Convert from percent to rate per woman
+    ages = pl.arange(resolution * max_age + 1) / resolution
+    activity_ages = df_activity.iloc[0]
+    activity_spline_model = si.splrep(x=activity_ages, y=df_activity.iloc[1])  #Build spline model of activity with ages
+    activity_spline = si.splev(ages, activity_spline_model)  #Evaluate spline along resolution of ages
+
+    return activity_spline
+
 
 def make_pars():
     pars = {}
+
+    # User-tunable parameters
+    pars['mortality_factor'] = 1.0 * (2 ** 2)  # These weird factors are since mortality and fertility scale differently to keep population growth the same
+    pars['fertility_factor'] = 1.65 * (1.1 ** 2)
+    pars['fertility_variation'] = [0.3, 1.5]  # Multiplicative range of fertility factors
+    pars['method_age'] = 15  # When people start choosing a method (sexual debut)
+    pars['max_age'] = 99
+    pars['preg_dur'] = [9, 9]  # Duration of a pregnancy, in months
+    pars['breastfeeding_dur'] = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
+    pars['age_limit_fecundity'] = 50
+    pars['postpartum_length'] = 24  # Extended postpartum period, for tracking
+    pars['postpartum_infecund_0-5'] = 0.65  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
+    pars['postpartum_infecund_6-11'] = 0.25
+    pars['end_first_tri'] = 3  # months at which first trimester ends, for miscarraige calculation
+    pars['miscarriage_prob'] = 0.14  # Cumulative probability of miscarriage in first 12 weeks of a pregnancy.  Data from rural western Kenya https://bmjopen.bmj.com/content/bmjopen/6/4/e011088.full.pdf
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
@@ -286,18 +327,9 @@ def make_pars():
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()
     pars['child_mortality']    = default_child_mortality()
+    pars['sexual_activity']    = default_sexual_activity()  # Returns a spline of sexual activity
     
-    # User-tunable parameters
-    pars['mortality_factor']    = 1.0*(2**2) # These weird factors are since mortality and fertility scale differently to keep population growth the same
-    pars['fertility_factor']    = 1.65*(1.1**2)
-    pars['fertility_variation'] = [0.3,1.5] # Multiplicative range of fertility factors
-    pars['method_age']          = 15 # When people start choosing a method (sexual debut)
-    pars['max_age']             = 99
-    pars['preg_dur']            = [9,9] # Duration of a pregnancy, in months
-    pars['breastfeeding_dur']   = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
-    pars['age_limit_fecundity'] = 50
-    pars['postpartum_length']   = 24 # Extended postpartum period, for tracking
-    pars['postpartum_infecund_0-5'] = 0.65  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
-    pars['postpartum_infecund_6-11'] = 0.25
+
+
 
     return pars

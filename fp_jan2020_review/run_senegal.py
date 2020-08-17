@@ -10,7 +10,7 @@ import senegal_parameters as sp
 
 # Housekeeping
 sc.tic()
-pl.rcParams['font.size'] = 16
+pl.rcParams['font.size'] = 12
 
 # Set parameters
 do_run              = 1
@@ -85,7 +85,7 @@ if do_run:
         # Population size plot
         ax = fig.axes[0] # First axis on plot
         ax.scatter(pop_years, popsize, c='k', label='Data', zorder=1000)
-        pl.legend()
+        #pl.legend()
         if do_save:
             pl.savefig(sp.abspath('figs/senegal_popsize.png'))
             
@@ -95,7 +95,7 @@ if do_run:
         
         ax = fig.axes[1] # Second axis on plot
         ax.scatter(mcpr_years, mcpr_rates, c='k', label='Data', zorder=1000)
-        pl.legend()
+        #pl.legend()
     
     
     if do_plot_pyramids:
@@ -127,7 +127,7 @@ if do_run:
         pl.plot(pop_props_year, bins, c='b', label=f'{year_str} data', **plotstyle)
         pl.plot(counts, bins, c='g', label='Model', **plotstyle)
         
-        pl.legend()
+        #pl.legend()
         pl.xlabel('Proportion')
         pl.ylabel('Age')
         pl.title('Age pyramid, 15-49, females only', fontweight='bold')
