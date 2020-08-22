@@ -14,6 +14,7 @@ pl.rcParams['font.size'] = 12
 
 # Set parameters
 do_run              = 1
+do_store_postpartum = 0
 do_plot_popsize     = 1
 do_plot_pyramids    = 1
 do_plot_skyscrapers = 1
@@ -68,8 +69,12 @@ if do_run:
     # sim = lfp.multi_run(sim, n=1)
     sim.run()
     people = list(sim.people.values()) # Pull out people
-    
-    
+
+    if do_store_postpartum:
+
+        pp = sim.store_postpartum()
+        pp.to_csv(sp.abspath('data/postpartum_model.csv'))
+
     if do_plot_popsize:
         
         # Load data
@@ -81,7 +86,9 @@ if do_run:
         
         # Default plots
         fig = sim.plot()
-        
+
+        sim.plot_postpartum()
+
         # Population size plot
         ax = fig.axes[0] # First axis on plot
         ax.scatter(pop_years, popsize, c='k', label='Data', zorder=1000)
