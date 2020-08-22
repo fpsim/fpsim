@@ -276,6 +276,7 @@ def default_sexual_activity():
     From STAT Complier DHS https://www.statcompiler.com/en/
     Using indicator "Timing of sexual intercourse"
     Includes women who have had sex "within the last four weeks" or "within the last year"
+    For age 15 and 18, uses indicator "percent women who have had sex by exact age".
     Data taken from 2018 DHS, no trend over years for now
     '''
 
