@@ -271,7 +271,7 @@ def default_barriers():
 
 def default_sexual_activity():
     '''
-    Returns a spline of rates of female sexual activity, defined as
+    Returns a linear interpolation of rates of female sexual activity, defined as
     percentage women who have had sex within the last year.
     From STAT Complier DHS https://www.statcompiler.com/en/
     Using indicator "Timing of sexual intercourse"
@@ -291,6 +291,26 @@ def default_sexual_activity():
 
     return activity_interp
 
+def default_miscarriage_rates():
+    '''
+    Returns a linear interpolation of the likelihood of a miscarriage
+    by age, taken from data from Magnus et al BMJ 2019: https://pubmed.ncbi.nlm.nih.gov/30894356/
+    Data to be fed into likelihood of continuing a pregnancy once initialized in model
+    '''
+
+    min_age_preg = 15
+    max_age_preg = 45
+
+    miscarriage_rates = pl.array([[15, 20, 25, 30, 35, 40, 45, 50], [16.7, 11.2, 9.7, 10.8, 16.7, 33.2, 56.9, 56.9]])
+    miscarriage_ages = miscarriage_rates[0]
+    miscarriage_rates[1] /= 100
+    ages = pl.arange(resolution * min_age_preg, resolution * max_age_preg + 1) / resolution
+    miscarriage_interp_model = si.interp1d(miscarriage_ages, miscarriage_rates[1])
+    miscarriage_interp = miscarriage_interp_model(ages)
+    miscarriage_interp = pl.minimum(1, pl.maximum(0, miscarriage_interp))
+
+    return miscarriage_interp
+
 
 def make_pars():
     pars = {}
@@ -307,8 +327,7 @@ def make_pars():
     pars['postpartum_length'] = 24  # Extended postpartum period, for tracking
     pars['postpartum_infecund_0-5'] = 0.65  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
     pars['postpartum_infecund_6-11'] = 0.25
-    pars['end_first_tri'] = 3  # months at which first trimester ends, for miscarraige calculation
-    #pars['miscarriage_prob'] = 0.14  # Cumulative probability of miscarriage in first 12 weeks of a pregnancy.  Data from rural western Kenya https://bmjopen.bmj.com/content/bmjopen/6/4/e011088.full.pdf
+    pars['end_first_tri'] = 3  # months at which first trimester ends, for miscarriage calculation
     pars['abortion_prob'] = 0.10
     pars['exposure'] = [1.0, 1.0]  # Range of probability of exposure to sex at each time step
 
@@ -330,7 +349,8 @@ def make_pars():
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()
     pars['child_mortality']    = default_child_mortality()
-    pars['sexual_activity']    = default_sexual_activity()  # Returns linear interpolation of sexual activity
+    pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of sexual activity
+    pars['miscarriage_rates']  = default_miscarriage_rates()
     
 
 
