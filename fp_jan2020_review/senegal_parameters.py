@@ -126,8 +126,8 @@ def default_age_fertility():
     f15 = 0.1  # Adjustment factor for women aged 15-20
     f20 = 0.5  # Adjustment factor for women aged 20-25
     fecundity = {
-        'bins': pl.array([0., 5, 10, 15,    20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
-        'f': pl.array([0.,    0,  0, 26.1, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+        'bins': pl.array([0., 5, 10, 15,    20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
+        'f': pl.array([0.,    0,  0, 70.8, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
     fecundity['m'] = 0 * fecundity['f']
 
@@ -280,16 +280,16 @@ def default_sexual_activity():
     Data taken from 2018 DHS, no trend over years for now
     '''
 
-    sexually_active = pl.array([[0, 5, 10, 15,  18,   20,   25,  30, 35, 40,    45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95],
-                                [0, 0,  0, 10, 34.5, 50.2, 78.9, 80, 83, 88.1, 82.6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-    df_activity = pd.DataFrame(sexually_active)
-    df_activity.iloc[1] /= 100 # Convert from percent to rate per woman
+    sexually_active = pl.array([[0, 5, 10, 15,  18,   20,   25,  30, 35, 40,    45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99],
+                                [0, 0,  0, 10, 35.4, 50.2, 78.9, 80, 83, 88.1, 82.6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
+    sexually_active[1] /= 100 # Convert from percent to rate per woman
     ages = pl.arange(resolution * max_age + 1) / resolution
-    activity_ages = df_activity.iloc[0]
-    activity_spline_model = si.splrep(x=activity_ages, y=df_activity.iloc[1])  #Build spline model of activity with ages
-    activity_spline = si.splev(ages, activity_spline_model)  #Evaluate spline along resolution of ages
+    activity_ages = sexually_active[0]
+    activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
+    activity_interp = activity_interp_model(ages)  # Evaluate interpolation along resolution of ages
+    activity_interp = pl.minimum(1, pl.maximum(0, activity_interp))
 
-    return activity_spline
+    return activity_interp
 
 
 def make_pars():
@@ -298,8 +298,8 @@ def make_pars():
     # User-tunable parameters
     pars['mortality_factor'] = 1.0 * (2 ** 2)  # These weird factors are since mortality and fertility scale differently to keep population growth the same
     pars['fertility_factor'] = 1.65 * (1.1 ** 2)
-    pars['fertility_variation'] = [0.3, 1.5]  # Multiplicative range of fertility factors
-    pars['method_age'] = 15  # When people start choosing a method (sexual debut)
+    pars['fertility_variation'] = [0.9, 1.1]  # Multiplicative range of fertility factors, from confidence intervals from PRESTO study
+    pars['sexual_debut'] = 15  # When people start choosing a method (sexual debut)
     pars['max_age'] = 99
     pars['preg_dur'] = [9, 9]  # Duration of a pregnancy, in months
     pars['breastfeeding_dur'] = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
@@ -308,7 +308,9 @@ def make_pars():
     pars['postpartum_infecund_0-5'] = 0.65  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
     pars['postpartum_infecund_6-11'] = 0.25
     pars['end_first_tri'] = 3  # months at which first trimester ends, for miscarraige calculation
-    pars['miscarriage_prob'] = 0.14  # Cumulative probability of miscarriage in first 12 weeks of a pregnancy.  Data from rural western Kenya https://bmjopen.bmj.com/content/bmjopen/6/4/e011088.full.pdf
+    #pars['miscarriage_prob'] = 0.14  # Cumulative probability of miscarriage in first 12 weeks of a pregnancy.  Data from rural western Kenya https://bmjopen.bmj.com/content/bmjopen/6/4/e011088.full.pdf
+    pars['abortion_prob'] = 0.10
+    pars['exposure'] = [1.0, 1.0]  # Range of probability of exposure to sex at each time step
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
@@ -328,7 +330,7 @@ def make_pars():
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()
     pars['child_mortality']    = default_child_mortality()
-    pars['sexual_activity']    = default_sexual_activity()  # Returns a spline of sexual activity
+    pars['sexual_activity']    = default_sexual_activity()  # Returns linear interpolation of sexual activity
     
 
 
