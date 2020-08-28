@@ -329,7 +329,7 @@ def make_pars():
     pars['postpartum_infecund_6-11'] = 0.25
     pars['end_first_tri'] = 3  # months at which first trimester ends, for miscarriage calculation
     pars['abortion_prob'] = 0.10
-    pars['exposure'] = [1.0, 1.0]  # Range of probability of exposure to sex at each time step
+    pars['exposure'] = [0.5, 1.0]  # Range of probability of exposure to sex at each time step
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
