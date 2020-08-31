@@ -134,7 +134,7 @@ if do_run:
         pl.plot(pop_props_year, bins, c='b', label=f'{year_str} data', **plotstyle)
         pl.plot(counts, bins, c='g', label='Model', **plotstyle)
         
-        #pl.legend()
+        pl.legend()
         pl.xlabel('Proportion')
         pl.ylabel('Age')
         pl.title('Age pyramid, 15-49, females only', fontweight='bold')
