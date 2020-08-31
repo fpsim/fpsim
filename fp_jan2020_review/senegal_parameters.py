@@ -67,7 +67,7 @@ def default_age_pyramid():
     
 
 def default_age_mortality():
-    ''' Age-dependent mortality rates -- see age_dependent_mortality.py in the fp_analyses repository
+    ''' Age-dependent mortality rates, Senegal specific -- see age_dependent_mortality.py in the fp_analyses repository
     Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
     '''
     mortality = {
@@ -303,7 +303,7 @@ def default_miscarriage_rates():
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
     '''
 
-    miscarriage_rates = pl.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50], [16.7, 16.7, 16.7, 16.7, 11.2, 9.7, 10.8, 16.7, 33.2, 56.9, 56.9]])
+    miscarriage_rates = pl.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50], [0, 0, 0, 16.7, 11.2, 9.7, 10.8, 16.7, 33.2, 56.9, 56.9]])
     miscarriage_ages = miscarriage_rates[0]
     miscarriage_rates[1] /= 100
     ages = pl.arange(resolution * max_age_preg + 1) / resolution
@@ -318,10 +318,10 @@ def make_pars():
     pars = {}
 
     # User-tunable parameters
-    pars['mortality_factor'] = 1.0 * (2 ** 2)  # These weird factors are since mortality and fertility scale differently to keep population growth the same
-    pars['fertility_factor'] = 1.65 * (1.1 ** 2)
+    #pars['mortality_factor'] = 1.0 * (2 ** 2)  # These weird factors are since mortality and fertility scale differently to keep population growth the same
+    #pars['fertility_factor'] = 1.65 * (1.1 ** 2)
     pars['fertility_variation'] = [0.9, 1.1]  # Multiplicative range of fertility factors, from confidence intervals from PRESTO study
-    pars['method_age'] = 15  # When people start choosing a method
+    pars['method_age'] = 12.5  # When people start choosing a method
     pars['max_age'] = 99
     pars['preg_dur'] = [9, 9]  # Duration of a pregnancy, in months
     pars['breastfeeding_dur'] = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
