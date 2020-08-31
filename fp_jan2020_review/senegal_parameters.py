@@ -10,6 +10,7 @@ from scipy import interpolate as si
 
 resolution = 100
 max_age = 99
+max_age_preg = 50
 
 #%% Helper function
 
@@ -66,7 +67,9 @@ def default_age_pyramid():
     
 
 def default_age_mortality():
-    ''' Age-dependent mortality rates -- see age_dependent_mortality.py in the fp_analyses repository '''
+    ''' Age-dependent mortality rates -- see age_dependent_mortality.py in the fp_analyses repository
+    Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
+    '''
     mortality = {
             'bins': pl.array([ 0.,  5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]), 
             'm': pl.array([0.01365168, 0.00580404, 0.00180847, 0.0012517 , 0.00171919, 0.00226466, 0.00258822, 0.00304351, 0.00377434, 0.00496091, 0.00694581, 0.01035062, 0.01563918, 0.02397286, 0.03651509,0.05578357, 0.08468156, 0.12539009, 0.17939655, 0.24558742]), 
@@ -125,8 +128,8 @@ def default_age_fertility():
     f15 = 0.1  # Adjustment factor for women aged 15-20
     f20 = 0.5  # Adjustment factor for women aged 20-25
     fecundity = {
-        'bins': pl.array([0., 5, 10,  15,    20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
-        'f': pl.array([0.,    0,  0, 70.8, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+        'bins': pl.array([0., 5, 10, 12.5,  15,    20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
+        'f': pl.array([0.,    0,  0, 0, 70.8, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
     fecundity['m'] = 0 * fecundity['f']
 
@@ -152,7 +155,7 @@ def default_maternal_mortality():
 
 
 def default_child_mortality():
-    ''' From "When and Where Birth Spacing Matters for Child Survival: An International Comparison Using the DHS", Fig. 1 '''
+    ''' From "When and Where Birth Spacing Matters for Child Survival: An International Comparison Using the DHS", Fig. 3 '''
     
     data = pl.array([
             [13.3032, 0.1502],
@@ -279,16 +282,19 @@ def default_sexual_activity():
     Data taken from 2018 DHS, no trend over years for now
     '''
 
-    sexually_active = pl.array([[0, 5, 10, 15,  18,   20,   25,  30, 35, 40,    45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99],
-                                [0, 0,  0, 10, 35.4, 50.2, 78.9, 80, 83, 88.1, 82.6, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]])
-    sexually_active[1] /= 100 # Convert from percent to rate per woman
-    ages = pl.arange(resolution * max_age + 1) / resolution
-    activity_ages = sexually_active[0]
-    activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
-    activity_interp = activity_interp_model(ages)  # Evaluate interpolation along resolution of ages
-    activity_interp = pl.minimum(1, pl.maximum(0, activity_interp))
 
-    return activity_interp
+    sexually_active = pl.array([[0, 5, 10, 12.5, 15,  18,   20,   25,  30, 35, 40,    45, 50],
+                                [0, 0,  0, 0, 10, 35.4, 50.2, 78.9, 80, 83, 88.1, 82.6, 82.6]])
+    sexually_active[1] /= 100 # Convert from percent to rate per woman
+    ages = pl.arange(resolution * max_age_preg + 1) / resolution
+    activity_ages = sexually_active[0]
+    activity_spline_model = si.splrep(x=activity_ages, y=sexually_active[1])
+    activity_spline = si.splev(ages, activity_spline_model)
+    #activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
+    #activity_interp = activity_interp_model(ages)  # Evaluate interpolation along resolution of ages
+    activity_spline = pl.minimum(1, pl.maximum(0, activity_spline))
+
+    return activity_spline
 
 def default_miscarriage_rates():
     '''
@@ -297,13 +303,10 @@ def default_miscarriage_rates():
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
     '''
 
-    min_age_preg = 15
-    max_age_preg = 45
-
-    miscarriage_rates = pl.array([[15, 20, 25, 30, 35, 40, 45, 50], [16.7, 11.2, 9.7, 10.8, 16.7, 33.2, 56.9, 56.9]])
+    miscarriage_rates = pl.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50], [16.7, 16.7, 16.7, 16.7, 11.2, 9.7, 10.8, 16.7, 33.2, 56.9, 56.9]])
     miscarriage_ages = miscarriage_rates[0]
     miscarriage_rates[1] /= 100
-    ages = pl.arange(resolution * min_age_preg, resolution * max_age_preg + 1) / resolution
+    ages = pl.arange(resolution * max_age_preg + 1) / resolution
     miscarriage_interp_model = si.interp1d(miscarriage_ages, miscarriage_rates[1])
     miscarriage_interp = miscarriage_interp_model(ages)
     miscarriage_interp = pl.minimum(1, pl.maximum(0, miscarriage_interp))
@@ -318,7 +321,7 @@ def make_pars():
     pars['mortality_factor'] = 1.0 * (2 ** 2)  # These weird factors are since mortality and fertility scale differently to keep population growth the same
     pars['fertility_factor'] = 1.65 * (1.1 ** 2)
     pars['fertility_variation'] = [0.9, 1.1]  # Multiplicative range of fertility factors, from confidence intervals from PRESTO study
-    pars['sexual_debut'] = 15  # When people start choosing a method and become sexually active (sexual debut)
+    pars['method_age'] = 15  # When people start choosing a method
     pars['max_age'] = 99
     pars['preg_dur'] = [9, 9]  # Duration of a pregnancy, in months
     pars['breastfeeding_dur'] = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
