@@ -67,13 +67,14 @@ def default_age_pyramid():
     
 
 def default_age_mortality():
-    ''' Age-dependent mortality rates, Senegal specific -- see age_dependent_mortality.py in the fp_analyses repository
+    ''' Age-dependent mortality rates, Senegal specific from 1990-1995 -- see age_dependent_mortality.py in the fp_analyses repository
     Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
     '''
     mortality = {
             'bins': pl.array([ 0.,  5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
-            'm': pl.array([0.01568221, 0.0153169, 0.00266326, 0.00164035, 0.00247776, 0.00376541, 0.00377009, 0.00433534, 0.00501743, 0.00656144, 0.00862479, 0.01224844, 0.01757291, 0.02655129, 0.0403916, 0.06604032, 0.10924413, 0.17495116, 0.26531436, 0.36505174]),
-            'f': pl.array([0.01378061, 0.01409648, 0.00262118, 0.00161414, 0.0023998 ,0.00311697, 0.00354105, 0.00376715, 0.00429043, 0.00503436, 0.00602394, 0.00840777, 0.01193858, 0.01954465, 0.03220238, 0.05614077, 0.0957751 , 0.15973906, 0.24231313, 0.33755308]),}
+            'm': pl.array([0.03075891, 0.00266326, 0.00164035, 0.00247776, 0.00376541,0.00377009, 0.00433534, 0.00501743, 0.00656144, 0.00862479, 0.01224844, 0.01757291, 0.02655129, 0.0403916 , 0.06604032,0.10924413, 0.17495116, 0.26531436, 0.36505174, 0.43979833]),
+            'f': pl.array([0.02768283, 0.00262118, 0.00161414, 0.0023998 , 0.00311697, 0.00354105, 0.00376715, 0.00429043, 0.00503436, 0.00602394, 0.00840777, 0.01193858, 0.01954465, 0.03220238, 0.05614077, 0.0957751 , 0.15973906, 0.24231313, 0.33755308, 0.41632442])
+            }
 
     mortality['years'] = pl.array([1950., 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
     mortality['trend'] = pl.array([28,    27,    26.023, 25.605, 24.687, 20.995, 16.9, 13.531, 11.335, 11.11, 10.752, 9.137, 7.305, 6.141, 5.7, 5.7, 5.7]) # First 2 estimated, last 3 are projected
@@ -129,7 +130,7 @@ def default_age_fertility():
     f20 = 0.5  # Adjustment factor for women aged 20-25
     fecundity = {
         'bins': pl.array([0., 5, 10, 12.5,  15,    20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
-        'f': pl.array([0.,    0,  0, 0, 70.8, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+        'f': pl.array([0.,    0,  0, 70.8, 70.8, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
     fecundity['m'] = 0 * fecundity['f']
 
@@ -284,17 +285,17 @@ def default_sexual_activity():
 
 
     sexually_active = pl.array([[0, 5, 10, 12.5, 15,  18,   20,   25,  30, 35, 40,    45, 50],
-                                [0, 0,  0, 0, 10, 35.4, 50.2, 78.9, 80, 83, 88.1, 82.6, 82.6]])
+                                [0, 0,  0, 8, 10, 35.4, 50.2, 78.9, 80, 83, 88.1, 82.6, 82.6]])
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     ages = pl.arange(resolution * max_age_preg + 1) / resolution
     activity_ages = sexually_active[0]
-    activity_spline_model = si.splrep(x=activity_ages, y=sexually_active[1])
-    activity_spline = si.splev(ages, activity_spline_model)
-    #activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
-    #activity_interp = activity_interp_model(ages)  # Evaluate interpolation along resolution of ages
-    activity_spline = pl.minimum(1, pl.maximum(0, activity_spline))
+    #activity_spline_model = si.splrep(x=activity_ages, y=sexually_active[1])
+    #activity_spline = si.splev(ages, activity_spline_model)
+    activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
+    activity_interp = activity_interp_model(ages)  # Evaluate interpolation along resolution of ages
+    #activity_spline = pl.minimum(1, pl.maximum(0, activity_spline))
 
-    return activity_spline
+    return activity_interp
 
 def default_miscarriage_rates():
     '''
@@ -303,7 +304,8 @@ def default_miscarriage_rates():
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
     '''
 
-    miscarriage_rates = pl.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50], [0, 0, 0, 16.7, 11.2, 9.7, 10.8, 16.7, 33.2, 56.9, 56.9]])
+    miscarriage_rates = pl.array([[0, 5, 10, 12.5, 15,   20,   25,   30,   35,  40,   45,    50],
+                                  [0, 0, 0,  16.7, 16.7, 11.2, 9.7, 10.8, 16.7, 33.2, 56.9, 56.9]])
     miscarriage_ages = miscarriage_rates[0]
     miscarriage_rates[1] /= 100
     ages = pl.arange(resolution * max_age_preg + 1) / resolution
@@ -313,6 +315,22 @@ def default_miscarriage_rates():
 
     return miscarriage_interp
 
+def default_exposure_correction():
+    '''
+    Returns a linear interpolation of the experimental factor to be applied to account for
+    residual exposure to either pregnancy or live birth.  Exposure to pregnancy will
+    increase factor number and residual likelihood of avoiding live birth (mostly abortion,
+    also miscarriage), will decrease factor number
+    '''
+
+    exposure_correction = pl.array([[0,       5,     10,      12.5,        15,          18,        20,        25,        30,        35,           40,        45,          50],
+                                    [[1, 1], [1, 1], [1, 1], [0.5, 0.5], [0.5, 0.5], [0.5,0.5], [1.0, 1.0], [1.1, 1.1], [1.0, 1.0], [0.5, 0.5], [0.3, 0.3], [0.2, 0.2], [0.1, 0.1]]])
+    #exposure_ages = exposure_correction[0]
+    #ages = pl.arange(resolution * max_age_preg + 1) / resolution
+    #exposure_interp_model = si.interp1d(exposure_ages, exposure_correction[1])
+    #exposure_interp = exposure_interp_model(ages)
+
+    return exposure_correction
 
 def make_pars():
     pars = {}
@@ -321,9 +339,11 @@ def make_pars():
     #pars['mortality_factor'] = 1.0 * (2 ** 2)  # These weird factors are since mortality and fertility scale differently to keep population growth the same
     #pars['fertility_factor'] = 1.65 * (1.1 ** 2)
     pars['fertility_variation'] = [0.9, 1.1]  # Multiplicative range of fertility factors, from confidence intervals from PRESTO study
-    pars['method_age'] = 12.5  # When people start choosing a method
+    #pars['sexual_debut'] = 12.5  # When menarche begins and when the possibility of pregnancy starts per sexual activity array above
+    pars['method_age'] = 15  # When people start choosing a method
     pars['max_age'] = 99
     pars['preg_dur'] = [9, 9]  # Duration of a pregnancy, in months
+    pars['switch_frequency'] = 3 # Number of months that pass before an agent can select a new method
     pars['breastfeeding_dur'] = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
     pars['age_limit_fecundity'] = 50
     pars['postpartum_length'] = 24  # Extended postpartum period, for tracking
@@ -338,7 +358,7 @@ def make_pars():
     pars['n'] = 500*10 # Number of people in the simulation -- for comparing data from Impact 2
     pars['start_year'] = 1950
     pars['end_year'] = 2015
-    pars['timestep'] = 3 # Timestep in months
+    pars['timestep'] = 1 # Timestep in months  DO NOT CHANGE
     pars['verbose'] = True
     pars['seed'] = 1 # Random seed, if None, don't reset
     
@@ -353,8 +373,21 @@ def make_pars():
     pars['child_mortality']    = default_child_mortality()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of sexual activity
     pars['miscarriage_rates']  = default_miscarriage_rates()
-    
+    pars['exposure_correction']= default_exposure_correction()
 
-
+    # Population size array from Senegal data for plotting in sim
+    pars['pop_years']          = pl.array([1982., 1983., 1984., 1985., 1986., 1987., 1988., 1989., 1990.,
+       1991., 1992., 1993., 1994., 1995., 1996., 1997., 1998., 1999.,
+       2000., 2001., 2002., 2003., 2004., 2005., 2006., 2007., 2008.,
+       2009., 2010., 2011., 2012., 2013., 2014., 2015.])
+    pars['pop_size']           = pl.array([18171.28189616, 18671.90398192, 19224.80410006, 19831.90843354,
+       20430.1523254 , 21102.60419936, 21836.03759909, 22613.45931046,
+       23427.16460161, 24256.32216052, 25118.86689077, 26016.96753169,
+       26959.59866908, 27950.59840084, 28881.13025563, 29867.46434421,
+       30902.09568706, 31969.90018092, 33062.81639339, 34143.09113842,
+       35256.73878676, 36402.87472106, 37583.29671208, 38797.07733839,
+       39985.26113334, 41205.93321424, 42460.86281582, 43752.50403785,
+       45081.05663263, 46401.31950667, 47773.28969221, 49185.05339094,
+       50627.82150134, 52100.32416946])
 
     return pars

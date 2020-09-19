@@ -14,9 +14,10 @@ pl.rcParams['font.size'] = 12
 
 # Set parameters
 do_run              = 1
-do_store_postpartum = 0
+do_store_postpartum = 1
 do_plot_popsize     = 1
 do_plot_pyramids    = 1
+do_plot_model_pyramid = 1
 do_plot_skyscrapers = 1
 do_plot_methods     = 1
 do_plot_spacing     = 1
@@ -115,7 +116,7 @@ if do_run:
         pop_props_year = pop_pyr_year[2].to_numpy()
         
         plotstyle = {'marker':'o', 'lw':3}
-        
+
         counts = pl.zeros(len(bins))
         for person in people:
             if person.alive:
@@ -142,8 +143,36 @@ if do_run:
         
         if do_save:
             pl.savefig(sp.abspath('figs/senegal_pyramids.png'))
-            
-       
+
+    if do_plot_model_pyramid:
+
+        fig = pl.figure(figsize=(16, 16))
+
+        plotstyle = {'marker': 'o', 'lw': 3}
+
+        min_age = 0
+        max_age = 99
+        bins = pl.arange(min_age, max_age, bin_size)
+
+        counts = pl.zeros(len(bins))
+        for person in people:
+            if person.alive:
+                bininds = sc.findinds(bins <= person.age)  # Could be refactored
+                if len(bininds) and person.age < max_age:
+                    counts[bininds[-1]] += 1
+        counts = counts / counts.sum()
+
+        pl.plot(counts, bins, c='g', label='Model', **plotstyle)
+
+        pl.legend()
+        pl.xlabel('Proportion')
+        pl.ylabel('Age')
+        pl.title('Age pyramid, 0-99, Model only', fontweight='bold')
+        sc.setylim()
+
+        if do_save:
+            pl.savefig(sp.abspath('figs/senegal_pyramid_model.png'))
+
 
     if do_plot_skyscrapers:
         
