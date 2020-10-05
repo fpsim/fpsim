@@ -26,7 +26,7 @@ do_save             = 1
 min_age = 15
 max_age = 50
 bin_size = 5
-year_str = '2010-11'
+year_str = '2017'
 pop_pyr_year_file = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
 skyscrapers_file = sp.abspath('dropbox/Skyscrapers-All-DHS.csv')
 methods_file = sp.abspath('dropbox/Method_v312.csv')
@@ -74,7 +74,7 @@ if do_run:
     if do_store_postpartum:
 
         pp = sim.store_postpartum()
-        pp.to_csv(sp.abspath('data/postpartum_model.csv'))
+        pp.to_csv(sp.abspath('data/postpartum_model2.csv'))
 
     if do_plot_popsize:
         
@@ -181,7 +181,7 @@ if do_run:
         max_age = 50
         bin_size = 5
         age_bins = pl.arange(min_age, max_age, bin_size)
-        parity_bins = pl.arange(0,7)
+        parity_bins = pl.arange(0,8)
         n_age = len(age_bins)
         n_parity = len(parity_bins)
         x_age = pl.arange(n_age)
@@ -239,7 +239,7 @@ if do_run:
         fig = pl.figure(figsize=(20,14))
         labels = ['Parity', 'Age']
         x_axes = [x_parity, x_age]
-        x_labels = [['0','1','2','3','4','5','6+'],
+        x_labels = [['0','1','2','3','4','5','6', '7+'],
                     ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']]
         offsets = [0, 0.4]
         for i in range(2):

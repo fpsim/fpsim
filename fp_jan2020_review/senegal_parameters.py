@@ -150,7 +150,7 @@ def default_maternal_mortality():
     '''
     maternal_mortality = {}
     maternal_mortality['years'] = pl.array([1985., 1990, 1995, 2000, 2005, 2010, 2015])
-    maternal_mortality['probs'] = pl.array([ 711.,   540, 509,  488,  427,  375,  315])
+    maternal_mortality['probs'] = pl.array([711.,   540, 509,  488,  427,  375,  315])
     maternal_mortality['probs'] /= 1e5
     return maternal_mortality
 
@@ -191,8 +191,7 @@ def default_child_mortality():
     child_mortality['probs'] = data[:,1]
     
     return child_mortality
-    
-    
+
     
 def default_methods():
     methods = {}
@@ -276,7 +275,7 @@ def default_sexual_activity():
     '''
     Returns a linear interpolation of rates of female sexual activity, defined as
     percentage women who have had sex within the last year.
-    From STAT Complier DHS https://www.statcompiler.com/en/
+    From STAT Compiler DHS https://www.statcompiler.com/en/
     Using indicator "Timing of sexual intercourse"
     Includes women who have had sex "within the last four weeks" or "within the last year"
     For age 15 and 18, uses indicator "percent women who have had sex by exact age".
@@ -289,11 +288,8 @@ def default_sexual_activity():
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     ages = pl.arange(resolution * max_age_preg + 1) / resolution
     activity_ages = sexually_active[0]
-    #activity_spline_model = si.splrep(x=activity_ages, y=sexually_active[1])
-    #activity_spline = si.splev(ages, activity_spline_model)
     activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
     activity_interp = activity_interp_model(ages)  # Evaluate interpolation along resolution of ages
-    #activity_spline = pl.minimum(1, pl.maximum(0, activity_spline))
 
     return activity_interp
 
@@ -315,31 +311,48 @@ def default_miscarriage_rates():
 
     return miscarriage_interp
 
-def default_exposure_correction():
+def default_fecundity_ratio_nullip():
     '''
-    Returns a linear interpolation of the experimental factor to be applied to account for
-    residual exposure to either pregnancy or live birth.  Exposure to pregnancy will
+    Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
+    Help correct for decreased likelihood of conceiving if never conceived
+    from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+    '''
+
+    fecundity_ratio_nullip = pl.array([[0,    5,   10, 12.5, 15,   18,  20,  25,   30,   34,   37,  40, 45, 50],
+                                       [1.0, 1.0, 1.0,  1.0, 1.0, 1.0, 1.0, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
+
+    return fecundity_ratio_nullip
+
+
+def default_exposure_correction_age():
+    '''
+    Returns an array of experimental factors to be applied to account for
+    residual exposure to either pregnancy or live birth by age.  Exposure to pregnancy will
     increase factor number and residual likelihood of avoiding live birth (mostly abortion,
     also miscarriage), will decrease factor number
     '''
 
-    exposure_correction = pl.array([[0,       5,     10,      12.5,        15,          18,        20,        25,        30,        35,           40,        45,          50],
-                                    [[1, 1], [1, 1], [1, 1], [0.5, 0.5], [0.5, 0.5], [0.5,0.5], [1.0, 1.0], [1.1, 1.1], [1.0, 1.0], [0.5, 0.5], [0.3, 0.3], [0.2, 0.2], [0.1, 0.1]]])
-    #exposure_ages = exposure_correction[0]
-    #ages = pl.arange(resolution * max_age_preg + 1) / resolution
-    #exposure_interp_model = si.interp1d(exposure_ages, exposure_correction[1])
-    #exposure_interp = exposure_interp_model(ages)
+    exposure_correction_age =   pl.array([[0,       5,     10,      12.5,        15,          18,        20,        25,        30,        35,           40,        45,          50],
+                                           [[1, 1], [1, 1], [1, 1], [1.9, 1.9], [2.8, 2.8], [2.8, 2.8], [3.1, 3.1], [3.6, 3.6], [3.1, 3.1], [2.7, 2.7], [2.4, 2.4], [1.6, 1.6], [0.1, 0.1]]])
 
-    return exposure_correction
+    return exposure_correction_age
+
+def default_exposure_correction_parity():
+    '''
+    Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
+    or live birth by parity.
+    '''
+
+    exposure_correction_parity = pl.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
+                                       [0.25, 0.6, 0.5, 0.3, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1]])
+
+    return exposure_correction_parity
 
 def make_pars():
     pars = {}
 
     # User-tunable parameters
-    #pars['mortality_factor'] = 1.0 * (2 ** 2)  # These weird factors are since mortality and fertility scale differently to keep population growth the same
-    #pars['fertility_factor'] = 1.65 * (1.1 ** 2)
-    pars['fertility_variation'] = [0.9, 1.1]  # Multiplicative range of fertility factors, from confidence intervals from PRESTO study
-    #pars['sexual_debut'] = 12.5  # When menarche begins and when the possibility of pregnancy starts per sexual activity array above
+    pars['fertility_variation'] = [0.3, 1.3]  # Multiplicative range of fertility factors, from confidence intervals from PRESTO study, adjusted from 0.9-1.1 to account for calibration to data
     pars['method_age'] = 15  # When people start choosing a method
     pars['max_age'] = 99
     pars['preg_dur'] = [9, 9]  # Duration of a pregnancy, in months
@@ -351,7 +364,6 @@ def make_pars():
     pars['postpartum_infecund_6-11'] = 0.25
     pars['end_first_tri'] = 3  # months at which first trimester ends, for miscarriage calculation
     pars['abortion_prob'] = 0.10
-    pars['exposure'] = [1.0, 1.0]  # Range of probability of exposure to sex at each time step
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
@@ -373,7 +385,9 @@ def make_pars():
     pars['child_mortality']    = default_child_mortality()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of sexual activity
     pars['miscarriage_rates']  = default_miscarriage_rates()
-    pars['exposure_correction']= default_exposure_correction()
+    pars['fecundity_ratio_nullip'] = default_fecundity_ratio_nullip()
+    pars['exposure_correction_age']= default_exposure_correction_age()
+    pars['exposure_correction_parity'] = default_exposure_correction_parity()
 
     # Population size array from Senegal data for plotting in sim
     pars['pop_years']          = pl.array([1982., 1983., 1984., 1985., 1986., 1987., 1988., 1989., 1990.,
