@@ -2,11 +2,16 @@
 Set the parameters for LEMOD-FP.
 '''
 
+import json
 import os
 import pylab as pl
 import sciris as sc
 import pandas as pd
 from scipy import interpolate as si
+
+
+CONFIGURATION_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
+
 
 resolution = 100
 max_age = 99
@@ -348,32 +353,99 @@ def default_exposure_correction_parity():
 
     return exposure_correction_parity
 
+
+def load_configuration_file():
+    try:
+        with open(CONFIGURATION_FILE, 'r') as f:
+            parameters = json.load(f)
+    except FileNotFoundError as e:
+        e.args = (f'Required configuration file: {CONFIGURATION_FILE} not found.',)
+        raise e
+    return parameters
+
+
+def set_fertility_variation(input_parameters, all_parameters):
+    # Multiplicative range of fertility factors, from confidence intervals from PRESTO study, adjusted from 0.9-1.1 to account for calibration to data
+    low = get_parameter(parameters=input_parameters, parameter='fertility_variation_low')
+    high = get_parameter(parameters=input_parameters, parameter='fertility_variation_high')
+    all_parameters['fertility_variation'] = [low, high]
+
+
+def set_pregnancy_duration(input_parameters, all_parameters):
+    # Duration of a pregnancy, in months
+    low = get_parameter(parameters=input_parameters, parameter='preg_dur_low')
+    high = get_parameter(parameters=input_parameters, parameter='preg_dur_high')
+    all_parameters['preg_dur'] = [low, high]
+
+
+def set_breastfeeding_duration(input_parameters, all_parameters):
+    # range in duration of breastfeeding per pregnancy, in months
+    low = get_parameter(parameters=input_parameters, parameter='breastfeeding_dur_low')
+    high = get_parameter(parameters=input_parameters, parameter='breastfeeding_dur_high')
+    all_parameters['breastfeeding_dur'] = [low, high]
+
+
+def get_parameter(parameters, parameter):
+    value = parameters.pop(parameter, None)
+    try:
+        default = DEFAULT_PARAMETERS.pop(parameter)
+    except KeyError as e:
+        e.args = (f'Unknown input parameter: {parameter} from file: {CONFIGURATION_FILE}',)
+        raise e
+
+    value = default if value is None else value
+    return value
+
+
+DEFAULT_PARAMETERS = {
+    'fertility_variation_low': 0.3,
+    'fertility_variation_high': 1.3,
+    'method_age': 15,  # When people start choosing a method
+    'max_age': 99,
+    'preg_dur_low': 9,
+    'preg_dur_high': 9,
+    'switch_frequency': 3,  # Number of months that pass before an agent can select a new method
+    'breastfeeding_dur_low': 1,
+    'breastfeeding_dur_high': 24,
+    'age_limit_fecundity': 50,
+    'postpartum_length': 24,  # Extended postpartum period, for tracking
+    'postpartum_infecund_0-5': 0.65,  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
+    'postpartum_infecund_6-11': 0.25,
+    'end_first_tri': 3,  # months at which first trimester ends, for miscarriage calculation
+    'abortion_prob': 0.1
+}
+
+DEFAULT_SIMULATION_PARAMETERS = {
+    'name': 'Default',
+    'n': 5000,  # Number of people in the simulation -- for comparing data from Impact 2
+    'start_year': 1950,
+    'end_year': 2015,
+    'timestep': 1, # Timestep in months  DO NOT CHANGE
+    'verbose': True,
+    'seed': 1  # Random seed, if None, don't reset
+}
+
+
 def make_pars():
+    input_configurations = load_configuration_file()
+    input_parameters = input_configurations['parameters']
+    sim_parameters = input_configurations['simulation_parameters']
+
     pars = {}
 
+    #
     # User-tunable parameters
-    pars['fertility_variation'] = [0.3, 1.3]  # Multiplicative range of fertility factors, from confidence intervals from PRESTO study, adjusted from 0.9-1.1 to account for calibration to data
-    pars['method_age'] = 15  # When people start choosing a method
-    pars['max_age'] = 99
-    pars['preg_dur'] = [9, 9]  # Duration of a pregnancy, in months
-    pars['switch_frequency'] = 3 # Number of months that pass before an agent can select a new method
-    pars['breastfeeding_dur'] = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
-    pars['age_limit_fecundity'] = 50
-    pars['postpartum_length'] = 24  # Extended postpartum period, for tracking
-    pars['postpartum_infecund_0-5'] = 0.65  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
-    pars['postpartum_infecund_6-11'] = 0.25
-    pars['end_first_tri'] = 3  # months at which first trimester ends, for miscarriage calculation
-    pars['abortion_prob'] = 0.10
+    #
 
-    # Simulation parameters
-    pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = 500*10 # Number of people in the simulation -- for comparing data from Impact 2
-    pars['start_year'] = 1950
-    pars['end_year'] = 2015
-    pars['timestep'] = 1 # Timestep in months  DO NOT CHANGE
-    pars['verbose'] = True
-    pars['seed'] = 1 # Random seed, if None, don't reset
-    
+    # parameters that require a bit of code to set
+    set_fertility_variation(input_parameters=input_parameters, all_parameters=pars)
+    set_pregnancy_duration(input_parameters=input_parameters, all_parameters=pars)
+    set_breastfeeding_duration(input_parameters=input_parameters, all_parameters=pars)
+
+    ###
+    # TODO: Finish porting these over to use input parameters
+    ###
+
     # Complicated parameters
     pars['methods']            = default_methods()
     pars['age_pyramid']        = default_age_pyramid()
@@ -403,5 +475,29 @@ def make_pars():
        39985.26113334, 41205.93321424, 42460.86281582, 43752.50403785,
        45081.05663263, 46401.31950667, 47773.28969221, 49185.05339094,
        50627.82150134, 52100.32416946])
+
+    ###
+    # END TODO
+    ###
+
+    # finish consuming all remaining input parameters
+    for input_parameter in input_parameters.keys():
+        pars[input_parameter] = get_parameter(parameters=input_parameters, parameter=input_parameter)
+
+    # now consume all remaining parameters NOT in the input parameters (use defaults, only)
+    for default_parameter in DEFAULT_PARAMETERS.keys():
+        pars[default_parameter] = get_parameter(parameters=DEFAULT_PARAMETERS, parameter=default_parameter)
+
+    #
+    # Simulation parameters
+    #
+
+    # consume input-specified simulation parameters
+    for sim_parameter in sim_parameters.keys():
+        pars[sim_parameter] = get_parameter(parameters=sim_parameters, parameter=sim_parameter)
+
+    # consume all remaining input parameters NOT in the input simulation parameters (use defaults, only)
+    for default_parameter in DEFAULT_SIMULATION_PARAMETERS.keys():
+        pars[default_parameter] = get_parameter(parameters=DEFAULT_SIMULATION_PARAMETERS, parameter=default_parameter)
 
     return pars
