@@ -412,7 +412,9 @@ DEFAULT_PARAMETERS = {
     'postpartum_infecund_0-5': 0.65,  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
     'postpartum_infecund_6-11': 0.25,
     'end_first_tri': 3,  # months at which first trimester ends, for miscarriage calculation
-    'abortion_prob': 0.1
+    'abortion_prob': 0.1,
+    'seed': 1  # Random seed, if None, don't reset
+
 }
 
 DEFAULT_SIMULATION_PARAMETERS = {
@@ -422,7 +424,6 @@ DEFAULT_SIMULATION_PARAMETERS = {
     'end_year': 2015,
     'timestep': 1, # Timestep in months  DO NOT CHANGE
     'verbose': True,
-    'seed': 1  # Random seed, if None, don't reset
 }
 
 
