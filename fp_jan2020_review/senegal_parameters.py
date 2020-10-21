@@ -138,59 +138,119 @@ def default_age_fertility():
 
 
 def default_maternal_mortality():
-    ''' From Impact 2 (?) <- Not sure what this refers to
-    I believe this is a maternal mortality ratio (MMR)
+    '''
+    Maternal mortality ratio (MMR) for Senegal.  Data from World Bank
     # of maternal deaths per 100,000 live births
-    Matches this data: https://knoema.com/WBWDI2019Jan/world-development-indicators-wdi
-    From WHO website:  https://www.who.int/data/gho/indicator-metadata-registry/imr-details/26
     Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
     or its management (excluding accidental or incidental causes) during pregnancy and childbirth or within
     42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
     expressed per 100,000 live births, for a specified time period.
     '''
+
+    data = pl.array([
+        [1990, 600],  # Estimated value from overall maternal mortality ratio from World Bank
+        [2000, 553],
+        [2001, 545],
+        [2002, 537],
+        [2003, 532],
+        [2004, 526],
+        [2005, 519],
+        [2006, 514],
+        [2007, 504],
+        [2008, 492],
+        [2009, 472],
+        [2010, 447],
+        [2011, 423],
+        [2012, 400],
+        [2013, 381],
+        [2014, 364],
+        [2015, 346],
+        [2016, 330],
+        [2017, 315],
+    ])
+
     maternal_mortality = {}
-    maternal_mortality['years'] = pl.array([1985., 1990, 1995, 2000, 2005, 2010, 2015])
-    maternal_mortality['probs'] = pl.array([711.,   540, 509,  488,  427,  375,  315])
-    maternal_mortality['probs'] /= 1e5
+
+    maternal_mortality['year'] = data[:,0]
+    maternal_mortality['probs'] = data[:,1]/1e5
+
     return maternal_mortality
 
 
-def default_child_mortality():
-    ''' From "When and Where Birth Spacing Matters for Child Survival: An International Comparison Using the DHS", Fig. 3 '''
+def default_infant_mortality():
+    '''
+    From World Bank indicators for infant morality (< 1 year) for Senegal, per 1000 live births
+    From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
+    '''
     
     data = pl.array([
-            [13.3032, 0.1502],
-            [14.0506, 0.1456],
-            [15.1708, 0.1384],
-            [16.1011, 0.1311],
-            [17.0384, 0.1265],
-            [18.1615, 0.1203],
-            [20.0332, 0.11],
-            [22.0963, 0.1002],
-            [24.1651, 0.0925],
-            [24.1637, 0.092],
-            [24.3522, 0.0915],
-            [24.5408, 0.0909],
-            [24.5394, 0.0904],
-            [24.728, 0.0899],
-            [24.7266, 0.0894],
-            [24.7252, 0.0889],
-            [24.9138, 0.0884],
-            [28.1181, 0.0791],
-            [32.0809, 0.0693],
-            [38.1334, 0.0594],
-            [44.0057, 0.0532],
-            [50.075, 0.0496],
-            [60.1336, 0.0459],
-            [70.0023, 0.0422],
-            [80.0567, 0.037],
-        ])
+        [1960, 128.3],
+        [1961, 128.2],
+        [1962, 128.3],
+        [1963, 128.6],
+        [1964, 128.8],
+        [1965, 128.9],
+        [1966, 128.6],
+        [1967, 128.2],
+        [1968, 127.7],
+        [1969, 126.7],
+        [1970, 125.4],
+        [1971, 123.6],
+        [1972, 121.4],
+        [1973, 118.7],
+        [1974, 115.6],
+        [1975, 112.2],
+        [1976, 108.4],
+        [1977, 104.6],
+        [1978, 101],
+        [1979, 97.7],
+        [1980, 94.9],
+        [1981, 92.5],
+        [1982, 90.4],
+        [1983, 88.2],
+        [1984, 85.7],
+        [1985, 82.9],
+        [1986, 79.9],
+        [1987, 77],
+        [1988, 74.4],
+        [1989, 72.4],
+        [1990, 71],
+        [1991, 70.3],
+        [1992, 70.1],
+        [1993, 70.3],
+        [1994, 70.6],
+        [1995, 71],
+        [1996, 71.2],
+        [1997, 71.1],
+        [1998, 70.6],
+        [1999, 69.4],
+        [2000, 67.5],
+        [2001, 65.1],
+        [2002, 62.2],
+        [2003, 59.2],
+        [2004, 56.1],
+        [2005, 53.2],
+        [2006, 50.6],
+        [2007, 48.2],
+        [2008, 46.2],
+        [2009, 44.3],
+        [2010, 42.6],
+        [2011, 41.1],
+        [2012, 39.8],
+        [2013, 38.6],
+        [2014, 37.5],
+        [2015, 36.4],
+        [2016, 35.4],
+        [2017, 34.4],
+        [2018, 33.6],
+        [2019, 32.7],
+    ])
     
-    child_mortality = {}
-    child_mortality['space'] = data[:,0]/12.0
-    child_mortality['probs'] = data[:,1]
+    infant_mortality = {}
+    infant_mortality['year'] = data[:,0]
+    infant_mortality['probs'] = data[:,1]/1000   # Rate per 1000 live births
     
-    return child_mortality
+    return infant_mortality
 
     
 def default_methods():
@@ -438,7 +498,7 @@ def make_pars():
     pars['method_efficacy']    = default_efficacy()
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()
-    pars['child_mortality']    = default_child_mortality()
+    pars['infant_mortality']    = default_infant_mortality()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
     pars['lactational_amenorrhea'] = default_lactational_amenorrhea()

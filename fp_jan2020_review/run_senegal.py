@@ -5,16 +5,18 @@ Run all analyses for Senegal.
 import pylab as pl
 import pandas as pd
 import sciris as sc
+import seaborn as sns
 import lemod_fp as lfp
 import senegal_parameters as sp
 
 # Housekeeping
 sc.tic()
-pl.rcParams['font.size'] = 12
+pl.rcParams['font.size'] = 10
 
 # Set parameters
 do_run              = 1
 do_store_postpartum = 1
+do_plot_pregnancy_parity = 1
 do_plot_popsize     = 1
 do_plot_pyramids    = 1
 do_plot_model_pyramid = 1
@@ -71,10 +73,41 @@ if do_run:
     sim.run()
     people = list(sim.people.values()) # Pull out people
 
-    if do_store_postpartum:
+    #if do_store_postpartum:
 
-        pp = sim.store_postpartum()
-        pp.to_csv(sp.abspath('data/postpartum_model2.csv'))
+        #pp = sim.store_postpartum()
+        #pp.to_csv(sp.abspath('data/postpartum_model2.csv'))
+
+    if do_plot_pregnancy_parity:
+
+        #Extract data on currently pregnant and parity at end of sim from model
+        model = sim.store_postpartum()
+
+        #Load Senegal DHS 2018 data
+        dhs = pd.read_stata('data/SNIR80FL.dta', convert_categoricals=False)
+        dhs = dhs[['v012', 'v213', 'v218']]
+        dhs = dhs.rename(columns={'v012': 'Age', 'v213': 'Currently pregnant',
+                                  'v218': 'Parity'})  # Parity means # of living children in DHS
+
+        fig, axes = pl.subplots(3, 2, figsize = (18, 14))
+
+        #fig.suptitle('FP Sim Model vs DHS data on age, pregnancy, and parity')
+
+        sns.distplot(model['Age'], bins=37, ax = axes[0,0]).set_title('Age histogram in FP model')
+        sns.distplot(dhs['Age'], bins=35, ax = axes[0,1]).set_title('Age histogram in Senegal 2018 DHS data')
+
+        sns.violinplot(ax = axes[1,0], x='Pregnant', y='Age', data=model).set_title(
+            'Age distribution of agents currently pregnant in FP model')
+        sns.violinplot(ax = axes[1,1], x='Currently pregnant', y='Age', data=dhs).set_title(
+            'Age distribution currently pregnant in 2018 DHS data')
+
+        sns.boxplot(ax = axes[2,0], x='Parity', y='Age', data=model).set_title('Age-parity distributions FP model')
+        sns.boxplot(ax = axes[2,1], x='Parity', y='Age', data=dhs).set_title('Age-parity distributions 2018 DHS data')
+
+        pl.tight_layout()
+
+        if do_save:
+            pl.savefig(sp.abspath('figs/pregnancy_parity.png'))
 
     if do_plot_popsize:
         
