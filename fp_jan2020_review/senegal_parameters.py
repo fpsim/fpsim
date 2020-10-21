@@ -293,6 +293,63 @@ def default_sexual_activity():
 
     return activity_interp
 
+def default_sexual_activity_postpartum():
+    '''
+    Returns an array of monthly likelihood of having resumed sexual activity within 0-11 months postpatum
+    From DHS Senegal 2018 calendar data
+    '''
+
+    postpartum_abstinent = pl.array([
+        [0, 1.0],
+        [1, 0.986062717770035],
+        [2, 0.868512110726644],
+        [3, 0.653136531365314],
+        [4, 0.511784511784512],
+        [5, 0.383512544802867],
+        [6, 0.348534201954397],
+        [7, 0.340557275541796],
+        [8, 0.291095890410959],
+        [9, 0.254285714285714],
+        [10, 0.223529411764706],
+        [11, 0.22258064516129],
+    ])
+
+    postpartum_activity = {}
+    postpartum_activity['month'] = postpartum_abstinent[:, 0]
+    postpartum_activity['percent_active'] = 1 - postpartum_abstinent[:, 1]
+
+    return postpartum_activity
+
+
+def default_lactational_amenorrhea():
+    '''
+    Returns an array of the percent of women by month postpartum 0-11 months who meet criteria for LAM:
+    Exclusively breastfeeding, menses have not returned.  Extended out 5-11 months to better match data
+    as those women continue to be postpartum insusceptible.
+    From DHS Senegal calendar data
+    '''
+
+    data = pl.array([
+        [0, 0.875757575757576],
+        [1, 0.853658536585366],
+        [2, 0.73356401384083],
+        [3, 0.627306273062731],
+        [4, 0.552188552188552],
+        [5, 0.444444444444444],
+        [6, 0.250814332247557],
+        [7, 0.195046439628483],
+        [8, 0.143835616438356],
+        [9, 0.108571428571429],
+        [10, 0.1],
+        [11, 0.0870967741935484],
+    ])
+
+    lactational_amenorrhea = {}
+    lactational_amenorrhea['month'] = data[:, 0]
+    lactational_amenorrhea['percent'] = data[:, 1]
+
+    return lactational_amenorrhea
+
 def default_miscarriage_rates():
     '''
     Returns a linear interpolation of the likelihood of a miscarriage
@@ -332,8 +389,8 @@ def default_exposure_correction_age():
     also miscarriage), will decrease factor number
     '''
 
-    exposure_correction_age =   pl.array([[0,       5,     10,      12.5,        15,          18,        20,        25,        30,        35,           40,        45,          50],
-                                           [[1, 1], [1, 1], [1, 1], [1.9, 1.9], [2.8, 2.8], [2.8, 2.8], [3.1, 3.1], [3.6, 3.6], [3.1, 3.1], [2.7, 2.7], [2.4, 2.4], [1.6, 1.6], [0.1, 0.1]]])
+    exposure_correction_age = pl.array([[0,        5,       10,      12.5,       15,          18,       20,          25,         30,        35,           40,       45,          50],
+                                        [[1, 1], [1, 1], [1, 1], [1.9, 1.9], [2.8, 2.8], [2.8, 2.8], [3.1, 3.1], [3.6, 3.6], [3.1, 3.1], [2.7, 2.7], [2.4, 2.4], [1.6, 1.6], [0.1, 0.1]]])
 
     return exposure_correction_age
 
@@ -344,7 +401,7 @@ def default_exposure_correction_parity():
     '''
 
     exposure_correction_parity = pl.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                                       [0.25, 0.6, 0.5, 0.3, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1]])
+                                           [0.25, 0.6, 0.5, 0.3, 0.3, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1, 0.1, 0.1]])
 
     return exposure_correction_parity
 
@@ -356,14 +413,13 @@ def make_pars():
     pars['method_age'] = 15  # When people start choosing a method
     pars['max_age'] = 99
     pars['preg_dur'] = [9, 9]  # Duration of a pregnancy, in months
-    pars['switch_frequency'] = 3 # Number of months that pass before an agent can select a new method
+    pars['switch_frequency'] = 3 # Number of months that pass before an agent can select a new method (selects on 0.25 of years in timestep)
     pars['breastfeeding_dur'] = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
     pars['age_limit_fecundity'] = 50
     pars['postpartum_length'] = 24  # Extended postpartum period, for tracking
-    pars['postpartum_infecund_0-5'] = 0.65  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
-    pars['postpartum_infecund_6-11'] = 0.25
     pars['end_first_tri'] = 3  # months at which first trimester ends, for miscarriage calculation
     pars['abortion_prob'] = 0.10
+    pars['twins_prob'] =  0.018
 
     # Simulation parameters
     pars['name'] = 'Default' # Name of the simulation
@@ -383,7 +439,9 @@ def make_pars():
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()
     pars['child_mortality']    = default_child_mortality()
-    pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of sexual activity
+    pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
+    pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
+    pars['lactational_amenorrhea'] = default_lactational_amenorrhea()
     pars['miscarriage_rates']  = default_miscarriage_rates()
     pars['fecundity_ratio_nullip'] = default_fecundity_ratio_nullip()
     pars['exposure_correction_age']= default_exposure_correction_age()
