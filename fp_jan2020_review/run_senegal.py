@@ -177,36 +177,6 @@ if do_run:
         if do_save:
             pl.savefig(sp.abspath('figs/senegal_pyramids.png'))
 
-    if do_plot_model_pyramid:
-
-        fig = pl.figure(figsize=(16, 16))
-
-        plotstyle = {'marker': 'o', 'lw': 3}
-
-        min_age = 0
-        max_age = 99
-        bins = pl.arange(min_age, max_age, bin_size)
-
-        counts = pl.zeros(len(bins))
-        for person in people:
-            if person.alive:
-                bininds = sc.findinds(bins <= person.age)  # Could be refactored
-                if len(bininds) and person.age < max_age:
-                    counts[bininds[-1]] += 1
-        counts = counts / counts.sum()
-
-        pl.plot(counts, bins, c='g', label='Model', **plotstyle)
-
-        pl.legend()
-        pl.xlabel('Proportion')
-        pl.ylabel('Age')
-        pl.title('Age pyramid, 0-99, Model only', fontweight='bold')
-        sc.setylim()
-
-        if do_save:
-            pl.savefig(sp.abspath('figs/senegal_pyramid_model.png'))
-
-
     if do_plot_skyscrapers:
         
         # Set up
@@ -296,6 +266,28 @@ if do_run:
         model_method_counts = sc.dcp(data_method_counts)
         
         # Load data from DHS -- from dropbox/Method_v312.csv
+
+        data = [
+            ['Other', 'emergency contraception', 0.015216411570543636,2017.698615635373],
+            ['Condoms', 'female condom', 0.005239036180154552,2017.698615635373],
+            ['BTL', 'female sterilization', 0.24609377594176307,2017.698615635373],
+            ['Implants', 'implants/norplant', 5.881839602070953,2017.698615635373],
+            ['Injectables', 'injections', 7.101718239287355,2017.698615635373],
+            ['IUDs', 'iud', 1.4865067612487317,2017.698615635373],
+            ['Other', 'lactational amenorrhea (lam)', 0.04745447091361792,2017.698615635373],
+            ['Condoms', 'male condom', 1.0697377418682412,2017.698615635373],
+            ['None', 'not using', 80.10054235699272,2017.698615635373],
+            ['Other', 'other modern method', 0.007832257135437748,2017.698615635373],
+            ['Other', 'other traditional', 0.5127850142889963,2017.698615635373],
+            ['Rhythm', 'periodic abstinence', 0.393946698444533,2017.698615635373],
+            ['Pill', 'pill', 2.945874450486654,2017.698615635373],
+            ['Rhythm', 'standard days method (sdm)', 0.06132534128612159,2017.698615635373],
+            ['Withdrawal', 'withdrawal', 0.12388784228417069,2017.698615635373],
+        ]
+
+
+        '''
+        Use to compare to old switching matrices
         data = [
             ['Other', 'emergency contraception', 0.015216411570543636,2017.698615635373],
             ['Condoms', 'female condom', 0.005239036180154552,2017.698615635373],
@@ -313,6 +305,7 @@ if do_run:
             ['Other', 'standard days method (sdm)', 0.06132534128612159,2017.698615635373],
             ['Traditional', 'withdrawal', 0.12388784228417069,2017.698615635373],
         ]
+        '''
         for entry in data:
             data_method_counts[entry[0]] += entry[2]
         data_method_counts[:] /= data_method_counts[:].sum()
