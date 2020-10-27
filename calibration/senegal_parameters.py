@@ -342,6 +342,7 @@ def default_exposure_correction_age():
 
     return exposure_correction_age
 
+
 def default_exposure_correction_parity():
     '''
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
@@ -398,6 +399,13 @@ def get_parameter(parameters, parameter):
 
 
 DEFAULT_PARAMETERS = {
+    'name': 'Default',
+    'n': 5000,  # Number of people in the simulation -- for comparing data from Impact 2
+    'start_year': 1950,
+    'end_year': 2015,
+    'timestep': 1, # Timestep in months  DO NOT CHANGE
+    'verbose': True,
+
     'fertility_variation_low': 0.3,
     'fertility_variation_high': 1.3,
     'method_age': 15,  # When people start choosing a method
@@ -414,23 +422,11 @@ DEFAULT_PARAMETERS = {
     'end_first_tri': 3,  # months at which first trimester ends, for miscarriage calculation
     'abortion_prob': 0.1,
     'seed': 1  # Random seed, if None, don't reset
-
-}
-
-DEFAULT_SIMULATION_PARAMETERS = {
-    'name': 'Default',
-    'n': 5000,  # Number of people in the simulation -- for comparing data from Impact 2
-    'start_year': 1950,
-    'end_year': 2015,
-    'timestep': 1, # Timestep in months  DO NOT CHANGE
-    'verbose': True,
 }
 
 
 def make_pars():
-    input_configurations = load_configuration_file()
-    input_parameters = input_configurations['parameters']
-    sim_parameters = input_configurations['simulation_parameters']
+    input_parameters = load_configuration_file()
 
     pars = {}
 
@@ -482,23 +478,10 @@ def make_pars():
     ###
 
     # finish consuming all remaining input parameters
-    for input_parameter in input_parameters.keys():
+    for input_parameter in list(input_parameters.keys()):
         pars[input_parameter] = get_parameter(parameters=input_parameters, parameter=input_parameter)
 
     # now consume all remaining parameters NOT in the input parameters (use defaults, only)
-    for default_parameter in DEFAULT_PARAMETERS.keys():
-        pars[default_parameter] = get_parameter(parameters=DEFAULT_PARAMETERS, parameter=default_parameter)
-
-    #
-    # Simulation parameters
-    #
-
-    # consume input-specified simulation parameters
-    for sim_parameter in sim_parameters.keys():
-        pars[sim_parameter] = get_parameter(parameters=sim_parameters, parameter=sim_parameter)
-
-    # consume all remaining input parameters NOT in the input simulation parameters (use defaults, only)
-    for default_parameter in DEFAULT_SIMULATION_PARAMETERS.keys():
-        pars[default_parameter] = get_parameter(parameters=DEFAULT_SIMULATION_PARAMETERS, parameter=default_parameter)
+    pars.update(DEFAULT_PARAMETERS)
 
     return pars
