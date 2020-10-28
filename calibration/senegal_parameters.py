@@ -10,8 +10,8 @@ import pandas as pd
 from scipy import interpolate as si
 
 
-CONFIGURATION_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
-
+DEFAULT_CONFIGURATION_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
+DEFAULTS_FILE = os.path.join(os.path.dirname(__file__), 'defaults.json')
 
 resolution = 100
 max_age = 99
@@ -355,78 +355,87 @@ def default_exposure_correction_parity():
     return exposure_correction_parity
 
 
-def load_configuration_file():
+def load_configuration_file(configuration_file=None):
+    if configuration_file is None:
+        configuration_file = DEFAULT_CONFIGURATION_FILE
     try:
-        with open(CONFIGURATION_FILE, 'r') as f:
+        with open(configuration_file, 'r') as f:
             parameters = json.load(f)
     except FileNotFoundError as e:
-        e.args = (f'Required configuration file: {CONFIGURATION_FILE} not found.',)
+        e.args = (f'Required configuration file: {configuration_file} not found.',)
         raise e
     return parameters
 
 
-def set_fertility_variation(input_parameters, all_parameters):
+def load_defaults_file(defaults_file=None):
+    if defaults_file is None:
+        defaults_file = DEFAULTS_FILE
+    return load_configuration_file(configuration_file=defaults_file)
+
+
+def set_fertility_variation(input_parameters, all_parameters, defaults):
     # Multiplicative range of fertility factors, from confidence intervals from PRESTO study, adjusted from 0.9-1.1 to account for calibration to data
-    low = get_parameter(parameters=input_parameters, parameter='fertility_variation_low')
-    high = get_parameter(parameters=input_parameters, parameter='fertility_variation_high')
+    low = get_parameter(parameters=input_parameters, parameter='fertility_variation_low', defaults=defaults)
+    high = get_parameter(parameters=input_parameters, parameter='fertility_variation_high', defaults=defaults)
     all_parameters['fertility_variation'] = [low, high]
 
 
-def set_pregnancy_duration(input_parameters, all_parameters):
+def set_pregnancy_duration(input_parameters, all_parameters, defaults):
     # Duration of a pregnancy, in months
-    low = get_parameter(parameters=input_parameters, parameter='preg_dur_low')
-    high = get_parameter(parameters=input_parameters, parameter='preg_dur_high')
+    low = get_parameter(parameters=input_parameters, parameter='preg_dur_low', defaults=defaults)
+    high = get_parameter(parameters=input_parameters, parameter='preg_dur_high', defaults=defaults)
     all_parameters['preg_dur'] = [low, high]
 
 
-def set_breastfeeding_duration(input_parameters, all_parameters):
+def set_breastfeeding_duration(input_parameters, all_parameters, defaults):
     # range in duration of breastfeeding per pregnancy, in months
-    low = get_parameter(parameters=input_parameters, parameter='breastfeeding_dur_low')
-    high = get_parameter(parameters=input_parameters, parameter='breastfeeding_dur_high')
+    low = get_parameter(parameters=input_parameters, parameter='breastfeeding_dur_low', defaults=defaults)
+    high = get_parameter(parameters=input_parameters, parameter='breastfeeding_dur_high', defaults=defaults)
     all_parameters['breastfeeding_dur'] = [low, high]
 
 
-def get_parameter(parameters, parameter):
+def get_parameter(parameters, parameter, defaults):
     value = parameters.pop(parameter, None)
     try:
-        default = DEFAULT_PARAMETERS.pop(parameter)
+        default = defaults.pop(parameter)
     except KeyError as e:
-        e.args = (f'Unknown input parameter: {parameter} from file: {CONFIGURATION_FILE}',)
+        e.args = (f'Unknown input parameter: {parameter} in configuration file.',)
         raise e
 
     value = default if value is None else value
     return value
 
+# leaving this here for now to keep the default-related comments
+# DEFAULT_PARAMETERS = {
+#     'name': 'Default',
+#     'n': 5000,  # Number of people in the simulation -- for comparing data from Impact 2
+#     'start_year': 1950,
+#     'end_year': 2015,
+#     'timestep': 1, # Timestep in months  DO NOT CHANGE
+#     'verbose': True,
+#
+#     'fertility_variation_low': 0.3,
+#     'fertility_variation_high': 1.3,
+#     'method_age': 15,  # When people start choosing a method
+#     'max_age': 99,
+#     'preg_dur_low': 9,
+#     'preg_dur_high': 9,
+#     'switch_frequency': 3,  # Number of months that pass before an agent can select a new method
+#     'breastfeeding_dur_low': 1,
+#     'breastfeeding_dur_high': 24,
+#     'age_limit_fecundity': 50,
+#     'postpartum_length': 24,  # Extended postpartum period, for tracking
+#     'postpartum_infecund_0-5': 0.65,  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
+#     'postpartum_infecund_6-11': 0.25,
+#     'end_first_tri': 3,  # months at which first trimester ends, for miscarriage calculation
+#     'abortion_prob': 0.1,
+#     'seed': 1  # Random seed, if None, don't reset
+# }
 
-DEFAULT_PARAMETERS = {
-    'name': 'Default',
-    'n': 5000,  # Number of people in the simulation -- for comparing data from Impact 2
-    'start_year': 1950,
-    'end_year': 2015,
-    'timestep': 1, # Timestep in months  DO NOT CHANGE
-    'verbose': True,
 
-    'fertility_variation_low': 0.3,
-    'fertility_variation_high': 1.3,
-    'method_age': 15,  # When people start choosing a method
-    'max_age': 99,
-    'preg_dur_low': 9,
-    'preg_dur_high': 9,
-    'switch_frequency': 3,  # Number of months that pass before an agent can select a new method
-    'breastfeeding_dur_low': 1,
-    'breastfeeding_dur_high': 24,
-    'age_limit_fecundity': 50,
-    'postpartum_length': 24,  # Extended postpartum period, for tracking
-    'postpartum_infecund_0-5': 0.65,  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
-    'postpartum_infecund_6-11': 0.25,
-    'end_first_tri': 3,  # months at which first trimester ends, for miscarriage calculation
-    'abortion_prob': 0.1,
-    'seed': 1  # Random seed, if None, don't reset
-}
-
-
-def make_pars():
-    input_parameters = load_configuration_file()
+def make_pars(configuration_file=None, defaults_file=None):
+    input_parameters = load_configuration_file(configuration_file=configuration_file)
+    default_parameters = load_defaults_file(defaults_file=defaults_file)
 
     pars = {}
 
@@ -435,9 +444,9 @@ def make_pars():
     #
 
     # parameters that require a bit of code to set
-    set_fertility_variation(input_parameters=input_parameters, all_parameters=pars)
-    set_pregnancy_duration(input_parameters=input_parameters, all_parameters=pars)
-    set_breastfeeding_duration(input_parameters=input_parameters, all_parameters=pars)
+    set_fertility_variation(input_parameters=input_parameters, all_parameters=pars, defaults=default_parameters)
+    set_pregnancy_duration(input_parameters=input_parameters, all_parameters=pars, defaults=default_parameters)
+    set_breastfeeding_duration(input_parameters=input_parameters, all_parameters=pars, defaults=default_parameters)
 
     ###
     # TODO: Finish porting these over to use input parameters
@@ -479,9 +488,9 @@ def make_pars():
 
     # finish consuming all remaining input parameters
     for input_parameter in list(input_parameters.keys()):
-        pars[input_parameter] = get_parameter(parameters=input_parameters, parameter=input_parameter)
+        pars[input_parameter] = get_parameter(parameters=input_parameters, parameter=input_parameter, defaults=default_parameters)
 
     # now consume all remaining parameters NOT in the input parameters (use defaults, only)
-    pars.update(DEFAULT_PARAMETERS)
+    pars.update(default_parameters)
 
     return pars
