@@ -11,18 +11,6 @@ import sciris as sc
 from .model import Sim
 
 
-# Settings of what to include -- TODO: move to user script?
-popsize = 1  # Population size and growth over time, adjusted for n number of agents; 'pop_size'
-skyscrapers = 1 # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
-first_birth = 1  # Age at first birth with standard deviation; 'age_first_birth'
-birth_space = 1  # Birth spacing with standard deviation; 'spacing'
-mcpr = 1  # Modern contraceptive prevalence; 'mcpr'
-methods = 1 # Overall percentage of method use and method use among users; 'methods'
-mmr = 1  # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'
-infant_m = 1  # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
-cdr = 1  # Crude death rate at end of sim in model vs data; 'crude_death_rate'
-cbr = 1  # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
-tfr = 0  # Need to write code for TFR calculation from model - age specific fertility rate to match over time; 'tfr'
 
 # ...more settings
 min_age = 15
@@ -52,7 +40,8 @@ class Calibration:
     Class for running calibration to data
     '''
 
-    def __init__(self):
+    def __init__(self, flags):
+        self.flags = flags # Set flags for what gets run
         self.model_results = sc.odict()
         self.model_people = sc.odict()
         self.model_to_calib = sc.odict()
@@ -116,19 +105,19 @@ class Calibration:
 
     def extract_model(self):
 
-        if popsize:
+        if self.flags.popsize:
             self.model_pop_size()
-        if mcpr:
+        if self.flags.mcpr:
             self.model_mcpr()
-        if mmr:
+        if self.flags.mmr:
             self.model_mmr()
-        if infant_m:
+        if self.flags.infant_m:
             self.model_infant_mortality_rate()
-        if cdr:
+        if self.flags.cdr:
             self.model_crude_death_rate()
-        if cbr:
+        if self.flags.cbr:
             self.model_crude_birth_rate()
-        if tfr:
+        if self.flags.tfr:
             self.model_tfr()
 
         return
@@ -197,7 +186,7 @@ class Calibration:
         data_parity_bins = pl.arange(0, 18)
         sky_raw_data = pd.read_csv(skyscrapers_file, header=None)
         sky_raw_data = sky_raw_data[sky_raw_data[0] == year_str]
-        sky_parity = sky_raw_data[2].to_numpy()
+        # sky_parity = sky_raw_data[2].to_numpy() # Not used currently
         sky_props = sky_raw_data[3].to_numpy()
         sky_arr = sc.odict()
 
