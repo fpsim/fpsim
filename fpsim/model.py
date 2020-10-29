@@ -57,24 +57,24 @@ class Person(base.ParsObj):
 
         self.init_step_results() # Do I need this?
         return
-    
-    
+
+
     # def get_mortality_prob(self): # Slow -- takes 36% of the time
     #     mortality_eval = self.mortality_fn[int(round(self.age*resolution))]
     #     prob = mortality_eval*self.pars['mortality_factor']/mpy
     #     return prob
-    
+
 
     # def get_preg_prob(self): # Slow -- see numba_preg_prob
     #     preg_eval = self.fertility_fn[int(round(self.age*resolution))]
     #     method_eff = self.pars['method_efficacy'][self.method]
     #     prob = method_eff*preg_eval*self.pars['fertility_factor']/mpy
     #     return prob
-    
-    
+
+
     def get_method(self):
         '''
-        Uses a switching matrix to decide based on a person's original method their probability of changing to a 
+        Uses a switching matrix to decide based on a person's original method their probability of changing to a
         new method and assigns them the new method. Currently allows switching on whole calendar years
         '''
         orig_method = self.method
@@ -286,8 +286,8 @@ class Person(base.ParsObj):
     def infant_mortality(self, y):
         '''Check for probability of infant mortality (death < 1 year of age)'''
 
-        ind = sc.findnearest(self.pars['infant_mortality']['year'], y)
-        infant_mort_prob = self.pars['infant_mortality']['probs'][ind]
+        ind = sc.findnearest(self.pars['infant_mortality_rate']['year'], y)
+        infant_mort_prob = self.pars['infant_mortality_rate']['probs'][ind]
 
         self.step_results['infant_death'] = utils.bt(infant_mort_prob)
 
@@ -359,7 +359,7 @@ class Person(base.ParsObj):
             'pp12to23'  : False
         }
         return
-        
+
 
     def update(self, t, y):
         ''' Update the person's state for the given timestep.  t is the time in the simulation '''
@@ -452,7 +452,7 @@ class Sim(base.BaseSim):
                         #fecundity_fn = fecundity_fn, mortality_trend=self.mortality_trend)
 
         return person
-    
+
 
     def init_people(self):
         ''' Create the people '''
@@ -559,16 +559,16 @@ class Sim(base.BaseSim):
 
     def run(self, verbose=None):
         ''' Run the simulation '''
-        
+
         T = sc.tic()
-        
+
         # Reset settings and results
         if verbose is not None:
             self.pars['verbose'] = verbose
         self.update_pars()
         self.init_results()
         self.init_people() # Actually create the children
-        
+
         # Validate the parameters
         # default_keys = set(make_pars().keys())
         # sim_keys = set(self.pars.keys())
@@ -579,7 +579,7 @@ class Sim(base.BaseSim):
         #     missing_str = f' Missing keys: {missing_keys}' if missing_keys else ''
         #     errormsg = f'Parameter keys are incorrect!{missing_str}{extra_str}'
         #     raise Exception(errormsg)
-        
+
         # Main simulation loop
         for i in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
             t = self.ind2year(i)  # t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
@@ -587,7 +587,7 @@ class Sim(base.BaseSim):
             if self.pars['verbose']>-1:
                 if sc.approx(t, int(t), eps=0.01):
                     print(f'  Running {y:0.0f} of {self.pars["end_year"]}...')
-            
+
             # Update switching and mortality
             self.update_methods_matrix(y)
             self.update_methods_matrix_postpartum(y)
@@ -618,7 +618,7 @@ class Sim(base.BaseSim):
 
                 if person.sex == 0 and 15 <= person.age < self.pars['age_limit_fecundity']:
                     total_women_fecund += 1
-            
+
             if i in self.interventions:
                 self.interventions[i](self)
 
@@ -736,7 +736,7 @@ class Sim(base.BaseSim):
         pp = pd.DataFrame(rows, index = None, columns = ['Age', 'PP0to5', 'PP6to11', 'PP12to23', 'NonPP', 'Pregnant', 'Parity'])
         pp.fillna(0, inplace=True)
         return pp
-    
+
 
     def plot(self, dosave=None, figargs=None, plotargs=None, axisargs=None, as_years=True):
         '''
@@ -752,7 +752,7 @@ class Sim(base.BaseSim):
 
         plotargs : dict
             Dictionary of kwargs to be passed to pl.plot()
-        
+
         as_years : bool
             Whether to plot the x-axis as years or time points
 
@@ -817,8 +817,8 @@ class Sim(base.BaseSim):
             pl.show() # Only show if we're not saving
 
         return fig
-    
-    
+
+
     def plot_people(self):
         ''' Use imshow() to show all individuals as rows, with time as columns, one pixel per timestep per person '''
         raise NotImplementedError
@@ -829,9 +829,9 @@ def single_run(sim):
     return sim
 
 def multi_run(orig_sim, n=4, verbose=None):
-    
+
     raise NotImplementedError('Memory leak, do not use!')
-    
+
     # Copy the simulations
     sims = []
     for i in range(n):
@@ -839,20 +839,19 @@ def multi_run(orig_sim, n=4, verbose=None):
         new_sim.pars['seed'] += i # Reset the seed, otherwise no point!
         new_sim.pars['n'] = int(new_sim.pars['n']/n) # Reduce the population size accordingly
         sims.append(new_sim)
-        
+
     finished_sims = sc.parallelize(single_run, iterarg=sims)
-    
+
     output_sim = sc.dcp(finished_sims[0])
     output_sim.pars['parallelized'] = n # Store how this was parallelized
     output_sim.pars['n'] *= n # Restore this since used in later calculations -- a bit hacky, it's true
-    
+
     for sim in finished_sims[1:]: # Skip the first one
         output_sim.people.update(sim.people)
         for key,val in sim.results.items():
             if key != 't':
                 output_sim.results[key] += sim.results[key]
-    
+
     return output_sim
-    
-    
-    
+
+

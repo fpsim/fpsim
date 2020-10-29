@@ -35,7 +35,7 @@ barriers_file = datapath('DHSIndividualBarriers.csv')
 
 
 
-class Calibration:
+class Calibration(sc.prettyobj):
     '''
     Class for running calibration to data
     '''
