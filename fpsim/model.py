@@ -286,8 +286,8 @@ class Person(base.ParsObj):
     def infant_mortality(self, y):
         '''Check for probability of infant mortality (death < 1 year of age)'''
 
-        ind = sc.findnearest(self.pars['infant_mortality_rate']['year'], y)
-        infant_mort_prob = self.pars['infant_mortality_rate']['probs'][ind]
+        ind = sc.findnearest(self.pars['infant_mortality']['year'], y)
+        infant_mort_prob = self.pars['infant_mortality']['probs'][ind]
 
         self.step_results['infant_death'] = utils.bt(infant_mort_prob)
 

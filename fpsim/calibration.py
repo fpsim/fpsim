@@ -62,7 +62,7 @@ class Calibration(sc.prettyobj):
         self.dhs_data['infant_mortality_rate'] = 33.6  # Per 1,000 live births, From World Bank
         self.dhs_data['crude_death_rate'] = 5.7  # Per 1,000 inhabitants, From World Bank
         self.dhs_data['crude_birth_rate'] = 34.5  # Per 1,000 inhabitants, From World Bank
-        self.dhs_data['total fertility rate'] = 4.62  # From World Bank
+        # self.dhs_data['total fertility rate'] = 4.62  # From World Bank -- TODO: see if can match the model
 
         return
 
@@ -147,7 +147,7 @@ class Calibration(sc.prettyobj):
 
         infant_deaths = pl.cumsum(self.model_results['infant_deaths'][-mpy:])
         births_last_year = pl.cumsum(self.model_results['births'][-mpy:])
-        self.model_to_calib['infant_mortality'] = infant_deaths[-1] / (births_last_year[-1] * 1000)
+        self.model_to_calib['infant_mortality_rate'] = infant_deaths[-1] / (births_last_year[-1] * 1000)
 
         return
 
