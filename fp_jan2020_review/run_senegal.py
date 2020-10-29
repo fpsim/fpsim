@@ -33,7 +33,7 @@ pop_pyr_year_file = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
 skyscrapers_file = sp.abspath('dropbox/Skyscrapers-All-DHS.csv')
 methods_file = sp.abspath('dropbox/Method_v312.csv')
 spacing_file = sp.abspath('dropbox/BirthSpacing.csv')
-popsize_file = sp.abspath('data/senegal-popsize-tfr.csv')
+popsize_file = sp.abspath('dropbox/senegal-popsize.csv')
 barriers_file = sp.abspath('dropbox/DHSIndividualBarriers.csv')
 
 if do_run:
@@ -84,7 +84,7 @@ if do_run:
         model = sim.store_postpartum()
 
         #Load Senegal DHS 2018 data
-        dhs = pd.read_stata('data/SNIR80FL.dta', convert_categoricals=False)
+        dhs = pd.read_stata('dropbox/SNIR80FL.dta', convert_categoricals=False)
         dhs = dhs[['v012', 'v213', 'v218']]
         dhs = dhs.rename(columns={'v012': 'Age', 'v213': 'Currently pregnant',
                                   'v218': 'Parity'})  # Parity means # of living children in DHS
@@ -116,7 +116,7 @@ if do_run:
         
         # Handle population size
         pop_years = popsize_tfr.iloc[0,:].to_numpy()
-        popsize = popsize_tfr.iloc[1,:].to_numpy() / 350434.0 * sim.pars['n'] # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500
+        popsize = popsize_tfr.iloc[1,:].to_numpy() / sim.pars['n'] # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500
         
         # Default plots
         fig = sim.plot()
@@ -137,8 +137,10 @@ if do_run:
         ax = fig.axes[1] # Second axis on plot
         ax.scatter(mcpr_years, mcpr_rates, c='k', label='Data', zorder=1000)
         #pl.legend()
-    
-    
+
+        #350434.0 <--- Factor previously used to adjust population
+
+
     if do_plot_pyramids:
         fig2 = pl.figure(figsize=(16,16))
         
