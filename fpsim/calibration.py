@@ -23,7 +23,7 @@ mpy = 12
 # Files
 def datapath(path):
     ''' Return the path of the parent folder '''
-    return sc.thisdir(__file__, os.pardir, 'dropbox')
+    return sc.thisdir(__file__, os.pardir, 'dropbox', path)
 
 pregnancy_parity_file = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file
 pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
@@ -310,16 +310,16 @@ class Calibration:
 
         return
 
-    def run(self):
+    def run(self, pars):
 
-        self.run_model()
+        self.run_model(pars)
         self.extract_model()
         self.extract_dhs_data()
-        if skyscrapers:
+        if self.flags.skyscrapers:
             self.extract_skyscrapers()
-        if birth_space:
+        if self.flags.birth_space:
             self.extract_birth_order_spacing()
-        if methods:
+        if self.flags.methods:
             self.extract_methods()
 
         # Remove people, they're large!
