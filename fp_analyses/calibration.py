@@ -5,7 +5,7 @@ File to extract outputs to calibration from model and compare to data
 import pylab as pl
 import pandas as pd
 import sciris as sc
-import lemod_fp as lfp
+import fpsim as lfp # Need to rename
 import senegal_parameters as sp
 
 sc.tic()
@@ -341,6 +341,9 @@ class Calibration:
 
 calibrate = Calibration()
 calibrate.run()
+
+print('Removing people objects...')
+del calibrate.people # Very large, don't keep!
 
 if do_save:
     sc.saveobj('senegal_calibration.obj', calibrate)
