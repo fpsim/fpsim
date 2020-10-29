@@ -1,9 +1,17 @@
+'''
+Define classes and functions for fitting (calibration)
+'''
+
+
 import os
 import numpy as np
 import pylab as pl
+import pandas as pd
 import sciris as sc
+from .model import Sim
 
 
+# Settings of what to include -- TODO: move to user script?
 popsize = 1  # Population size and growth over time, adjusted for n number of agents; 'pop_size'
 skyscrapers = 1 # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
 first_birth = 1  # Age at first birth with standard deviation; 'age_first_birth'
@@ -16,25 +24,27 @@ cdr = 1  # Crude death rate at end of sim in model vs data; 'crude_death_rate'
 cbr = 1  # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
 tfr = 0  # Need to write code for TFR calculation from model - age specific fertility rate to match over time; 'tfr'
 
-
-def abspath(path):
-    cwd = os.path.abspath(os.path.dirname(__file__))
-    output = os.path.join(cwd, path)
-    return output
-
-pregnancy_parity_file = abspath('dropbox/SNIR80FL.DTA')  # DHS Senegal 2018 file
-pop_pyr_year_file = abspath('dropbox/Population_Pyramid_-_All.csv')
-skyscrapers_file = abspath('dropbox/Skyscrapers-All-DHS.csv')
-methods_file = abspath('dropbox/Method_v312.csv')
-spacing_file = abspath('dropbox/BirthSpacing.csv')
-popsize_file = abspath('dropbox/senegal-popsize.csv')
-barriers_file = abspath('dropbox/DHSIndividualBarriers.csv')
-
+# ...more settings
 min_age = 15
 max_age = 50
 bin_size = 5
 year_str = '2017'
 mpy = 12
+
+
+# Files
+def datapath(path):
+    ''' Return the path of the parent folder '''
+    return sc.thisdir(__file__, os.pardir, 'dropbox')
+
+pregnancy_parity_file = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file
+pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
+skyscrapers_file = datapath('Skyscrapers-All-DHS.csv')
+methods_file = datapath('Method_v312.csv')
+spacing_file = datapath('BirthSpacing.csv')
+popsize_file = datapath('senegal-popsize.csv')
+barriers_file = datapath('DHSIndividualBarriers.csv')
+
 
 
 class Calibration:
@@ -83,13 +93,12 @@ class Calibration:
 
         return
 
-    def run_model(self):
+    def run_model(self, pars):
 
         self.init_dhs_data()
         self.extract_dhs_data()
 
-        pars = sp.make_pars()
-        sim = lfp.Sim(pars=pars)
+        sim = Sim(pars=pars)
 
         sim.run()
         self.people = list(sim.people.values())  # Extract people objects from sim
@@ -323,6 +332,9 @@ class Calibration:
             self.extract_birth_order_spacing()
         if methods:
             self.extract_methods()
+
+        # Remove people, they're large!
+        del self.people
 
         # Store model_to_calib and dhs_data dictionaries in preferred way
 
