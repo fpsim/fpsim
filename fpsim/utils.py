@@ -16,14 +16,15 @@ usenumba  = True
 
 if usenumba:
     func_decorator = nb.njit
-    class_decorator = nb.jitclass # Not used currently
+
 else:
     def func_decorator(*args, **kwargs):
         def wrap(func): return func
         return wrap
-    def class_decorator(*args, **kwargs):
-        def wrap(cls): return cls
-        return wrap
+def class_decorator(*args, **kwargs):
+    ''' Was class_decorator = nb.jitclass, but not used currently and removed from Numba '''
+    def wrap(cls): return cls
+    return wrap
 
 def set_seed(seed=None):
     ''' Reset the random seed -- complicated because of Numba '''
