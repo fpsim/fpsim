@@ -7,7 +7,7 @@ import fp_analyses.senegal_parameters as sp
 pars = sp.make_pars()
 sim = lfp.Sim(pars=pars)
 
-to_profile = 'get_method' # Must be 'sim' or 'update'
+to_profile = 'get_method' # Choose which function to profile
 
 func_options = {'sim':    sim.run,
                 'update': sc.odict(sim.people)[0].update,

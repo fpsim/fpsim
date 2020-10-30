@@ -1,11 +1,14 @@
-# Simple example usage for LEMOD-FP
+# Simple example usage for FPsim
 
-import lemod_fp as lfp
+import fpsim as lfp
+import fp_analyses.senegal_parameters as sp
 
 doplot = True
 dosave = False
 
-sim = lfp.Sim()
+pars = sp.make_pars()
+pars['start_year'] = 2010 # Only do a partial run
+sim = lfp.Sim(pars=pars)
 sim.run()
 if doplot:
     sim.plot(dosave=dosave)
