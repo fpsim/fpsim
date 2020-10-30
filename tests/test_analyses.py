@@ -2,7 +2,7 @@
 Ensure that basic analyses at least, like, run. Adapted from covasim/tests/test_examples.py.
 '''
 
-import os
+import sys
 import pylab as pl
 import sciris as sc
 from pathlib import Path
@@ -11,8 +11,7 @@ import importlib.util as iu
 pl.switch_backend('agg') # To avoid graphs from appearing -- if you want them, run the examples directly
 cwd = Path(sc.thisdir(__file__))
 analyses_dir = cwd.joinpath('../fp_analyses')
-
-os.chdir(analyses_dir)
+sys.path.append(analyses_dir) # To enable imports to work
 
 def run_script(name):
     '''
@@ -27,10 +26,12 @@ def run_script(name):
 
 
 def test_run_senegal():
+    # import run_senegal
     run_script("run_senegal")
 
-def test_calibration():
-    run_script("calibration")
+# def test_run_calibration():
+#     import run_calibration
+    # run_script("run_calibration")
 
 
 #%% Run as a script
@@ -39,7 +40,7 @@ if __name__ == '__main__':
     T = sc.tic()
 
     test_run_senegal()
-    test_calibration()
+    # test_run_calibration()
 
     sc.toc(T)
     print('Done.')

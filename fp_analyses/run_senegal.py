@@ -24,7 +24,7 @@ do_plot_model_pyramid = 1
 do_plot_skyscrapers = 1
 do_plot_methods     = 1
 do_plot_spacing     = 1
-do_save             = 1
+do_save             = 0
 
 min_age = 15
 max_age = 50
@@ -37,6 +37,7 @@ def datapath(path):
     ''' Return the path of the parent folder -- TODO: remove duplication with calibration.py'''
     return sc.thisdir(__file__, os.pardir, 'dropbox', path)
 
+pregnancy_parity_file = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file
 pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
 skyscrapers_file = datapath('Skyscrapers-All-DHS.csv')
 methods_file = datapath('Method_v312.csv')
@@ -93,7 +94,7 @@ if do_run:
         model = sim.store_postpartum()
 
         #Load Senegal DHS 2018 data
-        dhs = pd.read_stata('dropbox/SNIR80FL.DTA', convert_categoricals=False)
+        dhs = pd.read_stata(pregnancy_parity_file, convert_categoricals=False)
         dhs = dhs[['v012', 'v213', 'v218']]
         dhs = dhs.rename(columns={'v012': 'Age', 'v213': 'Currently pregnant',
                                   'v218': 'Parity'})  # Parity means # of living children in DHS
