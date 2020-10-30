@@ -2,6 +2,7 @@
 Ensure that basic analyses at least, like, run. Adapted from covasim/tests/test_examples.py.
 '''
 
+import os
 import pylab as pl
 import sciris as sc
 from pathlib import Path
@@ -10,6 +11,8 @@ import importlib.util as iu
 pl.switch_backend('agg') # To avoid graphs from appearing -- if you want them, run the examples directly
 cwd = Path(sc.thisdir(__file__))
 analyses_dir = cwd.joinpath('../fp_analyses')
+
+os.chdir(analyses_dir)
 
 def run_script(name):
     '''
