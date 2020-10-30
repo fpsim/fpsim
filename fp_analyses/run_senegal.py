@@ -2,11 +2,12 @@
 Run all analyses for Senegal.
 '''
 
+import os
 import pylab as pl
 import pandas as pd
 import sciris as sc
 import seaborn as sns
-import lemod_fp as lfp
+import fpsim as lfp
 import senegal_parameters as sp
 
 # Housekeeping
@@ -29,12 +30,20 @@ min_age = 15
 max_age = 50
 bin_size = 5
 year_str = '2017'
-pop_pyr_year_file = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
-skyscrapers_file = sp.abspath('dropbox/Skyscrapers-All-DHS.csv')
-methods_file = sp.abspath('dropbox/Method_v312.csv')
-spacing_file = sp.abspath('dropbox/BirthSpacing.csv')
-popsize_file = sp.abspath('dropbox/senegal-popsize.csv')
-barriers_file = sp.abspath('dropbox/DHSIndividualBarriers.csv')
+
+
+# Files
+def datapath(path):
+    ''' Return the path of the parent folder -- TODO: remove duplication with calibration.py'''
+    return sc.thisdir(__file__, os.pardir, 'dropbox', path)
+
+pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
+skyscrapers_file = datapath('Skyscrapers-All-DHS.csv')
+methods_file = datapath('Method_v312.csv')
+spacing_file = datapath('BirthSpacing.csv')
+popsize_file = datapath('senegal-popsize.csv')
+barriers_file = datapath('DHSIndividualBarriers.csv')
+
 
 if do_run:
     pars = sp.make_pars()
