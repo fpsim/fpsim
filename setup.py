@@ -1,5 +1,11 @@
 import os
+import runpy
 from setuptools import setup, find_packages
+
+# Get version
+cwd = os.path.abspath(os.path.dirname(__file__))
+versionpath = os.path.join(cwd, 'fpsim', 'version.py')
+version = runpy.run_path(versionpath)['__version__']
 
 CLASSIFIERS = [
     "Environment :: Console",
@@ -13,12 +19,12 @@ CLASSIFIERS = [
 ]
 
 setup(
-    name="fp_analyses",
-    version='0.1',
-    author="Cliff Kerr, Daniel Klein",
+    name="fpsim",
+    version=version,
+    author="Annie Valente, Marita Zimmermann, Cliff Kerr, Daniel Klein",
     author_email="ckerr@idmod.org",
-    description="FP analyses",
-    keywords=["EMOD"],
+    description="FPsim and applications",
+    keywords=["Family planning", "agent-based model", "simulation"],
     platforms=["OS Independent"],
     classifiers=CLASSIFIERS,
     packages=find_packages(),
@@ -29,5 +35,7 @@ setup(
         'matplotlib',
         'pandas',
         'sciris',
+        "numba",
+        "seaborn>=0.9",
     ],
 )
