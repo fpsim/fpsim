@@ -6,7 +6,8 @@ import pylab as pl
 import pandas as pd
 import sciris as sc
 import seaborn as sns
-import lemod_fp as lfp
+# import lemod_fp as lfp
+import fpsim.model as lfp
 import senegal_parameters as sp
 
 # Housekeeping
