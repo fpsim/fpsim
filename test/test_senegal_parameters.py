@@ -4,7 +4,7 @@ import os
 import unittest
 from tempfile import TemporaryDirectory
 
-import calibration.senegal_parameters as sp
+import fp_analyses.senegal_parameters as sp
 
 
 class TestSenegalParametersConfiguration(unittest.TestCase):
