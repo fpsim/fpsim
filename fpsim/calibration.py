@@ -71,7 +71,7 @@ class Calibration(sc.prettyobj):
         # Extract ages, currently pregnant, and parity in 2018 in dataframe
         dhs_pregnancy_parity = pd.read_stata(pregnancy_parity_file, convert_categoricals=False)
         dhs_pregnancy_parity = dhs_pregnancy_parity[['v012', 'v213', 'v218']]
-        dhs_pregnancy_parity = dhs_pregnancy_parity.rename(columns={'v012': 'Age', 'v213': 'Currently pregnant',
+        dhs_pregnancy_parity = dhs_pregnancy_parity.rename(columns={'v012': 'Age', 'v213': 'Pregnant',
                                                                     'v218': 'Parity'})  # Parity means # of living children in DHS
         self.dhs_data['pregnancy_parity'] = dhs_pregnancy_parity
 
@@ -139,7 +139,7 @@ class Calibration(sc.prettyobj):
 
         maternal_deaths = pl.cumsum(self.model_results['maternal_deaths'][-mpy * 3:])
         births_last_3_years = pl.cumsum(self.model_results['births'][-mpy * 3:])
-        self.model_to_calib['maternal_mortality_ratio'] = maternal_deaths[-1] / (births_last_3_years[-1] * 100000)
+        self.model_to_calib['maternal_mortality_ratio'] = (maternal_deaths[-1] / births_last_3_years[-1]) * 100000
 
         return
 
@@ -147,7 +147,7 @@ class Calibration(sc.prettyobj):
 
         infant_deaths = pl.cumsum(self.model_results['infant_deaths'][-mpy:])
         births_last_year = pl.cumsum(self.model_results['births'][-mpy:])
-        self.model_to_calib['infant_mortality_rate'] = infant_deaths[-1] / (births_last_year[-1] * 1000)
+        self.model_to_calib['infant_mortality_rate'] = (infant_deaths[-1] / births_last_year[-1]) * 1000
 
         return
 
@@ -156,14 +156,14 @@ class Calibration(sc.prettyobj):
         total_deaths = pl.cumsum(self.model_results['deaths'][-mpy:]) + \
                        pl.cumsum(self.model_results['infant_deaths'][-mpy:]) + \
                        pl.cumsum(self.model_results['maternal_deaths'][-mpy:])
-        self.model_to_calib['crude_death_rate'] = total_deaths[-1] / (self.model_results['pop_size'][-1] * 1000)
+        self.model_to_calib['crude_death_rate'] = (total_deaths[-1] / self.model_results['pop_size'][-1]) * 1000
 
         return
 
     def model_crude_birth_rate(self):
 
         births_last_year = pl.cumsum(self.model_results['births'][-mpy:])
-        self.model_to_calib['crude_birth_rate'] = births_last_year[-1] / (self.model_results['pop_size'][-1] * 1000)
+        self.model_to_calib['crude_birth_rate'] = (births_last_year[-1] / self.model_results['pop_size'][-1]) * 1000
 
         return
 
@@ -223,7 +223,7 @@ class Calibration(sc.prettyobj):
         # From data
         data = pd.read_csv(spacing_file)
 
-        right_year = data['SurveyYear'] == '2010-11'   #TODO - Should be 2017?
+        right_year = data['SurveyYear'] == '2017'   #TODO - Should be 2017?
         not_first = data['Birth Order'] != 0
         is_first = data['Birth Order'] == 0
         filtered = data[(right_year) & (not_first)]

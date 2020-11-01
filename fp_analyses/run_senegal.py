@@ -96,7 +96,7 @@ if do_run:
         #Load Senegal DHS 2018 data
         dhs = pd.read_stata(pregnancy_parity_file, convert_categoricals=False)
         dhs = dhs[['v012', 'v213', 'v218']]
-        dhs = dhs.rename(columns={'v012': 'Age', 'v213': 'Currently pregnant',
+        dhs = dhs.rename(columns={'v012': 'Age', 'v213': 'Pregnant',
                                   'v218': 'Parity'})  # Parity means # of living children in DHS
 
         fig, axes = pl.subplots(3, 2, figsize = (18, 14))
@@ -108,7 +108,7 @@ if do_run:
 
         sns.violinplot(ax = axes[1,0], x='Pregnant', y='Age', data=model).set_title(
             'Age distribution of agents currently pregnant in FP model')
-        sns.violinplot(ax = axes[1,1], x='Currently pregnant', y='Age', data=dhs).set_title(
+        sns.violinplot(ax = axes[1,1], x='Pregnant', y='Age', data=dhs).set_title(
             'Age distribution currently pregnant in 2018 DHS data')
 
         sns.boxplot(ax = axes[2,0], x='Parity', y='Age', data=model).set_title('Age-parity distributions FP model')
