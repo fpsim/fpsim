@@ -2,11 +2,12 @@
 Run all analyses for Senegal.
 '''
 
+import os
 import pylab as pl
 import pandas as pd
 import sciris as sc
 import seaborn as sns
-import lemod_fp as lfp
+import fpsim as lfp
 import senegal_parameters as sp
 
 # Housekeeping
@@ -29,12 +30,22 @@ min_age = 15
 max_age = 50
 bin_size = 5
 year_str = '2017'
-pop_pyr_year_file = sp.abspath('dropbox/Population_Pyramid_-_All.csv')
-skyscrapers_file = sp.abspath('dropbox/Skyscrapers-All-DHS.csv')
-methods_file = sp.abspath('dropbox/Method_v312.csv')
-spacing_file = sp.abspath('dropbox/BirthSpacing.csv')
-popsize_file = sp.abspath('dropbox/senegal-popsize.csv')
-barriers_file = sp.abspath('dropbox/DHSIndividualBarriers.csv')
+
+
+# Files
+def datapath(path):
+    ''' Return the path of the parent folder -- TODO: remove duplication with calibration.py'''
+    return sc.thisdir(__file__, os.pardir, 'dropbox', path)
+
+pregnancy_parity_file = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file
+pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
+skyscrapers_file = datapath('Skyscrapers-All-DHS.csv')
+methods_file = datapath('Method_v312.csv')
+spacing_file = datapath('BirthSpacing.csv')
+popsize_file = datapath('senegal-popsize.csv')
+barriers_file = datapath('DHSIndividualBarriers.csv')
+mcpr_file = datapath('mcpr_senegal.csv')
+
 
 if do_run:
     pars = sp.make_pars()
@@ -84,12 +95,12 @@ if do_run:
         model = sim.store_postpartum()
 
         #Load Senegal DHS 2018 data
-        dhs = pd.read_stata('dropbox/SNIR80FL.DTA', convert_categoricals=False)
+        dhs = pd.read_stata(pregnancy_parity_file, convert_categoricals=False)
         dhs = dhs[['v012', 'v213', 'v218']]
-        dhs = dhs.rename(columns={'v012': 'Age', 'v213': 'Currently pregnant',
+        dhs = dhs.rename(columns={'v012': 'Age', 'v213': 'Pregnant',
                                   'v218': 'Parity'})  # Parity means # of living children in DHS
 
-        fig, axes = pl.subplots(3, 2, figsize = (18, 14))
+        fig, axes = pl.subplots(3, 2, figsize = (16, 12))
 
         #fig.suptitle('FP Sim Model vs DHS data on age, pregnancy, and parity')
 
@@ -98,7 +109,7 @@ if do_run:
 
         sns.violinplot(ax = axes[1,0], x='Pregnant', y='Age', data=model).set_title(
             'Age distribution of agents currently pregnant in FP model')
-        sns.violinplot(ax = axes[1,1], x='Currently pregnant', y='Age', data=dhs).set_title(
+        sns.violinplot(ax = axes[1,1], x='Pregnant', y='Age', data=dhs).set_title(
             'Age distribution currently pregnant in 2018 DHS data')
 
         sns.boxplot(ax = axes[2,0], x='Parity', y='Age', data=model).set_title('Age-parity distributions FP model')
@@ -112,37 +123,40 @@ if do_run:
     if do_plot_popsize:
 
         # Load data
-        popsize_tfr  = pd.read_csv(popsize_file, header=None)
+        popsize_tfr = pd.read_csv(popsize_file, header=None)
+        mcpr = pd.read_csv(mcpr_file, header = None)
 
         # Handle population size
         pop_years = popsize_tfr.iloc[0,:].to_numpy()
-
         popsize = popsize_tfr.iloc[1,:].to_numpy() / sim.pars['n'] # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500
+        mcpr_years = mcpr.iloc[:,0].to_numpy()
+        mcpr_rates = mcpr.iloc[:,1].to_numpy()
 
+        '''
         # Default plots
         fig = sim.plot()
 
         sim.plot_postpartum()
-
+        '''
+        fig = pl.figure(figsize=(16, 16))
+        pl.subplot(2, 1, 1)
+        pl.scatter(pop_years, popsize, c='k', label='Data', zorder=1000)
         # Population size plot
-        ax = fig.axes[0] # First axis on plot
-        ax.scatter(pop_years, popsize, c='k', label='Data', zorder=1000)
-        #pl.legend()
+        #ax = fig.axes[1,0] # First axis on plot
+
+        pl.legend()
+
+        pl.subplot(2, 1, 2) # Second axis on plot
+        pl.scatter(mcpr_years, mcpr_rates, c='k', label='Data', zorder=1000)
+        pl.legend()
+
         if do_save:
             pl.savefig(sp.abspath('figs/senegal_popsize.png'))
-
-        # MCPR -- TODO, copied from senegal_parameters.py
-        mcpr_years = pl.array([1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
-        mcpr_rates = pl.array([2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
-
-        ax = fig.axes[1] # Second axis on plot
-        ax.scatter(mcpr_years, mcpr_rates, c='k', label='Data', zorder=1000)
-        #pl.legend()
 
         #350434.0 <--- Factor previously used to adjust population
 
     if do_plot_pyramids:
-        fig2 = pl.figure(figsize=(16,16))
+        fig = pl.figure(figsize=(16,16))
 
         # Load population pyramid from DHS
         pop_pyr_year  = pd.read_csv(pop_pyr_year_file, header=None)
@@ -385,7 +399,7 @@ if do_run:
         # From data
         data = pd.read_csv(spacing_file)
 
-        right_year = data['SurveyYear']=='2010-11'
+        right_year = data['SurveyYear']=='2017'
         not_first = data['Birth Order'] != 0
         is_first = data['Birth Order'] == 0
         filtered = data[(right_year) & (not_first)]
