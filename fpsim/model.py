@@ -729,7 +729,7 @@ class Sim(base.BaseSim):
                     row['PP0to5'] = 1 if 0 <= person.postpartum_dur < 6 else 0
                     row['PP6to11'] = 1 if 6 <= person.postpartum_dur < 12 else 0
                     row['PP12to23'] = 1 if 12 <= person.postpartum_dur <= 24 else 0
-                row['Currently pregnant'] = 1 if person.pregnant else 0
+                row['Pregnant'] = 1 if person.pregnant else 0
                 row['Parity'] = person.parity
                 rows.append(row)
 
