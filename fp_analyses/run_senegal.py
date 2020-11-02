@@ -24,7 +24,7 @@ do_plot_model_pyramid = 1
 do_plot_skyscrapers = 1
 do_plot_methods     = 1
 do_plot_spacing     = 1
-do_save             = 1
+do_save             = 0
 
 min_age = 15
 max_age = 50
@@ -84,6 +84,13 @@ if do_run:
     sim.run()
     people = list(sim.people.values()) # Pull out people
 
+    # Ensure the figures folder exists
+    if do_save:
+        if not os.path.exists(sp.abspath('figs')):
+            print('No figures folder exists and do_save = True, creating...')
+            os.makedirs(sp.abspath('figs'))
+
+
     #if do_store_postpartum:
 
         #pp = sim.store_postpartum()
@@ -118,7 +125,7 @@ if do_run:
         pl.tight_layout()
 
         if do_save:
-            pl.savefig(sp.abspath('figs/pregnancy_parity.png'))
+            pl.savefig(sp.abspath('figs', 'pregnancy_parity.png'))
 
     if do_plot_popsize:
 
@@ -151,7 +158,7 @@ if do_run:
         pl.legend()
 
         if do_save:
-            pl.savefig(sp.abspath('figs/senegal_popsize.png'))
+            pl.savefig(sp.abspath('figs', 'senegal_popsize.png'))
 
         #350434.0 <--- Factor previously used to adjust population
 
@@ -191,7 +198,7 @@ if do_run:
         sc.setylim()
 
         if do_save:
-            pl.savefig(sp.abspath('figs/senegal_pyramids.png'))
+            pl.savefig(sp.abspath('figs', 'senegal_pyramids.png'))
 
     if do_plot_skyscrapers:
 

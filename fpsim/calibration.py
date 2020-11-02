@@ -136,34 +136,37 @@ class Calibration(sc.prettyobj):
         return
 
     def model_mmr(self):
+        '''
+        Calculate maternal mortality in model over most recent 3 years
+        '''
 
-        maternal_deaths = pl.cumsum(self.model_results['maternal_deaths'][-mpy * 3:])
-        births_last_3_years = pl.cumsum(self.model_results['births'][-mpy * 3:])
-        self.model_to_calib['maternal_mortality_ratio'] = (maternal_deaths[-1] / births_last_3_years[-1]) * 100000
+        maternal_deaths = pl.sum(self.model_results['maternal_deaths'][-mpy * 3:])
+        births_last_3_years = pl.sum(self.model_results['births'][-mpy * 3:])
+        self.model_to_calib['maternal_mortality_ratio'] = (maternal_deaths / births_last_3_years) * 100000
 
         return
 
     def model_infant_mortality_rate(self):
 
-        infant_deaths = pl.cumsum(self.model_results['infant_deaths'][-mpy:])
-        births_last_year = pl.cumsum(self.model_results['births'][-mpy:])
-        self.model_to_calib['infant_mortality_rate'] = (infant_deaths[-1] / births_last_year[-1]) * 1000
+        infant_deaths = pl.sum(self.model_results['infant_deaths'][-mpy:])
+        births_last_year = pl.sum(self.model_results['births'][-mpy:])
+        self.model_to_calib['infant_mortality_rate'] = (infant_deaths / births_last_year) * 1000
 
         return
 
     def model_crude_death_rate(self):
 
-        total_deaths = pl.cumsum(self.model_results['deaths'][-mpy:]) + \
-                       pl.cumsum(self.model_results['infant_deaths'][-mpy:]) + \
-                       pl.cumsum(self.model_results['maternal_deaths'][-mpy:])
-        self.model_to_calib['crude_death_rate'] = (total_deaths[-1] / self.model_results['pop_size'][-1]) * 1000
+        total_deaths = pl.sum(self.model_results['deaths'][-mpy:]) + \
+                       pl.sum(self.model_results['infant_deaths'][-mpy:]) + \
+                       pl.sum(self.model_results['maternal_deaths'][-mpy:])
+        self.model_to_calib['crude_death_rate'] = (total_deaths / self.model_results['pop_size'][-1]) * 1000
 
         return
 
     def model_crude_birth_rate(self):
 
-        births_last_year = pl.cumsum(self.model_results['births'][-mpy:])
-        self.model_to_calib['crude_birth_rate'] = (births_last_year[-1] / self.model_results['pop_size'][-1]) * 1000
+        births_last_year = pl.sum(self.model_results['births'][-mpy:])
+        self.model_to_calib['crude_birth_rate'] = (births_last_year / self.model_results['pop_size'][-1]) * 1000
 
         return
 
