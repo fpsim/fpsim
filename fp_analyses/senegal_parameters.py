@@ -5,7 +5,6 @@ Set the parameters for LEMOD-FP.
 import os
 import pylab as pl
 import sciris as sc
-import pandas as pd
 from scipy import interpolate as si
 
 resolution = 100
@@ -14,9 +13,18 @@ max_age_preg = 50
 
 #%% Helper function
 
-def abspath(path):
+def abspath(path, *args):
+    '''
+    Turn a relative path into an absolute path. Accepts a
+    list of arguments and joins them into a path.
+
+    Example:
+
+        import senegal_parameters as sp
+        figpath = sp.abspath('figs', 'myfig.png')
+    '''
     cwd = os.path.abspath(os.path.dirname(__file__))
-    output = os.path.join(cwd, path)
+    output = os.path.join(cwd, path, *args)
     return output
 
 
@@ -24,7 +32,7 @@ def abspath(path):
 #%% Set parameters for the simulation
 
 def default_age_pyramid():
-    ''' Starting age bin, male population, female population ''' 
+    ''' Starting age bin, male population, female population '''
     # Based on Senegal 1982
     # pyramid = pl.array([[0,  579035, 567499],
     #                     [5,  459255, 452873],
@@ -43,7 +51,7 @@ def default_age_pyramid():
     #                     [70,  21727, 26383],
     #                     [75,  10626, 13542],
     #                     [80,   4766,  6424]])
-    
+
     pyramid = pl.array([ [0,  318225,  314011], # Senegal 1962
                          [5,  249054,  244271],
                         [10,  191209,  190998],
@@ -62,9 +70,9 @@ def default_age_pyramid():
                         [75,  5985,    7390],
                         [80,  2875,    3554],
                     ], dtype=float)
-    
+
     return pyramid
-    
+
 
 def default_age_mortality():
     ''' Age-dependent mortality rates, Senegal specific from 1990-1995 -- see age_dependent_mortality.py in the fp_analyses repository
@@ -111,7 +119,7 @@ def default_age_fertility():
     f15 = 0.1 # Adjustment factor for women aged 15-20
     f20 = 0.5 # Adjustment factor for women aged 20-25
     fertility = {
-            'bins': pl.array([ 0.,  5, 10,         15,         20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]), 
+            'bins': pl.array([ 0.,  5, 10,         15,         20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
             # 'f':    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
             'f':    pl.array([ 0.,  0,  0,   72.7,  180.2,  220.7,  200.0,   152.3,    82.1,    22.0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
     fertility['f'] /= 1000 # Births per thousand to births per woman
@@ -182,7 +190,7 @@ def default_infant_mortality():
     From World Bank indicators for infant morality (< 1 year) for Senegal, per 1000 live births
     From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
     '''
-    
+
     data = pl.array([
         [1960, 128.3],
         [1961, 128.2],
@@ -245,28 +253,28 @@ def default_infant_mortality():
         [2018, 33.6],
         [2019, 32.7],
     ])
-    
+
     infant_mortality = {}
     infant_mortality['year'] = data[:,0]
     infant_mortality['probs'] = data[:,1]/1000   # Rate per 1000 live births
-    
+
     return infant_mortality
 
-'''' 
+''''
 def default_methods():
     methods = {}
-    
-    methods['map'] = {'None':0, 
-                    'Lactation':1, 
-                    'Implants':2, 
-                    'Injectables':3, 
-                    'IUDs':4, 
-                    'Pill':5, 
-                    'Condoms':6, 
-                    'Other':7, 
+
+    methods['map'] = {'None':0,
+                    'Lactation':1,
+                    'Implants':2,
+                    'Injectables':3,
+                    'IUDs':4,
+                    'Pill':5,
+                    'Condoms':6,
+                    'Other':7,
                     'Traditional':8} # Add 'Novel'?
     methods['names'] = list(methods['map'].keys())
-    
+
     methods['matrix'] = pl.array([
        [8.81230657e-01, 0.00000000e+00, 9.56761433e-04, 1.86518124e-03,        1.44017774e-04, 8.45978530e-04, 1.80273996e-04, 1.61138768e-05,        1.46032008e-04],
        [2.21565806e-05, 1.52074712e-04, 2.01423460e-06, 3.02135189e-06,        0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,        0.00000000e+00],
@@ -277,17 +285,17 @@ def default_methods():
        [8.35907357e-05, 0.00000000e+00, 5.03558649e-06, 6.04270379e-06,        2.01423460e-06, 3.02135189e-06, 3.94689269e-03, 2.01423460e-06,        1.00711730e-06],
        [1.20854076e-05, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,        0.00000000e+00, 0.00000000e+00, 3.02135189e-06, 1.74432716e-03,        1.00711730e-06],
        [4.93487476e-05, 0.00000000e+00, 2.01423460e-06, 4.02846919e-06,        0.00000000e+00, 2.01423460e-06, 0.00000000e+00, 0.00000000e+00,        4.45145846e-03]])
-    
+
     methods['matrix'][0,0] *= 0.53 # Correct for 2015
-    
+
     methods['mcpr_years'] = pl.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
-    
+
     mcpr_rates = pl.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
     # mcpr_rates /= 100
     # methods['mcpr_multipliers'] = (1-mcpr_rates)**2.0
 
     methods['trend'] = mcpr_rates[5]/mcpr_rates # normalize trend around 2005 so "no method to no method" matrix entry will increase or decrease based on mcpr that year
-    
+
     methods['mcpr_multipliers'] = 10/mcpr_rates # No idea why it should be this...
 
     return methods
@@ -417,7 +425,7 @@ def default_methods_postpartum():
     methods_postpartum['trend'] = mcpr_rates[-1] / mcpr_rates  # normalize trend around 2005 so "no method to no method" matrix entry will increase or decrease based on mcpr that year
 
     return methods_postpartum
-    
+
 def default_efficacy():
     ''' From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
     BTL failure rate from general published data'''
@@ -436,14 +444,14 @@ def default_efficacy():
             })
 
     # method_efficacy[:] = 100 # To disable contraception
-    
+
     method_efficacy = method_efficacy[:]/100
-    
+
     # for key,value in method_efficacy.items():
     #     method_efficacy[key] = method_efficacy[key]/100
-    
+
     # assert method_efficacy.keys() == default_methods() # Ensure ordering
-    
+
     return method_efficacy
 
 
@@ -455,7 +463,7 @@ def default_barriers():
           'Access'    :   4.5,
           'Health'    :  12.9,
         })
-    barriers[:] /= barriers[:].sum() # Ensure it adds to 1    
+    barriers[:] /= barriers[:].sum() # Ensure it adds to 1
     return barriers
 
 def default_sexual_activity():
@@ -616,7 +624,7 @@ def make_pars():
     pars['timestep'] = 1 # Timestep in months  DO NOT CHANGE
     pars['verbose'] = True
     pars['seed'] = 1 # Random seed, if None, don't reset
-    
+
     # Complicated parameters
     pars['methods']            = default_methods()
     pars['methods_postpartum'] = default_methods_postpartum()
