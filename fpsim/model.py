@@ -106,13 +106,24 @@ class Person(base.ParsObj):
         continue or discontinue by 6 months postpartum.  Next opportunity to switch
         methods will be on whole calendar years, whenever that falls'''
 
-        if 0 <= self.postpartum_dur <= 3: # From 0 - 3 months postpartum
-            choices_from_birth = self.pars['methods_postpartum']['start_postpartum']
+        if 0 <= self.postpartum_dur <= 3: # From 0 - 3 months postpartum, initiating a postpartum method
+            if self.age < 18:
+                choices_from_birth = self.pars['methods_postpartum']['<18']
+            elif 18 < self.age <= 20:
+                choices_from_birth = self.pars['methods_postpartum']['18-20']
+            elif 20 < self.age <= 25:
+                choices_from_birth = self.pars['methods_postpartum']['21-25']
+            elif self.age > 25:
+                choices_from_birth = self.pars['methods_postpartum']['>25']
+            else:
+                raise Exception('Agent age does not match choice matrix options')
+
             self.method = utils.mt(choices_from_birth)
 
-        if 3 < self.postpartum_dur <=6:  # From 4-6 months postpartum
+        if 3 < self.postpartum_dur <=6:  # From 4-6 months postpartum, switching or discontinuing postpartum
             orig_method = self.method
             choices_postpartum = self.pars['methods_postpartum']['switch_postpartum'][orig_method]
+
             self.method = utils.mt(choices_postpartum)
 
         return
@@ -128,8 +139,6 @@ class Person(base.ParsObj):
             self.step_results['died'] = True
 
         return
-
-
 
     def check_sexually_active(self):
         '''
@@ -200,7 +209,6 @@ class Person(base.ParsObj):
                 return
 
             self.pregnant = True
-            #self.method = 0  # if commented out, postpartum women will go back to whatever they were using pre-conception as their original method
             self.gestation = 0  # Start the counter at 0 to allow full 9 months gestation
             self.preg_dur = (np.random.randint(self.pars['preg_dur'][0], self.pars['preg_dur'][1] + 1))  # Duration of this pregnancy
             self.postpartum = False
@@ -424,6 +432,7 @@ class Sim(base.BaseSim):
         self.results['tfr_years'] = []
         self.results['tfr_rates'] = []
         self.results['pop_size'] = []
+        self.results['mcpr_by_year'] = []
         return
 
     def get_age_sex(self):
@@ -481,37 +490,37 @@ class Sim(base.BaseSim):
         return
 
 
-    def update_methods_matrix(self, y):
+    def update_methods_matrices(self, y):
 
         switch_general = {}
+        start_postpartum = {}
 
+        ind = sc.findnearest(self.pars['methods']['mcpr_years'], y)  # Find the closest year to the timestep we are on
+
+        # Update general population switching matrices for current year mCPR - stratified by age
         for key, val in self.pars['methods']['probs_matrix'].items():
             switch_general[key] = sc.dcp(val)
-            ind = sc.findnearest(self.pars['methods']['mcpr_years'], y)  # Find the closest year to the timestep we are on
             switch_general[key][0, 0] *= self.pars['methods']['trend'][ind]  # Takes into account mCPR during year of sim
             for i in range(len(switch_general[key])):
                 switch_general[key][i] = switch_general[key][i, :] / switch_general[key][i,
                                                            :].sum()  # Normalize so probabilities add to 1
             self.pars['methods'][key] = switch_general[key]
 
-        return
+        # Update postpartum initiation matrices for current year mCPR - stratified by age
+        for key, val in self.pars['methods_postpartum']['probs_matrix_0-3'].items():
+            start_postpartum[key] = sc.dcp(val)
+            start_postpartum[key][0] *= self.pars['methods_postpartum']['trend'][ind]
+            start_postpartum[key] = start_postpartum[key] / start_postpartum[key].sum()
+            self.pars['methods_postpartum'][key] = start_postpartum[key]  # 1d array for probs coming from birth, binned by age
 
-    def update_methods_matrix_postpartum(self, y):
-
-        start_postpartum = sc.dcp(self.pars['methods_postpartum']['probs_matrix_0-3'])
+        # Update postpartum switching or discontinuation matrices - not age stratified
         switch_postpartum = sc.dcp(self.pars['methods_postpartum']['probs_matrix_4-6'])
-
-        ind = sc.findnearest(self.pars['methods_postpartum']['mcpr_years'], y)  # Find the closest year to the timestep we are on
-
-        start_postpartum[0] *= self.pars['methods_postpartum']['trend'][ind]
-        switch_postpartum[0,0] *= self.pars['methods_postpartum']['trend'][ind]
-
-        start_postpartum = start_postpartum / start_postpartum.sum()  # Normalize so probs add to 1
-        self.pars['methods_postpartum']['start_postpartum'] = start_postpartum   # 1d array for probs coming from birth
-
+        switch_postpartum[0, 0] *= self.pars['methods_postpartum']['trend'][ind]
         for i in range(len(switch_postpartum)):
-            switch_postpartum[i] = switch_postpartum[i,:] / switch_postpartum[i,:].sum() # Normalize so probabilities add to 1
-        self.pars['methods_postpartum']['switch_postpartum'] = switch_postpartum  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
+            switch_postpartum[i] = switch_postpartum[i, :] / switch_postpartum[i,
+                                                             :].sum()  # Normalize so probabilities add to 1
+        self.pars['methods_postpartum'][
+            'switch_postpartum'] = switch_postpartum  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
 
         return
 
@@ -547,9 +556,8 @@ class Sim(base.BaseSim):
                 if sc.approx(t, int(t), eps=0.01):
                     print(f'  Running {y:0.0f} of {self.pars["end_year"]}...')
 
-            # Update switching and mortality
-            self.update_methods_matrix(y)
-            self.update_methods_matrix_postpartum(y)
+            # Update method matrices for year of sim
+            self.update_methods_matrices(y)
 
             # Update each person
             deaths = 0
@@ -618,14 +626,18 @@ class Sim(base.BaseSim):
                 births_over_year = pl.sum(self.results['births'][start_index:stop_index])  # Grabs sum of birth over the last 12 months of calendar year
                 self.results['tfr_rates'].append(35*(births_over_year/self.results['total_women_fecund'][i]))
                 self.results['pop_size'].append(self.n)
+                self.results['mcpr_by_year'].append(self.results['mcpr'][i])
 
         self.results['tfr_rates'] = pl.array(self.results['tfr_rates']) # Store TFR rates for each year of model
         self.results['tfr_years'] = pl.array(self.results['tfr_years']) # Save an array of whole years that model runs (ie, 1950, 1951...)
         self.results['pop_size'] = pl.array(self.results['pop_size'])  # Store population size array in years and not months for calibration
+        self.results['mcpr_by_year'] = pl.array(self.results['mcpr_by_year'])
 
         for person in self.people.values():
             if person.lactating:
                 person.reset_breastfeeding()
+
+        print(f'Final population size: {self.n}.  Population size target for 5000 agents running 1960 to 2019: 25,410')
 
         elapsed = sc.toc(T, output=True)
         print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
@@ -723,8 +735,8 @@ class Sim(base.BaseSim):
                 else:
                     y = res[key]
                 pl.plot(x, y, label=label, **plotargs)
-                if key == 'pop_size_months':
-                    pl.scatter(self.pars['pop_years'], self.pars['pop_size'], **plotargs)
+                #if key == 'pop_size_months':
+                    #pl.scatter(self.pars['pop_years'], self.pars['pop_size'], **plotargs)
             utils.fixaxis(useSI=useSI)
             if key == 'mcpr':
                 pl.ylabel('Percentage')

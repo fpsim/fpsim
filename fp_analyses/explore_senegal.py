@@ -95,7 +95,6 @@ def print_demographics(results):
         infant_deaths = pl.sum(results['infant_deaths'][-12:])
         maternal_deaths = pl.sum(results['maternal_deaths'][-36:])
         births_last_year = pl.sum(results['births'][-12:])
-        print(f'Array of births last year: {results["births"][-12:]}')
         births_last_3_years = pl.sum(results['births'][-36:])
         print(f'Total infant mortality rate in model: {(infant_deaths/births_last_year)*1000}.  Infant mortality rate 2015 Senegal: 36.4')
         print(f'Total maternal death rate in model: {(maternal_deaths/births_last_3_years)*100000}.  Maternal mortality ratio 2015 Senegal: 315 ')

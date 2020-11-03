@@ -154,3 +154,5 @@ demographics.json
 campaign.json
 *.dtk
 .DS_Store
+.DS_Store
+dropbox/.DS_Store

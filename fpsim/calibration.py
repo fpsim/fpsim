@@ -83,8 +83,8 @@ class Calibration(sc.prettyobj):
 
         # Extract tfr over time
         tfr = pd.read_csv(tfr_file, header = None)  # From DHS
-        self.dhs_data['tfr_years'] = tfr.iloc[0,:].to_numpy()
-        self.dhs_data['total_fertility_rate'] = tfr.iloc[1,:].to_numpy()
+        self.dhs_data['tfr_years'] = tfr.iloc[:,0].to_numpy()
+        self.dhs_data['total_fertility_rate'] = tfr.iloc[:,0].to_numpy()
 
         return
 
@@ -178,7 +178,7 @@ class Calibration(sc.prettyobj):
 
     def model_tfr(self):
 
-        self.model_to_calib['total_fertility_rate'] = self.model_results['tfr']
+        self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
         self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
 
     def extract_skyscrapers(self):

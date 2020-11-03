@@ -18,13 +18,14 @@ pl.rcParams['font.size'] = 10
 do_run              = 1
 do_store_postpartum = 1
 do_plot_pregnancy_parity = 1
+do_print_demographics = 1
 do_plot_popsize     = 1
 do_plot_pyramids    = 1
 do_plot_model_pyramid = 1
 do_plot_skyscrapers = 1
 do_plot_methods     = 1
 do_plot_spacing     = 1
-do_save             = 0
+do_save             = 1
 
 min_age = 15
 max_age = 50
@@ -82,6 +83,7 @@ if do_run:
 
     # sim = lfp.multi_run(sim, n=1)
     sim.run()
+    sim.plot()
     people = list(sim.people.values()) # Pull out people
 
     # Ensure the figures folder exists
@@ -127,38 +129,65 @@ if do_run:
         if do_save:
             pl.savefig(sp.abspath('figs', 'pregnancy_parity.png'))
 
+    if do_print_demographics:
+
+        # Load model results
+        res = sim.store_results()
+
+        total_deaths = pl.sum(res['deaths'][-12:]) + \
+                       pl.sum(res['infant_deaths'][-12:]) + \
+                       pl.sum(res['maternal_deaths'][-12:])
+        print(f'Crude death rate per 1,000 inhabitants: {(total_deaths / res["pop_size"][-1]) * 1000}')
+        infant_deaths = pl.sum(res['infant_deaths'][-12:])
+        maternal_deaths = pl.sum(res['maternal_deaths'][-36:])
+        births_last_year = pl.sum(res['births'][-12:])
+        births_last_3_years = pl.sum(res['births'][-36:])
+        print(
+            f'Total infant mortality rate in model: {(infant_deaths / births_last_year) * 1000}.  Infant mortality rate 2015 Senegal: 36.4')
+        print(
+            f'Total maternal death rate in model: {(maternal_deaths / births_last_3_years) * 100000}.  Maternal mortality ratio 2015 Senegal: 315 ')
+        print(
+            f'Crude birth rate per 1000 inhabitants in model: {(births_last_year / res["pop_size"][-1]) * 1000}.  Crude birth rate Senegal 2018: 34.52 per 1000 inhabitants')
+        print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
+        print(f'TFR rates in 2015: {res["tfr_rates"][-5]}.  TFR in Senegal in 2015: 4.84')
+
     if do_plot_popsize:
 
         # Load data
-        popsize_tfr = pd.read_csv(popsize_file, header=None)
+        popsize = pd.read_csv(popsize_file, header=None)
         mcpr = pd.read_csv(mcpr_file, header = None)
 
-        # Handle population size
-        pop_years = popsize_tfr.iloc[0,:].to_numpy()
-        popsize = popsize_tfr.iloc[1,:].to_numpy() / sim.pars['n'] # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500
-        mcpr_years = mcpr.iloc[:,0].to_numpy()
-        mcpr_rates = mcpr.iloc[:,1].to_numpy()
+        # Handle population size and mcpr from data
+        pop_years_data = popsize.iloc[0,:].to_numpy()
+        popsize_data = popsize.iloc[1,:].to_numpy() / 5000 # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500  <-- Leftover from Cliff
+        mcpr_years_data = mcpr.iloc[:,0].to_numpy()
+        mcpr_rates_data = mcpr.iloc[:,1].to_numpy()
 
-        '''
-        # Default plots
-        fig = sim.plot()
+        # Handle population size and mcpr from model
+        pop_years_model = res['tfr_years']
+        popsize_model = res['pop_size']
+        mcpr_years_model = res['tfr_years']
+        mcpr_rates_model = res['mcpr_by_year']
 
-        sim.plot_postpartum()
-        '''
         fig = pl.figure(figsize=(16, 16))
-        pl.subplot(2, 1, 1)
-        pl.scatter(pop_years, popsize, c='k', label='Data', zorder=1000)
         # Population size plot
+        pl.subplot(2, 1, 1)
+        pl.plot(pop_years_model, popsize_model, c = 'b', label = 'Model')
+        pl.scatter(pop_years_data, popsize_data, c='k', label='Data', zorder=1000)
+        pl.suptitle('Population growth')
+
         #ax = fig.axes[1,0] # First axis on plot
 
         pl.legend()
 
         pl.subplot(2, 1, 2) # Second axis on plot
-        pl.scatter(mcpr_years, mcpr_rates, c='k', label='Data', zorder=1000)
+        pl.plot(mcpr_years_model, mcpr_rates_model, c = 'b', label = 'Model')
+        pl.scatter(mcpr_years_data, mcpr_rates_data, c='k', label='Data', zorder=1000)
+        pl.suptitle('mCPR over time')
         pl.legend()
 
         if do_save:
-            pl.savefig(sp.abspath('figs', 'senegal_popsize.png'))
+            pl.savefig(sp.abspath('figs', 'senegal_popsize-mcpr.png'))
 
         #350434.0 <--- Factor previously used to adjust population
 
