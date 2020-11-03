@@ -429,7 +429,7 @@ def default_methods_postpartum():
 
     mcpr_rates = pl.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
 
-    methods_postpartum['trend'] = mcpr_rates[-1] / mcpr_rates  # normalize trend around 2005 so "no method to no method" matrix entry will increase or decrease based on mcpr that year
+    methods_postpartum['trend'] = mcpr_rates[-1] / mcpr_rates  # normalize trend around 2017 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods_postpartum
 

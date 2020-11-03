@@ -85,8 +85,10 @@ class Person(base.ParsObj):
             matrix = self.pars['methods']['18-20']
         elif 20 < self.age <= 25:
             matrix = self.pars['methods']['21-25']
-        else:
+        elif self.age > 25:
             matrix = self.pars['methods']['>25']
+        else:
+            raise Exception('Agent age does not match choice matrix options')
 
         #matrix = self.pars['methods']['switch_general']   Use if going back to non-age stratified
         choices = matrix[orig_method]
@@ -483,7 +485,6 @@ class Sim(base.BaseSim):
 
         switch_general = {}
 
-        '''
         for key, val in self.pars['methods']['probs_matrix'].items():
             switch_general[key] = sc.dcp(val)
             ind = sc.findnearest(self.pars['methods']['mcpr_years'], y)  # Find the closest year to the timestep we are on
@@ -491,53 +492,7 @@ class Sim(base.BaseSim):
             for i in range(len(switch_general[key])):
                 switch_general[key][i] = switch_general[key][i, :] / switch_general[key][i,
                                                            :].sum()  # Normalize so probabilities add to 1
-            self.pars['methods']['key'] = switch_general[key]
-        '''
-
-        switch_general['<18'] = sc.dcp(self.pars['methods']['probs_matrix']['<18'])
-        ind = sc.findnearest(self.pars['methods']['mcpr_years'], y)  # Find the closest year to the timestep we are on
-        switch_general['<18'][0,0] *= self.pars['methods']['trend'][ind] # Takes into account mCPR during year of sim
-        for i in range(len(switch_general['<18'])):
-            switch_general['<18'][i] = switch_general['<18'][i,:] / switch_general['<18'][i,:].sum() # Normalize so probabilities add to 1
-        self.pars['methods']['<18'] = switch_general['<18']
-
-        switch_general['18-20'] = sc.dcp(self.pars['methods']['probs_matrix']['18-20'])
-        ind = sc.findnearest(self.pars['methods']['mcpr_years'],
-                                 y)  # Find the closest year to the timestep we are on
-        switch_general['18-20'][0, 0] *= self.pars['methods']['trend'][ind]  # Takes into account mCPR during year of sim
-        for i in range(len(switch_general['18-20'])):
-            switch_general['18-20'][i] = switch_general['18-20'][i, :] / switch_general['18-20'][i,
-                                                                        :].sum()  # Normalize so probabilities add to 1
-        self.pars['methods']['18-20'] = switch_general['18-20']
-
-        switch_general['21-25'] = sc.dcp(self.pars['methods']['probs_matrix']['21-25'])
-        ind = sc.findnearest(self.pars['methods']['mcpr_years'],
-                                 y)  # Find the closest year to the timestep we are on
-        switch_general['21-25'][0, 0] *= self.pars['methods']['trend'][
-                ind]  # Takes into account mCPR during year of sim
-        for i in range(len(switch_general['21-25'])):
-                switch_general['21-25'][i] = switch_general['21-25'][i, :] / switch_general['21-25'][i,
-                                                                            :].sum()  # Normalize so probabilities add to 1
-        self.pars['methods']['21-25'] = switch_general['21-25']
-
-        switch_general['>25'] = sc.dcp(self.pars['methods']['probs_matrix']['>25'])
-        ind = sc.findnearest(self.pars['methods']['mcpr_years'],
-                                 y)  # Find the closest year to the timestep we are on
-        switch_general['>25'][0, 0] *= self.pars['methods']['trend'][
-                ind]  # Takes into account mCPR during year of sim
-        for i in range(len(switch_general['>25'])):
-            switch_general['>25'][i] = switch_general['>25'][i, :] / switch_general['>25'][i,
-                                                                            :].sum()  # Normalize so probabilities add to 1
-        self.pars['methods']['>25'] = switch_general['>25']
-
-        '''
-        switch_general = sc.dcp(self.pars['methods']['probs_matrix'])
-        ind = sc.findnearest(self.pars['methods']['mcpr_years'], y)  # Find the closest year to the timestep we are on
-        switch_general[0, 0] *= self.pars['methods']['trend'][ind]  # Takes into account mCPR during year of sim
-        for i in range(len(switch_general)):
-            switch_general[i] = switch_general[i, :] / switch_general[i,:].sum()  # Normalize so probabilities add to 1
-        self.pars['methods']['switch_general'] = switch_general
-        '''
+            self.pars['methods'][key] = switch_general[key]
 
         return
 

@@ -44,14 +44,19 @@ def run_model():
 
 def plot_tfr(results):
 
+        tfr = pd.read_csv(tfr_file, header=None)  # From DHS
+        data_tfr_years = tfr.iloc[:,0].to_numpy()
+        data_tfr = tfr.iloc[:,1].to_numpy()
+
         x = results['tfr_years']
         y = results['tfr_rates']
 
         pl.plot(x, y, label = 'Total fertility rates')
+        pl.scatter(data_tfr_years, data_tfr)
 
         pl.xlabel('Year')
-        pl.ylabel('Total fertility rate')
-        pl.title('Total fertility rate in model', fontweight = 'bold')
+        pl.ylabel('Total fertility rate - children per woman')
+        pl.title('Total fertility rate in model compared data - Senegal', fontweight = 'bold')
 
         pl.show()
 
