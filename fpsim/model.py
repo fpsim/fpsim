@@ -419,9 +419,9 @@ class Sim(base.BaseSim):
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
-        self.tfr_years = []
-        self.tfr_rates = []
-        self.pop_size = []
+        self.results['tfr_years'] = []
+        self.results['tfr_rates'] = []
+        self.results['pop_size'] = []
         return
 
     def get_age_sex(self):
@@ -634,13 +634,10 @@ class Sim(base.BaseSim):
 
             self.n = len(self.people) - deaths # Calculate new population size
 
-
             percent0to5 = (pp0to5 / total_women_fecund) * 100
             percent6to11 = (pp6to11 / total_women_fecund) * 100
             percent12to23 = (pp12to23 / total_women_fecund) * 100
             nonpostpartum = ((total_women_fecund - pp0to5 - pp6to11 - pp12to23)/total_women_fecund) * 100
-
-
 
             # Store results
             self.results['t'][i]                = self.tvec[i]
@@ -657,43 +654,23 @@ class Sim(base.BaseSim):
             self.results['pp12to23'][i]           = percent12to23
             self.results['nonpostpartum'][i]      = nonpostpartum
             self.results['total_women_fecund'][i] = total_women_fecund
-            #self.results['tfr'][i]               = tfr_year
 
             # Calculate TFR over the last year in the model and save whole years and tfr rates to an array
             if i % mpy == 0:
-                self.tfr_years.append(y)
+                self.results['tfr_years'].append(y)
                 start_index = (int(t)-1)*mpy
                 stop_index = int(t)*mpy
                 births_over_year = pl.sum(self.results['births'][start_index:stop_index])  # Grabs sum of birth over the last 12 months of calendar year
-                self.tfr_rates.append(35*(births_over_year/self.results['total_women_fecund'][i]))
-                self.pop_size.append(self.n)
+                self.results['tfr_rates'].append(35*(births_over_year/self.results['total_women_fecund'][i]))
+                self.results['pop_size'].append(self.n)
 
-        tfr = pl.array(self.tfr_rates)
-        tfr_years = pl.array(self.tfr_years)
-        pop_size = pl.array(self.pop_size)
-        self.results['tfr'] = tfr
-        self.results['tfr_years'] = tfr_years
-        self.results['pop_size'] = pop_size
-
-        total_deaths = pl.sum(self.results['deaths'][-12:]) +\
-                       pl.sum(self.results['infant_deaths'][-12:]) +\
-                       pl.sum(self.results['maternal_deaths'][-12:])
-        print(f'Crude death rate per 1,000 inhabitants: {(total_deaths/pop_size)*1000}.  Total deaths:  {total_deaths}')  # Deaths in the last year
-        infant_deaths = pl.sum(self.results['infant_deaths'][-12:])
-        maternal_deaths = pl.sum(self.results['maternal_deaths'][-36:])
-        births_last_year = pl.sum(self.results['births'][-12:])
-        print(f'Array of births last year: {self.results["births"][-12:]}')
-        births_last_3_years = pl.sum(self.results['births'][-36:])
-        print(f'Total infant mortality rate in model: {(infant_deaths/births_last_year)*1000}.  Infant death rate 2015 Senegal: 36.4')
-        print(f'Total maternal death rate in model: {(maternal_deaths/births_last_3_years)*100000}.  Maternal mortality ratio 2015 Senegal: 315 ')
-        print(f'Crude birth rate per 1000 inhabitants in model: {(births_last_year/pop_size)*1000}.  Crude birth rate Senegal 2018: 34.52 per 1000 inhabitants')
-        print(f'Final percent non-postpartum : {nonpostpartum}')
-        print(f'TFR rates over last 10 years: {self.tfr_rates[-10:]}')
+        self.results['tfr_rates'] = pl.array(self.results['tfr_rates']) # Store TFR rates for each year of model
+        self.results['tfr_years'] = pl.array(self.results['tfr_years']) # Save an array of whole years that model runs (ie, 1950, 1951...)
+        self.results['pop_size'] = pl.array(self.results['pop_size'])  # Store population size array in years and not months for calibration
 
         for person in self.people.values():
             if person.lactating:
                 person.reset_breastfeeding()
-
 
         elapsed = sc.toc(T, output=True)
         print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
@@ -705,50 +682,10 @@ class Sim(base.BaseSim):
 
         return self.results
 
-    def plot_tfr(self):
-
-        x = pl.array(self.tfr_years)
-        y = pl.array(self.tfr_rates)
-
-        pl.plot(x, y, label = 'Total fertility rates')
-
-        pl.xlabel('Year')
-        pl.ylabel('Total fertility rate')
-        pl.title('Total fertility rate in model', fontweight = 'bold')
-
-        pl.show()
-
-        return
-
-    def plot_postpartum(self):
-
-        '''Creates a plot over time of various postpartum states in the model'''
-
-        x = self.results['t']
-        y1 = self.results['pp0to5']
-        y2 = self.results['pp6to11']
-        y3 = self.results['pp12to23']
-        y4 = self.results['nonpostpartum']
-
-        pl.plot(x, y1, label = 'Postpartum 0-5 months')
-        pl.plot(x, y2, label = 'Postpartum 6-11 months')
-        pl.plot(x, y3, label = 'Postpartum 12-23 months')
-        pl.plot(x, y4, label = 'Non-postpartum')
-
-        pl.xlabel('Year')
-        pl.ylabel('Percent')
-        pl.legend(loc = 'best')
-        pl.title('Percent women age 15-49 in postpartum states', fontweight = 'bold')
-
-        pl.show()
-
-        return
-
-
     def store_postpartum(self):
 
         '''Stores snapshot of who is currently pregnant, their parity, and various
-        postpartum states for use in calibration'''
+        postpartum states in final step of model for use in calibration'''
 
         min_age = 12.5
         max_age = self.pars['age_limit_fecundity']
@@ -772,7 +709,6 @@ class Sim(base.BaseSim):
         pp = pd.DataFrame(rows, index = None, columns = ['Age', 'PP0to5', 'PP6to11', 'PP12to23', 'NonPP', 'Pregnant', 'Parity'])
         pp.fillna(0, inplace=True)
         return pp
-
 
     def plot(self, dosave=None, figargs=None, plotargs=None, axisargs=None, as_years=True):
         '''
