@@ -2,10 +2,15 @@
 Set the parameters for LEMOD-FP.
 '''
 
+import json
 import os
 import pylab as pl
 import sciris as sc
 from scipy import interpolate as si
+
+
+DEFAULT_CONFIGURATION_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
+DEFAULTS_FILE = os.path.join(os.path.dirname(__file__), 'defaults.json')
 
 resolution = 100
 max_age = 99
@@ -28,8 +33,7 @@ def abspath(path, *args):
     return output
 
 
-
-#%% Set parameters for the simulation
+# %% Set parameters for the simulation
 
 def default_age_pyramid():
     ''' Starting age bin, male population, female population '''
@@ -260,7 +264,8 @@ def default_infant_mortality():
 
     return infant_mortality
 
-''''
+
+'''' 
 def default_methods():
     methods = {}
 
@@ -300,6 +305,7 @@ def default_methods():
 
     return methods
 '''
+
 
 def default_methods():
     methods = {}
@@ -387,6 +393,7 @@ def default_methods():
 
     return methods
 
+
 def default_methods_postpartum():
     methods_postpartum = {}
 
@@ -425,6 +432,7 @@ def default_methods_postpartum():
     methods_postpartum['trend'] = mcpr_rates[-1] / mcpr_rates  # normalize trend around 2005 so "no method to no method" matrix entry will increase or decrease based on mcpr that year
 
     return methods_postpartum
+
 
 def default_efficacy():
     ''' From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
@@ -465,6 +473,7 @@ def default_barriers():
         })
     barriers[:] /= barriers[:].sum() # Ensure it adds to 1
     return barriers
+
 
 def default_sexual_activity():
     '''
@@ -545,6 +554,7 @@ def default_lactational_amenorrhea():
 
     return lactational_amenorrhea
 
+
 def default_miscarriage_rates():
     '''
     Returns a linear interpolation of the likelihood of a miscarriage
@@ -562,6 +572,7 @@ def default_miscarriage_rates():
     miscarriage_interp = pl.minimum(1, pl.maximum(0, miscarriage_interp))
 
     return miscarriage_interp
+
 
 def default_fecundity_ratio_nullip():
     '''
@@ -589,6 +600,7 @@ def default_exposure_correction_age():
 
     return exposure_correction_age
 
+
 def default_exposure_correction_parity():
     '''
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
@@ -600,30 +612,103 @@ def default_exposure_correction_parity():
 
     return exposure_correction_parity
 
-def make_pars():
+
+def load_configuration_file(configuration_file=None):
+    if configuration_file is None:
+        configuration_file = DEFAULT_CONFIGURATION_FILE
+    try:
+        with open(configuration_file, 'r') as f:
+            parameters = json.load(f)
+    except FileNotFoundError as e:
+        e.args = (f'Required configuration file: {configuration_file} not found.',)
+        raise e
+    return parameters
+
+
+def load_defaults_file(defaults_file=None):
+    if defaults_file is None:
+        defaults_file = DEFAULTS_FILE
+    return load_configuration_file(configuration_file=defaults_file)
+
+
+def set_fertility_variation(input_parameters, all_parameters, defaults):
+    # Multiplicative range of fertility factors, from confidence intervals from PRESTO study, adjusted from 0.9-1.1 to account for calibration to data
+    low = get_parameter(parameters=input_parameters, parameter='fertility_variation_low', defaults=defaults)
+    high = get_parameter(parameters=input_parameters, parameter='fertility_variation_high', defaults=defaults)
+    all_parameters['fertility_variation'] = [low, high]
+
+
+def set_pregnancy_duration(input_parameters, all_parameters, defaults):
+    # Duration of a pregnancy, in months
+    low = get_parameter(parameters=input_parameters, parameter='preg_dur_low', defaults=defaults)
+    high = get_parameter(parameters=input_parameters, parameter='preg_dur_high', defaults=defaults)
+    all_parameters['preg_dur'] = [low, high]
+
+
+def set_breastfeeding_duration(input_parameters, all_parameters, defaults):
+    # range in duration of breastfeeding per pregnancy, in months
+    low = get_parameter(parameters=input_parameters, parameter='breastfeeding_dur_low', defaults=defaults)
+    high = get_parameter(parameters=input_parameters, parameter='breastfeeding_dur_high', defaults=defaults)
+    all_parameters['breastfeeding_dur'] = [low, high]
+
+
+def get_parameter(parameters, parameter, defaults):
+    value = parameters.pop(parameter, None)
+    try:
+        default = defaults.pop(parameter)
+    except KeyError as e:
+        e.args = (f'Unknown input parameter: {parameter} in configuration file.',)
+        raise e
+
+    value = default if value is None else value
+    return value
+
+# leaving this here for now to keep the default-related comments
+# DEFAULT_PARAMETERS = {
+#     'name': 'Default',
+#     'n': 5000,  # Number of people in the simulation -- for comparing data from Impact 2
+#     'start_year': 1950,
+#     'end_year': 2015,
+#     'timestep': 1, # Timestep in months  DO NOT CHANGE
+#     'verbose': True,
+#
+#     'fertility_variation_low': 0.3,
+#     'fertility_variation_high': 1.3,
+#     'method_age': 15,  # When people start choosing a method
+#     'max_age': 99,
+#     'preg_dur_low': 9,
+#     'preg_dur_high': 9,
+#     'switch_frequency': 3,  # Number of months that pass before an agent can select a new method
+#     'breastfeeding_dur_low': 1,
+#     'breastfeeding_dur_high': 24,
+#     'age_limit_fecundity': 50,
+#     'postpartum_length': 24,  # Extended postpartum period, for tracking
+#     'postpartum_infecund_0-5': 0.65,  # Data from https://www.contraceptionjournal.org/action/showPdf?pii=S0010-7824%2815%2900101-8
+#     'postpartum_infecund_6-11': 0.25,
+#     'end_first_tri': 3,  # months at which first trimester ends, for miscarriage calculation
+#     'abortion_prob': 0.1,
+#     'seed': 1  # Random seed, if None, don't reset
+# }
+
+
+def make_pars(configuration_file=None, defaults_file=None):
+    input_parameters = load_configuration_file(configuration_file=configuration_file)
+    default_parameters = load_defaults_file(defaults_file=defaults_file)
+
     pars = {}
 
+    #
     # User-tunable parameters
-    pars['fertility_variation'] = [0.3, 1.3]  # Multiplicative range of fertility factors, from confidence intervals from PRESTO study, adjusted from 0.9-1.1 to account for calibration to data
-    pars['method_age'] = 15  # When people start choosing a method
-    pars['max_age'] = 99
-    pars['preg_dur'] = [9, 9]  # Duration of a pregnancy, in months
-    pars['switch_frequency'] = 12 # Number of months that pass before an agent can select a new method (selects on non-fractional years in timestep)
-    pars['breastfeeding_dur'] = [1, 24]  # range in duration of breastfeeding per pregnancy, in months
-    pars['age_limit_fecundity'] = 50
-    pars['postpartum_length'] = 24  # Extended postpartum period, for tracking
-    pars['end_first_tri'] = 3  # months at which first trimester ends, for miscarriage calculation
-    pars['abortion_prob'] = 0.10
-    pars['twins_prob'] = 0.018
+    #
 
-    # Simulation parameters
-    pars['name'] = 'Default' # Name of the simulation
-    pars['n'] = 500*10 # Number of people in the simulation -- for comparing data from Impact 2
-    pars['start_year'] = 1960
-    pars['end_year'] = 2018
-    pars['timestep'] = 1 # Timestep in months  DO NOT CHANGE
-    pars['verbose'] = True
-    pars['seed'] = 1 # Random seed, if None, don't reset
+    # parameters that require a bit of code to set
+    set_fertility_variation(input_parameters=input_parameters, all_parameters=pars, defaults=default_parameters)
+    set_pregnancy_duration(input_parameters=input_parameters, all_parameters=pars, defaults=default_parameters)
+    set_breastfeeding_duration(input_parameters=input_parameters, all_parameters=pars, defaults=default_parameters)
+
+    ###
+    # TODO: Finish porting these over to use input parameters
+    ###
 
     # Complicated parameters
     pars['methods']            = default_methods()
@@ -644,18 +729,29 @@ def make_pars():
     pars['exposure_correction_parity'] = default_exposure_correction_parity()
 
     # Population size array from Senegal data for plotting in sim
-    pars['pop_years']          = pl.array([1982., 1983., 1984., 1985., 1986., 1987., 1988., 1989., 1990.,
-       1991., 1992., 1993., 1994., 1995., 1996., 1997., 1998., 1999.,
-       2000., 2001., 2002., 2003., 2004., 2005., 2006., 2007., 2008.,
-       2009., 2010., 2011., 2012., 2013., 2014., 2015.])
-    pars['pop_size']           = pl.array([18171.28189616, 18671.90398192, 19224.80410006, 19831.90843354,
-       20430.1523254 , 21102.60419936, 21836.03759909, 22613.45931046,
-       23427.16460161, 24256.32216052, 25118.86689077, 26016.96753169,
-       26959.59866908, 27950.59840084, 28881.13025563, 29867.46434421,
-       30902.09568706, 31969.90018092, 33062.81639339, 34143.09113842,
-       35256.73878676, 36402.87472106, 37583.29671208, 38797.07733839,
-       39985.26113334, 41205.93321424, 42460.86281582, 43752.50403785,
-       45081.05663263, 46401.31950667, 47773.28969221, 49185.05339094,
-       50627.82150134, 52100.32416946])
+    pars['pop_years'] = pl.array([1982., 1983., 1984., 1985., 1986., 1987., 1988., 1989., 1990.,
+                                  1991., 1992., 1993., 1994., 1995., 1996., 1997., 1998., 1999.,
+                                  2000., 2001., 2002., 2003., 2004., 2005., 2006., 2007., 2008.,
+                                  2009., 2010., 2011., 2012., 2013., 2014., 2015.])
+    pars['pop_size'] = pl.array([18171.28189616, 18671.90398192, 19224.80410006, 19831.90843354,
+                                 20430.1523254, 21102.60419936, 21836.03759909, 22613.45931046,
+                                 23427.16460161, 24256.32216052, 25118.86689077, 26016.96753169,
+                                 26959.59866908, 27950.59840084, 28881.13025563, 29867.46434421,
+                                 30902.09568706, 31969.90018092, 33062.81639339, 34143.09113842,
+                                 35256.73878676, 36402.87472106, 37583.29671208, 38797.07733839,
+                                 39985.26113334, 41205.93321424, 42460.86281582, 43752.50403785,
+                                 45081.05663263, 46401.31950667, 47773.28969221, 49185.05339094,
+                                 50627.82150134, 52100.32416946])
+
+    ###
+    # END TODO
+    ###
+
+    # finish consuming all remaining input parameters
+    for input_parameter in list(input_parameters.keys()):
+        pars[input_parameter] = get_parameter(parameters=input_parameters, parameter=input_parameter, defaults=default_parameters)
+
+    # now consume all remaining parameters NOT in the input parameters (use defaults, only)
+    pars.update(default_parameters)
 
     return pars
