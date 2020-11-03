@@ -17,9 +17,11 @@ CALIBRATION TARGETS:
 # Age distribution of agents currently pregnant
 # Age distribution of agents in each parity group (can be used to make box plot)
 # Percent of reproductive age female population in each parity group
+# 'pop_years' = Whole years model has run for comparison to population years
+# 'tfr_years' = Whole years TFR was recorded in both the model and the data
 
 flags = sc.objdict(
-    popsize = 1,  # Population size and growth over time, adjusted for n number of agents; 'pop_size'
+    popsize = 1,  # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
     skyscrapers = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
     first_birth = 1,  # Age at first birth with standard deviation; 'age_first_birth'
     birth_space = 1,  # Birth spacing with standard deviation; 'spacing'
@@ -29,7 +31,7 @@ flags = sc.objdict(
     infant_m = 1,  # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
     cdr = 1,  # Crude death rate at end of sim in model vs data; 'crude_death_rate'
     cbr = 1,  # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
-    tfr = 0,  # Need to write code for TFR calculation from model - age specific fertility rate to match over time; 'tfr'
+    tfr = 0,  # Need to write code for TFR calculation from model - age specific fertility rate to match over time; 'total_fertility_rate'
 )
 
 do_save = True # Whether to save the completed calibration

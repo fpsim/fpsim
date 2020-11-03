@@ -32,6 +32,7 @@ methods_file = datapath('Method_v312.csv')
 spacing_file = datapath('BirthSpacing.csv')
 popsize_file = datapath('senegal-popsize.csv')
 barriers_file = datapath('DHSIndividualBarriers.csv')
+tfr_file = datapath('senegal-tfr.csv')
 
 
 
@@ -62,7 +63,7 @@ class Calibration(sc.prettyobj):
         self.dhs_data['infant_mortality_rate'] = 33.6  # Per 1,000 live births, From World Bank
         self.dhs_data['crude_death_rate'] = 5.7  # Per 1,000 inhabitants, From World Bank
         self.dhs_data['crude_birth_rate'] = 34.5  # Per 1,000 inhabitants, From World Bank
-        # self.dhs_data['total fertility rate'] = 4.62  # From World Bank -- TODO: see if can match the model
+        # self.dhs_data['total_fertility_rate'] = 4.62  # From World Bank -- TODO: see if can match the model
 
         return
 
@@ -77,8 +78,13 @@ class Calibration(sc.prettyobj):
 
         # Extract population size over time
         pop_size = pd.read_csv(popsize_file, header=None)  # From World Bank
-        self.dhs_data['pop_years'] = pop_size.iloc[0, :].to_numpy()
-        self.dhs_data['pop_size'] = pop_size.iloc[1, :].to_numpy()
+        self.dhs_data['pop_years'] = pop_size.iloc[0,:].to_numpy()
+        self.dhs_data['pop_size'] = pop_size.iloc[1,:].to_numpy()
+
+        # Extract tfr over time
+        tfr = pd.read_csv(tfr_file, header = None)  # From DHS
+        self.dhs_data['tfr_years'] = tfr.iloc[0,:].to_numpy()
+        self.dhs_data['total_fertility_rate'] = tfr.iloc[1,:].to_numpy()
 
         return
 
@@ -125,7 +131,7 @@ class Calibration(sc.prettyobj):
     def model_pop_size(self):
 
         self.model_to_calib['pop_size'] = self.model_results['pop_size']
-        self.model_to_calib['pop_years'] = self.model_results['t']
+        self.model_to_calib['pop_years'] = self.model_results['tfr_years']
 
         return
 
@@ -171,7 +177,9 @@ class Calibration(sc.prettyobj):
         return
 
     def model_tfr(self):
-        pass
+
+        self.model_to_calib['total_fertility_rate'] = self.model_results['tfr']
+        self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
 
     def extract_skyscrapers(self):
 

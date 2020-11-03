@@ -153,3 +153,4 @@ config.json
 demographics.json
 campaign.json
 *.dtk
+.DS_Store
