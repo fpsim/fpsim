@@ -179,6 +179,7 @@ class Calibration(sc.prettyobj):
     def model_tfr(self):
 
         self.model_to_calib['total_fertility_rate'] = self.model_results['tfr']
+        self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
 
     def extract_skyscrapers(self):
 

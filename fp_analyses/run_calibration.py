@@ -17,9 +17,11 @@ CALIBRATION TARGETS:
 # Age distribution of agents currently pregnant
 # Age distribution of agents in each parity group (can be used to make box plot)
 # Percent of reproductive age female population in each parity group
+# 'pop_years' = Whole years model has run for comparison to population years
+# 'tfr_years' = Whole years TFR was recorded in both the model and the data
 
 flags = sc.objdict(
-    popsize = 1,  # Population size and growth over time, adjusted for n number of agents; 'pop_size'
+    popsize = 1,  # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
     skyscrapers = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
     first_birth = 1,  # Age at first birth with standard deviation; 'age_first_birth'
     birth_space = 1,  # Birth spacing with standard deviation; 'spacing'
