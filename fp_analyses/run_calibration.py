@@ -23,8 +23,10 @@ CALIBRATION TARGETS:
 flags = sc.objdict(
     popsize = 1,  # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
     skyscrapers = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
-    first_birth = 1,  # Age at first birth with standard deviation; 'age_first_birth'
-    birth_space = 1,  # Birth spacing with standard deviation; 'spacing'
+    first_birth = 1,  # Age at first birth mean with standard deviation; 'age_first_birth'
+    birth_space = 1,  # Birth spacing both in bins and mean with standard deviation; 'spacing'
+    age_pregnancy = 1, # Summary stats (mean, std, 25, 50, 75%) ages of those currently pregnant; 'age_pregnant_stats',
+        # Summmary stats (mean, std, 25, 50, 75%) ages at each parity; 'age_parity_stats'
     mcpr = 1,  # Modern contraceptive prevalence; 'mcpr'
     methods = 1, # Overall percentage of method use and method use among users; 'methods'
     mmr = 1,  # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'

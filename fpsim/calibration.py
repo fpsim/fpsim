@@ -60,7 +60,7 @@ class Calibration(sc.prettyobj):
         '''
 
         self.dhs_data[
-            'maternal_mortality_ratio'] = 315  # Per 100,000 live births, (2017) From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=SN
+            'maternal_mortality_ratio'] = 315.0  # Per 100,000 live births, (2017) From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=SN
         self.dhs_data['infant_mortality_rate'] = 33.6  # Per 1,000 live births, From World Bank
         self.dhs_data['crude_death_rate'] = 5.7  # Per 1,000 inhabitants, From World Bank
         self.dhs_data['crude_birth_rate'] = 34.5  # Per 1,000 inhabitants, From World Bank
@@ -367,6 +367,43 @@ class Calibration(sc.prettyobj):
 
         return
 
+    def extract_age_pregnancy(self):
+
+        index = [0, 3, 7] #indices of count, min, and max to drop from descriptive stats
+        # Keep mean, std, 25%, 50%, 75%
+
+        data = self.dhs_data['pregnancy_parity'] # Copy DataFrame for mainupation
+        preg = data[data['Pregnant'] == 1]
+        stat = preg['Age'].describe()
+        data_stats_all = stat.to_numpy()
+        data_stats = pl.delete(data_stats_all, index)
+
+        self.dhs_data['age_pregnant_stats'] = data_stats  # Array of mean, std, 25%, 50%, 75% of ages of agents currently pregnant
+
+        model = self.model_to_calib['pregnancy_parity']  # Copy DataFrame for manipulation
+        pregnant = model[model['Pregnant'] == 1]
+        stats = pregnant['Age'].describe()
+        model_stats_all = stats.to_numpy()
+        model_stats = pl.delete(model_stats_all, index)
+
+        self.model_to_calib['age_pregnant_stats'] = model_stats
+
+        parity_data = data.groupby('Parity')['Age'].describe()
+        parity_data = parity_data.head(11) # Include only parities 0-10 to exclude outliers
+        parity_data = parity_data.drop(['count', 'min', 'max'], axis = 1)
+        parity_data.fillna(0)
+        parity_data_stats = parity_data.to_numpy()
+
+        self.dhs_data['age_parity_stats'] = parity_data_stats
+
+        parity_model = model.groupby('Parity')['Age'].describe()
+        parity_model = parity_model.head(11)
+        parity_model = parity_model.drop(['count', 'min', 'max'], axis = 1)
+        parity_model.fillna(0)
+        parity_model_stats = parity_model.to_numpy()
+
+        self.model_to_calib['age_parity_stats'] = parity_model_stats
+
     def run(self, pars):
 
         self.run_model(pars)
@@ -378,9 +415,15 @@ class Calibration(sc.prettyobj):
             self.extract_birth_spacing()
         if self.flags.methods:
             self.extract_methods()
+        if self.flags.age_pregnancy:
+            self.extract_age_pregnancy()
 
         # Remove people, they're large!
         del self.people
+
+        # Remove raw dataframes of pregnancy / parity data from dictionary
+        del self.dhs_data['pregnancy_parity']
+        del self.model_to_calib['pregnancy_parity']
 
         return
 
