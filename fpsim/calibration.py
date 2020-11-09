@@ -278,6 +278,8 @@ class Calibration(sc.prettyobj):
 
         # Save to dictionary
         self.dhs_data['spacing_bins'] = pl.array(data_spacing_counts.values())
+        self.dhs_data['spacing_mean'] = pl.mean(spacing)
+        self.dhs_data['spacing_std'] = pl.std(spacing)
         self.dhs_data['age_first_birth_mean'] = pl.mean(first)
         self.dhs_data['age_first_birth_std'] = pl.std(first)
 
@@ -301,6 +303,8 @@ class Calibration(sc.prettyobj):
 
         # Save arrays to dictionary
         self.model_to_calib['spacing_bins'] = pl.array(model_spacing_counts.values())
+        self.model_to_calib['spacing_mean'] = pl.mean(model_spacing)
+        self.model_to_calib['spacing_std'] = pl.std(model_spacing)
         self.model_to_calib['age_first_birth_mean'] = pl.mean(model_age_first)
         self.model_to_calib['age_first_birth_std'] = pl.std(model_age_first)
 
