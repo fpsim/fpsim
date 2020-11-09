@@ -20,6 +20,7 @@ do_store_postpartum = 1
 do_plot_pregnancy_parity = 1
 do_print_demographics = 1
 do_plot_popsize     = 1
+do_plot_tfr         = 1
 do_plot_pyramids    = 1
 do_plot_model_pyramid = 1
 do_plot_skyscrapers = 1
@@ -46,6 +47,7 @@ spacing_file = datapath('BirthSpacing.csv')
 popsize_file = datapath('senegal-popsize.csv')
 barriers_file = datapath('DHSIndividualBarriers.csv')
 mcpr_file = datapath('mcpr_senegal.csv')
+tfr_file = datapath('senegal-tfr.csv')
 
 
 if do_run:
@@ -159,7 +161,7 @@ if do_run:
 
         # Handle population size and mcpr from data
         pop_years_data = popsize.iloc[0,:].to_numpy()
-        popsize_data = popsize.iloc[1,:].to_numpy() / 5000 # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500  <-- Leftover from Cliff
+        popsize_data = popsize.iloc[1,:].to_numpy() / (popsize.iloc[1,0] / 5000) # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500  <-- Leftover from Cliff
         mcpr_years_data = mcpr.iloc[:,0].to_numpy()
         mcpr_rates_data = mcpr.iloc[:,1].to_numpy()
 
@@ -167,29 +169,52 @@ if do_run:
         pop_years_model = res['tfr_years']
         popsize_model = res['pop_size']
         mcpr_years_model = res['tfr_years']
-        mcpr_rates_model = res['mcpr_by_year']
+        mcpr_rates_model = res['mcpr_by_year']*100
 
         fig = pl.figure(figsize=(16, 16))
         # Population size plot
         pl.subplot(2, 1, 1)
         pl.plot(pop_years_model, popsize_model, c = 'b', label = 'Model')
         pl.scatter(pop_years_data, popsize_data, c='k', label='Data', zorder=1000)
-        pl.suptitle('Population growth')
+        pl.title('Population growth')
+        pl.xlabel('Years')
+        pl.ylabel('Population')
+        pl.legend()
 
         #ax = fig.axes[1,0] # First axis on plot
-
-        pl.legend()
 
         pl.subplot(2, 1, 2) # Second axis on plot
         pl.plot(mcpr_years_model, mcpr_rates_model, c = 'b', label = 'Model')
         pl.scatter(mcpr_years_data, mcpr_rates_data, c='k', label='Data', zorder=1000)
-        pl.suptitle('mCPR over time')
+        pl.title('Modern contraceptive prevalence')
+        pl.xlabel('Years')
+        pl.ylabel('Percent reproductive age women using modern contraception')
         pl.legend()
 
         if do_save:
             pl.savefig(sp.abspath('figs', 'senegal_popsize-mcpr.png'))
 
         #350434.0 <--- Factor previously used to adjust population
+
+    if do_plot_tfr:
+
+        tfr = pd.read_csv(tfr_file, header=None)  # From DHS
+        data_tfr_years = tfr.iloc[:, 0].to_numpy()
+        data_tfr = tfr.iloc[:, 1].to_numpy()
+
+        fig = pl.figure(figsize=(16, 16))
+        x = res['tfr_years']+3
+        y = res['tfr_rates']
+
+        pl.plot(x, y, label='Total fertility rates')
+        pl.scatter(data_tfr_years, data_tfr)
+
+        pl.xlabel('Year')
+        pl.ylabel('Total fertility rate - children per woman')
+        pl.title('Total fertility rate in model compared data - Senegal', fontweight='bold')
+
+        if do_save:
+            pl.savefig(sp.abspath('figs', 'senegal_tfr.png'))
 
     if do_plot_pyramids:
         fig = pl.figure(figsize=(16,16))
