@@ -301,9 +301,9 @@ class Person(base.ParsObj):
 
         self.step_results['infant_death'] = utils.bt(infant_mort_prob)
 
-        if self.step_results['infant_death']:
-            self.step_results['gave_birth'] = False  # Don't count as a new person to add
-            self.reset_breastfeeding()
+        #if self.step_results['infant_death']:
+            #self.step_results['gave_birth'] = False  # Don't count as a new person to add
+            #self.reset_breastfeeding()
 
         return
 
@@ -589,9 +589,10 @@ class Sim(base.BaseSim):
             if i in self.interventions:
                 self.interventions[i](self)
 
+            new_people = births - infant_deaths # Do not add agents who died before age 1 to population
 
             # Births
-            for birth in range(births):
+            for birth in range(new_people):
                 person = self.make_person(age=0) # Save them to the dictionary
                 self.people[person.uid] = person
 
@@ -637,7 +638,7 @@ class Sim(base.BaseSim):
             if person.lactating:
                 person.reset_breastfeeding()
 
-        print(f'Final population size: {self.n}.  Population size target for 5000 agents running 1960 to 2019: 25,410')
+        print(f'Final population size: {self.n}.')
 
         elapsed = sc.toc(T, output=True)
         print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
