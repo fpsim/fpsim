@@ -33,6 +33,8 @@ spacing_file = datapath('BirthSpacing.csv')
 popsize_file = datapath('senegal-popsize.csv')
 barriers_file = datapath('DHSIndividualBarriers.csv')
 tfr_file = datapath('senegal-tfr.csv')
+mcpr_file = datapath('mcpr_senegal.csv')
+
 
 
 
@@ -57,13 +59,11 @@ class Calibration(sc.prettyobj):
         Adjust data for a different year or country
         '''
 
-        self.dhs_data['mcpr'] = 19.6  # From FP2020 data  --> Could make this an array to match model, need data
         self.dhs_data[
             'maternal_mortality_ratio'] = 315  # Per 100,000 live births, (2017) From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=SN
         self.dhs_data['infant_mortality_rate'] = 33.6  # Per 1,000 live births, From World Bank
         self.dhs_data['crude_death_rate'] = 5.7  # Per 1,000 inhabitants, From World Bank
         self.dhs_data['crude_birth_rate'] = 34.5  # Per 1,000 inhabitants, From World Bank
-        # self.dhs_data['total_fertility_rate'] = 4.62  # From World Bank -- TODO: see if can match the model
 
         return
 
@@ -79,14 +79,33 @@ class Calibration(sc.prettyobj):
         # Extract population size over time
         pop_size = pd.read_csv(popsize_file, header=None)  # From World Bank
         self.dhs_data['pop_years'] = pop_size.iloc[0,:].to_numpy()
-        self.dhs_data['pop_size'] = pop_size.iloc[1,:].to_numpy()
+        self.dhs_data['pop_size'] = pop_size.iloc[1,:].to_numpy() / (pop_size.iloc[1,0] / 5000)  # Corrected for # of agents
+
+        # Extract population growth rate
+        data_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
+        self.dhs_data['pop_growth_rate'] = data_growth_rate
 
         # Extract tfr over time
         tfr = pd.read_csv(tfr_file, header = None)  # From DHS
         self.dhs_data['tfr_years'] = tfr.iloc[:,0].to_numpy()
         self.dhs_data['total_fertility_rate'] = tfr.iloc[:,0].to_numpy()
 
+        # Extract mcpr over time
+        mcpr = pd.read_csv(mcpr_file, header = None)
+        self.dhs_data['mcpr_years'] = mcpr.iloc[:,0].to_numpy()
+        self.dhs_data['mcpr'] = mcpr.iloc[:,1].to_numpy()
+
         return
+
+    def pop_growth_rate(self, years, population):
+        growth_rate = np.zeros(len(years) - 1)
+
+        for i in range(len(years)):
+            if population[i] == population[-1]:
+                break
+            growth_rate[i] = ((population[i + 1] - population[i]) / population[i]) * 100
+
+        return growth_rate
 
     def run_model(self, pars):
 
@@ -133,10 +152,14 @@ class Calibration(sc.prettyobj):
         self.model_to_calib['pop_size'] = self.model_results['pop_size']
         self.model_to_calib['pop_years'] = self.model_results['tfr_years']
 
+        model_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
+        self.model_to_calib['pop_growth_rate'] = model_growth_rate
+
         return
 
     def model_mcpr(self):
 
+        self.model_to_calib['mcpr_years'] = self.dhs_data['mcpr_years']
         self.model_to_calib['mcpr'] = self.model_results['mcpr']
 
         return
@@ -188,7 +211,7 @@ class Calibration(sc.prettyobj):
         max_age = 50
         bin_size = 5
         age_bins = pl.arange(min_age, max_age, bin_size)
-        parity_bins = pl.arange(0, 8)
+        parity_bins = pl.arange(0, 7)
         n_age = len(age_bins)
         n_parity = len(parity_bins)
         x_age = pl.arange(n_age)
@@ -227,27 +250,36 @@ class Calibration(sc.prettyobj):
 
         return
 
-    def extract_birth_order_spacing(self):
+    def extract_birth_spacing(self):
 
         spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-36': 2, '>36': 3})  # Spacing bins in years
 
         # From data
         data = pd.read_csv(spacing_file)
 
-        right_year = data['SurveyYear'] == '2017'   #TODO - Should be 2017?
+        right_year = data['SurveyYear'] == '2017'
         not_first = data['Birth Order'] != 0
         is_first = data['Birth Order'] == 0
         filtered = data[(right_year) & (not_first)]
         spacing = filtered['Birth Spacing'].to_numpy()
-        sorted_spacing = sorted(spacing)
 
         first_filtered = data[(right_year) & (is_first)]
         first = first_filtered['Birth Spacing'].to_numpy()
-        sorted_first = sorted(first)
 
-        #Save to dictionary
-        self.dhs_data['spacing'] = sorted_spacing
-        self.dhs_data['age_first_birth'] = sorted_first
+        data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+
+        # Spacing bins from data
+        for s in range(len(spacing)):
+            i = sc.findinds(spacing[s] > spacing_bins[:])[-1]
+            data_spacing_counts[i] += 1
+
+        data_spacing_counts[:] /= data_spacing_counts[:].sum()
+        data_spacing_counts[:] *= 100
+
+        # Save to dictionary
+        self.dhs_data['spacing_bins'] = pl.array(data_spacing_counts.values())
+        self.dhs_data['age_first_birth_mean'] = pl.mean(first)
+        self.dhs_data['age_first_birth_std'] = pl.std(first)
 
         # From model
         model_age_first = []
@@ -264,13 +296,20 @@ class Calibration(sc.prettyobj):
 
                     model_spacing.append(space)
 
+        model_spacing_counts[:] /= model_spacing_counts[:].sum()
+        model_spacing_counts[:] *= 100
+
         # Save arrays to dictionary
-        self.model_to_calib['spacing'] = model_spacing
-        self.model_to_calib['age_first_birth'] = model_age_first
+        self.model_to_calib['spacing_bins'] = pl.array(model_spacing_counts.values())
+        self.model_to_calib['age_first_birth_mean'] = pl.mean(model_age_first)
+        self.model_to_calib['age_first_birth_std'] = pl.std(model_age_first)
 
         return
 
     def extract_methods(self):
+
+        min_age = 15
+        max_age = 50
 
         data_method_counts = sc.odict().make(self.method_keys, vals=0.0)
         model_method_counts = sc.dcp(data_method_counts)
@@ -319,6 +358,9 @@ class Calibration(sc.prettyobj):
             else:
                 model_labels[d] = ''
 
+        self.dhs_data['method_counts'] = pl.array(data_method_counts.values())
+        self.model_to_calib['method_counts'] = pl.array(model_method_counts.values())
+
         return
 
     def run(self, pars):
@@ -329,14 +371,12 @@ class Calibration(sc.prettyobj):
         if self.flags.skyscrapers:
             self.extract_skyscrapers()
         if self.flags.birth_space:
-            self.extract_birth_order_spacing()
+            self.extract_birth_spacing()
         if self.flags.methods:
             self.extract_methods()
 
         # Remove people, they're large!
         del self.people
-
-        # Store model_to_calib and dhs_data dictionaries in preferred way
 
         return
 
