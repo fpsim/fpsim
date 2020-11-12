@@ -33,7 +33,7 @@ flags = sc.objdict(
     infant_m = 1,  # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
     cdr = 1,  # Crude death rate at end of sim in model vs data; 'crude_death_rate'
     cbr = 1,  # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
-    tfr = 1,  # Need to write code for TFR calculation from model - age specific fertility rate to match over time; 'total_fertility_rate'
+    tfr = 0,  # Not using as calibration target given different formulas in data vs model
 )
 
 do_save = True # Whether to save the completed calibration

@@ -79,16 +79,13 @@ class Calibration(sc.prettyobj):
         # Extract population size over time
         pop_size = pd.read_csv(popsize_file, header=None)  # From World Bank
         self.dhs_data['pop_years'] = pop_size.iloc[0,:].to_numpy()
-        self.dhs_data['pop_size'] = pop_size.iloc[1,:].to_numpy() / (pop_size.iloc[1,0] / 5000)  # Corrected for # of agents
+        self.dhs_data['pop_size'] = pop_size.iloc[1,:].to_numpy() / (pop_size.iloc[1,0] / 5000)  # Corrected for # of agents, needs manual adjustment for # agents
 
         # Extract population growth rate
         data_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
         self.dhs_data['pop_growth_rate'] = data_growth_rate
 
-        # Extract tfr over time
-        tfr = pd.read_csv(tfr_file, header = None)  # From DHS
-        self.dhs_data['tfr_years'] = tfr.iloc[:,0].to_numpy()
-        self.dhs_data['total_fertility_rate'] = tfr.iloc[:,0].to_numpy()
+
 
         # Extract mcpr over time
         mcpr = pd.read_csv(mcpr_file, header = None)
@@ -143,7 +140,7 @@ class Calibration(sc.prettyobj):
         if self.flags.cbr:
             self.model_crude_birth_rate()
         if self.flags.tfr:
-            self.model_tfr()
+            self.model_data_tfr()
 
         return
 
@@ -159,8 +156,17 @@ class Calibration(sc.prettyobj):
 
     def model_mcpr(self):
 
+        model = {'years': self.model_results['t'], 'mcpr': self.model_results['mcpr']}
+        model_frame = pd.DataFrame(model)
+
+        data_years = self.dhs_data['mcpr_years'].tolist()
+
+        filtered_model = model_frame.loc[model_frame.years.isin(data_years)]
+
+        model_mcpr = filtered_model['mcpr'].to_numpy()
+
+        self.model_to_calib['mcpr'] = model_mcpr
         self.model_to_calib['mcpr_years'] = self.dhs_data['mcpr_years']
-        self.model_to_calib['mcpr'] = self.model_results['mcpr']
 
         return
 
@@ -199,7 +205,12 @@ class Calibration(sc.prettyobj):
 
         return
 
-    def model_tfr(self):
+    def model_data_tfr(self):
+
+        # Extract tfr over time in data - keep here to ignore dhs data if not using tfr for calibration
+        tfr = pd.read_csv(tfr_file, header=None)  # From DHS
+        self.dhs_data['tfr_years'] = tfr.iloc[:, 0].to_numpy()
+        self.dhs_data['total_fertility_rate'] = tfr.iloc[:, 0].to_numpy()
 
         self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
         self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
@@ -369,8 +380,8 @@ class Calibration(sc.prettyobj):
 
     def extract_age_pregnancy(self):
 
-        index = [0, 3, 7] #indices of count, min, and max to drop from descriptive stats
-        # Keep mean, std, 25%, 50%, 75%
+        index = [0, 2, 3, 7] #indices of count, min, and max to drop from descriptive stats
+        # Keep mean [1], 25% [4], 50%[5], 75% [6]
 
         data = self.dhs_data['pregnancy_parity'] # Copy DataFrame for mainupation
         preg = data[data['Pregnant'] == 1]
@@ -390,7 +401,7 @@ class Calibration(sc.prettyobj):
 
         parity_data = data.groupby('Parity')['Age'].describe()
         parity_data = parity_data.head(11) # Include only parities 0-10 to exclude outliers
-        parity_data = parity_data.drop(['count', 'min', 'max'], axis = 1)
+        parity_data = parity_data.drop(['count', 'std', 'min', 'max'], axis = 1)
         parity_data.fillna(0)
         parity_data_stats = parity_data.to_numpy()
 
@@ -398,7 +409,7 @@ class Calibration(sc.prettyobj):
 
         parity_model = model.groupby('Parity')['Age'].describe()
         parity_model = parity_model.head(11)
-        parity_model = parity_model.drop(['count', 'min', 'max'], axis = 1)
+        parity_model = parity_model.drop(['count', 'std', 'min', 'max'], axis = 1)
         parity_model.fillna(0)
         parity_model_stats = parity_model.to_numpy()
 

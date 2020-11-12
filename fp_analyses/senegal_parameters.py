@@ -388,6 +388,7 @@ def default_methods():
     methods['mcpr_years'] = pl.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
 
     mcpr_rates = pl.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
+    mcpr_rates = mcpr_rates * 0.95
 
     methods['trend'] = mcpr_rates[-1] / mcpr_rates  # normalize trend around 2017 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
@@ -431,7 +432,6 @@ def default_methods_postpartum():
     methods_postpartum['mcpr_years'] = pl.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
 
     mcpr_rates = pl.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
-    mcpr_rates = mcpr_rates * 1
 
     methods_postpartum['trend'] = mcpr_rates[-1] / mcpr_rates  # normalize trend around 2017 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
@@ -600,7 +600,7 @@ def default_exposure_correction_age():
     '''
 
     exposure_correction_age = pl.array([[0,        5,       10,      12.5,       15,          18,       20,          25,         30,        35,           40,       45,          50],
-                                        [[1, 1], [1, 1], [1, 1], [1.0, 1.0], [1.5, 1.5], [1.6, 1.6], [1.8, 1.8], [2.2, 2.2], [2.0, 2.0], [1.5, 1.5], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
+                                        [[1, 1], [1, 1], [1, 1], [1.0, 1.0], [2.0, 2.0], [2.0, 2.0], [2.2, 2.2], [2.2, 2.2], [1.8, 1.8], [1.5, 1.5], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
 
     return exposure_correction_age
 
@@ -612,7 +612,7 @@ def default_exposure_correction_parity():
     '''
 
     exposure_correction_parity = pl.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                                           [0.2, 0.5, 0.5, 0.5, 0.5, 0.4, 0.4, 0.3, 0.3, 0.3, 0.2, 0.2, 0.1]])
+                                           [0.1, 0.5, 0.5, 0.4, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.1]])
 
     return exposure_correction_parity
 
