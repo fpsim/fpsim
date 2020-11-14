@@ -106,7 +106,7 @@ class Person(base.ParsObj):
         continue or discontinue by 6 months postpartum.  Next opportunity to switch
         methods will be on whole calendar years, whenever that falls'''
 
-        if 0 <= self.postpartum_dur <= 3: # From 0 - 3 months postpartum, initiating a postpartum method
+        if self.postpartum_dur == 1.5: # Initiating a postpartum method at 6 weeks postpartum to mirror clinical practice, based on probability matrix 0-3 months PP
             if self.age < 18:
                 choices_from_birth = self.pars['methods_postpartum']['<18']
             elif 18 < self.age <= 20:
@@ -120,7 +120,7 @@ class Person(base.ParsObj):
 
             self.method = utils.mt(choices_from_birth)
 
-        if 3 < self.postpartum_dur <=6:  # From 4-6 months postpartum, switching or discontinuing postpartum
+        if self.postpartum_dur == 6:  # Allow switching or discontinuing at 6 months postpartum
             orig_method = self.method
             choices_postpartum = self.pars['methods_postpartum']['switch_postpartum'][orig_method]
 
@@ -152,8 +152,9 @@ class Person(base.ParsObj):
 
         # Else check if sexually active in the last year given their age - from DHS parameters
         else:
-            sexually_active_prob = utils.numba_activity_prob(self.pars['sexual_activity'], self.age,
+            sexually_active_prob_year = utils.numba_activity_prob(self.pars['sexual_activity'], self.age,
                                                              resolution)
+            sexually_active_prob = 1 - ((1 - sexually_active_prob_year) ** (1 / mpy))  # Convert from annual prob to month
 
         # Evaluate likelihood in this timestep of being sexually active
         sexually_active = utils.bt(sexually_active_prob)

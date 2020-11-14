@@ -385,12 +385,11 @@ def default_methods():
 
     '''
 
-    methods['mcpr_years'] = pl.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
+    methods['mcpr_years'] = pl.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019])
 
-    mcpr_rates = pl.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
-    mcpr_rates = mcpr_rates * 0.95
+    mcpr_rates = pl.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20])
 
-    methods['trend'] = mcpr_rates[-1] / mcpr_rates  # normalize trend around 2017 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
+    methods['trend'] = mcpr_rates[-2] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods
 
@@ -429,11 +428,14 @@ def default_methods_postpartum():
         [0.0098647440, 0.0021978014, 0.0000000000, 0.0010993037, 0.0000000000,  0.0000000000,  0.0000000000, 0.0000000000, 0.9868381509, 0.0000000000],
         [0.0095845990, 0.0000000000, 0.0000000000, 0.0095845990, 0.0000000000,  0.0000000000,  0.0000000000, 0.0000000000, 0.0000000000, 0.9808308020]])
 
-    methods_postpartum['mcpr_years'] = pl.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
+    methods_postpartum['mcpr_years'] = pl.array(
+        [1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019])
 
-    mcpr_rates = pl.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
+    mcpr_rates = pl.array(
+        [0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20])  # Combintion of DHS data and Track20 data
 
-    methods_postpartum['trend'] = mcpr_rates[-1] / mcpr_rates  # normalize trend around 2017 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
+    methods_postpartum['trend'] = mcpr_rates[
+                           -2] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods_postpartum
 
@@ -600,7 +602,7 @@ def default_exposure_correction_age():
     '''
 
     exposure_correction_age = pl.array([[0,        5,       10,      12.5,       15,          18,       20,          25,         30,        35,           40,       45,          50],
-                                        [[1, 1], [1, 1], [1, 1], [1.0, 1.0], [2.0, 2.0], [2.0, 2.0], [2.2, 2.2], [2.2, 2.2], [1.8, 1.8], [1.5, 1.5], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
+                                        [[1, 1], [1, 1], [1, 1], [1.3, 1.3], [3.0, 3.0], [3.0, 3.0], [2.5, 2.5], [2.5, 2.5], [2.0, 2.0], [2.0, 2.0], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
 
     return exposure_correction_age
 
@@ -612,7 +614,7 @@ def default_exposure_correction_parity():
     '''
 
     exposure_correction_parity = pl.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                                           [0.1, 0.5, 0.5, 0.4, 0.4, 0.4, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.1]])
+                                           [0.8, 1.0, 1.0, 0.9, 0.9, 0.9, 0.7, 0.7, 0.7, 0.6, 0.6, 0.6, 0.5]])
 
     return exposure_correction_parity
 
