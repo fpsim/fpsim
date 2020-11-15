@@ -156,7 +156,7 @@ class Person(base.ParsObj):
                                                              resolution)
             sexually_active_prob = 1 - ((1 - sexually_active_prob_year) ** (1 / mpy))  # Convert from annual prob to month
 
-        # Evaluate likelihood in this timestep of being sexually active
+        # Evaluate likelihood in this time step of being sexually active
         sexually_active = utils.bt(sexually_active_prob)
 
         if sexually_active:
@@ -485,7 +485,7 @@ class Sim(base.BaseSim):
 
 
     def add_intervention(self, intervention, year):
-        '''Allow adding an intervention at the time point corresponding to the year passed in '''
+        '''Allow adding an intervention at the time point corresponding to the year passed in'''
         index = self.year2ind(year)
         self.interventions[index] = intervention
         return

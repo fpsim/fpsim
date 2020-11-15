@@ -286,13 +286,17 @@ class Calibration(sc.prettyobj):
 
         data_spacing_counts[:] /= data_spacing_counts[:].sum()
         data_spacing_counts[:] *= 100
+        data_spacing_stats = pl.array([np.percentile(spacing, 25),
+                                        np.percentile(spacing, 50),
+                                        np.percentile(spacing, 75)])
+        data_age_first_stats = pl.array([np.percentile(first, 25),
+                                          np.percentile(first, 50),
+                                          np.percentile(first, 75)])
 
         # Save to dictionary
         self.dhs_data['spacing_bins'] = pl.array(data_spacing_counts.values())
-        self.dhs_data['spacing_mean'] = pl.mean(spacing)
-        self.dhs_data['spacing_std'] = pl.std(spacing)
-        self.dhs_data['age_first_birth_mean'] = pl.mean(first)
-        self.dhs_data['age_first_birth_std'] = pl.std(first)
+        self.dhs_data['spacing_stats'] = data_spacing_stats
+        self.dhs_data['age_first_stats'] = data_age_first_stats
 
         # From model
         model_age_first = []
@@ -311,13 +315,17 @@ class Calibration(sc.prettyobj):
 
         model_spacing_counts[:] /= model_spacing_counts[:].sum()
         model_spacing_counts[:] *= 100
+        model_spacing_stats = pl.array([np.percentile(model_spacing, 25),
+                                        np.percentile(model_spacing, 50),
+                                        np.percentile(model_spacing, 75)])
+        model_age_first_stats = pl.array([np.percentile(model_age_first, 25),
+                                        np.percentile(model_age_first, 50),
+                                        np.percentile(model_age_first, 75)])
 
         # Save arrays to dictionary
         self.model_to_calib['spacing_bins'] = pl.array(model_spacing_counts.values())
-        self.model_to_calib['spacing_mean'] = pl.mean(model_spacing)
-        self.model_to_calib['spacing_std'] = pl.std(model_spacing)
-        self.model_to_calib['age_first_birth_mean'] = pl.mean(model_age_first)
-        self.model_to_calib['age_first_birth_std'] = pl.std(model_age_first)
+        self.model_to_calib['spacing_stats'] = model_spacing_stats
+        self.model_to_calib['age_first_stats'] = model_age_first_stats
 
         return
 
