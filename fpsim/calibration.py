@@ -380,7 +380,7 @@ class Calibration(sc.prettyobj):
 
     def extract_age_pregnancy(self):
 
-        index = [0, 2, 3, 7] #indices of count, min, and max to drop from descriptive stats
+        index = [0, 1, 2, 3, 7] #indices of count, min, and max to drop from descriptive stats
         # Keep mean [1], 25% [4], 50%[5], 75% [6]
 
         data = self.dhs_data['pregnancy_parity'] # Copy DataFrame for mainupation
@@ -401,7 +401,7 @@ class Calibration(sc.prettyobj):
 
         parity_data = data.groupby('Parity')['Age'].describe()
         parity_data = parity_data.head(11) # Include only parities 0-10 to exclude outliers
-        parity_data = parity_data.drop(['count', 'std', 'min', 'max'], axis = 1)
+        parity_data = parity_data.drop(['count', 'mean', 'std', 'min', 'max'], axis = 1)
         parity_data.fillna(0)
         parity_data_stats = parity_data.to_numpy()
 
@@ -409,7 +409,7 @@ class Calibration(sc.prettyobj):
 
         parity_model = model.groupby('Parity')['Age'].describe()
         parity_model = parity_model.head(11)
-        parity_model = parity_model.drop(['count', 'std', 'min', 'max'], axis = 1)
+        parity_model = parity_model.drop(['count', 'mean', 'std', 'min', 'max'], axis = 1)
         parity_model.fillna(0)
         parity_model_stats = parity_model.to_numpy()
 
