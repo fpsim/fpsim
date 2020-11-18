@@ -107,7 +107,7 @@ class Person(base.ParsObj):
         continue or discontinue by 6 months postpartum.  Next opportunity to switch
         methods will be on whole calendar years, whenever that falls'''
 
-        if self.postpartum_dur == 1.5: # Initiating a postpartum method at 6 weeks postpartum to mirror clinical practice, based on probability matrix 0-3 months PP
+        if self.postpartum_dur == 3: # Initiating a postpartum method at 6 weeks postpartum to mirror clinical practice, based on probability matrix 0-3 months PP
             if self.age < 18:
                 choices_from_birth = self.pars['methods_postpartum']['<18']
             elif 18 < self.age <= 20:
@@ -121,11 +121,11 @@ class Person(base.ParsObj):
 
             self.method = utils.mt(choices_from_birth)
 
-        if self.postpartum_dur == 6:  # Allow switching or discontinuing at 6 months postpartum
-            orig_method = self.method
-            choices_postpartum = self.pars['methods_postpartum']['switch_postpartum'][orig_method]
+        #if self.postpartum_dur == 6:  # Allow switching or discontinuing at 6 months postpartum
+            #orig_method = self.method
+            #choices_postpartum = self.pars['methods_postpartum']['switch_postpartum'][orig_method]
 
-            self.method = utils.mt(choices_postpartum)
+            #self.method = utils.mt(choices_postpartum)
 
         return
 

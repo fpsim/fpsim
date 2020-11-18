@@ -435,7 +435,7 @@ def default_methods_postpartum():
         [0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20])  # Combintion of DHS data and Track20 data
 
     methods_postpartum['trend'] = mcpr_rates[
-                           -4] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
+                           -2] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods_postpartum
 
@@ -602,7 +602,7 @@ def default_exposure_correction_age():
     '''
 
     exposure_correction_age = pl.array([[0,        5,       10,      12.5,       15,          18,       20,          25,         30,        35,           40,       45,          50],
-                                        [[1, 1], [1, 1], [1, 1], [1.5, 1.5], [2.5, 2.5], [3.1, 3.1], [3.0, 3.0], [2.5, 2.5], [1.5, 1.5], [1.0, 1.0], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
+                                        [[1, 1], [1, 1], [1, 1], [1.5, 1.5], [2.5, 2.5], [3.1, 3.1], [3.2, 3.2], [2.8, 2.8], [1.5, 1.5], [1.0, 1.0], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
 
     return exposure_correction_age
 
@@ -614,7 +614,7 @@ def default_exposure_correction_parity():
     '''
 
     exposure_correction_parity = pl.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                                           [0.18, 0.5, 0.5, 0.5, 0.5, 0.4, 0.4, 0.4, 0.3, 0.3, 0.2, 0.2, 0.1]])
+                                           [0.18, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.3, 0.3, 0.2, 0.2, 0.1]])
 
     return exposure_correction_parity
 
