@@ -263,7 +263,7 @@ class Calibration(sc.prettyobj):
 
     def extract_birth_spacing(self):
 
-        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-36': 2, '>36': 3})  # Spacing bins in years
+        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
 
         # From data
         data = pd.read_csv(spacing_file)
@@ -286,12 +286,12 @@ class Calibration(sc.prettyobj):
 
         data_spacing_counts[:] /= data_spacing_counts[:].sum()
         data_spacing_counts[:] *= 100
-        data_spacing_stats = pl.array([np.percentile(spacing, 25),
-                                        np.percentile(spacing, 50),
-                                        np.percentile(spacing, 75)])
-        data_age_first_stats = pl.array([np.percentile(first, 25),
-                                          np.percentile(first, 50),
-                                          np.percentile(first, 75)])
+        data_spacing_stats = pl.array([pl.percentile(spacing, 25),
+                                        pl.percentile(spacing, 50),
+                                        pl.percentile(spacing, 75)])
+        data_age_first_stats = pl.array([pl.percentile(first, 25),
+                                          pl.percentile(first, 50),
+                                          pl.percentile(first, 75)])
 
         # Save to dictionary
         self.dhs_data['spacing_bins'] = pl.array(data_spacing_counts.values())

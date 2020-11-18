@@ -87,6 +87,7 @@ class Person(base.ParsObj):
             matrix = self.pars['methods']['21-25']
         elif self.age > 25:
             matrix = self.pars['methods']['>25']
+            
         else:
             raise Exception('Agent age does not match choice matrix options')
 
@@ -152,9 +153,8 @@ class Person(base.ParsObj):
 
         # Else check if sexually active in the last year given their age - from DHS parameters
         else:
-            sexually_active_prob_year = utils.numba_activity_prob(self.pars['sexual_activity'], self.age,
+            sexually_active_prob = utils.numba_activity_prob(self.pars['sexual_activity'], self.age,
                                                              resolution)
-            sexually_active_prob = 1 - ((1 - sexually_active_prob_year) ** (1 / mpy))  # Convert from annual prob to month
 
         # Evaluate likelihood in this time step of being sexually active
         sexually_active = utils.bt(sexually_active_prob)
@@ -167,7 +167,7 @@ class Person(base.ParsObj):
         return
 
 
-    def check_conception(self, t):
+    def check_conception(self):
         '''
         Decide if person (female) becomes pregnant at a timestep.
         '''
@@ -185,9 +185,11 @@ class Person(base.ParsObj):
 
         # Adjust for postpartum infecundability - parameters are women meeting criteria for lactational amenorrhea.
         # Postpartum abstinence accounted for in check_sexually_active function
-        if self.postpartum and 0 <= self.postpartum_dur < 12:
-            prob_postpartum_infecund = self.pars['lactational_amenorrhea']['percent'][self.postpartum_dur]
-            preg_prob *= (1 - prob_postpartum_infecund)
+        if self.postpartum and 0 <= self.postpartum_dur <= 6:
+            lam_rate = self.pars['lactational_amenorrhea']['rate'][self.postpartum_dur]
+            lactational_amenorrhea = utils.bt(lam_rate)
+            if lactational_amenorrhea:
+                preg_prob *= (1 - self.pars['LAM_efficacy'])
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity - encapsulates background factors - experimental and tunable
         ind = sc.findnearest(self.pars['exposure_correction_age'][0], self.age)
@@ -337,6 +339,7 @@ class Person(base.ParsObj):
         '''Advance age in the simulation'''
         self.age += self.pars['timestep'] / mpy  # Age the person for the next timestep
         self.age = min(self.age, self.pars['max_age'])
+
         return
 
     def update_contraception(self, t):
@@ -348,6 +351,10 @@ class Person(base.ParsObj):
         else:
             if t % (self.pars['switch_frequency']/mpy) == 0:  # If switching frequency in months has passed, allows switching only on whole years
                 self.get_method()
+
+        return
+
+    def check_mcpr(self):
 
         if self.pars['method_age'] <= self.age < self.pars['age_limit_fecundity'] and not self.pregnant:   #Tally for mCPR
             if self.method == 0:  # TODO: Think more carefully about the logic here!
@@ -398,13 +405,14 @@ class Person(base.ParsObj):
                         self.update_contraception(t)
                     self.check_sexually_active()
                     if self.sexually_active:
-                        self.check_conception(t)  # Decide if conceives and initialize gestation counter at 0
+                        self.check_conception()  # Decide if conceives and initialize gestation counter at 0
                     if self.postpartum:
                         self.update_postpartum() # Updates postpartum counter if postpartum
 
                 if self.lactating:
                     self.update_breastfeeding()
 
+                self.check_mcpr()
 
         return self.step_results
 

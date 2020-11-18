@@ -455,7 +455,7 @@ if do_run:
 
     if do_plot_spacing:
 
-        spacing_bins = sc.odict({'0-12':0,'12-24':1,'24-36':2,'>36':3}) # Spacing bins in years
+        spacing_bins = sc.odict({'0-12':0,'12-24':1,'24-48':2,'>48':4}) # Spacing bins in years
 
         # From data
         data = pd.read_csv(spacing_file)
@@ -470,6 +470,16 @@ if do_run:
         first_filtered = data[(right_year) & (is_first)]
         first = first_filtered['Birth Spacing'].to_numpy()
         sorted_first = sorted(first)
+
+        # Spacing bin counts from data
+
+        data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+        for s in range(len(spacing)):
+            i = sc.findinds(spacing[s] > spacing_bins[:])[-1]
+            data_spacing_counts[i] += 1
+
+        data_spacing_counts[:] /= data_spacing_counts[:].sum()
+        data_spacing_counts[:] *= 100
 
         x_ax = pl.linspace(0,100,len(sorted_spacing))
         x_ax_first = pl.linspace(0,100,len(sorted_first))
@@ -492,6 +502,12 @@ if do_run:
         model_ax = pl.linspace(0,100,len(model_spacing))
 
         model_age_ax = pl.linspace(0,100,len(model_age_first))
+
+        model_spacing_counts[:] /= model_spacing_counts[:].sum()
+        model_spacing_counts[:] *= 100
+
+        print(f'Model birth spacing bin percentages:{model_spacing_counts}')
+        print(f'Data birth spacing bin percentages: {data_spacing_counts}')
 
         # Plotting
         fig = pl.figure(figsize=(30,12))

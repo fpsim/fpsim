@@ -389,7 +389,7 @@ def default_methods():
 
     mcpr_rates = pl.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20])
 
-    methods['trend'] = mcpr_rates[-2] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
+    methods['trend'] = mcpr_rates[-4] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods
 
@@ -435,7 +435,7 @@ def default_methods_postpartum():
         [0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20])  # Combintion of DHS data and Track20 data
 
     methods_postpartum['trend'] = mcpr_rates[
-                           -2] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
+                           -4] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods_postpartum
 
@@ -487,14 +487,14 @@ def default_sexual_activity():
     percentage women who have had sex within the last year.
     From STAT Compiler DHS https://www.statcompiler.com/en/
     Using indicator "Timing of sexual intercourse"
-    Includes women who have had sex "within the last four weeks" or "within the last year"
-    For age 15 and 18, uses indicator "percent women who have had sex by exact age".
+    Includes women who have had sex "within the last four weeks"
     Data taken from 2018 DHS, no trend over years for now
+    Age 12.5 adjusted in calibration to help model match age at first intercourse
     '''
 
 
-    sexually_active = pl.array([[0, 5, 10, 12.5, 15,  18,   20,   25,  30, 35, 40,    45, 50],
-                                [0, 0,  0, 8, 10, 35.4, 50.2, 78.9, 80, 83, 88.1, 82.6, 82.6]])
+    sexually_active = pl.array([[0, 5, 10, 12.5, 15,  18,   20,     25,   30,    35,    40,   45,   50],
+                                [0, 0,  0,   8,  13.5,  13.5, 33.0, 56.3, 58.3, 61.1,  67.6,  64.7, 64.7]])
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     ages = pl.arange(resolution * max_age_preg + 1) / resolution
     activity_ages = sexually_active[0]
@@ -556,7 +556,7 @@ def default_lactational_amenorrhea():
 
     lactational_amenorrhea = {}
     lactational_amenorrhea['month'] = data[:, 0]
-    lactational_amenorrhea['percent'] = data[:, 1]
+    lactational_amenorrhea['rate'] = data[:, 1]
 
     return lactational_amenorrhea
 
@@ -602,7 +602,7 @@ def default_exposure_correction_age():
     '''
 
     exposure_correction_age = pl.array([[0,        5,       10,      12.5,       15,          18,       20,          25,         30,        35,           40,       45,          50],
-                                        [[1, 1], [1, 1], [1, 1], [1.3, 1.3], [3.0, 3.0], [3.0, 3.0], [2.5, 2.5], [2.5, 2.5], [2.0, 2.0], [2.0, 2.0], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
+                                        [[1, 1], [1, 1], [1, 1], [1.5, 1.5], [2.5, 2.5], [3.1, 3.1], [3.0, 3.0], [2.5, 2.5], [1.5, 1.5], [1.0, 1.0], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
 
     return exposure_correction_age
 
@@ -614,7 +614,7 @@ def default_exposure_correction_parity():
     '''
 
     exposure_correction_parity = pl.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                                           [0.8, 1.0, 1.0, 0.9, 0.9, 0.9, 0.7, 0.7, 0.7, 0.6, 0.6, 0.6, 0.5]])
+                                           [0.18, 0.5, 0.5, 0.5, 0.5, 0.4, 0.4, 0.4, 0.3, 0.3, 0.2, 0.2, 0.1]])
 
     return exposure_correction_parity
 
@@ -733,21 +733,6 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['fecundity_ratio_nullip'] = default_fecundity_ratio_nullip()
     pars['exposure_correction_age']= default_exposure_correction_age()
     pars['exposure_correction_parity'] = default_exposure_correction_parity()
-
-    # Population size array from Senegal data for plotting in sim
-    pars['pop_years'] = pl.array([1982., 1983., 1984., 1985., 1986., 1987., 1988., 1989., 1990.,
-                                  1991., 1992., 1993., 1994., 1995., 1996., 1997., 1998., 1999.,
-                                  2000., 2001., 2002., 2003., 2004., 2005., 2006., 2007., 2008.,
-                                  2009., 2010., 2011., 2012., 2013., 2014., 2015.])
-    pars['pop_size'] = pl.array([18171.28189616, 18671.90398192, 19224.80410006, 19831.90843354,
-                                 20430.1523254, 21102.60419936, 21836.03759909, 22613.45931046,
-                                 23427.16460161, 24256.32216052, 25118.86689077, 26016.96753169,
-                                 26959.59866908, 27950.59840084, 28881.13025563, 29867.46434421,
-                                 30902.09568706, 31969.90018092, 33062.81639339, 34143.09113842,
-                                 35256.73878676, 36402.87472106, 37583.29671208, 38797.07733839,
-                                 39985.26113334, 41205.93321424, 42460.86281582, 43752.50403785,
-                                 45081.05663263, 46401.31950667, 47773.28969221, 49185.05339094,
-                                 50627.82150134, 52100.32416946])
 
     ###
     # END TODO
