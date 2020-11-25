@@ -78,7 +78,7 @@ def default_age_pyramid():
     return pyramid
 
 
-def default_age_mortality():
+def default_age_mortality(bound):
     ''' Age-dependent mortality rates, Senegal specific from 1990-1995 -- see age_dependent_mortality.py in the fp_analyses repository
     Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
     '''
@@ -90,64 +90,41 @@ def default_age_mortality():
 
     mortality['years'] = pl.array([1950., 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
     mortality['trend'] = pl.array([28,    27,    26.023, 25.605, 24.687, 20.995, 16.9, 13.531, 11.335, 11.11, 10.752, 9.137, 7.305, 6.141, 5.7, 5.7, 5.7]) # First 2 estimated, last 3 are projected
-    mortality['trend'] /= mortality['trend'][8]
+    mortality['trend'] /= mortality['trend'][8]  # Normalize around 2000 for trending
+
+    ages = pl.arange(resolution * max_age + 1) / resolution
+    m_mortality_spline_model = si.splrep(x=mortality['bins'],
+                                      y=mortality['m'])  # Create a spline of mortality along known age bins
+    f_mortality_spline_model = si.splrep(x=mortality['bins'], y=mortality['f'])
+    m_mortality_spline = si.splev(ages, m_mortality_spline_model)  # Evaluate the spline along the range of ages in the model with resolution
+    f_mortality_spline = si.splev(ages, f_mortality_spline_model)
+    if bound:
+        m_mortality_spline = pl.minimum(1, pl.maximum(0, m_mortality_spline))
+        f_mortality_spline = pl.minimum(1, pl.maximum(0, f_mortality_spline))
+
+    mortality['m_spline'] = m_mortality_spline
+    mortality['f_spline'] = f_mortality_spline
+
     return mortality
 
-
-# def default_age_year_fertility():
-#     ''' From WPP2019_FERT_F07_AGE_SPECIFIC_FERTILITY.xlsx, filtered on Senegal '''
-#     fertility = {}
-#     fertility['ages'] = [0, 15, 20, 25, 30, 35, 40, 45, 50] # Starting age bin
-#     fertility['years'] = [1950, 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015], # Starting year bin
-#     fertility['data'] = [
-#         [0, 195.3,   297.1,   310.0,   260.9,   185.7,   78.1,    32.9, 0],
-#         [0, 194.5,   296.1,   303.4,   262.7,   197.3,   92.5,    33.6, 0],
-#         [0, 195.3,   299.0,   301.8,   267.6,   210.6,   110.4,   35.2, 0],
-#         [0, 192.2,   300.5,   302.6,   270.9,   219.3,   126.8,   37.7, 0],
-#         [0, 184.6,   296.6,   302.9,   270.6,   221.3,   134.5,   39.5, 0],
-#         [0, 176.8,   292.8,   304.4,   273.3,   224.4,   137.4,   40.9, 0],
-#         [0, 166.9,   289.2,   304.5,   278.8,   230.1,   138.6,   41.8, 0],
-#         [0, 142.9,   263.8,   283.5,   264.0,   218.2,   129.4,   38.1, 0],
-#         [0, 123.1,   241.6,   267.4,   250.9,   204.4,   119.3,   33.3, 0],
-#         [0, 109.7,   222.7,   252.7,   236.9,   186.3,   104.5,   27.1, 0],
-#         [0, 100.3,   207.8,   239.1,   222.8,   168.9,   89.4,    21.7, 0],
-#         [0, 93.5,    202.7,   236.2,   218.9,   163.6,   84.6,    20.5, 0],
-#         [0, 83.6,    195.2,   234.2,   214.1,   162.9,   87.4,    22.7, 0],
-#         [0, 72.7,    180.2,   220.7,   200.0,   152.3,   82.1,    22.0, 0],
-#         ]
-#     return fertility
-
-
-def default_age_fertility():
-    ''' Less-developed countries, WPP2019_MORT_F15_3_LIFE_TABLE_SURVIVORS_FEMALE.xlsx, 1990-1995 '''
-    f15 = 0.1 # Adjustment factor for women aged 15-20
-    f20 = 0.5 # Adjustment factor for women aged 20-25
-    fertility = {
-            'bins': pl.array([ 0.,  5, 10,         15,         20,     25,     30,     35,      40,       45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
-            # 'f':    pl.array([ 0,  0,  0, f15*0.0706, f20*0.0196, 0.0180, 0.0115, 0.00659, 0.00304, 0.00091,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
-            'f':    pl.array([ 0.,  0,  0,   72.7,  180.2,  220.7,  200.0,   152.3,    82.1,    22.0,  0,  0,  0,  0,  0,  0,  0,  0,  0,  0])}
-    fertility['f'] /= 1000 # Births per thousand to births per woman
-    fertility['m'] = 0*fertility['f'] # Men don't have fertility -- probably could be handled differently!
-    fertility['years'] = pl.array([1950., 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025, 2030]) # Starting year bin
-    fertility['trend'] = pl.array([194.3, 197.1, 202.9, 207.1, 207.1, 207.1, 207.1, 191.4, 177.1, 162.9, 150.0, 145.7, 142.9, 132.9, 125, 120, 115]) # Last 3 are projected!!
-    fertility['trend'] /= fertility['trend'][-1]
-
-
+def default_female_age_fecundity(bound):
     '''
-    Change to fecundity rate from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
-    Fecundity rate in 15-20 age bin estimated at 0.329 of fecundity of 25-27 yr olds, based on fertility data above
-    45-50 age bin also estimated at 0.10 of fecundity of 25-27 yr olds, based on fertility data
+    Use fecundity rates from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+    Fecundity rate in 12.5-20 age bins estimated equal to fecundity of 20-25 yr olds
+    45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds, based on fertility rates from Senegal
     '''
-    f15 = 0.1  # Adjustment factor for women aged 15-20
-    f20 = 0.5  # Adjustment factor for women aged 20-25
     fecundity = {
         'bins': pl.array([0., 5, 10, 12.5,  15,    20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
         'f': pl.array([0.,    0,  0, 70.8, 70.8, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
-    fecundity['m'] = 0 * fecundity['f']
 
-    return fecundity
+    ages = pl.arange(resolution * max_age + 1) / resolution
+    fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
+    fecundity_interp = fecundity_interp_model(ages)
+    if bound:
+        fecundity_interp = pl.minimum(1, pl.maximum(0, fecundity_interp))
 
+    return fecundity_interp
 
 def default_maternal_mortality():
     '''
@@ -266,6 +243,8 @@ def default_infant_mortality():
 
 
 '''' 
+OLD INITIATION, DISCONTINUATION, AND SWITCHING CONTRACEPTIVE MATRICES.  LEAVING HERE IN CASE USEFUL.
+CAN'T COMMENT ON HOW THESE PROBABILITIES WERE CALCULATED
 def default_methods():
     methods = {}
 
@@ -308,6 +287,9 @@ def default_methods():
 
 
 def default_methods():
+    '''Matrices to give transitional probabilities from 2018 DHS Senegal contraceptive calendar data
+    Probabilities in this function are annual probabilities of initiating, discontinuing, continuing
+    or switching methods'''
     methods = {}
 
     methods['map'] = {'None': 0,
@@ -371,6 +353,7 @@ def default_methods():
     }
 
     '''
+    Not age-stratified, if wanting to revert to these
     methods['probs_matrix'] = pl.array([
         [0.9675668047,   0.0067289610,   0.0013039766,   0.0131728314,   0.0016425499,   0.0000513672,  0.0005032939, 0.0000719133, 0.0081880486, 0.0007702535],
         [0.3175086974,   0.6396387998,   0.0042690889,   0.0262002878,   0.0017096448,   0.0000000000,  0.0008551576, 0.0017096448,  0.0059720416, 0.0021366372],
@@ -389,12 +372,14 @@ def default_methods():
 
     mcpr_rates = pl.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20])
 
-    methods['trend'] = mcpr_rates[-4] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
+    methods['trend'] = mcpr_rates[-2] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods
 
 
 def default_methods_postpartum():
+    '''Function to give probabilities postpartum.  Probabilities are transitional probabilities
+    over 3 month period'''
     methods_postpartum = {}
 
     methods_postpartum['map'] = {'None': 0,
@@ -505,7 +490,7 @@ def default_sexual_activity():
 
 def default_sexual_activity_postpartum():
     '''
-    Returns an array of monthly likelihood of having resumed sexual activity within 0-11 months postpatum
+    Returns an array of monthly likelihood of having resumed sexual activity within 0-11 months postpartum
     From DHS Senegal 2018 calendar data
     '''
 
@@ -602,7 +587,7 @@ def default_exposure_correction_age():
     '''
 
     exposure_correction_age = pl.array([[0,        5,       10,      12.5,       15,          18,       20,          25,         30,        35,           40,       45,          50],
-                                        [[1, 1], [1, 1], [1, 1], [1.5, 1.5], [2.5, 2.5], [3.1, 3.1], [3.2, 3.2], [2.8, 2.8], [1.5, 1.5], [1.0, 1.0], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
+                                        [[1, 1], [1, 1], [1, 1], [1.5, 1.5], [2.5, 2.5], [3.2, 3.2], [3.4, 3.4], [2.6, 2.6], [1.3, 1.3], [1.0, 1.0], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
 
     return exposure_correction_age
 
@@ -637,11 +622,11 @@ def load_defaults_file(defaults_file=None):
     return load_configuration_file(configuration_file=defaults_file)
 
 
-def set_fertility_variation(input_parameters, all_parameters, defaults):
+def set_fecundity_variation(input_parameters, all_parameters, defaults):
     # Multiplicative range of fertility factors, from confidence intervals from PRESTO study, adjusted from 0.9-1.1 to account for calibration to data
-    low = get_parameter(parameters=input_parameters, parameter='fertility_variation_low', defaults=defaults)
-    high = get_parameter(parameters=input_parameters, parameter='fertility_variation_high', defaults=defaults)
-    all_parameters['fertility_variation'] = [low, high]
+    low = get_parameter(parameters=input_parameters, parameter='fecundity_variation_low', defaults=defaults)
+    high = get_parameter(parameters=input_parameters, parameter='fecundity_variation_high', defaults=defaults)
+    all_parameters['fecundity_variation'] = [low, high]
 
 
 def set_pregnancy_duration(input_parameters, all_parameters, defaults):
@@ -678,8 +663,8 @@ def get_parameter(parameters, parameter, defaults):
 #     'timestep': 1, # Timestep in months  DO NOT CHANGE
 #     'verbose': True,
 #
-#     'fertility_variation_low': 0.3,
-#     'fertility_variation_high': 1.3,
+#     'fecundity_variation_low': 0.3,
+#     'fecundity_variation_high': 1.3,
 #     'method_age': 15,  # When people start choosing a method
 #     'max_age': 99,
 #     'preg_dur_low': 9,
@@ -708,7 +693,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     #
 
     # parameters that require a bit of code to set
-    set_fertility_variation(input_parameters=input_parameters, all_parameters=pars, defaults=default_parameters)
+    set_fecundity_variation(input_parameters=input_parameters, all_parameters=pars, defaults=default_parameters)
     set_pregnancy_duration(input_parameters=input_parameters, all_parameters=pars, defaults=default_parameters)
     set_breastfeeding_duration(input_parameters=input_parameters, all_parameters=pars, defaults=default_parameters)
 
@@ -720,8 +705,8 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['methods']            = default_methods()
     pars['methods_postpartum'] = default_methods_postpartum()
     pars['age_pyramid']        = default_age_pyramid()
-    pars['age_mortality']      = default_age_mortality()
-    pars['age_fertility']      = default_age_fertility()  # Changed to age_fecundity for now from age_fertility for use with LEMOD
+    pars['age_mortality']      = default_age_mortality(bound=True)
+    pars['age_fecundity']      = default_female_age_fecundity(bound=True)  # Changed to age_fecundity for now from age_fertility for use with LEMOD
     pars['method_efficacy']    = default_efficacy()
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()

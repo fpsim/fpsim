@@ -65,28 +65,27 @@ def mt(probs):
     ''' A multinomial trial '''
     return np.searchsorted(np.cumsum(probs), np.random.random())
 
-@func_decorator((nb.float64, nb.float64[:], nb.float64[:], nb.float64, nb.float64, nb.float64))
-def numba_mortality_prob(t, mortality_fn, trend_fn, age, resolution, mpy):
-    mortality_eval = mortality_fn[int(round(age * resolution))]
-    trend_eval = trend_fn[int(round(t * resolution))]
-    prob_annual = mortality_eval*trend_eval
-    prob_annual = np.median(np.array([0, prob_annual, 1])) # Some annual probs go slightly over 1 in older age groups when corrected for mortality trend spline
-    #prob_month = prob_annual/mpy
-    prob_month = 1 - ((1-prob_annual)**(1/mpy))
-    return prob_month
-
-
 @func_decorator((nb.float64[:], nb.float64, nb.float64, nb.float64, nb.float64))
-def numba_preg_prob(fertility_fn, age, resolution, method_eff, mpy):
-    ''' Pull this out here since it's the most computationally expensive '''
-    preg_eval = fertility_fn[int(round(age*resolution))]
-    prob_annual = ((1-method_eff) * preg_eval)
-    #prob_month = prob_annual/mpy
+def numba_mortality_prob(mortality_fn, trend, age, resolution, mpy):
+    mortality_eval = mortality_fn[int(round(age * resolution))]
+    prob_annual = mortality_eval * trend
+    prob_annual = np.median(np.array([0, prob_annual, 1]))
     prob_month = 1 - ((1-prob_annual)**(1/mpy))
-    #trend_eval = trend_fn[int(round(t*resolution))]
-
     return prob_month
 
+
+@func_decorator((nb.float64[:], nb.float64, nb.float64, nb.float64, nb.float64, nb.int64, nb.float64, nb.float64))
+def numba_preg_prob(fecundity_fn, personal_fecundity, age, resolution, method_eff, lam, lam_eff, mpy):
+    ''' Pull this out here since it's the most computationally expensive '''
+    fecundity_fn = fecundity_fn * personal_fecundity
+    preg_eval = fecundity_fn[int(round(age*resolution))]
+    if lam:
+        prob_annual = (1-lam_eff) * preg_eval
+    else:
+        prob_annual = ((1-method_eff) * preg_eval)
+
+    prob_month = 1 - ((1-prob_annual)**(1/mpy))
+    return prob_month
 
 @func_decorator((nb.float64[:], nb.float64, nb.float64))
 def numba_activity_prob(sexual_activity, age, resolution):

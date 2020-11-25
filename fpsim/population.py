@@ -33,43 +33,32 @@ def make_age_sex_splines(pars):
     return m_pop_spline, f_pop_spline, male_fraction
 
 
-def lookup_fertility_mortality_splines(pars, which = None, bound=True):
+def lookup_mortality_splines(pars, bound=True):
     """
-    Returns splines of fertility or mortality data evaluated along arrays of ages and trends over years
-    For use in calculating probability of pregnancy or death
-    'which' argument refers to either fertility or mortality from parameters
+    Returns splines mortality data evaluated along arrays of ages and trends over years
+    For use in calculating probability of death
+    Not currently using, moved this code to senegal_parameters.py and took out trend spline and replaced with
+    findnearest in model.py code.   Leaving here in case this code is useful.
     """
-    data = pars[which]
+    data = pars['age_mortality']
     ages = pl.arange(resolution * pars['max_age'] + 1) / resolution
     years = pl.arange(resolution * (pars['end_year'] - pars['start_year']) + 1) / resolution + pars['start_year']
-    male_fertility_mortality_spline = si.splrep(x=data['bins'],
-                                 y=data['m'])  # Create a spline of fertility or mortality along known age bins
-    female_fertility_mortality_spline = si.splrep(x=data['bins'], y = data['f'])
+    male_mortality_spline = si.splrep(x=data['bins'],
+                                 y=data['m'])  # Create a spline of mortality along known age bins
+    female_mortality_spline = si.splrep(x=data['bins'], y = data['f'])
     trend_spline = si.splrep(x=data['years'],
                              y=data['trend'])  # Create a spline of the mortality trend over years we have data
-    male_fertility_mortality_lookup = si.splev(ages,
-                                male_fertility_mortality_spline) # Evaluate the spline along the range of ages in the model with resolution
-    female_fertility_mortality_lookup = si.splev(ages,
-                                               female_fertility_mortality_spline)
+    male_mortality_lookup = si.splev(ages,
+                                male_mortality_spline) # Evaluate the spline along the range of ages in the model with resolution
+    female_mortality_lookup = si.splev(ages,
+                                               female_mortality_spline)
     trend_lookup = si.splev(years, trend_spline)  # Evaluate the spline along the range of years in the model
     if bound:
-        male_fertility_mortality_lookup = pl.minimum(1, pl.maximum(0, male_fertility_mortality_lookup))
-        female_fertility_mortality_lookup = pl.minimum(1, pl.maximum(0, female_fertility_mortality_lookup))
+        male_mortality_lookup = pl.minimum(1, pl.maximum(0, male_mortality_lookup))
+        female_mortality_lookup = pl.minimum(1, pl.maximum(0, female_mortality_lookup))
 
-    return male_fertility_mortality_lookup, female_fertility_mortality_lookup, trend_lookup
+    return male_mortality_lookup, female_mortality_lookup, trend_lookup
 
-def lookup_fecundity_splines(pars, bound = True ):
-
-    ages = pl.arange(resolution * pars['max_age'] + 1) / resolution
-    male_fecundity_interp_model = si.interp1d(x = pars['age_fertility']['bins'], y = pars['age_fertility']['m'])
-    female_fecundity_interp_model = si.interp1d(x=pars['age_fertility']['bins'], y=pars['age_fertility']['f'])
-    male_fecundity_interp = male_fecundity_interp_model(ages)
-    female_fecundity_interp = female_fecundity_interp_model(ages)
-    if bound:
-        male_fecundity_interp = pl.minimum(1, pl.maximum(0, male_fecundity_interp))
-        female_fecundity_interp = pl.minimum(1, pl.maximum(0, female_fecundity_interp))
-
-    return male_fecundity_interp, female_fecundity_interp
 
 
 
