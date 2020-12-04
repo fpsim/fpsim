@@ -34,7 +34,7 @@ setup(
         'scipy',
         'matplotlib',
         'pandas',
-        'sciris',
+        'sciris>=1.0',
         "numba",
         "seaborn>=0.9",
     ],
