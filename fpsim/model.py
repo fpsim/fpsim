@@ -29,7 +29,7 @@ class Person(base.ParsObj):
     '''
     Class for a single person.
     '''
-    def __init__(self, pars, age=0, sex=0, parity=0, method=None, barrier='None', postpartum_dur = 0, gestation = 0, unmet=False, breastfeed_dur = 0, breastfeed_dur_total = 0):
+    def __init__(self, pars, age=0, sex=0, parity=0, method=None, barrier='None', postpartum_dur = 0, gestation = 0, remainder_months = 0, unmet=False, breastfeed_dur = 0, breastfeed_dur_total = 0):
         self.update_pars(pars) # Set parameters
         self.uid = str(pl.randint(0,1e9))
         self.age = float(age) # Age of the person (in years)
@@ -52,12 +52,13 @@ class Person(base.ParsObj):
         self.breastfeed_dur_total = breastfeed_dur_total
         f_var = self.pars['fecundity_variation']
         self.personal_fecundity = np.random.random()*(f_var[1]-f_var[0])+f_var[0] # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
+        self.remainder_months = remainder_months
 
         self.init_step_results() # Do I need this?
         return
 
 
-    def get_method(self):
+    def get_method(self, y):
         '''
         Uses a switching matrix from DHS data to decide based on a person's original method their probability of changing to a
         new method and assigns them the new method. Currently allows switching on whole calendar years to enter function.
@@ -74,12 +75,22 @@ class Person(base.ParsObj):
             matrix = self.pars['methods']['21-25']
         elif self.age > 25:
             matrix = self.pars['methods']['>25']
-            
         else:
             raise Exception('Agent age does not match choice matrix options')
 
         #matrix = self.pars['methods']['switch_general']   Use if going back to non-age stratified
         choices = matrix[orig_method]
+
+        '''
+        if 6 < self.postpartum_dur <= 12:
+            partial_year_choices = np.zeros(len(choices))
+            for idx, choice in enumerate(choices):
+                partial_year_choice = 1 - ((1 - choice) ** (self.remainder_months / mpy))
+                partial_year_choices[idx] = partial_year_choice
+
+            choices = partial_year_choices
+            self.remainder_months = 0
+        '''
 
         new_method = utils.mt(choices)
         self.method = new_method
@@ -89,7 +100,7 @@ class Person(base.ParsObj):
                 print(f'Switched from {orig_method} to {new_method}')
         return
 
-    def get_method_postpartum(self):
+    def get_method_postpartum(self, t):
         '''Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by
          3 months postpartum and then initiate, continue, or discontinue a method by 6 months postpartum.
         Next opportunity to switch methods will be on whole calendar years, whenever that falls.
@@ -117,6 +128,7 @@ class Person(base.ParsObj):
         if self.postpartum_dur == 6:
             orig_method = self.method
             choices_postpartum = self.pars['methods_postpartum']['switch_postpartum'][orig_method]
+            #self.remainder_months = int((t - int(t)) * mpy)
 
             self.method = utils.mt(choices_postpartum)
 
@@ -347,16 +359,16 @@ class Person(base.ParsObj):
 
         return
 
-    def update_contraception(self, t):
+    def update_contraception(self, t, y):
         '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
 
         if self.postpartum and self.postpartum_dur <= 6:
-            self.get_method_postpartum()
+            self.get_method_postpartum(t)
 
         # If switching frequency in months has passed, allows switching only on whole years
         else:
             if t % (self.pars['switch_frequency']/mpy) == 0:
-                self.get_method()
+                self.get_method(y)
 
         return
 
@@ -391,7 +403,7 @@ class Person(base.ParsObj):
         return
 
 
-    def update(self, t):
+    def update(self, t, y):
         '''Update the person's state for the given timestep.
         t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)'''
 
@@ -414,9 +426,9 @@ class Person(base.ParsObj):
                         return self.step_results
 
                 if not self.pregnant:
-                    if self.pars['method_age'] <= self.age < self.pars['age_limit_fecundity']:
-                        self.update_contraception(t)
                     self.check_sexually_active()
+                    if self.pars['method_age'] <= self.age < self.pars['age_limit_fecundity']:
+                        self.update_contraception(t, y)
                     self.check_lam()
                     if self.sexually_active:
                         self.check_conception()  # Decide if conceives and initialize gestation counter at 0
@@ -605,7 +617,7 @@ class Sim(base.BaseSim):
             total_women_fecund = 0
 
             for person in self.people.values():
-                step_results = person.update(t) # Update and count new cases
+                step_results = person.update(t, y) # Update and count new cases
                 deaths          += step_results['died']
                 births          += step_results['gave_birth']
                 maternal_deaths += step_results['maternal_death']
