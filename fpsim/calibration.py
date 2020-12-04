@@ -566,7 +566,7 @@ class Calibration(sc.prettyobj):
 
         # Data skyscraper
         ax = axs[0,1]
-        ax.pcolormesh(self.age_bins, self.parity_bins, data.skyscrapers)
+        ax.pcolormesh(self.age_bins, self.parity_bins, data.skyscrapers, shading='nearest')
         ax.set_aspect(1./ax.get_data_ratio()) # Make square
         ax.set_title('Age-parity plot: data')
         ax.set_xlabel('Age')
@@ -574,7 +574,7 @@ class Calibration(sc.prettyobj):
 
         # Sim skyscraper
         ax = axs[1,1]
-        ax.pcolormesh(self.age_bins, self.parity_bins, sim.skyscrapers)
+        ax.pcolormesh(self.age_bins, self.parity_bins, sim.skyscrapers, shading='nearest')
         ax.set_aspect(1./ax.get_data_ratio())
         ax.set_title('Age-parity plot: sim')
         ax.set_xlabel('Age')
