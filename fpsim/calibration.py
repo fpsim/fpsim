@@ -586,8 +586,8 @@ class Calibration(sc.prettyobj):
         y = np.arange(len(data.spacing_stats))
         ax.barh(y=y+height/2, width=data.spacing_stats, height=height, align='center', label='Data')
         ax.barh(y=y-height/2, width=sim.spacing_stats,  height=height, align='center', label='Sim')
-        ax.set_title('Birth spacing')
-        ax.set_xlabel('Todo: fix this label')
+        ax.set_title('Birth spacing - Lower quartile, median, upper quartile')
+        ax.set_xlabel('Birth space in years')
         ax.set_ylabel('Todo: fix this label')
         ax.legend()
 
@@ -597,8 +597,8 @@ class Calibration(sc.prettyobj):
         y = np.arange(len(data.age_first_stats))
         ax.barh(y=y+height/2, width=data.age_first_stats, height=height, align='center', label='Data')
         ax.barh(y=y-height/2, width=sim.age_first_stats,  height=height, align='center', label='Sim')
-        ax.set_title('Age at first birth')
-        ax.set_xlabel('Todo: fix this label')
+        ax.set_title('Age at first birth - Lower quartile, median, upper quartile')
+        ax.set_xlabel('Age')
         ax.set_ylabel('Todo: fix this label')
         ax.legend()
 
@@ -608,8 +608,8 @@ class Calibration(sc.prettyobj):
         y = np.arange(len(data.age_pregnant_stats))
         ax.barh(y=y+height/2, width=data.age_pregnant_stats, height=height, align='center', label='Data')
         ax.barh(y=y-height/2, width=sim.age_pregnant_stats,  height=height, align='center', label='Sim')
-        ax.set_title('Age pregnancy statistics')
-        ax.set_xlabel('Todo: fix this label')
+        ax.set_title('Age of women currently pregnant - Lower quartile, median, upper quartile')
+        ax.set_xlabel('Age')
         ax.set_ylabel('Todo: fix this label')
         ax.legend()
 
@@ -626,9 +626,9 @@ class Calibration(sc.prettyobj):
                     marker = '-'
                     label = 'Sim'
                 ax.plot(vals, marker, c=cols[j], label=label)
-        ax.set_title('Age parity statistics')
-        ax.set_xlabel('Todo: fix this label')
-        ax.set_ylabel('Todo: fix this label')
+        ax.set_title('Age parity statistics - Lower quartile, median, upper quartile')
+        ax.set_xlabel('Parity')
+        ax.set_ylabel('Age')
         ax.legend()
 
         # Method counts
@@ -638,8 +638,8 @@ class Calibration(sc.prettyobj):
         ax.bar(x=x+width/2, height=data.method_counts, width=width, align='center', label='Data')
         ax.bar(x=x-width/2, height=sim.method_counts,  width=width, align='center', label='Sim')
         ax.set_title('Method counts')
-        ax.set_xlabel('Todo: fix this label')
-        ax.set_ylabel('Todo: fix this label')
+        ax.set_xlabel('Contraceptive method')
+        ax.set_ylabel('Rate of use')
         ax.legend()
 
         # Tidy up
