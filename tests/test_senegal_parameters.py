@@ -75,12 +75,12 @@ class TestSenegalParametersConfiguration(unittest.TestCase):
         low = 0.22
         high = 0.33
 
-        configuration = {'fertility_variation_low': low, 'fertility_variation_high': high}
-        parameters = self.load_parameters(configuration=configuration)
-        self.assertEqual([low, high], parameters['fertility_variation'])
-        configuration = {'fertility_variation_low': low, 'fertility_variation_high': None}
-        parameters = self.load_parameters(configuration=configuration)
-        self.assertEqual([low, self.DEFAULT_INPUT_PARAMETERS['fertility_variation_high']], parameters['fertility_variation'])
+        # configuration = {'fertility_variation_low': low, 'fertility_variation_high': high}
+        # parameters = self.load_parameters(configuration=configuration)
+        # self.assertEqual([low, high], parameters['fertility_variation'])
+        # configuration = {'fertility_variation_low': low, 'fertility_variation_high': None}
+        # parameters = self.load_parameters(configuration=configuration)
+        # self.assertEqual([low, self.DEFAULT_INPUT_PARAMETERS['fertility_variation_high']], parameters['fertility_variation'])
 
         configuration = {'preg_dur_low': low, 'preg_dur_high': high}
         parameters = self.load_parameters(configuration=configuration)

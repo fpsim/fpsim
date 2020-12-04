@@ -45,10 +45,8 @@ class Calibration(sc.prettyobj):
 
     def __init__(self, flags):
         self.flags = flags # Set flags for what gets run
-        self.model_results = sc.odict()
-        self.model_people = sc.odict()
-        self.model_to_calib = sc.odict()
-        self.dhs_data = sc.odict()
+        self.model_to_calib = sc.objdict()
+        self.dhs_data = sc.objdict()
         self.method_keys = None
 
         return
@@ -149,7 +147,7 @@ class Calibration(sc.prettyobj):
         self.model_to_calib['pop_size'] = self.model_results['pop_size']
         self.model_to_calib['pop_years'] = self.model_results['tfr_years']
 
-        model_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
+        model_growth_rate = self.pop_growth_rate(self.model_to_calib['pop_years'], self.model_to_calib['pop_size'])
         self.model_to_calib['pop_growth_rate'] = model_growth_rate
 
         return
@@ -165,7 +163,7 @@ class Calibration(sc.prettyobj):
 
         model_mcpr = filtered_model['mcpr'].to_numpy()
 
-        self.model_to_calib['mcpr'] = model_mcpr
+        self.model_to_calib['mcpr'] = model_mcpr*100 # Since data is in 100
         self.model_to_calib['mcpr_years'] = self.dhs_data['mcpr_years']
 
         return
@@ -258,6 +256,8 @@ class Calibration(sc.prettyobj):
 
         self.dhs_data['skyscrapers'] = sky_arr['Data']
         self.model_to_calib['skyscrapers'] = sky_arr['Model']
+        self.age_bins = age_bins
+        self.parity_bins = parity_bins
 
         return
 
@@ -423,7 +423,21 @@ class Calibration(sc.prettyobj):
 
         self.model_to_calib['age_parity_stats'] = parity_model_stats
 
-    def run(self, pars):
+
+    def compute_fit(self, *args, **kwargs):
+        ''' Compute how good the fit is '''
+        data = self.dhs_data
+        sim = self.model_to_calib
+        for k in data.keys():
+            data[k] = sc.promotetoarray(data[k])
+            data[k] = data[k].flatten()
+            sim[k] = sc.promotetoarray(sim[k])
+            sim[k] = sim[k].flatten()
+        self.fit = Fit(data, sim, *args, **kwargs)
+        pass
+
+
+    def run(self, pars, *args, **kwargs):
 
         self.run_model(pars)
         self.extract_model()
@@ -444,7 +458,198 @@ class Calibration(sc.prettyobj):
         del self.dhs_data['pregnancy_parity']
         del self.model_to_calib['pregnancy_parity']
 
+        # Compute comparison
+        self.df = self.compare()
+
+        # Compute fit
+        # self.compute_fit(*args, **kwargs)
+
         return
+
+
+    def compare(self):
+        ''' Create and print a comparison between model and data '''
+        # Check that keys match
+        data_keys = self.dhs_data.keys()
+        model_keys = self.model_to_calib.keys()
+        assert set(data_keys) == set(model_keys), 'Data and model keys do not match'
+
+        # Compare the two
+        comparison = []
+        for key in data_keys:
+            dv = self.dhs_data[key] # dv = "Data value"
+            mv = self.model_to_calib[key] # mv = "Model value"
+            cmp = sc.objdict(key=key,
+                             d_type=type(dv),
+                             m_type=type(mv),
+                             d_shape=np.shape(dv),
+                             m_shape=np.shape(mv),
+                             d_val='array',
+                             m_val='array')
+            if sc.isnumber(dv):
+                cmp.d_val = dv
+            if sc.isnumber(mv):
+                cmp.m_val = mv
+
+            comparison.append(cmp)
+
+        df = pd.DataFrame.from_dict(comparison)
+        return df
+
+
+    def plot(self, axes_args=None, do_maximize=True, do_show=True):
+        ''' Plot the model against the data '''
+        data = self.dhs_data
+        sim = self.model_to_calib
+
+        # Set up keys structure and remove non-plotted keys
+        keys = ['rates'] + list(data.keys())
+        rate_keys = ['maternal_mortality_ratio',
+                     'infant_mortality_rate',
+                     'crude_death_rate',
+                     'crude_birth_rate']
+        non_calibrated_keys = ['pop_years', 'mcpr_years']
+        for key in rate_keys + non_calibrated_keys:
+            keys.remove(key)
+        nkeys = len(keys)
+        expected = 11
+        if nkeys != expected:
+            errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys}'
+            raise ValueError(errormsg)
+
+        fig, axs = pl.subplots(nrows=4, ncols=3)
+        pl.subplots_adjust(**sc.mergedicts(dict(bottom=0.05, top=0.97, left=0.05, right=0.97, wspace=0.3, hspace=0.3), axes_args))
+
+        #%% Do the plotting!
+
+        # Rates
+        ax = axs[0,0]
+        height = 0.4
+        n_rates = len(rate_keys)
+        y = np.arange(n_rates)
+        data_rates = np.array([data[k] for k in rate_keys])
+        sim_rates  = np.array([sim[k] for k in rate_keys])
+        ax.barh(y=y+height/2, width=data_rates, height=height, align='center', label='Data')
+        ax.barh(y=y-height/2, width=sim_rates,  height=height, align='center', label='Sim')
+        ax.set_title('Rates')
+        ax.set_xlabel('Rate')
+        ax.set_yticks(range(n_rates))
+        ax.set_yticklabels(rate_keys)
+        ax.legend()
+
+        # Population size
+        ax = axs[1,0]
+        ax.plot(data.pop_years, data.pop_size, 'o', label='Data')
+        ax.plot(sim.pop_years,  sim.pop_size,  '-', label='Sim')
+        ax.set_title('Population size')
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Population size')
+        ax.legend()
+
+        # Population growth rate
+        ax = axs[2,0]
+        ax.plot(data.pop_years[:-1], data.pop_growth_rate, 'o', label='Data')
+        ax.plot(sim.pop_years[:-1],  sim.pop_growth_rate,  '-', label='Sim')
+        ax.set_title('Population growth rate')
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Population growth rate')
+        ax.legend()
+
+        # MCPR
+        ax = axs[3,0]
+        ax.plot(data.mcpr_years, data.mcpr, 'o', label='Data')
+        ax.plot(sim.mcpr_years,  sim.mcpr*100,  '-', label='Sim') # TODO: remove scale factor
+        ax.set_title('MCPR')
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Modern contraceptive prevalence rate')
+        ax.legend()
+
+        # Data skyscraper
+        ax = axs[0,1]
+        ax.pcolormesh(self.age_bins, self.parity_bins, data.skyscrapers)
+        ax.set_aspect(1./ax.get_data_ratio()) # Make square
+        ax.set_title('Age-parity plot: data')
+        ax.set_xlabel('Age')
+        ax.set_ylabel('Parity')
+
+        # Sim skyscraper
+        ax = axs[1,1]
+        ax.pcolormesh(self.age_bins, self.parity_bins, sim.skyscrapers)
+        ax.set_aspect(1./ax.get_data_ratio())
+        ax.set_title('Age-parity plot: sim')
+        ax.set_xlabel('Age')
+        ax.set_ylabel('Parity')
+
+        # Spacing stats
+        ax = axs[2,1]
+        height = 0.4
+        y = np.arange(len(data.spacing_stats))
+        ax.barh(y=y+height/2, width=data.spacing_stats, height=height, align='center', label='Data')
+        ax.barh(y=y-height/2, width=sim.spacing_stats,  height=height, align='center', label='Sim')
+        ax.set_title('Birth spacing')
+        ax.set_xlabel('Todo: fix this label')
+        ax.set_ylabel('Todo: fix this label')
+        ax.legend()
+
+        # Age first stats
+        ax = axs[3,1]
+        height = 0.4
+        y = np.arange(len(data.age_first_stats))
+        ax.barh(y=y+height/2, width=data.age_first_stats, height=height, align='center', label='Data')
+        ax.barh(y=y-height/2, width=sim.age_first_stats,  height=height, align='center', label='Sim')
+        ax.set_title('Age at first birth')
+        ax.set_xlabel('Todo: fix this label')
+        ax.set_ylabel('Todo: fix this label')
+        ax.legend()
+
+        # Age pregnant stats
+        ax = axs[0,2]
+        height = 0.4
+        y = np.arange(len(data.age_pregnant_stats))
+        ax.barh(y=y+height/2, width=data.age_pregnant_stats, height=height, align='center', label='Data')
+        ax.barh(y=y-height/2, width=sim.age_pregnant_stats,  height=height, align='center', label='Sim')
+        ax.set_title('Age pregnancy statistics')
+        ax.set_xlabel('Todo: fix this label')
+        ax.set_ylabel('Todo: fix this label')
+        ax.legend()
+
+        # Age parity stats
+        ax = axs[1,2]
+        cols = sc.gridcolors(3)
+        for i,yvals in enumerate([data.age_parity_stats, sim.age_parity_stats]):
+            for j in range(3):
+                vals = yvals[:,j]
+                if i==0:
+                    marker = 'o'
+                    label = 'Data'
+                else:
+                    marker = '-'
+                    label = 'Sim'
+                ax.plot(vals, marker, c=cols[j], label=label)
+        ax.set_title('Age parity statistics')
+        ax.set_xlabel('Todo: fix this label')
+        ax.set_ylabel('Todo: fix this label')
+        ax.legend()
+
+        # Method counts
+        ax = axs[2,2]
+        width = 0.4
+        x = np.arange(len(data.method_counts))
+        ax.bar(x=x+width/2, height=data.method_counts, width=width, align='center', label='Data')
+        ax.bar(x=x-width/2, height=sim.method_counts,  width=width, align='center', label='Sim')
+        ax.set_title('Method counts')
+        ax.set_xlabel('Todo: fix this label')
+        ax.set_ylabel('Todo: fix this label')
+        ax.legend()
+
+        # Tidy up
+        if do_maximize:
+            sc.maximize(fig=fig)
+
+        if do_show:
+            pl.show()
+
+        pass
 
 
 
@@ -477,39 +682,29 @@ class Fit(sc.prettyobj):
         fit.plot()
     '''
 
-    def __init__(self, sim, weights=None, keys=None, custom=None, compute=True, verbose=False, **kwargs):
+    def __init__(self, data, sim, weights=None, keys=None, custom=None, compute=True, verbose=False, **kwargs):
 
         # Handle inputs
         self.weights    = weights
         self.custom     = sc.mergedicts(custom)
         self.verbose    = verbose
         self.weights    = sc.mergedicts({'cum_deaths':10, 'cum_diagnoses':5}, weights)
-        self.keys       = keys
         self.gof_kwargs = kwargs
 
         # Copy data
-        if sim.data is None:
-            errormsg = 'Model fit cannot be calculated until data are loaded'
-            raise RuntimeError(errormsg)
-        self.data = sim.data
+        self.data = data
+        self.sim_results = sim
 
-        # Copy sim results
-        if not sim.results_ready:
-            errormsg = 'Model fit cannot be calculated until results are run'
-            raise RuntimeError(errormsg)
-        self.sim_results = sc.objdict()
-        for key in sim.result_keys() + ['t', 'date']:
-            self.sim_results[key] = sim.results[key]
-        self.sim_npts = sim.npts # Number of time points in the sim
-
-        # Copy other things
-        self.sim_dates = sim.datevec.tolist()
+        # Remove keys that aren't for fitting
+        for key in ['pop_years', 'mcpr_years', 'spacing_bins']:
+            self.data.pop(key)
+            self.sim_results.pop(key)
+        self.keys       = data.keys()
 
         # These are populated during initialization
         self.inds         = sc.objdict() # To store matching indices between the data and the simulation
         self.inds.sim     = sc.objdict() # For storing matching indices in the sim
         self.inds.data    = sc.objdict() # For storing matching indices in the data
-        self.date_matches = sc.objdict() # For storing matching dates, largely for plotting
         self.pair         = sc.objdict() # For storing perfectly paired points between the data and the sim
         self.diffs        = sc.objdict() # Differences between pairs
         self.gofs         = sc.objdict() # Goodness-of-fit for differences
@@ -536,7 +731,8 @@ class Fit(sc.prettyobj):
     def reconcile_inputs(self):
         ''' Find matching keys and indices between the model and the data '''
 
-        data_cols = self.data.columns
+        data_cols = set(self.data.keys())
+
         if self.keys is None:
             sim_keys = self.sim_results.keys()
             intersection = list(set(sim_keys).intersection(data_cols)) # Find keys in both the sim and data
@@ -553,15 +749,12 @@ class Fit(sc.prettyobj):
         for key in self.keys: # For keys present in both the results and in the data
             self.inds.sim[key]  = []
             self.inds.data[key] = []
-            self.date_matches[key] = []
             count = -1
-            for d, datum in self.data[key].iteritems():
+            for d, datum in enumerate(self.data[key]):
                 count += 1
                 if np.isfinite(datum):
-                    if d in self.sim_dates:
-                        self.date_matches[key].append(d)
-                        self.inds.sim[key].append(self.sim_dates.index(d))
-                        self.inds.data[key].append(count)
+                    self.inds.sim[key].append(count)
+                    self.inds.data[key].append(count)
             self.inds.sim[key]  = np.array(self.inds.sim[key])
             self.inds.data[key] = np.array(self.inds.data[key])
 
@@ -574,8 +767,8 @@ class Fit(sc.prettyobj):
             self.pair[key].sim  = np.zeros(n_inds)
             self.pair[key].data = np.zeros(n_inds)
             for i in range(n_inds):
-                self.pair[key].sim[i]  = self.sim_results[key].values[sim_inds[i]]
-                self.pair[key].data[i] = self.data[key].values[data_inds[i]]
+                self.pair[key].sim[i]  = self.sim_results[key][sim_inds[i]]
+                self.pair[key].data[i] = self.data[key][data_inds[i]]
 
         # Process custom inputs
         self.custom_keys = list(self.custom.keys())
@@ -690,15 +883,10 @@ class Fit(sc.prettyobj):
 
         loss_ax = None
         colors = sc.gridcolors(n_keys)
-        n_rows = 4
+        n_rows = 3
 
-        figs = [pl.figure(**fig_args)]
+        fig = pl.figure(**fig_args)
         pl.subplots_adjust(**axis_args)
-        main_ax1 = pl.subplot(n_rows, 2, 1)
-        main_ax2 = pl.subplot(n_rows, 2, 2)
-        bottom = sc.objdict() # Keep track of the bottoms for plotting cumulative
-        bottom.daily = np.zeros(self.sim_npts)
-        bottom.cumul = np.zeros(self.sim_npts)
         for k,key in enumerate(keys):
             if key in self.keys: # It's a time series, plot with days and dates
                 days      = self.inds.sim[key] # The "days" axis (or not, for custom keys)
@@ -707,34 +895,7 @@ class Fit(sc.prettyobj):
                 days      = np.arange(len(self.losses[key])) # Just use indices
                 daylabel  = 'Index'
 
-            # Cumulative totals can't mix daily and non-daily inputs, so skip custom keys
-            if key in self.keys:
-                for i,ax in enumerate([main_ax1, main_ax2]):
-
-                    if i == 0:
-                        data = self.losses[key]
-                        ylabel = 'Daily mismatch'
-                        title = f'Daily total mismatch'
-                    else:
-                        data = np.cumsum(self.losses[key])
-                        ylabel = 'Cumulative mismatch'
-                        title = f'Cumulative mismatch: {self.mismatch:0.3f}'
-
-                    dates = self.sim_results['date'][days] # Show these with dates, rather than days, as a reference point
-                    ax.bar(dates, data, width=width, bottom=bottom[i][self.inds.sim[key]], color=colors[k], label=f'{key}')
-
-                    if i == 0:
-                        bottom.daily[self.inds.sim[key]] += self.losses[key]
-                    else:
-                        bottom.cumul = np.cumsum(bottom.daily)
-
-                    if k == len(self.keys)-1:
-                        ax.set_xlabel('Date')
-                        ax.set_ylabel(ylabel)
-                        ax.set_title(title)
-                        ax.legend()
-
-            pl.subplot(n_rows, n_keys, k+1*n_keys+1)
+            pl.subplot(n_rows, n_keys, k+0*n_keys+1)
             pl.plot(days, self.pair[key].data, c='k', label='Data', **plot_args)
             pl.plot(days, self.pair[key].sim, c=colors[k], label='Simulation', **plot_args)
             pl.title(key)
@@ -742,14 +903,14 @@ class Fit(sc.prettyobj):
                 pl.ylabel('Time series (counts)')
                 pl.legend()
 
-            pl.subplot(n_rows, n_keys, k+2*n_keys+1)
+            pl.subplot(n_rows, n_keys, k+1*n_keys+1)
             pl.bar(days, self.diffs[key], width=width, color=colors[k], label='Difference')
             pl.axhline(0, c='k')
             if k == 0:
                 pl.ylabel('Differences (counts)')
                 pl.legend()
 
-            loss_ax = pl.subplot(n_rows, n_keys, k+3*n_keys+1, sharey=loss_ax)
+            loss_ax = pl.subplot(n_rows, n_keys, k+2*n_keys+1, sharey=loss_ax)
             pl.bar(days, self.losses[key], width=width, color=colors[k], label='Losses')
             pl.xlabel(daylabel)
             pl.title(f'Total loss: {self.losses[key].sum():0.3f}')
@@ -760,7 +921,7 @@ class Fit(sc.prettyobj):
         if do_show:
             pl.show()
 
-        return figs
+        return fig
 
 
 def compute_gof(actual, predicted, normalize=True, use_frac=False, use_squared=False, as_scalar='none', eps=1e-9, skestimator=None, **kwargs):
