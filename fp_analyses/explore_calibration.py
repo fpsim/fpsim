@@ -19,6 +19,7 @@ print('Plotting...')
 calib.plot()
 
 print('Fitting...')
-# calib.compute_fit()
+calib.compute_fit()
+print('Mismatch: ', calib.fit.mismatch)
 
 print('Done.')

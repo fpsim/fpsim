@@ -700,7 +700,6 @@ class Fit(sc.prettyobj):
         self.inds         = sc.objdict() # To store matching indices between the data and the simulation
         self.inds.sim     = sc.objdict() # For storing matching indices in the sim
         self.inds.data    = sc.objdict() # For storing matching indices in the data
-        self.date_matches = sc.objdict() # For storing matching dates, largely for plotting
         self.pair         = sc.objdict() # For storing perfectly paired points between the data and the sim
         self.diffs        = sc.objdict() # Differences between pairs
         self.gofs         = sc.objdict() # Goodness-of-fit for differences
@@ -744,15 +743,12 @@ class Fit(sc.prettyobj):
         for key in self.keys: # For keys present in both the results and in the data
             self.inds.sim[key]  = []
             self.inds.data[key] = []
-            self.date_matches[key] = []
             count = -1
-            for d, datum in self.data[key].iteritems():
+            for d, datum in enumerate(self.data[key]):
                 count += 1
                 if np.isfinite(datum):
-                    if d in self.sim_dates:
-                        self.date_matches[key].append(d)
-                        self.inds.sim[key].append(self.sim_dates.index(d))
-                        self.inds.data[key].append(count)
+                    self.inds.sim[key].append(count)
+                    self.inds.data[key].append(count)
             self.inds.sim[key]  = np.array(self.inds.sim[key])
             self.inds.data[key] = np.array(self.inds.data[key])
 
@@ -765,8 +761,8 @@ class Fit(sc.prettyobj):
             self.pair[key].sim  = np.zeros(n_inds)
             self.pair[key].data = np.zeros(n_inds)
             for i in range(n_inds):
-                self.pair[key].sim[i]  = self.sim_results[key].values[sim_inds[i]]
-                self.pair[key].data[i] = self.data[key].values[data_inds[i]]
+                self.pair[key].sim[i]  = self.sim_results[key][sim_inds[i]]
+                self.pair[key].data[i] = self.data[key][data_inds[i]]
 
         # Process custom inputs
         self.custom_keys = list(self.custom.keys())
