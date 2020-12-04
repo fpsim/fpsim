@@ -558,7 +558,7 @@ class Calibration(sc.prettyobj):
         # MCPR
         ax = axs[3,0]
         ax.plot(data.mcpr_years, data.mcpr, 'o', label='Data')
-        ax.plot(sim.mcpr_years,  sim.mcpr*100,  '-', label='Sim') # TODO: remove scale factor
+        ax.plot(sim.mcpr_years,  sim.mcpr,  '-', label='Sim') # TODO: remove scale factor
         ax.set_title('MCPR')
         ax.set_xlabel('Year')
         ax.set_ylabel('Modern contraceptive prevalence rate')
