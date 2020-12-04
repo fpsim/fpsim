@@ -15,4 +15,10 @@ print('Computing comparison...')
 df = calib.compare()
 print(df)
 
+print('Plotting...')
+calib.plot()
+
+print('Fitting...')
+# calib.compute_fit()
+
 print('Done.')

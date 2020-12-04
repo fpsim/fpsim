@@ -45,10 +45,8 @@ class Calibration(sc.prettyobj):
 
     def __init__(self, flags):
         self.flags = flags # Set flags for what gets run
-        self.model_results = sc.odict()
-        self.model_people = sc.odict()
-        self.model_to_calib = sc.odict()
-        self.dhs_data = sc.odict()
+        self.model_to_calib = sc.objdict()
+        self.dhs_data = sc.objdict()
         self.method_keys = None
 
         return
@@ -149,7 +147,7 @@ class Calibration(sc.prettyobj):
         self.model_to_calib['pop_size'] = self.model_results['pop_size']
         self.model_to_calib['pop_years'] = self.model_results['tfr_years']
 
-        model_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
+        model_growth_rate = self.pop_growth_rate(self.model_to_calib['pop_years'], self.model_to_calib['pop_size'])
         self.model_to_calib['pop_growth_rate'] = model_growth_rate
 
         return
@@ -258,6 +256,8 @@ class Calibration(sc.prettyobj):
 
         self.dhs_data['skyscrapers'] = sky_arr['Data']
         self.model_to_calib['skyscrapers'] = sky_arr['Model']
+        self.age_bins = age_bins
+        self.parity_bins = parity_bins
 
         return
 
@@ -425,6 +425,15 @@ class Calibration(sc.prettyobj):
 
 
     def compute_fit(self, *args, **kwargs):
+        ''' Compute how good the fit is '''
+        data = self.dhs_data
+        sim = self.model_to_calib
+        for k in data.keys():
+            data[k] = sc.promotetoarray(data[k])
+            data[k] = data[k].flatten()
+            sim[k] = sc.promotetoarray(sim[k])
+            sim[k] = sim[k].flatten()
+        self.fit = Fit(data, sim, *args, **kwargs)
         pass
 
 
@@ -488,8 +497,158 @@ class Calibration(sc.prettyobj):
         return df
 
 
-    def plot(self):
+    def plot(self, axes_args=None, do_maximize=True, do_show=True):
         ''' Plot the model against the data '''
+        data = self.dhs_data
+        sim = self.model_to_calib
+
+        # Set up keys structure and remove non-plotted keys
+        keys = ['rates'] + list(data.keys())
+        rate_keys = ['maternal_mortality_ratio',
+                     'infant_mortality_rate',
+                     'crude_death_rate',
+                     'crude_birth_rate']
+        non_calibrated_keys = ['pop_years', 'mcpr_years']
+        for key in rate_keys + non_calibrated_keys:
+            keys.remove(key)
+        nkeys = len(keys)
+        expected = 11
+        if nkeys != expected:
+            errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys}'
+            raise ValueError(errormsg)
+
+        fig, axs = pl.subplots(nrows=4, ncols=3)
+        pl.subplots_adjust(**sc.mergedicts(dict(bottom=0.05, top=0.97, left=0.05, right=0.97, wspace=0.3, hspace=0.3), axes_args))
+
+        #%% Do the plotting!
+
+        # Rates
+        ax = axs[0,0]
+        height = 0.4
+        n_rates = len(rate_keys)
+        y = np.arange(n_rates)
+        data_rates = np.array([data[k] for k in rate_keys])
+        sim_rates  = np.array([sim[k] for k in rate_keys])
+        ax.barh(y=y+height/2, width=data_rates, height=height, align='center', label='Data')
+        ax.barh(y=y-height/2, width=sim_rates,  height=height, align='center', label='Sim')
+        ax.set_title('Rates')
+        ax.set_xlabel('Rate')
+        ax.set_yticks(range(n_rates))
+        ax.set_yticklabels(rate_keys)
+        ax.legend()
+
+        # Population size
+        ax = axs[1,0]
+        ax.plot(data.pop_years, data.pop_size, 'o', label='Data')
+        ax.plot(sim.pop_years,  sim.pop_size,  '-', label='Sim')
+        ax.set_title('Population size')
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Population size')
+        ax.legend()
+
+        # Population growth rate
+        ax = axs[2,0]
+        ax.plot(data.pop_years[:-1], data.pop_growth_rate, 'o', label='Data')
+        ax.plot(sim.pop_years[:-1],  sim.pop_growth_rate,  '-', label='Sim')
+        ax.set_title('Population growth rate')
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Population growth rate')
+        ax.legend()
+
+        # MCPR
+        ax = axs[3,0]
+        ax.plot(data.mcpr_years, data.mcpr, 'o', label='Data')
+        ax.plot(sim.mcpr_years,  sim.mcpr*100,  '-', label='Sim') # TODO: remove scale factor
+        ax.set_title('MCPR')
+        ax.set_xlabel('Year')
+        ax.set_ylabel('Modern contraceptive prevalence rate')
+        ax.legend()
+
+        # Data skyscraper
+        ax = axs[0,1]
+        ax.pcolormesh(self.age_bins, self.parity_bins, data.skyscrapers)
+        ax.set_aspect(1./ax.get_data_ratio()) # Make square
+        ax.set_title('Age-parity plot: data')
+        ax.set_xlabel('Age')
+        ax.set_ylabel('Parity')
+
+        # Sim skyscraper
+        ax = axs[1,1]
+        ax.pcolormesh(self.age_bins, self.parity_bins, sim.skyscrapers)
+        ax.set_aspect(1./ax.get_data_ratio())
+        ax.set_title('Age-parity plot: sim')
+        ax.set_xlabel('Age')
+        ax.set_ylabel('Parity')
+
+        # Spacing stats
+        ax = axs[2,1]
+        height = 0.4
+        y = np.arange(len(data.spacing_stats))
+        ax.barh(y=y+height/2, width=data.spacing_stats, height=height, align='center', label='Data')
+        ax.barh(y=y-height/2, width=sim.spacing_stats,  height=height, align='center', label='Sim')
+        ax.set_title('Birth spacing')
+        ax.set_xlabel('Todo: fix this label')
+        ax.set_ylabel('Todo: fix this label')
+        ax.legend()
+
+        # Age first stats
+        ax = axs[3,1]
+        height = 0.4
+        y = np.arange(len(data.age_first_stats))
+        ax.barh(y=y+height/2, width=data.age_first_stats, height=height, align='center', label='Data')
+        ax.barh(y=y-height/2, width=sim.age_first_stats,  height=height, align='center', label='Sim')
+        ax.set_title('Age at first birth')
+        ax.set_xlabel('Todo: fix this label')
+        ax.set_ylabel('Todo: fix this label')
+        ax.legend()
+
+        # Age pregnant stats
+        ax = axs[0,2]
+        height = 0.4
+        y = np.arange(len(data.age_pregnant_stats))
+        ax.barh(y=y+height/2, width=data.age_pregnant_stats, height=height, align='center', label='Data')
+        ax.barh(y=y-height/2, width=sim.age_pregnant_stats,  height=height, align='center', label='Sim')
+        ax.set_title('Age pregnancy statistics')
+        ax.set_xlabel('Todo: fix this label')
+        ax.set_ylabel('Todo: fix this label')
+        ax.legend()
+
+        # Age parity stats
+        ax = axs[1,2]
+        cols = sc.gridcolors(3)
+        for i,yvals in enumerate([data.age_parity_stats, sim.age_parity_stats]):
+            for j in range(3):
+                vals = yvals[:,j]
+                if i==0:
+                    marker = 'o'
+                    label = 'Data'
+                else:
+                    marker = '-'
+                    label = 'Sim'
+                ax.plot(vals, marker, c=cols[j], label=label)
+        ax.set_title('Age parity statistics')
+        ax.set_xlabel('Todo: fix this label')
+        ax.set_ylabel('Todo: fix this label')
+        ax.legend()
+
+        # Method counts
+        ax = axs[2,2]
+        width = 0.4
+        x = np.arange(len(data.method_counts))
+        ax.bar(x=x+width/2, height=data.method_counts, width=width, align='center', label='Data')
+        ax.bar(x=x-width/2, height=sim.method_counts,  width=width, align='center', label='Sim')
+        ax.set_title('Method counts')
+        ax.set_xlabel('Todo: fix this label')
+        ax.set_ylabel('Todo: fix this label')
+        ax.legend()
+
+        # Tidy up
+        if do_maximize:
+            sc.maximize(fig=fig)
+
+        if do_show:
+            pl.show()
+
         pass
 
 
@@ -523,19 +682,19 @@ class Fit(sc.prettyobj):
         fit.plot()
     '''
 
-    def __init__(self, data, sim_results, weights=None, keys=None, custom=None, compute=True, verbose=False, **kwargs):
+    def __init__(self, data, sim, weights=None, keys=None, custom=None, compute=True, verbose=False, **kwargs):
 
         # Handle inputs
         self.weights    = weights
         self.custom     = sc.mergedicts(custom)
         self.verbose    = verbose
         self.weights    = sc.mergedicts({'cum_deaths':10, 'cum_diagnoses':5}, weights)
-        self.keys       = keys
+        self.keys       = data.keys()
         self.gof_kwargs = kwargs
 
         # Copy data
         self.data = data
-        self.sim_results = sim_results
+        self.sim_results = sim
 
         # These are populated during initialization
         self.inds         = sc.objdict() # To store matching indices between the data and the simulation
@@ -568,7 +727,7 @@ class Fit(sc.prettyobj):
     def reconcile_inputs(self):
         ''' Find matching keys and indices between the model and the data '''
 
-        data_cols = self.data.columns
+        data_cols = set(self.data.keys())
         if self.keys is None:
             sim_keys = self.sim_results.keys()
             intersection = list(set(sim_keys).intersection(data_cols)) # Find keys in both the sim and data
