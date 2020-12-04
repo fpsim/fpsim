@@ -423,7 +423,12 @@ class Calibration(sc.prettyobj):
 
         self.model_to_calib['age_parity_stats'] = parity_model_stats
 
-    def run(self, pars):
+
+    def compute_fit(self, *args, **kwargs):
+        pass
+
+
+    def run(self, pars, *args, **kwargs):
 
         self.run_model(pars)
         self.extract_model()
@@ -444,7 +449,48 @@ class Calibration(sc.prettyobj):
         del self.dhs_data['pregnancy_parity']
         del self.model_to_calib['pregnancy_parity']
 
+        # Compute comparison
+        self.df = self.compare()
+
+        # Compute fit
+        # self.compute_fit(*args, **kwargs)
+
         return
+
+
+    def compare(self):
+        ''' Create and print a comparison between model and data '''
+        # Check that keys match
+        data_keys = self.dhs_data.keys()
+        model_keys = self.model_to_calib.keys()
+        assert set(data_keys) == set(model_keys), 'Data and model keys do not match'
+
+        # Compare the two
+        comparison = []
+        for key in data_keys:
+            dv = self.dhs_data[key] # dv = "Data value"
+            mv = self.model_to_calib[key] # mv = "Model value"
+            cmp = sc.objdict(key=key,
+                             d_type=type(dv),
+                             m_type=type(mv),
+                             d_shape=np.shape(dv),
+                             m_shape=np.shape(mv),
+                             d_val='array',
+                             m_val='array')
+            if sc.isnumber(dv):
+                cmp.d_val = dv
+            if sc.isnumber(mv):
+                cmp.m_val = mv
+
+            comparison.append(cmp)
+
+        df = pd.DataFrame.from_dict(comparison)
+        return df
+
+
+    def plot(self):
+        ''' Plot the model against the data '''
+        pass
 
 
 
@@ -477,7 +523,7 @@ class Fit(sc.prettyobj):
         fit.plot()
     '''
 
-    def __init__(self, sim, weights=None, keys=None, custom=None, compute=True, verbose=False, **kwargs):
+    def __init__(self, data, sim_results, weights=None, keys=None, custom=None, compute=True, verbose=False, **kwargs):
 
         # Handle inputs
         self.weights    = weights
@@ -488,22 +534,8 @@ class Fit(sc.prettyobj):
         self.gof_kwargs = kwargs
 
         # Copy data
-        if sim.data is None:
-            errormsg = 'Model fit cannot be calculated until data are loaded'
-            raise RuntimeError(errormsg)
-        self.data = sim.data
-
-        # Copy sim results
-        if not sim.results_ready:
-            errormsg = 'Model fit cannot be calculated until results are run'
-            raise RuntimeError(errormsg)
-        self.sim_results = sc.objdict()
-        for key in sim.result_keys() + ['t', 'date']:
-            self.sim_results[key] = sim.results[key]
-        self.sim_npts = sim.npts # Number of time points in the sim
-
-        # Copy other things
-        self.sim_dates = sim.datevec.tolist()
+        self.data = data
+        self.sim_results = sim_results
 
         # These are populated during initialization
         self.inds         = sc.objdict() # To store matching indices between the data and the simulation
@@ -714,7 +746,7 @@ class Fit(sc.prettyobj):
                     if i == 0:
                         data = self.losses[key]
                         ylabel = 'Daily mismatch'
-                        title = f'Daily total mismatch'
+                        title = 'Daily total mismatch'
                     else:
                         data = np.cumsum(self.losses[key])
                         ylabel = 'Cumulative mismatch'
