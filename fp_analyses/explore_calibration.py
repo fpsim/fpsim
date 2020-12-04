@@ -20,6 +20,8 @@ calib.plot()
 
 print('Fitting...')
 calib.compute_fit()
+calib.fit.plot()
+
 print('Mismatch: ', calib.fit.mismatch)
 
 print('Done.')

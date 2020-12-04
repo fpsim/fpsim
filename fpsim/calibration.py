@@ -163,7 +163,7 @@ class Calibration(sc.prettyobj):
 
         model_mcpr = filtered_model['mcpr'].to_numpy()
 
-        self.model_to_calib['mcpr'] = model_mcpr
+        self.model_to_calib['mcpr'] = model_mcpr*100 # Since data is in 100
         self.model_to_calib['mcpr_years'] = self.dhs_data['mcpr_years']
 
         return
@@ -689,12 +689,17 @@ class Fit(sc.prettyobj):
         self.custom     = sc.mergedicts(custom)
         self.verbose    = verbose
         self.weights    = sc.mergedicts({'cum_deaths':10, 'cum_diagnoses':5}, weights)
-        self.keys       = data.keys()
         self.gof_kwargs = kwargs
 
         # Copy data
         self.data = data
         self.sim_results = sim
+
+        # Remove keys that aren't for fitting
+        for key in ['pop_years', 'mcpr_years', 'spacing_bins']:
+            self.data.pop(key)
+            self.sim_results.pop(key)
+        self.keys       = data.keys()
 
         # These are populated during initialization
         self.inds         = sc.objdict() # To store matching indices between the data and the simulation
@@ -727,6 +732,7 @@ class Fit(sc.prettyobj):
         ''' Find matching keys and indices between the model and the data '''
 
         data_cols = set(self.data.keys())
+
         if self.keys is None:
             sim_keys = self.sim_results.keys()
             intersection = list(set(sim_keys).intersection(data_cols)) # Find keys in both the sim and data
@@ -877,15 +883,10 @@ class Fit(sc.prettyobj):
 
         loss_ax = None
         colors = sc.gridcolors(n_keys)
-        n_rows = 4
+        n_rows = 3
 
-        figs = [pl.figure(**fig_args)]
+        fig = pl.figure(**fig_args)
         pl.subplots_adjust(**axis_args)
-        main_ax1 = pl.subplot(n_rows, 2, 1)
-        main_ax2 = pl.subplot(n_rows, 2, 2)
-        bottom = sc.objdict() # Keep track of the bottoms for plotting cumulative
-        bottom.daily = np.zeros(self.sim_npts)
-        bottom.cumul = np.zeros(self.sim_npts)
         for k,key in enumerate(keys):
             if key in self.keys: # It's a time series, plot with days and dates
                 days      = self.inds.sim[key] # The "days" axis (or not, for custom keys)
@@ -894,34 +895,7 @@ class Fit(sc.prettyobj):
                 days      = np.arange(len(self.losses[key])) # Just use indices
                 daylabel  = 'Index'
 
-            # Cumulative totals can't mix daily and non-daily inputs, so skip custom keys
-            if key in self.keys:
-                for i,ax in enumerate([main_ax1, main_ax2]):
-
-                    if i == 0:
-                        data = self.losses[key]
-                        ylabel = 'Daily mismatch'
-                        title = 'Daily total mismatch'
-                    else:
-                        data = np.cumsum(self.losses[key])
-                        ylabel = 'Cumulative mismatch'
-                        title = f'Cumulative mismatch: {self.mismatch:0.3f}'
-
-                    dates = self.sim_results['date'][days] # Show these with dates, rather than days, as a reference point
-                    ax.bar(dates, data, width=width, bottom=bottom[i][self.inds.sim[key]], color=colors[k], label=f'{key}')
-
-                    if i == 0:
-                        bottom.daily[self.inds.sim[key]] += self.losses[key]
-                    else:
-                        bottom.cumul = np.cumsum(bottom.daily)
-
-                    if k == len(self.keys)-1:
-                        ax.set_xlabel('Date')
-                        ax.set_ylabel(ylabel)
-                        ax.set_title(title)
-                        ax.legend()
-
-            pl.subplot(n_rows, n_keys, k+1*n_keys+1)
+            pl.subplot(n_rows, n_keys, k+0*n_keys+1)
             pl.plot(days, self.pair[key].data, c='k', label='Data', **plot_args)
             pl.plot(days, self.pair[key].sim, c=colors[k], label='Simulation', **plot_args)
             pl.title(key)
@@ -929,14 +903,14 @@ class Fit(sc.prettyobj):
                 pl.ylabel('Time series (counts)')
                 pl.legend()
 
-            pl.subplot(n_rows, n_keys, k+2*n_keys+1)
+            pl.subplot(n_rows, n_keys, k+1*n_keys+1)
             pl.bar(days, self.diffs[key], width=width, color=colors[k], label='Difference')
             pl.axhline(0, c='k')
             if k == 0:
                 pl.ylabel('Differences (counts)')
                 pl.legend()
 
-            loss_ax = pl.subplot(n_rows, n_keys, k+3*n_keys+1, sharey=loss_ax)
+            loss_ax = pl.subplot(n_rows, n_keys, k+2*n_keys+1, sharey=loss_ax)
             pl.bar(days, self.losses[key], width=width, color=colors[k], label='Losses')
             pl.xlabel(daylabel)
             pl.title(f'Total loss: {self.losses[key].sum():0.3f}')
@@ -947,7 +921,7 @@ class Fit(sc.prettyobj):
         if do_show:
             pl.show()
 
-        return figs
+        return fig
 
 
 def compute_gof(actual, predicted, normalize=True, use_frac=False, use_squared=False, as_scalar='none', eps=1e-9, skestimator=None, **kwargs):
