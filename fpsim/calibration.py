@@ -580,26 +580,39 @@ class Calibration(sc.prettyobj):
         ax.set_xlabel('Age')
         ax.set_ylabel('Parity')
 
-        # Spacing stats
-        ax = axs[2,1]
+        # Spacing bins
+
+        ax = axs[2, 1]
         height = 0.4
-        y = np.arange(len(data.spacing_stats))
-        ax.barh(y=y+height/2, width=data.spacing_stats, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim.spacing_stats,  height=height, align='center', label='Sim')
-        ax.set_title('Birth spacing - Lower quartile, median, upper quartile')
+
+        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
+        n_bins = len(spacing_bins.keys())
+
+        y = np.arange(len(data.spacing_bins))
+        ax.barh(y=y+height/2, width=data.spacing_bins, height=height, align='center', label='Data')
+        ax.barh(y=y-height/2, width=sim.spacing_bins,  height=height, align='center', label='Sim')
+        ax.set_title('Birth spacing bins')
         ax.set_xlabel('Birth space in years')
-        ax.set_ylabel('Todo: fix this label')
+        ax.set_yticks(range(n_bins))
+        ax.set_yticklabels(spacing_bins.keys())
         ax.legend()
 
         # Age first stats
+
+        quartile_keys = ['25th %',
+                     'Median',
+                     '75th %']
+        n_quartiles = len(quartile_keys)
+
         ax = axs[3,1]
         height = 0.4
         y = np.arange(len(data.age_first_stats))
         ax.barh(y=y+height/2, width=data.age_first_stats, height=height, align='center', label='Data')
         ax.barh(y=y-height/2, width=sim.age_first_stats,  height=height, align='center', label='Sim')
-        ax.set_title('Age at first birth - Lower quartile, median, upper quartile')
+        ax.set_title('Age at first birth')
         ax.set_xlabel('Age')
-        ax.set_ylabel('Todo: fix this label')
+        ax.set_yticks(range(n_quartiles))
+        ax.set_yticklabels(quartile_keys)
         ax.legend()
 
         # Age pregnant stats
@@ -608,9 +621,10 @@ class Calibration(sc.prettyobj):
         y = np.arange(len(data.age_pregnant_stats))
         ax.barh(y=y+height/2, width=data.age_pregnant_stats, height=height, align='center', label='Data')
         ax.barh(y=y-height/2, width=sim.age_pregnant_stats,  height=height, align='center', label='Sim')
-        ax.set_title('Age of women currently pregnant - Lower quartile, median, upper quartile')
+        ax.set_title('Age of women currently pregnant')
         ax.set_xlabel('Age')
-        ax.set_ylabel('Todo: fix this label')
+        ax.set_yticks(range(n_quartiles))
+        ax.set_yticklabels(quartile_keys)
         ax.legend()
 
         # Age parity stats
@@ -626,21 +640,41 @@ class Calibration(sc.prettyobj):
                     marker = '-'
                     label = 'Sim'
                 ax.plot(vals, marker, c=cols[j], label=label)
-        ax.set_title('Age parity statistics - Lower quartile, median, upper quartile')
+        ax.set_title('Age parity stats - quartiles')
         ax.set_xlabel('Parity')
         ax.set_ylabel('Age')
         ax.legend()
 
         # Method counts
         ax = axs[2,2]
-        width = 0.4
-        x = np.arange(len(data.method_counts))
-        ax.bar(x=x+width/2, height=data.method_counts, width=width, align='center', label='Data')
-        ax.bar(x=x-width/2, height=sim.method_counts,  width=width, align='center', label='Sim')
-        ax.set_title('Method counts')
-        ax.set_xlabel('Contraceptive method')
-        ax.set_ylabel('Rate of use')
-        ax.legend()
+
+        method_labels = ['None',
+                    'Pill',
+                    'IUDs',
+                    'Injectables',
+                    'Condoms',
+                    'BTL',
+                    'Rhythm',
+                    'Withdrawal',
+                    'Implants',
+                    'Other']
+
+        ax.pie(data.method_counts[:], labels=method_labels)
+        ax.set_title('Method use in data')
+
+        #width = 0.4
+        #x = np.arange(len(data.method_counts))
+        #ax.bar(x=x+width/2, height=data.method_counts, width=width, align='center', label='Data')
+        #ax.bar(x=x-width/2, height=sim.method_counts,  width=width, align='center', label='Sim')
+        #ax.set_title('Method counts')
+        #ax.set_xlabel('Contraceptive method')
+        #ax.set_ylabel('Rate of use')
+        #ax.legend()
+
+        ax = axs[3,2]
+
+        ax.pie(sim.method_counts[:], labels=method_labels)
+        ax.set_title('Method use in model')
 
         # Tidy up
         if do_maximize:
