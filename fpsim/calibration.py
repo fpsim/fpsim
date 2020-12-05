@@ -497,7 +497,7 @@ class Calibration(sc.prettyobj):
         return df
 
 
-    def plot(self, axes_args=None, do_maximize=True, do_show=True):
+    def plot(self, axes_args=None, do_maximize=True, do_show=False, do_save = True):
         ''' Plot the model against the data '''
         data = self.dhs_data
         sim = self.model_to_calib
@@ -592,9 +592,10 @@ class Calibration(sc.prettyobj):
         ax.barh(y=y+height/2, width=data.spacing_bins, height=height, align='center', label='Data')
         ax.barh(y=y-height/2, width=sim.spacing_bins,  height=height, align='center', label='Sim')
         ax.set_title('Birth spacing bins')
-        ax.set_xlabel('Birth space in years')
+        ax.set_xlabel('Percent of births in each bin')
         ax.set_yticks(range(n_bins))
         ax.set_yticklabels(spacing_bins.keys())
+        ax.set_ylabel('Birth space in months')
         ax.legend()
 
         # Age first stats
@@ -890,7 +891,7 @@ class Fit(sc.prettyobj):
         return self.mismatch
 
 
-    def plot(self, keys=None, width=0.8, font_size=18, fig_args=None, axis_args=None, plot_args=None, do_show=True):
+    def plot(self, keys=None, width=0.8, font_size=18, fig_args=None, axis_args=None, plot_args=None, do_show=True, do_save=True):
         '''
         Plot the fit of the model to the data. For each result, plot the data
         and the model; the difference; and the loss (weighted difference). Also
@@ -904,6 +905,7 @@ class Fit(sc.prettyobj):
             axis_args (dict):  passed to pl.subplots_adjust()
             plot_args (dict):  passed to pl.plot()
             do_show   (bool):  whether to show the plot
+            do_save   (bool):  whether to save the plot
         '''
 
         fig_args  = sc.mergedicts(dict(figsize=(36,22)), fig_args)
