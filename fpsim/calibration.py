@@ -730,7 +730,7 @@ class Fit(sc.prettyobj):
         self.sim_results = sim
 
         # Remove keys that aren't for fitting
-        for key in ['pop_years', 'mcpr_years', 'spacing_bins']:
+        for key in ['pop_years', 'mcpr_years']:
             self.data.pop(key)
             self.sim_results.pop(key)
         self.keys       = data.keys()
