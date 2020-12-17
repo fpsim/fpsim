@@ -469,7 +469,7 @@ def default_barriers():
 def default_sexual_activity():
     '''
     Returns a linear interpolation of rates of female sexual activity, defined as
-    percentage women who have had sex within the last year.
+    percentage women who have had sex within the last four weeks.
     From STAT Compiler DHS https://www.statcompiler.com/en/
     Using indicator "Timing of sexual intercourse"
     Includes women who have had sex "within the last four weeks"
@@ -479,7 +479,7 @@ def default_sexual_activity():
 
 
     sexually_active = pl.array([[0, 5, 10, 12.5, 15,  18,   20,     25,   30,    35,    40,   45,   50],
-                                [0, 0,  0,   8,  13.5,  13.5, 33.0, 56.3, 58.3, 61.1,  67.6,  64.7, 64.7]])
+                                [0, 0,  0,   3,  13.5,  13.5, 33.0, 56.3, 58.3, 61.1,  67.6,  64.7, 64.7]])
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     ages = pl.arange(resolution * max_age_preg + 1) / resolution
     activity_ages = sexually_active[0]
@@ -587,7 +587,7 @@ def default_exposure_correction_age():
     '''
 
     exposure_correction_age = pl.array([[0,        5,       10,      12.5,       15,          18,       20,          25,         30,        35,           40,       45,          50],
-                                        [[1, 1], [1, 1], [1, 1], [1.5, 1.5], [2.5, 2.5], [3.2, 3.2], [3.4, 3.4], [2.6, 2.6], [1.3, 1.3], [1.0, 1.0], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
+                                        [[1, 1], [1, 1], [1, 1], [1.5, 1.5], [2.5, 2.5], [3.0, 3.0], [3.8, 3.8], [2.5, 2.5], [2.0, 2.0], [1.5, 1.5], [1.0, 1.0], [0.8, 0.8], [0.1, 0.1]]])
 
     return exposure_correction_age
 
@@ -599,7 +599,7 @@ def default_exposure_correction_parity():
     '''
 
     exposure_correction_parity = pl.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12],
-                                           [0.18, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.4, 0.3, 0.3, 0.2, 0.2, 0.1]])
+                                           [0.2, 0.3, 0.3, 0.3, 0.3, 0.3, 0.2, 0.2, 0.2, 0.2, 0.1, 0.1, 0.1]])
 
     return exposure_correction_parity
 
