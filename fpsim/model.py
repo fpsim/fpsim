@@ -398,7 +398,9 @@ class Person(base.ParsObj):
             'no_method' : False,
             'pp0to5'   : False,
             'pp6to11'   : False,
-            'pp12to23'  : False
+            'pp12to23'  : False,
+            'sex': None,
+            'age': None,
         }
         return
 
@@ -408,6 +410,8 @@ class Person(base.ParsObj):
         t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)'''
 
         self.init_step_results()   # Initialize outputs
+        self.step_results['sex'] = self.sex
+        self.step_results['age'] = self.age
 
         if self.alive:  # Do not move through step if not alive
 
@@ -605,31 +609,57 @@ class Sim(base.BaseSim):
             self.update_mortality_probs(y)
 
             # Update each person
-            deaths = 0
-            births = 0
-            maternal_deaths = 0
-            infant_deaths = 0
-            on_methods = 0
-            no_methods = 0
-            pp0to5 = 0
-            pp6to11 = 0
-            pp12to23 = 0
-            total_women_fecund = 0
+            # deaths = 0
+            # births = 0
+            # maternal_deaths = 0
+            # infant_deaths = 0
+            # on_methods = 0
+            # no_methods = 0
+            # pp0to5 = 0
+            # pp6to11 = 0
+            # pp12to23 = 0
+            # total_women_fecund = 0
 
+            # def update_person(person, t, y):
+            #     step_results = person.update(t, y) # Update and count new cases
+            #     return step_results
+
+            step_results_list = []
             for person in self.people.values():
                 step_results = person.update(t, y) # Update and count new cases
-                deaths          += step_results['died']
-                births          += step_results['gave_birth']
-                maternal_deaths += step_results['maternal_death']
-                infant_deaths    += step_results['infant_death']
-                on_methods      += step_results['on_method']
-                no_methods      += step_results['no_method']
-                pp0to5          += step_results['pp0to5']
-                pp6to11         += step_results['pp6to11']
-                pp12to23        += step_results['pp12to23']
+                step_results_list.append(step_results)
 
-                if person.sex == 0 and 15 <= person.age < self.pars['age_limit_fecundity']:
-                    total_women_fecund += 1
+            # step_results_list = sc.parallelize(update_person, iterarg=self.people.values(), kwargs=dict(t=t, y=y))
+            df = pd.DataFrame(step_results_list)
+            deaths          = df['died'].values.sum()
+            births          = df['gave_birth'].values.sum()
+            maternal_deaths = df['maternal_death'].values.sum()
+            infant_deaths   = df['infant_death'].values.sum()
+            on_methods      = df['on_method'].values.sum()
+            no_methods      = df['no_method'].values.sum()
+            pp0to5          = df['pp0to5'].values.sum()
+            pp6to11         = df['pp6to11'].values.sum()
+            pp12to23        = df['pp12to23'].values.sum()
+
+            # Calculate total women fecund
+            sex = df['sex'].values
+            age = df['age'].values
+            total_women_fecund = (sex==0 * (15 <= age) * (age < self.pars['age_limit_fecundity'])).sum()
+
+            # for person in self.people.values():
+            #     step_results = person.update(t, y) # Update and count new cases
+            #     deaths          += step_results['died']
+            #     births          += step_results['gave_birth']
+            #     maternal_deaths += step_results['maternal_death']
+            #     infant_deaths    += step_results['infant_death']
+            #     on_methods      += step_results['on_method']
+            #     no_methods      += step_results['no_method']
+            #     pp0to5          += step_results['pp0to5']
+            #     pp6to11         += step_results['pp6to11']
+            #     pp12to23        += step_results['pp12to23']
+
+            #     if person.sex == 0 and 15 <= person.age < self.pars['age_limit_fecundity']:
+            #         total_women_fecund += 1
 
             if i in self.interventions:
                 self.interventions[i](self)
