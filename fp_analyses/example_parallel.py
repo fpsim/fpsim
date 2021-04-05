@@ -6,7 +6,7 @@ import sciris as sc
 import fpsim as fp
 import senegal_parameters as sp
 
-def run(seed=1, n=200):
+def run(seed=10, n=200):
     pars = sp.make_pars()
     pars['seed'] = seed
     pars['n'] = n
@@ -14,11 +14,10 @@ def run(seed=1, n=200):
     sim.run()
     return sim
 
-
 if __name__ == '__main__':
 
     T = sc.tic()
-    sims = sc.parallelize(run, range(5))
+    sims = sc.parallelize(run, range(100))
     all_ppl = sc.mergedicts(*[s.people for s in sims])
     msim = sc.dcp(sims[0])
     msim.people = all_ppl
@@ -28,5 +27,7 @@ if __name__ == '__main__':
                 msim.results[k] += sim.results[k]
 
     msim.plot()
+    # pl.switch_backend('Qt5Agg')
+    # pl.show()
     sc.toc(T)
     print('Done.')
