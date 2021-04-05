@@ -8,7 +8,6 @@ import pylab as pl
 import sciris as sc
 from scipy import interpolate as si
 import pandas as pd
-import xarray as xr
 from . import population
 from . import utils
 from . import base
@@ -610,16 +609,16 @@ class Sim(base.BaseSim):
             self.update_mortality_probs(y)
 
             # Update each person
-            # deaths = 0
-            # births = 0
-            # maternal_deaths = 0
-            # infant_deaths = 0
-            # on_methods = 0
-            # no_methods = 0
-            # pp0to5 = 0
-            # pp6to11 = 0
-            # pp12to23 = 0
-            # total_women_fecund = 0
+            deaths = 0
+            births = 0
+            maternal_deaths = 0
+            infant_deaths = 0
+            on_methods = 0
+            no_methods = 0
+            pp0to5 = 0
+            pp6to11 = 0
+            pp12to23 = 0
+            total_women_fecund = 0
 
             # def update_person(person, t, y):
             #     step_results = person.update(t, y) # Update and count new cases
@@ -631,40 +630,40 @@ class Sim(base.BaseSim):
                 step_results_list.append(step_results)
 
             # step_results_list = sc.parallelize(update_person, iterarg=self.people.values(), kwargs=dict(t=t, y=y))
-            data = [[v for v in res.values()] for res in step_results_list]
-            keys = list(step_results_list[0].keys())
-            n_people = len(self.people)
-            pvec = np.arange(n_people)
-            df = xr.DataArray(data=data, dims=('person', 'kind'), coords={'person':pvec, 'kind':keys})
-            deaths          = int(df.loc[:,'died'].values.sum())
-            births          = int(df.loc[:,'gave_birth'].values.sum())
-            maternal_deaths = int(df.loc[:,'maternal_death'].values.sum())
-            infant_deaths   = int(df.loc[:,'infant_death'].values.sum())
-            on_methods      = int(df.loc[:,'on_method'].values.sum())
-            no_methods      = int(df.loc[:,'no_method'].values.sum())
-            pp0to5          = int(df.loc[:,'pp0to5'].values.sum())
-            pp6to11         = int(df.loc[:,'pp6to11'].values.sum())
-            pp12to23        = int(df.loc[:,'pp12to23'].values.sum())
+            # data = [[v for v in res.values()] for res in step_results_list]
+            # keys = list(step_results_list[0].keys())
+            # n_people = len(self.people)
+            # pvec = np.arange(n_people)
+            # df = xr.DataArray(data=data, dims=('person', 'kind'), coords={'person':pvec, 'kind':keys})
+            # deaths          = int(df.loc[:,'died'].values.sum())
+            # births          = int(df.loc[:,'gave_birth'].values.sum())
+            # maternal_deaths = int(df.loc[:,'maternal_death'].values.sum())
+            # infant_deaths   = int(df.loc[:,'infant_death'].values.sum())
+            # on_methods      = int(df.loc[:,'on_method'].values.sum())
+            # no_methods      = int(df.loc[:,'no_method'].values.sum())
+            # pp0to5          = int(df.loc[:,'pp0to5'].values.sum())
+            # pp6to11         = int(df.loc[:,'pp6to11'].values.sum())
+            # pp12to23        = int(df.loc[:,'pp12to23'].values.sum())
 
             # Calculate total women fecund
-            sex = df.loc[:,'sex'].values
-            age = df.loc[:,'age'].values
-            total_women_fecund = (sex==0 * (15 <= age) * (age < self.pars['age_limit_fecundity'])).sum()
+            # sex = df.loc[:,'sex'].values
+            # age = df.loc[:,'age'].values
+            # total_women_fecund = (sex==0 * (15 <= age) * (age < self.pars['age_limit_fecundity'])).sum()
 
-            # for person in self.people.values():
-            #     step_results = person.update(t, y) # Update and count new cases
-            #     deaths          += step_results['died']
-            #     births          += step_results['gave_birth']
-            #     maternal_deaths += step_results['maternal_death']
-            #     infant_deaths    += step_results['infant_death']
-            #     on_methods      += step_results['on_method']
-            #     no_methods      += step_results['no_method']
-            #     pp0to5          += step_results['pp0to5']
-            #     pp6to11         += step_results['pp6to11']
-            #     pp12to23        += step_results['pp12to23']
+            for person in self.people.values():
+                step_results = person.update(t, y) # Update and count new cases
+                deaths          += step_results['died']
+                births          += step_results['gave_birth']
+                maternal_deaths += step_results['maternal_death']
+                infant_deaths    += step_results['infant_death']
+                on_methods      += step_results['on_method']
+                no_methods      += step_results['no_method']
+                pp0to5          += step_results['pp0to5']
+                pp6to11         += step_results['pp6to11']
+                pp12to23        += step_results['pp12to23']
 
-            #     if person.sex == 0 and 15 <= person.age < self.pars['age_limit_fecundity']:
-            #         total_women_fecund += 1
+                if person.sex == 0 and 15 <= person.age < self.pars['age_limit_fecundity']:
+                    total_women_fecund += 1
 
             if i in self.interventions:
                 self.interventions[i](self)
