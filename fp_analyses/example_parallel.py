@@ -17,7 +17,7 @@ def run(seed=10, n=200):
 if __name__ == '__main__':
 
     T = sc.tic()
-    sims = sc.parallelize(run, range(100))
+    sims = sc.parallelize(run, range(2))
     all_ppl = sc.mergedicts(*[s.people for s in sims])
     msim = sc.dcp(sims[0])
     msim.people = all_ppl
