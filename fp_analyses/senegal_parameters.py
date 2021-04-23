@@ -480,8 +480,8 @@ def default_sexual_activity():
     '''
 
 
-    sexually_active = pl.array([[0, 5, 10, 12.5, 15,    18,   20,   25,   30,   35,    40,   45,   50],
-                                [0, 0,  0,  8,   10,  35.4,  50.2, 78.9, 80,   83,   88.1, 82.6,  82.6]])
+        sexually_active = pl.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
+                                [0, 0,  0,  8,   11.5,  11.5,  35.5, 49.6, 57.4,  64.4,   64.45, 64.5,  66.8]])
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     ages = pl.arange(resolution * max_age_preg + 1) / resolution
     activity_ages = sexually_active[0]
