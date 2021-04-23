@@ -128,40 +128,42 @@ def default_female_age_fecundity(bound):
 
 def default_maternal_mortality():
     '''
-    Maternal mortality ratio (MMR) for Senegal.  Data from World Bank
-    # of maternal deaths per 100,000 live births
+    Risk of maternal death assessed at each pregnancy. Data from Huchon et al. (2013) prospective study on risk of maternal death in Senegal and Mali.
     Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
     or its management (excluding accidental or incidental causes) during pregnancy and childbirth or within
     42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
     expressed per 100,000 live births, for a specified time period.
     '''
 
-    data = pl.array([
-        [1990, 600],  # Estimated value from overall maternal mortality ratio from World Bank
-        [2000, 553],
-        [2001, 545],
-        [2002, 537],
-        [2003, 532],
-        [2004, 526],
-        [2005, 519],
-        [2006, 514],
-        [2007, 504],
-        [2008, 492],
-        [2009, 472],
-        [2010, 447],
-        [2011, 423],
-        [2012, 400],
-        [2013, 381],
-        [2014, 364],
-        [2015, 346],
-        [2016, 330],
-        [2017, 315],
+        data = pl.array([
+        [1990, 0.00278, 0.00319, 0.00364],
+        [2000, 0.00268, 0.00309, 0.00354],
+        [2001, 0.00263, 0.00304, 0.00350],
+        [2002, 0.00259, 0.00300, 0.00346],
+        [2003, 0.00255, 0.00296, 0.00341],
+        [2004, 0.00252, 0.00293, 0.00338],
+        [2005, 0.00249, 0.00290, 0.00335],
+        [2006, 0.00245, 0.00286, 0.00331],
+        [2007, 0.00242, 0.00283, 0.00329],
+        [2008, 0.00237, 0.00278, 0.00323],
+        [2009, 0.00230, 0.00271, 0.00317],
+        [2010, 0.00220, 0.00261, 0.00306],
+        [2011, 0.00207, 0.00248, 0.00293],
+        [2012, 0.00194, 0.00235, 0.00280],
+        [2013, 0.00182, 0.002228327, 0.00268338],
+        [2014, 0.00172, 0.00213, 0.00258],
+        [2015, 0.00161, 0.00202, 0.00248],
+        [2016, 0.00152, 0.00193, 0.00239],
+        [2017, 0.00143, 0.00184, 0.00230],
+        [2018, 0.00135, 0.00176, 0.00222],
+        [2019, 0.00128, 0.00169, 0.00214]
     ])
 
-    maternal_mortality = {}
 
+
+    maternal_mortality = {}
     maternal_mortality['year'] = data[:,0]
-    maternal_mortality['probs'] = data[:,1]/1e5
+    maternal_mortality['probs'] = data[:,3] ##select column of low, median, high estimates
 
     return maternal_mortality
 
