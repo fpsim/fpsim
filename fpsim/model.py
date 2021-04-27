@@ -79,6 +79,7 @@ class Person(base.ParsObj):
             raise Exception('Agent age does not match choice matrix options')
 
         #matrix = self.pars['methods']['switch_general']   Use if going back to non-age stratified
+
         choices = matrix[orig_method]
 
         '''
@@ -100,7 +101,7 @@ class Person(base.ParsObj):
                 print(f'Switched from {orig_method} to {new_method}')
         return
 
-    def get_method_postpartum(self, t):
+    def get_method_postpartum(self, t, y):
         '''Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by
          3 months postpartum and then initiate, continue, or discontinue a method by 6 months postpartum.
         Next opportunity to switch methods will be on whole calendar years, whenever that falls.
@@ -109,7 +110,9 @@ class Person(base.ParsObj):
 
         # Probability of initiating a postpartum method at 0-3 months postpartum
         # Transitional probabilities are for the first 3 month time period after delivery from DHS data
+
         if self.postpartum_dur == 3:
+
             if self.age < 18:
                 choices_from_birth = self.pars['methods_postpartum']['<18']
             elif 18 < self.age <= 20:
@@ -158,8 +161,8 @@ class Person(base.ParsObj):
         not postpartum.  Postpartum and general age-based data from DHS.
         '''
 
-        # Check if postpartum in first year and assign probability
-        if self.postpartum and 0 < self.postpartum_dur < 12:
+        # Check if postpartum in first six months and assign probability
+        if self.postpartum and 0 < self.postpartum_dur <= 6:
             sexually_active_prob = self.pars['sexual_activity_postpartum']['percent_active'][self.postpartum_dur]
 
         # Else check if sexually active in the last year given their age - from DHS parameters
@@ -363,7 +366,7 @@ class Person(base.ParsObj):
         '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
 
         if self.postpartum and self.postpartum_dur <= 6:
-            self.get_method_postpartum(t)
+            self.get_method_postpartum(t, y)
 
         # If switching frequency in months has passed, allows switching only on whole years
         else:
