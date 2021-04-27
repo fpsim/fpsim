@@ -35,6 +35,21 @@ barriers_file = datapath('DHSIndividualBarriers.csv')
 tfr_file = datapath('senegal-tfr.csv')
 mcpr_file = datapath('mcpr_senegal.csv')
 
+default_flags = sc.objdict(
+    popsize = 1,  # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
+    skyscrapers = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
+    first_birth = 1,  # Age at first birth mean with standard deviation; 'age_first_birth'
+    birth_space = 1,  # Birth spacing both in bins and mean with standard deviation; 'spacing'
+    age_pregnancy = 1, # Summary stats (mean, std, 25, 50, 75%) ages of those currently pregnant; 'age_pregnant_stats',
+    mcpr = 1,  # Modern contraceptive prevalence; 'mcpr'
+    methods = 1, # Overall percentage of method use and method use among users; 'methods'
+    mmr = 1,  # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'
+    infant_m = 1,  # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
+    cdr = 1,  # Crude death rate at end of sim in model vs data; 'crude_death_rate'
+    cbr = 1,  # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
+    tfr = 0,  # Not using as calibration target given different formulas in data vs model
+)
+
 
 
 
@@ -43,12 +58,12 @@ class Calibration(sc.prettyobj):
     Class for running calibration to data
     '''
 
-    def __init__(self, flags):
-        self.flags = flags # Set flags for what gets run
+    def __init__(self, flags=None, pars=None):
+        self.flags = flags if flags else sc.dcp(default_flags) # Set flags for what gets run
+        self.pars = pars
         self.model_to_calib = sc.objdict()
         self.dhs_data = sc.objdict()
         self.method_keys = None
-
         return
 
     def init_dhs_data(self):
@@ -102,6 +117,7 @@ class Calibration(sc.prettyobj):
 
         return growth_rate
 
+
     def run_model(self, pars):
 
         self.init_dhs_data()
@@ -123,24 +139,17 @@ class Calibration(sc.prettyobj):
 
         return
 
+
     def extract_model(self):
-
-        if self.flags.popsize:
-            self.model_pop_size()
-        if self.flags.mcpr:
-            self.model_mcpr()
-        if self.flags.mmr:
-            self.model_mmr()
-        if self.flags.infant_m:
-            self.model_infant_mortality_rate()
-        if self.flags.cdr:
-            self.model_crude_death_rate()
-        if self.flags.cbr:
-            self.model_crude_birth_rate()
-        if self.flags.tfr:
-            self.model_data_tfr()
-
+        if self.flags.popsize:  self.model_pop_size()
+        if self.flags.mcpr:     self.model_mcpr()
+        if self.flags.mmr:      self.model_mmr()
+        if self.flags.infant_m: self.model_infant_mortality_rate()
+        if self.flags.cdr:      self.model_crude_death_rate()
+        if self.flags.cbr:      self.model_crude_birth_rate()
+        if self.flags.tfr:      self.model_data_tfr()
         return
+
 
     def model_pop_size(self):
 
@@ -151,6 +160,7 @@ class Calibration(sc.prettyobj):
         self.model_to_calib['pop_growth_rate'] = model_growth_rate
 
         return
+
 
     def model_mcpr(self):
 
@@ -437,19 +447,17 @@ class Calibration(sc.prettyobj):
         pass
 
 
-    def run(self, pars, *args, **kwargs):
+    def run(self, pars=None, *args, **kwargs):
+        if pars is None:
+            pars = self.pars
 
         self.run_model(pars)
         self.extract_model()
         self.extract_dhs_data()
-        if self.flags.skyscrapers:
-            self.extract_skyscrapers()
-        if self.flags.birth_space:
-            self.extract_birth_spacing()
-        if self.flags.methods:
-            self.extract_methods()
-        if self.flags.age_pregnancy:
-            self.extract_age_pregnancy()
+        if self.flags.skyscrapers:   self.extract_skyscrapers()
+        if self.flags.birth_space:   self.extract_birth_spacing()
+        if self.flags.methods:       self.extract_methods()
+        if self.flags.age_pregnancy: self.extract_age_pregnancy()
 
         # Remove people, they're large!
         del self.people

@@ -588,8 +588,8 @@ def default_exposure_correction_age():
     also miscarriage), will decrease factor number
     '''
 
-    exposure_correction_age = pl.array([[0,        5,       10,   12.5,    15,              18,              20,        25,        30,        35,           40,          45,         50],
-                                        [[1, 1], [1, 1], [1, 1],  [0.8, 0.8],  [3.0, 3.0],  [3.0, 3.0], [3.0, 3.0],  [2.0, 2.0],   [1.2, 1.2],  [1.0, 1.0],  [0.5, 0.5], [0.3, 0.3],  [0.2, 0.2]]])
+    exposure_correction_age = pl.array([[0,  5,  10,   12.5,    15,              18,              20,        25,        30,        35,           40,          45,         50],
+                                        [1,  1, 1,  0.8,  3.0,  3.0, 3.0,  2.0,   1.2,  1.0,  0.5, 0.3,  0.2]])
 
     return exposure_correction_age
 

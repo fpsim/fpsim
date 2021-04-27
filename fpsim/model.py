@@ -202,7 +202,7 @@ class Person(base.ParsObj):
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity - encapsulates background factors - experimental and tunable
         ind = sc.findnearest(self.pars['exposure_correction_age'][0], self.age)
         exposure_range = self.pars['exposure_correction_age'][1][ind]
-        exposure_correction_age = np.random.uniform(exposure_range[0], exposure_range[1]) # Affect exposure by a random number between interval for agent's age
+        exposure_correction_age = exposure_range # CK: was getting a warning about ragged arrays before; this is disabled for now np.random.uniform(exposure_range[0], exposure_range[1]) # Affect exposure by a random number between interval for agent's age
         # Using a range for age and a static number for parity as this is a work in progress -- how to represent this exposoure correction still up for debate
         ind2 = sc.findnearest(self.pars['exposure_correction_parity'][0], self.parity)
         exposure_correction_parity = self.pars['exposure_correction_parity'][1][ind2]
