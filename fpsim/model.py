@@ -612,11 +612,6 @@ class Sim(base.BaseSim):
             pp12to23 = 0
             total_women_fecund = 0
 
-            step_results_list = []
-            for person in self.people.values():
-                step_results = person.update(t, y) # Update and count new cases
-                step_results_list.append(step_results)
-
             for person in self.people.values():
                 step_results = person.update(t, y) # Update and count new cases
                 deaths          += step_results['died']
