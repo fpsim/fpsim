@@ -585,17 +585,6 @@ class Sim(base.BaseSim):
         self.init_results()
         self.init_people() # Actually create the children
 
-        # Validate the parameters
-        # default_keys = set(make_pars().keys())
-        # sim_keys = set(self.pars.keys())
-        # if sim_keys != default_keys:
-        #     extra_keys = sim_keys - default_keys
-        #     missing_keys = default_keys - sim_keys
-        #     extra_str = f' Keys not understood: {extra_keys}' if extra_keys else ''
-        #     missing_str = f' Missing keys: {missing_keys}' if missing_keys else ''
-        #     errormsg = f'Parameter keys are incorrect!{missing_str}{extra_str}'
-        #     raise Exception(errormsg)
-
         # Main simulation loop
 
         for i in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
@@ -623,42 +612,17 @@ class Sim(base.BaseSim):
             pp12to23 = 0
             total_women_fecund = 0
 
-            # def update_person(person, t, y):
-            #     step_results = person.update(t, y) # Update and count new cases
-            #     return step_results
-
             step_results_list = []
             for person in self.people.values():
                 step_results = person.update(t, y) # Update and count new cases
                 step_results_list.append(step_results)
-
-            # step_results_list = sc.parallelize(update_person, iterarg=self.people.values(), kwargs=dict(t=t, y=y))
-            # data = [[v for v in res.values()] for res in step_results_list]
-            # keys = list(step_results_list[0].keys())
-            # n_people = len(self.people)
-            # pvec = np.arange(n_people)
-            # df = xr.DataArray(data=data, dims=('person', 'kind'), coords={'person':pvec, 'kind':keys})
-            # deaths          = int(df.loc[:,'died'].values.sum())
-            # births          = int(df.loc[:,'gave_birth'].values.sum())
-            # maternal_deaths = int(df.loc[:,'maternal_death'].values.sum())
-            # infant_deaths   = int(df.loc[:,'infant_death'].values.sum())
-            # on_methods      = int(df.loc[:,'on_method'].values.sum())
-            # no_methods      = int(df.loc[:,'no_method'].values.sum())
-            # pp0to5          = int(df.loc[:,'pp0to5'].values.sum())
-            # pp6to11         = int(df.loc[:,'pp6to11'].values.sum())
-            # pp12to23        = int(df.loc[:,'pp12to23'].values.sum())
-
-            # Calculate total women fecund
-            # sex = df.loc[:,'sex'].values
-            # age = df.loc[:,'age'].values
-            # total_women_fecund = (sex==0 * (15 <= age) * (age < self.pars['age_limit_fecundity'])).sum()
 
             for person in self.people.values():
                 step_results = person.update(t, y) # Update and count new cases
                 deaths          += step_results['died']
                 births          += step_results['gave_birth']
                 maternal_deaths += step_results['maternal_death']
-                infant_deaths    += step_results['infant_death']
+                infant_deaths   += step_results['infant_death']
                 on_methods      += step_results['on_method']
                 no_methods      += step_results['no_method']
                 pp0to5          += step_results['pp0to5']
@@ -818,8 +782,6 @@ class Sim(base.BaseSim):
                 else:
                     y = res[key]
                 pl.plot(x, y, label=label, **plotargs)
-                #if key == 'pop_size_months':
-                    #pl.scatter(self.pars['pop_years'], self.pars['pop_size'], **plotargs)
             utils.fixaxis(useSI=useSI)
             if key == 'mcpr':
                 pl.ylabel('Percentage')
