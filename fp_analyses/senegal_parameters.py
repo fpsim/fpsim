@@ -135,7 +135,7 @@ def default_maternal_mortality():
     expressed per 100,000 live births, for a specified time period.
     '''
 
-        data = pl.array([
+    data = pl.array([
         [1990, 0.00278, 0.00319, 0.00364],
         [2000, 0.00268, 0.00309, 0.00354],
         [2001, 0.00263, 0.00304, 0.00350],
@@ -244,7 +244,7 @@ def default_infant_mortality():
     return infant_mortality
 
 
-'''' 
+''''
 OLD INITIATION, DISCONTINUATION, AND SWITCHING CONTRACEPTIVE MATRICES.  LEAVING HERE IN CASE USEFUL.
 CAN'T COMMENT ON HOW THESE PROBABILITIES WERE CALCULATED
 def default_methods():
@@ -480,8 +480,8 @@ def default_sexual_activity():
     '''
 
 
-        sexually_active = pl.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
-                                [0, 0,  0,  8,   11.5,  11.5,  35.5, 49.6, 57.4,  64.4,   64.45, 64.5,  66.8]])
+    sexually_active = pl.array([[0, 5, 10, 12.5, 15,   18,   20,   25,   30,   35,   40,    45,   50],
+                                [0, 0,  0,  8,   11.5, 11.5, 35.5, 49.6, 57.4, 64.4, 64.45, 64.5, 66.8]])
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     ages = pl.arange(resolution * max_age_preg + 1) / resolution
     activity_ages = sexually_active[0]
