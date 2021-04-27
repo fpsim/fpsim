@@ -401,7 +401,9 @@ class Person(base.ParsObj):
             'no_method' : False,
             'pp0to5'   : False,
             'pp6to11'   : False,
-            'pp12to23'  : False
+            'pp12to23'  : False,
+            'sex': None,
+            'age': None,
         }
         return
 
@@ -411,6 +413,8 @@ class Person(base.ParsObj):
         t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)'''
 
         self.init_step_results()   # Initialize outputs
+        self.step_results['sex'] = self.sex
+        self.step_results['age'] = self.age
 
         if self.alive:  # Do not move through step if not alive
 
@@ -581,17 +585,6 @@ class Sim(base.BaseSim):
         self.init_results()
         self.init_people() # Actually create the children
 
-        # Validate the parameters
-        # default_keys = set(make_pars().keys())
-        # sim_keys = set(self.pars.keys())
-        # if sim_keys != default_keys:
-        #     extra_keys = sim_keys - default_keys
-        #     missing_keys = default_keys - sim_keys
-        #     extra_str = f' Keys not understood: {extra_keys}' if extra_keys else ''
-        #     missing_str = f' Missing keys: {missing_keys}' if missing_keys else ''
-        #     errormsg = f'Parameter keys are incorrect!{missing_str}{extra_str}'
-        #     raise Exception(errormsg)
-
         # Main simulation loop
 
         for i in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
@@ -624,7 +617,7 @@ class Sim(base.BaseSim):
                 deaths          += step_results['died']
                 births          += step_results['gave_birth']
                 maternal_deaths += step_results['maternal_death']
-                infant_deaths    += step_results['infant_death']
+                infant_deaths   += step_results['infant_death']
                 on_methods      += step_results['on_method']
                 no_methods      += step_results['no_method']
                 pp0to5          += step_results['pp0to5']
@@ -784,8 +777,6 @@ class Sim(base.BaseSim):
                 else:
                     y = res[key]
                 pl.plot(x, y, label=label, **plotargs)
-                #if key == 'pop_size_months':
-                    #pl.scatter(self.pars['pop_years'], self.pars['pop_size'], **plotargs)
             utils.fixaxis(useSI=useSI)
             if key == 'mcpr':
                 pl.ylabel('Percentage')
