@@ -2,11 +2,15 @@
 Save or test the regression. To save, run
 '''
 
+import numpy as np
 import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
 
-filename = 'baseline.json'
+do_plot = 0
+do_save = 0
+baseline_filename  = sc.thisdir(__file__, 'baseline.json')
+benchmark_filename = sc.thisdir(__file__, 'benchmark.json')
 
 def run(do_save=False):
     pars = fa.senegal_parameters.make_pars()
