@@ -1138,7 +1138,7 @@ def diff_summaries(sim1, sim2, skip_key_diffs=False, output=False, die=False):
     values which differ.
 
     Args:
-        sim1 (sim/dict): either a simulation object or the sim.summary dictionary
+        sim1 (sim/dict): the calib.summary dictionary, representing a single sim
         sim2 (sim/dict): ditto
         skip_key_diffs (bool): whether to skip keys that don't match between sims
         output (bool): whether to return the output as a string (otherwise print)
