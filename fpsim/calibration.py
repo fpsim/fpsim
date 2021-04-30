@@ -11,6 +11,7 @@ import sciris as sc
 from .model import Sim
 
 
+__all__ = ['Calibration', 'Fit', 'compute_gof', 'datapath']
 
 # ...more settings
 min_age = 15
