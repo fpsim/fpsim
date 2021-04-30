@@ -9,8 +9,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-Version 0.6.0 (2021-05-05)
+Coming soon
+-----------
+- Converting model to array-based implementation, increasing performance by a factor of roughly 100.
+- Adding a ``calib.calibrate()`` method.
+
+
+Version 0.5.1 (2021-05-05)
 --------------------------
-- Converted model to array-based implementation, increasing performance by a factor of roughly 100.
 - Added regression and benchmarking tests.
-- Added a ``calib.calibrate()`` method.
+- *GitHub info*: PR `90 <https://github.com/amath-idm/fp_analyses/pull/90>`__

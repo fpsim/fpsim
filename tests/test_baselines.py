@@ -140,11 +140,15 @@ def test_benchmark(do_save=do_save, repeats=1):
             'cpu_performance': ratio,
             }
 
+    def printjson(json):
+        ''' Print more nicely '''
+        print(sc.jsonify(json, tostring=True, indent=2))
+
     print('Previous benchmark:')
-    print(previous)
+    printjson(previous)
 
     print('\nNew benchmark:')
-    print(json)
+    printjson(json)
 
     if do_save:
         sc.savejson(filename=benchmark_filename, obj=json, indent=2)
@@ -161,8 +165,8 @@ if __name__ == '__main__':
     T = sc.tic()
 
     json = test_benchmark(do_save=do_save, repeats=1) # Run this first so benchmarking is available even if results are different
-    # new  = test_baseline()
-    # calib = make_calib(do_plot=True)
+    new  = test_baseline()
+    calib = make_calib(do_plot=True)
 
     print('\n'*2)
     sc.toc(T)
