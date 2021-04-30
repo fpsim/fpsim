@@ -4,7 +4,7 @@ Benchmark the simulation
 
 import sciris as sc
 import fpsim as fp
-import senegal_parameters as sp
+from fp_analyses import senegal_parameters as sp
 
 pars = sp.make_pars()
 sim = fp.Sim(pars)
