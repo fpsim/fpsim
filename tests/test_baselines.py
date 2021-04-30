@@ -131,6 +131,7 @@ def test_benchmark(do_save=do_save, repeats=1):
                 'initialize':  round(t_init, n_decimals),
                 'run':         round(t_run,  n_decimals),
                 'postprocess': round(t_post, n_decimals),
+                'total':       round(t_init+t_run+t_post, n_decimals)
                 },
             'parameters': {
                 'n':          calib.pars['n'],

@@ -1147,11 +1147,11 @@ def diff_summaries(sim1, sim2, skip_key_diffs=False, output=False, die=False):
 
     **Example**::
 
-        s1 = fp.Calibration()
-        s2 = fp.Calibration()
-        s1.run()
-        s2.run()
-        fp.diff_summaries(s1, s2)
+        c1 = fp.Calibration()
+        c2 = fp.Calibration()
+        c1.run()
+        c2.run()
+        fp.diff_summaries(c1.summarize(), c2.summarize())
     '''
 
     for sim in [sim1, sim2]:
