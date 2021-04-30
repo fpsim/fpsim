@@ -44,13 +44,14 @@ def save_baseline():
 
 def test_baseline():
     ''' Compare the current default sim against the saved baseline '''
+    sc.heading('Testing baseline...')
 
     # Load existing baseline
     old = sc.loadjson(baseline_filename)
 
     # Calculate new baseline
     calib = make_calib(do_run=True)
-    new = calib.summary()
+    new = calib.summarize()
 
     # Compute the comparison
     fp.diff_summaries(old, new, die=True)
@@ -61,7 +62,7 @@ def test_baseline():
 def test_benchmark(do_save=do_save, repeats=1):
     ''' Compare benchmark performance '''
 
-    print('Running benchmark...')
+    sc.heading('Running benchmark...')
     previous = sc.loadjson(benchmark_filename)
 
     t_inits = []

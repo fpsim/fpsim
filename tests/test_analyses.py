@@ -7,6 +7,7 @@ import pylab as pl
 import sciris as sc
 from pathlib import Path
 import importlib.util as iu
+import pytest
 
 pl.switch_backend('agg') # To avoid graphs from appearing -- if you want them, run the examples directly
 cwd = Path(sc.thisdir(__file__))
@@ -27,11 +28,12 @@ def run_script(name):
     return
 
 
+@pytest.mark.skip('Too long to run as part of continuous integration')
 def test_run_senegal():
     run_script("run_senegal")
     return
 
-
+@pytest.mark.skip('Too long to run as part of continuous integration')
 def test_run_calibration():
     run_script("run_calibration")
     return

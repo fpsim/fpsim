@@ -11,7 +11,7 @@ import sciris as sc
 from . import model as mo
 
 
-__all__ = ['Calibration', 'Fit', 'compute_gof', 'datapath']
+__all__ = ['Calibration', 'Fit', 'compute_gof', 'datapath', 'diff_summaries']
 
 # ...more settings
 min_age = 15
