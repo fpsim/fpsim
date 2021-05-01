@@ -578,8 +578,8 @@ class Sim(base.BaseSim):
         T = sc.tic()
 
         # Reset settings and results
-        if verbose is not None:
-            self.pars['verbose'] = verbose
+        if verbose is None:
+            verbose = self.pars['verbose']
         self.update_pars()
         self.init_results()
         self.init_people() # Actually create the children
@@ -589,9 +589,10 @@ class Sim(base.BaseSim):
         for i in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
             t = self.ind2year(i)  # t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
             y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
-            if self.pars['verbose']>-1:
-                if sc.approx(t, int(t), eps=0.01):
-                    print(f'  Running {y:0.0f} of {self.pars["end_year"]}...')
+            if verbose:
+                if not (t % int(1.0/verbose)):
+                    string = f'  Running {y:0.1f} of {self.pars["end_year"]}...'
+                    sc.progressbar(i+1, self.npts, label=string, length=20, newline=True)
 
             # Update method matrices for year of sim to trend over years
             self.update_methods_matrices(y)
