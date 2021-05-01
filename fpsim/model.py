@@ -1,5 +1,5 @@
 '''
-Defines the Sim class, the core class of the FP model (LEMOD-FP).
+Defines the Sim class, the core class of the FP model (FPsim).
 '''
 
 #%% Imports
@@ -14,12 +14,12 @@ from . import base
 
 
 # Specify all externally visible things this file defines
-__all__ = ['Person', 'Sim', 'multi_run']
+__all__ = ['Person', 'Sim', 'single_run', 'multi_run']
 
 useSI      = True
-mpy        = 12 # Months per year, to avoid magic numbers
-resolution = 100 # For spline interpolation
-eps = 1e-12
+mpy        = 12    # Months per year, to avoid magic numbers
+resolution = 100   # For spline interpolation
+eps        = 1e-12 # To avoid divide-by-zero
 
 
 #%% Define classes
@@ -462,7 +462,6 @@ class Sim(base.BaseSim):
         self.init_results()
         self.init_people()
         self.interventions = {}  # dictionary for possible interventions to add to the sim
-
         return
 
 
