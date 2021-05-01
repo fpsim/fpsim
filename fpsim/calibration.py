@@ -31,7 +31,8 @@ pregnancy_parity_file_raw = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file --
 pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
 skyscrapers_file = datapath('Skyscrapers-All-DHS.csv')
 methods_file = datapath('Method_v312.csv')
-spacing_file = datapath('BirthSpacing.csv')
+spacing_file = datapath('BirthSpacing.obj')
+spacing_file_raw = datapath('BirthSpacing.csv')
 popsize_file = datapath('senegal-popsize.csv')
 barriers_file = datapath('DHSIndividualBarriers.csv')
 tfr_file = datapath('senegal-tfr.csv')
@@ -285,17 +286,8 @@ class Calibration(sc.prettyobj):
         spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
 
         # From data
-        data = pd.read_csv(spacing_file)
-
-        right_year = data['SurveyYear'] == '2017'
-        not_first = data['Birth Order'] != 0
-        is_first = data['Birth Order'] == 0
-        filtered = data[(right_year) & (not_first)]
-        spacing = filtered['Birth Spacing'].to_numpy()
-
-        first_filtered = data[(right_year) & (is_first)]
-        first = first_filtered['Birth Spacing'].to_numpy()
-
+        data = sc.loadobj(spacing_file)
+        spacing, first = data['spacing'], data['first']
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
 
         # Spacing bins from data
