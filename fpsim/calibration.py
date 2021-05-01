@@ -60,7 +60,7 @@ class Calibration(sc.prettyobj):
     Class for running calibration to data
     '''
 
-    def __init__(self, flags=None, pars=None):
+    def __init__(self, pars=None, flags=None):
         self.flags = flags if flags else sc.dcp(default_flags) # Set flags for what gets run
         self.pars = pars
         self.model_to_calib = sc.objdict()
@@ -299,9 +299,12 @@ class Calibration(sc.prettyobj):
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
 
         # Spacing bins from data
-        for s in range(len(spacing)):
-            i = sc.findinds(spacing[s] > spacing_bins[:])[-1]
-            data_spacing_counts[i] += 1
+        spacing_bins_array = sc.cat(spacing_bins[:], np.inf)
+        for i in range(len(spacing_bins_array)-1):
+            lower = spacing_bins_array[i]
+            upper = spacing_bins_array[i+1]
+            matches = np.intersect1d(sc.findinds(spacing >= lower), sc.findinds(spacing < upper))
+            data_spacing_counts[i] += len(matches)
 
         data_spacing_counts[:] /= data_spacing_counts[:].sum()
         data_spacing_counts[:] *= 100
@@ -459,7 +462,6 @@ class Calibration(sc.prettyobj):
     def post_process_results(self, keep_people=False, compute_fit=False, **kwargs):
         ''' Compare the model and the data '''
         self.extract_model()
-        self.extract_dhs_data()
         if self.flags.skyscrapers:   self.extract_skyscrapers()
         if self.flags.birth_space:   self.extract_birth_spacing()
         if self.flags.methods:       self.extract_methods()

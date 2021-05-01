@@ -456,7 +456,7 @@ class Sim(base.BaseSim):
     The Sim class handles the running of the simulation
     '''
 
-    def __init__(self, pars=None, ):
+    def __init__(self, pars=None):
         super().__init__(pars) # Initialize and set the parameters as attributes
         utils.set_seed(self.pars['seed'])
         self.init_results()
