@@ -26,7 +26,8 @@ def datapath(path):
     ''' Return the path of the parent folder '''
     return sc.thisdir(__file__, os.pardir, 'dropbox', path)
 
-pregnancy_parity_file = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file
+pregnancy_parity_file = datapath('SNIR80FL.obj')  # DHS Senegal 2018 file -- preprocessed
+pregnancy_parity_file_raw = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file -- raw
 pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
 skyscrapers_file = datapath('Skyscrapers-All-DHS.csv')
 methods_file = datapath('Method_v312.csv')
@@ -84,12 +85,7 @@ class Calibration(sc.prettyobj):
 
     def extract_dhs_data(self):
 
-        # Extract ages, currently pregnant, and parity in 2018 in dataframe
-        dhs_pregnancy_parity = pd.read_stata(pregnancy_parity_file, convert_categoricals=False)
-        dhs_pregnancy_parity = dhs_pregnancy_parity[['v012', 'v213', 'v218']]
-        dhs_pregnancy_parity = dhs_pregnancy_parity.rename(columns={'v012': 'Age', 'v213': 'Pregnant',
-                                                                    'v218': 'Parity'})  # Parity means # of living children in DHS
-        self.dhs_data['pregnancy_parity'] = dhs_pregnancy_parity
+        self.dhs_data['pregnancy_parity'] = sc.load(pregnancy_parity_file)
 
         # Extract population size over time
         pop_size = pd.read_csv(popsize_file, header=None)  # From World Bank
@@ -99,8 +95,6 @@ class Calibration(sc.prettyobj):
         # Extract population growth rate
         data_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
         self.dhs_data['pop_growth_rate'] = data_growth_rate
-
-
 
         # Extract mcpr over time
         mcpr = pd.read_csv(mcpr_file, header = None)
