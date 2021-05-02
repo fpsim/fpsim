@@ -25,7 +25,7 @@ def arr(n=None, val=0):
         assert len(val) == n
         arr = val
     elif isinstance(val, list):
-        arr = [sc.dcp(val)]*n
+        arr = [sc.dcp(val) for _ in range(n)]
     else:
         dtype = object if sc.isstring(val) else None
         arr = np.full(shape=n, fill_value=val, dtype=dtype)
@@ -364,7 +364,7 @@ class People(fpb.BasePeople):
         self.breastfeed_dur[deliv_inds] = 0  # Start at 0, will update before leaving timestep in separate function
         self.postpartum_dur[deliv_inds] = 0
         for i in deliv_inds: # Handle DOBs
-            self.dobs[i].append(self.age)  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
+            self.dobs[i].append(self.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
 
         # Handle twins
         twin_inds = deliv_inds[fpu.n_binomial(self.pars['twins_prob'], len(deliv_inds))]

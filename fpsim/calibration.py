@@ -123,8 +123,8 @@ class Calibration(sc.prettyobj):
 
 
     def post_process_sim(self):
-        self.people = list(self.sim.people.values())  # Extract people objects from sim
-        self.model_results = self.sim.store_results()  # Stores dictionary of results
+        self.people = self.sim.people  # Extract people objects from sim
+        self.model_results = self.sim.results  # Stores dictionary of results
 
         # Store dataframe of agent's age, pregnancy status, and parity
         model_pregnancy_parity = self.sim.store_postpartum()
@@ -264,10 +264,11 @@ class Calibration(sc.prettyobj):
 
         # Extract from model
         sky_arr['Model'] = pl.zeros((len(age_bins), len(parity_bins)))
-        for person in self.people:
-            if person.alive and not person.sex and person.age >= min_age and person.age < max_age:
-                age_bin = sc.findinds(age_bins <= person.age)[-1]
-                parity_bin = sc.findinds(parity_bins <= person.parity)[-1]
+        ppl = self.people
+        for i in range(len(ppl)):
+            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+                age_bin = sc.findinds(age_bins <= ppl.age[i])[-1]
+                parity_bin = sc.findinds(parity_bins <= ppl.parity[i])[-1]
                 sky_arr['Model'][age_bin, parity_bin] += 1
 
         # Normalize
@@ -316,12 +317,13 @@ class Calibration(sc.prettyobj):
         model_age_first = []
         model_spacing = []
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
-        for person in self.people:
-            if len(person.dobs):
-                model_age_first.append(person.dobs[0])
-            if len(person.dobs) > 1:
-                for d in range(len(person.dobs) - 1):
-                    space = person.dobs[d + 1] - person.dobs[d]
+        ppl = self.people
+        for i in  range(len(ppl)):
+            if len(ppl.dobs[i]):
+                model_age_first.append(ppl.dobs[i][0])
+            if len(ppl.dobs[i]) > 1:
+                for d in range(len(ppl.dobs[i]) - 1):
+                    space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
                     ind = sc.findinds(space > spacing_bins[:])[-1]
                     model_spacing_counts[ind] += 1
 
@@ -376,9 +378,10 @@ class Calibration(sc.prettyobj):
         data_method_counts[:] /= data_method_counts[:].sum()
 
         # From model
-        for person in self.people:
-            if person.alive and not person.sex and person.age >= min_age and person.age < max_age:
-                model_method_counts[person.method] += 1
+        ppl = self.people
+        for i in range(len(ppl)):
+            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+                model_method_counts[ppl.method[i]] += 1
         model_method_counts[:] /= model_method_counts[:].sum()
 
         # Make labels
@@ -1146,6 +1149,10 @@ def diff_summaries(sim1, sim2, skip_key_diffs=False, output=False, die=False):
         if not isinstance(sim, dict): # pragma: no cover
             errormsg = f'Cannot compare object of type {type(sim)}, must be a FPsim calib.summary dict'
             raise TypeError(errormsg)
+
+    # Ignore data for now
+    sim1 = sim1['model']
+    sim2 = sim2['model']
 
     # Compare keys
     keymatchmsg = ''
