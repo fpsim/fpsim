@@ -121,11 +121,6 @@ def numba_preg_prob(fecundity_fn, personal_fecundity, age, resolution, method_ef
     prob_month = 1 - ((1-prob_annual)**(1/mpy))
     return prob_month
 
-@func_decorator((nb.float64[:], nb.float64, nb.float64), cache=True)
-def numba_activity_prob(sexual_activity, age, resolution):
-    '''Run interpolation eval to check for probability of sexual activity here'''
-    sexually_active_prob = sexual_activity[int(round(age*resolution))]
-    return sexually_active_prob
 
 @func_decorator((nb.float64[:], nb.float64, nb.float64), cache=True)
 def numba_miscarriage_prob(miscarriage_rates, age, resolution):

@@ -215,24 +215,11 @@ class People(fpb.ParsObj):
 
         # Set non-postpartum probabilities
         nonpp_inds = np.setdiff1d(np.arange(n), pp_inds)
-
-        # Check if postpartum in first six months and assign probability
-        if self.postpartum and 0 < self.postpartum_dur <= 6:
-            sexually_active_prob = self.pars['sexual_activity_postpartum']['percent_active'][self.postpartum_dur]
-
-        # Else check if sexually active in the last year given their age - from DHS parameters
-        else:
-            sexually_active_prob = utils.numba_activity_prob(self.pars['sexual_activity'], self.age,
-                                                             resolution)
+        probs[nonpp_inds] = self.pars['sexual_activity'][self.int_ages[nonpp_inds]]
 
         # Evaluate likelihood in this time step of being sexually active
         # Can revert to active or not active each timestep
-        sexually_active = utils.bt(sexually_active_prob)
-
-        if sexually_active:
-            self.sexually_active = True
-        else:
-            self.sexually_active = False
+        self.sexually_active = fpu.binomial_arr(probs)
 
         return
 
