@@ -210,16 +210,16 @@ class People(fpb.BasePeople):
 
         # Find monthly probability of pregnancy based on fecundity and any use of contraception including LAM - from data
         timestep    = self.pars['timestep']
-        lam_inds    = inds[sc.findinds(self.lam[inds])]
-        nonlam_inds = inds[sc.findinds(self.lam[inds] == 0)]
+        lam_i       = sc.findinds(self.lam[inds])
+        nonlam_i    = sc.findinds(self.lam[inds] == 0)
         preg_eval   = self.pars['age_fecundity'][self.int_ages[inds]] * self.personal_fecundity[inds]
-        method_eff  = self.pars['method_efficacy'][self.method[nonlam_inds]]
+        method_eff  = self.pars['method_efficacy'][self.method[inds[nonlam_i]]]
         lam_eff     = self.pars['LAM_efficacy']
 
-        lam_probs    = fpu.annprob2ts((1-lam_eff)*preg_eval[lam_inds],       timestep)
-        nonlam_probs = fpu.annprob2ts((1-method_eff)*preg_eval[nonlam_inds], timestep)
-        preg_probs[lam_inds]    = lam_probs
-        preg_probs[nonlam_inds] = nonlam_probs
+        lam_probs    = fpu.annprob2ts((1-lam_eff)*preg_eval[lam_i],       timestep)
+        nonlam_probs = fpu.annprob2ts((1-method_eff)*preg_eval[nonlam_i], timestep)
+        preg_probs[lam_i]    = lam_probs
+        preg_probs[nonlam_i] = nonlam_probs
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from data
         nullip_inds = sc.findinds(self.parity[inds] == 0) # Nulliparous
