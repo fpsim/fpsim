@@ -9,7 +9,8 @@ dosave = False
 
 sc.tic()
 pars = sp.make_pars()
-pars['n'] = 500 # Only do a partial run
+pars['n'] = 5000 # Only do a partial run
+pars['end_year'] = 1990
 sim = fp.Sim(pars=pars)
 sim.run()
 if doplot:
