@@ -235,7 +235,7 @@ class People(fpb.ParsObj):
         # Find monthly probability of pregnancy based on fecundity and any use of contraception including LAM - from data
         timestep    = self.pars['timestep']
         lam_inds    = sc.findinds(self.lam)
-        nonlam_inds = sc.findinds(np.logical_not(self.lam))
+        nonlam_inds = sc.findinds(self.lam == 0)
         preg_eval   = self.pars['age_fecundity'][self.int_ages] * self.personal_fecundity
         method_eff  = self.pars['method_efficacy'][self.method[nonlam_inds]]
         lam_eff     = self.pars['LAM_efficacy']
@@ -283,7 +283,7 @@ class People(fpb.ParsObj):
         '''
         Check to see if postpartum agent meets criteria for LAM in this time step
         '''
-        not_postpartum = sc.findinds(np.logical_not(self.postpartum))
+        not_postpartum = sc.findinds(self.postpartum == 0)
         over5mo = sc.findinds(self.postpartum_dur > 5)
         self.lam[sc.cat(not_postpartum, over5mo)] = False
         match_low = self.postpartum_dur > 0
@@ -420,7 +420,7 @@ class People(fpb.ParsObj):
 
         self.get_method_postpartum()
 
-        # If switching frequency in months has passed, allows switching only on whole years
+        # If switching frequency in months has passed, allows switching only on whole years -- TODO: have it per-woman rather than per-timestep
         if self.t % (self.pars['switch_frequency']/fpd.mpy) == 0:
             self.get_method()
 
@@ -434,13 +434,11 @@ class People(fpb.ParsObj):
         DHS data records only women who self-report LAM which is much lower.
         If wanting to include LAM here need to add "or self.lam == False" to 2nd if statemnt
         '''
-
-        if self.pars['method_age'] <= self.age < self.pars['age_limit_fecundity'] and not self.pregnant:   #Tally for mCPR
-            if self.method == 0:
-                self.step_results['no_method'] = 1
-            else:
-                self.step_results['on_method'] = 1
-
+        denominator = (self.pars['method_age'] <= self.age < self.pars['age_limit_fecundity']) * (self.pregnant == 0)
+        no_method = np.sum((self.method == 0) * denominator)
+        on_method = np.sum((self.method != 0) * denominator)
+        self.step_results['no_method'] += no_method
+        self.step_results['on_method'] += on_method
         return
 
 
