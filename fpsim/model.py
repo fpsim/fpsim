@@ -14,47 +14,65 @@ from . import base
 
 
 # Specify all externally visible things this file defines
-__all__ = ['Person', 'Sim', 'single_run', 'multi_run']
+__all__ = ['People', 'Sim', 'single_run', 'multi_run']
 
 useSI      = True
 mpy        = 12    # Months per year, to avoid magic numbers
 resolution = 100   # For spline interpolation
 eps        = 1e-12 # To avoid divide-by-zero
 
+person_defaults = dict(
+    age = 0,
+    sex = 0,
+    parity = 0,
+    method = None,
+    barrier = 'None',
+    postpartum_dur = 0,
+    gestation = 0,
+    remainder_months = 0,
+    unmet = False,
+    breastfeed_dur = 0,
+    breastfeed_dur_total = 0
+)
+
 
 #%% Define classes
+def state_arr(n, val=0):
+    ''' Shortcut for defining an empty array with the correct value and data type '''
+    dtype = object if sc.isstring(val) else None
+    arr = np.full(shape=n, fill_value=val, dtype=dtype)
+    return arr
 
 
-class Person(base.ParsObj):
+class People(base.ParsObj):
     '''
-    Class for a single person.
+    Class for all the people in the simulation.
     '''
-    def __init__(self, pars, age=0, sex=0, parity=0, method=None, barrier='None', postpartum_dur = 0, gestation = 0, remainder_months = 0, unmet=False, breastfeed_dur = 0, breastfeed_dur_total = 0):
+    def __init__(self, pars, **kwargs):
         self.update_pars(pars) # Set parameters
+        d = sc.objdict(sc.mergedicts(person_defaults, kwargs)) # d = defaults
         self.uid = str(pl.randint(0,1e9))
-        self.age = float(age) # Age of the person (in years)
-        self.sex = sex # Female (0) or male (1)
-        self.parity = parity
-        self.method = method  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
-        self.barrier = barrier  # reason for non-use
-        self.unmet = unmet  # not currently used
+        self.age = float(d.age) # Age of the person (in years)
+        self.sex = d.sex # Female (0) or male (1)
+        self.parity = d.parity
+        self.method = d.method  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
+        self.barrier = d.barrier  # reason for non-use
+        self.unmet = d.unmet  # not currently used
         self.alive = True
         self.pregnant = False
         self.sexually_active = False
         self.lactating = False
-        self.gestation = gestation
+        self.gestation = d.gestation
         self.postpartum = False
-        self.postpartum_dur = postpartum_dur # Tracks # months postpartum
+        self.postpartum_dur = d.postpartum_dur # Tracks # months postpartum
         self.lam = False # Separately tracks lactational amenorrhea, can be using both LAM and another method
         self.dobs = [-1]*self.parity # Dates of births
         self.lactating = False  # not currently used but build and available to use
-        self.breastfeed_dur = breastfeed_dur
-        self.breastfeed_dur_total = breastfeed_dur_total
+        self.breastfeed_dur = d.breastfeed_dur
+        self.breastfeed_dur_total = d.breastfeed_dur_total
         f_var = self.pars['fecundity_variation']
         self.personal_fecundity = np.random.random()*(f_var[1]-f_var[0])+f_var[0] # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
-        self.remainder_months = remainder_months
-
-        self.init_step_results() # Do I need this?
+        self.remainder_months = d.remainder_months
         return
 
 
@@ -544,10 +562,8 @@ class Sim(base.BaseSim):
         switch_postpartum = sc.dcp(self.pars['methods_postpartum']['probs_matrix_4-6'])
         switch_postpartum[0, 0] *= self.pars['methods_postpartum']['trend'][ind]
         for i in range(len(switch_postpartum)):
-            switch_postpartum[i] = switch_postpartum[i, :] / switch_postpartum[i,
-                                                             :].sum()  # Normalize so probabilities add to 1
-        self.pars['methods_postpartum'][
-            'switch_postpartum'] = switch_postpartum  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
+            switch_postpartum[i] = switch_postpartum[i,:] / switch_postpartum[i,:].sum()  # Normalize so probabilities add to 1
+        self.pars['methods_postpartum']['switch_postpartum'] = switch_postpartum  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
 
         return
 
@@ -685,11 +701,6 @@ class Sim(base.BaseSim):
         print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
         return self.results
 
-    def store_results(self):
-
-        ''' Returns results dictionary for use in other files'''
-
-        return self.results
 
     def store_postpartum(self):
 
@@ -718,6 +729,7 @@ class Sim(base.BaseSim):
         pp = pd.DataFrame(rows, index = None, columns = ['Age', 'PP0to5', 'PP6to11', 'PP12to23', 'NonPP', 'Pregnant', 'Parity'])
         pp.fillna(0, inplace=True)
         return pp
+
 
     def plot(self, dosave=None, figargs=None, plotargs=None, axisargs=None, as_years=True):
         '''
@@ -790,7 +802,7 @@ class Sim(base.BaseSim):
             if isinstance(dosave, str):
                 filename = dosave # It's a string, assume it's a filename
             else:
-                filename = 'voi_sim.png' # Just give it a default name
+                filename = 'fp_sim.png' # Just give it a default name
             pl.savefig(filename)
         else:
             pl.show() # Only show if we're not saving
@@ -804,8 +816,10 @@ class Sim(base.BaseSim):
 
 
 def single_run(sim):
+    ''' Helper function for multi_run(); rarely used on its own '''
     sim.run()
     return sim
+
 
 def multi_run(orig_sim, n=4, verbose=None):
 
