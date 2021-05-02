@@ -228,46 +228,53 @@ class People(fpb.ParsObj):
         '''
         Decide if person (female) becomes pregnant at a timestep.
         '''
+        print('TODO: only check subset of people')
+        n = len(self)
+        preg_probs = np.zeros(n)
 
         # Find monthly probability of pregnancy based on fecundity and any use of contraception including LAM - from data
+        timestep    = self.pars['timestep']
+        lam_inds    = sc.findinds(self.lam)
+        nonlam_inds = sc.findinds(np.logical_not(self.lam))
+        preg_eval   = self.pars['age_fecundity'][self.int_ages] * self.personal_fecundity
+        method_eff  = self.pars['method_efficacy'][self.method[nonlam_inds]]
+        lam_eff     = self.pars['LAM_efficacy']
 
-        preg_prob = utils.numba_preg_prob(self.pars['age_fecundity'], self.personal_fecundity, self.age, resolution,
-                                          self.pars['method_efficacy'][self.method], self.lam,
-                                          self.pars['LAM_efficacy'], mpy)
+        lam_probs    = fpu.annprob2ts((1-lam_eff)*preg_eval[lam_inds],       timestep)
+        nonlam_probs = fpu.annprob2ts((1-method_eff)*preg_eval[nonlam_inds], timestep)
+        preg_probs[lam_inds] = lam_probs
+        preg_probs[nonlam_inds] = nonlam_probs
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from data
-        if self.parity == 0:   #Nulliparous
-            ind = sc.findnearest(self.pars['fecundity_ratio_nullip'][0], self.age)
-            fr_nullip = self.pars['fecundity_ratio_nullip'][1][ind]
-            preg_prob *= fr_nullip
+        nullip_inds = sc.findinds(self.parity == 0) # Nulliparous
+        preg_ages = np.minimum(self.int_ages, fpd.max_age_preg)
+        preg_probs[nullip_inds] *= self.pars['fecundity_ratio_nullip'][preg_ages[nullip_inds]]
+        preg_probs
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity - encapsulates background factors - experimental and tunable
-        ind = sc.findnearest(self.pars['exposure_correction_age'][0], self.age)
-        exposure_range = self.pars['exposure_correction_age'][1][ind]
-        exposure_correction_age = exposure_range # CK: was getting a warning about ragged arrays before; this is disabled for now np.random.uniform(exposure_range[0], exposure_range[1]) # Affect exposure by a random number between interval for agent's age
-        # Using a range for age and a static number for parity as this is a work in progress -- how to represent this exposoure correction still up for debate
-        ind2 = sc.findnearest(self.pars['exposure_correction_parity'][0], self.parity)
-        exposure_correction_parity = self.pars['exposure_correction_parity'][1][ind2]
-
-        preg_prob *= exposure_correction_age
-        preg_prob *= exposure_correction_parity
+        preg_probs *= self.pars['exposure_correction_age'][preg_ages]
+        preg_probs *= self.pars['exposure_correction_parity'][self.parity]
 
         # Use a single binomial trial to check for conception successes this month
-        pregnant = utils.bt(preg_prob)
+        pregnant = fpu.binomial_arr(preg_probs)
+        preg_inds = sc.findinds(pregnant)
 
-        if pregnant:
-            abortion = utils.bt(self.pars['abortion_prob']) # Check to see if this pregnancy ends in abortion, do not set up pregnancy if yes
-            if abortion:
-                self.postpartum = False
-                self.postpartum_dur = 0  # Reset postpartum state if got pregnant and then aborted
-                return
+        # Check for abortion
+        abortion = fpu.n_binomial(self.pars['abortion_prob'], len(preg_inds))
+        abort_inds = preg_inds[sc.findinds(abortion)]
+        preg_inds = np.setdiff1d(preg_inds, abort_inds)
 
-            self.pregnant = True
-            self.gestation = 0  # Start the counter at 0 to allow full 9 months gestation
-            self.preg_dur = (np.random.randint(self.pars['preg_dur'][0], self.pars['preg_dur'][1] + 1))  # Duration of this pregnancy
-            self.postpartum = False
-            self.postpartum_dur = 0
-            self.reset_breastfeeding() # Stop lactating if becoming pregnant
+        # Update states
+        self.postpartum[abort_inds] = False
+        self.postpartum_dur[abort_inds] = 0
+
+        self.pregnant[preg_inds] = True
+        self.gestation[preg_inds] = 0  # Start the counter at 0 to allow full 9 months gestation
+        pregdur = self.pars['preg_dur']
+        self.preg_dur[preg_inds] = np.random.randint(pregdur[0], pregdur[1]+1, size=len(preg_inds))  # Duration of this pregnancy
+        self.postpartum[preg_inds] = False
+        self.postpartum_dur[preg_inds] = 0
+        self.reset_breastfeeding(inds=preg_inds) # Stop lactating if becoming pregnant
 
         return
 
@@ -276,34 +283,33 @@ class People(fpb.ParsObj):
         '''
         Check to see if postpartum agent meets criteria for LAM in this time step
         '''
-
-        if self.postpartum:
-            if 0 <= self.postpartum_dur <= 5:
-                lam_rate = self.pars['lactational_amenorrhea']['rate'][self.postpartum_dur]
-                self.lam = utils.bt(lam_rate)
-
-            if self.postpartum_dur > 5:
-                self.lam = False
-
-        else:
-            self.lam = False
-
+        not_postpartum = sc.findinds(np.logical_not(self.postpartum))
+        over5mo = sc.findinds(self.postpartum_dur > 5)
+        self.lam[sc.cat(not_postpartum, over5mo)] = False
+        match_low = self.postpartum_dur > 0
+        match_high = self.postpartum_dur <= 5
+        match = self.postpartum * match_low * match_high
+        match_inds = sc.findinds(match)
+        probs = self.pars['lactational_amenorrhea']['rate'][self.postpartum_dur[match_inds]]
+        self.lam[match_inds] = fpu.binomial_arr(probs)
         return
 
 
-    def update_breastfeeding(self):
-        '''Track breastfeeding, and update time of breastfeeding for individual pregnancy.
+    def update_breastfeeding(self, inds):
+        '''
+        Track breastfeeding, and update time of breastfeeding for individual pregnancy.
         Currently agents breastfeed a random amount of time between 1 and 24 months.
-        Not connected to rates of exclusive breastfeeding in data informaed by self.lam
-        NOT currently being utilized to track lactataional amenorrhea, left here in case useful feature in the future'''
-        if self.breastfeed_dur >= (np.random.randint(self.pars['breastfeeding_dur'][0],
-                                                             self.pars['breastfeeding_dur'][
-                                                                 1] + 1)):  # when each breastfeeding episode terminates (in months) within range set in parameters
-            self.reset_breastfeeding()
-
-        else:
-            self.breastfeed_dur += self.pars['timestep']
-
+        Not connected to rates of exclusive breastfeeding in data informed by self.lam
+        NOT currently being utilized to track lactataional amenorrhea, left here in case
+        useful feature in the future
+        '''
+        n_inds = len(inds)
+        bfdur = self.pars['breastfeeding_dur']
+        breastfeed_durs = np.random.randint(bfdur[0], bfdur[1]+1, size=n_inds)
+        inds_finished = inds[sc.findinds(self.breastfeed_dur >= breastfeed_durs)]
+        inds_continue = np.setdiff1d(inds, inds_finished)
+        self.reset_breastfeeding(inds_finished)
+        self.breastfeed_dur[inds_continue] += self.pars['timestep']
         return
 
 

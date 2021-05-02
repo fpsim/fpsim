@@ -85,6 +85,24 @@ def n_multinomial(probs, n): # No speed gain from Numba
     return np.searchsorted(np.cumsum(probs), np.random.random(n))
 
 
+def n_binomial(prob, n):
+    '''
+    Perform multiple binomial (Bernolli) trials
+
+    Args:
+        prob (float): probability of each trial succeeding
+        n (int): number of trials (size of array)
+
+    Returns:
+        Boolean array of which trials succeeded
+
+    **Example**::
+
+        outcomes = cv.n_binomial(0.5, 100) # Perform 100 coin-flips
+    '''
+    return np.random.random(n) < prob
+
+
 def binomial_arr(prob_arr): # No speed gain from Numba
     '''
     Binomial (Bernoulli) trials each with different probabilities.
@@ -107,19 +125,6 @@ def annprob2ts(prob_annual, timestep=1):
     prob_timestep = 1 - ((1-prob_annual)**(timestep/fpd.mpy))
     return prob_timestep
 
-
-@func_decorator((nb.float64[:], nb.float64, nb.float64, nb.float64, nb.float64, nb.int64, nb.float64, nb.float64), cache=True)
-def numba_preg_prob(fecundity_fn, personal_fecundity, age, resolution, method_eff, lam, lam_eff, mpy):
-    ''' Pull this out here since it's the most computationally expensive '''
-    fecundity_fn = fecundity_fn * personal_fecundity
-    preg_eval = fecundity_fn[int(round(age*resolution))]
-    if lam:
-        prob_annual = (1-lam_eff) * preg_eval
-    else:
-        prob_annual = ((1-method_eff) * preg_eval)
-
-    prob_month = 1 - ((1-prob_annual)**(1/mpy))
-    return prob_month
 
 
 @func_decorator((nb.float64[:], nb.float64, nb.float64), cache=True)
