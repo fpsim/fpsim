@@ -443,19 +443,17 @@ class People(fpb.ParsObj):
 
 
     def init_step_results(self):
-        self.step_results = {
-            'died' : False,
-            'gave_birth' : 0,
-            'maternal_death' : False,
-            'infant_death' : False,
-            'on_method' : False,
-            'no_method' : False,
-            'pp0to5'   : False,
-            'pp6to11'   : False,
-            'pp12to23'  : False,
-            'sex': None,
-            'age': None,
-        }
+        self.step_results = dict(
+            died           = 0,
+            gave_birth     = 0,
+            maternal_death = 0,
+            infant_death   = 0,
+            on_method      = 0,
+            no_method      = 0,
+            pp0to5         = 0,
+            pp6to11        = 0,
+            pp12to23       = 0,
+        )
         return
 
 
