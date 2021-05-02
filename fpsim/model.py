@@ -39,7 +39,7 @@ class People(fpb.BasePeople):
     def __init__(self, pars, n=None, **kwargs):
 
         # Initialization
-        self.update_pars(pars) # Set parameters
+        self.pars = pars # Set parameters
         d = sc.objdict(sc.mergedicts(fpd.person_defaults, kwargs)) # d = defaults
         if n is None:
             n = self.pars['n']
@@ -47,7 +47,7 @@ class People(fpb.BasePeople):
         # Basic states
         init_states = dir(self)
         self.uid      = arr(n, np.arange(n))
-        self.age      = arr(n, float(d.age)) # Age of the person (in years)
+        self.age      = arr(n, np.float64(d.age)) # Age of the person (in years)
         self.sex      = arr(n, d.sex) # Female (0) or male (1)
         self.parity   = arr(n, d.parity) # Number of children
         self.method   = arr(n, d.method)  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
@@ -432,7 +432,7 @@ class People(fpb.BasePeople):
         return
 
 
-    def update(self, t, y):
+    def update(self):
         '''
         Update the person's state for the given timestep.
 
