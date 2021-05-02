@@ -71,6 +71,18 @@ class People(fpb.ParsObj):
         self.remainder_months = arr(n, d.remainder_months)
         return
 
+
+    def __len__(self):
+        try:
+            return self.pars['n']
+        except Exception as E1:
+            try:
+                return len(self.uid)
+            except Exception as E2:
+                print(f'Warning: could not get length of People (could not get pars.n: {E1}, could not get self.uid: {E2})')
+                return 0
+
+
     @property
     def is_female(self):
         return self.sex == 0
@@ -163,6 +175,7 @@ class People(fpb.ParsObj):
     def check_mortality(self):
         '''Decide if person dies at a timestep'''
 
+        timestep = self.pars['timestep']
         trend_val = self.pars['mortality_probs']['gen_trend']
         age_mort = self.pars['age_mortality']
         f_spline = age_mort['f_spline'] * trend_val
@@ -173,8 +186,8 @@ class People(fpb.ParsObj):
         f_ages = int_ages[f_inds]
         m_ages = int_ages[m_inds]
 
-        f_mort_prob = f_spline[f_ages]
-        m_mort_prob = m_spline[m_ages]
+        f_mort_prob = fpu.annprob2ts(f_spline[f_ages], timestep)
+        m_mort_prob = fpu.annprob2ts(m_spline[m_ages], timestep)
 
         f_died = f_inds[fpu.binomial_arr(f_mort_prob)]
         m_died = m_inds[fpu.binomial_arr(m_mort_prob)]
@@ -190,6 +203,18 @@ class People(fpb.ParsObj):
         Decide if agent is sexually active based either on month postpartum or age if
         not postpartum.  Postpartum and general age-based data from DHS.
         '''
+        n = len(self)
+        probs = np.zeros(n)
+
+        # Set postpartum probabilities
+        match_low  = self.postpartum_dur > 0
+        match_high = self.postpartum_dur <= 6
+        pp_match = self.postpartum * match_low * match_high
+        pp_inds = sc.findinds(pp_match)
+        probs[pp_inds] = self.pars['sexual_activity_postpartum']['percent_active'][self.postpartum_dur[pp_inds]]
+
+        # Set non-postpartum probabilities
+        nonpp_inds = np.setdiff1d(np.arange(n), pp_inds)
 
         # Check if postpartum in first six months and assign probability
         if self.postpartum and 0 < self.postpartum_dur <= 6:

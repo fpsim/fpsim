@@ -7,6 +7,7 @@ import numpy as np # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
 import numba as nb
+from . import defaults as fpd
 
 
 # Specify all externally visible things this file defines
@@ -101,13 +102,10 @@ def binomial_arr(prob_arr): # No speed gain from Numba
     return np.random.random(len(prob_arr)) < prob_arr
 
 
-@func_decorator((nb.float64[:], nb.float64, nb.float64, nb.float64, nb.float64), cache=True)
-def numba_mortality_prob(mortality_fn, trend, age, resolution, mpy):
-    mortality_eval = mortality_fn[int(round(age * resolution))]
-    prob_annual = mortality_eval * trend
-    prob_annual = np.median(np.array([0, prob_annual, 1]))
-    prob_month = 1 - ((1-prob_annual)**(1/mpy))
-    return prob_month
+def annprob2ts(prob_annual, timestep=1):
+    ''' Convert an annual probability into a timestep probability '''
+    prob_timestep = 1 - ((1-prob_annual)**(timestep/fpd.mpy))
+    return prob_timestep
 
 
 @func_decorator((nb.float64[:], nb.float64, nb.float64, nb.float64, nb.float64, nb.int64, nb.float64, nb.float64), cache=True)
