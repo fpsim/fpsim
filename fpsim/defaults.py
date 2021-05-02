@@ -34,6 +34,12 @@ method_age_mapping = {
     '>25':   [25, max_age+1], # +1 since we're using < rather than <=
 }
 
+postpartum_mapping = {
+    'pp0to5':   [ 0, 6],
+    'pp6to11':  [6, 12],
+    'pp12to23': [12, 24]
+}
+
 spline_ages      = np.arange(max_age + 2) # +2 so e.g. 0-100
 spline_preg_ages = np.arange(max_age_preg + 2)
 spline_parities  = np.arange(max_parity + 1)

@@ -317,21 +317,19 @@ class People(fpb.ParsObj):
         '''Track duration of extended postpartum period (0-24 months after birth).  Only enter this function if agent is postpartum'''
 
         # Stop postpartum episode if reach max length (set to 24 months)
-        if self.postpartum_dur >= (self.pars['postpartum_length']):
-            self.postpartum = False
-            self.postpartum_dur = 0
+        pp_done = sc.findinds(self.postpartum_dur >= (self.pars['postpartum_length']))
+        self.postpartum[pp_done] = False
+        self.postpartum_dur[pp_done] = 0
 
         # Count the state of the agent
-        if self.postpartum:
-            if 0 <= self.postpartum_dur < 6:
-                self.step_results['pp0to5'] = True
-            elif 6 <= self.postpartum_dur < 12:
-                self.step_results['pp6to11'] = True
-            elif 12 <= self.postpartum_dur < 24:
-                self.step_results['pp12to23'] = True
-
-            # Advance the state to next timestep
-            self.postpartum_dur += self.pars['timestep']
+        is_pp = sc.findinds(self.postpartum)
+        for key,(pp_low, pp_high) in fpd.postpartum_mapping.items():
+            match_low  = (self.postpartum_dur >= pp_low)
+            match_high = (self.postpartum_dur <  pp_high)
+            match = is_pp * match_low * match_high
+            inds = sc.findinds(match)
+            self.step_results[key] += len(inds)
+        self.postpartum_dur[is_pp] += self.pars['timestep']
 
         return
 
