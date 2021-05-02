@@ -50,18 +50,17 @@ class People(fpb.ParsObj):
         self.parity   = arr(n, d.parity) # Number of children
         self.method   = arr(n, d.method)  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
         self.barrier  = arr(n, d.barrier)  # Reason for non-use
-        self.alive    = arr(n, True)
-        self.pregnant = arr(n, False)
+        self.alive    = arr(n, d.alive)
+        self.pregnant = arr(n, d.pregnant)
 
         # Sexual and reproductive history
-        self.sexually_active = arr(n, False)
-        self.lactating       = arr(n, False)
+        self.sexually_active = arr(n, d.sexually_active)
+        self.lactating       = arr(n, d.lactating)
         self.gestation       = arr(n, d.gestation)
-        self.postpartum      = arr(n, False)
+        self.postpartum      = arr(n, d.postpartum)
         self.postpartum_dur  = arr(n, d.postpartum_dur) # Tracks # months postpartum
-        self.lam             = arr(n, False) # Separately tracks lactational amenorrhea, can be using both LAM and another method
-        self.dobs            = arr(n, [-1]*self.parity) # Dates of births # TODO: refactor
-        self.lactating       = arr(n, False)
+        self.lam             = arr(n, d.lam) # Separately tracks lactational amenorrhea, can be using both LAM and another method
+        self.dobs            = arr(n, [-1]*self.parity) # Dates of births
         self.breastfeed_dur  = arr(n, d.breastfeed_dur)
         self.breastfeed_dur_total = arr(n, d.breastfeed_dur_total)
 
@@ -527,27 +526,22 @@ class Sim(fpb.BaseSim):
         return ages, sexes
 
 
-    def make_people(self, age=None, sex=None, method=None):
-        ''' Set up each person'''
-        _age, _sex = self.get_age_sex()
-        if age is None: age = _age
-        if sex is None: sex = _sex
-        if method is None: method = 0
-        barrier_ind = utils.mt(self.pars['barriers'][:])
-        barrier = self.pars['barriers'].keys()[barrier_ind]
-
-        person = Person(self.pars, age=age, sex=sex, method=method, barrier=barrier) # Create the person
-
-        return person
+    def make_people(self, n=1, ages=None, sexes=None, methods=None):
+        ''' Set up each person '''
+        _ages, _sexes = self.get_age_sex(n)
+        if ages    is None: ages  = _ages
+        if sexes   is None: sexes = _sexes
+        if methods is None: methods = np.zeros(n)
+        barriers = fpu.n_multinomial(self.pars['barriers'][:], n)
+        data = dict(age=ages, sex=sexes, method=methods, barrier=barriers)
+        return data
 
 
     def init_people(self):
         ''' Create the people '''
-        self.m_pop_spline, self.f_pop_spline, self.m_frac = population.make_age_sex_splines(self.pars)
-        self.people = sc.odict()  # Dictionary for storing the people
-        for i in range(int(self.pars['n'])):  # Loop over each person
-            person = self.make_person()
-            self.people[person.uid] = person  # Save them to the dictionary
+        self.m_pop_spline, self.f_pop_spline, self.m_frac = fpp.make_age_sex_splines(self.pars)
+        p = sc.objdict(self.make_people(n=int(self.pars['n'])))
+        self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier)
         return
 
 

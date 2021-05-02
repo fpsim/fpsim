@@ -17,13 +17,19 @@ person_defaults = dict(
     age = 0,
     sex = 0,
     parity = 0,
-    method = None,
-    barrier = 'None',
+    method = 0,
+    barrier = 0,
     postpartum_dur = 0,
     gestation = 0,
     remainder_months = 0,
     breastfeed_dur = 0,
-    breastfeed_dur_total = 0
+    breastfeed_dur_total = 0,
+    alive = True,
+    pregnant = False,
+    sexually_active = False,
+    lactating = False,
+    postpartum = False,
+    lam = False,
 )
 
 #%% Age bins for different method switching matrices
