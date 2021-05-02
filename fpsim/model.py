@@ -59,6 +59,7 @@ class People(fpb.BasePeople):
         self.sexually_active = arr(n, d.sexually_active)
         self.lactating       = arr(n, d.lactating)
         self.gestation       = arr(n, d.gestation)
+        self.preg_dur        = arr(n, d.preg_dur)
         self.postpartum      = arr(n, d.postpartum)
         self.postpartum_dur  = arr(n, d.postpartum_dur) # Tracks # months postpartum
         self.lam             = arr(n, d.lam) # Separately tracks lactational amenorrhea, can be using both LAM and another method
@@ -100,7 +101,7 @@ class People(fpb.BasePeople):
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
                 new_methods = fpu.n_multinomial(choices, len(m_inds))
-                self.method[m_inds] = new_methods
+                self.method[m_inds] = np.array(new_methods, dtype=np.int64)
 
         return
 
@@ -131,7 +132,7 @@ class People(fpb.BasePeople):
 
             choices = pp_methods[key]
             new_methods = fpu.n_multinomial(choices, len(m_inds))
-            self.method[m_inds] = new_methods
+            self.method[m_inds] = np.array(new_methods, dtype=np.int64)
 
         # At 6 months, choice is by previous method but not age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
@@ -143,7 +144,7 @@ class People(fpb.BasePeople):
 
             choices = pp_switch[m]
             new_methods = fpu.n_multinomial(choices, len(m_inds))
-            self.method[m_inds] = new_methods
+            self.method[m_inds] = np.array(new_methods, dtype=np.int64)
 
         return
 
@@ -190,13 +191,13 @@ class People(fpb.BasePeople):
         probs[pp] = self.pars['sexual_activity_postpartum']['percent_active'][self.postpartum_dur[pp_inds]]
 
         # Set non-postpartum probabilities
-        non_pp = np.setdiff(np.arange(len(inds), pp))
+        non_pp = np.setdiff1d(np.arange(len(inds)), pp)
         nonpp_inds = inds[non_pp]
-        probs[nonpp_inds] = self.pars['sexual_activity'][self.int_ages[nonpp_inds]]
+        probs[non_pp] = self.pars['sexual_activity'][self.int_ages[nonpp_inds]]
 
         # Evaluate likelihood in this time step of being sexually active
         # Can revert to active or not active each timestep
-        self.sexually_active[inds] = fpu.binomial_arr(probs[inds])
+        self.sexually_active[inds] = fpu.binomial_arr(probs)
 
         return
 
@@ -517,7 +518,7 @@ class Sim(fpb.BaseSim):
         _age, _sex = self.get_age_sex(n)
         if age    is None: age    = _age
         if sex    is None: sex    = _sex
-        if method is None: method = np.zeros(n)
+        if method is None: method = np.zeros(n, dtype=np.int64)
         barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
         data = dict(age=age, sex=sex, method=method, barrier=barrier)
         return data

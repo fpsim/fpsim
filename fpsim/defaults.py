@@ -14,30 +14,31 @@ max_parity     = 20   # Maximum number of children
 
 #%% Defaults when creating a new person
 person_defaults = dict(
-    uid = -1,
-    age = 0,
-    sex = 0,
-    parity = 0,
-    method = 0,
-    barrier = 0,
-    postpartum_dur = 0,
-    gestation = 0,
-    remainder_months = 0,
-    breastfeed_dur = 0,
+    uid                  = -1,
+    age                  = 0,
+    sex                  = 0,
+    parity               = 0,
+    method               = 0,
+    barrier              = 0,
+    postpartum_dur       = 0,
+    gestation            = 0,
+    preg_dur             = 0,
+    remainder_months     = 0,
+    breastfeed_dur       = 0,
     breastfeed_dur_total = 0,
-    alive = True,
-    pregnant = False,
-    sexually_active = False,
-    lactating = False,
-    postpartum = False,
-    lam = False,
+    alive                = True,
+    pregnant             = False,
+    sexually_active      = False,
+    lactating            = False,
+    postpartum           = False,
+    lam                  = False,
 )
 
 #%% Age bins for different method switching matrices
 method_age_mapping = {
     '<18':   [ 0, 18],
     '18-20': [18, 20],
-    '20-25': [20, 25],
+    '21-25': [20, 25],
     '>25':   [25, max_age+1], # +1 since we're using < rather than <=
 }
 
