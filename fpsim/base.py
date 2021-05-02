@@ -130,7 +130,7 @@ class BasePeople(sc.prettyobj):
 
     @property
     def int_ages(self):
-        return np.array(self.ages, dtype=np.int64)
+        return np.array(self.age, dtype=np.int64)
 
     def female_inds(self):
         return sc.findinds(self.is_female)
