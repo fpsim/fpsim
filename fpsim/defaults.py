@@ -5,12 +5,13 @@ Define defaults for use throughout FPsim
 import numpy as np
 
 #%% Global defaults
-useSI        = True
-mpy          = 12   # Months per year, to avoid magic numbers
-eps          = 1e-9 # To avoid divide-by-zero
-max_age      = 99   # Maximum age
-max_age_preg = 49   # Maximum age to become pregnant
-max_parity   = 20   # Maximum number of childre
+useSI          = True
+mpy            = 12   # Months per year, to avoid magic numbers
+eps            = 1e-9 # To avoid divide-by-zero
+max_age        = 99   # Maximum age
+max_age_preg   = 49   # Maximum age to become pregnant
+max_spline_age = 105  # With buffer for spline input
+max_parity     = 20   # Maximum number of children
 
 #%% Defaults when creating a new person
 person_defaults = dict(
