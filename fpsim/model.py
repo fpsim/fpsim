@@ -8,31 +8,14 @@ import pylab as pl
 import sciris as sc
 from scipy import interpolate as si
 import pandas as pd
-from . import population
-from . import utils
-from . import base
+from . import defaults as fpd
+from . import population as fpp
+from . import utils as fpu
+from . import base as fpb
 
 
 # Specify all externally visible things this file defines
 __all__ = ['People', 'Sim', 'single_run', 'multi_run']
-
-useSI      = True
-mpy        = 12    # Months per year, to avoid magic numbers
-resolution = 100   # For spline interpolation
-eps        = 1e-12 # To avoid divide-by-zero
-
-person_defaults = dict(
-    age = 0,
-    sex = 0,
-    parity = 0,
-    method = None,
-    barrier = 'None',
-    postpartum_dur = 0,
-    gestation = 0,
-    remainder_months = 0,
-    breastfeed_dur = 0,
-    breastfeed_dur_total = 0
-)
 
 
 #%% Define classes
@@ -49,7 +32,7 @@ def arr(n=None, val=0):
     return arr
 
 
-class People(base.ParsObj):
+class People(fpb.ParsObj):
     '''
     Class for all the people in the simulation.
     '''
@@ -57,7 +40,7 @@ class People(base.ParsObj):
 
         # Initialization
         self.update_pars(pars) # Set parameters
-        d = sc.objdict(sc.mergedicts(person_defaults, kwargs)) # d = defaults
+        d = sc.objdict(sc.mergedicts(fpd.person_defaults, kwargs)) # d = defaults
         n = self.pars['n']
 
         # Basic states
@@ -89,48 +72,40 @@ class People(base.ParsObj):
         return
 
 
-    def get_method(self, y):
+    def get_method(self):
         '''
         Uses a switching matrix from DHS data to decide based on a person's original method their probability of changing to a
         new method and assigns them the new method. Currently allows switching on whole calendar years to enter function.
         Matrix serves as an initiation, discontinuation, continuation, and switching matrix. Transition probabilities are for 1 year and
         only for women who have not given birth within the last 6 months.
         '''
-        orig_method = self.method
+        methods = self.pars['methods']
+        orig_methods = self.method
 
-        if self.age < 18:
-            matrix = self.pars['methods']['<18']
-        elif 18 < self.age <= 20:
-            matrix = self.pars['methods']['18-20']
-        elif 20 < self.age <= 25:
-            matrix = self.pars['methods']['21-25']
-        elif self.age > 25:
-            matrix = self.pars['methods']['>25']
-        else:
-            raise Exception('Agent age does not match choice matrix options')
+        mapping = {
+            '<18':   [ 0, 18],
+            '18-20': [18, 20],
+            '20-25': [20, 25],
+            '>25':   [25, fpd.max_age+1], # +1 since we're using < rather than <=
+        }
 
-        #matrix = self.pars['methods']['switch_general']   Use if going back to non-age stratified
+        # Method switching depends both on agent age and also on their current method, so we need to loop over both
+        for m in methods['map'].values():
+            for key,(age_low, age_high) in mapping.items():
+                match_m = (orig_methods == m)
+                match_low = (self.age[match_m] >= age_low)
+                match_high = (self.age[match_m] < age_high)
+                match = match_m * match_low * match_high
+                inds = sc.findinds(match)
 
-        choices = matrix[orig_method]
+                matrix = self.pars['methods'][key]
+                choices = matrix[m]
 
-        '''
-        if 6 < self.postpartum_dur <= 12:
-            partial_year_choices = np.zeros(len(choices))
-            for idx, choice in enumerate(choices):
-                partial_year_choice = 1 - ((1 - choice) ** (self.remainder_months / mpy))
-                partial_year_choices[idx] = partial_year_choice
+                new_methods = fpu.n_multinomial(choices, len(inds))
+                self.method[inds] = new_methods
 
-            choices = partial_year_choices
-            self.remainder_months = 0
-        '''
-
-        new_method = utils.mt(choices)
-        self.method = new_method
-
-        if self.pars['verbose']>1:
-            if orig_method != 0 or new_method != 0: # Assume 0 = None
-                print(f'Switched from {orig_method} to {new_method}')
         return
+
 
     def get_method_postpartum(self, t, y):
         '''Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by

@@ -65,6 +65,25 @@ def mt(probs):
     ''' A multinomial trial '''
     return np.searchsorted(np.cumsum(probs), np.random.random())
 
+
+def n_multinomial(probs, n): # No speed gain from Numba
+    '''
+    An array of multinomial trials.
+
+    Args:
+        probs (array): probability of each outcome, which usually should sum to 1
+        n (int): number of trials
+
+    Returns:
+        Array of integer outcomes
+
+    **Example**::
+
+        outcomes = cv.multinomial(np.ones(6)/6.0, 50)+1 # Return 50 die-rolls
+    '''
+    return np.searchsorted(np.cumsum(probs), np.random.random(n))
+
+
 @func_decorator((nb.float64[:], nb.float64, nb.float64, nb.float64, nb.float64), cache=True)
 def numba_mortality_prob(mortality_fn, trend, age, resolution, mpy):
     mortality_eval = mortality_fn[int(round(age * resolution))]
