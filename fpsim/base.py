@@ -80,7 +80,7 @@ class BasePeople(sc.prettyobj):
         ''' Combine two people arrays '''
 
         # Preliminaries
-        newpeople = sc.dcp(self)
+        newpeople = self
         keys      = self.keys()
         n_orig    = len(newpeople)
         max_uid   = newpeople.uid.max() + 1
@@ -90,7 +90,11 @@ class BasePeople(sc.prettyobj):
         for key in keys:
             npval = newpeople[key]
             p2val = people2[key]
-            if sc.isarray(npval):
+            if isinstance(npval, np.ndarray):
+                # nplen = len(np.val)
+                # p2len = len(p2val)
+                # new_size = nplen + p2len
+                # newpeople[key].resize(new_size, refcheck=False)
                 newpeople[key] = np.concatenate([npval, p2val], axis=0)
             elif isinstance(npval, list):
                 newpeople[key] = npval + p2val
