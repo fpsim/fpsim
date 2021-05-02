@@ -290,6 +290,7 @@ class People(fpb.ParsObj):
 
         return
 
+
     def update_breastfeeding(self):
         '''Track breastfeeding, and update time of breastfeeding for individual pregnancy.
         Currently agents breastfeed a random amount of time between 1 and 24 months.
@@ -405,9 +406,8 @@ class People(fpb.ParsObj):
 
     def age_person(self):
         '''Advance age in the simulation'''
-        self.age += self.pars['timestep'] / mpy  # Age the person for the next timestep
+        self.age += self.pars['timestep'] / fpd.mpy  # Age the person for the next timestep
         self.age = min(self.age, self.pars['max_age'])
-
         return
 
 
