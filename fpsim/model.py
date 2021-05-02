@@ -30,17 +30,22 @@ person_defaults = dict(
     postpartum_dur = 0,
     gestation = 0,
     remainder_months = 0,
-    unmet = False,
     breastfeed_dur = 0,
     breastfeed_dur_total = 0
 )
 
 
 #%% Define classes
-def state_arr(n, val=0):
+def arr(n=None, val=0):
     ''' Shortcut for defining an empty array with the correct value and data type '''
-    dtype = object if sc.isstring(val) else None
-    arr = np.full(shape=n, fill_value=val, dtype=dtype)
+    if sc.isarray(val):
+        assert len(val) == n
+        arr = val
+    elif isinstance(val, list):
+        arr = [sc.dcp(val)]*n
+    else:
+        dtype = object if sc.isstring(val) else None
+        arr = np.full(shape=n, fill_value=val, dtype=dtype)
     return arr
 
 
@@ -49,30 +54,38 @@ class People(base.ParsObj):
     Class for all the people in the simulation.
     '''
     def __init__(self, pars, **kwargs):
+
+        # Initialization
         self.update_pars(pars) # Set parameters
         d = sc.objdict(sc.mergedicts(person_defaults, kwargs)) # d = defaults
-        self.uid = str(pl.randint(0,1e9))
-        self.age = float(d.age) # Age of the person (in years)
-        self.sex = d.sex # Female (0) or male (1)
-        self.parity = d.parity
-        self.method = d.method  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
-        self.barrier = d.barrier  # reason for non-use
-        self.unmet = d.unmet  # not currently used
-        self.alive = True
-        self.pregnant = False
-        self.sexually_active = False
-        self.lactating = False
-        self.gestation = d.gestation
-        self.postpartum = False
-        self.postpartum_dur = d.postpartum_dur # Tracks # months postpartum
-        self.lam = False # Separately tracks lactational amenorrhea, can be using both LAM and another method
-        self.dobs = [-1]*self.parity # Dates of births
-        self.lactating = False  # not currently used but build and available to use
-        self.breastfeed_dur = d.breastfeed_dur
-        self.breastfeed_dur_total = d.breastfeed_dur_total
-        f_var = self.pars['fecundity_variation']
-        self.personal_fecundity = np.random.random()*(f_var[1]-f_var[0])+f_var[0] # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
-        self.remainder_months = d.remainder_months
+        n = self.pars['n']
+
+        # Basic states
+        self.uid      = np.arange(n)
+        self.age      = arr(n, float(d.age)) # Age of the person (in years)
+        self.sex      = arr(n, d.sex) # Female (0) or male (1)
+        self.parity   = arr(n, d.parity) # Number of children
+        self.method   = arr(n, d.method)  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
+        self.barrier  = arr(n, d.barrier)  # Reason for non-use
+        self.alive    = arr(n, True)
+        self.pregnant = arr(n, False)
+
+        # Sexual and reproductive history
+        self.sexually_active = arr(n, False)
+        self.lactating       = arr(n, False)
+        self.gestation       = arr(n, d.gestation)
+        self.postpartum      = arr(n, False)
+        self.postpartum_dur  = arr(n, d.postpartum_dur) # Tracks # months postpartum
+        self.lam             = arr(n, False) # Separately tracks lactational amenorrhea, can be using both LAM and another method
+        self.dobs            = arr(n, [-1]*self.parity) # Dates of births # TODO: refactor
+        self.lactating       = arr(n, False)
+        self.breastfeed_dur  = arr(n, d.breastfeed_dur)
+        self.breastfeed_dur_total = arr(n, d.breastfeed_dur_total)
+
+        # Fecundity variation
+        fv = self.pars['fecundity_variation']
+        self.personal_fecundity = arr(n, np.random.random(n)*(fv[1]-fv[0])+fv[0]) # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
+        self.remainder_months = arr(n, d.remainder_months)
         return
 
 
