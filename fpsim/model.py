@@ -337,18 +337,18 @@ class People(fpb.ParsObj):
     def update_pregnancy(self):
         '''Advance pregnancy in time and check for miscarriage'''
 
-        if self.pregnant:
-            self.gestation += self.pars['timestep']
+        preg_inds = sc.findinds(self.pregnant)
+        self.gestation[preg_inds] += self.pars['timestep']
 
-            # Check for probability of miscarriage this pregnancy and end pregnancy if miscarried
-            miscarriage_prob = utils.numba_miscarriage_prob(self.pars['miscarriage_rates'], self.age, resolution)
+        # Check for miscarriage at the end of the first trimester
+        end_first_tri     = preg_inds[sc.findinds(self.gestation[preg_inds] == (self.pars['end_first_tri']))]
+        miscarriage_probs = self.pars['miscarriage_rates'][self.int_ages[end_first_tri]]
+        miscarriage_inds  = end_first_tri[fpu.binomial_arr(miscarriage_probs)]
 
-            if self.gestation == (self.pars['end_first_tri']):
-                miscarriage = utils.bt(miscarriage_prob)
-                if miscarriage:
-                    self.pregnant = False
-                    self.postpartum = False
-                    self.gestation = 0  # Reset gestation counter
+        # Reset states
+        self.pregnant[miscarriage_inds]   = False
+        self.postpartum[miscarriage_inds] = False
+        self.gestation[miscarriage_inds]   = 0  # Reset gestation counter
         return
 
 
@@ -464,7 +464,9 @@ class People(fpb.ParsObj):
 
 
     def update(self, t, y):
-        '''Update the person's state for the given timestep.
+        '''
+        Update the person's state for the given timestep.
+
         t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)'''
 
         self.init_step_results()   # Initialize outputs
