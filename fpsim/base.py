@@ -177,6 +177,11 @@ class BaseSim(ParsObj):
         except:
             return np.array([])
 
+    @property
+    def n(self):
+        return self.people.alive.sum()
+
+
 
 
 
