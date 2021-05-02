@@ -692,20 +692,20 @@ class Sim(fpb.BaseSim):
         min_age = 12.5
         max_age = self.pars['age_limit_fecundity']
 
-        people = self.people.values()
-
+        ppl = self.people
         rows = []
-        for person in people:
-            if person.alive and person.sex == 0 and min_age <= person.age < max_age:
+        for i in range(len(ppl)):
+            if ppl.alive[i] and ppl.sex[i] == 0 and min_age <= ppl.age[i] < max_age:
                 row = {'Age': None, 'PP0to5': None, 'PP6to11': None, 'PP12to23': None, 'NonPP': None, 'Pregnant': None, 'Parity': None}
-                row['Age'] = int(round(person.age))
-                row['NonPP'] = 1 if not person.postpartum else 0
-                if person.postpartum:
-                    row['PP0to5'] = 1 if 0 <= person.postpartum_dur < 6 else 0
-                    row['PP6to11'] = 1 if 6 <= person.postpartum_dur < 12 else 0
-                    row['PP12to23'] = 1 if 12 <= person.postpartum_dur <= 24 else 0
-                row['Pregnant'] = 1 if person.pregnant else 0
-                row['Parity'] = person.parity
+                row['Age'] = int(round(ppl.age[i]))
+                row['NonPP'] = 1 if not ppl.postpartum[i] else 0
+                if ppl.postpartum[i]:
+                    pp_dur = ppl.postpartum_dur[i]
+                    row['PP0to5'] = 1 if 0 <= pp_dur < 6 else 0
+                    row['PP6to11'] = 1 if 6 <= pp_dur < 12 else 0
+                    row['PP12to23'] = 1 if 12 <= pp_dur <= 24 else 0
+                row['Pregnant'] = 1 if ppl.pregnant[i] else 0
+                row['Parity'] = ppl.parity[i]
                 rows.append(row)
 
         pp = pd.DataFrame(rows, index = None, columns = ['Age', 'PP0to5', 'PP6to11', 'PP12to23', 'NonPP', 'Pregnant', 'Parity'])
