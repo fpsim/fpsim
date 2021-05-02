@@ -2,13 +2,13 @@
 Base classes for loading parameters and for running simulations with FP model
 '''
 
-import numpy as np # Needed for a few things not provided by pl
+import numpy as np
 import sciris as sc
-# import numba as nb
+from . import defaults as fpd
 
-__all__ = ['ParsObj', 'BaseSim']
 
-mpy = 12 # Months per year, to avoid magic numbers
+__all__ = ['ParsObj', 'BasePeople', 'BaseSim']
+
 
 class ParsObj(sc.prettyobj):
     '''
@@ -38,41 +38,120 @@ class ParsObj(sc.prettyobj):
                 self.pars = pars
         elif pars is not None:
             self.pars.update(pars)
-        # self._pars_to_attrs() # Convert parameters to attributes
         return
 
 
-    # def _pars_to_attrs(self):
-    #     ''' Convert from a dictionary to class attributes in order to avoid having to do dict lookups -- used by update_pars '''
-    #     self.par_keys = self.pars.keys()
-    #     for key,value in self.pars.items():
-    #         setattr(self, key, value)
-    #     return None
 
-    # def _attrs_to_pars(self):
-    #     ''' Convert back -- not used currently '''
-    #     pars = dict()
-    #     for key in self.par_keys:
-    #         pars[key] = getattr(self, key)
-    #     return pars
+class BasePeople(sc.prettyobj):
+    '''
+    Class for all the people in the simulation.
+    '''
+
+    def __len__(self):
+        try:
+            return len(self.uid)
+        except Exception as E:
+            print(f'Warning: could not get length of People (could not get self.uid: {E})')
+            return 0
+
+
+    def __getitem__(self, key):
+        ''' Allow people['attr'] instead of getattr(people, 'attr')
+            If the key is an integer, alias `people.person()` to return a `Person` instance
+        '''
+
+        try:
+            return self.__dict__[key]
+        except: # pragma: no cover
+            if isinstance(key, int):
+                return self.person(key)
+            else:
+                errormsg = f'Key "{key}" is not a valid attribute of people'
+                raise AttributeError(errormsg)
+
+
+    def __setitem__(self, key, value):
+        ''' Ditto '''
+        self.__dict__[key] = value
+        return
+
+
+    def __add__(self, people2):
+        ''' Combine two people arrays '''
+
+        # Preliminaries
+        newpeople = sc.dcp(self)
+        keys      = self.keys()
+        n_orig    = len(newpeople)
+        max_uid   = newpeople.uid.max() + 1
+        n_new     = len(people2)
+
+        # Merge arrays
+        for key in keys:
+            npval = newpeople[key]
+            p2val = people2[key]
+            if sc.isarray(npval):
+                newpeople[key] = np.concatenate([npval, p2val], axis=0)
+            elif isinstance(npval, list):
+                newpeople[key] = npval + p2val
+            else:
+                errormsg = f'Not sure what to do with object of type {type(npval)}'
+                raise TypeError(errormsg)
+
+        # Validate
+        for key in keys:
+            assert len(newpeople[key]) == len(newpeople)
+        newpeople.uid[n_orig:] = max_uid + np.arange(n_new) # Reassign UIDs so they're unique
+
+        return newpeople
+
+
+    def __radd__(self, people2):
+        ''' Allows sum() to work correctly '''
+        if not people2: return self
+        else:           return self.__add__(people2)
+
+
+    def keys(self):
+        ''' Returns keys for all properties of the people object '''
+        if hasattr(self, '_keys'):
+            return sc.dcp(self._keys)
+        else:
+            return []
+        return
+
+
+    @property
+    def is_female(self):
+        return self.sex == 0
+
+    @property
+    def is_male(self):
+        return self.sex == 1
+
+    @property
+    def int_ages(self):
+        return np.array(self.ages, dtype=np.int64)
+
+    def female_inds(self):
+        return sc.findinds(self.is_female)
+
+    def male_inds(self):
+        return sc.findinds(self.is_male)
+
 
 
 class BaseSim(ParsObj):
     '''
     The BaseSim class handles the admin work of managing time in the simulation.
     '''
-    def __init__(self, pars=None):
-        super().__init__(pars)
-        self.year2ind(year = 0)
-        self.ind2year(ind = 0)
-        self.ind2calendar(ind = 0)
 
     def year2ind(self, year):
-        index = int((year - self.pars['start_year']) * mpy / self.pars['timestep'])
+        index = int((year - self.pars['start_year']) * fpd.mpy / self.pars['timestep'])
         return index
 
     def ind2year(self, ind):
-        year = ind * self.pars['timestep'] / mpy  # Months
+        year = ind * self.pars['timestep'] / fpd.mpy  # Months
         return year
 
     def ind2calendar(self, ind):
@@ -83,7 +162,7 @@ class BaseSim(ParsObj):
     def npts(self):
         ''' Count the number of points in timesteps between the starting year and the ending year.'''
         try:
-            return int(mpy * (self.pars['end_year'] - self.pars['start_year']) / self.pars['timestep'] + 1)
+            return int(fpd.mpy * (self.pars['end_year'] - self.pars['start_year']) / self.pars['timestep'] + 1)
         except:
             return 0
 
@@ -91,7 +170,7 @@ class BaseSim(ParsObj):
     def tvec(self):
         ''' Create a time vector array at intervals of the timestep in years '''
         try:
-            return self.pars['start_year'] + np.arange(self.npts) * self.pars['timestep'] / mpy
+            return self.pars['start_year'] + np.arange(self.npts) * self.pars['timestep'] / fpd.mpy
         except:
             return np.array([])
 

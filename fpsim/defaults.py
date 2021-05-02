@@ -14,6 +14,7 @@ max_parity   = 20   # Maximum number of childre
 
 #%% Defaults when creating a new person
 person_defaults = dict(
+    uid = -1,
     age = 0,
     sex = 0,
     parity = 0,

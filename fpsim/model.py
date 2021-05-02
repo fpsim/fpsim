@@ -32,7 +32,7 @@ def arr(n=None, val=0):
     return arr
 
 
-class People(fpb.ParsObj):
+class People(fpb.BasePeople):
     '''
     Class for all the people in the simulation.
     '''
@@ -44,7 +44,8 @@ class People(fpb.ParsObj):
         n = self.pars['n']
 
         # Basic states
-        self.uid      = np.arange(n)
+        init_states = dir(self)
+        self.uid      = arr(n, np.arange(n))
         self.age      = arr(n, float(d.age)) # Age of the person (in years)
         self.sex      = arr(n, d.sex) # Female (0) or male (1)
         self.parity   = arr(n, d.parity) # Number of children
@@ -68,37 +69,12 @@ class People(fpb.ParsObj):
         fv = self.pars['fecundity_variation']
         self.personal_fecundity = arr(n, np.random.random(n)*(fv[1]-fv[0])+fv[0]) # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.remainder_months = arr(n, d.remainder_months)
+
+        # Store keys
+        final_states = dir(self)
+        self._keys = [s for s in final_states if s not in init_states]
+
         return
-
-
-    def __len__(self):
-        try:
-            return self.pars['n']
-        except Exception as E1:
-            try:
-                return len(self.uid)
-            except Exception as E2:
-                print(f'Warning: could not get length of People (could not get pars.n: {E1}, could not get self.uid: {E2})')
-                return 0
-
-
-    @property
-    def is_female(self):
-        return self.sex == 0
-
-    @property
-    def is_male(self):
-        return self.sex == 1
-
-    @property
-    def int_ages(self):
-        return np.array(self.ages, dtype=np.int64)
-
-    def female_inds(self):
-        return sc.findinds(self.is_female)
-
-    def male_inds(self):
-        return sc.findinds(self.is_male)
 
 
     def get_method(self, inds):
@@ -552,14 +528,14 @@ class Sim(fpb.BaseSim):
         return
 
 
-    def update_methods_matrices(self, y):
+    def update_methods_matrices(self):
         '''Update all contraceptive matrices to have probabilities that follow a trend closest to the
         year the sim is on based on mCPR in that year'''
 
         switch_general = {}
         start_postpartum = {}
 
-        ind = sc.findnearest(self.pars['methods']['mcpr_years'], y)  # Find the closest year to the timestep we are on
+        ind = sc.findnearest(self.pars['methods']['mcpr_years'], self.y)  # Find the closest year to the timestep we are on
 
         # Update general population switching matrices for current year mCPR - stratified by age
         for key, val in self.pars['methods']['probs_matrix'].items():
@@ -687,7 +663,7 @@ class Sim(fpb.BaseSim):
             self.results['births'][i]          = births
             self.results['deaths'][i]          = deaths
             self.results['maternal_deaths'][i] = maternal_deaths
-            self.results['infant_deaths'][i]    = infant_deaths
+            self.results['infant_deaths'][i]   = infant_deaths
             self.results['on_method'][i]       = on_methods
             self.results['no_method'][i]       = no_methods
             self.results['mcpr'][i]            = on_methods/(on_methods+no_methods)
@@ -698,10 +674,10 @@ class Sim(fpb.BaseSim):
             self.results['total_women_fecund'][i] = total_women_fecund
 
             # Calculate TFR over the last year in the model and save whole years and tfr rates to an array
-            if i % mpy == 0:
+            if i % fpd.mpy == 0:
                 self.results['tfr_years'].append(y)
-                start_index = (int(t)-1)*mpy
-                stop_index = int(t)*mpy
+                start_index = (int(t)-1)*fpd.mpy
+                stop_index = int(t)*fpd.mpy
                 births_over_year = pl.sum(self.results['births'][start_index:stop_index])  # Grabs sum of birth over the last 12 months of calendar year
                 self.results['tfr_rates'].append(35*(births_over_year/self.results['total_women_fecund'][i]))
                 self.results['pop_size'].append(self.n)
@@ -787,7 +763,7 @@ class Sim(fpb.BaseSim):
 
         x = res['t'] # Likewise
         if not as_years:
-            x *= mpy
+            x *= fpd.mpy
             x -= x[0]
             timelabel = 'Timestep'
         else:
@@ -810,7 +786,7 @@ class Sim(fpb.BaseSim):
                 else:
                     y = res[key]
                 pl.plot(x, y, label=label, **plotargs)
-            utils.fixaxis(useSI=useSI)
+            fpu.fixaxis(useSI=fpd.useSI)
             if key == 'mcpr':
                 pl.ylabel('Percentage')
             else:
