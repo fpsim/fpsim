@@ -12,6 +12,7 @@ np; pl; pd; sc; cv
 import fpsim as fp
 import fp_analyses as fa
 
+do_save = 0
 n_runs = 20
 outfile = 'baseline_statistics.df'
 
@@ -34,7 +35,7 @@ def make_calib(n=500, seed=1, verbose=0.1, do_run=False, do_plot=False):
     return calib
 
 
-def run_save_sims(n_runs):
+def run_save_sims(n_runs=n_runs, do_save=do_save):
 
     x = np.arange(n_runs)
     calibs = sc.parallelize(make_calib, iterkwargs=dict(seed=x+1), kwargs=dict(do_run=True))
@@ -53,7 +54,8 @@ def run_save_sims(n_runs):
         df[f'q{q}'] = rawdf[cols].quantile(q=q, axis=1)
 
     out = sc.objdict(df=df, rawdf=rawdf)
-    sc.saveobj(outfile, out)
+    if do_save:
+        sc.saveobj(outfile, out)
 
     return out
 
@@ -61,5 +63,6 @@ def run_save_sims(n_runs):
 if __name__ == '__main__':
 
     sc.tic()
-    out = run_save_sims(n_runs=n_runs)
+    old = sc.loadobj(outfile)
+    new = run_save_sims(n_runs=n_runs, do_save=do_save)
     sc.toc()
