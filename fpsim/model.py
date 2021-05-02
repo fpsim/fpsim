@@ -129,7 +129,7 @@ class People(fpb.ParsObj):
         return
 
 
-    def get_method_postpartum(self, t, y):
+    def get_method_postpartum(self):
         '''Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by
          3 months postpartum and then initiate, continue, or discontinue a method by 6 months postpartum.
         Next opportunity to switch methods will be on whole calendar years, whenever that falls.
@@ -150,7 +150,7 @@ class People(fpb.ParsObj):
         for key,(age_low, age_high) in fpd.method_age_mapping.items():
             match_low  = (self.age >= age_low)
             match_high = (self.age <  age_high)
-            match = postpartum3 * match_low * match_high
+            match = self.postpartum * postpartum3 * match_low * match_high
             inds = sc.findinds(match)
 
             choices = pp_methods[key]
@@ -162,7 +162,7 @@ class People(fpb.ParsObj):
         # Transitional probabilities are for 3 months, 4-6 months after delivery from DHS data
         for m in self.pars['methods']['map'].values():
             match_m    = (orig_methods == m)
-            match = postpartum6 * match_m
+            match = self.postpartum * postpartum6 * match_m
             inds = sc.findinds(match)
 
             choices = pp_switch[m]
@@ -415,16 +415,14 @@ class People(fpb.ParsObj):
         return
 
 
-    def update_contraception(self, t, y):
+    def update_contraception(self):
         '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
 
-        if self.postpartum and self.postpartum_dur <= 6:
-            self.get_method_postpartum(t, y)
+        self.get_method_postpartum()
 
         # If switching frequency in months has passed, allows switching only on whole years
-        else:
-            if t % (self.pars['switch_frequency']/mpy) == 0:
-                self.get_method(y)
+        if self.t % (self.pars['switch_frequency']/fpd.mpy) == 0:
+            self.get_method()
 
         return
 
