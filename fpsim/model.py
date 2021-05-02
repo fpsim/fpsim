@@ -206,6 +206,7 @@ class People(fpb.BasePeople):
         '''
         Decide if person (female) becomes pregnant at a timestep.
         '''
+        inds = inds[sc.findinds(self.sexually_active[inds])]
         preg_probs = np.zeros(len(inds))
 
         # Find monthly probability of pregnancy based on fecundity and any use of contraception including LAM - from data
@@ -447,7 +448,6 @@ class People(fpb.BasePeople):
         fecund_inds  = sc.findinds(self.alive * (self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
         preg_inds    = fecund_inds[sc.findinds(self.pregnant[fecund_inds])]
         nonpreg_inds = np.setdiff1d(fecund_inds, preg_inds)
-        sex_inds     = nonpreg_inds[sc.findinds(self.sexually_active[nonpreg_inds])]
         lact_inds    = fecund_inds[sc.findinds(self.lactating[fecund_inds])]
 
         # Update everything
@@ -455,12 +455,13 @@ class People(fpb.BasePeople):
         self.update_pregnancy(preg_inds)  # Advance gestation in timestep, handle miscarriage
         self.check_sexually_active(nonpreg_inds)
         self.update_contraception(nonpreg_inds)
-        self.check_conception(sex_inds)  # Decide if conceives and initialize gestation counter at 0
         self.check_lam(nonpreg_inds)
         self.update_postpartum(nonpreg_inds) # Updates postpartum counter if postpartum
         self.update_breastfeeding(lact_inds)
-        self.check_mcpr()
+        self.check_conception(nonpreg_inds)  # Decide if conceives and initialize gestation counter at 0
 
+        # Update results
+        self.check_mcpr()
         self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
 
         return self.step_results
