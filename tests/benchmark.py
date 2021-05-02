@@ -8,11 +8,12 @@ from fp_analyses import senegal_parameters as sp
 
 pars = sp.make_pars()
 sim = fp.Sim(pars)
-to_profile = 'run'
+to_profile = 'other'
 
-func_options = {'run':        sim.run,
-                'update':     sim.people.update,
-                # 'preg':       person.get_preg_prob,
+func_options = {'run':         sim.run,
+                'update':      sim.people.update,
+                'people_init': sim.people.__init__,
+                'other': [fp.model.arr][0],
                 # 'get_method': person.get_method,
                 }
 

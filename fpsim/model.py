@@ -21,13 +21,13 @@ __all__ = ['People', 'Sim', 'single_run', 'multi_run']
 #%% Define classes
 def arr(n=None, val=0):
     ''' Shortcut for defining an empty array with the correct value and data type '''
-    if sc.isarray(val):
+    if isinstance(val, np.ndarray):
         assert len(val) == n
         arr = val
     elif isinstance(val, list):
-        arr = [sc.dcp(val) for _ in range(n)]
+        arr = [[] for _ in range(n)]
     else:
-        dtype = object if sc.isstring(val) else None
+        dtype = object if isinstance(val, str) else None
         arr = np.full(shape=n, fill_value=val, dtype=dtype)
     return arr
 
@@ -40,37 +40,37 @@ class People(fpb.BasePeople):
 
         # Initialization
         self.pars = pars # Set parameters
-        d = sc.objdict(sc.mergedicts(fpd.person_defaults, kwargs)) # d = defaults
+        d = sc.mergedicts(fpd.person_defaults, kwargs) # d = defaults
         if n is None:
             n = self.pars['n']
 
         # Basic states
         init_states = dir(self)
         self.uid      = arr(n, np.arange(n))
-        self.age      = arr(n, np.float64(d.age)) # Age of the person (in years)
-        self.sex      = arr(n, d.sex) # Female (0) or male (1)
-        self.parity   = arr(n, d.parity) # Number of children
-        self.method   = arr(n, d.method)  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
-        self.barrier  = arr(n, d.barrier)  # Reason for non-use
-        self.alive    = arr(n, d.alive)
-        self.pregnant = arr(n, d.pregnant)
+        self.age      = arr(n, np.float64(d['age'])) # Age of the person (in years)
+        self.sex      = arr(n, d['sex']) # Female (0) or male (1)
+        self.parity   = arr(n, d['parity']) # Number of children
+        self.method   = arr(n, d['method'])  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
+        self.barrier  = arr(n, d['barrier'])  # Reason for non-use
+        self.alive    = arr(n, d['alive'])
+        self.pregnant = arr(n, d['pregnant'])
 
         # Sexual and reproductive history
-        self.sexually_active = arr(n, d.sexually_active)
-        self.lactating       = arr(n, d.lactating)
-        self.gestation       = arr(n, d.gestation)
-        self.preg_dur        = arr(n, d.preg_dur)
-        self.postpartum      = arr(n, d.postpartum)
-        self.postpartum_dur  = arr(n, d.postpartum_dur) # Tracks # months postpartum
-        self.lam             = arr(n, d.lam) # Separately tracks lactational amenorrhea, can be using both LAM and another method
+        self.sexually_active = arr(n, d['sexually_active'])
+        self.lactating       = arr(n, d['lactating'])
+        self.gestation       = arr(n, d['gestation'])
+        self.preg_dur        = arr(n, d['preg_dur'])
+        self.postpartum      = arr(n, d['postpartum'])
+        self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
+        self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
         self.dobs            = arr(n, []) # Dates of births -- list of lists
-        self.breastfeed_dur  = arr(n, d.breastfeed_dur)
-        self.breastfeed_dur_total = arr(n, d.breastfeed_dur_total)
+        self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
+        self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
 
         # Fecundity variation
         fv = self.pars['fecundity_variation']
         self.personal_fecundity = arr(n, np.random.random(n)*(fv[1]-fv[0])+fv[0]) # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
-        self.remainder_months = arr(n, d.remainder_months)
+        self.remainder_months = arr(n, d['remainder_months'])
 
         # Store keys
         final_states = dir(self)
