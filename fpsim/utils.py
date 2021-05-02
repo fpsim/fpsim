@@ -146,6 +146,6 @@ def fixaxis(useSI=True):
 def dict2obj(d):
     ''' Convert a dictionary to an object '''
     o = sc.prettyobj()
-    for k,v in d:
+    for k,v in d.items():
         setattr(o, k, v)
     return o

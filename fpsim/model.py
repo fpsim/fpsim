@@ -170,7 +170,7 @@ class People(fpb.BasePeople):
         m_died = m_inds[fpu.binomial_arr(m_mort_prob)]
         died = sc.cat(f_died, m_died)
         self.alive[died] = False
-        self.step_results['died'] = len(died)
+        self.step_results['deaths'] += len(died)
 
         return
 
@@ -301,7 +301,7 @@ class People(fpb.BasePeople):
         for key,(pp_low, pp_high) in fpd.postpartum_mapping.items():
             match_low  = (self.postpartum_dur[inds] >= pp_low)
             match_high = (self.postpartum_dur[inds] <  pp_high)
-            match = self.postpartum * match_low * match_high
+            match = self.postpartum[inds] * match_low * match_high
             m_inds = inds[sc.findinds(match)]
             self.step_results[key] += len(m_inds)
         self.postpartum_dur[pp_inds] += self.pars['timestep']
@@ -338,16 +338,16 @@ class People(fpb.BasePeople):
     def maternal_mortality(self, inds):
         '''Check for probability of maternal mortality'''
         death_inds = inds[fpu.n_binomial(self.pars['mortality_probs']['maternal'], len(inds))]
-        self.step_results['maternal_death'] += len(death_inds)
+        self.step_results['maternal_deaths'] += len(death_inds)
         self.alive[death_inds] = False
-        self.step_results['died'] += len(death_inds)
+        self.step_results['deaths'] += len(death_inds)
         return
 
 
     def infant_mortality(self, inds):
         '''Check for probability of infant mortality (death < 1 year of age)'''
         death_inds = inds[fpu.n_binomial(self.pars['mortality_probs']['infant'], len(inds))]
-        self.step_results['infant_death'] = len(death_inds)
+        self.step_results['infant_deaths'] += len(death_inds)
         self.reset_breastfeeding(death_inds)
         return
 
@@ -368,12 +368,12 @@ class People(fpb.BasePeople):
 
         # Handle twins
         twin_inds = deliv_inds[fpu.n_binomial(self.pars['twins_prob'], len(deliv_inds))]
-        self.step_results['gave_birth'] += 2*len(twin_inds)
+        self.step_results['births'] += 2*len(twin_inds)
         self.parity[twin_inds] += 2
 
         # Handle singles
         single_inds = np.setdiff1d(deliv_inds, twin_inds)
-        self.step_results['gave_birth'] += len(single_inds)
+        self.step_results['births'] += len(single_inds)
         self.parity[single_inds] += 1
 
         # Check mortality
@@ -409,25 +409,25 @@ class People(fpb.BasePeople):
         DHS data records only women who self-report LAM which is much lower.
         If wanting to include LAM here need to add "or self.lam == False" to 2nd if statemnt
         '''
-        denominator = (self.pars['method_age'] <= self.age < self.pars['age_limit_fecundity']) * (self.pregnant == 0) * (self.sex == 0) * (self.alive)
+        denominator = (self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * (self.pregnant == 0) * (self.sex == 0) * (self.alive)
         no_method = np.sum((self.method == 0) * denominator)
         on_method = np.sum((self.method != 0) * denominator)
-        self.step_results['no_method'] += no_method
-        self.step_results['on_method'] += on_method
+        self.step_results['no_methods'] += no_method
+        self.step_results['on_methods'] += on_method
         return
 
 
     def init_step_results(self):
         self.step_results = dict(
-            died           = 0,
-            gave_birth     = 0,
-            maternal_death = 0,
-            infant_death   = 0,
-            on_method      = 0,
-            no_method      = 0,
-            pp0to5         = 0,
-            pp6to11        = 0,
-            pp12to23       = 0,
+            deaths          = 0,
+            births          = 0,
+            maternal_deaths = 0,
+            infant_deaths   = 0,
+            on_methods      = 0,
+            no_methods      = 0,
+            pp0to5          = 0,
+            pp6to11         = 0,
+            pp12to23        = 0,
             total_women_fecund = 0,
         )
         return
@@ -461,7 +461,7 @@ class People(fpb.BasePeople):
         self.update_breastfeeding(lact_inds)
         self.check_mcpr()
 
-        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age < self.pars['age_limit_fecundity']))
+        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
 
         return self.step_results
 
