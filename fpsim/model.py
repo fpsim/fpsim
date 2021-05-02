@@ -514,15 +514,20 @@ class Sim(fpb.BaseSim):
         return
 
 
-    def get_age_sex(self):
+    def get_age_sex(self, n):
         ''' For an ex nihilo person, figure out if they are male and female, and how old '''
-        sex = np.random.random() < self.m_frac  # Pick the sex based on the fraction of men vs. women
-        spline = self.f_pop_spline if sex == 0 else self.m_pop_spline  # Pick the male or female population spline
-        age = si.splev(np.random.random(), spline)  # Use the spline fit to pick the age
-        return age, sex
+        sexes = np.random.random(n) < self.m_frac  # Pick the sex based on the fraction of men vs. women
+        f_inds = sc.findinds(sexes == 0)
+        m_inds = sc.findinds(sexes == 1)
+        f_ages = si.splev(np.random.random(len(f_inds)), self.f_pop_spline)  # Use the spline fit to pick the age
+        m_ages = si.splev(np.random.random(len(m_inds)), self.m_pop_spline)  # Use the spline fit to pick the age
+        ages = np.zeros(n)
+        ages[f_inds] = f_ages
+        ages[m_inds] = m_ages
+        return ages, sexes
 
 
-    def make_person(self, age=None, sex=None, method=None):
+    def make_people(self, age=None, sex=None, method=None):
         ''' Set up each person'''
         _age, _sex = self.get_age_sex()
         if age is None: age = _age
