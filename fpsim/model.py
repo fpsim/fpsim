@@ -322,14 +322,14 @@ class People(fpb.ParsObj):
         self.postpartum_dur[pp_done] = 0
 
         # Count the state of the agent
-        is_pp = sc.findinds(self.postpartum)
+        pp_inds = sc.findinds(self.postpartum)
         for key,(pp_low, pp_high) in fpd.postpartum_mapping.items():
             match_low  = (self.postpartum_dur >= pp_low)
             match_high = (self.postpartum_dur <  pp_high)
-            match = is_pp * match_low * match_high
+            match = self.postpartum * match_low * match_high
             inds = sc.findinds(match)
             self.step_results[key] += len(inds)
-        self.postpartum_dur[is_pp] += self.pars['timestep']
+        self.postpartum_dur[pp_inds] += self.pars['timestep']
 
         return
 
@@ -352,11 +352,11 @@ class People(fpb.ParsObj):
         return
 
 
-    def reset_breastfeeding(self):
+    def reset_breastfeeding(self, inds):
         '''Stop breastfeeding, calculate total lifetime duration so far, and reset lactation episode to zero'''
-        self.lactating = False
-        self.breastfeed_dur_total += self.breastfeed_dur
-        self.breastfeed_dur = 0
+        self.lactating[inds] = False
+        self.breastfeed_dur_total[inds] += self.breastfeed_dur[inds]
+        self.breastfeed_dur[inds] = 0
 
         return
 
