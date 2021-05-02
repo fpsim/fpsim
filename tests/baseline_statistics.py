@@ -3,17 +3,14 @@ Like test_baselines.py, but with statistics.
 '''
 
 import numpy as np
-import pylab as pl
 import pandas as pd
 import sciris as sc
-import covasim as cv
-np; pl; pd; sc; cv
-
 import fpsim as fp
 import fp_analyses as fa
 
-do_save = 0
-n_runs = 20
+rerun   = 0  # Re-run rather than just load
+do_save = 0  # Re-save, overwriting existing file
+n_runs  = 20 # Number of runs to run
 outfile = 'baseline_statistics.df'
 
 def make_calib(n=500, seed=1, verbose=0.1, do_run=False, do_plot=False):
@@ -64,5 +61,6 @@ if __name__ == '__main__':
 
     sc.tic()
     old = sc.loadobj(outfile)
-    new = run_save_sims(n_runs=n_runs, do_save=do_save)
+    if rerun:
+        new = run_save_sims(n_runs=n_runs, do_save=do_save)
     sc.toc()
