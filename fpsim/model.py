@@ -36,12 +36,13 @@ class People(fpb.BasePeople):
     '''
     Class for all the people in the simulation.
     '''
-    def __init__(self, pars, **kwargs):
+    def __init__(self, pars, n=None, **kwargs):
 
         # Initialization
         self.update_pars(pars) # Set parameters
         d = sc.objdict(sc.mergedicts(fpd.person_defaults, kwargs)) # d = defaults
-        n = self.pars['n']
+        if n is None:
+            n = self.pars['n']
 
         # Basic states
         init_states = dir(self)
@@ -474,6 +475,7 @@ class Sim(fpb.BaseSim):
         super().__init__(pars) # Initialize and set the parameters as attributes
         fpu.set_seed(self.pars['seed'])
         self.init_results()
+        self.init_splines()
         self.init_people()
         self.interventions = {}  # dictionary for possible interventions to add to the sim
         return
@@ -489,6 +491,11 @@ class Sim(fpb.BaseSim):
         self.results['tfr_rates'] = []
         self.results['pop_size'] = []
         self.results['mcpr_by_year'] = []
+        return
+
+
+    def init_splines(self):
+        self.m_pop_spline, self.f_pop_spline, self.m_frac = fpp.make_age_sex_splines(self.pars)
         return
 
 
@@ -516,9 +523,8 @@ class Sim(fpb.BaseSim):
         return data
 
 
-    def init_people(self):
+    def init_people(self, output=False, **kwargs):
         ''' Create the people '''
-        self.m_pop_spline, self.f_pop_spline, self.m_frac = fpp.make_age_sex_splines(self.pars)
         p = sc.objdict(self.make_people(n=int(self.pars['n'])))
         self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier)
         return
@@ -616,66 +622,65 @@ class Sim(fpb.BaseSim):
             # Update mortality probabilities for year of sim
             self.update_mortality_probs()
 
-            # Update the people
-            step_results = self.people.update()
-            r = sc.objdict(step_results)
-
+            # Call the interventions
             if i in self.interventions:
                 self.interventions[i](self)
 
+            # Update the people
+            self.people.t = self.t
+            step_results = self.people.update()
+            r = fpu.dict2obj(step_results)
+
+            # Start calculating results
             new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
 
             # Births
             data = self.make_people(n=new_people, age=np.zeros(new_people))
-            people = People(pars=self.pars, )
-            for birth in range(new_people):
-                person = self.make_person() # Save them to the dictionary
-                self.people[person.uid] = person
+            people = People(pars=self.pars, n=new_people, age=data['age'])
+            self.people += people
 
-            percent0to5 = (pp0to5 / total_women_fecund) * 100
-            percent6to11 = (pp6to11 / total_women_fecund) * 100
-            percent12to23 = (pp12to23 / total_women_fecund) * 100
-            nonpostpartum = ((total_women_fecund - pp0to5 - pp6to11 - pp12to23)/total_women_fecund) * 100
+            # Results
+            percent0to5   = (r.pp0to5 / r.total_women_fecund) * 100
+            percent6to11  = (r.pp6to11 / r.total_women_fecund) * 100
+            percent12to23 = (r.pp12to23 / r.total_women_fecund) * 100
+            nonpostpartum = ((r.total_women_fecund - r.pp0to5 - r.pp6to11 - r.pp12to23)/r.total_women_fecund) * 100
 
             # Store results
-            self.results['t'][i]                = self.tvec[i]
-            self.results['pop_size_months'][i]   = self.n
-            self.results['births'][i]          = births
-            self.results['deaths'][i]          = deaths
-            self.results['maternal_deaths'][i] = maternal_deaths
-            self.results['infant_deaths'][i]   = infant_deaths
-            self.results['on_method'][i]       = on_methods
-            self.results['no_method'][i]       = no_methods
-            self.results['mcpr'][i]            = on_methods/(on_methods+no_methods)
+            self.results['t'][i]               = self.tvec[i]
+            self.results['pop_size_months'][i] = self.n
+            self.results['births'][i]          = r.births
+            self.results['deaths'][i]          = r.deaths
+            self.results['maternal_deaths'][i] = r.maternal_deaths
+            self.results['infant_deaths'][i]   = r.infant_deaths
+            self.results['on_method'][i]       = r.on_methods
+            self.results['no_method'][i]       = r.no_methods
+            self.results['mcpr'][i]            = r.on_methods/(r.on_methods+r.no_methods)
             self.results['pp0to5'][i]          = percent0to5
             self.results['pp6to11'][i]         = percent6to11
             self.results['pp12to23'][i]           = percent12to23
             self.results['nonpostpartum'][i]      = nonpostpartum
-            self.results['total_women_fecund'][i] = total_women_fecund
+            self.results['total_women_fecund'][i] = r.total_women_fecund
 
             # Calculate TFR over the last year in the model and save whole years and tfr rates to an array
             if i % fpd.mpy == 0:
-                self.results['tfr_years'].append(y)
-                start_index = (int(t)-1)*fpd.mpy
-                stop_index = int(t)*fpd.mpy
+                self.results['tfr_years'].append(self.y)
+                start_index = (int(self.t)-1)*fpd.mpy
+                stop_index = int(self.t)*fpd.mpy
                 births_over_year = pl.sum(self.results['births'][start_index:stop_index])  # Grabs sum of birth over the last 12 months of calendar year
                 self.results['tfr_rates'].append(35*(births_over_year/self.results['total_women_fecund'][i]))
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
 
-        self.results['tfr_rates'] = pl.array(self.results['tfr_rates']) # Store TFR rates for each year of model
-        self.results['tfr_years'] = pl.array(self.results['tfr_years']) # Save an array of whole years that model runs (ie, 1950, 1951...)
-        self.results['pop_size'] = pl.array(self.results['pop_size'])  # Store population size array in years and not months for calibration
-        self.results['mcpr_by_year'] = pl.array(self.results['mcpr_by_year'])
-
-        for person in self.people.values():
-            if person.lactating:
-                person.reset_breastfeeding()
+        self.results['tfr_rates']    = np.array(self.results['tfr_rates']) # Store TFR rates for each year of model
+        self.results['tfr_years']    = np.array(self.results['tfr_years']) # Save an array of whole years that model runs (ie, 1950, 1951...)
+        self.results['pop_size']     = np.array(self.results['pop_size'])  # Store population size array in years and not months for calibration
+        self.results['mcpr_by_year'] = np.array(self.results['mcpr_by_year'])
 
         print(f'Final population size: {self.n}.')
 
         elapsed = sc.toc(T, output=True)
         print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
+
         return self.results
 
 

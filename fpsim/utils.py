@@ -11,7 +11,7 @@ from . import defaults as fpd
 
 
 # Specify all externally visible things this file defines
-__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'fixaxis']
+__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'fixaxis', 'dict2obj']
 
 usenumba  = True
 
@@ -141,3 +141,11 @@ def fixaxis(useSI=True):
     if useSI:
         sc.SIticks()
     return
+
+
+def dict2obj(d):
+    ''' Convert a dictionary to an object '''
+    o = sc.prettyobj()
+    for k,v in d:
+        setattr(o, k, v)
+    return o
