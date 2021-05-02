@@ -357,18 +357,15 @@ class People(fpb.ParsObj):
         self.lactating[inds] = False
         self.breastfeed_dur_total[inds] += self.breastfeed_dur[inds]
         self.breastfeed_dur[inds] = 0
-
         return
 
 
-    def maternal_mortality(self):
+    def maternal_mortality(self, inds):
         '''Check for probability of maternal mortality'''
-
-        self.step_results['maternal_death'] = utils.bt(self.pars['mortality_probs']['maternal'])
-        if self.step_results['maternal_death']:
-            self.alive = False
-            self.step_results['died'] = True
-
+        death_inds = inds[fpu.n_binomial(self.pars['mortality_probs']['maternal'], len(inds))]
+        self.step_results['maternal_death'] = len(death_inds)
+        self.alive[death_inds] = False
+        self.step_results['died'] += len(death_inds)
         return
 
 
