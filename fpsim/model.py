@@ -71,6 +71,20 @@ class People(fpb.ParsObj):
         self.remainder_months = arr(n, d.remainder_months)
         return
 
+    @property
+    def is_female(self):
+        return self.sex == 0
+
+    @property
+    def is_male(self):
+        return self.sex == 1
+
+    def female_inds(self):
+        return sc.findinds(self.is_female)
+
+    def male_inds(self):
+        return sc.findinds(self.is_male)
+
 
     def get_method(self):
         '''
@@ -141,16 +155,21 @@ class People(fpb.ParsObj):
 
         return
 
+
     def check_mortality(self):
         '''Decide if person dies at a timestep'''
 
+        age_mort = self.pars['age_mortality']
+        f_spline = age_mort['f_spline']
+        m_spline = age_mort['m_spline']
+        f_inds   = self.female_inds()
         if self.sex == 0:
-            mortality_spline = self.pars['age_mortality']['f_spline']
+
         else:
             mortality_spline = self.pars['age_mortality']['m_spline']
 
         trend = self.pars['mortality_probs']['gen_trend']
-        mortality_prob = utils.numba_mortality_prob(mortality_spline, trend, self.age, resolution, mpy)
+        mortality_prob = fpu.numba_mortality_prob(mortality_spline, trend, self.age, resolution, mpy)
 
         died = utils.bt(mortality_prob)
         if died:
@@ -158,6 +177,7 @@ class People(fpb.ParsObj):
             self.step_results['died'] = True
 
         return
+
 
     def check_sexually_active(self):
         '''
@@ -233,6 +253,7 @@ class People(fpb.ParsObj):
 
         return
 
+
     def check_lam(self):
         '''
         Check to see if postpartum agent meets criteria for LAM in this time step
@@ -307,6 +328,7 @@ class People(fpb.ParsObj):
                     self.gestation = 0  # Reset gestation counter
         return
 
+
     def reset_breastfeeding(self):
         '''Stop breastfeeding, calculate total lifetime duration so far, and reset lactation episode to zero'''
         self.lactating = False
@@ -314,6 +336,7 @@ class People(fpb.ParsObj):
         self.breastfeed_dur = 0
 
         return
+
 
     def maternal_mortality(self):
         '''Check for probability of maternal mortality'''
@@ -325,6 +348,7 @@ class People(fpb.ParsObj):
 
         return
 
+
     def infant_mortality(self):
         '''Check for probability of infant mortality (death < 1 year of age)'''
 
@@ -333,6 +357,7 @@ class People(fpb.ParsObj):
             self.reset_breastfeeding()
 
         return
+
 
     def check_delivery(self):
         '''Decide if pregnant woman gives birth and explore maternal mortality and child mortality'''
@@ -359,12 +384,14 @@ class People(fpb.ParsObj):
 
         return
 
+
     def age_person(self):
         '''Advance age in the simulation'''
         self.age += self.pars['timestep'] / mpy  # Age the person for the next timestep
         self.age = min(self.age, self.pars['max_age'])
 
         return
+
 
     def update_contraception(self, t, y):
         '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
@@ -378,6 +405,7 @@ class People(fpb.ParsObj):
                 self.get_method(y)
 
         return
+
 
     def check_mcpr(self):
         '''
@@ -394,6 +422,7 @@ class People(fpb.ParsObj):
                 self.step_results['on_method'] = 1
 
         return
+
 
     def init_step_results(self):
         self.step_results = {
@@ -455,14 +484,14 @@ class People(fpb.ParsObj):
 
 
 
-class Sim(base.BaseSim):
+class Sim(fpb.BaseSim):
     '''
     The Sim class handles the running of the simulation
     '''
 
     def __init__(self, pars=None):
         super().__init__(pars) # Initialize and set the parameters as attributes
-        utils.set_seed(self.pars['seed'])
+        fpu.set_seed(self.pars['seed'])
         self.init_results()
         self.init_people()
         self.interventions = {}  # dictionary for possible interventions to add to the sim
@@ -481,12 +510,14 @@ class Sim(base.BaseSim):
         self.results['mcpr_by_year'] = []
         return
 
+
     def get_age_sex(self):
         ''' For an ex nihilo person, figure out if they are male and female, and how old '''
         sex = np.random.random() < self.m_frac  # Pick the sex based on the fraction of men vs. women
         spline = self.f_pop_spline if sex == 0 else self.m_pop_spline  # Pick the male or female population spline
         age = si.splev(np.random.random(), spline)  # Use the spline fit to pick the age
         return age, sex
+
 
     def make_person(self, age=None, sex=None, method=None):
         ''' Set up each person'''
@@ -553,17 +584,18 @@ class Sim(base.BaseSim):
 
         return
 
-    def update_mortality_probs(self, y):
+
+    def update_mortality_probs(self):
         ''' Update infant and maternal mortality for the sim's current year.  Update general mortality trend
         as this uses a spline interpolation instead of an array'''
 
-        ind = sc.findnearest(self.pars['age_mortality']['years'], y)
+        ind = sc.findnearest(self.pars['age_mortality']['years'], self.y)
         gen_mortality_trend = self.pars['age_mortality']['trend'][ind]
 
-        ind = sc.findnearest(self.pars['infant_mortality']['year'], y)
+        ind = sc.findnearest(self.pars['infant_mortality']['year'], self.y)
         infant_mort_prob = self.pars['infant_mortality']['probs'][ind]
 
-        ind = sc.findnearest(self.pars['maternal_mortality']['year'], y)
+        ind = sc.findnearest(self.pars['maternal_mortality']['year'], self.y)
         maternal_death_prob = self.pars['maternal_mortality']['probs'][ind]
 
         self.pars['mortality_probs'] = {
@@ -573,6 +605,7 @@ class Sim(base.BaseSim):
         }
 
         return
+
 
     def run(self, verbose=None):
         ''' Run the simulation '''

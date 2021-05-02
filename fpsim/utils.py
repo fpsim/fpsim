@@ -84,6 +84,23 @@ def n_multinomial(probs, n): # No speed gain from Numba
     return np.searchsorted(np.cumsum(probs), np.random.random(n))
 
 
+def binomial_arr(prob_arr): # No speed gain from Numba
+    '''
+    Binomial (Bernoulli) trials each with different probabilities.
+
+    Args:
+        prob_arr (array): array of probabilities
+
+    Returns:
+         Boolean array of which trials on the input array succeeded
+
+    **Example**::
+
+        outcomes = cv.binomial_arr([0.1, 0.1, 0.2, 0.2, 0.8, 0.8]) # Perform 6 trials with different probabilities
+    '''
+    return np.random.random(len(prob_arr)) < prob_arr
+
+
 @func_decorator((nb.float64[:], nb.float64, nb.float64, nb.float64, nb.float64), cache=True)
 def numba_mortality_prob(mortality_fn, trend, age, resolution, mpy):
     mortality_eval = mortality_fn[int(round(age * resolution))]

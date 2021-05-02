@@ -7,14 +7,12 @@ import os
 import pylab as pl
 import sciris as sc
 from scipy import interpolate as si
+import fpsim.defaults as fpd
 
 
 DEFAULT_CONFIGURATION_FILE = os.path.join(os.path.dirname(__file__), 'config.json')
 DEFAULTS_FILE = os.path.join(os.path.dirname(__file__), 'defaults.json')
 
-resolution = 100
-max_age = 99
-max_age_preg = 50
 
 #%% Helper function
 
@@ -92,12 +90,11 @@ def default_age_mortality(bound):
     mortality['trend'] = pl.array([28,    27,    26.023, 25.605, 24.687, 20.995, 16.9, 13.531, 11.335, 11.11, 10.752, 9.137, 7.305, 6.141, 5.7, 5.7, 5.7]) # First 2 estimated, last 3 are projected
     mortality['trend'] /= mortality['trend'][8]  # Normalize around 2000 for trending
 
-    ages = pl.arange(resolution * max_age + 1) / resolution
     m_mortality_spline_model = si.splrep(x=mortality['bins'],
                                       y=mortality['m'])  # Create a spline of mortality along known age bins
     f_mortality_spline_model = si.splrep(x=mortality['bins'], y=mortality['f'])
-    m_mortality_spline = si.splev(ages, m_mortality_spline_model)  # Evaluate the spline along the range of ages in the model with resolution
-    f_mortality_spline = si.splev(ages, f_mortality_spline_model)
+    m_mortality_spline = si.splev(fpd.spline_ages, m_mortality_spline_model)  # Evaluate the spline along the range of ages in the model with resolution
+    f_mortality_spline = si.splev(fpd.spline_ages, f_mortality_spline_model)
     if bound:
         m_mortality_spline = pl.minimum(1, pl.maximum(0, m_mortality_spline))
         f_mortality_spline = pl.minimum(1, pl.maximum(0, f_mortality_spline))
@@ -106,6 +103,7 @@ def default_age_mortality(bound):
     mortality['f_spline'] = f_mortality_spline
 
     return mortality
+
 
 def default_female_age_fecundity(bound):
     '''
@@ -118,13 +116,13 @@ def default_female_age_fecundity(bound):
         'f': pl.array([0.,    0,  0, 70.8, 70.8, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
 
-    ages = pl.arange(resolution * max_age + 1) / resolution
     fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
-    fecundity_interp = fecundity_interp_model(ages)
+    fecundity_interp = fecundity_interp_model(fpd.spline_ages)
     if bound:
         fecundity_interp = pl.minimum(1, pl.maximum(0, fecundity_interp))
 
     return fecundity_interp
+
 
 def default_maternal_mortality():
     '''
@@ -485,10 +483,9 @@ def default_sexual_activity():
     sexually_active = pl.array([[0, 5, 10, 12.5, 15,   18,   20,   25,   30,   35,   40,    45,   50],
                                 [0, 0,  0,  8,   11.5, 11.5, 35.5, 49.6, 57.4, 64.4, 64.45, 64.5, 66.8]])
     sexually_active[1] /= 100 # Convert from percent to rate per woman
-    ages = pl.arange(resolution * max_age_preg + 1) / resolution
     activity_ages = sexually_active[0]
     activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
-    activity_interp = activity_interp_model(ages)  # Evaluate interpolation along resolution of ages
+    activity_interp = activity_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
 
     return activity_interp
 
@@ -561,9 +558,8 @@ def default_miscarriage_rates():
                                   [0, 0, 0,  16.7, 16.7, 11.2, 9.7, 10.8, 16.7, 33.2, 56.9, 56.9]])
     miscarriage_ages = miscarriage_rates[0]
     miscarriage_rates[1] /= 100
-    ages = pl.arange(resolution * max_age_preg + 1) / resolution
     miscarriage_interp_model = si.interp1d(miscarriage_ages, miscarriage_rates[1])
-    miscarriage_interp = miscarriage_interp_model(ages)
+    miscarriage_interp = miscarriage_interp_model(fpd.spline_preg_ages)
     miscarriage_interp = pl.minimum(1, pl.maximum(0, miscarriage_interp))
 
     return miscarriage_interp
@@ -576,7 +572,7 @@ def default_fecundity_ratio_nullip():
     from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
     '''
 
-    fecundity_ratio_nullip = pl.array([[0,    5,   10, 12.5, 15,   18,  20,  25,   30,   34,   37,  40, 45, 50],
+    fecundity_ratio_nullip = pl.array([[  0,   5,  10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
                                        [1.0, 1.0, 1.0,  1.0, 1.0, 1.0, 1.0, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
 
     return fecundity_ratio_nullip
