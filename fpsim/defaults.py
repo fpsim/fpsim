@@ -7,12 +7,9 @@ import numpy as np
 #%% Global defaults
 useSI        = True
 mpy          = 12   # Months per year, to avoid magic numbers
-resolution   = 1    # For spline interpolation, steps per year
 eps          = 1e-9 # To avoid divide-by-zero
 max_age      = 99   # Maximum age
-max_age_preg = 50
-if resolution != 1:
-    raise NotImplementedError('Currently, resolutions other than 1 year for splines do not work')
+max_age_preg = 49
 
 #%% Defaults when creating a new person
 person_defaults = dict(
@@ -36,5 +33,5 @@ method_age_mapping = {
     '>25':   [25, max_age+1], # +1 since we're using < rather than <=
 }
 
-spline_ages      = np.arange(resolution*max_age + 1) / resolution
-spline_preg_ages = np.arange(resolution*max_age_preg + 1) / resolution
+spline_ages      = np.arange(max_age + 2) # +2 so e.g. 0-100
+spline_preg_ages = np.arange(max_age_preg + 2)

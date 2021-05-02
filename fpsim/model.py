@@ -79,6 +79,10 @@ class People(fpb.ParsObj):
     def is_male(self):
         return self.sex == 1
 
+    @property
+    def int_ages(self):
+        return np.array(self.ages, dtype=np.int64)
+
     def female_inds(self):
         return sc.findinds(self.is_female)
 
@@ -159,22 +163,24 @@ class People(fpb.ParsObj):
     def check_mortality(self):
         '''Decide if person dies at a timestep'''
 
+        trend_val = self.pars['mortality_probs']['gen_trend']
         age_mort = self.pars['age_mortality']
-        f_spline = age_mort['f_spline']
-        m_spline = age_mort['m_spline']
+        f_spline = age_mort['f_spline'] * trend_val
+        m_spline = age_mort['m_spline'] * trend_val
         f_inds   = self.female_inds()
-        if self.sex == 0:
+        m_inds   = self.male_inds()
+        int_ages = self.int_ages
+        f_ages = int_ages[f_inds]
+        m_ages = int_ages[m_inds]
 
-        else:
-            mortality_spline = self.pars['age_mortality']['m_spline']
+        f_mort_prob = f_spline[f_ages]
+        m_mort_prob = m_spline[m_ages]
 
-        trend = self.pars['mortality_probs']['gen_trend']
-        mortality_prob = fpu.numba_mortality_prob(mortality_spline, trend, self.age, resolution, mpy)
-
-        died = utils.bt(mortality_prob)
-        if died:
-            self.alive = False
-            self.step_results['died'] = True
+        f_died = f_inds[fpu.binomial_arr(f_mort_prob)]
+        m_died = m_inds[fpu.binomial_arr(m_mort_prob)]
+        died = sc.cat(f_died, m_died)
+        self.alive[died] = False
+        self.step_results['died'] = len(died)
 
         return
 
