@@ -82,25 +82,17 @@ class People(fpb.ParsObj):
         methods = self.pars['methods']
         orig_methods = self.method
 
-        mapping = {
-            '<18':   [ 0, 18],
-            '18-20': [18, 20],
-            '20-25': [20, 25],
-            '>25':   [25, fpd.max_age+1], # +1 since we're using < rather than <=
-        }
-
         # Method switching depends both on agent age and also on their current method, so we need to loop over both
         for m in methods['map'].values():
-            for key,(age_low, age_high) in mapping.items():
-                match_m = (orig_methods == m)
-                match_low = (self.age[match_m] >= age_low)
-                match_high = (self.age[match_m] < age_high)
+            for key,(age_low, age_high) in fpd.method_age_mapping.items():
+                match_m    = (orig_methods == m)
+                match_low  = (self.age >= age_low)
+                match_high = (self.age <  age_high)
                 match = match_m * match_low * match_high
                 inds = sc.findinds(match)
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
-
                 new_methods = fpu.n_multinomial(choices, len(inds))
                 self.method[inds] = new_methods
 
@@ -117,29 +109,35 @@ class People(fpb.ParsObj):
         # Probability of initiating a postpartum method at 0-3 months postpartum
         # Transitional probabilities are for the first 3 month time period after delivery from DHS data
 
-        if self.postpartum_dur == 3:
+        pp_methods = self.pars['methods_postpartum']
+        pp_switch  = pp_methods['switch_postpartum']
+        orig_methods = self.method
 
-            if self.age < 18:
-                choices_from_birth = self.pars['methods_postpartum']['<18']
-            elif 18 < self.age <= 20:
-                choices_from_birth = self.pars['methods_postpartum']['18-20']
-            elif 20 < self.age <= 25:
-                choices_from_birth = self.pars['methods_postpartum']['21-25']
-            elif self.age > 25:
-                choices_from_birth = self.pars['methods_postpartum']['>25']
-            else:
-                raise Exception('Agent age does not match choice matrix options')
+        postpartum3 = (self.postpartum_dur == 3)
+        postpartum6 = (self.postpartum_dur == 6)
 
-            self.method = utils.mt(choices_from_birth)
+        # At 3 months, choice is by age but not previous method (since just gave birth)
+        for key,(age_low, age_high) in fpd.method_age_mapping.items():
+            match_low  = (self.age >= age_low)
+            match_high = (self.age <  age_high)
+            match = postpartum3 * match_low * match_high
+            inds = sc.findinds(match)
 
+            choices = pp_methods[key]
+            new_methods = fpu.n_multinomial(choices, len(inds))
+            self.method[inds] = new_methods
+
+        # At 6 months, choice is by previous method but not age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
         # Transitional probabilities are for 3 months, 4-6 months after delivery from DHS data
-        if self.postpartum_dur == 6:
-            orig_method = self.method
-            choices_postpartum = self.pars['methods_postpartum']['switch_postpartum'][orig_method]
-            #self.remainder_months = int((t - int(t)) * mpy)
+        for m in self.pars['methods']['map'].values():
+            match_m    = (orig_methods == m)
+            match = postpartum6 * match_m
+            inds = sc.findinds(match)
 
-            self.method = utils.mt(choices_postpartum)
+            choices = pp_switch[m]
+            new_methods = fpu.n_multinomial(choices, len(inds))
+            self.method[inds] = new_methods
 
         return
 
