@@ -426,6 +426,7 @@ class People(fpb.BasePeople):
             pp0to5         = 0,
             pp6to11        = 0,
             pp12to23       = 0,
+            total_women_fecund = 0,
         )
         return
 
@@ -457,6 +458,8 @@ class People(fpb.BasePeople):
         self.update_postpartum(nonpreg_inds) # Updates postpartum counter if postpartum
         self.update_breastfeeding(lact_inds)
         self.check_mcpr()
+
+        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age < self.pars['age_limit_fecundity']))
 
         return self.step_results
 
@@ -502,14 +505,14 @@ class Sim(fpb.BaseSim):
         return ages, sexes
 
 
-    def make_people(self, n=1, ages=None, sexes=None, methods=None):
+    def make_people(self, n=1, age=None, sex=None, method=None):
         ''' Set up each person '''
-        _ages, _sexes = self.get_age_sex(n)
-        if ages    is None: ages  = _ages
-        if sexes   is None: sexes = _sexes
-        if methods is None: methods = np.zeros(n)
-        barriers = fpu.n_multinomial(self.pars['barriers'][:], n)
-        data = dict(age=ages, sex=sexes, method=methods, barrier=barriers)
+        _age, _sex = self.get_age_sex(n)
+        if age    is None: age    = _age
+        if sex    is None: sex    = _sex
+        if method is None: method = np.zeros(n)
+        barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
+        data = dict(age=age, sex=sex, method=method, barrier=barrier)
         return data
 
 
@@ -595,62 +598,39 @@ class Sim(fpb.BaseSim):
             verbose = self.pars['verbose']
         self.update_pars()
         self.init_results()
-        self.init_people() # Actually create the children
+        self.init_people() # Actually create the people
 
         # Main simulation loop
 
         for i in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
-            t = self.ind2year(i)  # t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
-            y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
+            self.t = self.ind2year(i)  # t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
+            self.y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
             if verbose:
-                if not (t % int(1.0/verbose)):
-                    string = f'  Running {y:0.1f} of {self.pars["end_year"]}...'
+                if not (self.t % int(1.0/verbose)):
+                    string = f'  Running {self.y:0.1f} of {self.pars["end_year"]}...'
                     sc.progressbar(i+1, self.npts, label=string, length=20, newline=True)
 
             # Update method matrices for year of sim to trend over years
-            self.update_methods_matrices(y)
+            self.update_methods_matrices()
 
             # Update mortality probabilities for year of sim
-            self.update_mortality_probs(y)
+            self.update_mortality_probs()
 
-            # Update each person
-            deaths = 0
-            births = 0
-            maternal_deaths = 0
-            infant_deaths = 0
-            on_methods = 0
-            no_methods = 0
-            pp0to5 = 0
-            pp6to11 = 0
-            pp12to23 = 0
-            total_women_fecund = 0
-
-            for person in self.people.values():
-                step_results = person.update(t, y) # Update and count new cases
-                deaths          += step_results['died']
-                births          += step_results['gave_birth']
-                maternal_deaths += step_results['maternal_death']
-                infant_deaths   += step_results['infant_death']
-                on_methods      += step_results['on_method']
-                no_methods      += step_results['no_method']
-                pp0to5          += step_results['pp0to5']
-                pp6to11         += step_results['pp6to11']
-                pp12to23        += step_results['pp12to23']
-
-                if person.sex == 0 and 15 <= person.age < self.pars['age_limit_fecundity']:
-                    total_women_fecund += 1
+            # Update the people
+            step_results = self.people.update()
+            r = sc.objdict(step_results)
 
             if i in self.interventions:
                 self.interventions[i](self)
 
-            new_people = births - infant_deaths # Do not add agents who died before age 1 to population
+            new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
 
             # Births
+            data = self.make_people(n=new_people, age=np.zeros(new_people))
+            people = People(pars=self.pars, )
             for birth in range(new_people):
-                person = self.make_person(age=0) # Save them to the dictionary
+                person = self.make_person() # Save them to the dictionary
                 self.people[person.uid] = person
-
-            self.n = len(self.people) - deaths # Calculate new population size
 
             percent0to5 = (pp0to5 / total_women_fecund) * 100
             percent6to11 = (pp6to11 / total_women_fecund) * 100

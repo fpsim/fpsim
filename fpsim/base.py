@@ -120,7 +120,6 @@ class BasePeople(sc.prettyobj):
             return []
         return
 
-
     @property
     def is_female(self):
         return self.sex == 0
@@ -138,6 +137,10 @@ class BasePeople(sc.prettyobj):
 
     def male_inds(self):
         return sc.findinds(self.is_male)
+
+    @property
+    def n(self):
+        return self.alive.sum()
 
 
 
