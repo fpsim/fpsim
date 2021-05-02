@@ -380,25 +380,30 @@ class People(fpb.ParsObj):
     def check_delivery(self):
         '''Decide if pregnant woman gives birth and explore maternal mortality and child mortality'''
 
-        if self.gestation >= self.preg_dur:  # Needs to be separate since this won't exist otherwise
-            self.pregnant = False
-            self.gestation = 0  # Reset gestation counter
-            twins = utils.bt(self.pars['twins_prob'])
-            if twins:
-                self.step_results['gave_birth'] = 2
-                self.parity += 2
-                self.dobs.append(self.age) # Used for birth spacing only, only add one baby to dob
-            else:
-                self.step_results['gave_birth'] = 1
-                self.parity += 1
-                self.dobs.append(self.age)
-            self.lactating = True  # Start lactating at time of birth
-            self.postpartum = True # Start postpartum state at time of birth
-            self.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
-            self.postpartum_dur = 0
+        # Update states
+        deliv_inds = sc.findinds(self.gestation >= self.preg_dur)
+        self.pregnant[deliv_inds] = False
+        self.gestation[deliv_inds] = 0  # Reset gestation counter
+        self.lactating[deliv_inds] = True  # Start lactating at time of birth
+        self.postpartum[deliv_inds] = True # Start postpartum state at time of birth
+        self.breastfeed_dur[deliv_inds] = 0  # Start at 0, will update before leaving timestep in separate function
+        self.postpartum_dur[deliv_inds] = 0
+        for i in deliv_inds: # Handle DOBs
+            self.dobs[i].append(self.age)  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
 
-            self.maternal_mortality()
-            self.infant_mortality()
+        # Handle twins
+        twin_inds = deliv_inds[fpu.n_binomial(self.pars['twins_prob'], len(deliv_inds))]
+        self.step_results['gave_birth'] += 2*len(twin_inds)
+        self.parity[twin_inds] += 2
+
+        # Handle singles
+        single_inds = np.setdiff1d(deliv_inds, twin_inds)
+        self.step_results['gave_birth'] += len(single_inds)
+        self.parity[single_inds] += 1
+
+        # Check mortality
+        self.maternal_mortality(inds=deliv_inds)
+        self.infant_mortality(inds=deliv_inds)
 
         return
 
