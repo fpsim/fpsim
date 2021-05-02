@@ -234,7 +234,6 @@ class People(fpb.BasePeople):
         # Use a single binomial trial to check for conception successes this month
         pregnant = fpu.binomial_arr(preg_probs)
         preg_inds = inds[sc.findinds(pregnant)]
-        print(f'debug: {len(preg_inds)} pregnant out of {len(preg_probs)} options with prob {preg_probs.mean():0.3f}')
 
         # Check for abortion
         abortion = fpu.n_binomial(self.pars['abortion_prob'], len(preg_inds))
