@@ -63,7 +63,7 @@ class People(fpb.BasePeople):
         self.postpartum      = arr(n, d.postpartum)
         self.postpartum_dur  = arr(n, d.postpartum_dur) # Tracks # months postpartum
         self.lam             = arr(n, d.lam) # Separately tracks lactational amenorrhea, can be using both LAM and another method
-        self.dobs            = arr(n, [-1]*self.parity) # Dates of births
+        self.dobs            = arr(n, []) # Dates of births -- list of lists
         self.breastfeed_dur  = arr(n, d.breastfeed_dur)
         self.breastfeed_dur_total = arr(n, d.breastfeed_dur_total)
 
