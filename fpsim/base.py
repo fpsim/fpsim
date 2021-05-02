@@ -91,13 +91,9 @@ class BasePeople(sc.prettyobj):
             npval = newpeople[key]
             p2val = people2[key]
             if isinstance(npval, np.ndarray):
-                # nplen = len(np.val)
-                # p2len = len(p2val)
-                # new_size = nplen + p2len
-                # newpeople[key].resize(new_size, refcheck=False)
                 newpeople[key] = np.concatenate([npval, p2val], axis=0)
             elif isinstance(npval, list):
-                newpeople[key] = npval + p2val
+                newpeople[key] += p2val
             else:
                 errormsg = f'Not sure what to do with object of type {type(npval)}'
                 raise TypeError(errormsg)
