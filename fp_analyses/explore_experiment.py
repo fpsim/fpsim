@@ -1,5 +1,5 @@
 '''
-Explorations of the calibration object
+Explorations of the Experiment object (renamed from calibration)
 '''
 
 import sciris as sc
@@ -8,20 +8,20 @@ import pandas as pd
 pd.set_option('display.max_columns', 20) # Show full dataframe
 pd.set_option('display.width', 999) # Show full dataframe
 
-print('Loading saved calibration...')
-calib = sc.loadobj('senegal_calibration.obj')
+print('Loading saved experiment...')
+exp = sc.loadobj('senegal_experiment.obj')
 
 print('Computing comparison...')
-df = calib.compare()
+df = exp.compare()
 print(df)
 
 print('Plotting...')
-calib.plot()
+exp.plot()
 
 print('Fitting...')
-calib.compute_fit()
-calib.fit.plot()
+exp.compute_fit()
+exp.fit.plot()
 
-print('Mismatch: ', calib.fit.mismatch)
+print('Mismatch: ', exp.fit.mismatch)
 
 print('Done.')

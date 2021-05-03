@@ -11,7 +11,7 @@ import sciris as sc
 from . import model as mo
 
 
-__all__ = ['Calibration', 'Fit', 'compute_gof', 'datapath', 'diff_summaries']
+__all__ = ['Experiment', 'Fit', 'compute_gof', 'datapath', 'diff_summaries']
 
 # ...more settings
 min_age = 15
@@ -56,7 +56,7 @@ default_flags = sc.objdict(
 
 
 
-class Calibration(sc.prettyobj):
+class Experiment(sc.prettyobj):
     '''
     Class for running calibration to data
     '''
