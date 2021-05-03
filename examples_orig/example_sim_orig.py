@@ -3,15 +3,15 @@ Simple example usage for FPsim
 '''
 
 import sciris as sc
-import fpsim as fp
-import fp_analyses.senegal_parameters as sp
+import fpsim_orig as fp
+import fp_analyses_orig.senegal_parameters as sp
 
 # Set options
 do_plot = True
 pars = sp.make_pars()
 pars['n'] = 500 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
-pars['exposure_correction'] = 1.0 # Overall scale factor on probability of becoming pregnant
+# pars['exposure_correction'] = 1.0 # Overall scale factor on probability of becoming pregnant -- not implemented for original version
 
 sc.tic()
 sim = fp.Sim(pars=pars)
