@@ -31,11 +31,12 @@ setup(
     include_package_data=True,
     install_requires=[
         'numpy',
+        'numba',
         'scipy',
-        'matplotlib',
         'pandas',
         'sciris>=1.0',
-        "numba",
-        "seaborn>=0.9",
+        'matplotlib',
+        'seaborn>=0.9',
+        'optuna',
     ],
 )

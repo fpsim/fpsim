@@ -1,4 +1,6 @@
-# Simple example usage for FPsim
+'''
+Simple example usage for FPsim
+'''
 
 import sciris as sc
 import fpsim as fp
@@ -9,8 +11,9 @@ dosave = False
 
 sc.tic()
 pars = sp.make_pars()
-pars['n'] = 10000 # Only do a partial run
-pars['end_year'] = 1970
+pars['n'] = 500 # Only do a partial run
+pars['end_year'] = 2020
+pars['exposure_correction'] = 2
 sim = fp.Sim(pars=pars)
 sim.run()
 if doplot:
@@ -18,4 +21,3 @@ if doplot:
 
 sc.toc()
 print('Done.')
-

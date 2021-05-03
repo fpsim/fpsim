@@ -7,7 +7,7 @@ import pylab as pl
 import pandas as pd
 import sciris as sc
 import seaborn as sns
-import fpsim as lfp
+import fpsim as fp
 import senegal_parameters as sp
 
 # Housekeeping
@@ -52,7 +52,7 @@ tfr_file = datapath('senegal-tfr.csv')
 
 if do_run:
     pars = sp.make_pars()
-    sim = lfp.Sim(pars=pars)
+    sim = fp.Sim(pars=pars)
 
     def add_long_acting(sim):
         print('Added long-acting intervention')
@@ -86,7 +86,7 @@ if do_run:
     # sim = lfp.multi_run(sim, n=1)
     sim.run()
     sim.plot()
-    people = list(sim.people.values()) # Pull out people
+    # people = list(sim.people.values()) # Pull out people
 
     # Ensure the figures folder exists
     if do_save:
@@ -134,7 +134,7 @@ if do_run:
     if do_print_demographics:
 
         # Load model results
-        res = sim.store_results()
+        res = sim.results
 
         total_deaths = pl.sum(res['deaths'][-12:]) + \
                        pl.sum(res['infant_deaths'][-12:]) + \
@@ -228,10 +228,11 @@ if do_run:
         plotstyle = {'marker':'o', 'lw':3}
 
         counts = pl.zeros(len(bins))
-        for person in people:
-            if person.alive:
-                bininds = sc.findinds(bins<=person.age) # Could be refactored
-                if len(bininds) and person.age < max_age:
+        ppl = sim.people
+        for i in range(len(ppl)):
+            if ppl.alive[i]:
+                bininds = sc.findinds(bins<=ppl.age[i]) # Could be refactored
+                if len(bininds) and ppl.age[i] < max_age:
                     counts[bininds[-1]] += 1
         counts = counts/counts.sum()
 
@@ -287,10 +288,11 @@ if do_run:
 
         # Extract from model
         sky_arr['Model'] = pl.zeros((len(age_bins), len(parity_bins)))
-        for person in people:
-            if person.alive and not person.sex and person.age>=min_age and person.age<max_age:
-                age_bin = sc.findinds(age_bins<=person.age)[-1]
-                parity_bin = sc.findinds(parity_bins<=person.parity)[-1]
+        ppl = sim.people
+        for i in range(len(ppl)):
+            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i]>=min_age and ppl.age[i]<max_age:
+                age_bin = sc.findinds(age_bins<=ppl.age[i])[-1]
+                parity_bin = sc.findinds(parity_bins<=ppl.parity[i])[-1]
                 sky_arr['Model'][age_bin, parity_bin] += 1
 
         # Normalize
@@ -388,9 +390,10 @@ if do_run:
         data_method_counts[:] /= data_method_counts[:].sum()
 
         # From model
-        for person in people:
-            if person.alive and not person.sex and person.age>=min_age and person.age<max_age:
-                model_method_counts[person.method] += 1
+        ppl = sim.people
+        for i in range(len(ppl)):
+            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i]>=min_age and ppl.age[i]<max_age:
+                model_method_counts[ppl.method[i]] += 1
         model_method_counts[:] /= model_method_counts[:].sum()
 
         # Make labels
@@ -488,12 +491,13 @@ if do_run:
         model_age_first = []
         model_spacing = []
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
-        for person in people:
-            if len(person.dobs):
-                model_age_first.append(person.dobs[0])
-            if len(person.dobs)>1:
-                for d in range(len(person.dobs)-1):
-                    space = person.dobs[d+1] - person.dobs[d]
+        ppl = sim.people
+        for i in range(len(ppl)):
+            if len(ppl.dobs[i]):
+                model_age_first.append(ppl.dobs[i][0])
+            if len(ppl.dobs[i])>1:
+                for d in range(len(ppl.dobs[i])-1):
+                    space = ppl.dobs[i][d+1] - ppl.dobs[i][d]
                     ind = sc.findinds(space>spacing_bins[:])[-1]
                     model_spacing_counts[ind] += 1
 
