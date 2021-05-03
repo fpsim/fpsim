@@ -9,6 +9,14 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.6.1 (2021-05-02)
+--------------------------
+- Renamed ``fp.Calibration`` to ``fp.Experiment``, and added a new ``fp.Calibration`` class, using Optuna.
+- This allows the user to do e.g. ``calib = fp.Calibration(pars); calib.calibrate(calib_pars)``
+- Calibrating a single parameter takes about 20 seconds for a single parameter and a small population size (500 people). Realistic calibrations should take roughly 10 - 60 minutes.
+- *GitHub info*: PR `93 <https://github.com/amath-idm/fp_analyses/pull/93>`__
+
+
 Version 0.6.0 (2021-05-01)
 --------------------------
 - Refactored the model to use an array-based implementation, instead of a loop over individual people.
