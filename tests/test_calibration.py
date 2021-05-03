@@ -14,26 +14,26 @@ def make_calib(n=500):
     '''
     pars = fa.senegal_parameters.make_pars()
     pars['n'] = n
+    pars['verbose'] = 0.1
     calib = fp.Calibration(pars=pars)
 
     return calib
 
 
-def test_calibration(max_iters=10, do_plot=False):
+def test_calibration(n_trials=5, do_plot=False):
     ''' Compare the current default sim against the saved baseline '''
     sc.heading('Testing calibration...')
 
     calib_pars = dict(
-        exposure_correction = [0.5, 2.0],
+        exposure_correction = [1.0, 0.5, 8.0],
     )
 
     # Calculate calibration
     calib = make_calib()
-    calib.calibrate(calib_pars=calib_pars, max_iters=max_iters)
-    print(calib.results)
+    calib.calibrate(calib_pars=calib_pars, n_trials=n_trials)
+    before,after = calib.summarize()
 
-    if do_plot:
-        raise NotImplementedError
+    assert before > after
 
     return calib
 

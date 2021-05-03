@@ -8,10 +8,11 @@ import numpy as np
 import pylab as pl
 import pandas as pd
 import sciris as sc
+import optuna as op
 from . import model as mo
 
 
-__all__ = ['Experiment', 'Fit', 'compute_gof', 'datapath', 'diff_summaries']
+__all__ = ['Experiment', 'Fit', 'Calibration', 'compute_gof', 'datapath', 'diff_summaries']
 
 # ...more settings
 min_age = 15
@@ -61,13 +62,14 @@ class Experiment(sc.prettyobj):
     Class for running calibration to data
     '''
 
-    def __init__(self, pars=None, flags=None):
+    def __init__(self, pars=None, flags=None, label=None):
         self.flags = flags if flags else sc.dcp(default_flags) # Set flags for what gets run
         self.pars = pars
         self.model_to_calib = sc.objdict()
         self.dhs_data = sc.objdict()
         self.method_keys = None
         self.initialized = False
+        self.label = label
         return
 
     def init_dhs_data(self):
@@ -887,8 +889,11 @@ class Fit(sc.prettyobj):
             self.pair[key].sim  = np.zeros(n_inds)
             self.pair[key].data = np.zeros(n_inds)
             for i in range(n_inds):
-                self.pair[key].sim[i]  = self.sim_results[key][sim_inds[i]]
-                self.pair[key].data[i] = self.data[key][data_inds[i]]
+                try:
+                    self.pair[key].sim[i]  = self.sim_results[key][sim_inds[i]]
+                    self.pair[key].data[i] = self.data[key][data_inds[i]]
+                except:
+                    print('WARNING: exception at', key, i, len(sim_inds), len(self.pair[key].sim),  len(self.sim_results[key]))
 
         # Process custom inputs
         self.custom_keys = list(self.custom.keys())
@@ -1250,3 +1255,119 @@ class Calibration(sc.prettyobj):
     '''
     A class to handle calibration of FPsim objects.
     '''
+
+    def __init__(self, pars, calib_pars=None, **kwargs):
+        self.pars = pars
+        self.calib_pars = calib_pars
+        self.results = None
+        self.init_optuna(**kwargs)
+        return
+
+
+    def init_optuna(self, **kwargs):
+        ''' Create a (mutable) dictionary for global settings '''
+        g = sc.objdict() # g for "global" -- probably should rename
+        g.name      = kwargs.pop('name', 'fpsim')
+        g.db_name   = kwargs.pop('db_name', f'{g.name}.db')
+        g.storage   = kwargs.pop('storage', f'sqlite:///{g.db_name}')
+        g.n_workers = kwargs.pop('n_workers', 4) # Define how many workers to run in parallel
+        g.n_trials  = kwargs.pop('n_trials', 100) # Define the number of trials, i.e. sim runs, per worker
+        self.g = g
+        if len(kwargs):
+            errormsg = f'Did not recognize keys {sc.strjoin(kwargs.keys())}'
+            raise ValueError(errormsg)
+        return
+
+
+    def run_exp(self, pars, return_exp=False, **kwargs):
+        ''' Create and run an experiment '''
+        pars = sc.mergedicts(sc.dcp(self.pars), pars)
+        exp = Experiment(pars=pars, **kwargs)
+        exp.run()
+        if return_exp:
+            return exp
+        else:
+            return exp.fit.mismatch
+
+
+    def run_trial(self, trial):
+        ''' Define the objective for Optuna '''
+        pars = {}
+        for key, (best,low,high) in self.calib_pars.items():
+            pars[key] = trial.suggest_uniform(key, low, high) # Sample from beta values within this range
+        mismatch = self.run_exp(pars)
+        return mismatch
+
+
+    def worker(self):
+        ''' Run a single worker '''
+        study = op.load_study(storage=self.g.storage, study_name=self.g.name)
+        output = study.optimize(self.run_trial, n_trials=self.g.n_trials)
+        return output
+
+
+    def run_workers(self):
+        ''' Run multiple workers in parallel '''
+        output = sc.parallelize(self.worker, self.g.n_workers)
+        return output
+
+
+    def make_study(self):
+        ''' Make a study, deleting one if it already exists '''
+        if os.path.exists(self.g.db_name):
+            os.remove(self.g.db_name)
+            print(f'Removed existing calibration {self.g.db_name}')
+        output = op.create_study(storage=self.g.storage, study_name=self.g.name)
+        return output
+
+
+    def calibrate(self, calib_pars=None, **kwargs):
+        ''' Actually perform calibration '''
+
+        # Load and validate calibration parameters
+        if calib_pars is not None:
+            self.calib_pars = calib_pars
+        if self.calib_pars is None:
+            errormsg = 'You must supply calibration parameters either when creating the calibration object or when calling calibrate().'
+            raise ValueError(errormsg)
+
+        # Update optuna settings
+        to_pop = []
+        for k,v in kwargs.items():
+            if k in self.g:
+                self.g[k] = v
+                to_pop.append(k)
+        for k in to_pop:
+            kwargs.pop(k)
+
+        # Run the optimization
+        t0 = sc.tic()
+        self.make_study()
+        self.run_workers()
+        study = op.load_study(storage=self.g.storage, study_name=self.g.name)
+        self.best_pars = study.best_params
+        T = sc.toc(t0, output=True)
+        print(f'Output: {self.best_pars}, time: {T}')
+
+        # Plot the results
+        self.initial_pars = {k:v[0] for k,v in self.calib_pars.items()}
+        self.before = self.run_exp(pars=self.initial_pars, label='Before calibration', return_exp=True)
+        self.after = self.run_exp(pars=self.best_pars, label='After calibration', return_exp=True)
+        return
+
+
+    def summarize(self):
+        try:
+            before = self.before.fit.mismatch
+            after = self.after.fit.mismatch
+            print('Initial parameter values:')
+            print(self.initial_pars)
+            print('Best parameter values:')
+            print(self.best_pars)
+            print(f'Mismatch before calibration: {before:n}')
+            print(f'Mismatch after calibration:  {after:n}')
+            print(f'Percent improvement:         {(1-(before-after)/before)*100:0.1f}%')
+            return before, after
+        except Exception as E:
+            errormsg = 'Could not get summary, have you run the calibration?'
+            raise RuntimeError(errormsg) from E
