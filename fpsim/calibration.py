@@ -91,9 +91,14 @@ class Experiment(sc.prettyobj):
         self.dhs_data['pregnancy_parity'] = sc.load(pregnancy_parity_file)
 
         # Extract population size over time
+        if self.pars:
+            n = self.pars['n']
+        else:
+            n = 5000 # Use default if not available
+            print(f'Warning: parameters not defined, using default of n={n}')
         pop_size = pd.read_csv(popsize_file, header=None)  # From World Bank
         self.dhs_data['pop_years'] = pop_size.iloc[0,:].to_numpy()
-        self.dhs_data['pop_size'] = pop_size.iloc[1,:].to_numpy() / (pop_size.iloc[1,0] / self.pars['n'])  # Corrected for # of agents, needs manual adjustment for # agents
+        self.dhs_data['pop_size'] = pop_size.iloc[1,:].to_numpy() / (pop_size.iloc[1,0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
 
         # Extract population growth rate
         data_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
