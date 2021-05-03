@@ -28,12 +28,12 @@ def run_script(name):
     return
 
 
-@pytest.mark.skip('Too long to run as part of continuous integration')
+# @pytest.mark.skip('Too long to run as part of continuous integration')
 def test_run_senegal():
     run_script("run_senegal")
     return
 
-@pytest.mark.skip('Too long to run as part of continuous integration')
+
 def test_run_experiment():
     run_script("run_experiment")
     return
