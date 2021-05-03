@@ -40,8 +40,8 @@ do_save = True # Whether to save the completed calibration
 
 
 pars = sp.make_pars()
-exp = fp.Experiment(flags=flags)
-exp.run(pars=pars)
+exp = fp.Experiment(pars=pars, flags=flags)
+exp.run()
 
 if do_save:
     sc.saveobj('senegal_experiment.obj', exp)
