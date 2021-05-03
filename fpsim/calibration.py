@@ -8,9 +8,10 @@ import numpy as np
 import pylab as pl
 import pandas as pd
 import sciris as sc
-from .model import Sim
+from . import model as mo
 
 
+__all__ = ['Calibration', 'Fit', 'compute_gof', 'datapath', 'diff_summaries']
 
 # ...more settings
 min_age = 15
@@ -25,15 +26,32 @@ def datapath(path):
     ''' Return the path of the parent folder '''
     return sc.thisdir(__file__, os.pardir, 'dropbox', path)
 
-pregnancy_parity_file = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file
+pregnancy_parity_file = datapath('SNIR80FL.obj')  # DHS Senegal 2018 file -- preprocessed
+pregnancy_parity_file_raw = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file -- raw
 pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
 skyscrapers_file = datapath('Skyscrapers-All-DHS.csv')
 methods_file = datapath('Method_v312.csv')
-spacing_file = datapath('BirthSpacing.csv')
+spacing_file = datapath('BirthSpacing.obj')
+spacing_file_raw = datapath('BirthSpacing.csv')
 popsize_file = datapath('senegal-popsize.csv')
 barriers_file = datapath('DHSIndividualBarriers.csv')
 tfr_file = datapath('senegal-tfr.csv')
 mcpr_file = datapath('mcpr_senegal.csv')
+
+default_flags = sc.objdict(
+    popsize = 1,  # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
+    skyscrapers = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
+    first_birth = 1,  # Age at first birth mean with standard deviation; 'age_first_birth'
+    birth_space = 1,  # Birth spacing both in bins and mean with standard deviation; 'spacing'
+    age_pregnancy = 1, # Summary stats (mean, std, 25, 50, 75%) ages of those currently pregnant; 'age_pregnant_stats',
+    mcpr = 1,  # Modern contraceptive prevalence; 'mcpr'
+    methods = 1, # Overall percentage of method use and method use among users; 'methods'
+    mmr = 1,  # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'
+    infant_m = 1,  # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
+    cdr = 1,  # Crude death rate at end of sim in model vs data; 'crude_death_rate'
+    cbr = 1,  # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
+    tfr = 0,  # Not using as calibration target given different formulas in data vs model
+)
 
 
 
@@ -43,12 +61,13 @@ class Calibration(sc.prettyobj):
     Class for running calibration to data
     '''
 
-    def __init__(self, flags):
-        self.flags = flags # Set flags for what gets run
+    def __init__(self, pars=None, flags=None):
+        self.flags = flags if flags else sc.dcp(default_flags) # Set flags for what gets run
+        self.pars = pars
         self.model_to_calib = sc.objdict()
         self.dhs_data = sc.objdict()
         self.method_keys = None
-
+        self.initialized = False
         return
 
     def init_dhs_data(self):
@@ -67,12 +86,7 @@ class Calibration(sc.prettyobj):
 
     def extract_dhs_data(self):
 
-        # Extract ages, currently pregnant, and parity in 2018 in dataframe
-        dhs_pregnancy_parity = pd.read_stata(pregnancy_parity_file, convert_categoricals=False)
-        dhs_pregnancy_parity = dhs_pregnancy_parity[['v012', 'v213', 'v218']]
-        dhs_pregnancy_parity = dhs_pregnancy_parity.rename(columns={'v012': 'Age', 'v213': 'Pregnant',
-                                                                    'v218': 'Parity'})  # Parity means # of living children in DHS
-        self.dhs_data['pregnancy_parity'] = dhs_pregnancy_parity
+        self.dhs_data['pregnancy_parity'] = sc.load(pregnancy_parity_file)
 
         # Extract population size over time
         pop_size = pd.read_csv(popsize_file, header=None)  # From World Bank
@@ -82,8 +96,6 @@ class Calibration(sc.prettyobj):
         # Extract population growth rate
         data_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
         self.dhs_data['pop_growth_rate'] = data_growth_rate
-
-
 
         # Extract mcpr over time
         mcpr = pd.read_csv(mcpr_file, header = None)
@@ -102,45 +114,52 @@ class Calibration(sc.prettyobj):
 
         return growth_rate
 
-    def run_model(self, pars):
 
+    def initialize(self):
         self.init_dhs_data()
         self.extract_dhs_data()
+        self.initialized = True
+        return
 
-        sim = Sim(pars=pars)
 
-        sim.run()
-        self.people = list(sim.people.values())  # Extract people objects from sim
-
-        self.model_results = sim.store_results()  # Stores dictionary of results
+    def post_process_sim(self):
+        self.people = list(self.sim.people.values())  # Extract people objects from sim
+        self.model_results = self.sim.store_results()  # Stores dictionary of results
 
         # Store dataframe of agent's age, pregnancy status, and parity
-        model_pregnancy_parity = sim.store_postpartum()
+        model_pregnancy_parity = self.sim.store_postpartum()
         model_pregnancy_parity = model_pregnancy_parity.drop(['PP0to5', 'PP6to11', 'PP12to23', 'NonPP'], axis=1)
         self.model_to_calib['pregnancy_parity'] = model_pregnancy_parity
+        self.method_keys = self.sim.pars['methods']['names']
+        return
 
-        self.method_keys = sim.pars['methods']['names']
+
+    def run_model(self, pars=None):
+        ''' Create the sim and run the model '''
+
+        if not self.initialized:
+            self.initialize()
+
+        if pars is None:
+            pars = self.pars
+
+        self.sim = mo.Sim(pars=pars)
+        self.sim.run()
+        self.post_process_sim()
 
         return
+
 
     def extract_model(self):
-
-        if self.flags.popsize:
-            self.model_pop_size()
-        if self.flags.mcpr:
-            self.model_mcpr()
-        if self.flags.mmr:
-            self.model_mmr()
-        if self.flags.infant_m:
-            self.model_infant_mortality_rate()
-        if self.flags.cdr:
-            self.model_crude_death_rate()
-        if self.flags.cbr:
-            self.model_crude_birth_rate()
-        if self.flags.tfr:
-            self.model_data_tfr()
-
+        if self.flags.popsize:  self.model_pop_size()
+        if self.flags.mcpr:     self.model_mcpr()
+        if self.flags.mmr:      self.model_mmr()
+        if self.flags.infant_m: self.model_infant_mortality_rate()
+        if self.flags.cdr:      self.model_crude_death_rate()
+        if self.flags.cbr:      self.model_crude_birth_rate()
+        if self.flags.tfr:      self.model_data_tfr()
         return
+
 
     def model_pop_size(self):
 
@@ -151,6 +170,7 @@ class Calibration(sc.prettyobj):
         self.model_to_calib['pop_growth_rate'] = model_growth_rate
 
         return
+
 
     def model_mcpr(self):
 
@@ -266,23 +286,17 @@ class Calibration(sc.prettyobj):
         spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
 
         # From data
-        data = pd.read_csv(spacing_file)
-
-        right_year = data['SurveyYear'] == '2017'
-        not_first = data['Birth Order'] != 0
-        is_first = data['Birth Order'] == 0
-        filtered = data[(right_year) & (not_first)]
-        spacing = filtered['Birth Spacing'].to_numpy()
-
-        first_filtered = data[(right_year) & (is_first)]
-        first = first_filtered['Birth Spacing'].to_numpy()
-
+        data = sc.loadobj(spacing_file)
+        spacing, first = data['spacing'], data['first']
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
 
         # Spacing bins from data
-        for s in range(len(spacing)):
-            i = sc.findinds(spacing[s] > spacing_bins[:])[-1]
-            data_spacing_counts[i] += 1
+        spacing_bins_array = sc.cat(spacing_bins[:], np.inf)
+        for i in range(len(spacing_bins_array)-1):
+            lower = spacing_bins_array[i]
+            upper = spacing_bins_array[i+1]
+            matches = np.intersect1d(sc.findinds(spacing >= lower), sc.findinds(spacing < upper))
+            data_spacing_counts[i] += len(matches)
 
         data_spacing_counts[:] /= data_spacing_counts[:].sum()
         data_spacing_counts[:] *= 100
@@ -437,22 +451,17 @@ class Calibration(sc.prettyobj):
         pass
 
 
-    def run(self, pars, *args, **kwargs):
-
-        self.run_model(pars)
+    def post_process_results(self, keep_people=False, compute_fit=False, **kwargs):
+        ''' Compare the model and the data '''
         self.extract_model()
-        self.extract_dhs_data()
-        if self.flags.skyscrapers:
-            self.extract_skyscrapers()
-        if self.flags.birth_space:
-            self.extract_birth_spacing()
-        if self.flags.methods:
-            self.extract_methods()
-        if self.flags.age_pregnancy:
-            self.extract_age_pregnancy()
+        if self.flags.skyscrapers:   self.extract_skyscrapers()
+        if self.flags.birth_space:   self.extract_birth_spacing()
+        if self.flags.methods:       self.extract_methods()
+        if self.flags.age_pregnancy: self.extract_age_pregnancy()
 
         # Remove people, they're large!
-        del self.people
+        if not keep_people:
+            del self.people
 
         # Remove raw dataframes of pregnancy / parity data from dictionary
         del self.dhs_data['pregnancy_parity']
@@ -462,8 +471,16 @@ class Calibration(sc.prettyobj):
         self.df = self.compare()
 
         # Compute fit
-        # self.compute_fit(*args, **kwargs)
+        if compute_fit:
+            self.compute_fit(**kwargs)
 
+        return
+
+
+    def run(self, pars=None, keep_people=False, compute_fit=False, **kwargs):
+        ''' Run the model and post-process the results '''
+        self.run_model(pars=pars)
+        self.post_process_results(keep_people=keep_people, compute_fit=compute_fit, **kwargs)
         return
 
 
@@ -493,8 +510,73 @@ class Calibration(sc.prettyobj):
 
             comparison.append(cmp)
 
-        df = pd.DataFrame.from_dict(comparison)
-        return df
+        self.comparison_df = pd.DataFrame.from_dict(comparison)
+        return self.comparison_df
+
+
+    def summarize(self, as_df=False):
+        '''
+        Convert results to a one-number-per-key summary format. Returns summary,
+        also saves to self.summary.
+
+        Args:
+            as_df (bool): if True, return a dataframe instead of a dict.
+        '''
+        summary = sc.objdict()
+        summary.model = sc.objdict()
+        summary.data = sc.objdict()
+
+        data = self.dhs_data
+        model = self.model_to_calib
+        keys = model.keys()
+
+        # Compare the two
+        for key in keys:
+            dv = data[key] # dv = "Data value"
+            mv = model[key] # mv = "Model value"
+            if sc.isnumber(mv) and sc.isnumber(dv):
+                summary.data[key] = dv
+                summary.model[key] = mv
+            else:
+                summary.data[key+'_mean'] = np.mean(dv)
+                summary.model[key+'_mean'] = np.mean(mv)
+
+        self.summary = summary
+        self.summary_df = pd.DataFrame(summary)
+
+        if as_df:
+            return self.summary.df
+        else:
+            return self.summary
+
+
+    def to_json(self, filename=None, tostring=False, indent=2, verbose=False, **kwargs):
+        '''
+        Export results as JSON.
+
+        Args:
+            filename (str): if None, return string; else, write to file
+            tostring (bool): if not writing to file, whether to write to string (alternative is sanitized dictionary)
+            indent (int): if writing to file, how many indents to use per nested level
+            verbose (bool): detail to print
+            kwargs (dict): passed to savejson()
+
+        Returns:
+            A unicode string containing a JSON representation of the results,
+            or writes the JSON file to disk
+
+        **Examples**::
+
+            json = calib.to_json()
+            calib.to_json('results.json')
+        '''
+        d = self.summarize()
+        if filename is None:
+            output = sc.jsonify(d, tostring=tostring, indent=indent, verbose=verbose, **kwargs)
+        else:
+            output = sc.savejson(filename=filename, obj=d, indent=indent, **kwargs)
+
+        return output
 
 
     def plot(self, axes_args=None, do_maximize=True, do_show=False, do_save = True):
@@ -1036,3 +1118,122 @@ def compute_gof(actual, predicted, normalize=True, use_frac=False, use_squared=F
             gofs = np.median(gofs)
 
         return gofs
+
+
+def diff_summaries(sim1, sim2, skip_key_diffs=False, output=False, die=False):
+    '''
+    Compute the difference of the summaries of two FPsim calibration objects, and print any
+    values which differ.
+
+    Args:
+        sim1 (sim/dict): the calib.summary dictionary, representing a single sim
+        sim2 (sim/dict): ditto
+        skip_key_diffs (bool): whether to skip keys that don't match between sims
+        output (bool): whether to return the output as a string (otherwise print)
+        die (bool): whether to raise an exception if the sims don't match
+        require_run (bool): require that the simulations have been run
+
+    **Example**::
+
+        c1 = fp.Calibration()
+        c2 = fp.Calibration()
+        c1.run()
+        c2.run()
+        fp.diff_summaries(c1.summarize(), c2.summarize())
+    '''
+
+    for sim in [sim1, sim2]:
+        if not isinstance(sim, dict): # pragma: no cover
+            errormsg = f'Cannot compare object of type {type(sim)}, must be a FPsim calib.summary dict'
+            raise TypeError(errormsg)
+
+    # Compare keys
+    keymatchmsg = ''
+    sim1_keys = set(sim1.keys())
+    sim2_keys = set(sim2.keys())
+    if sim1_keys != sim2_keys and not skip_key_diffs: # pragma: no cover
+        keymatchmsg = "Keys don't match!\n"
+        missing = list(sim1_keys - sim2_keys)
+        extra   = list(sim2_keys - sim1_keys)
+        if missing:
+            keymatchmsg += f'  Missing sim1 keys: {missing}\n'
+        if extra:
+            keymatchmsg += f'  Extra sim2 keys: {extra}\n'
+
+    # Compare values
+    valmatchmsg = ''
+    mismatches = {}
+    for key in sim2.keys(): # To ensure order
+        if key in sim1_keys: # If a key is missing, don't count it as a mismatch
+            sim1_val = sim1[key] if key in sim1 else 'not present'
+            sim2_val = sim2[key] if key in sim2 else 'not present'
+            both_nan = sc.isnumber(sim1_val, isnan=True) and sc.isnumber(sim2_val, isnan=True)
+            if sim1_val != sim2_val and not both_nan:
+                mismatches[key] = {'sim1': sim1_val, 'sim2': sim2_val}
+
+    if len(mismatches):
+        valmatchmsg = '\nThe following values differ between the two simulations:\n'
+        df = pd.DataFrame.from_dict(mismatches).transpose()
+        diff   = []
+        ratio  = []
+        change = []
+        small_change = 1e-3 # Define a small change, e.g. a rounding error
+        for mdict in mismatches.values():
+            old = mdict['sim1']
+            new = mdict['sim2']
+            numeric = sc.isnumber(sim1_val) and sc.isnumber(sim2_val)
+            if numeric and old>0:
+                this_diff  = new - old
+                this_ratio = new/old
+                abs_ratio  = max(this_ratio, 1.0/this_ratio)
+
+                # Set the character to use
+                if abs_ratio<small_change:
+                    change_char = '≈'
+                elif new > old:
+                    change_char = '↑'
+                elif new < old:
+                    change_char = '↓'
+                else:
+                    errormsg = f'Could not determine relationship between sim1={old} and sim2={new}'
+                    raise ValueError(errormsg)
+
+                # Set how many repeats it should have
+                repeats = 1
+                if abs_ratio >= 1.1:
+                    repeats = 2
+                if abs_ratio >= 2:
+                    repeats = 3
+                if abs_ratio >= 10:
+                    repeats = 4
+
+                this_change = change_char*repeats
+            else: # pragma: no cover
+                this_diff   = np.nan
+                this_ratio  = np.nan
+                this_change = 'N/A'
+
+            diff.append(this_diff)
+            ratio.append(this_ratio)
+            change.append(this_change)
+
+        df['diff'] = diff
+        df['ratio'] = ratio
+        for col in ['sim1', 'sim2', 'diff', 'ratio']:
+            df[col] = df[col].round(decimals=3)
+        df['change'] = change
+        valmatchmsg += str(df)
+
+    # Raise an error if mismatches were found
+    mismatchmsg = keymatchmsg + valmatchmsg
+    if mismatchmsg: # pragma: no cover
+        if die:
+            raise ValueError(mismatchmsg)
+        elif output:
+            return mismatchmsg
+        else:
+            print(mismatchmsg)
+    else:
+        if not output:
+            print('Sims match')
+    return
