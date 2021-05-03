@@ -19,10 +19,10 @@ calib_pars = dict(
 )
 
 # Run
-sc.tic()
+T = sc.tic()
 calib = fp.Calibration(pars=pars, n_trials=10)
 calib.calibrate(calib_pars=calib_pars)
 calib.summarize()
-sc.toc()
+sc.toc(T)
 
 print('Done.')

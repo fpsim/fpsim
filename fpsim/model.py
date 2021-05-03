@@ -230,7 +230,7 @@ class People(fpb.BasePeople):
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity - encapsulates background factors - experimental and tunable
         preg_probs *= self.pars['exposure_correction']
         preg_probs *= self.pars['exposure_correction_age'][preg_ages]
-        preg_probs *= self.pars['exposure_correction_parity'][np.maximum(self.parity[inds], fpd.max_parity)]
+        preg_probs *= self.pars['exposure_correction_parity'][np.minimum(self.parity[inds], fpd.max_parity)]
 
         # Use a single binomial trial to check for conception successes this month
         pregnant = fpu.binomial_arr(preg_probs)
