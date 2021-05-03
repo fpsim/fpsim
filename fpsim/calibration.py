@@ -454,7 +454,7 @@ class Experiment(sc.prettyobj):
         pass
 
 
-    def post_process_results(self, keep_people=False, compute_fit=False, **kwargs):
+    def post_process_results(self, keep_people=False, compute_fit=True, **kwargs):
         ''' Compare the model and the data '''
         self.extract_model()
         if self.flags.skyscrapers:   self.extract_skyscrapers()
@@ -480,7 +480,7 @@ class Experiment(sc.prettyobj):
         return
 
 
-    def run(self, pars=None, keep_people=False, compute_fit=False, **kwargs):
+    def run(self, pars=None, keep_people=False, compute_fit=True, **kwargs):
         ''' Run the model and post-process the results '''
         self.run_model(pars=pars)
         self.post_process_results(keep_people=keep_people, compute_fit=compute_fit, **kwargs)
@@ -1244,3 +1244,9 @@ def diff_summaries(sim1, sim2, skip_key_diffs=False, output=False, die=False):
         if not output:
             print('Sims match')
     return
+
+
+class Calibration(sc.prettyobj):
+    '''
+    A class to handle calibration of FPsim objects.
+    '''

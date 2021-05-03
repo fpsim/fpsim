@@ -228,6 +228,7 @@ class People(fpb.BasePeople):
         preg_probs[nullip_inds] *= self.pars['fecundity_ratio_nullip'][preg_ages[nullip_inds]]
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity - encapsulates background factors - experimental and tunable
+        preg_probs *= self.pars['exposure_correction']
         preg_probs *= self.pars['exposure_correction_age'][preg_ages]
         preg_probs *= self.pars['exposure_correction_parity'][self.parity[inds]]
 

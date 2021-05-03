@@ -720,6 +720,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['fecundity_ratio_nullip']     = default_fecundity_ratio_nullip()
     pars['exposure_correction_age']    = default_exposure_correction_age()
     pars['exposure_correction_parity'] = default_exposure_correction_parity()
+    pars['exposure_correction'] = 1 # Overall exposure correction factor
 
     ###
     # END TODO
