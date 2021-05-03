@@ -443,8 +443,8 @@ class Experiment(sc.prettyobj):
 
     def compute_fit(self, *args, **kwargs):
         ''' Compute how good the fit is '''
-        data = self.dhs_data
-        sim = self.model_to_calib
+        data = sc.dcp(self.dhs_data)
+        sim = sc.dcp(self.model_to_calib)
         for k in data.keys():
             data[k] = sc.promotetoarray(data[k])
             data[k] = data[k].flatten()
