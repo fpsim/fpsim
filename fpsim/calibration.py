@@ -303,15 +303,15 @@ class Experiment(sc.prettyobj):
 
         data_spacing_counts[:] /= data_spacing_counts[:].sum()
         data_spacing_counts[:] *= 100
-        data_spacing_stats = pl.array([pl.percentile(spacing, 25),
+        data_spacing_stats = np.array([pl.percentile(spacing, 25),
                                         pl.percentile(spacing, 50),
                                         pl.percentile(spacing, 75)])
-        data_age_first_stats = pl.array([pl.percentile(first, 25),
+        data_age_first_stats = np.array([pl.percentile(first, 25),
                                           pl.percentile(first, 50),
                                           pl.percentile(first, 75)])
 
         # Save to dictionary
-        self.dhs_data['spacing_bins'] = pl.array(data_spacing_counts.values())
+        self.dhs_data['spacing_bins'] = np.array(data_spacing_counts.values())
         self.dhs_data['spacing_stats'] = data_spacing_stats
         self.dhs_data['age_first_stats'] = data_age_first_stats
 
@@ -333,15 +333,21 @@ class Experiment(sc.prettyobj):
 
         model_spacing_counts[:] /= model_spacing_counts[:].sum()
         model_spacing_counts[:] *= 100
-        model_spacing_stats = pl.array([np.percentile(model_spacing, 25),
-                                        np.percentile(model_spacing, 50),
-                                        np.percentile(model_spacing, 75)])
-        model_age_first_stats = pl.array([np.percentile(model_age_first, 25),
-                                        np.percentile(model_age_first, 50),
-                                        np.percentile(model_age_first, 75)])
+        try:
+            model_spacing_stats = np.array([np.percentile(model_spacing, 25),
+                                            np.percentile(model_spacing, 50),
+                                            np.percentile(model_spacing, 75)])
+            model_age_first_stats = np.array([np.percentile(model_age_first, 25),
+                                            np.percentile(model_age_first, 50),
+                                            np.percentile(model_age_first, 75)])
+        except Exception as E:
+            print(f'Could not calculate birth spacing, returning zeros: {E}')
+            model_spacing_counts = {k:0 for k in spacing_bins.keys()}
+            model_spacing_stats = np.zeros(data_spacing_stats.shape)
+            model_age_first_stats = np.zeros(data_age_first_stats.shape)
 
         # Save arrays to dictionary
-        self.model_to_calib['spacing_bins'] = pl.array(model_spacing_counts.values())
+        self.model_to_calib['spacing_bins'] = np.array(model_spacing_counts.values())
         self.model_to_calib['spacing_stats'] = model_spacing_stats
         self.model_to_calib['age_first_stats'] = model_age_first_stats
 
@@ -400,8 +406,8 @@ class Experiment(sc.prettyobj):
             else:
                 model_labels[d] = ''
 
-        self.dhs_data['method_counts'] = pl.array(data_method_counts.values())
-        self.model_to_calib['method_counts'] = pl.array(model_method_counts.values())
+        self.dhs_data['method_counts'] = np.array(data_method_counts.values())
+        self.model_to_calib['method_counts'] = np.array(model_method_counts.values())
 
         return
 
@@ -414,7 +420,7 @@ class Experiment(sc.prettyobj):
         preg = data[data['Pregnant'] == 1]
         stat = preg['Age'].describe()
         data_stats_all = stat.to_numpy()
-        data_stats = pl.delete(data_stats_all, index)
+        data_stats = np.delete(data_stats_all, index)
 
         self.dhs_data['age_pregnant_stats'] = data_stats  # Array of mean, std, 25%, 50%, 75% of ages of agents currently pregnant
 
@@ -422,7 +428,7 @@ class Experiment(sc.prettyobj):
         pregnant = model[model['Pregnant'] == 1]
         stats = pregnant['Age'].describe()
         model_stats_all = stats.to_numpy()
-        model_stats = pl.delete(model_stats_all, index)
+        model_stats = np.delete(model_stats_all, index)
 
         self.model_to_calib['age_pregnant_stats'] = model_stats
 
