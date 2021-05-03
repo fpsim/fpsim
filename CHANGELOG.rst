@@ -9,10 +9,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-Coming soon
------------
-- Converting model to array-based implementation, which should increase performance by a factor of roughly 100.
-- Adding a ``calib.calibrate()`` method.
+Version 0.6.0 (2021-05-01)
+--------------------------
+- Refactored the model to use an array-based implementation, instead of a loop over individual people.
+- This results in a performance increase of roughly 20-100x, depending on the size of the simulation. In practice, this means that 50,000 people can be run in roughly the same amount of time as 500 could be previously.
+- *GitHub info*: PR `92 <https://github.com/amath-idm/fp_analyses/pull/92>`__
 
 
 Version 0.5.2 (2021-04-30)
@@ -20,6 +21,7 @@ Version 0.5.2 (2021-04-30)
 - Added a new script, ``preprocess_data.py``, that takes large raw data files and preprocesses them down to only the essentials used in the model.
 - This increases the performance of ``calib.run()`` (**not** counting model runtime) by a factor of 1000.
 - *GitHub info*: PR `91 <https://github.com/amath-idm/fp_analyses/pull/91>`__
+
 
 Version 0.5.1 (2021-04-29)
 --------------------------
