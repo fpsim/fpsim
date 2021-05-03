@@ -7,10 +7,11 @@ import numpy as np # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
 import numba as nb
+from . import defaults as fpd
 
 
 # Specify all externally visible things this file defines
-__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'fixaxis']
+__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'fixaxis', 'dict2obj']
 
 usenumba  = True
 
@@ -42,58 +43,91 @@ def set_seed(seed=None):
     return
 
 
-@func_decorator((nb.float64,))  # These types can also be declared as a dict, but performance is much slower...?
+@func_decorator((nb.float64,), cache=True)  # These types can also be declared as a dict, but performance is much slower...?
 def bt(prob):
     ''' A simple Bernoulli (binomial) trial '''
     return np.random.random() < prob  # Or rnd.random() < prob, np.random.binomial(1, prob), which seems slower
 
 
-@func_decorator((nb.float64, nb.int64))
+@func_decorator((nb.float64, nb.int64), cache=True)
 def bc(prob, repeats):
     ''' A binomial count '''
     return np.random.binomial(repeats, prob)  # Or (np.random.rand(repeats) < prob).sum()
 
 
-@func_decorator((nb.float64, nb.int64))
+@func_decorator((nb.float64, nb.int64), cache=True)
 def rbt(prob, repeats):
     ''' A repeated Bernoulli (binomial) trial '''
     return np.random.binomial(repeats, prob) > 0  # Or (np.random.rand(repeats) < prob).any()
 
 
-@func_decorator((nb.float64[:],))
+@func_decorator((nb.float64[:],), cache=True)
 def mt(probs):
     ''' A multinomial trial '''
     return np.searchsorted(np.cumsum(probs), np.random.random())
 
-@func_decorator((nb.float64[:], nb.float64, nb.float64, nb.float64, nb.float64))
-def numba_mortality_prob(mortality_fn, trend, age, resolution, mpy):
-    mortality_eval = mortality_fn[int(round(age * resolution))]
-    prob_annual = mortality_eval * trend
-    prob_annual = np.median(np.array([0, prob_annual, 1]))
-    prob_month = 1 - ((1-prob_annual)**(1/mpy))
-    return prob_month
+
+def n_multinomial(probs, n): # No speed gain from Numba
+    '''
+    An array of multinomial trials.
+
+    Args:
+        probs (array): probability of each outcome, which usually should sum to 1
+        n (int): number of trials
+
+    Returns:
+        Array of integer outcomes
+
+    **Example**::
+
+        outcomes = cv.multinomial(np.ones(6)/6.0, 50)+1 # Return 50 die-rolls
+    '''
+    return np.searchsorted(np.cumsum(probs), np.random.random(n))
 
 
-@func_decorator((nb.float64[:], nb.float64, nb.float64, nb.float64, nb.float64, nb.int64, nb.float64, nb.float64))
-def numba_preg_prob(fecundity_fn, personal_fecundity, age, resolution, method_eff, lam, lam_eff, mpy):
-    ''' Pull this out here since it's the most computationally expensive '''
-    fecundity_fn = fecundity_fn * personal_fecundity
-    preg_eval = fecundity_fn[int(round(age*resolution))]
-    if lam:
-        prob_annual = (1-lam_eff) * preg_eval
-    else:
-        prob_annual = ((1-method_eff) * preg_eval)
+def n_binomial(prob, n):
+    '''
+    Perform multiple binomial (Bernolli) trials
 
-    prob_month = 1 - ((1-prob_annual)**(1/mpy))
-    return prob_month
+    Args:
+        prob (float): probability of each trial succeeding
+        n (int): number of trials (size of array)
 
-@func_decorator((nb.float64[:], nb.float64, nb.float64))
-def numba_activity_prob(sexual_activity, age, resolution):
-    '''Run interpolation eval to check for probability of sexual activity here'''
-    sexually_active_prob = sexual_activity[int(round(age*resolution))]
-    return sexually_active_prob
+    Returns:
+        Boolean array of which trials succeeded
 
-@func_decorator((nb.float64[:], nb.float64, nb.float64))
+    **Example**::
+
+        outcomes = cv.n_binomial(0.5, 100) # Perform 100 coin-flips
+    '''
+    return np.random.random(n) < prob
+
+
+def binomial_arr(prob_arr): # No speed gain from Numba
+    '''
+    Binomial (Bernoulli) trials each with different probabilities.
+
+    Args:
+        prob_arr (array): array of probabilities
+
+    Returns:
+         Boolean array of which trials on the input array succeeded
+
+    **Example**::
+
+        outcomes = cv.binomial_arr([0.1, 0.1, 0.2, 0.2, 0.8, 0.8]) # Perform 6 trials with different probabilities
+    '''
+    return np.random.random(len(prob_arr)) < prob_arr
+
+
+def annprob2ts(prob_annual, timestep=1):
+    ''' Convert an annual probability into a timestep probability '''
+    prob_timestep = 1 - ((1-np.minimum(1,prob_annual))**(timestep/fpd.mpy))
+    return prob_timestep
+
+
+
+@func_decorator((nb.float64[:], nb.float64, nb.float64), cache=True)
 def numba_miscarriage_prob(miscarriage_rates, age, resolution):
     '''Run interpolation eval to check for probability of miscarriage here'''
     miscarriage_prob = miscarriage_rates[int(round(age*resolution))]
@@ -107,3 +141,11 @@ def fixaxis(useSI=True):
     if useSI:
         sc.SIticks()
     return
+
+
+def dict2obj(d):
+    ''' Convert a dictionary to an object '''
+    o = sc.prettyobj()
+    for k,v in d.items():
+        setattr(o, k, v)
+    return o

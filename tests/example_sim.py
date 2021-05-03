@@ -1,17 +1,21 @@
 # Simple example usage for FPsim
 
-import fpsim as lfp
+import sciris as sc
+import fpsim as fp
 import fp_analyses.senegal_parameters as sp
 
 doplot = True
 dosave = False
 
+sc.tic()
 pars = sp.make_pars()
-pars['start_year'] = 2010 # Only do a partial run
-sim = lfp.Sim(pars=pars)
+pars['n'] = 10000 # Only do a partial run
+pars['end_year'] = 1970
+sim = fp.Sim(pars=pars)
 sim.run()
 if doplot:
     sim.plot(dosave=dosave)
 
+sc.toc()
 print('Done.')
 
