@@ -34,8 +34,8 @@ def test_run_senegal():
     return
 
 @pytest.mark.skip('Too long to run as part of continuous integration')
-def test_run_calibration():
-    run_script("run_calibration")
+def test_run_experiment():
+    run_script("run_experiment")
     return
 
 
@@ -45,7 +45,7 @@ if __name__ == '__main__':
     T = sc.tic()
 
     test_run_senegal()
-    test_run_calibration()
+    test_run_experiment()
 
     sc.toc(T)
     print('Done.')

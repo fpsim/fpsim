@@ -13,21 +13,21 @@ do_save = 0
 baseline_filename  = sc.thisdir(__file__, 'baseline.json')
 benchmark_filename = sc.thisdir(__file__, 'benchmark.json')
 
-def make_calib(n=500, do_run=False, do_plot=False):
+def make_exp(n=500, do_run=False, do_plot=False):
     '''
     Define a default simulation for testing the baseline.
     '''
     pars = fa.senegal_parameters.make_pars()
     pars['n'] = n
-    calib = fp.Calibration(pars=pars)
+    exp = fp.Experiment(pars=pars)
 
     if do_run or do_plot:
-        calib.run()
+        exp.run()
 
     if do_plot:
-        calib.plot()
+        exp.plot()
 
-    return calib
+    return exp
 
 
 def save_baseline():
@@ -36,8 +36,8 @@ def save_baseline():
     but instead is called by the update_baseline script.
     '''
     print('Updating baseline values...')
-    calib = make_calib(do_run=True)
-    calib.to_json(filename=baseline_filename)
+    exp = make_exp(do_run=True)
+    exp.to_json(filename=baseline_filename)
     print('Done.')
     return
 
@@ -50,8 +50,8 @@ def test_baseline():
     old = sc.loadjson(baseline_filename)
 
     # Calculate new baseline
-    calib = make_calib(do_run=True)
-    new = calib.summarize()
+    exp = make_exp(do_run=True)
+    new = exp.summarize()
 
     # Compute the comparison
     fp.diff_summaries(old, new, die=True)
@@ -96,21 +96,21 @@ def test_benchmark(do_save=do_save, repeats=1):
     for r in range(repeats):
 
         # Create the sim
-        calib = make_calib()
+        exp = make_exp()
 
         # Time initialization
         t0 = sc.tic()
-        calib.initialize()
+        exp.initialize()
         t_init = sc.toc(t0, output=True)
 
         # Time running
         t0 = sc.tic()
-        calib.run_model()
+        exp.run_model()
         t_run = sc.toc(t0, output=True)
 
         # Time postprocessing
         t0 = sc.tic()
-        calib.post_process_results()
+        exp.post_process_results()
         t_post = sc.toc(t0, output=True)
 
         # Store results
@@ -134,10 +134,10 @@ def test_benchmark(do_save=do_save, repeats=1):
                 'total':       round(t_init+t_run+t_post, n_decimals)
                 },
             'parameters': {
-                'n':          calib.pars['n'],
-                'start_year': calib.pars['start_year'],
-                'end_year':   calib.pars['end_year'],
-                'timestep':   calib.pars['timestep'],
+                'n':          exp.pars['n'],
+                'start_year': exp.pars['start_year'],
+                'end_year':   exp.pars['end_year'],
+                'timestep':   exp.pars['timestep'],
                 },
             'cpu_performance': ratio,
             }
@@ -168,7 +168,7 @@ if __name__ == '__main__':
 
     json = test_benchmark(do_save=do_save, repeats=1) # Run this first so benchmarking is available even if results are different
     new  = test_baseline()
-    calib = make_calib(do_plot=True)
+    exp = make_exp(do_plot=True)
 
     print('\n'*2)
     sc.toc(T)

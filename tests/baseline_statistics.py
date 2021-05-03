@@ -13,7 +13,7 @@ do_save = 0  # Re-save, overwriting existing file
 n_runs  = 20 # Number of runs to run
 outfile = 'baseline_statistics.df'
 
-def make_calib(n=500, seed=1, verbose=0.1, do_run=False, do_plot=False):
+def make_exp(n=500, seed=1, verbose=0.1, do_run=False, do_plot=False):
     '''
     Define a default simulation for testing the baseline.
     '''
@@ -21,27 +21,27 @@ def make_calib(n=500, seed=1, verbose=0.1, do_run=False, do_plot=False):
     pars['n'] = n
     pars['seed'] = seed
     pars['verbose'] = verbose
-    calib = fp.Calibration(pars=pars)
+    exp = fp.Experiment(pars=pars)
 
     if do_run or do_plot:
-        calib.run()
+        exp.run()
 
     if do_plot:
-        calib.plot()
+        exp.plot()
 
-    return calib
+    return exp
 
 
 def run_save_sims(n_runs=n_runs, do_save=do_save):
 
     x = np.arange(n_runs)
-    calibs = sc.parallelize(make_calib, iterkwargs=dict(seed=x+1), kwargs=dict(do_run=True))
+    exps = sc.parallelize(make_exp, iterkwargs=dict(seed=x+1), kwargs=dict(do_run=True))
     data = {}
     cols = []
     for i in x:
         col = f'seed{i+1}'
         cols.append(col)
-        data[col] = calibs[i].summarize()['model']
+        data[col] = exps[i].summarize()['model']
 
     rawdf = pd.DataFrame(data)
     df = pd.DataFrame()
