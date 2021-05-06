@@ -465,8 +465,6 @@ class People(fpb.BasePeople):
         self.check_mcpr()
         self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
 
-        print(self.sexually_active.mean())
-
         return self.step_results
 
 
