@@ -620,6 +620,8 @@ class Sim(base.BaseSim):
             preg_inds = []
             preg_probs = []
 
+            sexact = []
+
             for person in self.people.values():
                 step_results = person.update(t, y) # Update and count new cases
                 deaths          += step_results['died']
@@ -639,12 +641,17 @@ class Sim(base.BaseSim):
                     preg_inds.append(int(person.uid))
                 preg_probs.append(step_results['preg_probs'])
 
+                if person.sexually_active:
+                    sexact.append(person)
+
+            print(f'debug1: {len(sexact)} {len(sexact)/len(self.people)}')
+
             preg_inds = np.array(preg_inds)
             preg_probs = np.array(preg_probs, dtype=np.float64)
             isnan = np.isnan(preg_probs)
             nisnan = isnan.sum()
             preg_probs = preg_probs[~isnan]
-            print(f'debug: {len(preg_inds)} pregnant out of {len(preg_probs)} options plus {nisnan} nan, with prob {preg_probs.mean():0.3f}')
+            # print(f'debug: {len(preg_inds)} pregnant out of {len(preg_probs)} options plus {nisnan} nan, with prob {preg_probs.mean():0.3f}')
 
             if i in self.interventions:
                 self.interventions[i](self)
