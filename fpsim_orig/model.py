@@ -644,7 +644,7 @@ class Sim(base.BaseSim):
                 if person.sexually_active:
                     sexact.append(person)
 
-            print(f'debug1: {len(sexact)} {len(sexact)/len(self.people)}')
+            # print(f'debug1: {len(sexact)} {len(sexact)/len(self.people)}')
 
             preg_inds = np.array(preg_inds)
             preg_probs = np.array(preg_probs, dtype=np.float64)
