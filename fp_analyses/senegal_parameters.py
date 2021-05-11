@@ -711,7 +711,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['age_fecundity']      = default_female_age_fecundity(bound=True)  # Changed to age_fecundity for now from age_fertility for use with LEMOD
     pars['method_efficacy']    = default_efficacy()
     pars['barriers']           = default_barriers()
-    pars['maternal_mortality'] = default_maternal_mortality(get_parameter(parameters=input_parameters, parameter=maternal_mortality_multiplier, defaults=default_parameters))
+    pars['maternal_mortality'] = default_maternal_mortality(get_parameter(parameters=input_parameters, parameter="maternal_mortality_multiplier", defaults=default_parameters))
     pars['infant_mortality']   = default_infant_mortality()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
