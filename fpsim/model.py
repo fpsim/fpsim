@@ -12,6 +12,7 @@ from . import defaults as fpd
 from . import population as fpp
 from . import utils as fpu
 from . import base as fpb
+from . import interventions as fpi
 
 
 # Specify all externally visible things this file defines
@@ -599,6 +600,38 @@ class Sim(fpb.BaseSim):
         return
 
 
+    def apply_interventions(self):
+        ''' Apply each intervention in the model '''
+        if 'interventions' in self.pars:
+            for i,intervention in enumerate(self.pars['interventions']):
+                if isinstance(intervention, fpi.Intervention):
+                    if not intervention.initialized: # pragma: no cover
+                        intervention.initialize(self)
+                    intervention.apply(self) # If it's an intervention, call the apply() method
+                elif callable(intervention):
+                    intervention(self) # If it's a function, call it directly
+                else: # pragma: no cover
+                    errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object'
+                    raise TypeError(errormsg)
+        return
+
+
+    def apply_analyzers(self):
+        ''' Apply each analyzer in the model '''
+        if 'analyzers' in self.pars:
+            for i,analyzer in enumerate(self.pars['analyzers']):
+                if isinstance(analyzer, fpi.Analyzer):
+                    if not analyzer.initialized: # pragma: no cover
+                        analyzer.initialize(self)
+                    analyzer.apply(self) # If it's an intervention, call the apply() method
+                elif callable(analyzer):
+                    analyzer(self) # If it's a function, call it directly
+                else: # pragma: no cover
+                    errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object'
+                    raise TypeError(errormsg)
+        return
+
+
     def run(self, verbose=None):
         ''' Run the simulation '''
 
@@ -614,12 +647,16 @@ class Sim(fpb.BaseSim):
         # Main simulation loop
 
         for i in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
+            self.i = i # Timestep
             self.t = self.ind2year(i)  # t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
             self.y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
             if verbose:
                 if not (self.t % int(1.0/verbose)):
                     string = f'  Running {self.y:0.1f} of {self.pars["end_year"]}...'
                     sc.progressbar(i+1, self.npts, label=string, length=20, newline=True)
+
+            # Apply interventions
+            self.apply_interventions()
 
             # Update method matrices for year of sim to trend over years
             self.update_methods_matrices()
@@ -675,6 +712,9 @@ class Sim(fpb.BaseSim):
                 self.results['tfr_rates'].append(35*(births_over_year/self.results['total_women_fecund'][i]))
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
+
+            # Apply analyzers
+            self.apply_analyzers()
 
         self.results['tfr_rates']    = np.array(self.results['tfr_rates']) # Store TFR rates for each year of model
         self.results['tfr_years']    = np.array(self.results['tfr_years']) # Save an array of whole years that model runs (ie, 1950, 1951...)
