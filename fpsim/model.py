@@ -200,7 +200,7 @@ class People(fpb.BasePeople):
         # Can revert to active or not active each timestep
         self.sexually_active[inds] = fpu.binomial_arr(probs)
 
-        print('koshi', len(probs), probs.mean(), np.sum(self.sexually_active))
+        # print('koshi', len(probs), probs.mean(), np.sum(self.sexually_active))
 
         return
 
@@ -454,7 +454,7 @@ class People(fpb.BasePeople):
         nonpreg_inds = np.setdiff1d(fecund_inds, preg_inds)
         lact_inds    = fecund_inds[sc.findinds(self.lactating[fecund_inds])]
 
-        print('all_inds', len(self), len(fecund_inds), len(preg_inds), len(nonpreg_inds))
+        # print('all_inds', len(self), len(fecund_inds), len(preg_inds), len(nonpreg_inds))
 
         # Update everything
         self.check_delivery(preg_inds)  # Deliver with birth outcomes if reached pregnancy duration
@@ -521,7 +521,7 @@ class Sim(fpb.BaseSim):
                 age_bins       = fpu.n_multinomial(age_data_prob, len(inds)) # Choose age bins
                 ages[inds]     = age_data_min[age_bins] + age_data_range[age_bins]*np.random.random(len(inds)) # Uniformly distribute within this age bin
 
-        print('hoshi', len(ages), ages.mean())
+        # print('hoshi', len(ages), ages.mean())
         # import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
         return ages, sexes
 
@@ -689,7 +689,7 @@ class Sim(fpb.BaseSim):
 
             people = People(pars=self.pars, n=new_people, **data)
             self.people += people
-            print('hididid', new_people, np.mean(data['sex']), np.mean(people['sex']))
+            # print('hididid', new_people, np.mean(data['sex']), np.mean(people['sex']))
 
             # Results
             percent0to5   = (r.pp0to5 / r.total_women_fecund) * 100

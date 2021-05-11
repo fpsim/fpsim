@@ -3,6 +3,7 @@ Specify the core interventions available in FPsim. Other interventions can be
 defined by the user by inheriting from these classes.
 '''
 
+import numpy as np
 import pylab as pl
 import sciris as sc
 import inspect
@@ -10,7 +11,7 @@ import inspect
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'Analyzer', 'snapshot']
+__all__ = ['Intervention', 'Analyzer', 'snapshot', 'timeseries_recorder']
 
 
 
@@ -305,3 +306,60 @@ class snapshot(Analyzer):
     def apply(self, sim):
         if sim.i in self.timesteps:
             self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
+
+
+class timeseries_recorder(Analyzer):
+    '''
+    Record every attribute in people as a time series.
+    '''
+
+    def __init__(self):
+        super().__init__()
+        self.i = []
+        self.t = []
+        self.y = []
+        self.data = sc.objdict(defaultdict=list)
+        return
+
+    def initialize(self, sim):
+        super().initialize()
+        self.keys = sim.people.keys()
+        self.keys.remove('dobs')
+        return
+
+
+    def apply(self, sim):
+        self.i.append(sim.i)
+        self.t.append(sim.t)
+        self.y.append(sim.y)
+        for k in self.keys:
+            val = np.mean(sim.people[k])
+            self.data[k].append(val)
+
+
+    def plot(self, x='y', fig_args=None, pl_args=None):
+        ''' Plot time series of each quantity '''
+
+        xmap = dict(i=self.i, t=self.t, y=self.y)
+        x = xmap[x]
+
+        fig_args  = sc.mergedicts(fig_args)
+        pl_args = sc.mergedicts(pl_args)
+        nkeys = len(self.keys)
+        rows,cols = sc.get_rows_cols(nkeys)
+
+        fig = pl.figure(**fig_args)
+
+        for k,key in enumerate(self.keys):
+            pl.subplot(rows,cols,k+1)
+            try:
+                data = np.array(self.data[key], dtype=float)
+                mean = data.mean()
+                label = f'mean: {mean}'
+                pl.plot(x, data, label=label, **pl_args)
+                pl.title(key)
+                pl.legend()
+            except:
+                pl.title(f'Could not plot {key}')
+
+        return fig
