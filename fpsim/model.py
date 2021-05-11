@@ -200,6 +200,8 @@ class People(fpb.BasePeople):
         # Can revert to active or not active each timestep
         self.sexually_active[inds] = fpu.binomial_arr(probs)
 
+        print('koshi', len(probs), probs.mean(), np.sum(self.sexually_active))
+
         return
 
 
@@ -452,6 +454,8 @@ class People(fpb.BasePeople):
         nonpreg_inds = np.setdiff1d(fecund_inds, preg_inds)
         lact_inds    = fecund_inds[sc.findinds(self.lactating[fecund_inds])]
 
+        print('all_inds', len(self), len(fecund_inds), len(preg_inds), len(nonpreg_inds))
+
         # Update everything
         self.check_delivery(preg_inds)  # Deliver with birth outcomes if reached pregnancy duration
         self.update_pregnancy(preg_inds)  # Advance gestation in timestep, handle miscarriage
@@ -678,8 +682,10 @@ class Sim(fpb.BaseSim):
 
             # Births
             data = self.make_people(n=new_people, age=np.zeros(new_people))
-            people = People(pars=self.pars, n=new_people, age=data['age'])
+
+            people = People(pars=self.pars, n=new_people, **data)
             self.people += people
+            print('hididid', new_people, np.mean(data['sex']), np.mean(people['sex']))
 
             # Results
             percent0to5   = (r.pp0to5 / r.total_women_fecund) * 100
