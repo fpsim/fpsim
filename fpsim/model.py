@@ -483,7 +483,6 @@ class Sim(fpb.BaseSim):
         super().__init__(pars) # Initialize and set the parameters as attributes
         fpu.set_seed(self.pars['seed'])
         self.init_results()
-        self.init_splines()
         self.init_people()
         self.interventions = {}  # dictionary for possible interventions to add to the sim
         return
@@ -502,23 +501,28 @@ class Sim(fpb.BaseSim):
         return
 
 
-    def init_splines(self):
-        self.m_pop_spline, self.f_pop_spline, self.m_frac = fpp.make_age_sex_splines(self.pars)
-        return
-
-
     def get_age_sex(self, n):
         ''' For an ex nihilo person, figure out if they are male and female, and how old '''
+        pyramid = self.pars['age_pyramid']
+        self.m_frac = pyramid[:,1].sum() / pyramid[:,1:3].sum()
+
         ages = np.zeros(n)
         sexes = np.random.random(n) < self.m_frac  # Pick the sex based on the fraction of men vs. women
         f_inds = sc.findinds(sexes == 0)
         m_inds = sc.findinds(sexes == 1)
-        if len(f_inds):
-            f_ages = si.splev(np.random.random(len(f_inds)), self.f_pop_spline)  # Use the spline fit to pick the age
-            ages[f_inds] = f_ages
-        if len(m_inds):
-            m_ages = si.splev(np.random.random(len(m_inds)), self.m_pop_spline)  # Use the spline fit to pick the age
-            ages[m_inds] = m_ages
+
+        age_data_min   = pyramid[:,0]
+        age_data_max   = np.append(pyramid[1:,0], self.pars['max_age'])
+        age_data_range = age_data_max - age_data_min
+        for i,inds in enumerate([m_inds, f_inds]):
+            if len(inds):
+                age_data_prob  = pyramid[:,i+1]
+                age_data_prob /= age_data_prob.sum() # Ensure it sums to 1
+                age_bins       = fpu.n_multinomial(age_data_prob, len(inds)) # Choose age bins
+                ages[inds]     = age_data_min[age_bins] + age_data_range[age_bins]*np.random.random(len(inds)) # Uniformly distribute within this age bin
+
+        print('hoshi', len(ages), ages.mean())
+        # import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
         return ages, sexes
 
 
