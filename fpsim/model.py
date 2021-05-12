@@ -6,10 +6,8 @@ Defines the Sim class, the core class of the FP model (FPsim).
 import numpy as np # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
-from scipy import interpolate as si
 import pandas as pd
 from . import defaults as fpd
-from . import population as fpp
 from . import utils as fpu
 from . import base as fpb
 from . import interventions as fpi
