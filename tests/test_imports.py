@@ -49,24 +49,6 @@ class FPSimImportTests(unittest.TestCase):
     def tearDown(self) -> None:
         pass
 
-    # def test_requirements(self):
-    #     import emod_api
-    #     import emodpy_generic
-    #     import emodpy
-    #     # Testing that we can import all requirements
-    #     checks = [dir(package) for package in [emod_api, emodpy_generic, emodpy]]
-    #     for package in checks:
-    #         self.assertIn('__package__', package)
-
-    # def test_module_interventions_complex_import(self):
-    #     from emodpy_generic.interventions import complex_import
-    #     self.expected_items = [
-    #         "ComplexImportationEvent"
-    #     ]
-    #
-    #     self.verify_expected_items_present(namespace=complex_import)
-    #     pass
-
     def test_fpsim(self):
         import fpsim as fp
         self.expected_items = self.fpsim_analyses_items +\
