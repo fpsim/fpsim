@@ -495,65 +495,27 @@ class Sim(fpb.BaseSim):
         return
 
 
-    def make_age_sex_splines(self, pars):
-        """ Fit splines to the demographic pyramid data, and returns male fraction of population """
-        import scipy.interpolate as si
-        pyramid = pars['age_pyramid']
-        year = pyramid[:, 0]
-        year = pl.append(year, pars['max_age'])
-        m = pl.insert(pyramid[:, 1], 0, 0)
-        f = pl.insert(pyramid[:, 2], 0, 0)
-        male_pop_total = m.sum()
-        female_pop_total = f.sum()
-        total_pop = male_pop_total + female_pop_total
-        male_fraction = male_pop_total / total_pop
-        m = (pl.cumsum(m)) / male_pop_total  # Transform population into fraction of total population in each 5 yr age bin
-        f = (pl.cumsum(f)) / female_pop_total
-        self.m_pop_spline = si.splrep(x=m, y=year)  # Note how axes are swapped for inverse CDF
-        self.f_pop_spline = si.splrep(x=f, y=year)
-        self.m_frac = male_fraction
-        return
-
-
     def get_age_sex(self, n):
         ''' For an ex nihilo person, figure out if they are male and female, and how old '''
-        import scipy.interpolate as si
-        if not hasattr(self, 'm_frac'):
-            self.make_age_sex_splines(self.pars)
+        pyramid = self.pars['age_pyramid']
+        self.m_frac = pyramid[:,1].sum() / pyramid[:,1:3].sum()
+
         ages = np.zeros(n)
         sexes = np.random.random(n) < self.m_frac  # Pick the sex based on the fraction of men vs. women
         f_inds = sc.findinds(sexes == 0)
         m_inds = sc.findinds(sexes == 1)
-        if len(f_inds):
-            f_ages = si.splev(np.random.random(len(f_inds)), self.f_pop_spline)  # Use the spline fit to pick the age
-            ages[f_inds] = f_ages
-        if len(m_inds):
-            m_ages = si.splev(np.random.random(len(m_inds)), self.m_pop_spline)  # Use the spline fit to pick the age
-            ages[m_inds] = m_ages
+
+        age_data_min   = pyramid[:,0]
+        age_data_max   = np.append(pyramid[1:,0], self.pars['max_age'])
+        age_data_range = age_data_max - age_data_min
+        for i,inds in enumerate([m_inds, f_inds]):
+            if len(inds):
+                age_data_prob  = pyramid[:,i+1]
+                age_data_prob /= age_data_prob.sum() # Ensure it sums to 1
+                age_bins       = fpu.n_multinomial(age_data_prob, len(inds)) # Choose age bins
+                ages[inds]     = age_data_min[age_bins] + age_data_range[age_bins]*np.random.random(len(inds)) # Uniformly distribute within this age bin
+
         return ages, sexes
-
-
-    # def get_age_sex(self, n):
-    #     ''' For an ex nihilo person, figure out if they are male and female, and how old '''
-    #     pyramid = self.pars['age_pyramid']
-    #     self.m_frac = pyramid[:,1].sum() / pyramid[:,1:3].sum()
-
-    #     ages = np.zeros(n)
-    #     sexes = np.random.random(n) < self.m_frac  # Pick the sex based on the fraction of men vs. women
-    #     f_inds = sc.findinds(sexes == 0)
-    #     m_inds = sc.findinds(sexes == 1)
-
-    #     age_data_min   = pyramid[:,0]
-    #     age_data_max   = np.append(pyramid[1:,0], self.pars['max_age'])
-    #     age_data_range = age_data_max - age_data_min
-    #     for i,inds in enumerate([m_inds, f_inds]):
-    #         if len(inds):
-    #             age_data_prob  = pyramid[:,i+1]
-    #             age_data_prob /= age_data_prob.sum() # Ensure it sums to 1
-    #             age_bins       = fpu.n_multinomial(age_data_prob, len(inds)) # Choose age bins
-    #             ages[inds]     = age_data_min[age_bins] + age_data_range[age_bins]*np.random.random(len(inds)) # Uniformly distribute within this age bin
-
-    #     return ages, sexes
 
 
     def make_people(self, n=1, age=None, sex=None, method=None):
