@@ -386,7 +386,7 @@ class People(fpb.BasePeople):
 
     def age_person(self, inds):
         '''Advance age in the simulation'''
-        self.age[inds] += self.pars['timestep'] / fpd.mpy  # Age the person for the next timestep
+        self.age[inds] += self.pars['timestep'] / fpd.mpy + 0.001*(0.5-np.random.random(len(inds)))  # Age the person for the next timestep
         self.age[inds] = np.minimum(self.age[inds], self.pars['max_age'])
         return
 

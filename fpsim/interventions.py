@@ -11,7 +11,7 @@ import inspect
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'Analyzer', 'snapshot', 'timeseries_recorder']
+__all__ = ['Intervention', 'Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids']
 
 
 
@@ -362,4 +362,45 @@ class timeseries_recorder(Analyzer):
             except:
                 pl.title(f'Could not plot {key}')
 
+        return fig
+
+
+class age_pyramids(Analyzer):
+    '''
+    Record age pyramids for each timestep.
+    '''
+
+    def __init__(self, bins=None):
+        super().__init__()
+        self.bins = bins
+        self.data = None
+        return
+
+    def initialize(self, sim):
+        super().initialize()
+        if self.bins is None:
+            self.bins = np.arange(0, sim.pars['max_age']+2)
+            nbins = len(self.bins)-1
+        self.data = np.full((sim.npts, nbins), np.nan)
+        self.raw = sc.dcp(self.data)
+        return
+
+    def apply(self, sim):
+        ages = sim.people.age[sc.findinds(sim.people.alive)]
+        self.raw[sim.i, :] = np.histogram(ages, self.bins)[0]
+        self.data[sim.i, :] = self.raw[sim.i, :]/self.raw[sim.i, :].sum()
+
+    def plot(self):
+        fig = pl.figure()
+        pl.pcolormesh(self.data.T)
+        pl.xlabel('Timestep')
+        pl.ylabel('Age (years)')
+        return fig
+
+    def plot3d(self):
+        print('Warning, very slow...')
+        fig = pl.figure()
+        sc.bar3d(self.data.T)
+        pl.xlabel('Timestep')
+        pl.ylabel('Age (years)')
         return fig
