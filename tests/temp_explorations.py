@@ -14,8 +14,8 @@ kwargs = dict(
 pars = fa.senegal_parameters.make_pars()
 pars['n'] = 10000
 pars['verbose'] = 0.1
-pars['end_year'] = 2100
-pars['exposure_correction'] = 1.0
+pars['end_year'] = 2050
+pars['exposure_correction'] = 3.0
 pars.update(kwargs)
 sim = fp.Sim(pars=pars)
 sim.run()
