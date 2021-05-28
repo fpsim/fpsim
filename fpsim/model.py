@@ -261,7 +261,8 @@ class People(fpb.BasePeople):
         '''
         not_postpartum = inds[sc.findinds(self.postpartum[inds] == 0)]
         over5mo = inds[sc.findinds(self.postpartum_dur[inds] > 5)]
-        self.lam[sc.cat(not_postpartum, over5mo)] = False
+        not_breastfeeding = inds[sc.findinds(self.breastfeed_dur[inds] == 0)]
+        self.lam[sc.cat(not_postpartum, over5mo, not_breastfeeding)] = False
         match_low = self.postpartum_dur[inds] > 0
         match_high = self.postpartum_dur[inds] <= 5
         match = self.postpartum[inds] * match_low * match_high
@@ -275,9 +276,6 @@ class People(fpb.BasePeople):
         '''
         Track breastfeeding, and update time of breastfeeding for individual pregnancy.
         Currently agents breastfeed a random amount of time between 1 and 24 months.
-        Not connected to rates of exclusive breastfeeding in data informed by self.lam
-        NOT currently being utilized to track lactataional amenorrhea, left here in case
-        useful feature in the future
         '''
         n_inds = len(inds)
         bfdur = self.pars['breastfeeding_dur']
