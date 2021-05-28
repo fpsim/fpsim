@@ -6,18 +6,19 @@ import sciris as sc
 import fpsim as fp
 import fp_analyses.senegal_parameters as sp
 
-doplot = True
-dosave = False
+# Set options
+do_plot = True
+pars = sp.make_pars()
+pars['n'] = 1000 # Small population size
+pars['end_year'] = 1970 # 1961 - 2020 is the normal date range
+pars['exposure_correction'] = 1.0 # Overall scale factor on probability of becoming pregnant
 
 sc.tic()
-pars = sp.make_pars()
-pars['n'] = 500 # Only do a partial run
-pars['end_year'] = 2020
-pars['exposure_correction'] = 2
 sim = fp.Sim(pars=pars)
 sim.run()
-if doplot:
-    sim.plot(dosave=dosave)
+
+if do_plot:
+    sim.plot()
 
 sc.toc()
 print('Done.')

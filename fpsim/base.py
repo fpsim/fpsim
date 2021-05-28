@@ -4,6 +4,7 @@ Base classes for loading parameters and for running simulations with FP model
 
 import numpy as np
 import sciris as sc
+import pylab as pl
 from . import defaults as fpd
 
 
@@ -141,6 +142,32 @@ class BasePeople(sc.prettyobj):
     @property
     def n(self):
         return self.alive.sum()
+
+
+    def plot(self, fig_args=None, hist_args=None):
+        ''' Plot histograms of each quantity '''
+
+        fig_args  = sc.mergedicts(fig_args)
+        hist_args = sc.mergedicts(dict(bins=50), hist_args)
+        keys = self.keys()
+        nkeys = len(keys)
+        rows,cols = sc.get_rows_cols(nkeys)
+
+        fig = pl.figure(**fig_args)
+
+        for k,key in enumerate(keys):
+            pl.subplot(rows,cols,k+1)
+            try:
+                data = np.array(self[key], dtype=float)
+                mean = data.mean()
+                label = f'mean: {mean}'
+                pl.hist(data, label=label, **hist_args)
+                pl.title(key)
+                pl.legend()
+            except:
+                pl.title(f'Could not plot {key}')
+
+        return fig
 
 
 

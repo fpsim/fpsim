@@ -1,9 +1,9 @@
 '''
-File to extract outputs to calibration from model and compare to data -- renamed to experiment
+File to extract outputs to calibration from model and compare to data
 '''
 
 import sciris as sc
-import fpsim as fp
+import fpsim as fps # Need to rename
 import senegal_parameters as sp
 
 sc.tic()
@@ -40,11 +40,11 @@ do_save = True # Whether to save the completed calibration
 
 
 pars = sp.make_pars()
-exp = fp.Experiment(pars=pars, flags=flags)
-exp.run()
+calib = fps.Calibration(flags=flags)
+calib.run(pars=pars)
 
 if do_save:
-    sc.saveobj('senegal_experiment.obj', exp)
+    sc.saveobj('senegal_calibration.obj', calib)
 
 sc.toc()
 

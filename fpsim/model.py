@@ -6,12 +6,11 @@ Defines the Sim class, the core class of the FP model (FPsim).
 import numpy as np # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
-from scipy import interpolate as si
 import pandas as pd
 from . import defaults as fpd
-from . import population as fpp
 from . import utils as fpu
 from . import base as fpb
+from . import interventions as fpi
 
 
 # Specify all externally visible things this file defines
@@ -478,7 +477,6 @@ class Sim(fpb.BaseSim):
         super().__init__(pars) # Initialize and set the parameters as attributes
         fpu.set_seed(self.pars['seed'])
         self.init_results()
-        self.init_splines()
         self.init_people()
         self.interventions = {}  # dictionary for possible interventions to add to the sim
         return
@@ -497,23 +495,26 @@ class Sim(fpb.BaseSim):
         return
 
 
-    def init_splines(self):
-        self.m_pop_spline, self.f_pop_spline, self.m_frac = fpp.make_age_sex_splines(self.pars)
-        return
-
-
     def get_age_sex(self, n):
         ''' For an ex nihilo person, figure out if they are male and female, and how old '''
+        pyramid = self.pars['age_pyramid']
+        self.m_frac = pyramid[:,1].sum() / pyramid[:,1:3].sum()
+
         ages = np.zeros(n)
         sexes = np.random.random(n) < self.m_frac  # Pick the sex based on the fraction of men vs. women
         f_inds = sc.findinds(sexes == 0)
         m_inds = sc.findinds(sexes == 1)
-        if len(f_inds):
-            f_ages = si.splev(np.random.random(len(f_inds)), self.f_pop_spline)  # Use the spline fit to pick the age
-            ages[f_inds] = f_ages
-        if len(m_inds):
-            m_ages = si.splev(np.random.random(len(m_inds)), self.m_pop_spline)  # Use the spline fit to pick the age
-            ages[m_inds] = m_ages
+
+        age_data_min   = pyramid[:,0]
+        age_data_max   = np.append(pyramid[1:,0], self.pars['max_age'])
+        age_data_range = age_data_max - age_data_min
+        for i,inds in enumerate([m_inds, f_inds]):
+            if len(inds):
+                age_data_prob  = pyramid[:,i+1]
+                age_data_prob /= age_data_prob.sum() # Ensure it sums to 1
+                age_bins       = fpu.n_multinomial(age_data_prob, len(inds)) # Choose age bins
+                ages[inds]     = age_data_min[age_bins] + age_data_range[age_bins]*np.random.random(len(inds)) # Uniformly distribute within this age bin
+
         return ages, sexes
 
 
@@ -599,6 +600,38 @@ class Sim(fpb.BaseSim):
         return
 
 
+    def apply_interventions(self):
+        ''' Apply each intervention in the model '''
+        if 'interventions' in self.pars:
+            for i,intervention in enumerate(self.pars['interventions']):
+                if isinstance(intervention, fpi.Intervention):
+                    if not intervention.initialized: # pragma: no cover
+                        intervention.initialize(self)
+                    intervention.apply(self) # If it's an intervention, call the apply() method
+                elif callable(intervention):
+                    intervention(self) # If it's a function, call it directly
+                else: # pragma: no cover
+                    errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object'
+                    raise TypeError(errormsg)
+        return
+
+
+    def apply_analyzers(self):
+        ''' Apply each analyzer in the model '''
+        if 'analyzers' in self.pars:
+            for i,analyzer in enumerate(self.pars['analyzers']):
+                if isinstance(analyzer, fpi.Analyzer):
+                    if not analyzer.initialized: # pragma: no cover
+                        analyzer.initialize(self)
+                    analyzer.apply(self) # If it's an intervention, call the apply() method
+                elif callable(analyzer):
+                    analyzer(self) # If it's a function, call it directly
+                else: # pragma: no cover
+                    errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object'
+                    raise TypeError(errormsg)
+        return
+
+
     def run(self, verbose=None):
         ''' Run the simulation '''
 
@@ -614,12 +647,16 @@ class Sim(fpb.BaseSim):
         # Main simulation loop
 
         for i in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
+            self.i = i # Timestep
             self.t = self.ind2year(i)  # t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
             self.y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
             if verbose:
                 if not (self.t % int(1.0/verbose)):
                     string = f'  Running {self.y:0.1f} of {self.pars["end_year"]}...'
                     sc.progressbar(i+1, self.npts, label=string, length=20, newline=True)
+
+            # Apply interventions
+            self.apply_interventions()
 
             # Update method matrices for year of sim to trend over years
             self.update_methods_matrices()
@@ -641,8 +678,10 @@ class Sim(fpb.BaseSim):
 
             # Births
             data = self.make_people(n=new_people, age=np.zeros(new_people))
-            people = People(pars=self.pars, n=new_people, age=data['age'])
+
+            people = People(pars=self.pars, n=new_people, **data)
             self.people += people
+            # print('hididid', new_people, np.mean(data['sex']), np.mean(people['sex']))
 
             # Results
             percent0to5   = (r.pp0to5 / r.total_women_fecund) * 100
@@ -675,6 +714,9 @@ class Sim(fpb.BaseSim):
                 self.results['tfr_rates'].append(35*(births_over_year/self.results['total_women_fecund'][i]))
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
+
+            # Apply analyzers
+            self.apply_analyzers()
 
         self.results['tfr_rates']    = np.array(self.results['tfr_rates']) # Store TFR rates for each year of model
         self.results['tfr_years']    = np.array(self.results['tfr_years']) # Save an array of whole years that model runs (ie, 1950, 1951...)

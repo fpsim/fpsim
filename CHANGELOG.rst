@@ -9,6 +9,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.6.2 (2021-05-10)
+--------------------------
+- Added ``fp.Intervention`` and ``fp.Analyzer`` classes, which are much more flexible ways to modify and record the state of the simulation, respectively.
+- Fixed a bug with only females being born.
+- *GitHub info*: PR `100 <https://github.com/amath-idm/fp_analyses/pull/100>`__
+
+
 Version 0.6.1 (2021-05-02)
 --------------------------
 - Renamed ``fp.Calibration`` to ``fp.Experiment``, and added a new ``fp.Calibration`` class, using Optuna.

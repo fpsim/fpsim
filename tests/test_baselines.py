@@ -13,7 +13,7 @@ do_save = 0
 baseline_filename  = sc.thisdir(__file__, 'baseline.json')
 benchmark_filename = sc.thisdir(__file__, 'benchmark.json')
 
-def make_exp(n=500, do_run=False, do_plot=False):
+def make_exp(n=10000, do_run=False, do_plot=False):
     '''
     Define a default simulation for testing the baseline.
     '''
