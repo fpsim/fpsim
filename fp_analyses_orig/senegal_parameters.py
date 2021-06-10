@@ -591,6 +591,13 @@ def default_exposure_correction_age():
     exposure_correction_age = pl.array([[0,  5,  10,   12.5,    15,              18,              20,        25,        30,        35,           40,          45,         50],
                                         [1,  1, 1,  0.8,  3.0,  3.0, 3.0,  2.0,   1.2,  1.0,  0.5, 0.3,  0.2]])
 
+    normalize = os.getenv('FPNORM')
+    if normalize:
+        exposure_correction_age[1,:] = pl.minimum(1, exposure_correction_age[1,:])
+        print('normalizing', exposure_correction_age[1,:])
+    else:
+        print('not norm')
+
     return exposure_correction_age
 
 
