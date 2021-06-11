@@ -9,6 +9,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+
+Version 0.6.4 (2021-06-10)
+--------------------------
+- Added a ``MultiSim`` class, which can handle parallel runs and uncertainty bounds.
+- *GitHub info*: PR `120 <https://github.com/amath-idm/fp_analyses/pull/120>`__
+
+
 Version 0.6.3 (2021-06-10)
 --------------------------
 - Fixed a bug where exposure correction by age was accidentally being clipped to the range [0,1], restoring behavior of the array-based model to match the object-based model (notwithstanding stochastic effects and other bugfixes).

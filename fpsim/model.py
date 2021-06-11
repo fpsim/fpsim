@@ -14,7 +14,7 @@ from . import interventions as fpi
 
 
 # Specify all externally visible things this file defines
-__all__ = ['People', 'Sim', 'single_run', 'multi_run']
+__all__ = ['People', 'Sim', 'MultiSim']
 
 
 #%% Define classes
@@ -471,12 +471,14 @@ class Sim(fpb.BaseSim):
     The Sim class handles the running of the simulation
     '''
 
-    def __init__(self, pars=None):
+    def __init__(self, pars=None, label=None):
         super().__init__(pars) # Initialize and set the parameters as attributes
+        self.label = label
         fpu.set_seed(self.pars['seed'])
         self.init_results()
         self.init_people()
         self.interventions = {}  # dictionary for possible interventions to add to the sim
+        fpu.set_metadata(self) # Set version, date, and git info
         return
 
 
@@ -842,36 +844,98 @@ class Sim(fpb.BaseSim):
         raise NotImplementedError
 
 
+class MultiSim(sc.prettyobj):
+    '''
+    The MultiSim class handles the running of multiple simulations
+    '''
+
+    def __init__(self, sims=None, label=None, **kwargs):
+
+        # Basic checks
+        assert isinstance(sims, list), "Must supply sims as a list"
+        assert len(sims)>0, "Must supply at least 1 sim"
+
+        # Set properties
+        self.sims      = sims
+        self.base_sim  = sc.dcp(sims[0])
+        self.label     = self.base_sim.label if label is None else label
+        self.run_args  = sc.mergedicts(kwargs)
+        self.results   = None
+        self.which     = None # Whether the multisim is to be reduced, combined, etc.
+        fpu.set_metadata(self) # Set version, date, and git info
+
+        return
+
+
+    def __len__(self):
+        try:
+            return len(self.sims)
+        except:
+            return 0
+
+
+    def run(self, compute_stats=True, **kwargs):
+        self.sims = multi_run(self.sims, **kwargs)
+        if compute_stats:
+            self.compute_stats()
+        return self
+
+
+    def compute_stats(self, return_raw=False, quantiles=None, use_mean=False, bounds=None):
+        ''' Compute statistics across multiple sims '''
+
+        if use_mean:
+            if bounds is None:
+                bounds = 1
+        else:
+            if quantiles is None:
+                quantiles = {'low':0.1, 'high':0.9}
+            if not isinstance(quantiles, dict):
+                try:
+                    quantiles = {'low':float(quantiles[0]), 'high':float(quantiles[1])}
+                except Exception as E:
+                    errormsg = f'Could not figure out how to convert {quantiles} into a quantiles object: must be a dict with keys low, high or a 2-element array ({str(E)})'
+                    raise ValueError(errormsg)
+
+        base_sim = sc.dcp(self.sims[0])
+        raw = sc.objdict()
+        results = sc.objdict()
+        axis = 1
+
+        for reskey in base_sim.results.keys():
+            results[reskey] = sc.objdict()
+            npts = len(base_sim.results[reskey])
+            raw[reskey] = np.zeros((npts, len(self.sims)))
+            for s,sim in enumerate(self.sims):
+                raw[reskey][:, s] = sim.results[reskey] # Stack into an array for processing
+
+            if use_mean:
+                r_mean = np.mean(raw[reskey], axis=axis)
+                r_std = np.std(raw[reskey], axis=axis)
+                results[reskey].best = r_mean
+                results[reskey].low = r_mean - bounds * r_std
+                results[reskey].high = r_mean + bounds * r_std
+            else:
+                results[reskey].best = np.quantile(raw[reskey], q=0.5, axis=axis)
+                results[reskey].low = np.quantile(raw[reskey], q=quantiles['low'], axis=axis)
+                results[reskey].high = np.quantile(raw[reskey], q=quantiles['high'], axis=axis)
+
+        self.results = results
+
+        if return_raw:
+            return raw
+        else:
+            return
+
+
 def single_run(sim):
     ''' Helper function for multi_run(); rarely used on its own '''
     sim.run()
     return sim
 
 
-def multi_run(orig_sim, n=4, verbose=None):
-
-    raise NotImplementedError('Memory leak, do not use!')
-
-    # Copy the simulations
-    sims = []
-    for i in range(n):
-        new_sim = sc.dcp(orig_sim)
-        new_sim.pars['seed'] += i # Reset the seed, otherwise no point!
-        new_sim.pars['n'] = int(new_sim.pars['n']/n) # Reduce the population size accordingly
-        sims.append(new_sim)
-
-    finished_sims = sc.parallelize(single_run, iterarg=sims)
-
-    output_sim = sc.dcp(finished_sims[0])
-    output_sim.pars['parallelized'] = n # Store how this was parallelized
-    output_sim.pars['n'] *= n # Restore this since used in later calculations -- a bit hacky, it's true
-
-    for sim in finished_sims[1:]: # Skip the first one
-        output_sim.people.update(sim.people)
-        for key,val in sim.results.items():
-            if key != 't':
-                output_sim.results[key] += sim.results[key]
-
-    return output_sim
-
+def multi_run(sims, **kwargs):
+    ''' Run multiple sims in parallel; usually used via the MultiSim class, not directly '''
+    sims = sc.parallelize(single_run, iterarg=sims, **kwargs)
+    return sims
 

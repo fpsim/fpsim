@@ -8,6 +8,7 @@ import pylab as pl
 import sciris as sc
 import numba as nb
 from . import defaults as fpd
+from . import version as fpv
 
 
 # Specify all externally visible things this file defines
@@ -149,3 +150,11 @@ def dict2obj(d):
     for k,v in d.items():
         setattr(o, k, v)
     return o
+
+
+def set_metadata(obj):
+    ''' Set standard metadata for an object '''
+    obj.created = sc.now()
+    obj.version = fpv.__version__
+    obj.git_info = sc.gitinfo()
+    return
