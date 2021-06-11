@@ -13,7 +13,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 Version 0.6.4 (2021-06-10)
 --------------------------
 - Added a ``MultiSim`` class, which can handle parallel runs and uncertainty bounds.
-- *GitHub info*: PR `120 <https://github.com/amath-idm/fp_analyses/pull/120>`__
+- *GitHub info*: PR `124 <https://github.com/amath-idm/fp_analyses/pull/124>`__
 
 
 Version 0.6.3 (2021-06-10)
