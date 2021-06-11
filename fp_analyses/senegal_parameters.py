@@ -545,11 +545,12 @@ def default_lactational_amenorrhea():
     return lactational_amenorrhea
 
 
-def data2interp(data, ages):
+def data2interp(data, ages, normalize=False):
     ''' Convert unevently spaced data into an even spline interpolation '''
     model = si.interp1d(data[0], data[1])
     interp = model(ages)
-    interp = np.minimum(1, np.maximum(0, interp))
+    if normalize:
+        interp = np.minimum(1, np.maximum(0, interp))
     return interp
 
 
