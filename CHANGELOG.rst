@@ -9,6 +9,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.6.3 (2021-06-10)
+--------------------------
+- Fixed a bug where exposure correction by age was accidentally being clipped to the range [0,1], restoring behavior of the array-based model to match the object-based model (notwithstanding stochastic effects and other bugfixes).
+- *GitHub info*: PR `119 <https://github.com/amath-idm/fp_analyses/pull/119>`__
+
+
 Version 0.6.2 (2021-05-10)
 --------------------------
 - Added ``fp.Intervention`` and ``fp.Analyzer`` classes, which are much more flexible ways to modify and record the state of the simulation, respectively.
