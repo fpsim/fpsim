@@ -1,5 +1,5 @@
 """
-Run tests on the calibration object.
+Run tests on the multisim object.
 """
 
 import sciris as sc
