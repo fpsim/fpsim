@@ -41,7 +41,7 @@ class People(fpb.BasePeople):
         self.pars = pars # Set parameters
         d = sc.mergedicts(fpd.person_defaults, kwargs) # d = defaults
         if n is None:
-            n = self.pars['n']
+            n = int(self.pars['n'])
 
         # Basic states
         init_states = dir(self)
@@ -511,7 +511,7 @@ class Sim(fpb.BaseSim):
         for i,inds in enumerate([m_inds, f_inds]):
             if len(inds):
                 age_data_prob  = pyramid[:,i+1]
-                age_data_prob /= age_data_prob.sum() # Ensure it sums to 1
+                age_data_prob  = age_data_prob/age_data_prob.sum() # Ensure it sums to 1
                 age_bins       = fpu.n_multinomial(age_data_prob, len(inds)) # Choose age bins
                 ages[inds]     = age_data_min[age_bins] + age_data_range[age_bins]*np.random.random(len(inds)) # Uniformly distribute within this age bin
 
