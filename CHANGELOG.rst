@@ -13,6 +13,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 Version 0.6.5 (2021-06-11)
 --------------------------
 - Added R support; see ``examples/example_sim.R``.
+- Fixed a bug where the age pyramid was being unintentionally modified in-place.
 - *GitHub info*: PR `128 <https://github.com/amath-idm/fp_analyses/pull/128>`__
 
 
