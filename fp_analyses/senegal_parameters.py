@@ -589,7 +589,7 @@ def default_exposure_correction_age():
     '''
 
     exposure_correction_age = np.array([[0, 5, 10, 12.5,  15,  18,  20,  25,  30,  35,  40,  45,  50],
-                                        [1, 1, 1,   0.8, 3.0, 3.0, 3.0, 2.0, 1.2, 1.0, 0.5, 0.3, 0.2]])
+                                        [1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
     exposure_age_interp = data2interp(exposure_correction_age, fpd.spline_preg_ages)
 
     return exposure_age_interp
@@ -602,7 +602,7 @@ def default_exposure_correction_parity():
     '''
 
     exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
-                                           [0.15, 0.5, 0.5, 0.5, 0.5, 0.3, 0.3, 0.3, 0.3, 0.3,  0.3, 0.3,  0.1, 0.1]])
+                                           [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1, 1]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
