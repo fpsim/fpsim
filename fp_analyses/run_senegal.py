@@ -473,7 +473,7 @@ if do_run:
 
     if do_plot_spacing:
 
-        spacing_bins = sc.odict({'0-12':0,'12-24':1,'24-48':2,'>48':4}) # Spacing bins in years
+        spacing_bins = sc.odict({'0-11':0,'12-23':1,'24-47':2,'>48':4}) # Spacing bins in years
 
         # From data
         data = pd.read_csv(spacing_file)
