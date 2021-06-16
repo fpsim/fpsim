@@ -140,18 +140,33 @@ if do_run:
                        pl.sum(res['infant_deaths'][-12:]) + \
                        pl.sum(res['maternal_deaths'][-12:])
         print(f'Crude death rate per 1,000 inhabitants: {(total_deaths / res["pop_size"][-1]) * 1000}')
+
         infant_deaths = pl.sum(res['infant_deaths'][-12:])
-        maternal_deaths = pl.sum(res['maternal_deaths'][-36:])
+        maternal_deaths1 = pl.sum(res['maternal_deaths'][-12:])
+        maternal_deaths3 = pl.sum(res['maternal_deaths'][-36:])
+        maternal_deaths7 = pl.sum(res['maternal_deaths'][-84:])
         births_last_year = pl.sum(res['births'][-12:])
         births_last_3_years = pl.sum(res['births'][-36:])
-        print(
-            f'Total infant mortality rate in model: {(infant_deaths / births_last_year) * 1000}.  Infant mortality rate 2015 Senegal: 36.4')
-        print(
-            f'Total maternal death rate in model: {(maternal_deaths / births_last_3_years) * 100000}.  Maternal mortality ratio 2015 Senegal: 315 ')
-        print(
-            f'Crude birth rate per 1000 inhabitants in model: {(births_last_year / res["pop_size"][-1]) * 1000}.  Crude birth rate Senegal 2018: 34.52 per 1000 inhabitants')
+        births_last_7_years = pl.sum(res['births'][-84:])
+        all_maternal_deaths = pl.sum(res['maternal_deaths'])
+        all_births = pl.sum(res['births'])
+        births_2017 = pl.sum(res['births'][-48:-36])
+        maternal_deaths_2017 = pl.sum(res['births'][-48:-36])
+
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
+        print(f'Total births last year: {(births_last_year)}')
+        print(f'Crude birth rate per 1000 inhabitants in model: {(births_last_year / res["pop_size"][-1]) * 1000}.  Crude birth rate Senegal 2018: 34.52 per 1000 inhabitants')
+        print(f'Total infant mortality rate in last year of model: {(infant_deaths / births_last_year) * 1000}.  Infant mortality rate 2015 Senegal: 36.4')
+        print(f'Total maternal deaths last year: {(maternal_deaths1)}')
+        print(f'Total maternal deaths last three years: {(maternal_deaths3)}')
+        print(f'Total maternal deaths last seven years: {(maternal_deaths7)}')
+        print(f'Total model maternal mortality ratio 2019: {(maternal_deaths1 / births_last_year) * 100000}. Maternal mortality ratio 2019 Senegal: Unknown ')
+        print(f'Total model maternal mortality ratio 2017-2019: {(maternal_deaths3 / births_last_3_years) * 100000}.  Maternal mortality ratio 2017 Senegal: 315 ')
+        print(f'Total model maternal mortality ratio 2013-2019: {(maternal_deaths7 / births_last_7_years) * 100000}.  Maternal mortality ratio 2013 Senegal:  381')
+        print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
+        print(f'TFR rates over last 10 years: {res["tfr_rates"][-10:]}.  TFR in Senegal in 2015: 4.84; 2018: 4.625')
         print(f'TFR rates in 2015: {res["tfr_rates"][-5]}.  TFR in Senegal in 2015: 4.84')
+        print(f'TFR rates in 2019: {res["tfr_rates"][-1]}.  TFR in Senegal in 2018: 4.56')
 
     if do_plot_popsize:
 
@@ -161,7 +176,7 @@ if do_run:
 
         # Handle population size and mcpr from data
         pop_years_data = popsize.iloc[0,:].to_numpy()
-        popsize_data = popsize.iloc[1,:].to_numpy() / (popsize.iloc[1,0] /5000) # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500  <-- Leftover from Cliff
+        popsize_data = popsize.iloc[1,:].to_numpy() / (popsize.iloc[1,0] / 100000) # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500  <-- Leftover from Cliff
         mcpr_years_data = mcpr.iloc[:,0].to_numpy()
         mcpr_rates_data = mcpr.iloc[:,1].to_numpy()
 

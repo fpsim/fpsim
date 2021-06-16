@@ -34,25 +34,6 @@ def abspath(path, *args):
 
 def default_age_pyramid():
     ''' Starting age bin, male population, female population '''
-    # Based on Senegal 1982
-    # pyramid = np.array([[0,  579035, 567499],
-    #                     [5,  459255, 452873],
-    #                     [10, 364432, 359925],
-    #                     [15, 294589, 292235],
-    #                     [20, 239825, 241363],
-    #                     [25, 195652, 198326],
-    #                     [30, 155765, 158950],
-    #                     [35, 135953, 137097],
-    #                     [40, 124615, 122950],
-    #                     [45, 107622, 106116],
-    #                     [50,  89533, 89654],
-    #                     [55,  70781, 73290],
-    #                     [60,  52495, 57330],
-    #                     [65,  36048, 41585],
-    #                     [70,  21727, 26383],
-    #                     [75,  10626, 13542],
-    #                     [80,   4766,  6424]])
-
     pyramid = np.array([ [0,  318225,  314011], # Senegal 1962
                          [5,  249054,  244271],
                         [10,  191209,  190998],
@@ -73,6 +54,17 @@ def default_age_pyramid():
                     ], dtype=float)
 
     return pyramid
+
+# def default_wealth_index():
+#     '''
+#     Relative wealth as represented by the DHS 2019 household wealth index
+#     '''
+#
+# 2018 "Poorest" 22.7
+#     "Poorer" 22.8
+#     "Middle" 21.0
+#     "Richer" 18.0
+#     "Richest" 15.5
 
 
 def default_age_mortality(bound):
@@ -427,17 +419,20 @@ def default_methods_postpartum():
 
 def default_efficacy():
     ''' From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
-    BTL failure rate from general published data'''
+    BTL failure rate from general published data
+    Pooled efficacy rates for women ages 25+
+    '''
+
 
     method_efficacy = sc.odict({
             "None":        0.0,
-            "Pill":        94.5,
-            "IUDs":        98.6,
-            "Injectable": 98.3,
+            "Pill":        95.6,
+            "IUDs":        98.9,
+            "Injectable": 98.4,
             "Condoms":     94.6,
             "BTL":         99.5,
-            "Rhythm":       86.1,
-            "Withdrawal":   86.6,
+            "Rhythm":       86.7,
+            "Withdrawal":   88.3,
             "Implants":     99.4,
             "Other":       94.5,
             })
@@ -446,12 +441,33 @@ def default_efficacy():
 
     method_efficacy = method_efficacy[:]/100
 
-    # for key,value in method_efficacy.items():
-    #     method_efficacy[key] = method_efficacy[key]/100
-
-    # assert method_efficacy.keys() == default_methods() # Ensure ordering
-
     return method_efficacy
+
+def default_efficacy25():
+    ''' From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
+    BTL failure rate from general published data
+    Pooled efficacy rates for women ages 25+
+    '''
+
+
+    method_efficacy25 = sc.odict({
+            "None":        0.0,
+            "Pill":        91.7,
+            "IUDs":        96.8,
+            "Injectable":  96.5,
+            "Condoms":     91.1,
+            "BTL":         99.5,
+            "Rhythm":       75.4,
+            "Withdrawal":   77.3,
+            "Implants":     99.4,
+            "Other":       94.5,
+            })
+
+    # method_efficacy25[:] = 100 # To disable contraception
+
+    method_efficacy25 = method_efficacy25[:]/100
+
+    return method_efficacy25
 
 
 def default_barriers():
@@ -489,28 +505,55 @@ def default_sexual_activity():
 
 def default_sexual_activity_postpartum():
     '''
-    Returns an array of monthly likelihood of having resumed sexual activity within 0-11 months postpartum
-    From DHS Senegal 2018 calendar data
+    Returns an array of monthly likelihood of having resumed sexual activity within 0-36 months postpartum
+    Replaces DHS Senegal 2018 calendar data with DHS Senegal 2018 individual recode (postpartum (v222) and this month's sexual activity report)
+    Limited to 36 months postpartum (can use any limit you want)
+    Changes postpartum_abstinent to postpartum_sex and removes 1- in calculation
+    DHS data is reporting on sexual activity in this module (not abstinence)
     '''
 
-    postpartum_abstinent = np.array([
-        [0, 1.0],
-        [1, 0.986062717770035],
-        [2, 0.868512110726644],
-        [3, 0.653136531365314],
-        [4, 0.511784511784512],
-        [5, 0.383512544802867],
-        [6, 0.348534201954397],
-        [7, 0.340557275541796],
-        [8, 0.291095890410959],
-        [9, 0.254285714285714],
-        [10, 0.223529411764706],
-        [11, 0.22258064516129],
-    ])
+    postpartum_sex = np.array([
+        [0, 0.0],
+        [1, 0.104166667],
+        [2, 0.300000000],
+        [3, 0.383177570],
+        [4, 0.461538462],
+        [5, 0.476635514],
+        [6, 0.500000000],
+        [7, 0.565217391],
+        [8, 0.541666667],
+        [9,0.547368421],
+        [10,0.617391304],
+        [11,0.578947368],
+        [12,0.637254902],
+        [13,0.608247423],
+        [14,0.582278481],
+        [15,0.542553191],
+        [16,0.678260870],
+        [17,0.600000000],
+        [18,0.605042017],
+        [19,0.562500000],
+        [20,0.529411765],
+        [21,0.674698795],
+        [22,0.548780488],
+        [23,0.616161616],
+        [24,0.709401709],
+        [25,0.651376147],
+        [26,0.780219780],
+        [27,0.717647059],
+        [28,0.716417910],
+        [29,0.683544304],
+        [30,0.716417910],
+        [31,0.640625000],
+        [32,0.650000000],
+        [33,0.676470588],
+        [34,0.645161290],
+        [35,0.606557377],
+        [36,0.644736842]])
 
     postpartum_activity = {}
-    postpartum_activity['month'] = postpartum_abstinent[:, 0]
-    postpartum_activity['percent_active'] = 1 - postpartum_abstinent[:, 1]
+    postpartum_activity['month'] = postpartum_sex[:, 0]
+    postpartum_activity['percent_active'] = postpartum_sex[:, 1]
 
     return postpartum_activity
 
@@ -566,15 +609,30 @@ def default_miscarriage_rates():
     return miscarriage_interp
 
 
+# def default_fecundity_ratio_nullip():
+#     '''
+#     Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
+#     Help correct for decreased likelihood of conceiving if never conceived
+#     from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+#     '''
+#
+#     fecundity_ratio_nullip = np.array([[  0,   5,  10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
+#                                        [1.0, 1.0, 1.0,  1.0, 1.0, 1.0, 1.0, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
+#     fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
+#
+#     return fecundity_nullip_interp
+
+
 def default_fecundity_ratio_nullip():
     '''
     Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
     Help correct for decreased likelihood of conceiving if never conceived
-    from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+    Assumes higher rates (20%) of infecundability in LMICs than PRESTO (North America) due to environmental exposures
+    Could be adjusted with condom use later (STIs linked to infecundability)
     '''
 
     fecundity_ratio_nullip = np.array([[  0,   5,  10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
-                                       [1.0, 1.0, 1.0,  1.0, 1.0, 1.0, 1.0, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
+                                       [1, 1, 1, 1, 1, 1, 1, 0.768, 0.76, 0.568, 0.584, 0.336, 0.336, 0.336]])
     fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
 
     return fecundity_nullip_interp
@@ -602,7 +660,7 @@ def default_exposure_correction_parity():
     '''
 
     exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
-                                           [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1, 1]])
+                                           [0.75, 0.75, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1, 1]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
@@ -711,6 +769,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['age_mortality']      = default_age_mortality(bound=True)
     pars['age_fecundity']      = default_female_age_fecundity(bound=True)  # Changed to age_fecundity for now from age_fertility for use with LEMOD
     pars['method_efficacy']    = default_efficacy()
+    pars['method_efficacy25'] = default_efficacy25()
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality(get_parameter(parameters=input_parameters, parameter="maternal_mortality_multiplier", defaults=default_parameters))
     pars['infant_mortality']   = default_infant_mortality()
