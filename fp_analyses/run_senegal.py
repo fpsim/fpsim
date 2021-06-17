@@ -263,58 +263,14 @@ if do_run:
     props = [value / total for value in values]
     model_table = pd.DataFrame({"AgeRange": pop_pyr_year['AgeRange'], "Proportion": props, "Status": ["Model"] * len(
         props)})
-    pop_pyr_year["Status"] = ["Real"] * len(props)
+    pop_pyr_year["Status"] = ["Data"] * len(props)
     compared_table = pd.DataFrame({"AgeRange": model_table["AgeRange"].append(pop_pyr_year["AgeRange"]),
     "Proportion": model_table["Proportion"].append(pop_pyr_year["Proportion"]),
     "Status": model_table["Status"].append(pop_pyr_year["Status"])})
-    ggplot(compared_table, aes(x="AgeRange", y="Proportion", fill="Status")) + coord_flip() + geom_bar(stat="identity", position=position_dodge())
-
-
-
-        # # Load population pyramid from DHS
-        # pop_pyr_year  = pd.read_csv(pop_pyr_year_file, header=None)
-        # pop_pyr_year = pop_pyr_year[pop_pyr_year[0]==year_str]
-        # bins = pl.arange(min_age, max_age, bin_size)
-        # pop_props_year = pop_pyr_year[2].to_numpy()
-        #
-        # # plotstyle = {'marker':'o', 'lw':3}
-        #
-        # counts = pl.zeros(len(bins))
-        # ppl = sim.people
-        # for i in range(len(ppl)):
-        #     if ppl.alive[i]:
-        #         bininds = sc.findinds(bins<=ppl.age[i]) # Could be refactored
-        #         if len(bininds) and ppl.age[i] < max_age:
-        #             counts[bininds[-1]] += 1
-        # counts = counts/counts.sum()
-
-
-
-        # # left = 0
-        # Pos = np.arange(len(bins))
-        # pl.barh(Pos + 0.8,
-        #         pop_props_year, bins,
-        #         # style = 'grouped', #Not necessary, this is the barh() default
-        #         color = 'blue',
-        #         EdgeColor = 'black',
-        #         # left = left,
-        #         label=f'{year_str} data')
-        #         # label='Data')
-        # pl.barh(Pos - 0.8,
-        #         counts, bins,
-        #         # style='grouped',
-        #         color='green',
-        #         EdgeColor= 'black',
-        #         label='Model')
-        #
-        # pl.legend()
-        # pl.xlabel('Proportion')
-        # pl.ylabel('Age')
-        # pl.title('Age pyramid, 15-49, females only', fontweight='bold')
-        # sc.setylim()
+    p = ggplot(compared_table, aes(x="AgeRange", y="Proportion", fill="Status")) + coord_flip() + geom_bar(stat="identity", position=position_dodge())
 
     if do_save:
-        pl.savefig(sp.abspath('figs', 'senegal_pyramids.png'))
+        ggsave(p, 'figs/senegal_pyramids.png')
 
     if do_plot_skyscrapers:
 
