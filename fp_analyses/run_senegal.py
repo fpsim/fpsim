@@ -9,6 +9,8 @@ import sciris as sc
 import seaborn as sns
 import fpsim as fp
 import senegal_parameters as sp
+import numpy as np
+from plotnine import *
 
 # Housekeeping
 sc.tic()
@@ -16,16 +18,16 @@ pl.rcParams['font.size'] = 10
 
 # Set parameters
 do_run              = 1
-do_store_postpartum = 1
-do_plot_pregnancy_parity = 1
-do_print_demographics = 1
-do_plot_popsize     = 1
-do_plot_tfr         = 1
+do_store_postpartum = 0
+do_plot_pregnancy_parity = 0
+do_print_demographics = 0
+do_plot_popsize     = 0
+do_plot_tfr         = 0
 do_plot_pyramids    = 1
 do_plot_model_pyramid = 1
-do_plot_skyscrapers = 1
-do_plot_methods     = 1
-do_plot_spacing     = 1
+do_plot_skyscrapers = 0
+do_plot_methods     = 0
+do_plot_spacing     = 0
 do_save             = 1
 
 min_age = 15
@@ -234,41 +236,85 @@ if do_run:
     if do_plot_pyramids:
         fig = pl.figure(figsize=(16,16))
 
-        # Load population pyramid from DHS
-        pop_pyr_year  = pd.read_csv(pop_pyr_year_file, header=None)
-        pop_pyr_year = pop_pyr_year[pop_pyr_year[0]==year_str]
-        bins = pl.arange(min_age, max_age, bin_size)
-        pop_props_year = pop_pyr_year[2].to_numpy()
+    pop_pyr_year = pd.read_csv(pop_pyr_year_file, header=None)
+    pop_pyr_year = pop_pyr_year[pop_pyr_year[0] == year_str]
+    pop_pyr_year['bins'] = [word.split("-") for word in pop_pyr_year[1]]
+    pop_pyr_year['bins'] = [[int(num) for num in numlist] for numlist in pop_pyr_year['bins']]
+    pop_pyr_year.columns = ["Year", "AgeRange", "Proportion", "bins"]
+    ages = [17, 18, 28, 19, 21, 25, 45, 37, 33, 35,
+            44]  # this is an example to match format of sim.People because can't extract
+    alive = [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1]
 
-        plotstyle = {'marker':'o', 'lw':3}
 
-        counts = pl.zeros(len(bins))
-        ppl = sim.people
-        for i in range(len(ppl)):
-            if ppl.alive[i]:
-                bininds = sc.findinds(bins<=ppl.age[i]) # Could be refactored
-                if len(bininds) and ppl.age[i] < max_age:
-                    counts[bininds[-1]] += 1
-        counts = counts/counts.sum()
+    def get_bin(age):
+        for index, bing in enumerate(pop_pyr_year['bins']):
+            if age >= bing[0] and age <= bing[1]:
+                return pop_pyr_year['AgeRange'].iloc[index]
 
-        # x = pl.hstack([bins, bins[::-1]])
-        # PP = pl.hstack([pop_props_year,-pop_props_year[::-1]])
-        # CC = pl.hstack([counts,-counts[::-1]])
+    model_proportions = {}
+    for index, age in enumerate(ages):
+        if alive[index]:
+            if get_bin(age) not in model_proportions:
+                model_proportions[get_bin(age)] = 1
+            else:
+                model_proportions[get_bin(age)] = model_proportions[get_bin(age)] + 1
+    values = [model_proportions[bing] for bing in pop_pyr_year['AgeRange']]
+    total = sum(values)
+    props = [value / total for value in values]
+    model_table = pd.DataFrame({"AgeRange": pop_pyr_year['AgeRange'], "Proportion": props, "Status": ["Model"] * len(
+        props)})
+    pop_pyr_year["Status"] = ["Real"] * len(props)
+    compared_table = pd.DataFrame({"AgeRange": model_table["AgeRange"].append(pop_pyr_year["AgeRange"]),
+    "Proportion": model_table["Proportion"].append(pop_pyr_year["Proportion"]),
+    "Status": model_table["Status"].append(pop_pyr_year["Status"])})
+    ggplot(compared_table, aes(x="AgeRange", y="Proportion", fill="Status")) + coord_flip() + geom_bar(stat="identity", position=position_dodge())
 
-        # pl.plot(PP, x, c='b', label=f'{year_str} data', **plotstyle)
-        # pl.plot(CC, x, c='g', label='Model', **plotstyle)
 
-        pl.plot(pop_props_year, bins, c='b', label=f'{year_str} data', **plotstyle)
-        pl.plot(counts, bins, c='g', label='Model', **plotstyle)
 
-        pl.legend()
-        pl.xlabel('Proportion')
-        pl.ylabel('Age')
-        pl.title('Age pyramid, 15-49, females only', fontweight='bold')
-        sc.setylim()
+        # # Load population pyramid from DHS
+        # pop_pyr_year  = pd.read_csv(pop_pyr_year_file, header=None)
+        # pop_pyr_year = pop_pyr_year[pop_pyr_year[0]==year_str]
+        # bins = pl.arange(min_age, max_age, bin_size)
+        # pop_props_year = pop_pyr_year[2].to_numpy()
+        #
+        # # plotstyle = {'marker':'o', 'lw':3}
+        #
+        # counts = pl.zeros(len(bins))
+        # ppl = sim.people
+        # for i in range(len(ppl)):
+        #     if ppl.alive[i]:
+        #         bininds = sc.findinds(bins<=ppl.age[i]) # Could be refactored
+        #         if len(bininds) and ppl.age[i] < max_age:
+        #             counts[bininds[-1]] += 1
+        # counts = counts/counts.sum()
 
-        if do_save:
-            pl.savefig(sp.abspath('figs', 'senegal_pyramids.png'))
+
+
+        # # left = 0
+        # Pos = np.arange(len(bins))
+        # pl.barh(Pos + 0.8,
+        #         pop_props_year, bins,
+        #         # style = 'grouped', #Not necessary, this is the barh() default
+        #         color = 'blue',
+        #         EdgeColor = 'black',
+        #         # left = left,
+        #         label=f'{year_str} data')
+        #         # label='Data')
+        # pl.barh(Pos - 0.8,
+        #         counts, bins,
+        #         # style='grouped',
+        #         color='green',
+        #         EdgeColor= 'black',
+        #         label='Model')
+        #
+        # pl.legend()
+        # pl.xlabel('Proportion')
+        # pl.ylabel('Age')
+        # pl.title('Age pyramid, 15-49, females only', fontweight='bold')
+        # sc.setylim()
+
+    if do_save:
+        pl.savefig(sp.abspath('figs', 'senegal_pyramids.png'))
 
     if do_plot_skyscrapers:
 
@@ -560,8 +606,8 @@ if do_run:
         pl.title(f'Age at first birth: data={pl.mean(first):0.2f}±{pl.std(first):0.2f} years, model={pl.mean(model_age_first):0.2f}±{pl.std(model_age_first):0.2f} years')
         pl.legend()
 
-        if do_save:
-            pl.savefig(sp.abspath(f'figs/senegal_birth_spacing.png'))
+    if do_save:
+        pl.savefig(sp.abspath(f'figs/senegal_birth_spacing.png'))
 
 
 
