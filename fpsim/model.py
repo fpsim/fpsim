@@ -557,8 +557,9 @@ class Sim(fpb.BaseSim):
             switch_general[key] = sc.dcp(val)
             switch_general[key][0, 0] *= self.pars['methods']['trend'][ind]  # Takes into account mCPR during year of sim
             for i in range(len(switch_general[key])):
-                switch_general[key][i] = switch_general[key][i, :] / switch_general[key][i,
-                                                           :].sum()  # Normalize so probabilities add to 1
+                denom = switch_general[key][i,:].sum()
+                if denom > 0:
+                    switch_general[key][i] = switch_general[key][i, :] / denom  # Normalize so probabilities add to 1
             self.pars['methods'][key] = switch_general[key]
 
         # Update postpartum initiation matrices for current year mCPR - stratified by age
