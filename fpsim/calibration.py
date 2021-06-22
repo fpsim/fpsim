@@ -51,7 +51,7 @@ default_flags = sc.objdict(
     infant_m = 1,  # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
     cdr = 1,  # Crude death rate at end of sim in model vs data; 'crude_death_rate'
     cbr = 1,  # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
-    tfr = 0,  # Not using as calibration target given different formulas in data vs model
+    tfr = 1,  # Not using as calibration target given different formulas in data vs model
 )
 
 
