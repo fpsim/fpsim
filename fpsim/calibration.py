@@ -244,7 +244,7 @@ class Experiment(sc.prettyobj):
 
         self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
         self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
-        
+
 
     def extract_skyscrapers(self):
 
@@ -616,7 +616,7 @@ class Experiment(sc.prettyobj):
         for key in rate_keys + non_calibrated_keys:
             keys.remove(key)
         nkeys = len(keys)
-        expected = 11
+        expected = 12
         if nkeys != expected:
             errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys}'
             raise ValueError(errormsg)

@@ -6,7 +6,7 @@ import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
 
-do_plot = 0
+do_plot = 1
 
 def make_calib(n=500):
     '''
@@ -14,7 +14,7 @@ def make_calib(n=500):
     '''
     pars = fa.senegal_parameters.make_pars()
     pars['n'] = n
-    pars['verbose'] = 0.1
+    pars['verbose'] = 0
     calib = fp.Calibration(pars=pars)
 
     return calib
@@ -34,6 +34,12 @@ def test_calibration(n_trials=5, do_plot=False):
     before,after = calib.summarize()
 
     assert before > after
+
+    if do_plot:
+        calib.before.plot()
+        calib.after.plot()
+        calib.before.fit.plot()
+        calib.after.fit.plot()
 
     return calib
 
