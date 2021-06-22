@@ -493,9 +493,9 @@ def default_sexual_activity():
     Age 12.5 adjusted in calibration to help model match age at first intercourse
     '''
 
-
     sexually_active = np.array([[0, 5, 10, 12.5, 15,   18,   20,   25,   30,   35,   40,    45,   50],
                                 [0, 0,  0,  8,   11.5, 11.5, 35.5, 49.6, 57.4, 64.4, 64.45, 64.5, 66.8]])
+
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     activity_ages = sexually_active[0]
     activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
@@ -657,11 +657,16 @@ def default_exposure_correction_parity():
     '''
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
     or live birth by parity.
-    '''
 
+    Michelle note: Thinking about this in terms of child preferences/ideal number of children
+    '''
     exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
-                                           [0.75, 0.75, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1, 1]])
+                                           [0.5, 0.8, 1, 1, 1, 1, 1, 1, 1, 1, 0.15, 0.10,  0.05, 0.01]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
+    #
+    # exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
+    #                                        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1, 1]])
+    # exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
 

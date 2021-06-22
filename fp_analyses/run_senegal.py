@@ -7,6 +7,8 @@ import pylab as pl
 import pandas as pd
 import sciris as sc
 import seaborn as sns
+
+import fp_analyses.senegal_parameters
 import fpsim as fp
 import senegal_parameters as sp
 import numpy as np
@@ -18,16 +20,16 @@ pl.rcParams['font.size'] = 10
 
 # Set parameters
 do_run              = 1
-do_store_postpartum = 0
-do_plot_pregnancy_parity = 0
-do_print_demographics = 0
-do_plot_popsize     = 0
-do_plot_tfr         = 0
+do_store_postpartum = 1
+do_plot_pregnancy_parity = 1
+do_print_demographics = 1
+do_plot_popsize     = 1
+do_plot_tfr         = 1
 do_plot_pyramids    = 1
 do_plot_model_pyramid = 1
-do_plot_skyscrapers = 0
-do_plot_methods     = 0
-do_plot_spacing     = 0
+do_plot_skyscrapers = 1
+do_plot_methods     = 1
+do_plot_spacing     = 1
 do_save             = 1
 
 min_age = 15
@@ -178,7 +180,7 @@ if do_run:
 
         # Handle population size and mcpr from data
         pop_years_data = popsize.iloc[0,:].to_numpy()
-        popsize_data = popsize.iloc[1,:].to_numpy() / (popsize.iloc[1,0] / 100000) # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500  <-- Leftover from Cliff
+        popsize_data = popsize.iloc[1,:].to_numpy() / (popsize.iloc[1,0] / 5000) # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500  <-- Leftover from Cliff
         mcpr_years_data = mcpr.iloc[:,0].to_numpy()
         mcpr_rates_data = mcpr.iloc[:,1].to_numpy()
 
@@ -243,7 +245,7 @@ if do_run:
     pop_pyr_year.columns = ["Year", "AgeRange", "Proportion", "bins"]
     ages = [17, 18, 28, 19, 21, 25, 45, 37, 33, 35,
             44]  # this is an example to match format of sim.People because can't extract
-    alive = [1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1]
+    alive = [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]
 
 
     def get_bin(age):
