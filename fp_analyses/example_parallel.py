@@ -6,7 +6,7 @@ import sciris as sc
 import fpsim as fp
 import senegal_parameters as sp
 
-def run(seed=10, n=200):
+def run(seed=10, n=100):
     pars = sp.make_pars()
     pars['seed'] = seed
     pars['n'] = n
@@ -17,7 +17,7 @@ def run(seed=10, n=200):
 if __name__ == '__main__':
 
     T = sc.tic()
-    sims = sc.parallelize(run, range(2))
+    sims = sc.parallelize(run, range(50))
     all_ppl = sc.mergedicts(*[s.people for s in sims])
     msim = sc.dcp(sims[0])
     msim.people = all_ppl
