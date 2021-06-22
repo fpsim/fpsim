@@ -237,8 +237,9 @@ class Experiment(sc.prettyobj):
         self.dhs_data['tfr_years'] = tfr.iloc[:, 0].to_numpy()
         self.dhs_data['total_fertility_rate'] = tfr.iloc[:, 0].to_numpy()
 
-        self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
         self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
+        self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
+
 
     def extract_skyscrapers(self):
 
