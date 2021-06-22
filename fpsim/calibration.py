@@ -51,7 +51,7 @@ default_flags = sc.objdict(
     infant_m = 1,  # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
     cdr = 1,  # Crude death rate at end of sim in model vs data; 'crude_death_rate'
     cbr = 1,  # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
-    tfr = 0,  # Not using as calibration target given different formulas in data vs model
+    tfr = 1,  # Total fertility rate
 )
 
 
@@ -195,6 +195,7 @@ class Experiment(sc.prettyobj):
 
         return
 
+
     def model_mmr(self):
         '''
         Calculate maternal mortality in model over most recent 3 years
@@ -206,6 +207,7 @@ class Experiment(sc.prettyobj):
 
         return
 
+
     def model_infant_mortality_rate(self):
 
         infant_deaths = pl.sum(self.model_results['infant_deaths'][-mpy:])
@@ -213,6 +215,7 @@ class Experiment(sc.prettyobj):
         self.model_to_calib['infant_mortality_rate'] = (infant_deaths / births_last_year) * 1000
 
         return
+
 
     def model_crude_death_rate(self):
 
@@ -223,6 +226,7 @@ class Experiment(sc.prettyobj):
 
         return
 
+
     def model_crude_birth_rate(self):
 
         births_last_year = pl.sum(self.model_results['births'][-mpy:])
@@ -230,15 +234,17 @@ class Experiment(sc.prettyobj):
 
         return
 
+
     def model_data_tfr(self):
 
         # Extract tfr over time in data - keep here to ignore dhs data if not using tfr for calibration
         tfr = pd.read_csv(tfr_file, header=None)  # From DHS
         self.dhs_data['tfr_years'] = tfr.iloc[:, 0].to_numpy()
-        self.dhs_data['total_fertility_rate'] = tfr.iloc[:, 0].to_numpy()
+        self.dhs_data['total_fertility_rate'] = tfr.iloc[:, 1].to_numpy()
 
-        self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
         self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
+        self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
+        
 
     def extract_skyscrapers(self):
 
@@ -606,7 +612,7 @@ class Experiment(sc.prettyobj):
                      'infant_mortality_rate',
                      'crude_death_rate',
                      'crude_birth_rate']
-        non_calibrated_keys = ['pop_years', 'mcpr_years']
+        non_calibrated_keys = ['pop_years', 'mcpr_years', 'tfr_years']
         for key in rate_keys + non_calibrated_keys:
             keys.remove(key)
         nkeys = len(keys)
@@ -829,9 +835,10 @@ class Fit(sc.prettyobj):
         self.sim_results = sim
 
         # Remove keys that aren't for fitting
-        for key in ['pop_years', 'mcpr_years']:
-            self.data.pop(key)
-            self.sim_results.pop(key)
+        for key in self.data.keys():
+            if key.endswith('_years'):
+                self.data.pop(key)
+                self.sim_results.pop(key)
         self.keys       = data.keys()
 
         # These are populated during initialization
