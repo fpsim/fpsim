@@ -14,7 +14,7 @@ Version 0.7.0 (2021-06-29)
 - Added new calibration plotting methods.
 - Separated Experiment and Calibration into separate files, and renamed ``model.py`` to ``sim.py``.
 - Fixed a bug where the age pyramid was being unintentionally modified in-place.
-- *GitHub info*: PR `128 <https://github.com/amath-idm/fp_analyses/pull/128>`__
+- *GitHub info*: PR `144 <https://github.com/amath-idm/fp_analyses/pull/144>`__
 
 
 Version 0.6.5 (2021-06-11)
