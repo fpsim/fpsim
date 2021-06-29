@@ -1033,7 +1033,7 @@ class Fit(sc.prettyobj):
         for k,key in enumerate(keys):
             if key in self.keys: # It's a time series, plot with days and dates
                 days      = self.inds.sim[key] # The "days" axis (or not, for custom keys)
-                daylabel  = 'Day'
+                daylabel  = 'Timestep'
             else: #It's custom, we don't know what it is
                 days      = np.arange(len(self.losses[key])) # Just use indices
                 daylabel  = 'Index'
