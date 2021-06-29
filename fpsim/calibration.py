@@ -607,11 +607,11 @@ class Experiment(sc.prettyobj):
                      'infant_mortality_rate',
                      'crude_death_rate',
                      'crude_birth_rate']
-        non_calibrated_keys = ['pop_years', 'mcpr_years']
+        non_calibrated_keys = ['pop_years', 'mcpr_years', 'tfr_years']
         for key in rate_keys + non_calibrated_keys:
             keys.remove(key)
         nkeys = len(keys)
-        expected = 13
+        expected = 12
         if nkeys != expected:
             errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys}'
             raise ValueError(errormsg)
@@ -1378,7 +1378,7 @@ class Calibration(sc.prettyobj):
             print(self.best_pars)
             print(f'Mismatch before calibration: {before:n}')
             print(f'Mismatch after calibration:  {after:n}')
-            print(f'Percent improvement:         {(1-(before-after)/before)*100:0.1f}%')
+            print(f'Percent improvement:         {((before-after)/before)*100:0.1f}%')
             return before, after
         except Exception as E:
             errormsg = 'Could not get summary, have you run the calibration?'
