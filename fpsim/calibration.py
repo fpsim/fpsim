@@ -24,6 +24,7 @@ class Calibration(sc.prettyobj):
     def __init__(self, pars, calib_pars=None, **kwargs):
         self.pars = pars
         self.calib_pars = calib_pars
+        self.g = None
         self.init_optuna(**kwargs)
         return
 
@@ -163,6 +164,9 @@ class Calibration(sc.prettyobj):
                 to_pop.append(k)
         for k in to_pop:
             kwargs.pop(k)
+        if len(kwargs):
+            errormsg = f'Did not recognize keys {sc.strjoin(kwargs.keys())}'
+            raise ValueError(errormsg)
 
         # Run the optimization
         t0 = sc.tic()
@@ -217,9 +221,7 @@ class Calibration(sc.prettyobj):
                 results.append(data)
         print(f'Processed {n_trials} trials; {len(failed_trials)} failed')
 
-        print('Making data structure...')
         keys = ['index', 'mismatch'] + list(best.keys())
-        print(keys)
         data = sc.objdict().make(keys=keys, vals=[])
         for i,r in enumerate(results):
             for key in keys:
