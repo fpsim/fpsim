@@ -1388,7 +1388,7 @@ class Calibration(sc.prettyobj):
             print(self.best_pars)
             print(f'Mismatch before calibration: {before:n}')
             print(f'Mismatch after calibration:  {after:n}')
-            print(f'Percent improvement:         {(1-(before-after)/before)*100:0.1f}%')
+            print(f'Percent improvement:         {((before-after)/before)*100:0.1f}%')
             return before, after
         except Exception as E:
             errormsg = 'Could not get summary, have you run the calibration?'
