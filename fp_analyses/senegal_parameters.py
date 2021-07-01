@@ -114,7 +114,7 @@ def default_female_age_fecundity(bound):
     return fecundity_interp
 
 
-def default_maternal_mortality():
+def default_maternal_mortality(maternal_mortality_multiplier):
     '''
     Risk of maternal death assessed at each pregnancy. Data from Huchon et al. (2013) prospective study on risk of maternal death in Senegal and Mali.
     Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
@@ -147,9 +147,11 @@ def default_maternal_mortality():
         [2019, 0.00128, 0.00169, 0.00214]
     ])
 
+
+
     maternal_mortality = {}
     maternal_mortality['year'] = data[:,0]
-    maternal_mortality['probs'] = data[:,2]
+    maternal_mortality['probs'] = data[:,3] * maternal_mortality_multiplier ##select column of low, median, high estimates
 
     return maternal_mortality
 
@@ -423,16 +425,16 @@ def default_efficacy():
 
 
     method_efficacy = sc.odict({
-            "None":        0.0,
-            "Pill":        95.6,
-            "IUDs":        98.9,
-            "Injectable": 98.4,
-            "Condoms":     94.6,
-            "BTL":         99.5,
+            "None":         0.0,
+            "Pill":         95.6,
+            "IUDs":         98.9,
+            "Injectable":   98.4,
+            "Condoms":      94.6,
+            "BTL":          99.5,
             "Rhythm":       86.7,
             "Withdrawal":   88.3,
             "Implants":     99.4,
-            "Other":       94.5,
+            "Other":        94.5,
             })
 
     # method_efficacy[:] = 100 # To disable contraception
@@ -659,7 +661,7 @@ def default_exposure_correction_parity():
     Michelle note: Thinking about this in terms of child preferences/ideal number of children
     '''
     exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
-                                           [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.15, 0.10,  0.05, 0.01]])
+                                           [0.5, 0.8, 1, 1, 1, 1, 1, 1, 1, 1, 0.15, 0.10,  0.05, 0.01]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
     #
     # exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
@@ -774,7 +776,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['method_efficacy']    = default_efficacy()
     pars['method_efficacy25'] = default_efficacy25()
     pars['barriers']           = default_barriers()
-    pars['maternal_mortality'] = default_maternal_mortality()
+    pars['maternal_mortality'] = default_maternal_mortality(get_parameter(parameters=input_parameters, parameter="maternal_mortality_multiplier", defaults=default_parameters))
     pars['infant_mortality']   = default_infant_mortality()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
