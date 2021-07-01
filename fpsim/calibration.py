@@ -9,7 +9,7 @@ import pylab as pl
 import pandas as pd
 import sciris as sc
 import optuna as op
-from . import model as mo
+from . import sim as mo
 
 
 __all__ = ['Experiment', 'Fit', 'Calibration', 'compute_gof', 'datapath', 'diff_summaries']
