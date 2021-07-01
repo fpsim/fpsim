@@ -8,7 +8,7 @@ import fp_analyses as fa
 
 do_plot = 1
 
-def make_calib(n=1000):
+def make_calib(n=5000):
     '''
     Define a default simulation for testing the baseline.
     '''
@@ -20,12 +20,14 @@ def make_calib(n=1000):
     return calib
 
 
-def test_calibration(n_trials=5, do_plot=False):
+def test_calibration(n_trials=25, do_plot=False):
     ''' Compare the current default sim against the saved baseline '''
     sc.heading('Testing calibration...')
 
     calib_pars = dict(
-        exposure_correction = [1.0, 0.5, 1.5],
+        exposure_correction = [1.0, 0.9, 1.1],
+        fecundity_variation_low = [0.4, 0.1, 0.9],
+        fecundity_variation_high = [1.4, 1.1, 1.9],
         maternal_mortality_multiplier = [1, 0.75, 3.0],
         abortion_prob = [0.086, 0.017, 0.1]
     )

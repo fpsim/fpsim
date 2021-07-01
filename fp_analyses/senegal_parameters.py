@@ -425,16 +425,16 @@ def default_efficacy():
 
 
     method_efficacy = sc.odict({
-            "None":         0.0,
-            "Pill":         95.6,
-            "IUDs":         98.9,
-            "Injectable":   98.4,
-            "Condoms":      94.6,
-            "BTL":          99.5,
+            "None":        0.0,
+            "Pill":        95.6,
+            "IUDs":        98.9,
+            "Injectable": 98.4,
+            "Condoms":     94.6,
+            "BTL":         99.5,
             "Rhythm":       86.7,
             "Withdrawal":   88.3,
             "Implants":     99.4,
-            "Other":        94.5,
+            "Other":       94.5,
             })
 
     # method_efficacy[:] = 100 # To disable contraception
@@ -661,7 +661,7 @@ def default_exposure_correction_parity():
     Michelle note: Thinking about this in terms of child preferences/ideal number of children
     '''
     exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
-                                           [0.5, 0.8, 1, 1, 1, 1, 1, 1, 1, 1, 0.15, 0.10,  0.05, 0.01]])
+                                           [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.15, 0.10,  0.05, 0.01]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
     #
     # exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
