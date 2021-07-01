@@ -114,7 +114,7 @@ def default_female_age_fecundity(bound):
     return fecundity_interp
 
 
-def default_maternal_mortality(maternal_mortality_multiplier):
+def default_maternal_mortality():
     '''
     Risk of maternal death assessed at each pregnancy. Data from Huchon et al. (2013) prospective study on risk of maternal death in Senegal and Mali.
     Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
@@ -147,11 +147,9 @@ def default_maternal_mortality(maternal_mortality_multiplier):
         [2019, 0.00128, 0.00169, 0.00214]
     ])
 
-
-
     maternal_mortality = {}
     maternal_mortality['year'] = data[:,0]
-    maternal_mortality['probs'] = data[:,3] * maternal_mortality_multiplier ##select column of low, median, high estimates
+    maternal_mortality['probs'] = data[:,2]
 
     return maternal_mortality
 
@@ -776,7 +774,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['method_efficacy']    = default_efficacy()
     pars['method_efficacy25'] = default_efficacy25()
     pars['barriers']           = default_barriers()
-    pars['maternal_mortality'] = default_maternal_mortality(get_parameter(parameters=input_parameters, parameter="maternal_mortality_multiplier", defaults=default_parameters))
+    pars['maternal_mortality'] = default_maternal_mortality()
     pars['infant_mortality']   = default_infant_mortality()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month

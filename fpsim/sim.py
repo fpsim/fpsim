@@ -341,7 +341,8 @@ class People(fpb.BasePeople):
 
     def maternal_mortality(self, inds):
         '''Check for probability of maternal mortality'''
-        death_inds = inds[fpu.n_binomial(self.pars['mortality_probs']['maternal'], len(inds))]
+        prob = self.pars['mortality_probs']['maternal'] * self.pars['maternal_mortality_multiplier']
+        death_inds = inds[fpu.n_binomial(prob, len(inds))]
         self.step_results['maternal_deaths'] += len(death_inds)
         self.alive[death_inds] = False
         self.step_results['deaths'] += len(death_inds)
