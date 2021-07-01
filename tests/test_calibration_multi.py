@@ -8,7 +8,7 @@ import fp_analyses as fa
 
 do_plot = 1
 
-def make_calib(n=5000):
+def make_calib(n=1000):
     '''
     Define a default simulation for testing the baseline.
     '''
