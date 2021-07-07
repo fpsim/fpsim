@@ -38,5 +38,6 @@ setup(
         'matplotlib',
         'seaborn>=0.9',
         'optuna',
+        'plotnine',
     ],
 )
