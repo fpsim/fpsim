@@ -6,7 +6,7 @@ from tempfile import TemporaryDirectory
 
 import fp_analyses.senegal_parameters as sp
 
-
+@unittest.skip
 class TestSenegalParametersConfiguration(unittest.TestCase):
     with open(sp.DEFAULTS_FILE, 'r') as f:
         DEFAULT_INPUT_PARAMETERS = json.load(f)

@@ -9,7 +9,6 @@ import sciris as sc
 import seaborn as sns
 import fpsim as fp
 import senegal_parameters as sp
-import numpy as np
 from plotnine import *
 
 # Housekeeping
