@@ -269,7 +269,8 @@ if do_run:
     p = ggplot(compared_table, aes(x="AgeRange", y="Proportion", fill="Status")) + coord_flip() + geom_bar(stat="identity", position=position_dodge())
 
     if do_save:
-        ggsave(p, 'figs/senegal_pyramids.png')
+        p.save(sp.abspath('figs', 'senegal_pyramids.png'))
+
 
     if do_plot_skyscrapers:
 
