@@ -114,7 +114,7 @@ def default_female_age_fecundity(bound):
     return fecundity_interp
 
 
-def default_maternal_mortality(maternal_mortality_multiplier):
+def default_maternal_mortality():
     '''
     Risk of maternal death assessed at each pregnancy. Data from Huchon et al. (2013) prospective study on risk of maternal death in Senegal and Mali.
     Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
@@ -151,7 +151,7 @@ def default_maternal_mortality(maternal_mortality_multiplier):
 
     maternal_mortality = {}
     maternal_mortality['year'] = data[:,0]
-    maternal_mortality['probs'] = data[:,3] * maternal_mortality_multiplier ##select column of low, median, high estimates
+    maternal_mortality['probs'] = data[:,2]
 
     return maternal_mortality
 

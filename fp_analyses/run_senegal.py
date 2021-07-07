@@ -7,8 +7,6 @@ import pylab as pl
 import pandas as pd
 import sciris as sc
 import seaborn as sns
-
-import fp_analyses.senegal_parameters
 import fpsim as fp
 import senegal_parameters as sp
 import numpy as np
