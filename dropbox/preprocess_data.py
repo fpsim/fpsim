@@ -7,10 +7,10 @@ import pandas as pd
 import sciris as sc
 import fpsim as fp
 
-dhs_infile      = fp.calibration.pregnancy_parity_file_raw # Name of the input file
-dhs_outfile     = fp.calibration.pregnancy_parity_file     # Name of the output file
-spacing_infile  = fp.calibration.spacing_file_raw
-spacing_outfile = fp.calibration.spacing_file
+dhs_infile      = fp.experiment.pregnancy_parity_file_raw # Name of the input file
+dhs_outfile     = fp.experiment.pregnancy_parity_file     # Name of the output file
+spacing_infile  = fp.experiment.spacing_file_raw
+spacing_outfile = fp.experiment.spacing_file
 
 
 
