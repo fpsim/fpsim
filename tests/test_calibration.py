@@ -25,7 +25,7 @@ def test_calibration(n_trials=5, do_plot=False):
     sc.heading('Testing calibration...')
 
     calib_pars = dict(
-        exposure_correction = [1.0, 0.5, 8.0],
+        exposure_correction = [1.0, 0.8, 1.2],
     )
 
     # Calculate calibration

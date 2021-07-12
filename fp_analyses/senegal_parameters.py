@@ -114,7 +114,7 @@ def default_female_age_fecundity(bound):
     return fecundity_interp
 
 
-def default_maternal_mortality(maternal_mortality_multiplier):
+def default_maternal_mortality():
     '''
     Risk of maternal death assessed at each pregnancy. Data from Huchon et al. (2013) prospective study on risk of maternal death in Senegal and Mali.
     Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
@@ -151,7 +151,7 @@ def default_maternal_mortality(maternal_mortality_multiplier):
 
     maternal_mortality = {}
     maternal_mortality['year'] = data[:,0]
-    maternal_mortality['probs'] = data[:,3] * maternal_mortality_multiplier ##select column of low, median, high estimates
+    maternal_mortality['probs'] = data[:,2]
 
     return maternal_mortality
 
@@ -304,7 +304,7 @@ def default_methods():
             [0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.3784797068, 0.0337520371, 0.0000000000, 0.5673896826, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0203785735, 0.0000000000],
             [0.3062747325, 0.0000000000, 0.0000000000, 0.0000000000, 0.6937252675, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000],
             [0.1975288747, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.8024711253, 0.0000000000],
@@ -315,7 +315,7 @@ def default_methods():
             [0.1487728323, 0.0000000000, 0.8512271677, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.4335262316, 0.0186547239, 0.0000000000, 0.5290636135, 0.0093676132, 0.0000000000, 0.0000000000, 0.0000000000, 0.0046939089, 0.0046939089],
             [0.1805180504, 0.0000000000, 0.0000000000, 0.0000000000, 0.8194819496, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.1075144246, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.8924855754, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000],
             [0.1640640890, 0.0000000000, 0.0000000000, 0.0188921157, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.8170437953, 0.0000000000],
@@ -776,7 +776,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['method_efficacy']    = default_efficacy()
     pars['method_efficacy25'] = default_efficacy25()
     pars['barriers']           = default_barriers()
-    pars['maternal_mortality'] = default_maternal_mortality(get_parameter(parameters=input_parameters, parameter="maternal_mortality_multiplier", defaults=default_parameters))
+    pars['maternal_mortality'] = default_maternal_mortality()
     pars['infant_mortality']   = default_infant_mortality()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month

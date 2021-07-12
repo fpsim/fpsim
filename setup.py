@@ -33,10 +33,11 @@ setup(
         'numpy',
         'numba',
         'scipy',
-        'pandas',
+        'pandas<1.3', # Bug in pandas 1.3 with loading older pickles; see https://github.com/pandas-dev/pandas/issues/42345
         'sciris>=1.0',
         'matplotlib',
         'seaborn>=0.9',
         'optuna',
+        'plotnine',
     ],
 )
