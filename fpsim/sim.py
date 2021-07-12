@@ -72,7 +72,7 @@ class People(fpb.BasePeople):
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
 
         # Fecundity variation
-        fv = self.pars['fecundity_variation']
+        fv = [self.pars['fecundity_variation_low'], self.pars['fecundity_variation_high']]
         self.personal_fecundity = arr(n, np.random.random(n)*(fv[1]-fv[0])+fv[0]) # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.remainder_months = arr(n, d['remainder_months'])
 
@@ -251,7 +251,7 @@ class People(fpb.BasePeople):
 
         self.pregnant[preg_inds] = True
         self.gestation[preg_inds] = 0  # Start the counter at 0 to allow full 9 months gestation
-        pregdur = self.pars['preg_dur']
+        pregdur = [self.pars['preg_dur_low'], self.pars['preg_dur_high']]
         self.preg_dur[preg_inds] = np.random.randint(pregdur[0], pregdur[1]+1, size=len(preg_inds))  # Duration of this pregnancy
         self.postpartum[preg_inds] = False
         self.postpartum_dur[preg_inds] = 0
@@ -283,7 +283,7 @@ class People(fpb.BasePeople):
         Currently agents breastfeed a random amount of time between 1 and 24 months.
         '''
         n_inds = len(inds)
-        bfdur = self.pars['breastfeeding_dur']
+        bfdur = [self.pars['breastfeeding_dur_low'], self.pars['breastfeeding_dur_high']]
         breastfeed_durs = np.random.randint(bfdur[0], bfdur[1]+1, size=n_inds)
         inds_finished = inds[sc.findinds(self.breastfeed_dur[inds] >= breastfeed_durs)]
         inds_continue = np.setdiff1d(inds, inds_finished)
