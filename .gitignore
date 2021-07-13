@@ -1,6 +1,9 @@
 # Custom files
 *.obj
 .DS_Store
+*.pdf
+*.png
+*.zip
 
 # History files
 .Rhistory
