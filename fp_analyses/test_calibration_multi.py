@@ -7,14 +7,17 @@ import fpsim as fp
 import fp_analyses as fa
 
 do_plot = 1
-n_trials = 5
+total_trials = 100
+
+n_workers = sc.cpu_count()
+n_trials = int(total_trials/n_workers)
 
 
 # Set parameters
 pars = fa.senegal_parameters.make_pars()
 pars['n'] = 100
 pars['verbose'] = 0.1
-calib = fp.Calibration(pars=pars)
+calib = fp.Calibration(pars=pars, n_workers=n_workers, n_trials=n_trials)
 
 calib_pars = dict(
     exposure_correction = [1.0, 0.9, 1.1],
