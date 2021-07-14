@@ -6,6 +6,7 @@ import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
 
+do_plot = 1
 n_trials = 50
 
 
@@ -32,6 +33,12 @@ if __name__ == '__main__':
     # Calculate calibration
     calib.calibrate(calib_pars=calib_pars, n_trials=n_trials)
     before,after = calib.summarize()
+
+    if do_plot:
+        calib.before.plot()
+        calib.after.plot()
+        calib.before.fit.plot()
+        calib.after.fit.plot()
 
     # Wrap up
     print('\n'*2)
