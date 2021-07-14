@@ -146,12 +146,14 @@ class Calibration(sc.prettyobj):
         return output
 
 
-    def calibrate(self, calib_pars=None, **kwargs):
+    def calibrate(self, calib_pars=None, weights=None, **kwargs):
         ''' Actually perform calibration '''
 
         # Load and validate calibration parameters
         if calib_pars is not None:
             self.calib_pars = calib_pars
+        if weights is not None:
+            self.weights = weights
         if self.calib_pars is None:
             errormsg = 'You must supply calibration parameters either when creating the calibration object or when calling calibrate().'
             raise ValueError(errormsg)

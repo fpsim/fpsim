@@ -7,12 +7,12 @@ import fpsim as fp
 import fp_analyses as fa
 
 do_plot = 1
-n_trials = 50
+n_trials = 5
 
 
 # Set parameters
 pars = fa.senegal_parameters.make_pars()
-pars['n'] = 1000
+pars['n'] = 100
 pars['verbose'] = 0.1
 calib = fp.Calibration(pars=pars)
 
@@ -24,6 +24,10 @@ calib_pars = dict(
     abortion_prob = [0.086, 0.017, 0.1]
 )
 
+weights = dict(
+    maternal_mortality_ratio = 0.0,
+)
+
 
 if __name__ == '__main__':
 
@@ -31,7 +35,7 @@ if __name__ == '__main__':
     T = sc.tic()
 
     # Calculate calibration
-    calib.calibrate(calib_pars=calib_pars, n_trials=n_trials)
+    calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, weights=weights)
     before,after = calib.summarize()
 
     if do_plot:
