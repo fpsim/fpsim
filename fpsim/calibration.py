@@ -21,9 +21,10 @@ class Calibration(sc.prettyobj):
     A class to handle calibration of FPsim objects.
     '''
 
-    def __init__(self, pars, calib_pars=None, **kwargs):
+    def __init__(self, pars, calib_pars=None, weights=None, **kwargs):
         self.pars = pars
         self.calib_pars = calib_pars
+        self.weights = weights
         self.g = None
         self.init_optuna(**kwargs)
         return
@@ -107,7 +108,7 @@ class Calibration(sc.prettyobj):
         ''' Create and run an experiment '''
         pars = sc.mergedicts(sc.dcp(self.pars), pars)
         exp = fpe.Experiment(pars=pars, **kwargs)
-        exp.run()
+        exp.run(weights=self.weights)
         if return_exp:
             return exp
         else:
@@ -145,12 +146,14 @@ class Calibration(sc.prettyobj):
         return output
 
 
-    def calibrate(self, calib_pars=None, **kwargs):
+    def calibrate(self, calib_pars=None, weights=None, **kwargs):
         ''' Actually perform calibration '''
 
         # Load and validate calibration parameters
         if calib_pars is not None:
             self.calib_pars = calib_pars
+        if weights is not None:
+            self.weights = weights
         if self.calib_pars is None:
             errormsg = 'You must supply calibration parameters either when creating the calibration object or when calling calibrate().'
             raise ValueError(errormsg)

@@ -823,10 +823,9 @@ class Fit(sc.prettyobj):
     def __init__(self, data, sim, weights=None, keys=None, custom=None, compute=True, verbose=False, **kwargs):
 
         # Handle inputs
-        self.weights    = weights
         self.custom     = sc.mergedicts(custom)
         self.verbose    = verbose
-        self.weights    = sc.mergedicts({'cum_deaths':10, 'cum_diagnoses':5}, weights)
+        self.weights    = sc.mergedicts(weights)
         self.gof_kwargs = kwargs
 
         # Copy data
