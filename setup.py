@@ -34,7 +34,7 @@ setup(
         'numba',
         'scipy',
         'pandas>=1.3', 
-        'sciris>=1.0',
+        'sciris>=1.2.1',
         'matplotlib',
         'seaborn>=0.9',
         'optuna',
