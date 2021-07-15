@@ -18,30 +18,71 @@ __all__ = ['Calibration']
 
 class Calibration(sc.prettyobj):
     '''
-    A class to handle calibration of FPsim objects.
+    A class to handle calibration of FPsim objects. Uses the Optuna hyperparameter
+    optimization library (optuna.org).
+
+    Note: running a calibration does not guarantee a good fit! You must ensure that
+    you run for a sufficient number of iterations, have enough free parameters, and
+    that the parameters have wide enough bounds. Please see the tutorial on calibration
+    for more information.
+
+    Args:
+        sim          (Sim)  : the simulation to calibrate
+        calib_pars   (dict) : a dictionary of the parameters to calibrate of the format dict(key1=[best, low, high])
+        weights      (dict) : a custom dictionary of weights for each output
+        n_trials     (int)  : the number of trials per worker
+        n_workers    (int)  : the number of parallel workers (default: maximum)
+        total_trials (int)  : if n_trials is not supplied, calculate by dividing this number by n_workers
+        name         (str)  : the name of the database (default: 'fpsim_calibration')
+        db_name      (str)  : the name of the database file (default: 'fpsim_calibration.db')
+        storage      (str)  : the location of the database (default: sqlite)
+        label        (str)  : a label for this calibration object
+        verbose      (bool) : whether to print details of the calibration
+        kwargs       (dict) : passed to cv.Calibration()
+
+    Returns:
+        A Calibration object
     '''
 
-    def __init__(self, pars, calib_pars=None, weights=None, **kwargs):
-        self.pars = pars
+    def __init__(self, pars, calib_pars=None, weights=None, verbose=True, **kwargs):
+        self.pars       = pars
         self.calib_pars = calib_pars
-        self.weights = weights
-        self.g = None
-        self.init_optuna(**kwargs)
+        self.weights    = weights
+        self.verbose    = verbose
+
+        # Configure Optuna
+        self.set_optuna_defaults()
+        self.configure_optuna(**kwargs)
         return
 
 
-    def init_optuna(self, **kwargs):
-        ''' Create a (mutable) dictionary for global settings '''
-        g = sc.objdict() # g for "global" -- probably should rename
-        g.name      = kwargs.pop('name', 'fpsim')
-        g.db_name   = kwargs.pop('db_name', f'{g.name}.db')
-        g.storage   = kwargs.pop('storage', f'sqlite:///{g.db_name}')
-        g.n_workers = kwargs.pop('n_workers', 4) # Define how many workers to run in parallel
-        g.n_trials  = kwargs.pop('n_trials', 100) # Define the number of trials, i.e. sim runs, per worker
+    def set_optuna_defaults(self):
+        ''' Create a (mutable) dictionary with default global settings '''
+        ''' Set defaults for Optuna '''
+        g = sc.objdict()
+        g.name      = 'fpsim_calibration'
+        g.db_name   = f'{g.name}.db'
+        g.storage   = f'sqlite:///{g.db_name}'
+        g.n_trials  = 20  # Define the number of trials, i.e. sim runs, per worker
+        g.n_workers = sc.cpu_count()
         self.g = g
+        return
+
+
+    def configure_optuna(self, **kwargs):
+        ''' Update Optuna configuration, if required '''
+
+        total_trials = kwargs.pop('total_trials', None)
+        for key in self.g.keys():
+            self.g[key] = kwargs.pop(key, self.g[key])
+
+        if total_trials is not None:
+            self.g.n_trials = int(total_trials/self.g.n_workers)
+
         if len(kwargs):
             errormsg = f'Did not recognize keys {sc.strjoin(kwargs.keys())}'
             raise ValueError(errormsg)
+
         return
 
 
@@ -146,32 +187,24 @@ class Calibration(sc.prettyobj):
         return output
 
 
-    def calibrate(self, calib_pars=None, weights=None, **kwargs):
+    def calibrate(self, calib_pars=None, weights=None, verbose=None, **kwargs):
         ''' Actually perform calibration '''
 
         # Load and validate calibration parameters
-        if calib_pars is not None:
-            self.calib_pars = calib_pars
-        if weights is not None:
-            self.weights = weights
+        if calib_pars is not None: self.calib_pars = calib_pars
+        if weights    is not None: self.weights    = weights
+        if verbose    is not None: self.verbose    = verbose
         if self.calib_pars is None:
             errormsg = 'You must supply calibration parameters either when creating the calibration object or when calling calibrate().'
             raise ValueError(errormsg)
         self.validate_pars()
-
-        # Update optuna settings
-        to_pop = []
-        for k,v in kwargs.items():
-            if k in self.g:
-                self.g[k] = v
-                to_pop.append(k)
-        for k in to_pop:
-            kwargs.pop(k)
-        if len(kwargs):
-            errormsg = f'Did not recognize keys {sc.strjoin(kwargs.keys())}'
-            raise ValueError(errormsg)
+        self.configure_optuna(**kwargs) # Update optuna settings
 
         # Run the optimization
+        if self.verbose:
+            sc.heading('Starting calibration')
+            print('Settings:')
+            print(self.g)
         t0 = sc.tic()
         self.make_study()
         self.run_workers()
