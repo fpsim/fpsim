@@ -9,6 +9,19 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+
+Version 0.7.2 (2021-07-14)
+--------------------------
+- Allow ``total_trials`` to be passed to an ``fp.Calibration`` object.
+- *GitHub info*: PR `162 <https://github.com/amath-idm/fp_analyses/pull/162>`__
+
+
+Version 0.7.1 (2021-07-14)
+--------------------------
+- Allow ``weights`` to be passed to an ``fp.Calibration`` object.
+- *GitHub info*: PR `161 <https://github.com/amath-idm/fp_analyses/pull/161>`__
+
+
 Version 0.7.0 (2021-06-29)
 --------------------------
 - Added new calibration plotting methods.

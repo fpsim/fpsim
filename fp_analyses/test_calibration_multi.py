@@ -7,17 +7,13 @@ import fpsim as fp
 import fp_analyses as fa
 
 do_plot = 1
-total_trials = 100
-
-n_workers = sc.cpu_count()
-n_trials = int(total_trials/n_workers)
-
+total_trials = 50
 
 # Set parameters
 pars = fa.senegal_parameters.make_pars()
 pars['n'] = 100
 pars['verbose'] = 0.1
-calib = fp.Calibration(pars=pars, n_workers=n_workers, n_trials=n_trials)
+calib = fp.Calibration(pars=pars)
 
 calib_pars = dict(
     exposure_correction = [1.0, 0.9, 1.1],
@@ -38,7 +34,7 @@ if __name__ == '__main__':
     T = sc.tic()
 
     # Calculate calibration
-    calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, weights=weights)
+    calib.calibrate(calib_pars=calib_pars, total_trials=total_trials, weights=weights)
     before,after = calib.summarize()
 
     if do_plot:
