@@ -7,7 +7,7 @@ import fpsim as fp
 import fp_analyses as fa
 
 do_plot = 1
-total_trials = 128
+total_trials = 50
 
 # Set parameters
 pars = fa.senegal_parameters.make_pars()
