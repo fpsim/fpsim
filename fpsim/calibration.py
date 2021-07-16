@@ -77,7 +77,7 @@ class Calibration(sc.prettyobj):
             self.g[key] = kwargs.pop(key, self.g[key])
 
         if total_trials is not None:
-            self.g.n_trials = int(total_trials/self.g.n_workers)
+            self.g.n_trials = int(np.ceil(total_trials/self.g.n_workers))
 
         if len(kwargs):
             errormsg = f'Did not recognize keys {sc.strjoin(kwargs.keys())}'
