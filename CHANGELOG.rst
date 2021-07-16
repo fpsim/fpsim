@@ -9,6 +9,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.7.3 (2021-07-15)
+--------------------------
+- Fix bug to ensure that at least one process runs on each worker.
+- *GitHub info*: PR `163 <https://github.com/amath-idm/fp_analyses/pull/163>`__
+
 
 Version 0.7.2 (2021-07-14)
 --------------------------
