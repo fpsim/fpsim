@@ -526,6 +526,23 @@ def default_sexual_activity():
 
     return activity_interp
 
+def default_birth_spacing_preference():
+    '''
+    Returns an array of birth spacing preferences by closest postpartum month. Applied to postpartum pregnancy likelihoods.
+    '''
+    postpartum_spacing = np.array([
+        [0, 0.025],
+        [13, 0.22],
+        [25, 1.50],
+        [36, 1.70],
+        [48, 0.75]])
+
+    pref_spacing = {}
+    pref_spacing['postpartum_dur'] = postpartum_spacing[:, 0]
+    pref_spacing['preference'] = postpartum_spacing[:, 1]
+
+    return pref_spacing
+
 def default_sexual_activity_postpartum():
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-36 months postpartum
@@ -644,6 +661,7 @@ def default_miscarriage_rates():
 #     fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
 #
 #     return fecundity_nullip_interp
+
 
 
 def default_fecundity_ratio_nullip():
