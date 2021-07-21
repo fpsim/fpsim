@@ -70,7 +70,6 @@ class People(fpb.BasePeople):
         self.dobs            = arr(n, []) # Dates of births -- list of lists
         self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
-        self.pref_spacing = arr(n, d['pref_spacing'])
 
         # Fecundity variation
         fv = [self.pars['fecundity_variation_low'], self.pars['fecundity_variation_high']]
