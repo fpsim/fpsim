@@ -546,8 +546,9 @@ def default_birth_spacing_preference():
     interval = intervals[0]
     assert np.all(intervals == interval), f'In order to be computed in an array, birth spacing preference bins must be equal width, not {intervals}'
     pref_spacing = {}
-    pref_spacing['pref_interval'] = interval
-    pref_spacing['preference'] = postpartum_spacing[:, 1]
+    pref_spacing['interval'] = interval # Store the interval (which we've just checked is always the same)
+    pref_spacing['n_bins'] = len(intervals) # Actually n_bins - 1, but we're counting 0 so it's OK
+    pref_spacing['preference'] = postpartum_spacing[:, 1] # Store the actual birth spacing data
 
     return pref_spacing
 
