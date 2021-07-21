@@ -70,7 +70,6 @@ class People(fpb.BasePeople):
         self.dobs            = arr(n, []) # Dates of births -- list of lists
         self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
-        self.pref_spacing = arr(n, d['pref_spacing'])
 
         # Fecundity variation
         fv = [self.pars['fecundity_variation_low'], self.pars['fecundity_variation_high']]
@@ -238,8 +237,11 @@ class People(fpb.BasePeople):
         preg_probs *= self.pars['exposure_correction_parity'][np.minimum(self.parity[inds], fpd.max_parity)]
 
         # Adjust for postpartum women's birth spacing preferences
-        postpartum_i = sc.findinds(self.postpartum_dur[inds] > 0)
-        preg_probs[postpartum_i] *= self.pars['pref_spacing']
+        pref = self.pars['pref_spacing'] # Shorten since used a lot
+        pp_inds = sc.findinds(self.postpartum_dur[inds] > 0) # Find nonzero postpartum indices
+        spacing_bins = self.postpartum_dur[inds[pp_inds]] / pref['interval'] # Main calculation -- divide the duration by the interval
+        spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int) # Convert to an integer and bound by longest bin
+        preg_probs[pp_inds] *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
 
         # Use a single binomial trial to check for conception successes this month
         pregnant = fpu.binomial_arr(preg_probs)
