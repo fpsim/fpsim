@@ -535,11 +535,11 @@ def default_birth_spacing_preference():
     NOTE: spacing bins must be uniform!
     '''
     postpartum_spacing = np.array([
-        [0, 0.025],
-        [12, 0.22],
-        [24, 1.50],
-        [36, 1.70],
-        [48, 0.75]])
+        [ 0,  0.1],
+        [12,  2.0],
+        [24,  8.0],
+        [36, 10.0],
+        [48,  5.0]])
 
     # Calculate the intervals and check they're all the same
     intervals = np.diff(postpartum_spacing[:, 0])

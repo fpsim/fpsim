@@ -237,10 +237,11 @@ class People(fpb.BasePeople):
         preg_probs *= self.pars['exposure_correction_parity'][np.minimum(self.parity[inds], fpd.max_parity)]
 
         # Adjust for postpartum women's birth spacing preferences
-        pref = self.pars['pref_spacing']
-        spacing_bins = np.array(np.minimum(self.postpartum_dur[inds] / pref['interval'], pref['n_bins']), dtype=int)
-        print(self.postpartum_dur[inds].mean())
-        # preg_probs *= pref['preference'][spacing_bins] # Actually adjust the probability
+        pref = self.pars['pref_spacing'] # Shorten since used a lot
+        pp_inds = sc.findinds(self.postpartum_dur[inds] > 0) # Find nonzero postpartum indices
+        spacing_bins = self.postpartum_dur[inds[pp_inds]] / pref['interval'] # Main calculation -- divide the duration by the interval
+        spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int) # Convert to an integer and bound by longest bin
+        preg_probs[pp_inds] *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
 
         # Use a single binomial trial to check for conception successes this month
         pregnant = fpu.binomial_arr(preg_probs)
@@ -309,8 +310,8 @@ class People(fpb.BasePeople):
         # Count the state of the agent
         pp_inds = inds[sc.findinds(self.postpartum[inds])]
         for key,(pp_low, pp_high) in fpd.postpartum_mapping.items():
-            match_low  = (self.postpartum_dur[inds] >= pp_low/fpd.mpy)
-            match_high = (self.postpartum_dur[inds] <  pp_high/fpd.mpy)
+            match_low  = (self.postpartum_dur[inds] >= pp_low)
+            match_high = (self.postpartum_dur[inds] <  pp_high)
             match = self.postpartum[inds] * match_low * match_high
             m_inds = inds[sc.findinds(match)]
             self.step_results[key] += len(m_inds)
