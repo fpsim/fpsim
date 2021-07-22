@@ -169,7 +169,6 @@ if do_run:
         print(f'TFR rates in 2015: {res["tfr_rates"][-5]}.  TFR in Senegal in 2015: 4.84')
         print(f'TFR rates in 2019: {res["tfr_rates"][-1]}.  TFR in Senegal in 2018: 4.56')
 
-
     if do_plot_popsize:
 
         # Load data
@@ -178,7 +177,7 @@ if do_run:
 
         # Handle population size and mcpr from data
         pop_years_data = popsize.iloc[0,:].to_numpy()
-        popsize_data = popsize.iloc[1,:].to_numpy() / (popsize.iloc[1,0] / 100000) # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500  <-- Leftover from Cliff
+        popsize_data = popsize.iloc[1,:].to_numpy() / (popsize.iloc[1,0] / 5000) # Conversion factor from Senegal to 500 people, = 1 / 1000 * 1.4268 / 500  <-- Leftover from Cliff
         mcpr_years_data = mcpr.iloc[:,0].to_numpy()
         mcpr_rates_data = mcpr.iloc[:,1].to_numpy()
 
