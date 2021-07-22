@@ -537,9 +537,9 @@ def default_birth_spacing_preference():
     postpartum_spacing = np.array([
         [ 0,  0.2],
         [12,  2.0],
-        [24,  8.5],
+        [24,  8.0],
         [36, 12.0],
-        [48,  4.5]])
+        [48,  5.0]])
 
     # Calculate the intervals and check they're all the same
     intervals = np.diff(postpartum_spacing[:, 0])
