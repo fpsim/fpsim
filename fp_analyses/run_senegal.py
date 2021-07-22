@@ -169,7 +169,6 @@ if do_run:
         print(f'TFR rates in 2015: {res["tfr_rates"][-5]}.  TFR in Senegal in 2015: 4.84')
         print(f'TFR rates in 2019: {res["tfr_rates"][-1]}.  TFR in Senegal in 2018: 4.56')
 
-
     if do_plot_popsize:
 
         # Load data
