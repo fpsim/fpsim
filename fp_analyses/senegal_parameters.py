@@ -11,7 +11,7 @@ import fpsim.defaults as fpd
 # Define default user-tunable parameters and values
 defaults = {
   'name'                          : 'Default',
-  'n'                             : 5000,
+  'n'                             : 10000,
   'start_year'                    : 1960,
   'end_year'                      : 2019,
   'timestep'                      : 1,
@@ -535,10 +535,10 @@ def default_birth_spacing_preference():
     NOTE: spacing bins must be uniform!
     '''
     postpartum_spacing = np.array([
-        [ 0,  0.1],
+        [ 0,  0.2],
         [12,  2.0],
         [24,  8.0],
-        [36, 10.0],
+        [36, 12.0],
         [48,  5.0]])
 
     # Calculate the intervals and check they're all the same
@@ -712,7 +712,7 @@ def default_exposure_correction_parity():
     Michelle note: Thinking about this in terms of child preferences/ideal number of children
     '''
     exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
-                                           [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.15, 0.10,  0.05, 0.01]])
+                                           [0.8, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0.15, 0.10,  0.05, 0.01]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
     #
     # exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
