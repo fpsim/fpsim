@@ -526,6 +526,33 @@ def default_sexual_activity():
 
     return activity_interp
 
+
+def default_birth_spacing_preference():
+    '''
+    Returns an array of birth spacing preferences by closest postpartum month.
+    Applied to postpartum pregnancy likelihoods.
+
+    NOTE: spacing bins must be uniform!
+    '''
+    postpartum_spacing = np.array([
+        [ 0,  0.2],
+        [12,  2.0],
+        [24,  8.0],
+        [36, 12.0],
+        [48,  5.0]])
+
+    # Calculate the intervals and check they're all the same
+    intervals = np.diff(postpartum_spacing[:, 0])
+    interval = intervals[0]
+    assert np.all(intervals == interval), f'In order to be computed in an array, birth spacing preference bins must be equal width, not {intervals}'
+    pref_spacing = {}
+    pref_spacing['interval'] = interval # Store the interval (which we've just checked is always the same)
+    pref_spacing['n_bins'] = len(intervals) # Actually n_bins - 1, but we're counting 0 so it's OK
+    pref_spacing['preference'] = postpartum_spacing[:, 1] # Store the actual birth spacing data
+
+    return pref_spacing
+
+
 def default_sexual_activity_postpartum():
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-36 months postpartum
@@ -646,6 +673,7 @@ def default_miscarriage_rates():
 #     return fecundity_nullip_interp
 
 
+
 def default_fecundity_ratio_nullip():
     '''
     Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
@@ -709,6 +737,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['maternal_mortality'] = default_maternal_mortality()
     pars['infant_mortality']   = default_infant_mortality()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
+    pars['pref_spacing']       = default_birth_spacing_preference()
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
     pars['lactational_amenorrhea']     = default_lactational_amenorrhea()
     pars['miscarriage_rates']          = default_miscarriage_rates()

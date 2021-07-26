@@ -529,6 +529,7 @@ if do_run:
 
         print(f'Model birth spacing bin percentages:{model_spacing_counts}')
         print(f'Data birth spacing bin percentages: {data_spacing_counts}')
+        #print(f'Mean spacing preference: {pref['preference'][spacing_bins].mean()}')
 
         # Plotting
         fig = pl.figure(figsize=(30,12))
