@@ -526,7 +526,19 @@ if do_run:
 
         model_spacing_counts[:] /= model_spacing_counts[:].sum()
         model_spacing_counts[:] *= 100
+        
+        #Spacing pies
+        fig = pl.figure(figsize=(15,14))
+        
+        pl.subplot(1,2,1)
+        pl.pie(data_spacing_counts[:], labels=spacing_bins)
+        pl.title('Birth spacing (DHS data)', fontweight='bold')
+        
+        pl.subplot(1,2,2)
+        pl.pie(model_spacing_counts[:], labels=spacing_bins)
+        pl.title('Birth spacing in model', fontweight='bold')
 
+        
         print(f'Model birth spacing bin percentages:{model_spacing_counts}')
         print(f'Data birth spacing bin percentages: {data_spacing_counts}')
         #print(f'Mean spacing preference: {pref['preference'][spacing_bins].mean()}')
