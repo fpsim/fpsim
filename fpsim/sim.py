@@ -271,16 +271,17 @@ class People(fpb.BasePeople):
         '''
         Check to see if postpartum agent meets criteria for LAM in this time step
         '''
-        not_postpartum = inds[sc.findinds(self.postpartum[inds] == 0)]
-        over5mo = inds[sc.findinds(self.postpartum_dur[inds] > 5)]
-        not_breastfeeding = inds[sc.findinds(self.breastfeed_dur[inds] == 0)]
-        self.lam[sc.cat(not_postpartum, over5mo, not_breastfeeding)] = False
         match_low = self.postpartum_dur[inds] > 0
         match_high = self.postpartum_dur[inds] <= 5
         match = self.postpartum[inds] * match_low * match_high
         match_inds = inds[sc.findinds(match)]
         probs = self.pars['lactational_amenorrhea']['rate'][self.postpartum_dur[match_inds]]
         self.lam[match_inds] = fpu.binomial_arr(probs)
+        
+        not_postpartum = inds[sc.findinds(self.postpartum[inds] == 0)]
+        over5mo = inds[sc.findinds(self.postpartum_dur[inds] > 5)]
+        not_breastfeeding = inds[sc.findinds(self.breastfeed_dur[inds] == 0)]
+        self.lam[sc.cat(not_postpartum, over5mo, not_breastfeeding)] = False
         return
 
 
