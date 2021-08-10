@@ -7,10 +7,12 @@ import numpy as np # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
 import pandas as pd
+import pyarrow.feather as feather
 from . import defaults as fpd
 from . import utils as fpu
 from . import base as fpb
 from . import interventions as fpi
+from collections import defaultdict
 
 
 # Specify all externally visible things this file defines
@@ -449,7 +451,6 @@ class People(fpb.BasePeople):
     def update(self):
         '''
         Update the person's state for the given timestep.
-
         t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)'''
 
         self.init_step_results()   # Initialize outputs
@@ -487,6 +488,15 @@ class Sim(fpb.BaseSim):
 
     def __init__(self, pars=None, label=None):
         super().__init__(pars) # Initialize and set the parameters as attributes
+
+        # Test settings
+        self.test_mode = False
+        self.to_feather = False
+        self.custom_feather_tables = None
+
+        # contains additional results of each timestep
+        self.total_results = defaultdict(lambda: {})
+
         self.label = label
         fpu.set_seed(self.pars['seed'])
         self.init_results()
@@ -494,7 +504,6 @@ class Sim(fpb.BaseSim):
         self.interventions = {}  # dictionary for possible interventions to add to the sim
         fpu.set_metadata(self) # Set version, date, and git info
         return
-
 
     def init_results(self):
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'maternal_deaths', 'infant_deaths', 'on_method',
@@ -730,13 +739,39 @@ class Sim(fpb.BaseSim):
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
 
-            # Apply analyzers
-            self.apply_analyzers()
+            if self.test_mode:
+                states = ["alive", "breastfeed_dur", "gestation", "lactating", "lam", "postpartum", "pregnant", "sexually_active", "postpartum_dur"]
+                for state in states:
+                    self.total_results[self.y][state] = getattr(self.people, state)
+
+        if self.test_mode:
+            default_states = ["alive", "breastfeed_dur", "gestation", "lactating", "lam", "postpartum", "pregnant", "sexually_active", "postpartum_dur"]
+            if not self.to_feather:
+                sc.savejson(filename="total_results.json", obj=self.total_results)
+            else:
+                if self.custom_feather_tables is None:
+                    states = default_states
+                else:
+                    states = self.custom_csv_tables
+                for state in default_states:
+                    state_frame = pd.DataFrame()
+                    max_length = len(self.total_results[max(self.total_results.keys())][state])
+                    for timestep, _ in self.total_results.items():
+                        colname = str(timestep) + "_" + state
+                        adjustment = max_length - len(self.total_results[timestep][state])
+                        state_frame[colname] = list(self.total_results[timestep][state]) + [None] * adjustment # ONLY WORKS IF LAST YEAR HAS MOST PEOPLE
+
+                    feather.write_feather(state_frame, state+".csv")
+
+        
+        # Apply analyzers
+        self.apply_analyzers()
 
         self.results['tfr_rates']    = np.array(self.results['tfr_rates']) # Store TFR rates for each year of model
         self.results['tfr_years']    = np.array(self.results['tfr_years']) # Save an array of whole years that model runs (ie, 1950, 1951...)
         self.results['pop_size']     = np.array(self.results['pop_size'])  # Store population size array in years and not months for calibration
         self.results['mcpr_by_year'] = np.array(self.results['mcpr_by_year'])
+
 
         print(f'Final population size: {self.n}.')
 
@@ -778,25 +813,19 @@ class Sim(fpb.BaseSim):
     def plot(self, dosave=None, figargs=None, plotargs=None, axisargs=None, as_years=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
-
         Parameters
         ----------
         dosave : bool or str
             Whether or not to save the figure. If a string, save to that filename.
-
         figargs : dict
             Dictionary of kwargs to be passed to pl.figure()
-
         plotargs : dict
             Dictionary of kwargs to be passed to pl.plot()
-
         as_years : bool
             Whether to plot the x-axis as years or time points
-
         Returns
         -------
         Figure handle
-
         '''
 
         if figargs  is None: figargs  = {'figsize':(20,8)}
@@ -856,6 +885,7 @@ class Sim(fpb.BaseSim):
 
     def plot_people(self):
         ''' Use imshow() to show all individuals as rows, with time as columns, one pixel per timestep per person '''
+        # The test_mode might help with this
         raise NotImplementedError
 
 
@@ -953,4 +983,3 @@ def multi_run(sims, **kwargs):
     ''' Run multiple sims in parallel; usually used via the MultiSim class, not directly '''
     sims = sc.parallelize(single_run, iterarg=sims, **kwargs)
     return sims
-

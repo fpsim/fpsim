@@ -39,5 +39,6 @@ setup(
         'seaborn>=0.9',
         'optuna',
         'plotnine',
+        'pyarrow'
     ],
 )
