@@ -14,7 +14,7 @@ run_number = input("Which run number would you like to compare (1-9): ")
 
 
 
-
+# Reading and plotting original vs. new sim results
 with open(f"plotting_data\DEBUG_array_results_{run_number}.json", "r") as read_file:
     new = json.load(read_file)
 with open(f"plotting_data\DEBUG_orig_results_{run_number}.json", "r") as read_file:
