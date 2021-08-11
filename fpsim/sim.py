@@ -744,7 +744,6 @@ class Sim(fpb.BaseSim):
                     self.total_results[self.y][state] = getattr(self.people, state)
 
         if self.test_mode:
-            default_states = ["alive", "breastfeed_dur", "gestation", "lactating", "lam", "postpartum", "pregnant", "sexually_active", "postpartum_dur"]
             if not self.to_feather:
                 sc.savejson(filename="total_results.json", obj=self.total_results)
             else:
