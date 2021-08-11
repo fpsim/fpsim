@@ -135,8 +135,7 @@ class TestStates(unittest.TestCase):
                 breastfeed_dur[index].append(attribute_dict["breastfeed_dur"][index])
 
         print("Checking alive against updated parameter")
-        i = 1 # comparing to previous value so must be one
-        while (i < len(gestation_dur)):
+        for i in range(1, gestation_dur):
             prec_gestation = 100 # value of gestation on the previous day
             prec_breastfeed = 100
 
@@ -148,8 +147,6 @@ class TestStates(unittest.TestCase):
                     self.assertEqual(alive_recorder[i][index-1], True, msg="At [{i}, {index}] a person's pregnancy is progressing while they are dead")
                 if prec_breastfeed < breastfeed_dur[i][index]:
                     self.assertEqual(alive_recorder[i][index-1], True, msg="At [{i}, {index}] a person is breastfeeding while they are dead")
-
-            i = i + 1
 
     # Nobody should have their pregnancy reset after month 4 (unless they give birth at month 9)
     @unittest.skip("This reveals issue 117")
