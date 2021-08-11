@@ -740,8 +740,7 @@ class Sim(fpb.BaseSim):
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
 
             if self.test_mode:
-                states = ["alive", "breastfeed_dur", "gestation", "lactating", "lam", "postpartum", "pregnant", "sexually_active", "postpartum_dur"]
-                for state in states:
+                for state in fpd.debug_states:
                     self.total_results[self.y][state] = getattr(self.people, state)
 
         if self.test_mode:
@@ -750,10 +749,10 @@ class Sim(fpb.BaseSim):
                 sc.savejson(filename="total_results.json", obj=self.total_results)
             else:
                 if self.custom_feather_tables is None:
-                    states = default_states
+                    states = fpd.debug_states
                 else:
                     states = self.custom_csv_tables
-                for state in default_states:
+                for state in fpd.debug_states:
                     state_frame = pd.DataFrame()
                     max_length = len(self.total_results[max(self.total_results.keys())][state])
                     for timestep, _ in self.total_results.items():
