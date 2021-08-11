@@ -22,8 +22,8 @@ def preprocess_dhs_file():
     dhs_pp = pd.read_stata(dhs_infile, convert_categoricals=False) # dhs_pp = dhs_pregnancy_parity
 
     print('Processing data...')
-    dhs_pp = dhs_pp[['v012', 'v213', 'v218']]
-    dhs_pp = dhs_pp.rename(columns={'v012': 'Age', 'v213': 'Pregnant', 'v218': 'Parity'})  # Parity means # of living children in DHS
+    dhs_pp = dhs_pp[['v012', 'v213', 'v201']]
+    dhs_pp = dhs_pp.rename(columns={'v012': 'Age', 'v213': 'Pregnant', 'v201': 'Parity'})  # Parity means # child ever born
 
     print(f'Saving data to {dhs_outfile}...')
     sc.saveobj(dhs_outfile, dhs_pp)
