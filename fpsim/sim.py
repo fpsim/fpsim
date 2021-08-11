@@ -759,7 +759,7 @@ class Sim(fpb.BaseSim):
                         adjustment = max_length - len(self.total_results[timestep][state])
                         state_frame[colname] = list(self.total_results[timestep][state]) + [None] * adjustment # ONLY WORKS IF LAST YEAR HAS MOST PEOPLE
 
-                    feather.write_feather(state_frame, state+".csv")
+                    feather.write_feather(state_frame, f"{self.label}_state.csv")
 
         
         # Apply analyzers
