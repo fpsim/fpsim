@@ -654,7 +654,7 @@ def default_miscarriage_rates():
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
     '''
     miscarriage_rates = np.array([[0, 5, 10,   12.5,   15,     20,   25,    30,    35,    40,    45,    50],
-                                  [0, 0,  0,  0.167, 0.167, 0.112, 0.097, 0.108, 0.167, 0.332, 0.569, 0.569]])
+                                  [0, 0,  0,  0.167, 0.167, 0.112, 0.97, 0.108, 0.167, 0.332, 0.569, 0.569]])
     miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
     return miscarriage_interp
 
