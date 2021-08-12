@@ -23,7 +23,7 @@ def preprocess_dhs_file():
 
     print('Processing data...')
     dhs_pp = dhs_pp[['v012', 'v213', 'v201']]
-    dhs_pp = dhs_pp.rename(columns={'v012': 'Age', 'v213': 'Pregnant', 'v201': 'Parity'})  # Parity means # child ever born
+    dhs_pp = dhs_pp.rename(columns={'v012': 'Age', 'v213': 'Pregnant', 'v201': 'Parity'})  # Parity means # children ever born
 
     print(f'Saving data to {dhs_outfile}...')
     sc.saveobj(dhs_outfile, dhs_pp)
