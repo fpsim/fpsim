@@ -8,8 +8,8 @@ import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
 
-rerun   = 1  # Re-run rather than just load
-do_save = 1  # Re-save, overwriting existing file
+rerun   = 0  # Re-run rather than just load
+do_save = 0  # Re-save, overwriting existing file
 n_runs  = 20 # Number of runs to run
 outfile = 'baseline_statistics.df'
 
