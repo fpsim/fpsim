@@ -3,6 +3,7 @@ Test that the current version of FPsim exactly matches
 the baseline results. To update baseline, run ./update_baseline.
 """
 
+
 import numpy as np
 import sciris as sc
 import fpsim as fp
