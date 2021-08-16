@@ -173,6 +173,30 @@ class TestFPSimFertility():
             current_birth_sums = []
         self.log_lines.append(all_birth_sums)
 
+    def sweep_spacing_preference(self, spacing_prefs, parameters, seeds):
+        if seeds is None:
+            seeds=self.default_seeds
+        if 0 not in spacing_prefs:
+            spacing_prefs = [0] + spacing_prefs
+        previous_birth_sums = None
+        all_birth_sums = {}
+        current_birth_sums = []
+        for sp in spacing_prefs:
+            parameters['pref_spacing'] = dp.default_birth_spacing_preference(sp)
+            self.sweep_seed(
+                seeds=seeds, pars=parameters
+            )
+            for result_file in self.output_files[-(len(seeds)):]:
+                result_dict = self.get_results_by_filename(result_file)
+                current_birth_sums.append(sum(result_dict['births']))
+            self.log_lines.append(f"At spacing pref {sp=} saw {sum(current_birth_sums)=} {current_birth_sums=}")
+            if previous_birth_sums:
+                assert sum(previous_birth_sums) < sum(current_birth_sums)
+            all_birth_sums[sp] = current_birth_sums
+            previous_birth_sums = current_birth_sums
+            current_birth_sums = []
+        self.log_lines.append(all_birth_sums)
+
     def sweep_ec_age(self, ec_ages, parameters, seeds=None):
         if seeds is None:
             seeds = self.default_seeds
@@ -279,6 +303,24 @@ class TestFPSimFertility():
             abortion_probs=abortion_probs,
             parameters=pars,
             seeds=seeds)
+
+    def test_sweep_spacing_preference(self):
+        """
+        Spacing preference is a multiplier on sexual activity in the 12 months postpartum.
+        Test is like the sexual activity test other than greatly cranking up the birth rates
+        so that we have enough data to consdier the scaling.
+        """
+        self.is_debugging = False
+        pars = dp.make_pars()
+        pars['sexual_activity'] = dp.default_sexual_activity(320.0)
+        uniform_spacing_preferences = [0.3, 1.0, 2.0, 4.0]
+        seeds = self.default_seeds
+        self.sweep_spacing_preference(
+            spacing_prefs=uniform_spacing_preferences,
+            parameters=pars,
+            seeds=seeds
+        )
+        # TODO: Finish this!
 
     @pytest.mark.skip("NYI")
     def test_sweep_age_pyramid(self):
