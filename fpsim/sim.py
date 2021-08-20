@@ -745,13 +745,13 @@ class Sim(fpb.BaseSim):
 
         if self.test_mode:
             if not self.to_feather:
-                sc.savejson(filename="total_results.json", obj=self.total_results)
+                sc.savejson(filename="sim_output/total_results.json", obj=self.total_results)
             else:
                 if self.custom_feather_tables is None:
                     states = fpd.debug_states
                 else:
-                    states = self.custom_csv_tables
-                for state in fpd.debug_states:
+                    states = self.custom_feather_tables
+                for state in states:
                     state_frame = pd.DataFrame()
                     max_length = len(self.total_results[max(self.total_results.keys())][state])
                     for timestep, _ in self.total_results.items():
@@ -759,7 +759,9 @@ class Sim(fpb.BaseSim):
                         adjustment = max_length - len(self.total_results[timestep][state])
                         state_frame[colname] = list(self.total_results[timestep][state]) + [None] * adjustment # ONLY WORKS IF LAST YEAR HAS MOST PEOPLE
 
-                    feather.write_feather(state_frame, f"{self.label}_state.csv")
+                    feather.write_feather(state_frame, f"sim_output/{state}_state")
+
+                
 
         
         # Apply analyzers

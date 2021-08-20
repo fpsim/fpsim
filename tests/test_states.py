@@ -6,7 +6,7 @@ import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
 
-@unittest.skip("Must run this with test_mode on in model.py, should not be run with other regression tests in GHA")
+#@unittest.skip("Must run this with test_mode on in model.py, should not be run with other regression tests in GHA")
 class TestStates(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -20,10 +20,10 @@ class TestStates(unittest.TestCase):
         exp = fp.Experiment(pars)
         exp.run(keep_people = True)
 
-        if not os.path.exists("total_results.json"):
+        if not os.path.exists("sim_output/total_results.json"):
             raise ValueError("You must enable test mode in model.py. Currently disabled by default due to speed difference")
         else:
-            with open("total_results.json") as result_file:
+            with open("sim_output/total_results.json") as result_file:
                 self.result_dict = sc.loadjson(result_file)
 
         self.year = None # Change to run the cross sectional tests on a specific year for the purpose of debugging specific reported values
