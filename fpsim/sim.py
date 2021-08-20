@@ -190,7 +190,7 @@ class People(fpb.BasePeople):
 
         # Set postpartum probabilities
         match_low  = self.postpartum_dur > 0
-        match_high = self.postpartum_dur <= 6
+        match_high = self.postpartum_dur <= self.pars['postpartum_length']
         pp_match = self.postpartum * match_low * match_high
         pp = sc.findinds(pp_match[inds])
         pp_inds = inds[pp]
