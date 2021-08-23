@@ -32,14 +32,18 @@ def abspath(path, *args):
 
 # %% Set parameters for the simulation
 
-def default_age_pyramid():
+def default_age_pyramid(age_array=None):
     '''
     Starting age bin, male population, female population
     This method defines a perfectly flat age structure,
     with the same portions in each age bin for each sex.
+
+    :param age_array [age_bucket, male_weight, female_weight]
     '''
 
-    pyramid = np.array([[x, 1, 1] for x in range(0, 81, 5)])
+    if not age_array:
+        age_array = [[x, 1, 1] for x in range(0, 81, 5)]
+    pyramid = np.array(age_array)
     return pyramid
 
 
@@ -277,7 +281,7 @@ def default_sexual_activity_postpartum():
 
     postpartum_abstinence_rates = \
     [[month, 1.0] for month in range(0, 2)] + \
-    [[month, 0.0] for month in range(2, 12)]
+    [[month, 0.2] for month in range(2, 36)]
     postpartum_abstinent = np.array(postpartum_abstinence_rates)
 
     postpartum_activity = {}

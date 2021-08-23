@@ -40,6 +40,8 @@ class TestFPSimFertility():
                    num_humans=1000, end_year=1963,
                    var_str=None):
         '''Sweep the specified parameters over random seed and save to disk'''
+        if not var_str:
+            var_str = "seeds"
         pars['n'] = num_humans
         pars['end_year'] = end_year
         if seeds is None:
@@ -173,9 +175,9 @@ class TestFPSimFertility():
             current_birth_sums = []
         self.log_lines.append(all_birth_sums)
 
-    def sweep_spacing_preference(self, spacing_prefs, parameters, seeds):
+    def sweep_spacing_preference(self, spacing_prefs, parameters, seeds=None):
         if seeds is None:
-            seeds=self.default_seeds
+            seeds = self.default_seeds
         if 0 not in spacing_prefs:
             spacing_prefs = [0] + spacing_prefs
         previous_birth_sums = None
@@ -231,11 +233,60 @@ class TestFPSimFertility():
             prev_key = ec
         self.log_lines.append(all_birth_sums)
 
+    def sweep_maternal_mortality(self, maternal_mortality_multipliers, parameters, seeds=None):
+        if seeds is None:
+            seeds = self.default_seeds
+        if 0 not in maternal_mortality_multipliers:
+            maternal_mortality_multipliers = [0] + maternal_mortality_multipliers
+        previous_maternal_deaths = 0
+        all_maternal_death_sums = {}
+        for mmm in maternal_mortality_multipliers:
+            current_maternal_death_sums = []
+            parameters['maternal_mortality'] = dp.default_maternal_mortality(mmm)
+            self.sweep_seed(
+                seeds=seeds, pars=parameters
+            )
+            for result_file in self.output_files[-(len(seeds)):]:
+                result_dict = self.get_results_by_filename(result_file)
+                current_maternal_death_sums.append(sum(result_dict['maternal_deaths']))
+            self.log_lines.append(f"At maternal mortality multiplier {mmm=}, saw {sum(current_maternal_death_sums)=} {current_maternal_death_sums=}")
+            if previous_maternal_deaths:
+                assert sum(previous_maternal_deaths) <= sum (current_maternal_death_sums)
+            all_maternal_death_sums[mmm] = current_maternal_death_sums
+            previous_maternal_deaths = current_maternal_death_sums
+        self.log_lines.append(all_maternal_death_sums)
+        pass
+
+    def sweep_infant_mortality(self, infant_mortality_rates, parameters, seeds=None):
+        if seeds is None:
+            seeds = self.default_seeds
+        if 0 not in infant_mortality_rates:
+            infant_mortality_rates = [0] + infant_mortality_rates
+        previous_infant_deaths = 0
+        all_infant_death_sums = {}
+        for imr in infant_mortality_rates:
+            current_infant_death_sums = []
+            parameters['infant_mortality'] = dp.default_infant_mortality(default=imr)
+            self.sweep_seed(
+                seeds=seeds, pars=parameters
+            )
+            for result_file in self.output_files[-(len(seeds)):]:
+                result_dict = self.get_results_by_filename(result_file)
+                current_infant_death_sums.append(sum(result_dict['infant_deaths']))
+            self.log_lines.append(f"At infant mortality rate {imr=}, saw {sum(current_infant_death_sums)=} {current_infant_death_sums=}")
+            if previous_infant_deaths:
+                assert sum(previous_infant_deaths) <= sum (current_infant_death_sums)
+            all_infant_death_sums[imr] = current_infant_death_sums
+            previous_infant_deaths = current_infant_death_sums
+        self.log_lines.append(all_infant_death_sums)
+        pass
+
     def test_sweep_sexual_activity(self):
         """array model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
         have non-overlapping birth counts"""
+        self.is_debugging = False
         pars = dp.make_pars()
-        sex_rates = [40.0, 80.0, 160.0, 320.0]
+        sex_rates = [30.0, 60.0, 120.0]
         seeds = self.default_seeds
         self.sweep_sexual_activity(
             sex_rates=sex_rates,
@@ -310,45 +361,42 @@ class TestFPSimFertility():
         Test is like the sexual activity test other than greatly cranking up the birth rates
         so that we have enough data to consdier the scaling.
         """
-        self.is_debugging = False
+        self.is_debugging = True
         pars = dp.make_pars()
         pars['sexual_activity'] = dp.default_sexual_activity(320.0)
-        uniform_spacing_preferences = [0.3, 1.0, 2.0, 4.0]
+        uniform_spacing_preferences = [0.3, 1.0, 2.0]
         seeds = self.default_seeds
+        seeds = [1, 2, 3, 4, 5]
         self.sweep_spacing_preference(
             spacing_prefs=uniform_spacing_preferences,
             parameters=pars,
             seeds=seeds
         )
-        # TODO: Finish this!
 
-    @pytest.mark.skip("NYI")
-    def test_sweep_age_pyramid(self):
-        raise NotImplementedError()
-        pass
-
-    @pytest.mark.skip("NYI")
-    def test_sweep_age_mortality(self):
-        raise NotImplementedError()
-        pass
-
-    @pytest.mark.skip("NYI")
-    def test_sweep_age_fecundity(self):
-        raise NotImplementedError()
-        pass
-
-    @pytest.mark.skip("NYI")
     def test_sweep_maternal_mortality(self):
-        raise NotImplementedError()
-        pass
+        self.is_debugging = False
+        pars = dp.make_pars()
+        pars['sexual_activity'] = dp.default_sexual_activity(320.0) # many conceptions
+        multipliers = [10, 50, 100, 200] # default is 2/1000
+        self.sweep_maternal_mortality(maternal_mortality_multipliers=multipliers,
+                                      parameters=pars)
 
-    @pytest.mark.skip("NYI")
     def test_sweep_infant_mortality(self):
-        raise NotImplementedError()
-        pass
+        self.is_debugging = False
+        pars = dp.make_pars()
+        pars['sexual_activity'] = dp.default_sexual_activity(320.0) # many conceptions
+        infant_mortality_rates = [10, 50, 100, 200]
+        self.sweep_infant_mortality(infant_mortality_rates=infant_mortality_rates,
+                                    parameters=pars)
 
     @pytest.mark.skip("NYI")
     def test_sweep_sexual_activity_postpartum(self):
+        # Possible:
+        # # Set default sexual activity rate to 50 or something with a larger overall population
+        # # Sweep postpartum across much larger numbers (100, 200, 400)
+        # Better:
+        # # Set all women of age to "pregnant" in year 0 with a large base population
+        # # Sweep postpartum rates of 0 to 320 in years 0 and 1
         raise NotImplementedError()
         pass
 
