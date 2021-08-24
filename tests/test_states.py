@@ -6,7 +6,7 @@ import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
 
-#@unittest.skip("Must run this with test_mode on in model.py, should not be run with other regression tests in GHA")
+@unittest.skip("Must run this with test_mode on in model.py, should not be run with other regression tests in GHA")
 class TestStates(unittest.TestCase):
     @classmethod
     def setUpClass(self):
