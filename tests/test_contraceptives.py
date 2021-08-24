@@ -147,7 +147,7 @@ class TestContraceptives(unittest.TestCase):
         if not self.debug_on:
             os.remove(self.experiment_json)
 
-@unittest.skip("Long, but all passes")
+@unittest.skip("Long, but all passes, except for issue #153")
 class TestContraceptiveEfficacy(unittest.TestCase):
     # Toggle off every method except for method specified
     @classmethod
@@ -170,21 +170,13 @@ class TestContraceptiveEfficacy(unittest.TestCase):
 
         self.pars['methods']['probs_matrix'] = prob_dict
 
-        efficacy = sc.odict({
-                "None":        0.0,
-                "Pill":        0.0,
-                "IUDs":        0.0,
-                "Injectables": 0.0,
-                "Condoms":     0.0,
-                "BTL":         0.0,
-                "Rhythm":       0.0,
-                "Withdrawal":   0.0,
-                "Implants":     0.0,
-                "Other":       0.0,
-                })
+        efficacy = fa.senegal_parameters.default_efficacy()
+        for method in efficacy.keys():
+            efficacy[method] = 0.0
 
         last_result = 100000 # Sentinel
-        for index, efficacy_value in enumerate([0, .3, .6, 0.9]):
+        # This section reveals issue #153
+        for index, efficacy_value in enumerate([0, .3, 0.6, 1.0]):
             efficacy[method] = efficacy_value
             self.pars["method_efficacy"] = efficacy
             exp = fp.Experiment(self.pars)

@@ -51,3 +51,4 @@ postpartum_mapping = {
 spline_ages      = np.arange(max_age + 1)
 spline_preg_ages = np.arange(max_age_preg + 1)
 spline_parities  = np.arange(max_parity + 1)
+debug_states = ["alive", "breastfeed_dur", "gestation", "lactating", "lam", "postpartum", "pregnant", "sexually_active", "postpartum_dur", "parity", "method"]

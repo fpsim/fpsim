@@ -1,11 +1,10 @@
+import unittest
+import os
+import pandas as pd
 import numpy as np
 import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
-import unittest
-import json
-import os
-import pandas as pd
 
 @unittest.skip("Must run this with test_mode on in model.py, should not be run with other regression tests in GHA")
 class TestStates(unittest.TestCase):
@@ -21,11 +20,11 @@ class TestStates(unittest.TestCase):
         exp = fp.Experiment(pars)
         exp.run(keep_people = True)
 
-        if not os.path.exists("total_results.json"):
+        if not os.path.exists("sim_output/total_results.json"):
             raise ValueError("You must enable test mode in model.py. Currently disabled by default due to speed difference")
         else:
-            with open("total_results.json") as result_file:
-                self.result_dict = json.load(result_file)
+            with open("sim_output/total_results.json") as result_file:
+                self.result_dict = sc.loadjson(result_file)
 
         self.year = None # Change to run the cross sectional tests on a specific year for the purpose of debugging specific reported values
     
@@ -136,8 +135,7 @@ class TestStates(unittest.TestCase):
                 breastfeed_dur[index].append(attribute_dict["breastfeed_dur"][index])
 
         print("Checking alive against updated parameter")
-        i = 1 # comparing to previous value so must be one
-        while (i < len(gestation_dur)):
+        for i in range(1, gestation_dur):
             prec_gestation = 100 # value of gestation on the previous day
             prec_breastfeed = 100
 
@@ -149,8 +147,6 @@ class TestStates(unittest.TestCase):
                     self.assertEqual(alive_recorder[i][index-1], True, msg="At [{i}, {index}] a person's pregnancy is progressing while they are dead")
                 if prec_breastfeed < breastfeed_dur[i][index]:
                     self.assertEqual(alive_recorder[i][index-1], True, msg="At [{i}, {index}] a person is breastfeeding while they are dead")
-
-            i = i + 1
 
     # Nobody should have their pregnancy reset after month 4 (unless they give birth at month 9)
     @unittest.skip("This reveals issue 117")
