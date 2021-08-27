@@ -150,7 +150,11 @@ class BasePeople(sc.prettyobj):
 
     def keys(self):
         ''' Returns keys for all properties of the people object '''
-        return obj_get(self, '_keys')[:]
+        try: # Unclear wy this fails, but sometimes it does during initialization/pickling
+            keys = obj_get(self, '_keys')[:]
+        except:
+            keys = []
+        return keys
 
     @property
     def is_female(self):
