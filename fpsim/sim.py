@@ -242,8 +242,7 @@ class People(fpb.BasePeople):
         preg_probs *= self.pars['exposure_correction_parity'][np.minimum(all_ppl.parity, fpd.max_parity)]
 
         # Use a single binomial trial to check for conception successes this month
-        is_conceived = fpu.binomial_arr(preg_probs)
-        conceived = all_ppl.filter(is_conceived)
+        conceived = active.binomial(preg_probs[active.inds], as_filter=True)
 
         # Check for abortion
         is_abort = conceived.binomial(self.pars['abortion_prob'])
