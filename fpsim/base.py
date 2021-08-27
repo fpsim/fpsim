@@ -71,8 +71,7 @@ class BasePeople(sc.prettyobj):
         '''
 
         try:
-            print('I AM ITEM', key)
-            return self.__dict__[key] # TODO: apply filtering
+            return self.__getattribute__(key)
         except: # pragma: no cover
             if isinstance(key, int):
                 return self.person(key)
@@ -94,18 +93,13 @@ class BasePeople(sc.prettyobj):
 
     def __getattribute__(self, attr):
         ''' Route property access to the underlying entity '''
-        # print('HI I AM ATRIBUTE', attr)
         output  = obj_get(self, attr)
         keys = obj_get(self, 'keys')()
-        # print('KEYS ARE', keys)
         if attr not in keys:
             return output
         else:
             if self._is_filtered(attr):
-                print('I AM FILTERED', attr)
                 output = output[self.inds]
-            else:
-                print('I AM NOT FILTERED', attr)
         return output
 
 

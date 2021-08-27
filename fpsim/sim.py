@@ -322,7 +322,7 @@ class People(fpb.BasePeople):
 
         # Check for miscarriage at the end of the first trimester
         end_first_tri     = preg.filter(preg.gestation == self.pars['end_first_tri'])
-        miscarriage_probs = self.pars['miscarriage_rates'][end_first_tri.int_age]
+        miscarriage_probs = self.pars['miscarriage_rates'][end_first_tri.int_age_clip]
         miscarriage  = end_first_tri.binomial(miscarriage_probs, as_filter=True)
 
         # Reset states
