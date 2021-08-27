@@ -7,6 +7,8 @@ import sciris as sc
 import pylab as pl
 from . import defaults as fpd
 from . import utils as fpu
+obj_get = object.__getattribute__ # Alias the default getattribute method
+obj_set = object.__setattr__
 
 
 __all__ = ['ParsObj', 'BasePeople', 'BaseSim']
@@ -49,8 +51,10 @@ class BasePeople(sc.prettyobj):
     Class for all the people in the simulation.
     '''
 
+    _keylike_properties = ['is_female', 'is_male', 'int_ages'] # People properties that act like keys
+
     def __init__(self):
-        self._keys = []
+        obj_set(self, '_keys', []) # Since getattribute is overwritten
         self.inds = None
         return
 
@@ -69,7 +73,8 @@ class BasePeople(sc.prettyobj):
         '''
 
         try:
-            return self.__dict__[key]
+            print('I AM ITEM', key)
+            return self.__dict__[key] # TODO: apply filtering
         except: # pragma: no cover
             if isinstance(key, int):
                 return self.person(key)
@@ -85,28 +90,34 @@ class BasePeople(sc.prettyobj):
 
 
     def _is_filtered(self, attr):
-        if hasattr(self, '_keys') and hasattr(self, 'inds'):
-            is_filtered = (attr in self.keys() and self.inds is not None)
-        else:
-            is_filtered = False
+        is_filtered = (attr in self.keys() and self.inds is not None)
         return is_filtered
 
 
-    def __getattr__(self, attr):
-        ''' Route property access to the underlying entity, if initialized '''
-        output = super().__getattribute__(attr)
-        if self._is_filtered(attr):
-            output = output[self._inds]
+    def __getattribute__(self, attr):
+        ''' Route property access to the underlying entity '''
+        print('HI I AM ATRIBUTE', attr)
+        output  = obj_get(self, attr)
+        keys = obj_get(self, 'keys')()
+        print('KEYS ARE', keys)
+        if attr not in keys:
+            return output
+        else:
+            if self._is_filtered(attr):
+                print('I AM FILTERED', attr)
+                output = output[self.inds]
+            else:
+                print('I AM NOT FILTERED', attr)
         return output
 
 
     def __setattr__(self, attr, value):
         ''' Ditto '''
         if self._is_filtered(attr):
-            array = self.__getattribute__(attr)
-            array[self._inds] = value
+            array = obj_get(self, attr)
+            array[self.inds] = value
         else:   # If not initialized, rely on the default behavior
-            super().__setattr__(attr, value)    # self.__dict__[name] = value
+            obj_set(self, attr, value)    # self.__dict__[name] = value
 
 
     def __add__(self, people2):
@@ -147,8 +158,9 @@ class BasePeople(sc.prettyobj):
 
     def keys(self):
         ''' Returns keys for all properties of the people object '''
-        properties = ['is_female', 'is_male', 'int_ages'] # Additional properties that act like keys
-        output = self._keys + properties
+        keys    = obj_get(self, '_keys')
+        kprops  = obj_get(self, '_keylike_properties')
+        output = keys + kprops
         return output
 
     @property
@@ -211,6 +223,7 @@ class BasePeople(sc.prettyobj):
 
         # Create a new People object with the same properties as the original
         filtered = object.__new__(self.__class__)
+        BasePeople.__init__(filtered)
         filtered.__dict__ = {k:v for k,v in self.__dict__.items()}
 
         # Perform the filtering

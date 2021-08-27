@@ -83,9 +83,6 @@ class People(fpb.BasePeople):
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]
 
-        # Handle indices
-        self._inds = None
-
         return
 
 
