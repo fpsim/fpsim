@@ -108,7 +108,8 @@ class BasePeople(sc.prettyobj):
             array = obj_get(self, attr)
             array[self.inds] = value
         else:   # If not initialized, rely on the default behavior
-            obj_set(self, attr, value)    # self.__dict__[name] = value
+            obj_set(self, attr, value)
+        return
 
 
     def __add__(self, people2):
@@ -181,6 +182,19 @@ class BasePeople(sc.prettyobj):
     def n(self):
         return self.alive.sum()
 
+    @property
+    def len_inds(self):
+        ''' Alias to len(self) '''
+        if self.inds is not None:
+            return len(self.inds)
+        else:
+            return len(self)
+
+    @property
+    def len_people(self):
+        ''' Full length of People array, ignoring filtering '''
+        return len(self.unfilter())
+
 
     def plot(self, fig_args=None, hist_args=None):
         ''' Plot histograms of each quantity '''
@@ -230,12 +244,11 @@ class BasePeople(sc.prettyobj):
         else:
             if len(criteria) == len(self):
                 filtered.inds = criteria.nonzero()[0] # Criteria is already filtered
-            elif len(criteria) == self.n_people:
+            elif len(criteria) == self.len_people:
                 filtered.inds = criteria[self.inds].nonzero()[0] # Criteria is not filtered yet
             else:
-                errormsg = f'"criteria" must be boolean array matching either current filter length ({self.n_inds}) or else the total number of people ({self.n_people}), not {len(criteria)}'
+                errormsg = f'"criteria" must be boolean array matching either current filter length ({self.len_inds}) or else the total number of people ({self.len_people}), not {len(criteria)}'
                 raise ValueError(errormsg)
-
 
         return filtered
 
@@ -271,25 +284,6 @@ class BasePeople(sc.prettyobj):
         else:
             output = arr
         return output
-
-
-    @property
-    def n_inds(self):
-        ''' Alias to len(self) '''
-        if self.inds is not None:
-            return len(self.inds)
-        else:
-            return len(self)
-
-    @property
-    def n_people(self):
-        ''' Full length of People array, ignoring filtering '''
-        return len(self.unfilter())
-
-
-
-
-
 
 
 class BaseSim(ParsObj):
