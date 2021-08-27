@@ -167,16 +167,16 @@ class People(fpb.BasePeople):
         age_mort = self.pars['age_mortality']
         f_spline = age_mort['f_spline'] * trend_val
         m_spline = age_mort['m_spline'] * trend_val
-        female   = self.filter(self.female_inds())
-        male     = self.filter(self.male_inds())
+        female   = self.filter(self.is_female)
+        male     = self.filter(self.is_male)
         f_ages = female.int_ages
         m_ages = male.int_ages
 
         f_mort_prob = fpu.annprob2ts(f_spline[f_ages], timestep)
         m_mort_prob = fpu.annprob2ts(m_spline[m_ages], timestep)
 
-        f_died = female[fpu.binomial_arr(f_mort_prob)]
-        m_died = male[fpu.binomial_arr(m_mort_prob)]
+        f_died = female.binomial(f_mort_prob, as_filter=True)
+        m_died = male.binomial(m_mort_prob, as_filter=True)
         for died in [f_died, m_died]:
             died.alive = False
             self.step_results['deaths'] += len(died)
@@ -327,7 +327,7 @@ class People(fpb.BasePeople):
         # Check for miscarriage at the end of the first trimester
         end_first_tri     = preg.filter(preg.gestation == self.pars['end_first_tri'])
         miscarriage_probs = self.pars['miscarriage_rates'][end_first_tri.int_ages]
-        miscarriage  = end_first_tri.filter(fpu.binomial_arr(miscarriage_probs)) # TODO: consider built-in
+        miscarriage  = end_first_tri.binomial(miscarriage_probs, as_filter=True)
 
         # Reset states
         miscarriage.pregnant   = False

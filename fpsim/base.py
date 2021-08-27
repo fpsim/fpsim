@@ -86,7 +86,7 @@ class BasePeople(sc.prettyobj):
 
     def _is_filtered(self, attr):
         if hasattr(self, '_keys') and hasattr(self, 'inds'):
-            is_filtered = (attr in self._keys and self.inds is not None)
+            is_filtered = (attr in self.keys() and self.inds is not None)
         else:
             is_filtered = False
         return is_filtered
@@ -147,7 +147,9 @@ class BasePeople(sc.prettyobj):
 
     def keys(self):
         ''' Returns keys for all properties of the people object '''
-        return sc.dcp(self._keys)
+        properties = ['is_female', 'is_male', 'int_ages'] # Additional properties that act like keys
+        output = self._keys + properties
+        return output
 
     @property
     def is_female(self):
@@ -237,12 +239,14 @@ class BasePeople(sc.prettyobj):
         return unfiltered
 
 
-    def binomial(self, prob):
+    def binomial(self, prob, as_inds=False, as_filter=False):
         '''
         Return indices either by a single probability or by an array of probabilities.
 
         Args:
             prob (float/array): either a scalar probability, or an array of probabilities
+            as_inds (bool): return as list of indices instead of a boolean array
+            as_filter (bool): return as filter instead than boolean array
         '''
         if sc.isnumber(prob):
             arr = fpu.n_binomial(prob, len(self))
@@ -251,7 +255,13 @@ class BasePeople(sc.prettyobj):
         else:
             errormsg = f'Could not recognize {type(prob)} as a scalar or array'
             raise TypeError(errormsg)
-        return arr
+        if as_inds:
+            output = sc.findinds(arr)
+        elif as_filter:
+            output = self.filter(arr)
+        else:
+            output = arr
+        return output
 
 
     @property
