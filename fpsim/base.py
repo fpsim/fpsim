@@ -45,7 +45,6 @@ class ParsObj(sc.prettyobj):
         return
 
 
-
 class BasePeople(sc.prettyobj):
     '''
     Class for all the people in the simulation.
