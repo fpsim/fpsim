@@ -371,8 +371,9 @@ class People(fpb.BasePeople):
         deliv.postpartum = True # Start postpartum state at time of birth
         deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
         deliv.postpartum_dur = 0
-        for i in range(len(deliv)): # Handle DOBs
-            deliv.dobs[i].append(deliv.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
+        all_ppl = self.unfilter()
+        for i in deliv.inds: # Handle DOBs
+            all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
 
         # Handle twins
         is_twin = deliv.binomial(self.pars['twins_prob'])
