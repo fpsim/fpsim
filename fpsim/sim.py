@@ -40,6 +40,7 @@ class People(fpb.BasePeople):
     def __init__(self, pars, n=None, **kwargs):
 
         # Initialization
+        super().__init__()
         self.pars = pars # Set parameters
         d = sc.mergedicts(fpd.person_defaults, kwargs) # d = defaults
         if n is None:
@@ -81,6 +82,9 @@ class People(fpb.BasePeople):
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]
+
+        # Handle indices
+        self._inds = None
 
         return
 
@@ -358,60 +362,62 @@ class People(fpb.BasePeople):
         return
 
 
-    def infant_mortality(self, inds):
+    def infant_mortality(self):
         '''Check for probability of infant mortality (death < 1 year of age)'''
-        death_inds = inds[fpu.n_binomial(self.pars['mortality_probs']['infant'], len(inds))]
-        self.step_results['infant_deaths'] += len(death_inds)
-        self.reset_breastfeeding(death_inds)
+        is_death = fpu.n_binomial(self.pars['mortality_probs']['infant'], len(self))
+        death = self.filter(is_death)
+        self.step_results['infant_deaths'] += len(death)
+        death.reset_breastfeeding()
         return
 
 
-    def check_delivery(self, inds):
+    def check_delivery(self):
         '''Decide if pregnant woman gives birth and explore maternal mortality and child mortality'''
 
         # Update states
-        deliv_inds = inds[sc.findinds(self.gestation[inds] >= self.preg_dur[inds])]
-        self.pregnant[deliv_inds] = False
-        self.gestation[deliv_inds] = 0  # Reset gestation counter
-        self.lactating[deliv_inds] = True  # Start lactating at time of birth
-        self.postpartum[deliv_inds] = True # Start postpartum state at time of birth
-        self.breastfeed_dur[deliv_inds] = 0  # Start at 0, will update before leaving timestep in separate function
-        self.postpartum_dur[deliv_inds] = 0
-        for i in deliv_inds: # Handle DOBs
-            self.dobs[i].append(self.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
+        deliv = self.filter(self.gestation >= self.preg_dur)
+        deliv.pregnant = False
+        deliv.gestation = 0  # Reset gestation counter
+        deliv.lactating = True  # Start lactating at time of birth
+        deliv.postpartum = True # Start postpartum state at time of birth
+        deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
+        deliv.postpartum_dur = 0
+        for i in range(len(deliv)): # Handle DOBs
+            deliv.dobs[i].append(deliv.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
 
         # Handle twins
-        twin_inds = deliv_inds[fpu.n_binomial(self.pars['twins_prob'], len(deliv_inds))]
-        self.step_results['births'] += 2*len(twin_inds)
-        self.parity[twin_inds] += 2
+        is_twin = fpu.n_binomial(self.pars['twins_prob'], len(deliv))
+        twin = deliv.filter(is_twin)
+        self.step_results['births'] += 2*len(twin)
+        twin.parity += 2
 
         # Handle singles
-        single_inds = np.setdiff1d(deliv_inds, twin_inds)
-        self.step_results['births'] += len(single_inds)
-        self.parity[single_inds] += 1
+        single = deliv.filter(~is_twin)
+        self.step_results['births'] += len(single)
+        single.parity += 1
 
         # Check mortality
-        self.maternal_mortality(inds=deliv_inds)
-        self.infant_mortality(inds=deliv_inds)
+        deliv.maternal_mortality()
+        deliv.infant_mortality()
 
         return
 
 
-    def age_person(self, inds):
+    def age_person(self):
         '''Advance age in the simulation'''
-        self.age[inds] += self.pars['timestep'] / fpd.mpy  # Age the person for the next timestep
-        self.age[inds] = np.minimum(self.age[inds], self.pars['max_age'])
+        self.age += self.pars['timestep'] / fpd.mpy  # Age the person for the next timestep
+        self.age = np.minimum(self.age, self.pars['max_age'])
         return
 
 
-    def update_contraception(self, inds):
+    def update_contraception(self):
         '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
 
-        self.get_method_postpartum(inds)
+        self.get_method_postpartum()
 
         # If switching frequency in months has passed, allows switching only on whole years -- TODO: have it per-woman rather than per-timestep
         if self.t % (self.pars['switch_frequency']/fpd.mpy) == 0:
-            self.get_method(inds)
+            self.get_method()
 
         return
 

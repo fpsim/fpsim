@@ -48,6 +48,12 @@ class BasePeople(sc.prettyobj):
     Class for all the people in the simulation.
     '''
 
+    def __init__(self):
+        self._keys = []
+        self.inds = None
+        return
+
+
     def __len__(self):
         try:
             return len(self.uid)
@@ -75,6 +81,29 @@ class BasePeople(sc.prettyobj):
         ''' Ditto '''
         self.__dict__[key] = value
         return
+
+
+    @property
+    def _is_filtered(self, attr):
+        is_filtered = (attr in self._keys and self._inds is not None)
+        return is_filtered
+
+
+    def __getattr__(self, attr):
+        ''' Route property access to the underlying entity, if initialized '''
+        output = super().__getattr__(attr)
+        if self._is_filtered(attr):
+            output = output[self._inds]
+        return output
+
+
+    def __setattr__(self, attr, value):
+        ''' Ditto '''
+        if self._is_filtered(attr):
+            array = self.__getattr__(attr)
+            array[self._inds] = value
+        else:   # If not initialized, rely on the default behavior
+            super().__setattr__(attr, value)    # self.__dict__[name] = value
 
 
     def __add__(self, people2):
@@ -115,11 +144,7 @@ class BasePeople(sc.prettyobj):
 
     def keys(self):
         ''' Returns keys for all properties of the people object '''
-        if hasattr(self, '_keys'):
-            return sc.dcp(self._keys)
-        else:
-            return []
-        return
+        return sc.dcp(self._keys)
 
     @property
     def is_female(self):
@@ -170,27 +195,53 @@ class BasePeople(sc.prettyobj):
         return fig
 
 
+    def filter(self, criteria=None):
+        '''
+        Store indices to allow for easy filtering of the People object.
+        '''
 
-class FilteredPeople(sc.prettyobj):
-    '''
-    Store indices to allow for easy filtering of the People object.
-    '''
+        # Create a new People object with the same properties as the original
+        filtered = object.__new__(self.__class__)
+        filtered.__dict__ = {k:v for k,v in self.__dict__.items()}
 
-    def __init__(self, people, indices=None):
-        self.people = people
-        self.indices = np.empty(0, dtype=int)
-        return
+        # Perform the filtering
+        if criteria is None:
+            filtered.inds = None
+        else:
+            if len(criteria) == len(self):
+                filtered.inds = criteria.nonzero()[0] # Criteria is already filtered
+            elif len(criteria) == self.n_people:
+                filtered.inds = criteria[self.inds].nonzero()[0] # Criteria is not filtered yet
+            else:
+                errormsg = f'"criteria" must be boolean array matching either current filter length ({self.n_inds}) or else the total number of people ({self.n_people})'
+                raise ValueError(errormsg)
 
 
-    def __len__(self):
-        return len(self.indices)
+        return filtered
+
+
+    def unfilter(self):
+        '''
+        An easy way of unfiltering the People object.
+        '''
+        return self.filter(criteria=None)
+
+
+    @property
+    def n_inds(self):
+        ''' Alias to len(self) '''
+        if self.inds is not None:
+            return len(self.inds)
+        else:
+            return len(self)
 
     @property
     def n_people(self):
-        return len(self.people)
+        ''' Full length of People array, ignoring filtering '''
+        return len(self.unfiltered())
 
-    def filter(self, criteria):
-        indices = criteria.nonzero()[0]
+
+
 
 
 
