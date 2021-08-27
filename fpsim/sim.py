@@ -455,22 +455,22 @@ class People(fpb.BasePeople):
         self.init_step_results()   # Initialize outputs
         alive = self.filter(self.alive)
         alive.age_person()  # Age person in units of the timestep
-        self.check_mortality(inds=alive_inds)  # Decide if person dies at this t in the simulation
+        alive.check_mortality()  # Decide if person dies at this t in the simulation
 
-        fecund_inds  = sc.findinds(self.alive * (self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
-        preg_inds    = fecund_inds[sc.findinds(self.pregnant[fecund_inds])]
-        nonpreg_inds = np.setdiff1d(fecund_inds, preg_inds)
-        lact_inds    = fecund_inds[sc.findinds(self.lactating[fecund_inds])]
+        fecund  = alive.filter((alive.sex == 0) * (alive.age < self.pars['age_limit_fecundity']))
+        preg    = fecund.filter(fecund.pregnant)
+        nonpreg = fecund.filter(~fecund.pregnant)
+        lact    = fecund.filter(fecund.lactating)
 
         # Update everything
-        self.check_delivery(preg_inds)  # Deliver with birth outcomes if reached pregnancy duration
-        self.update_pregnancy(preg_inds)  # Advance gestation in timestep, handle miscarriage
-        self.check_sexually_active(nonpreg_inds)
-        self.update_contraception(nonpreg_inds)
-        self.check_lam(nonpreg_inds)
-        self.update_postpartum(nonpreg_inds) # Updates postpartum counter if postpartum
-        self.update_breastfeeding(lact_inds)
-        self.check_conception(nonpreg_inds)  # Decide if conceives and initialize gestation counter at 0
+        preg.check_delivery()  # Deliver with birth outcomes if reached pregnancy duration
+        preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
+        nonpreg.check_sexually_active()
+        nonpreg.update_contraception()
+        nonpreg.check_lam()
+        nonpreg.update_postpartum() # Updates postpartum counter if postpartum
+        lact.update_breastfeeding()
+        nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
         # Update results
         self.check_mcpr()
@@ -760,7 +760,7 @@ class Sim(fpb.BaseSim):
 
                     feather.write_feather(state_frame, f"sim_output/{state}_state")
 
-                
+
 
 
         # Apply analyzers
