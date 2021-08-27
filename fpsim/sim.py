@@ -457,7 +457,7 @@ class People(fpb.BasePeople):
         alive.age_person()  # Age person in units of the timestep
         alive.check_mortality()  # Decide if person dies at this t in the simulation
 
-        fecund  = alive.filter((alive.sex == 0) * (alive.age < self.pars['age_limit_fecundity']))
+        fecund  = alive.filter((alive.sex == 0) & (alive.age < alive.pars['age_limit_fecundity']))
         preg    = fecund.filter(fecund.pregnant)
         nonpreg = fecund.filter(~fecund.pregnant)
         lact    = fecund.filter(fecund.lactating)
@@ -474,7 +474,7 @@ class People(fpb.BasePeople):
 
         # Update results
         self.check_mcpr()
-        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
+        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) & (15 <= self.age) & (self.age < self.pars['age_limit_fecundity']))
 
         return self.step_results
 
