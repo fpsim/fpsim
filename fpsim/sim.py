@@ -89,7 +89,7 @@ class People(fpb.BasePeople):
         return
 
 
-    def get_method(self, inds):
+    def get_method(self):
         '''
         Uses a switching matrix from DHS data to decide based on a person's original method their probability of changing to a
         new method and assigns them the new method. Currently allows switching on whole calendar years to enter function.
@@ -105,18 +105,18 @@ class People(fpb.BasePeople):
                 match_m    = (orig_methods == m)
                 match_low  = (self.age >= age_low)
                 match_high = (self.age <  age_high)
-                match = match_m * match_low * match_high
-                m_inds = inds[sc.findinds(match[inds])]
+                match = match_m & match_low & match_high
+                this_method = self.filter(match)
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
-                new_methods = fpu.n_multinomial(choices, len(m_inds))
-                self.method[m_inds] = np.array(new_methods, dtype=np.int64)
+                new_methods = fpu.n_multinomial(choices, len(this_method))
+                this_method.method = np.array(new_methods, dtype=np.int64)
 
         return
 
 
-    def get_method_postpartum(self, inds):
+    def get_method_postpartum(self):
         '''Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by
          3 months postpartum and then initiate, continue, or discontinue a method by 6 months postpartum.
         Next opportunity to switch methods will be on whole calendar years, whenever that falls.
@@ -138,11 +138,11 @@ class People(fpb.BasePeople):
             match_low  = (self.age >= age_low)
             match_high = (self.age <  age_high)
             match = self.postpartum * postpartum3 * match_low * match_high
-            m_inds = inds[sc.findinds(match[inds])]
+            this_method = self.filter(match)
 
             choices = pp_methods[key]
-            new_methods = fpu.n_multinomial(choices, len(m_inds))
-            self.method[m_inds] = np.array(new_methods, dtype=np.int64)
+            new_methods = fpu.n_multinomial(choices, len(this_method))
+            this_method.method = np.array(new_methods, dtype=np.int64)
 
         # At 6 months, choice is by previous method but not age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
@@ -150,16 +150,16 @@ class People(fpb.BasePeople):
         for m in self.pars['methods']['map'].values():
             match_m    = (orig_methods == m)
             match = self.postpartum * postpartum6 * match_m
-            m_inds = inds[sc.findinds(match[inds])]
+            this_method = self.filter(match)
 
             choices = pp_switch[m]
-            new_methods = fpu.n_multinomial(choices, len(m_inds))
-            self.method[m_inds] = np.array(new_methods, dtype=np.int64)
+            new_methods = fpu.n_multinomial(choices, len(this_method))
+            this_method.method = np.array(new_methods, dtype=np.int64)
 
         return
 
 
-    def check_mortality(self, inds):
+    def check_mortality(self):
         '''Decide if person dies at a timestep'''
 
         timestep = self.pars['timestep']
@@ -167,161 +167,153 @@ class People(fpb.BasePeople):
         age_mort = self.pars['age_mortality']
         f_spline = age_mort['f_spline'] * trend_val
         m_spline = age_mort['m_spline'] * trend_val
-        f_inds   = np.intersect1d(inds, self.female_inds())
-        m_inds   = np.intersect1d(inds, self.male_inds())
-        int_ages = self.int_ages
-        f_ages = int_ages[f_inds]
-        m_ages = int_ages[m_inds]
+        female   = self.filter(self.female_inds())
+        male     = self.filter(self.male_inds())
+        f_ages = female.int_ages
+        m_ages = male.int_ages
 
         f_mort_prob = fpu.annprob2ts(f_spline[f_ages], timestep)
         m_mort_prob = fpu.annprob2ts(m_spline[m_ages], timestep)
 
-        f_died = f_inds[fpu.binomial_arr(f_mort_prob)]
-        m_died = m_inds[fpu.binomial_arr(m_mort_prob)]
-        died = sc.cat(f_died, m_died)
-        self.alive[died] = False
-        self.step_results['deaths'] += len(died)
+        f_died = female[fpu.binomial_arr(f_mort_prob)]
+        m_died = male[fpu.binomial_arr(m_mort_prob)]
+        for died in [f_died, m_died]:
+            died.alive = False
+            self.step_results['deaths'] += len(died)
 
         return
 
 
-    def check_sexually_active(self, inds):
+    def check_sexually_active(self):
         '''
         Decide if agent is sexually active based either on month postpartum or age if
         not postpartum.  Postpartum and general age-based data from DHS.
         '''
-        probs = np.zeros(len(inds))
-
         # Set postpartum probabilities
         match_low  = self.postpartum_dur > 0
         match_high = self.postpartum_dur <= self.pars['postpartum_length']
-        pp_match = self.postpartum * match_low * match_high
-        pp = sc.findinds(pp_match[inds])
-        pp_inds = inds[pp]
-        probs[pp] = self.pars['sexual_activity_postpartum']['percent_active'][self.postpartum_dur[pp_inds]]
+        match = self.postpartum * match_low * match_high
+        pp = self.filter(match)
+        non_pp = self.filter(~match)
 
         # Adjust for postpartum women's birth spacing preferences
         pref = self.pars['pref_spacing'] # Shorten since used a lot
-        spacing_bins = self.postpartum_dur[inds[pp]] / pref['interval'] # Main calculation -- divide the duration by the interval
+        spacing_bins = pp.postpartum_dur / pref['interval'] # Main calculation -- divide the duration by the interval
         spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int) # Convert to an integer and bound by longest bin
-        probs[pp] *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
+        probs_pp = self.pars['sexual_activity_postpartum']['percent_active'][pp.postpartum_dur]
+        probs_pp *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
 
         # Set non-postpartum probabilities
-        non_pp = np.setdiff1d(np.arange(len(inds)), pp)
-        nonpp_inds = inds[non_pp]
-        probs[non_pp] = self.pars['sexual_activity'][self.int_ages[nonpp_inds]]
+        probs_non_pp = self.pars['sexual_activity'][non_pp.int_ages]
 
         # Evaluate likelihood in this time step of being sexually active
         # Can revert to active or not active each timestep
-        self.sexually_active[inds] = fpu.binomial_arr(probs)
+        pp.sexually_active = fpu.binomial_arr(probs_pp)
+        non_pp.sexually_active = fpu.binomial_arr(probs_non_pp)
 
         return
 
 
-    def check_conception(self, inds):
+    def check_conception(self):
         '''
         Decide if person (female) becomes pregnant at a timestep.
         '''
-        inds = inds[sc.findinds(self.sexually_active[inds])]
-        preg_probs = np.zeros(len(inds))
+        all_ppl = self.unfilter() # For complex array operations
+        active = self.filter(self.sexually_active)
+        lam         = active.filter(active.lam)
+        nonlam      = active.filter(~active.lam)
+        preg_probs = np.zeros(len(all_ppl)) # Use full array
 
         # Find monthly probability of pregnancy based on fecundity and any use of contraception including LAM - from data
-        timestep    = self.pars['timestep']
-        lam_i       = sc.findinds(self.lam[inds])
-        nonlam_i    = sc.findinds(self.lam[inds] == 0)
-        preg_eval   = self.pars['age_fecundity'][self.int_ages[inds]] * self.personal_fecundity[inds]
-        method_eff  = self.pars['method_efficacy'][self.method[inds[nonlam_i]]]
+        preg_eval_lam     = self.pars['age_fecundity'][lam.int_ages] * lam.personal_fecundity
+        preg_eval_nonlam  = self.pars['age_fecundity'][nonlam.int_ages] * nonlam.personal_fecundity
+        method_eff  = self.pars['method_efficacy'][nonlam.method]
         lam_eff     = self.pars['LAM_efficacy']
 
-        lam_probs    = fpu.annprob2ts((1-lam_eff)*preg_eval[lam_i],       timestep)
-        nonlam_probs = fpu.annprob2ts((1-method_eff)*preg_eval[nonlam_i], timestep)
-        preg_probs[lam_i]    = lam_probs
-        preg_probs[nonlam_i] = nonlam_probs
+        lam_probs    = fpu.annprob2ts((1-lam_eff)*preg_eval_lam,       self.pars['timestep'])
+        nonlam_probs = fpu.annprob2ts((1-method_eff)*preg_eval_nonlam, self.pars['timestep'])
+        preg_probs[lam.inds]    = lam_probs
+        preg_probs[nonlam.inds] = nonlam_probs
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from data
-        nullip_inds = sc.findinds(self.parity[inds] == 0) # Nulliparous
-        preg_ages = np.minimum(self.int_ages[inds], fpd.max_age_preg)
-        preg_probs[nullip_inds] *= self.pars['fecundity_ratio_nullip'][preg_ages[nullip_inds]]
+        nullip = active.filter(active.parity == 0) # Nulliparous
+        all_ages = np.minimum(all_ppl.int_ages, fpd.max_age_preg)
+        preg_probs[nullip.inds] *= self.pars['fecundity_ratio_nullip'][all_ages[nullip.inds]]
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity - encapsulates background factors - experimental and tunable
         preg_probs *= self.pars['exposure_correction']
-        preg_probs *= self.pars['exposure_correction_age'][preg_ages]
-        preg_probs *= self.pars['exposure_correction_parity'][np.minimum(self.parity[inds], fpd.max_parity)]
+        preg_probs *= self.pars['exposure_correction_age'][all_ages]
+        preg_probs *= self.pars['exposure_correction_parity'][np.minimum(all_ppl.parity, fpd.max_parity)]
 
         # Use a single binomial trial to check for conception successes this month
-        pregnant = fpu.binomial_arr(preg_probs)
-        preg_inds = inds[sc.findinds(pregnant)]
+        is_conceived = fpu.binomial_arr(preg_probs)
+        conceived = all_ppl.filter(is_conceived)
 
         # Check for abortion
-        abortion = fpu.n_binomial(self.pars['abortion_prob'], len(preg_inds))
-        abort_inds = preg_inds[sc.findinds(abortion)]
-        preg_inds = np.setdiff1d(preg_inds, abort_inds)
+        is_abort = fpu.n_binomial(self.pars['abortion_prob'], len(conceived)) # TODO: refactor
+        abort = conceived.filter(is_abort)
+        preg = conceived.filter(~is_abort)
 
         # Update states
-        self.postpartum[abort_inds] = False
-        self.postpartum_dur[abort_inds] = 0
+        abort.postpartum = False
+        abort.postpartum_dur = 0
 
-        self.pregnant[preg_inds] = True
-        self.gestation[preg_inds] = 0  # Start the counter at 0 to allow full 9 months gestation
+        preg.pregnant = True
+        preg.gestation = 0  # Start the counter at 0 to allow full 9 months gestation
         pregdur = [self.pars['preg_dur_low'], self.pars['preg_dur_high']]
-        self.preg_dur[preg_inds] = np.random.randint(pregdur[0], pregdur[1]+1, size=len(preg_inds))  # Duration of this pregnancy
-        self.postpartum[preg_inds] = False
-        self.postpartum_dur[preg_inds] = 0
-        self.reset_breastfeeding(inds=preg_inds) # Stop lactating if becoming pregnant
+        preg.preg_dur = np.random.randint(pregdur[0], pregdur[1]+1, size=len(preg))  # Duration of this pregnancy
+        preg.postpartum = False
+        preg.postpartum_dur = 0
+        preg.reset_breastfeeding() # Stop lactating if becoming pregnant
 
         return
 
 
-    def check_lam(self, inds):
+    def check_lam(self):
         '''
         Check to see if postpartum agent meets criteria for LAM in this time step
         '''
-        match_low = self.postpartum_dur[inds] > 0
-        match_high = self.postpartum_dur[inds] <= 5
-        match = self.postpartum[inds] * match_low * match_high
-        match_inds = inds[sc.findinds(match)]
-        probs = self.pars['lactational_amenorrhea']['rate'][self.postpartum_dur[match_inds]]
-        self.lam[match_inds] = fpu.binomial_arr(probs)
+        lam = self.filter((self.postpartum_dur > 0) * (self.postpartum_dur <= 5)) # TODO: remove hard-coding
+        probs = self.pars['lactational_amenorrhea']['rate'][lam.postpartum_dur]
+        lam.lam = fpu.binomial_arr(probs) # TODO: make less ugly
 
-        not_postpartum = inds[sc.findinds(self.postpartum[inds] == 0)]
-        over5mo = inds[sc.findinds(self.postpartum_dur[inds] > 5)]
-        not_breastfeeding = inds[sc.findinds(self.breastfeed_dur[inds] == 0)]
-        self.lam[sc.cat(not_postpartum, over5mo, not_breastfeeding)] = False
+        not_postpartum    = self.postpartum == 0
+        over5mo           = self.postpartum_dur > 5 # TODO: remove hard-coding
+        not_breastfeeding = self.breastfeed_dur == 0
+        not_lam = self.filter(not_postpartum | over5mo | not_breastfeeding )
+        not_lam.lam = False
         return
 
 
-    def update_breastfeeding(self, inds):
+    def update_breastfeeding(self):
         '''
         Track breastfeeding, and update time of breastfeeding for individual pregnancy.
         Currently agents breastfeed a random amount of time between 1 and 24 months.
         '''
-        n_inds = len(inds)
         bfdur = [self.pars['breastfeeding_dur_low'], self.pars['breastfeeding_dur_high']]
-        breastfeed_durs = np.random.randint(bfdur[0], bfdur[1]+1, size=n_inds)
-        inds_finished = inds[sc.findinds(self.breastfeed_dur[inds] >= breastfeed_durs)]
-        inds_continue = np.setdiff1d(inds, inds_finished)
-        self.reset_breastfeeding(inds_finished)
-        self.breastfeed_dur[inds_continue] += self.pars['timestep']
+        breastfeed_durs = np.random.randint(bfdur[0], bfdur[1]+1, size=len(self))
+        breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
+        breastfeed_finished = self.filter(breastfeed_finished_inds)
+        breastfeed_continue = self.filter(~breastfeed_finished_inds)
+        breastfeed_finished.reset_breastfeeding()
+        breastfeed_continue.breastfeed_dur += self.pars['timestep']
         return
 
 
-    def update_postpartum(self, inds):
+    def update_postpartum(self):
         '''Track duration of extended postpartum period (0-24 months after birth).  Only enter this function if agent is postpartum'''
 
         # Stop postpartum episode if reach max length (set to 24 months)
-        pp_done = inds[sc.findinds(self.postpartum_dur[inds] >= (self.pars['postpartum_length']))]
-        self.postpartum[pp_done] = False
-        self.postpartum_dur[pp_done] = 0
+        pp_done = self.filter(self.postpartum_dur >= self.pars['postpartum_length'])
+        pp_done.postpartum = False
+        pp_done.postpartum_dur = 0
 
-        # Count the state of the agent
-        pp_inds = inds[sc.findinds(self.postpartum[inds])]
+        # Count the state of the agent for postpartum -- # TOOD: refactor, what is this loop doing?
+        pp = self.filter(self.postpartum)
         for key,(pp_low, pp_high) in fpd.postpartum_mapping.items():
-            match_low  = (self.postpartum_dur[inds] >= pp_low)
-            match_high = (self.postpartum_dur[inds] <  pp_high)
-            match = self.postpartum[inds] * match_low * match_high
-            m_inds = inds[sc.findinds(match)]
-            self.step_results[key] += len(m_inds)
-        self.postpartum_dur[pp_inds] += self.pars['timestep']
+            this_pp_bin = pp.filter((pp.postpartum_dur >= pp_low) * (pp.postpartum_dur <  pp_high))
+            self.step_results[key] += len(this_pp_bin)
+        pp.postpartum_dur += self.pars['timestep']
 
         return
 
@@ -335,7 +327,7 @@ class People(fpb.BasePeople):
         # Check for miscarriage at the end of the first trimester
         end_first_tri     = preg.filter(preg.gestation == self.pars['end_first_tri'])
         miscarriage_probs = self.pars['miscarriage_rates'][end_first_tri.int_ages]
-        miscarriage  = end_first_tri.filter(fpu.binomial_arr(miscarriage_probs))
+        miscarriage  = end_first_tri.filter(fpu.binomial_arr(miscarriage_probs)) # TODO: consider built-in
 
         # Reset states
         miscarriage.pregnant   = False
