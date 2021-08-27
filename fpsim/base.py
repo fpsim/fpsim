@@ -84,15 +84,17 @@ class BasePeople(sc.prettyobj):
         return
 
 
-    @property
     def _is_filtered(self, attr):
-        is_filtered = (attr in self._keys and self._inds is not None)
+        if hasattr(self, '_keys') and hasattr(self, 'inds'):
+            is_filtered = (attr in self._keys and self.inds is not None)
+        else:
+            is_filtered = False
         return is_filtered
 
 
     def __getattr__(self, attr):
         ''' Route property access to the underlying entity, if initialized '''
-        output = super().__getattr__(attr)
+        output = super().__getattribute__(attr)
         if self._is_filtered(attr):
             output = output[self._inds]
         return output
@@ -101,7 +103,7 @@ class BasePeople(sc.prettyobj):
     def __setattr__(self, attr, value):
         ''' Ditto '''
         if self._is_filtered(attr):
-            array = self.__getattr__(attr)
+            array = self.__getattribute__(attr)
             array[self._inds] = value
         else:   # If not initialized, rely on the default behavior
             super().__setattr__(attr, value)    # self.__dict__[name] = value
@@ -220,7 +222,7 @@ class BasePeople(sc.prettyobj):
             elif len(criteria) == self.n_people:
                 filtered.inds = criteria[self.inds].nonzero()[0] # Criteria is not filtered yet
             else:
-                errormsg = f'"criteria" must be boolean array matching either current filter length ({self.n_inds}) or else the total number of people ({self.n_people})'
+                errormsg = f'"criteria" must be boolean array matching either current filter length ({self.n_inds}) or else the total number of people ({self.n_people}), not {len(criteria)}'
                 raise ValueError(errormsg)
 
 
@@ -263,7 +265,7 @@ class BasePeople(sc.prettyobj):
     @property
     def n_people(self):
         ''' Full length of People array, ignoring filtering '''
-        return len(self.unfiltered())
+        return len(self.unfilter())
 
 
 
