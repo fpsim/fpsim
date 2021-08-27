@@ -250,7 +250,7 @@ class People(fpb.BasePeople):
         conceived = all_ppl.filter(is_conceived)
 
         # Check for abortion
-        is_abort = fpu.n_binomial(self.pars['abortion_prob'], len(conceived)) # TODO: refactor
+        is_abort = conceived.binomial(self.pars['abortion_prob'])
         abort = conceived.filter(is_abort)
         preg = conceived.filter(~is_abort)
 
@@ -275,7 +275,7 @@ class People(fpb.BasePeople):
         '''
         lam = self.filter((self.postpartum_dur > 0) * (self.postpartum_dur <= 5)) # TODO: remove hard-coding
         probs = self.pars['lactational_amenorrhea']['rate'][lam.postpartum_dur]
-        lam.lam = fpu.binomial_arr(probs) # TODO: make less ugly
+        lam.lam = lam.binomial(probs) # TODO: make less ugly
 
         not_postpartum    = self.postpartum == 0
         over5mo           = self.postpartum_dur > 5 # TODO: remove hard-coding
@@ -347,7 +347,7 @@ class People(fpb.BasePeople):
     def maternal_mortality(self):
         '''Check for probability of maternal mortality'''
         prob = self.pars['mortality_probs']['maternal'] * self.pars['maternal_mortality_multiplier']
-        is_death = fpu.n_binomial(prob, len(self))
+        is_death = self.binomial(prob)
         death = self.filter(is_death)
         death.alive = False
         self.step_results['maternal_deaths'] += len(death)
@@ -357,7 +357,7 @@ class People(fpb.BasePeople):
 
     def infant_mortality(self):
         '''Check for probability of infant mortality (death < 1 year of age)'''
-        is_death = fpu.n_binomial(self.pars['mortality_probs']['infant'], len(self))
+        is_death = self.binomial(self.pars['mortality_probs']['infant'])
         death = self.filter(is_death)
         self.step_results['infant_deaths'] += len(death)
         death.reset_breastfeeding()
@@ -379,7 +379,7 @@ class People(fpb.BasePeople):
             deliv.dobs[i].append(deliv.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
 
         # Handle twins
-        is_twin = fpu.n_binomial(self.pars['twins_prob'], len(deliv))
+        is_twin = deliv.binomial(self.pars['twins_prob'])
         twin = deliv.filter(is_twin)
         self.step_results['births'] += 2*len(twin)
         twin.parity += 2

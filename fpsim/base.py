@@ -6,6 +6,7 @@ import numpy as np
 import sciris as sc
 import pylab as pl
 from . import defaults as fpd
+from . import utils as fpu
 
 
 __all__ = ['ParsObj', 'BasePeople', 'BaseSim']
@@ -195,9 +196,13 @@ class BasePeople(sc.prettyobj):
         return fig
 
 
-    def filter(self, criteria=None):
+    def filter(self, criteria=None, inds=None):
         '''
         Store indices to allow for easy filtering of the People object.
+
+        Args:
+            criteria (array): a boolean array for the filtering critria
+            inds (array): alternatively, explicitly filter by these indices
         '''
 
         # Create a new People object with the same properties as the original
@@ -207,6 +212,8 @@ class BasePeople(sc.prettyobj):
         # Perform the filtering
         if criteria is None:
             filtered.inds = None
+            if inds is not None:
+                filtered.inds = inds
         else:
             if len(criteria) == len(self):
                 filtered.inds = criteria.nonzero()[0] # Criteria is already filtered
@@ -224,7 +231,25 @@ class BasePeople(sc.prettyobj):
         '''
         An easy way of unfiltering the People object.
         '''
-        return self.filter(criteria=None)
+        unfiltered = self.filter(criteria=None)
+        return unfiltered
+
+
+    def binomial(self, prob):
+        '''
+        Return indices either by a single probability or by an array of probabilities.
+
+        Args:
+            prob (float/array): either a scalar probability, or an array of probabilities
+        '''
+        if sc.isnumber(prob):
+            arr = fpu.n_binomial(prob, len(self))
+        elif sc.isarray(prob):
+            arr = fpu.binomial_arr(prob)
+        else:
+            errormsg = f'Could not recognize {type(prob)} as a scalar or array'
+            raise TypeError(errormsg)
+        return arr
 
 
     @property
