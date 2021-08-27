@@ -326,39 +326,40 @@ class People(fpb.BasePeople):
         return
 
 
-    def update_pregnancy(self, inds):
+    def update_pregnancy(self):
         '''Advance pregnancy in time and check for miscarriage'''
 
-        preg_inds = inds[sc.findinds(self.pregnant[inds])]
-        self.gestation[preg_inds] += self.pars['timestep']
+        preg = self.filter(self.pregnant)
+        preg.gestation += self.pars['timestep']
 
         # Check for miscarriage at the end of the first trimester
-        end_first_tri     = preg_inds[sc.findinds(self.gestation[preg_inds] == (self.pars['end_first_tri']))]
-        miscarriage_probs = self.pars['miscarriage_rates'][self.int_ages[end_first_tri]]
-        miscarriage_inds  = end_first_tri[fpu.binomial_arr(miscarriage_probs)]
+        end_first_tri     = preg.filter(preg.gestation == self.pars['end_first_tri'])
+        miscarriage_probs = self.pars['miscarriage_rates'][end_first_tri.int_ages]
+        miscarriage  = end_first_tri.filter(fpu.binomial_arr(miscarriage_probs))
 
         # Reset states
-        self.pregnant[miscarriage_inds]   = False
-        self.postpartum[miscarriage_inds] = False
-        self.gestation[miscarriage_inds]  = 0  # Reset gestation counter
+        miscarriage.pregnant   = False
+        miscarriage.postpartum = False
+        miscarriage.gestation  = 0  # Reset gestation counter
         return
 
 
-    def reset_breastfeeding(self, inds):
+    def reset_breastfeeding(self):
         '''Stop breastfeeding, calculate total lifetime duration so far, and reset lactation episode to zero'''
-        self.lactating[inds] = False
-        self.breastfeed_dur_total[inds] += self.breastfeed_dur[inds]
-        self.breastfeed_dur[inds] = 0
+        self.lactating = False
+        self.breastfeed_dur_total += self.breastfeed_dur
+        self.breastfeed_dur = 0
         return
 
 
-    def maternal_mortality(self, inds):
+    def maternal_mortality(self):
         '''Check for probability of maternal mortality'''
         prob = self.pars['mortality_probs']['maternal'] * self.pars['maternal_mortality_multiplier']
-        death_inds = inds[fpu.n_binomial(prob, len(inds))]
-        self.step_results['maternal_deaths'] += len(death_inds)
-        self.alive[death_inds] = False
-        self.step_results['deaths'] += len(death_inds)
+        is_death = fpu.n_binomial(prob, len(self))
+        death = self.filter(is_death)
+        death.alive = False
+        self.step_results['maternal_deaths'] += len(death)
+        self.step_results['deaths'] += len(death)
         return
 
 
