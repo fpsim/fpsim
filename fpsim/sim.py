@@ -201,7 +201,7 @@ class People(fpb.BasePeople):
         probs_pp *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
 
         # Set non-postpartum probabilities
-        probs_non_pp = self.pars['sexual_activity'][non_pp.int_age_clip]
+        probs_non_pp = self.pars['sexual_activity'][non_pp.int_age]
 
         # Evaluate likelihood in this time step of being sexually active
         # Can revert to active or not active each timestep

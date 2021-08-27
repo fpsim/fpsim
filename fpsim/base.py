@@ -243,12 +243,16 @@ class BasePeople(sc.prettyobj):
                 filtered.inds = inds
         else:
             if len(criteria) == len(self):
-                filtered.inds = criteria.nonzero()[0] # Criteria is already filtered
+                new_inds = criteria.nonzero()[0] # Criteria is already filtered
             elif len(criteria) == self.len_people:
-                filtered.inds = criteria[self.inds].nonzero()[0] # Criteria is not filtered yet
+                new_inds = criteria[filtered.inds].nonzero()[0] # Criteria is not filtered yet
             else:
                 errormsg = f'"criteria" must be boolean array matching either current filter length ({self.len_inds}) or else the total number of people ({self.len_people}), not {len(criteria)}'
                 raise ValueError(errormsg)
+            if filtered.inds is None:
+                filtered.inds = new_inds
+            else:
+                filtered.inds = filtered.inds[new_inds]
 
         return filtered
 
