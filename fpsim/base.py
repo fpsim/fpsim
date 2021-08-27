@@ -160,15 +160,23 @@ class BasePeople(sc.prettyobj):
 
     @property
     def is_female(self):
+        ''' Boolean array of everyone female '''
         return self.sex == 0
 
     @property
     def is_male(self):
+        ''' Boolean array of everyone male '''
         return self.sex == 1
 
     @property
-    def int_ages(self):
+    def int_age(self):
+        ''' Return ages as an integer '''
         return np.array(self.age, dtype=np.int64)
+
+    @property
+    def int_age_clip(self):
+        ''' Return ages as integers, clipped to maximum allowable age for pregnancy '''
+        return np.minimum(self.int_age, fpd.max_age_preg)
 
     def female_inds(self):
         return sc.findinds(self.is_female)

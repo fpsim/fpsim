@@ -166,8 +166,8 @@ class People(fpb.BasePeople):
         m_spline = age_mort['m_spline'] * trend_val
         female   = self.filter(self.is_female)
         male     = self.filter(self.is_male)
-        f_ages = female.int_ages
-        m_ages = male.int_ages
+        f_ages = female.int_age
+        m_ages = male.int_age
 
         f_mort_prob = fpu.annprob2ts(f_spline[f_ages], timestep)
         m_mort_prob = fpu.annprob2ts(m_spline[m_ages], timestep)
@@ -201,7 +201,7 @@ class People(fpb.BasePeople):
         probs_pp *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
 
         # Set non-postpartum probabilities
-        probs_non_pp = self.pars['sexual_activity'][non_pp.int_ages]
+        probs_non_pp = self.pars['sexual_activity'][non_pp.int_age_clip]
 
         # Evaluate likelihood in this time step of being sexually active
         # Can revert to active or not active each timestep
@@ -222,8 +222,8 @@ class People(fpb.BasePeople):
         preg_probs = np.zeros(len(all_ppl)) # Use full array
 
         # Find monthly probability of pregnancy based on fecundity and any use of contraception including LAM - from data
-        preg_eval_lam     = self.pars['age_fecundity'][lam.int_ages] * lam.personal_fecundity
-        preg_eval_nonlam  = self.pars['age_fecundity'][nonlam.int_ages] * nonlam.personal_fecundity
+        preg_eval_lam     = self.pars['age_fecundity'][lam.int_age_clip] * lam.personal_fecundity
+        preg_eval_nonlam  = self.pars['age_fecundity'][nonlam.int_age_clip] * nonlam.personal_fecundity
         method_eff  = self.pars['method_efficacy'][nonlam.method]
         lam_eff     = self.pars['LAM_efficacy']
 
@@ -234,12 +234,11 @@ class People(fpb.BasePeople):
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from data
         nullip = active.filter(active.parity == 0) # Nulliparous
-        all_ages = np.minimum(all_ppl.int_ages, fpd.max_age_preg)
-        preg_probs[nullip.inds] *= self.pars['fecundity_ratio_nullip'][all_ages[nullip.inds]]
+        preg_probs[nullip.inds] *= self.pars['fecundity_ratio_nullip'][nullip.int_age_clip]
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity - encapsulates background factors - experimental and tunable
         preg_probs *= self.pars['exposure_correction']
-        preg_probs *= self.pars['exposure_correction_age'][all_ages]
+        preg_probs *= self.pars['exposure_correction_age'][all_ppl.int_age_clip]
         preg_probs *= self.pars['exposure_correction_parity'][np.minimum(all_ppl.parity, fpd.max_parity)]
 
         # Use a single binomial trial to check for conception successes this month
@@ -323,7 +322,7 @@ class People(fpb.BasePeople):
 
         # Check for miscarriage at the end of the first trimester
         end_first_tri     = preg.filter(preg.gestation == self.pars['end_first_tri'])
-        miscarriage_probs = self.pars['miscarriage_rates'][end_first_tri.int_ages]
+        miscarriage_probs = self.pars['miscarriage_rates'][end_first_tri.int_age]
         miscarriage  = end_first_tri.binomial(miscarriage_probs, as_filter=True)
 
         # Reset states
