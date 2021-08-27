@@ -51,8 +51,6 @@ class BasePeople(sc.prettyobj):
     Class for all the people in the simulation.
     '''
 
-    _keylike_properties = ['is_female', 'is_male', 'int_ages'] # People properties that act like keys
-
     def __init__(self):
         obj_set(self, '_keys', []) # Since getattribute is overwritten
         self.inds = None
@@ -96,18 +94,16 @@ class BasePeople(sc.prettyobj):
 
     def __getattribute__(self, attr):
         ''' Route property access to the underlying entity '''
-        print('HI I AM ATRIBUTE', attr)
+        # print('HI I AM ATRIBUTE', attr)
         output  = obj_get(self, attr)
-
         keys = obj_get(self, 'keys')()
-        print('KEYS ARE', keys)
+        # print('KEYS ARE', keys)
         if attr not in keys:
             return output
         else:
             if self._is_filtered(attr):
                 print('I AM FILTERED', attr)
-                inds  = obj_get(self, 'inds')
-                output = output[inds]
+                output = output[self.inds]
             else:
                 print('I AM NOT FILTERED', attr)
         return output
@@ -160,10 +156,7 @@ class BasePeople(sc.prettyobj):
 
     def keys(self):
         ''' Returns keys for all properties of the people object '''
-        keys    = obj_get(self, '_keys')
-        kprops  = obj_get(self, '_keylike_properties')
-        output = keys + kprops
-        return output
+        return obj_get(self, '_keys')[:]
 
     @property
     def is_female(self):
