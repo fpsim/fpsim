@@ -195,7 +195,7 @@ class People(fpb.BasePeople):
         pp = sc.findinds(pp_match[inds])
         pp_inds = inds[pp]
         probs[pp] = self.pars['sexual_activity_postpartum']['percent_active'][self.postpartum_dur[pp_inds]]
-        
+
         # Adjust for postpartum women's birth spacing preferences
         pref = self.pars['pref_spacing'] # Shorten since used a lot
         spacing_bins = self.postpartum_dur[inds[pp]] / pref['interval'] # Main calculation -- divide the duration by the interval
@@ -278,7 +278,7 @@ class People(fpb.BasePeople):
         match_inds = inds[sc.findinds(match)]
         probs = self.pars['lactational_amenorrhea']['rate'][self.postpartum_dur[match_inds]]
         self.lam[match_inds] = fpu.binomial_arr(probs)
-        
+
         not_postpartum = inds[sc.findinds(self.postpartum[inds] == 0)]
         over5mo = inds[sc.findinds(self.postpartum_dur[inds] > 5)]
         not_breastfeeding = inds[sc.findinds(self.breastfeed_dur[inds] == 0)]
@@ -453,8 +453,8 @@ class People(fpb.BasePeople):
         t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)'''
 
         self.init_step_results()   # Initialize outputs
-        alive_inds = sc.findinds(self.alive)
-        self.age_person(inds=alive_inds)  # Age person in units of the timestep
+        alive = self.filter(self.alive)
+        alive.age_person()  # Age person in units of the timestep
         self.check_mortality(inds=alive_inds)  # Decide if person dies at this t in the simulation
 
         fecund_inds  = sc.findinds(self.alive * (self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
@@ -762,7 +762,7 @@ class Sim(fpb.BaseSim):
 
                     feather.write_feather(state_frame, state+".csv")
 
-        
+
         # Apply analyzers
         self.apply_analyzers()
 

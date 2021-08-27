@@ -171,6 +171,30 @@ class BasePeople(sc.prettyobj):
 
 
 
+class FilteredPeople(sc.prettyobj):
+    '''
+    Store indices to allow for easy filtering of the People object.
+    '''
+
+    def __init__(self, people, indices=None):
+        self.people = people
+        self.indices = np.empty(0, dtype=int)
+        return
+
+
+    def __len__(self):
+        return len(self.indices)
+
+    @property
+    def n_people(self):
+        return len(self.people)
+
+    def filter(self, criteria):
+        indices = criteria.nonzero()[0]
+
+
+
+
 class BaseSim(ParsObj):
     '''
     The BaseSim class handles the admin work of managing time in the simulation.
