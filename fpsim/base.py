@@ -98,6 +98,7 @@ class BasePeople(sc.prettyobj):
         ''' Route property access to the underlying entity '''
         print('HI I AM ATRIBUTE', attr)
         output  = obj_get(self, attr)
+
         keys = obj_get(self, 'keys')()
         print('KEYS ARE', keys)
         if attr not in keys:
@@ -105,7 +106,8 @@ class BasePeople(sc.prettyobj):
         else:
             if self._is_filtered(attr):
                 print('I AM FILTERED', attr)
-                output = output[self.inds]
+                inds  = obj_get(self, 'inds')
+                output = output[inds]
             else:
                 print('I AM NOT FILTERED', attr)
         return output
