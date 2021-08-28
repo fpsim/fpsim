@@ -556,8 +556,8 @@ def default_birth_spacing_preference():
 def default_sexual_activity_postpartum():
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-36 months postpartum
-    Uses DHS Senegal 2018 calendar data for rates of postpartum abstinence within 0-11 months.  Exposure to sex is 1-abstinence rate.
-    Uses DHS Senegal 2018 individual recode (postpartum (v222) and this month's sexual activity report for 12-36 months.
+    0-11 months postpartum: Uses DHS Senegal 2018 calendar data for rates of postpartum abstinence. Sexual activity below is 1-abstinence rate.
+    12-36 months postpartum: Uses DHS Senegal 2018 individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
     Limited to 36 months postpartum (can use any limit you want 0-36 max)
     '''
 
