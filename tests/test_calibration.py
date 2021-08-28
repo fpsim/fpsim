@@ -30,7 +30,7 @@ def test_calibration(n_trials=5, do_plot=False):
 
     # Calculate calibration
     calib = make_calib()
-    calib.calibrate(calib_pars=calib_pars, n_trials=n_trials)
+    calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=2)
     before,after = calib.summarize()
 
     assert before > after

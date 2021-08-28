@@ -54,7 +54,6 @@ class BasePeople(sc.prettyobj):
     def __init__(self):
         obj_set(self, '_keys', []) # Since getattribute is overwritten
         obj_set(self, '_inds', None) # Since getattribute is overwritten
-        obj_set(self, '_filter_keys', {}) # Since getattribute is overwritten
         return
 
 
@@ -88,23 +87,14 @@ class BasePeople(sc.prettyobj):
 
 
     def _is_filtered(self, attr):
-        try:
-            is_filtered = self._filter_keys[attr]
-        except:
-            is_filtered = (self._inds is not None and attr in self._keys)
-            self._filter_keys[attr] = is_filtered
+        is_filtered = (self._inds is not None and attr in self._keys)
         return is_filtered
 
 
     def __getattribute__(self, attr):
         ''' Route property access to the underlying entity '''
-        # _counts = obj_get(self, '_counts')
-        # if attr in _counts:
-        #     _counts[attr] += 1
-        # else:
-        #     _counts[attr] = 1
         output  = obj_get(self, attr)
-        if attr[0] == '_':
+        if attr[0] == '_': # Short-circuit for built-in methods to save time
             return output
         else:
             try: # Unclear wy this fails, but sometimes it does during initialization/pickling
