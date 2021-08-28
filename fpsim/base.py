@@ -49,10 +49,12 @@ class BasePeople(sc.prettyobj):
     '''
     Class for all the people in the simulation.
     '''
+    # _counts = {}
 
     def __init__(self):
         obj_set(self, '_keys', []) # Since getattribute is overwritten
-        self.inds = None
+        obj_set(self, '_inds', None) # Since getattribute is overwritten
+        obj_set(self, '_filter_keys', {}) # Since getattribute is overwritten
         return
 
 
@@ -86,19 +88,34 @@ class BasePeople(sc.prettyobj):
 
 
     def _is_filtered(self, attr):
-        is_filtered = (attr in self.keys() and self.inds is not None)
+        try:
+            is_filtered = self._filter_keys[attr]
+        except:
+            is_filtered = (self._inds is not None and attr in self._keys)
+            self._filter_keys[attr] = is_filtered
         return is_filtered
 
 
     def __getattribute__(self, attr):
         ''' Route property access to the underlying entity '''
+        # _counts = obj_get(self, '_counts')
+        # if attr in _counts:
+        #     _counts[attr] += 1
+        # else:
+        #     _counts[attr] = 1
         output  = obj_get(self, attr)
-        keys = obj_get(self, 'keys')()
-        if attr not in keys:
+        if attr[0] == '_':
             return output
         else:
-            if self._is_filtered(attr):
-                output = output[self.inds]
+            try: # Unclear wy this fails, but sometimes it does during initialization/pickling
+                keys = obj_get(self, '_keys')
+            except:
+                keys = []
+            if attr not in keys:
+                return output
+            else:
+                if self._is_filtered(attr):
+                    output = output[self.inds]
         return output
 
 
@@ -187,10 +204,14 @@ class BasePeople(sc.prettyobj):
         return self.alive.sum()
 
     @property
+    def inds(self):
+        return self._inds
+
+    @property
     def len_inds(self):
         ''' Alias to len(self) '''
-        if self.inds is not None:
-            return len(self.inds)
+        if self._inds is not None:
+            return len(self._inds)
         else:
             return len(self)
 
@@ -242,9 +263,9 @@ class BasePeople(sc.prettyobj):
 
         # Perform the filtering
         if criteria is None:
-            filtered.inds = None
+            filtered._inds = None
             if inds is not None:
-                filtered.inds = inds
+                filtered._inds = inds
         else:
             if len(criteria) == len(self):
                 new_inds = criteria.nonzero()[0] # Criteria is already filtered
@@ -254,9 +275,9 @@ class BasePeople(sc.prettyobj):
                 errormsg = f'"criteria" must be boolean array matching either current filter length ({self.len_inds}) or else the total number of people ({self.len_people}), not {len(criteria)}'
                 raise ValueError(errormsg)
             if filtered.inds is None:
-                filtered.inds = new_inds
+                filtered._inds = new_inds
             else:
-                filtered.inds = filtered.inds[new_inds]
+                filtered._inds = filtered.inds[new_inds]
 
         return filtered
 
