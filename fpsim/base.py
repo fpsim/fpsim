@@ -240,29 +240,33 @@ class BasePeople(sc.prettyobj):
         Args:
             criteria (array): a boolean array for the filtering critria
             inds (array): alternatively, explicitly filter by these indices
+
+        Returns:
+            A filtered People object, which works just like a normal People object
+            except only operates on a subset of indices.
         '''
 
         # Create a new People object with the same properties as the original
-        filtered = object.__new__(self.__class__)
-        BasePeople.__init__(filtered)
-        filtered.__dict__ = {k:v for k,v in self.__dict__.items()}
+        filtered = object.__new__(self.__class__) # Create a new People instance
+        BasePeople.__init__(filtered) # Perform essential initialization
+        filtered.__dict__ = {k:v for k,v in self.__dict__.items()} # Copy pointers to the arrays in People
 
         # Perform the filtering
-        if criteria is None:
+        if criteria is None: # No filtering: reset
             filtered._inds = None
-            if inds is not None:
+            if inds is not None: # Unless indices are supplied directly, in which case use them
                 filtered._inds = inds
-        else:
-            if len(criteria) == len(self):
-                new_inds = criteria.nonzero()[0] # Criteria is already filtered
-            elif len(criteria) == self.len_people:
-                new_inds = criteria[filtered.inds].nonzero()[0] # Criteria is not filtered yet
+        else: # Main use case: perform filtering
+            if len(criteria) == len(self): # Main use case: a new filter applied on an already filtered object, e.g. filtered.filter(filtered.age > 5)
+                new_inds = criteria.nonzero()[0] # Criteria is already filtered, just get the indices
+            elif len(criteria) == self.len_people: # Alternative: a filter on the underlying People object is applied to the filtered object, e.g. filtered.filter(people.age > 5)
+                new_inds = criteria[filtered.inds].nonzero()[0] # Apply filtering before getting the new indices
             else:
                 errormsg = f'"criteria" must be boolean array matching either current filter length ({self.len_inds}) or else the total number of people ({self.len_people}), not {len(criteria)}'
                 raise ValueError(errormsg)
-            if filtered.inds is None:
+            if filtered.inds is None: # Not yet filtered: use the indices directly
                 filtered._inds = new_inds
-            else:
+            else: # Already filtered: map them back onto the original People indices
                 filtered._inds = filtered.inds[new_inds]
 
         return filtered
@@ -270,7 +274,7 @@ class BasePeople(sc.prettyobj):
 
     def unfilter(self):
         '''
-        An easy way of unfiltering the People object.
+        An easy way of unfiltering the People object, returning the original.
         '''
         unfiltered = self.filter(criteria=None)
         return unfiltered
@@ -279,9 +283,11 @@ class BasePeople(sc.prettyobj):
     def binomial(self, prob, as_inds=False, as_filter=False):
         '''
         Return indices either by a single probability or by an array of probabilities.
+        By default just return the boolean array, but can also return the indices,
+        or the filtered People object.
 
         Args:
-            prob (float/array): either a scalar probability, or an array of probabilities
+            prob (float/array): either a scalar probability, or an array of probabilities of the same length as People
             as_inds (bool): return as list of indices instead of a boolean array
             as_filter (bool): return as filter instead than boolean array
         '''
@@ -303,7 +309,7 @@ class BasePeople(sc.prettyobj):
 
 class BaseSim(ParsObj):
     '''
-    The BaseSim class handles the admin work of managing time in the simulation.
+    The BaseSim class handles the dynamics of the simulation.
     '''
 
     def year2ind(self, year):
