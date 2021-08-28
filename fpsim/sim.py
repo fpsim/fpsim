@@ -268,12 +268,13 @@ class People(fpb.BasePeople):
         '''
         Check to see if postpartum agent meets criteria for LAM in this time step
         '''
-        lam = self.filter((self.postpartum_dur > 0) * (self.postpartum_dur <= 5)) # TODO: remove hard-coding
-        probs = self.pars['lactational_amenorrhea']['rate'][lam.postpartum_dur]
-        lam.lam = lam.binomial(probs) # TODO: make less ugly
+        max_lam_dur = 5 # TODO: remove hard-coding, make a parameter
+        lam_candidates = self.filter((self.postpartum_dur > 0) * (self.postpartum_dur <= max_lam_dur))
+        probs = self.pars['lactational_amenorrhea']['rate'][lam_candidates.postpartum_dur]
+        lam_candidates.lam = lam_candidates.binomial(probs)
 
         not_postpartum    = self.postpartum == 0
-        over5mo           = self.postpartum_dur > 5 # TODO: remove hard-coding
+        over5mo           = self.postpartum_dur > max_lam_dur
         not_breastfeeding = self.breastfeed_dur == 0
         not_lam = self.filter(not_postpartum + over5mo + not_breastfeeding )
         not_lam.lam = False

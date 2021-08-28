@@ -49,11 +49,11 @@ class BasePeople(sc.prettyobj):
     '''
     Class for all the people in the simulation.
     '''
-    # _counts = {}
 
     def __init__(self):
+        ''' Initialize essential attributes used for filtering '''
         obj_set(self, '_keys', []) # Since getattribute is overwritten
-        obj_set(self, '_inds', None) # Since getattribute is overwritten
+        obj_set(self, '_inds', None)
         return
 
 
@@ -69,7 +69,6 @@ class BasePeople(sc.prettyobj):
         ''' Allow people['attr'] instead of getattr(people, 'attr')
             If the key is an integer, alias `people.person()` to return a `Person` instance
         '''
-
         try:
             return self.__getattribute__(key)
         except: # pragma: no cover
@@ -87,12 +86,13 @@ class BasePeople(sc.prettyobj):
 
 
     def _is_filtered(self, attr):
+        ''' Determine if a given attribute is filtered (e.g. people.age is, people.inds isn't) '''
         is_filtered = (self._inds is not None and attr in self._keys)
         return is_filtered
 
 
     def __getattribute__(self, attr):
-        ''' Route property access to the underlying entity '''
+        ''' For array quantities, handle filtering '''
         output  = obj_get(self, attr)
         if attr[0] == '_': # Short-circuit for built-in methods to save time
             return output
@@ -183,18 +183,14 @@ class BasePeople(sc.prettyobj):
         ''' Return ages as integers, clipped to maximum allowable age for pregnancy '''
         return np.minimum(self.int_age, fpd.max_age_preg)
 
-    def female_inds(self):
-        return sc.findinds(self.is_female)
-
-    def male_inds(self):
-        return sc.findinds(self.is_male)
-
     @property
     def n(self):
+        ''' Number of people alive '''
         return self.alive.sum()
 
     @property
     def inds(self):
+        ''' Alias to self._inds to prevent accidental overwrite & increase speed '''
         return self._inds
 
     @property

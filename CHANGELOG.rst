@@ -9,6 +9,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.8.0 (2021-08-28)
+--------------------------
+- Refactored the ``People`` object to use a new filtering-based approach.
+- *GitHub info*: PR `219 <https://github.com/amath-idm/fp_analyses/pull/219>`__
+
+
 Version 0.7.3 (2021-07-15)
 --------------------------
 - Fix bug to ensure that at least one process runs on each worker.
