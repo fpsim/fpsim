@@ -556,25 +556,24 @@ def default_birth_spacing_preference():
 def default_sexual_activity_postpartum():
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-36 months postpartum
-    Replaces DHS Senegal 2018 calendar data with DHS Senegal 2018 individual recode (postpartum (v222) and this month's sexual activity report)
-    Limited to 36 months postpartum (can use any limit you want)
-    Changes postpartum_abstinent to postpartum_sex and removes 1- in calculation
-    DHS data is reporting on sexual activity in this module (not abstinence)
+    0-11 months postpartum: Uses DHS Senegal 2018 calendar data for rates of postpartum abstinence. Sexual activity below is 1-abstinence rate.
+    12-36 months postpartum: Uses DHS Senegal 2018 individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
+    Limited to 36 months postpartum (can use any limit you want 0-36 max)
     '''
 
     postpartum_sex = np.array([
-        [0, 0.0],
-        [1, 0.104166667],
-        [2, 0.300000000],
-        [3, 0.383177570],
-        [4, 0.461538462],
-        [5, 0.476635514],
-        [6, 0.500000000],
-        [7, 0.565217391],
-        [8, 0.541666667],
-        [9,0.547368421],
-        [10,0.617391304],
-        [11,0.578947368],
+        [0, 1.0],
+        [1, 0.986062717770035],
+        [2, 0.868512110726644],
+        [3, 0.653136531365314],
+        [4, 0.511784511784512],
+        [5, 0.383512544802867],
+        [6, 0.348534201954397],
+        [7, 0.340557275541796],
+        [8, 0.291095890410959],
+        [9, 0.254285714285714],
+        [10, 0.223529411764706],
+        [11, 0.22258064516129],
         [12,0.637254902],
         [13,0.608247423],
         [14,0.582278481],
@@ -603,10 +602,10 @@ def default_sexual_activity_postpartum():
 
     postpartum_activity = {}
     postpartum_activity['month'] = postpartum_sex[:, 0]
-    postpartum_activity['percent_active'] = postpartum_sex[:, 1]
+    postpartum_activity['percent_active'] = 1 - postpartum_sex[0:11, 1]
+    postpartum_activity['percent_active'] = np.append(postpartum_activity['percent_active'], postpartum_sex[12:, 1])
 
     return postpartum_activity
-
 
 def default_lactational_amenorrhea():
     '''
