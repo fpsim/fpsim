@@ -399,7 +399,7 @@ class People(fpb.BasePeople):
         single.parity += 1
 
         # Check mortality
-        deliv.maternal_mortality()
+        deliv.maternal_mortality() # Mothers of both stillborn and live babies eligible
         live.infant_mortality()
 
         return
