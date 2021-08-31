@@ -376,25 +376,25 @@ class People(fpb.BasePeople):
 
         # Handle stillbirth and add dates to agent list
         is_stillborn = deliv.binomial(self.pars['stillbirth_prob'])  # TODO- Need to pick year bucket
-        stillborn = deliv.filer(is_stillborn)
+        stillborn = deliv.filter(is_stillborn)
         stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
 
         # Add dates of live births and stillbirths separately
         all_ppl = self.unfilter()
-        live = deliv.filer(~is_stillborn)
+        live = deliv.filter(~is_stillborn)
         for i in live.inds: # Handle DOBs
             all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
         for i in stillborn.inds: # Handle adding dates
             all_ppl.still_dates[i].append(all_ppl.age[i])
 
         # Handle twins
-        is_twin = deliv.binomial(self.pars['twins_prob'])
-        twin = deliv.filter(is_twin)
-        self.step_results['births'] += 2*len(twin)
+        is_twin = live.binomial(self.pars['twins_prob'])
+        twin = live.filter(is_twin)
+        self.step_results['births'] += 2*len(twin) # only add births to population if born alive
         twin.parity += 2 # Add 2 because matching DHS "total children ever born (alive) v201"
 
         # Handle singles
-        single = deliv.filter(~is_twin)
+        single = live.filter(~is_twin)
         self.step_results['births'] += len(single)
         single.parity += 1
 
