@@ -72,6 +72,7 @@ class People(fpb.BasePeople):
         self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
         self.dobs            = arr(n, []) # Dates of births -- list of lists
+        self.still_dates     = arr(n, [])  # Dates of stillbirths -- list of lists
         self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
 
@@ -384,7 +385,7 @@ class People(fpb.BasePeople):
         for i in live.inds: # Handle DOBs
             all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
         for i in stillborn.inds: # Handle adding dates
-            all_ppl.stillbirth_dates[i].append(all_ppl.age[i])
+            all_ppl.still_dates[i].append(all_ppl.age[i])
 
         # Handle twins
         is_twin = deliv.binomial(self.pars['twins_prob'])
