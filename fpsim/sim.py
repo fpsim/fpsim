@@ -375,7 +375,7 @@ class People(fpb.BasePeople):
         deliv.postpartum_dur = 0
 
         # Handle stillbirth and add dates to agent list
-        is_stillborn = deliv.binomial(self.pars['mortality_probs']['stillbirth'])  # TODO- Need to pick year bucket
+        is_stillborn = deliv.binomial(self.pars['mortality_probs']['stillbirth']) 
         stillborn = deliv.filter(is_stillborn)
         stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
 
@@ -622,10 +622,14 @@ class Sim(fpb.BaseSim):
         ind = sc.findnearest(self.pars['maternal_mortality']['year'], self.y)
         maternal_death_prob = self.pars['maternal_mortality']['probs'][ind]
 
+        ind = sc.findnearest(self.pars['stillbirth_rate']['year'], self.y)
+        stillbirth_prob = self.pars['stillbirth_rate']['probs'][ind]
+
         self.pars['mortality_probs'] = {
             'gen_trend': gen_mortality_trend,
             'infant': infant_mort_prob,
-            'maternal': maternal_death_prob
+            'maternal': maternal_death_prob,
+            'stillbirth': stillbirth_prob
         }
 
         return
