@@ -250,9 +250,27 @@ def default_infant_mortality():
 
     infant_mortality = {}
     infant_mortality['year'] = data[:,0]
-    infant_mortality['probs'] = data[:,1]/1000   # Rate per 1000 live births
+    infant_mortality['probs'] = data[:,1]/1000   # Rate per 1000 live births, used after stillbirth is filtered out
 
     return infant_mortality
+
+def stillbirth():
+    '''
+    From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
+    https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
+    '''
+
+    data = np.array([
+        [2000, 25.3],
+        [2010, 22.6],
+        [2019, 19.7],
+        ])
+
+    stillbirth_rate = {}
+    stillbirth_rate['year'] = data[:,0]
+    stillbirth_rate['probs'] = data[:,1]/1000    # Rate per 1000 total births
+
+    return stillbirth_rate
 
 
 ''''
@@ -735,6 +753,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()
     pars['infant_mortality']   = default_infant_mortality()
+    pars['stillbirth']         = default_stillbirth()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['pref_spacing']       = default_birth_spacing_preference()
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
