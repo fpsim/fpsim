@@ -95,12 +95,6 @@ if do_run:
             print('No figures folder exists and do_save = True, creating...')
             os.makedirs(sp.abspath('figs'))
 
-
-    #if do_store_postpartum:
-
-        #pp = sim.store_postpartum()
-        #pp.to_csv(sp.abspath('data/postpartum_model2.csv'))
-
     if do_plot_pregnancy_parity:
 
         #Extract data on currently pregnant and parity at end of sim from model
@@ -108,9 +102,9 @@ if do_run:
 
         #Load Senegal DHS 2018 data
         dhs = pd.read_stata(pregnancy_parity_file, convert_categoricals=False)
-        dhs = dhs[['v012', 'v213', 'v218']]
+        dhs = dhs[['v012', 'v213', 'v201']]
         dhs = dhs.rename(columns={'v012': 'Age', 'v213': 'Pregnant',
-                                  'v218': 'Parity'})  # Parity means # of living children in DHS
+                                  'v201': 'Parity'})  # Parity means # of children ever born in DHS
 
         fig, axes = pl.subplots(3, 2, figsize = (16, 12))
 
