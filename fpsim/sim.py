@@ -373,16 +373,18 @@ class People(fpb.BasePeople):
         deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
         deliv.postpartum_dur = 0
 
-        # Handle stillbirth
+        # Handle stillbirth and add dates to agent list
         is_stillborn = deliv.binomial(self.pars['stillbirth_prob'])  # TODO- Need to pick year bucket
         stillborn = deliv.filer(is_stillborn)
         stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
 
-        # Add dates of live births
-        live = deliv.filer(~is_stillborn)
+        # Add dates of live births and stillbirths separately
         all_ppl = self.unfilter()
+        live = deliv.filer(~is_stillborn)
         for i in live.inds: # Handle DOBs
             all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
+        for i in stillborn.inds: # Handle adding dates
+            all_ppl.stillbirth_dates[i].append(all_ppl.age[i])
 
         # Handle twins
         is_twin = deliv.binomial(self.pars['twins_prob'])
