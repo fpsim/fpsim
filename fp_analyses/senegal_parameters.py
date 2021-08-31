@@ -254,7 +254,7 @@ def default_infant_mortality():
 
     return infant_mortality
 
-def stillbirth():
+def default_stillbirth():
     '''
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf

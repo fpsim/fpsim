@@ -375,7 +375,7 @@ class People(fpb.BasePeople):
         deliv.postpartum_dur = 0
 
         # Handle stillbirth and add dates to agent list
-        is_stillborn = deliv.binomial(self.pars['mortality_probs']['stillbirth']) 
+        is_stillborn = deliv.binomial(self.pars['mortality_probs']['stillbirth'])
         stillborn = deliv.filter(is_stillborn)
         stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
 
