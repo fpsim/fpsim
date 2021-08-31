@@ -67,6 +67,7 @@ class People(fpb.BasePeople):
         self.lactating       = arr(n, d['lactating'])
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
+        self.stillbirth      = arr(n, d['stillbirth'])
         self.postpartum      = arr(n, d['postpartum'])
         self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
@@ -375,11 +376,16 @@ class People(fpb.BasePeople):
         for i in deliv.inds: # Handle DOBs
             all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
 
+        # Handle stillbirth
+        is_stillborn = deliv.binomial(self.pars['stillbirth_prob']) #TODO- Need to pick year bucket
+        stillborn = deliv.filer(is_stillborn)
+        stillborn.stillbirth += 1 # Track how many stillbirths an agent has had
+
         # Handle twins
         is_twin = deliv.binomial(self.pars['twins_prob'])
         twin = deliv.filter(is_twin)
         self.step_results['births'] += 2*len(twin)
-        twin.parity += 2
+        twin.parity += 2 # Add 2 because matching DHS "total children ever born (alive) v201"
 
         # Handle singles
         single = deliv.filter(~is_twin)
