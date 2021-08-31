@@ -95,12 +95,6 @@ if do_run:
             print('No figures folder exists and do_save = True, creating...')
             os.makedirs(sp.abspath('figs'))
 
-
-    #if do_store_postpartum:
-
-        #pp = sim.store_postpartum()
-        #pp.to_csv(sp.abspath('data/postpartum_model2.csv'))
-
     if do_plot_pregnancy_parity:
 
         #Extract data on currently pregnant and parity at end of sim from model
