@@ -102,7 +102,7 @@ if do_run:
 
         #Load Senegal DHS 2018 data
         dhs = pd.read_stata(pregnancy_parity_file, convert_categoricals=False)
-        dhs = dhs[['v012', 'v213', 'v218']]
+        dhs = dhs[['v012', 'v213', 'v201']]
         dhs = dhs.rename(columns={'v012': 'Age', 'v213': 'Pregnant',
                                   'v201': 'Parity'})  # Parity means # of children ever born in DHS
 
