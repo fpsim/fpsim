@@ -80,7 +80,7 @@ class Calibration(sc.prettyobj):
             self.g.n_trials = int(np.ceil(total_trials/self.g.n_workers))
 
         if len(kwargs):
-            errormsg = f'Did not recognize keys {sc.strjoin(kwargs.keys())}'
+            errormsg = f'Did not recognize key(s) "{sc.strjoin(kwargs.keys())}", valid arguments are: {sc.strjoin(self.g.keys())}'
             raise ValueError(errormsg)
 
         return
