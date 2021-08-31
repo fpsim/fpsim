@@ -400,7 +400,7 @@ class People(fpb.BasePeople):
 
         # Check mortality
         deliv.maternal_mortality()
-        deliv.infant_mortality()
+        live.infant_mortality()
 
         return
 
