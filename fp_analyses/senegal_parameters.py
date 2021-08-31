@@ -753,7 +753,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['barriers']           = default_barriers()
     pars['maternal_mortality'] = default_maternal_mortality()
     pars['infant_mortality']   = default_infant_mortality()
-    pars['stillbirth']         = default_stillbirth()
+    pars['stillbirth_rate']    = default_stillbirth()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['pref_spacing']       = default_birth_spacing_preference()
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
