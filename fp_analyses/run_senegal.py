@@ -147,10 +147,13 @@ if do_run:
         all_births = pl.sum(res['births'])
         births_2017 = pl.sum(res['births'][-48:-36])
         maternal_deaths_2017 = pl.sum(res['births'][-48:-36])
+        stillbirths_3_years = pl.sum(res['stillbirths'][-36])
+        total_births_3_years = pl.sum(res['total_births'][-36])
 
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
-        print(f'Total births last year: {(births_last_year)}')
-        print(f'Crude birth rate per 1000 inhabitants in model: {(births_last_year / res["pop_size"][-1]) * 1000}.  Crude birth rate Senegal 2018: 34.52 per 1000 inhabitants')
+        print(f'Total live births last year: {(births_last_year)}')
+        print(f'Crude live birth rate per 1000 inhabitants in model: {(births_last_year / res["pop_size"][-1]) * 1000}.  Crude birth rate Senegal 2018: 34.52 per 1000 inhabitants')
+        print(f'Stillbirth rate per 1000 total births last 3 years: {(stillbirths_3_years / total_births_3_years) * 1000}.  Stillbirth rate Senegal 2019: 19.7 per 1000 total births')
         print(f'Total infant mortality rate in last year of model: {(infant_deaths / births_last_year) * 1000}.  Infant mortality rate 2015 Senegal: 36.4')
         print(f'Total maternal deaths last year: {(maternal_deaths1)}')
         print(f'Total maternal deaths last three years: {(maternal_deaths3)}')
@@ -469,7 +472,7 @@ if do_run:
 
     if do_plot_spacing:
 
-        spacing_bins = sc.odict({'0-11':0,'12-23':1,'24-47':2,'>48':4}) # Spacing bins in years
+        spacing_bins = sc.odict({'0-12':0,'12-24':1,'24-48':2,'>48':4}) # Spacing bins in years
 
         # From data
         data = pd.read_csv(spacing_file)
@@ -532,9 +535,10 @@ if do_run:
         pl.pie(model_spacing_counts[:], labels=spacing_bins)
         pl.title('Birth spacing in model', fontweight='bold')
 
-        
         print(f'Model birth spacing bin percentages:{model_spacing_counts}')
         print(f'Data birth spacing bin percentages: {data_spacing_counts}')
+        spaces = pd.DataFrame(data = model_spacing)
+        spaces.to_csv(sp.abspath('model_files/model_birth_spaces.csv'))
         #print(f'Mean spacing preference: {pref['preference'][spacing_bins].mean()}')
 
         # Plotting
