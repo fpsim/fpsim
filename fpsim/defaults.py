@@ -23,6 +23,7 @@ person_defaults = dict(
     postpartum_dur       = 0,
     gestation            = 0,
     preg_dur             = 0,
+    stillbirth           = 0,
     remainder_months     = 0,
     breastfeed_dur       = 0,
     breastfeed_dur_total = 0,

@@ -67,10 +67,12 @@ class People(fpb.BasePeople):
         self.lactating       = arr(n, d['lactating'])
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
+        self.stillbirth      = arr(n, d['stillbirth'])
         self.postpartum      = arr(n, d['postpartum'])
         self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
         self.dobs            = arr(n, []) # Dates of births -- list of lists
+        self.still_dates     = arr(n, [])  # Dates of stillbirths -- list of lists
         self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
 
@@ -371,24 +373,34 @@ class People(fpb.BasePeople):
         deliv.postpartum = True # Start postpartum state at time of birth
         deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
         deliv.postpartum_dur = 0
+
+        # Handle stillbirth and add dates to agent list
+        is_stillborn = deliv.binomial(self.pars['mortality_probs']['stillbirth'])
+        stillborn = deliv.filter(is_stillborn)
+        stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
+
+        # Add dates of live births and stillbirths separately
         all_ppl = self.unfilter()
-        for i in deliv.inds: # Handle DOBs
+        live = deliv.filter(~is_stillborn)
+        for i in live.inds: # Handle DOBs
             all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
+        for i in stillborn.inds: # Handle adding dates
+            all_ppl.still_dates[i].append(all_ppl.age[i])
 
         # Handle twins
-        is_twin = deliv.binomial(self.pars['twins_prob'])
-        twin = deliv.filter(is_twin)
-        self.step_results['births'] += 2*len(twin)
-        twin.parity += 2
+        is_twin = live.binomial(self.pars['twins_prob'])
+        twin = live.filter(is_twin)
+        self.step_results['births'] += 2*len(twin) # only add births to population if born alive
+        twin.parity += 2 # Add 2 because matching DHS "total children ever born (alive) v201"
 
         # Handle singles
-        single = deliv.filter(~is_twin)
+        single = live.filter(~is_twin)
         self.step_results['births'] += len(single)
         single.parity += 1
 
         # Check mortality
-        deliv.maternal_mortality()
-        deliv.infant_mortality()
+        deliv.maternal_mortality() # Mothers of both stillborn and live babies eligible
+        live.infant_mortality()
 
         return
 
@@ -610,10 +622,14 @@ class Sim(fpb.BaseSim):
         ind = sc.findnearest(self.pars['maternal_mortality']['year'], self.y)
         maternal_death_prob = self.pars['maternal_mortality']['probs'][ind]
 
+        ind = sc.findnearest(self.pars['stillbirth_rate']['year'], self.y)
+        stillbirth_prob = self.pars['stillbirth_rate']['probs'][ind]
+
         self.pars['mortality_probs'] = {
             'gen_trend': gen_mortality_trend,
             'infant': infant_mort_prob,
-            'maternal': maternal_death_prob
+            'maternal': maternal_death_prob,
+            'stillbirth': stillbirth_prob
         }
 
         return
