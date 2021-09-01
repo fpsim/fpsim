@@ -287,7 +287,7 @@ class People(fpb.BasePeople):
     def update_breastfeeding(self):
         '''
         Track breastfeeding, and update time of breastfeeding for individual pregnancy.
-        Currently agents breastfeed a random amount of time between 1 and 24 months.
+        Agents are randomly assigned a duration value based on a gumbel distribution drawn from the 2018 DHS variable for breastfeeding months. The mean (mu) is set to 10.67 and the std dev (beta) to 7, drawn from that distribution in the DHS data.
         '''
         bfdur = [self.pars['breastfeeding_dur_low'], self.pars['breastfeeding_dur_high']]
         bf_mu, bf_beta = 10.67, 7
