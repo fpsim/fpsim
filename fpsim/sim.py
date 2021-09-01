@@ -378,6 +378,7 @@ class People(fpb.BasePeople):
         is_stillborn = deliv.binomial(self.pars['mortality_probs']['stillbirth'])
         stillborn = deliv.filter(is_stillborn)
         stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
+        self.step_results['stillbirths'] = len(stillborn)
 
         # Add dates of live births and stillbirths separately
         all_ppl = self.unfilter()
@@ -397,6 +398,9 @@ class People(fpb.BasePeople):
         single = live.filter(~is_twin)
         self.step_results['births'] += len(single)
         single.parity += 1
+
+        #Calculate total births
+        self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
         # Check mortality
         deliv.maternal_mortality() # Mothers of both stillborn and live babies eligible
@@ -443,6 +447,8 @@ class People(fpb.BasePeople):
         self.step_results = dict(
             deaths          = 0,
             births          = 0,
+            stillbirths     = 0,
+            total_births    = 0
             maternal_deaths = 0,
             infant_deaths   = 0,
             on_methods      = 0,
@@ -513,7 +519,7 @@ class Sim(fpb.BaseSim):
         return
 
     def init_results(self):
-        resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'maternal_deaths', 'infant_deaths', 'on_method',
+        resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths', 'on_method',
                        'no_method', 'mcpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund']
         self.results = {}
         for key in resultscols:
