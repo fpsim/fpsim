@@ -271,15 +271,16 @@ class People(fpb.BasePeople):
         Check to see if postpartum agent meets criteria for LAM in this time step
         '''
         max_lam_dur = 5 # TODO: remove hard-coding, make a parameter
-        lam_candidates = self.filter((self.postpartum_dur > 0) * (self.postpartum_dur <= max_lam_dur))
+        lam_candidates = self.filter((self.postpartum_dur > 0) * (self.postpartum_dur <= max_lam_dur) * (self.breastfeed_dur > 0))
         probs = self.pars['lactational_amenorrhea']['rate'][lam_candidates.postpartum_dur]
         lam_candidates.lam = lam_candidates.binomial(probs)
-
+        
         not_postpartum    = self.postpartum == 0
         over5mo           = self.postpartum_dur > max_lam_dur
         not_breastfeeding = self.breastfeed_dur == 0
         not_lam = self.filter(not_postpartum + over5mo + not_breastfeeding )
         not_lam.lam = False
+        
         return
 
 
@@ -289,7 +290,8 @@ class People(fpb.BasePeople):
         Currently agents breastfeed a random amount of time between 1 and 24 months.
         '''
         bfdur = [self.pars['breastfeeding_dur_low'], self.pars['breastfeeding_dur_high']]
-        breastfeed_durs = np.random.randint(bfdur[0], bfdur[1]+1, size=len(self))
+        bf_mu, bf_beta = 10.67, 7
+        breastfeed_durs = np.random.gumbel(bf_mu, bf_beta, size = len(self))
         breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
         breastfeed_finished = self.filter(breastfeed_finished_inds)
         breastfeed_continue = self.filter(~breastfeed_finished_inds)
