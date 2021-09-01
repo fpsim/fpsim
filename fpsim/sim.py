@@ -403,7 +403,7 @@ class People(fpb.BasePeople):
         self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
         # Check mortality
-        deliv.maternal_mortality() # Mothers of both stillborn and live babies eligible
+        live.maternal_mortality() # Mothers of both stillborn and live babies eligible
         live.infant_mortality()
 
         return

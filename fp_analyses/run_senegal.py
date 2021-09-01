@@ -472,7 +472,7 @@ if do_run:
 
     if do_plot_spacing:
 
-        spacing_bins = sc.odict({'0-11':0,'12-23':1,'24-47':2,'>48':4}) # Spacing bins in years
+        spacing_bins = sc.odict({'0-12':0,'12-24':1,'24-48':2,'>48':4}) # Spacing bins in years
 
         # From data
         data = pd.read_csv(spacing_file)
@@ -535,9 +535,10 @@ if do_run:
         pl.pie(model_spacing_counts[:], labels=spacing_bins)
         pl.title('Birth spacing in model', fontweight='bold')
 
-        
         print(f'Model birth spacing bin percentages:{model_spacing_counts}')
         print(f'Data birth spacing bin percentages: {data_spacing_counts}')
+        spaces = pd.DataFrame(data = model_spacing)
+        spaces.to_csv(sp.abspath('model_files/model_birth_spaces.csv'))
         #print(f'Mean spacing preference: {pref['preference'][spacing_bins].mean()}')
 
         # Plotting
