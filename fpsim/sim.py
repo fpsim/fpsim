@@ -735,6 +735,8 @@ class Sim(fpb.BaseSim):
             self.results['pop_size_months'][i] = self.n
             self.results['births'][i]          = r.births
             self.results['deaths'][i]          = r.deaths
+            self.results['stillbirths'][i]     = r.stillbirths
+            self.results['total_births'][i]    = r.total_births
             self.results['maternal_deaths'][i] = r.maternal_deaths
             self.results['infant_deaths'][i]   = r.infant_deaths
             self.results['on_method'][i]       = r.on_methods
