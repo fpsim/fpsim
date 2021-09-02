@@ -291,7 +291,7 @@ class People(fpb.BasePeople):
         '''
         bfdur = [self.pars['breastfeeding_dur_low'], self.pars['breastfeeding_dur_high']]
         bf_mu, bf_beta = 10.66828, 7.2585
-        breastfeed_durs = np.random.gumbel(bf_mu, bf_beta, size = len(self))
+        breastfeed_durs = abs(np.random.gumbel(bf_mu, bf_beta, size = len(self)))
         breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
         breastfeed_finished = self.filter(breastfeed_finished_inds)
         breastfeed_continue = self.filter(~breastfeed_finished_inds)
