@@ -287,10 +287,10 @@ class People(fpb.BasePeople):
     def update_breastfeeding(self):
         '''
         Track breastfeeding, and update time of breastfeeding for individual pregnancy.
-        Agents are randomly assigned a duration value based on a gumbel distribution drawn from the 2018 DHS variable for breastfeeding months. The mean (mu) is set to 10.67 and the std dev (beta) to 7, drawn from that distribution in the DHS data.
+        Agents are randomly assigned a duration value based on a gumbel distribution drawn from the 2018 DHS variable for breastfeeding months. The mean (mu) and the std dev (beta) are both drawn from that distribution in the DHS data.
         '''
         bfdur = [self.pars['breastfeeding_dur_low'], self.pars['breastfeeding_dur_high']]
-        bf_mu, bf_beta = 10.67, 7
+        bf_mu, bf_beta = 10.66828, 7.2585
         breastfeed_durs = np.random.gumbel(bf_mu, bf_beta, size = len(self))
         breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
         breastfeed_finished = self.filter(breastfeed_finished_inds)
