@@ -3,6 +3,7 @@ Defines the Sim class, the core class of the FP model (FPsim).
 '''
 
 #%% Imports
+import math #needed to round up with math.ceil
 import numpy as np # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
@@ -290,8 +291,9 @@ class People(fpb.BasePeople):
         Agents are randomly assigned a duration value based on a gumbel distribution drawn from the 2018 DHS variable for breastfeeding months. The mean (mu) and the std dev (beta) are both drawn from that distribution in the DHS data.
         '''
         bfdur = [self.pars['breastfeeding_dur_low'], self.pars['breastfeeding_dur_high']]
-        bf_mu, bf_beta = 10.66828, 7.2585
+        bf_mu, bf_beta = 10.66828+9, 7.2585
         breastfeed_durs = abs(np.random.gumbel(bf_mu, bf_beta, size = len(self)))
+        breastfeed_durs = [math.ceil(number) for number in breastfeed_durs]
         breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
         breastfeed_finished = self.filter(breastfeed_finished_inds)
         breastfeed_continue = self.filter(~breastfeed_finished_inds)
