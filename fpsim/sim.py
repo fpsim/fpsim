@@ -189,7 +189,7 @@ class People(fpb.BasePeople):
         not postpartum.  Postpartum and general age-based data from DHS.
         '''
         # Set postpartum probabilities
-        match_low  = self.postpartum_dur > 0
+        match_low  = self.postpartum_dur >= 0
         match_high = self.postpartum_dur <= self.pars['postpartum_length']
         match = self.postpartum * match_low * match_high
         pp = self.filter(match)
