@@ -190,18 +190,18 @@ class People(fpb.BasePeople):
         not postpartum.  Postpartum and general age-based data from DHS.
         '''
         # Set postpartum probabilities
-        match_low  = self.postpartum_dur > 0
+        match_low  = self.postpartum_dur >= 0
         match_high = self.postpartum_dur <= self.pars['postpartum_length']
         match = self.postpartum * match_low * match_high
         pp = self.filter(match)
         non_pp = self.filter(~match)
 
         # Adjust for postpartum women's birth spacing preferences
-        pref = self.pars['pref_spacing'] # Shorten since used a lot
-        spacing_bins = pp.postpartum_dur / pref['interval'] # Main calculation -- divide the duration by the interval
-        spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int) # Convert to an integer and bound by longest bin
+        #pref = self.pars['pref_spacing'] # Shorten since used a lot
+        #spacing_bins = pp.postpartum_dur / pref['interval'] # Main calculation -- divide the duration by the interval
+        #spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int) # Convert to an integer and bound by longest bin
         probs_pp = self.pars['sexual_activity_postpartum']['percent_active'][pp.postpartum_dur]
-        probs_pp *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
+        #probs_pp *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
 
         # Set non-postpartum probabilities
         probs_non_pp = self.pars['sexual_activity'][non_pp.int_age]
@@ -272,14 +272,14 @@ class People(fpb.BasePeople):
         Check to see if postpartum agent meets criteria for LAM in this time step
         '''
         max_lam_dur = 5 # TODO: remove hard-coding, make a parameter
-        lam_candidates = self.filter((self.postpartum_dur > 0) * (self.postpartum_dur <= max_lam_dur) * (self.breastfeed_dur > 0))
+        lam_candidates = self.filter((self.postpartum) * (self.postpartum_dur <= max_lam_dur))
         probs = self.pars['lactational_amenorrhea']['rate'][lam_candidates.postpartum_dur]
         lam_candidates.lam = lam_candidates.binomial(probs)
         
         not_postpartum    = self.postpartum == 0
         over5mo           = self.postpartum_dur > max_lam_dur
         not_breastfeeding = self.breastfeed_dur == 0
-        not_lam = self.filter(not_postpartum + over5mo + not_breastfeeding )
+        not_lam = self.filter(not_postpartum + over5mo + not_breastfeeding)
         not_lam.lam = False
         
         return
@@ -370,7 +370,7 @@ class People(fpb.BasePeople):
         '''Decide if pregnant woman gives birth and explore maternal mortality and child mortality'''
 
         # Update states
-        deliv = self.filter(self.gestation >= self.preg_dur)
+        deliv = self.filter(self.gestation > self.preg_dur)
         deliv.pregnant = False
         deliv.gestation = 0  # Reset gestation counter
         deliv.lactating = True  # Start lactating at time of birth
@@ -407,7 +407,7 @@ class People(fpb.BasePeople):
         self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
         # Check mortality
-        live.maternal_mortality() # Mothers of both stillborn and live babies eligible
+        live.maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
         live.infant_mortality()
 
         return
@@ -472,7 +472,6 @@ class People(fpb.BasePeople):
 
         self.init_step_results()   # Initialize outputs
         alive = self.filter(self.alive)
-        alive.age_person()  # Age person in units of the timestep
         alive.check_mortality()  # Decide if person dies at this t in the simulation
 
         fecund  = alive.filter((alive.sex == 0) * (alive.age < alive.pars['age_limit_fecundity']))
@@ -493,6 +492,9 @@ class People(fpb.BasePeople):
         # Update results
         self.check_mcpr()
         self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
+
+        # Age person at end of timestep
+        alive.age_person()  # Important to keep this here so birth spacing gets recorded accurately
 
         return self.step_results
 
