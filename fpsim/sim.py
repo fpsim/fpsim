@@ -468,7 +468,6 @@ class People(fpb.BasePeople):
 
         self.init_step_results()   # Initialize outputs
         alive = self.filter(self.alive)
-        alive.age_person()  # Age person in units of the timestep
         alive.check_mortality()  # Decide if person dies at this t in the simulation
 
         fecund  = alive.filter((alive.sex == 0) * (alive.age < alive.pars['age_limit_fecundity']))
@@ -489,6 +488,9 @@ class People(fpb.BasePeople):
         # Update results
         self.check_mcpr()
         self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
+
+        # Age person at end of timestep
+        alive.age_person()  # Important to keep this here so birth spacing gets recorded accurately
 
         return self.step_results
 
