@@ -278,7 +278,7 @@ class People(fpb.BasePeople):
         not_postpartum    = self.postpartum == 0
         over5mo           = self.postpartum_dur > max_lam_dur
         not_breastfeeding = self.breastfeed_dur == 0
-        not_lam = self.filter(not_postpartum + over5mo)
+        not_lam = self.filter(not_postpartum + over5mo + not_breastfeeding)
         not_lam.lam = False
         return
 
