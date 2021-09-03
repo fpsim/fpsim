@@ -627,25 +627,25 @@ def default_sexual_activity_postpartum():
 
 def default_lactational_amenorrhea():
     '''
-    Returns an array of the percent of women by month postpartum 0-11 months who meet criteria for LAM:
-    Exclusively breastfeeding, menses have not returned.  Extended out 5-11 months to better match data
+    Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
+    Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
     as those women continue to be postpartum insusceptible.
     From DHS Senegal calendar data
     '''
 
     data = np.array([
-        [0, 0.875757575757576],
-        [1, 0.853658536585366],
-        [2, 0.73356401384083],
-        [3, 0.627306273062731],
-        [4, 0.552188552188552],
-        [5, 0.444444444444444],
-        [6, 0.250814332247557],
-        [7, 0.195046439628483],
-        [8, 0.143835616438356],
-        [9, 0.108571428571429],
-        [10, 0.1],
-        [11, 0.0870967741935484],
+        [0, 0.903125],
+        [1, 0.868794326],
+        [2, 0.746478873],
+        [3, 0.648854962],
+        [4, 0.563573883],
+        [5, 0.457564576],
+        [6, 0.254966887],
+        [7, 0.2],
+        [8, 0.146341463],
+        [9, 0.10982659],
+        [10, 0.10982659],
+        [11, 0.101796407],
     ])
 
     lactational_amenorrhea = {}
