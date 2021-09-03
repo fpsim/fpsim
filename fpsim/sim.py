@@ -271,7 +271,7 @@ class People(fpb.BasePeople):
         Check to see if postpartum agent meets criteria for LAM in this time step
         '''
         max_lam_dur = 5 # TODO: remove hard-coding, make a parameter
-        lam_candidates = self.filter((self.postpartum_dur > 0) * (self.postpartum_dur <= max_lam_dur))
+        lam_candidates = self.filter((self.postpartum) * (self.postpartum_dur <= max_lam_dur))
         probs = self.pars['lactational_amenorrhea']['rate'][lam_candidates.postpartum_dur]
         lam_candidates.lam = lam_candidates.binomial(probs)
 
