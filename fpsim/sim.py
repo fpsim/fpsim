@@ -196,11 +196,11 @@ class People(fpb.BasePeople):
         non_pp = self.filter(~match)
 
         # Adjust for postpartum women's birth spacing preferences
-        pref = self.pars['pref_spacing'] # Shorten since used a lot
-        spacing_bins = pp.postpartum_dur / pref['interval'] # Main calculation -- divide the duration by the interval
-        spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int) # Convert to an integer and bound by longest bin
+        #pref = self.pars['pref_spacing'] # Shorten since used a lot
+        #spacing_bins = pp.postpartum_dur / pref['interval'] # Main calculation -- divide the duration by the interval
+        #spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int) # Convert to an integer and bound by longest bin
         probs_pp = self.pars['sexual_activity_postpartum']['percent_active'][pp.postpartum_dur]
-        probs_pp *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
+        #probs_pp *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
 
         # Set non-postpartum probabilities
         probs_non_pp = self.pars['sexual_activity'][non_pp.int_age]
@@ -278,7 +278,7 @@ class People(fpb.BasePeople):
         not_postpartum    = self.postpartum == 0
         over5mo           = self.postpartum_dur > max_lam_dur
         not_breastfeeding = self.breastfeed_dur == 0
-        not_lam = self.filter(not_postpartum + over5mo + not_breastfeeding )
+        not_lam = self.filter(not_postpartum + over5mo)
         not_lam.lam = False
         return
 
@@ -403,7 +403,7 @@ class People(fpb.BasePeople):
         self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
         # Check mortality
-        live.maternal_mortality() # Mothers of both stillborn and live babies eligible
+        live.maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
         live.infant_mortality()
 
         return
