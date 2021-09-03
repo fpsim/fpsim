@@ -66,7 +66,7 @@ class TestFPSimFertility():
         for rate in lam_rates:
             parameters['lactational_amenorrhea'] = dp.default_lactational_amenorrhea(rate)
             self.sweep_seed(
-                seeds=seeds, pars=parameters, end_year=1966
+                seeds=seeds, pars=parameters, end_year=1966, num_humans=2000
             )
             for result_file in self.output_files[-(len(seeds)):]:
                 result_dict = self.get_results_by_filename(result_file)
@@ -282,7 +282,7 @@ class TestFPSimFertility():
         pass
 
     def test_sweep_sexual_activity(self):
-        """array model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
+        """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
         have non-overlapping birth counts"""
         self.is_debugging = False
         pars = dp.make_pars()
@@ -294,12 +294,21 @@ class TestFPSimFertility():
             seeds=seeds)
 
     def test_sweep_lam(self):
-        """array model at lam rates [1.0, 0.5, 0.25, 0.0] should
+        """model at lam rates [1.0, 0.4, 0.1] should
         have increasing birth counts"""
         self.is_debugging = False
         pars = dp.make_pars()
+
+        # Crank up birth rate
         pars['sexual_activity'] = dp.default_sexual_activity(320.0)
-        lam_rates = [1.0, 0.5, 0.25, 0.0]
+        pars['abortion_prob'] = 0.0
+        pars['miscarriage_rates'] = dp.default_miscarriage_rates(0)
+
+        # Make LAM very important
+        pars['breastfeeding_dur_low'] = 48
+        pars['breastfeeding_dur_high'] = 48
+        pars['LAM_efficacy'] = 1.0
+        lam_rates = [1.0, 0.4, 0.1]
         seeds = self.default_seeds
         self.sweep_lam(
             lam_rates=lam_rates,
@@ -307,7 +316,7 @@ class TestFPSimFertility():
             seeds=seeds)
 
     def test_sweep_nullip_ratio_array(self):
-        """array model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
+        """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
         have non-overlapping birth counts"""
         self.is_debugging = False
         pars = dp.make_pars()
@@ -321,7 +330,7 @@ class TestFPSimFertility():
             seeds=seeds)
 
     def test_sweep_exposure_correction(self):
-        """array model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
+        """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
         have non-overlapping birth counts"""
         pars = dp.make_pars()
         exposure_corrections = [0.1, 0.5, 1.0, 2.0, 4.0]
@@ -332,7 +341,7 @@ class TestFPSimFertility():
             seeds=seeds)
 
     def test_sweep_ec_age(self):
-        """array model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
+        """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
         have non-overlapping birth counts"""
         pars = dp.make_pars()
         exposure_corrections = [0.0, 0.1, 0.5, 1.0, 2.0]
@@ -343,7 +352,7 @@ class TestFPSimFertility():
             seeds=seeds)
 
     def test_sweep_abortion(self):
-        """array model at abortion rates [1.0 to 0.0] should
+        """model at abortion rates [1.0 to 0.0] should
         start at 0.0 and have increasing birth counts"""
         pars = dp.make_pars()
         pars['sexual_activity'] = dp.default_sexual_activity(320.0)
@@ -361,7 +370,7 @@ class TestFPSimFertility():
         Test is like the sexual activity test other than greatly cranking up the birth rates
         so that we have enough data to consdier the scaling.
         """
-        self.is_debugging = True
+        self.is_debugging = False
         pars = dp.make_pars()
         pars['sexual_activity'] = dp.default_sexual_activity(320.0)
         uniform_spacing_preferences = [0.3, 1.0, 2.0]

@@ -271,7 +271,10 @@ def default_sexual_activity(default=100.0):
     return activity_interp
 
 
-def default_sexual_activity_postpartum():
+def default_sexual_activity_postpartum(
+        default_first_two=1.0,
+        default_rest=0.2
+):
     '''
     Returns an array of monthly likelihood of having resumed sexual activity
     within 0-11 months postpartum
@@ -280,8 +283,8 @@ def default_sexual_activity_postpartum():
     '''
 
     postpartum_abstinence_rates = \
-    [[month, 1.0] for month in range(0, 2)] + \
-    [[month, 0.2] for month in range(2, 36)]
+    [[month, default_first_two] for month in range(0, 2)] + \
+    [[month, default_rest] for month in range(2, 36)]
     postpartum_abstinent = np.array(postpartum_abstinence_rates)
 
     postpartum_activity = {}
@@ -366,6 +369,7 @@ def default_exposure_correction_age(default=1.0):
 
     return exposure_age_interp
 
+
 def default_birth_spacing_preference(default_spacing=2.0):
     '''
     Returns an array of birth spacing preferences by closest postpartum month.
@@ -387,7 +391,6 @@ def default_birth_spacing_preference(default_spacing=2.0):
     return pref_spacing
 
 
-
 def default_exposure_correction_parity(default=1):
     '''
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
@@ -401,6 +404,27 @@ def default_exposure_correction_parity(default=1):
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
+
+
+def default_stillbirth(default=20.0):
+    '''Sets stillbirth rate to constant
+
+    Args:
+        default: rate per 1000 live births
+    '''
+
+    data = np.array([
+        [2000, default],
+        [2010, default],
+        [2020, default]
+    ])
+
+    stillbirth_rate = {
+        'year': data[:,0],
+        'probs': data[:,1]/1000
+    }
+
+    return stillbirth_rate
 
 
 def make_pars(configuration_file=None, defaults_file=None):
@@ -454,6 +478,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['pref_spacing'] = default_birth_spacing_preference()
     pars['lactational_amenorrhea'] = default_lactational_amenorrhea()
     pars['miscarriage_rates'] = default_miscarriage_rates()
+    pars['stillbirth_rate'] = default_stillbirth()
     pars['fecundity_ratio_nullip'] = default_fecundity_ratio_nullip()
     pars['exposure_correction_age'] = default_exposure_correction_age()
     pars['exposure_correction_parity'] = default_exposure_correction_parity()
