@@ -394,16 +394,16 @@ def default_exposure_correction_age(test_value=1.0):
     return exposure_age_interp
 
 
-def default_birth_spacing_preference(test_spacing=2.0):
+def default_birth_spacing_preference(test_spacing_multiplier=1.0):
     '''
     Returns an array of birth spacing preferences by closest postpartum month.
     Applied to postpartum pregnancy likelihoods.
 
     NOTE: spacing bins must be uniform!
     Args:
-        test_spacing spacing preference for every month in the four years
+        test_spacing_multiplier on sexual activity during postpartum months
     '''
-    uniform_spacing = np.array([[month, test_spacing] for month in range(0, 49, 12)])
+    uniform_spacing = np.array([[month, test_spacing_multiplier] for month in range(0, 49, 12)])
 
     # Calculate the intervals and check they're all the same
     intervals = np.diff(uniform_spacing[:, 0])
