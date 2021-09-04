@@ -3,6 +3,7 @@ Defines the Sim class, the core class of the FP model (FPsim).
 '''
 
 #%% Imports
+import math #needed to round up with math.ceil
 import numpy as np # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
@@ -274,22 +275,25 @@ class People(fpb.BasePeople):
         lam_candidates = self.filter((self.postpartum) * (self.postpartum_dur <= max_lam_dur))
         probs = self.pars['lactational_amenorrhea']['rate'][lam_candidates.postpartum_dur]
         lam_candidates.lam = lam_candidates.binomial(probs)
-
+        
         not_postpartum    = self.postpartum == 0
         over5mo           = self.postpartum_dur > max_lam_dur
         not_breastfeeding = self.breastfeed_dur == 0
         not_lam = self.filter(not_postpartum + over5mo + not_breastfeeding)
         not_lam.lam = False
+        
         return
 
 
     def update_breastfeeding(self):
         '''
         Track breastfeeding, and update time of breastfeeding for individual pregnancy.
-        Currently agents breastfeed a random amount of time between 1 and 24 months.
+        Agents are randomly assigned a duration value based on a gumbel distribution drawn from the 2018 DHS variable for breastfeeding months. The mean (mu) and the std dev (beta) are both drawn from that distribution in the DHS data.
         '''
         bfdur = [self.pars['breastfeeding_dur_low'], self.pars['breastfeeding_dur_high']]
-        breastfeed_durs = np.random.randint(bfdur[0], bfdur[1]+1, size=len(self))
+        bf_mu, bf_beta = 10.66828+9, 7.2585
+        breastfeed_durs = abs(np.random.gumbel(bf_mu, bf_beta, size = len(self)))
+        breastfeed_durs = [math.ceil(number) for number in breastfeed_durs]
         breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
         breastfeed_finished = self.filter(breastfeed_finished_inds)
         breastfeed_continue = self.filter(~breastfeed_finished_inds)
