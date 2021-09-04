@@ -266,7 +266,7 @@ class TestFPSimFertility():
         all_infant_death_sums = {}
         for imr in infant_mortality_rates:
             current_infant_death_sums = []
-            parameters['infant_mortality'] = tp.default_infant_mortality(default=imr)
+            parameters['infant_mortality'] = tp.default_infant_mortality(test_rate=imr)
             self.sweep_seed(
                 seeds=seeds, pars=parameters
             )
