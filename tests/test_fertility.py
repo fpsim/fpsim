@@ -1,7 +1,7 @@
 import pytest
 import fpsim as fp
 
-import fp_analyses.default_parameters as dp
+import fp_analyses.test_parameters as tp
 
 import json
 import sciris as sc
@@ -36,7 +36,7 @@ class TestFPSimFertility():
             if Path(f).exists():
                 os.remove(f)
 
-    def sweep_seed(self, seeds=None, pars=dp.make_pars(),
+    def sweep_seed(self, seeds=None, pars=tp.make_pars(),
                    num_humans=1000, end_year=1963,
                    var_str=None):
         '''Sweep the specified parameters over random seed and save to disk'''
@@ -64,7 +64,7 @@ class TestFPSimFertility():
         all_birth_sums = {}
         current_birth_sums = []
         for rate in lam_rates:
-            parameters['lactational_amenorrhea'] = dp.default_lactational_amenorrhea(rate)
+            parameters['lactational_amenorrhea'] = tp.default_lactational_amenorrhea(rate)
             self.sweep_seed(
                 seeds=seeds, pars=parameters, end_year=1966, num_humans=2000
             )
@@ -86,7 +86,7 @@ class TestFPSimFertility():
         all_birth_sums = {}
         current_birth_sums = []
         for rate in nullip_rates:
-            parameters['fecundity_ratio_nullip'] = dp.default_fecundity_ratio_nullip(rate)
+            parameters['fecundity_ratio_nullip'] = tp.default_fecundity_ratio_nullip(rate)
             self.sweep_seed(
                 seeds=seeds, pars=parameters, end_year=1966, var_str="fecundity_nullip_ratio"
             )
@@ -110,7 +110,7 @@ class TestFPSimFertility():
         all_birth_sums = {}
         current_birth_sums = []
         for rate in sex_rates:
-            parameters['sexual_activity'] = dp.default_sexual_activity(rate)
+            parameters['sexual_activity'] = tp.default_sexual_activity(rate)
             self.sweep_seed(
                 seeds=seeds, pars=parameters
             )
@@ -184,7 +184,7 @@ class TestFPSimFertility():
         all_birth_sums = {}
         current_birth_sums = []
         for sp in spacing_prefs:
-            parameters['pref_spacing'] = dp.default_birth_spacing_preference(sp)
+            parameters['pref_spacing'] = tp.default_birth_spacing_preference(sp)
             self.sweep_seed(
                 seeds=seeds, pars=parameters
             )
@@ -209,7 +209,7 @@ class TestFPSimFertility():
         # start populating all birth sums
         for ec in ec_ages:
             parameters['exposure_correction_age'] = \
-                dp.default_exposure_correction_age(ec)
+                tp.default_exposure_correction_age(ec)
             self.sweep_seed(
                 seeds=seeds, pars=parameters, var_str=f'ec_{ec}'
             )
@@ -242,7 +242,7 @@ class TestFPSimFertility():
         all_maternal_death_sums = {}
         for mmm in maternal_mortality_multipliers:
             current_maternal_death_sums = []
-            parameters['maternal_mortality'] = dp.default_maternal_mortality(mmm)
+            parameters['maternal_mortality'] = tp.default_maternal_mortality(mmm)
             self.sweep_seed(
                 seeds=seeds, pars=parameters
             )
@@ -266,7 +266,7 @@ class TestFPSimFertility():
         all_infant_death_sums = {}
         for imr in infant_mortality_rates:
             current_infant_death_sums = []
-            parameters['infant_mortality'] = dp.default_infant_mortality(default=imr)
+            parameters['infant_mortality'] = tp.default_infant_mortality(test_rate=imr)
             self.sweep_seed(
                 seeds=seeds, pars=parameters
             )
@@ -285,7 +285,7 @@ class TestFPSimFertility():
         """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
         have non-overlapping birth counts"""
         self.is_debugging = False
-        pars = dp.make_pars()
+        pars = tp.make_pars()
         sex_rates = [30.0, 60.0, 120.0]
         seeds = self.default_seeds
         self.sweep_sexual_activity(
@@ -297,12 +297,12 @@ class TestFPSimFertility():
         """model at lam rates [1.0, 0.4, 0.1] should
         have increasing birth counts"""
         self.is_debugging = False
-        pars = dp.make_pars()
+        pars = tp.make_pars()
 
         # Crank up birth rate
-        pars['sexual_activity'] = dp.default_sexual_activity(320.0)
+        pars['sexual_activity'] = tp.default_sexual_activity(320.0)
         pars['abortion_prob'] = 0.0
-        pars['miscarriage_rates'] = dp.default_miscarriage_rates(0)
+        pars['miscarriage_rates'] = tp.default_miscarriage_rates(0)
 
         # Make LAM very important
         pars['breastfeeding_dur_low'] = 48
@@ -319,9 +319,9 @@ class TestFPSimFertility():
         """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
         have non-overlapping birth counts"""
         self.is_debugging = False
-        pars = dp.make_pars()
-        pars['sexual_activity'] = dp.default_sexual_activity(320.0)
-        pars['lactational_amenorrhea'] = dp.default_lactational_amenorrhea(0.0)
+        pars = tp.make_pars()
+        pars['sexual_activity'] = tp.default_sexual_activity(320.0)
+        pars['lactational_amenorrhea'] = tp.default_lactational_amenorrhea(0.0)
         nullip_ratios = [0.1, 0.5, 1.0, 2.0, 4.0]
         seeds = self.default_seeds
         self.sweep_fecundity_nullip(
@@ -332,7 +332,7 @@ class TestFPSimFertility():
     def test_sweep_exposure_correction(self):
         """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
         have non-overlapping birth counts"""
-        pars = dp.make_pars()
+        pars = tp.make_pars()
         exposure_corrections = [0.1, 0.5, 1.0, 2.0, 4.0]
         seeds = self.default_seeds
         self.sweep_exposure_correction(
@@ -343,7 +343,7 @@ class TestFPSimFertility():
     def test_sweep_ec_age(self):
         """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
         have non-overlapping birth counts"""
-        pars = dp.make_pars()
+        pars = tp.make_pars()
         exposure_corrections = [0.0, 0.1, 0.5, 1.0, 2.0]
         seeds = self.default_seeds
         self.sweep_ec_age(
@@ -354,9 +354,9 @@ class TestFPSimFertility():
     def test_sweep_abortion(self):
         """model at abortion rates [1.0 to 0.0] should
         start at 0.0 and have increasing birth counts"""
-        pars = dp.make_pars()
-        pars['sexual_activity'] = dp.default_sexual_activity(320.0)
-        pars['lactational_amenorrhea'] = dp.default_lactational_amenorrhea(0.0)
+        pars = tp.make_pars()
+        pars['sexual_activity'] = tp.default_sexual_activity(320.0)
+        pars['lactational_amenorrhea'] = tp.default_lactational_amenorrhea(0.0)
         abortion_probs = [1.0, 0.5, 0.25, 0.1, 0.0]
         seeds = self.default_seeds
         self.sweep_abortion_probability(
@@ -371,8 +371,8 @@ class TestFPSimFertility():
         so that we have enough data to consdier the scaling.
         """
         self.is_debugging = False
-        pars = dp.make_pars()
-        pars['sexual_activity'] = dp.default_sexual_activity(320.0)
+        pars = tp.make_pars()
+        pars['sexual_activity'] = tp.default_sexual_activity(320.0)
         uniform_spacing_preferences = [0.3, 1.0, 2.0]
         seeds = self.default_seeds
         seeds = [1, 2, 3, 4, 5]
@@ -384,16 +384,16 @@ class TestFPSimFertility():
 
     def test_sweep_maternal_mortality(self):
         self.is_debugging = False
-        pars = dp.make_pars()
-        pars['sexual_activity'] = dp.default_sexual_activity(320.0) # many conceptions
+        pars = tp.make_pars()
+        pars['sexual_activity'] = tp.default_sexual_activity(320.0) # many conceptions
         multipliers = [10, 50, 100, 200] # default is 2/1000
         self.sweep_maternal_mortality(maternal_mortality_multipliers=multipliers,
                                       parameters=pars)
 
     def test_sweep_infant_mortality(self):
         self.is_debugging = False
-        pars = dp.make_pars()
-        pars['sexual_activity'] = dp.default_sexual_activity(320.0) # many conceptions
+        pars = tp.make_pars()
+        pars['sexual_activity'] = tp.default_sexual_activity(320.0) # many conceptions
         infant_mortality_rates = [10, 50, 100, 200]
         self.sweep_infant_mortality(infant_mortality_rates=infant_mortality_rates,
                                     parameters=pars)
