@@ -178,6 +178,7 @@ class TestFPSimFertility():
         self.log_lines.append(all_birth_sums)
 
     def sweep_spacing_preference(self, spacing_prefs, parameters, seeds=None):
+        raise NotImplementedError("Test is skipped for now, please do not use this until feature better understood.")
         if seeds is None:
             seeds = self.default_seeds
         if 0 not in spacing_prefs:
@@ -367,6 +368,7 @@ class TestFPSimFertility():
             parameters=pars,
             seeds=seeds)
 
+    @pytest.mark.skip("Not yet ready")
     def test_sweep_spacing_preference(self):
         """
         Spacing preference is a multiplier on sexual activity in the 12 months postpartum.
@@ -376,6 +378,7 @@ class TestFPSimFertility():
         self.is_debugging = False
         pars = tp.make_pars()
         pars['sexual_activity'] = tp.default_sexual_activity(320.0)
+        pars['']
         uniform_spacing_preferences = [0.3, 1.0, 2.0]
         seeds = self.default_seeds
         seeds = [1, 2, 3, 4, 5]
