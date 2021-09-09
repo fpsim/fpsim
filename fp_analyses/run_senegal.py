@@ -149,6 +149,14 @@ if do_run:
         maternal_deaths_2017 = pl.sum(res['births'][-48:-36])
         stillbirths_3_years = pl.sum(res['stillbirths'][-36])
         total_births_3_years = pl.sum(res['total_births'][-36])
+        
+        ppl = sim.people
+        alive = ppl.filter(ppl.alive == 1)
+        women = alive.filter(alive.sex == 0)
+        age_low = women.filter(women.age >= 15)
+        age_high = age_low.filter(age_low.age < 49)
+        total_LAM = age_high.lam.mean()
+         
 
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
         print(f'Total live births last year: {(births_last_year)}')
@@ -162,6 +170,7 @@ if do_run:
         print(f'Total model maternal mortality ratio 2017-2019: {(maternal_deaths3 / births_last_3_years) * 100000}.  Maternal mortality ratio 2017 Senegal: 315 ')
         print(f'Total model maternal mortality ratio 2013-2019: {(maternal_deaths7 / births_last_7_years) * 100000}.  Maternal mortality ratio 2013 Senegal:  381')
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
+        print(f'Final percent 15-49 on LAM: {(total_LAM*100)}. LAM in Senegal, 2017 (v312): 0.047% (Note: Model output intended to be significantly higher.)') 
         print(f'TFR rates over last 10 years: {res["tfr_rates"][-10:]}.  TFR in Senegal in 2015: 4.84; 2018: 4.625')
         print(f'TFR rates in 2015: {res["tfr_rates"][-5]}.  TFR in Senegal in 2015: 4.84')
         print(f'TFR rates in 2019: {res["tfr_rates"][-1]}.  TFR in Senegal in 2018: 4.56')
