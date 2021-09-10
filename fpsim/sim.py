@@ -373,18 +373,17 @@ class People(fpb.BasePeople):
         deliv = self.filter(self.gestation > self.preg_dur)
         deliv.pregnant = False
         deliv.gestation = 0  # Reset gestation counter
-        deliv.lactating = True  # Start lactating at time of birth
         deliv.postpartum = True # Start postpartum state at time of birth
         deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
         deliv.postpartum_dur = 0
 
-        # Handle stillbirth and add dates to agent list
+        # Handle stillbirth
         is_stillborn = deliv.binomial(self.pars['mortality_probs']['stillbirth'])
         stillborn = deliv.filter(is_stillborn)
         stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
         self.step_results['stillbirths'] = len(stillborn)
 
-        # Add dates of live births and stillbirths separately
+        # Add dates of live births and stillbirths separately for agent to remember
         all_ppl = self.unfilter()
         live = deliv.filter(~is_stillborn)
         for i in live.inds: # Handle DOBs
@@ -406,7 +405,8 @@ class People(fpb.BasePeople):
         #Calculate total births
         self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
-        # Check mortality
+        # Check mortality and start lactating with live births
+        live.lactating = True # Mothers of stillbirths do not lactate to be eligible for LAM
         live.maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
         live.infant_mortality()
 
