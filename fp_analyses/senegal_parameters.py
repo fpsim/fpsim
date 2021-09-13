@@ -585,55 +585,53 @@ def default_birth_spacing_preference():
 
 def default_sexual_activity_postpartum():
     '''
-    Returns an array of monthly likelihood of having resumed sexual activity within 0-36 months postpartum
-    0-11 months postpartum: Uses DHS Senegal 2018 calendar data for rates of postpartum abstinence. Sexual activity below is 1-abstinence rate.
-    12-36 months postpartum: Uses DHS Senegal 2018 individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
-    Limited to 36 months postpartum (can use any limit you want 0-36 max)
+    Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
+    Uses DHS Senegal 2018 individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
+    Limited to 35 months postpartum (can use any limit you want 0-35 max)
+    Postpartum month 0 refers to the first month after delivery
     '''
 
     postpartum_sex = np.array([
-        [0, 1.0],
-        [1, 0.986062717770035],
-        [2, 0.868512110726644],
-        [3, 0.653136531365314],
-        [4, 0.511784511784512],
-        [5, 0.383512544802867],
-        [6, 0.348534201954397],
-        [7, 0.340557275541796],
-        [8, 0.291095890410959],
-        [9, 0.254285714285714],
-        [10, 0.223529411764706],
-        [11, 0.22258064516129],
-        [12,0.637254902],
-        [13,0.608247423],
-        [14,0.582278481],
-        [15,0.542553191],
-        [16,0.678260870],
-        [17,0.600000000],
-        [18,0.605042017],
-        [19,0.562500000],
-        [20,0.529411765],
-        [21,0.674698795],
-        [22,0.548780488],
-        [23,0.616161616],
-        [24,0.709401709],
-        [25,0.651376147],
-        [26,0.780219780],
-        [27,0.717647059],
-        [28,0.716417910],
-        [29,0.683544304],
-        [30,0.716417910],
-        [31,0.640625000],
-        [32,0.650000000],
-        [33,0.676470588],
-        [34,0.645161290],
-        [35,0.606557377],
-        [36,0.644736842]])
+        [0, 0.104166667],
+        [1, 0.300000000],
+        [2, 0.383177570],
+        [3, 0.461538462],
+        [4, 0.476635514],
+        [5, 0.500000000],
+        [6, 0.565217391],
+        [7, 0.541666667],
+        [8, 0.547368421],
+        [9, 0.617391304],
+        [10, 0.578947368],
+        [11, 0.637254902],
+        [12, 0.608247423],
+        [13, 0.582278481],
+        [14, 0.542553191],
+        [15, 0.678260870],
+        [16, 0.600000000],
+        [17, 0.605042017],
+        [18, 0.562500000],
+        [19, 0.529411765],
+        [20, 0.674698795],
+        [21, 0.548780488],
+        [22, 0.616161616],
+        [23, 0.709401709],
+        [24, 0.651376147],
+        [25, 0.780219780],
+        [26, 0.717647059],
+        [27, 0.716417910],
+        [28, 0.683544304],
+        [29, 0.716417910],
+        [30, 0.640625000],
+        [31, 0.650000000],
+        [32, 0.676470588],
+        [33, 0.645161290],
+        [34, 0.606557377],
+        [35, 0.644736842]])
 
     postpartum_activity = {}
     postpartum_activity['month'] = postpartum_sex[:, 0]
-    postpartum_activity['percent_active'] = 1 - postpartum_sex[0:11, 1]
-    postpartum_activity['percent_active'] = np.append(postpartum_activity['percent_active'], postpartum_sex[12:, 1])
+    postpartum_activity['percent_active'] = postpartum_sex[:, 1]
 
     return postpartum_activity
 
