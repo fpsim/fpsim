@@ -370,7 +370,7 @@ class People(fpb.BasePeople):
         '''Decide if pregnant woman gives birth and explore maternal mortality and child mortality'''
 
         # Update states
-        deliv = self.filter(self.gestation > self.preg_dur)
+        deliv = self.filter(self.gestation == self.preg_dur)
         deliv.pregnant = False
         deliv.gestation = 0  # Reset gestation counter
         deliv.lactating = True
