@@ -257,7 +257,7 @@ class People(fpb.BasePeople):
         abort.postpartum_dur = 0
 
         preg.pregnant = True
-        preg.gestation = 0  # Start the counter at 0 to allow full 9 months gestation
+        preg.gestation = 1  # Start the counter at 1
         pregdur = [self.pars['preg_dur_low'], self.pars['preg_dur_high']]
         preg.preg_dur = np.random.randint(pregdur[0], pregdur[1]+1, size=len(preg))  # Duration of this pregnancy
         preg.postpartum = False
