@@ -588,20 +588,20 @@ def default_sexual_activity_postpartum():
     Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
     Uses DHS Senegal 2018 individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
     Limited to 35 months postpartum (can use any limit you want 0-35 max)
-    Postpartum month 0 refers to the first month after delivery TODO- Need to pull weighted array 0-35 months, 0-9 months here is unweighted
+    Postpartum month 0 refers to the first month after delivery
     '''
 
     postpartum_sex = np.array([
-        [0, 0.08759124],
-        [1, 0.13541667],
-        [2, 0.31111111],
-        [3, 0.40186916],
-        [4, 0.47115385],
-        [5, 0.47663551],
-        [6, 0.52586207],
-        [7, 0.56521739],
-        [8, 0.54166667],
-        [9, 0.54736842],
+        [0, 0.104166667],
+        [1, 0.300000000],
+        [2, 0.383177570],
+        [3, 0.461538462],
+        [4, 0.476635514],
+        [5, 0.500000000],
+        [6, 0.565217391],
+        [7, 0.541666667],
+        [8, 0.547368421],
+        [9, 0.617391304],
         [10, 0.578947368],
         [11, 0.637254902],
         [12, 0.608247423],
