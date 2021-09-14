@@ -531,11 +531,11 @@ def default_sexual_activity():
     Using indicator "Timing of sexual intercourse"
     Includes women who have had sex "within the last four weeks"
     Data taken from 2018 DHS, no trend over years for now
-    Age 12.5 adjusted in calibration to help model match age at first intercourse
+    Onset of sexual activity assumed to be linear from age 10 to first data point at age 15
     '''
 
-    sexually_active = np.array([[0, 5, 10, 12.5, 15,   18,   20,   25,   30,   35,   40,    45,   50],
-                                [0, 0,  0,  8,   11.5, 11.5, 35.5, 49.6, 57.4, 64.4, 64.45, 64.5, 66.8]])
+    sexually_active = np.array([[0, 5, 10, 15,  20,   25,   30,   35,   40,    45,   50],
+                                [0, 0,  0,  11.5, 35.5, 49.6, 57.4, 64.4, 64.45, 64.5, 66.8]])
 
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     activity_ages = sexually_active[0]
