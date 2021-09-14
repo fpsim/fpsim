@@ -121,12 +121,12 @@ def default_age_mortality(bound):
 def default_female_age_fecundity(bound):
     '''
     Use fecundity rates from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
-    Fecundity rate in 12.5-20 age bins estimated equal to fecundity of 20-25 yr olds
+    Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
     45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds, based on fertility rates from Senegal
     '''
     fecundity = {
-        'bins': np.array([0., 5, 10, 12.5,  15,    20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
-        'f': np.array([0.,    0,  0, 70.8, 70.8, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+        'bins': np.array([0., 5, 10, 20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
+        'f': np.array([0.,    0,  0, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
 
     fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
@@ -531,11 +531,11 @@ def default_sexual_activity():
     Using indicator "Timing of sexual intercourse"
     Includes women who have had sex "within the last four weeks"
     Data taken from 2018 DHS, no trend over years for now
-    Age 12.5 adjusted in calibration to help model match age at first intercourse
+    Onset of sexual activity assumed to be linear from age 10 to first data point at age 15
     '''
 
-    sexually_active = np.array([[0, 5, 10, 12.5, 15,   18,   20,   25,   30,   35,   40,    45,   50],
-                                [0, 0,  0,  8,   11.5, 11.5, 35.5, 49.6, 57.4, 64.4, 64.45, 64.5, 66.8]])
+    sexually_active = np.array([[0, 5, 10, 15,  20,   25,   30,   35,   40,    45,   50],
+                                [0, 0,  0,  11.5, 35.5, 49.6, 57.4, 64.4, 64.45, 64.5, 66.8]])
 
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     activity_ages = sexually_active[0]
@@ -679,9 +679,10 @@ def default_miscarriage_rates():
     Returns a linear interpolation of the likelihood of a miscarriage
     by age, taken from data from Magnus et al BMJ 2019: https://pubmed.ncbi.nlm.nih.gov/30894356/
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
+    Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
     '''
-    miscarriage_rates = np.array([[0, 5, 10,   12.5,   15,     20,   25,    30,    35,    40,    45,    50],
-                                  [0, 0,  0,  0.167, 0.167, 0.112, 0.097, 0.108, 0.167, 0.332, 0.569, 0.569]])
+    miscarriage_rates = np.array([[0,   5, 10,      15,     20,     25,    30,    35,    40,    45,    50],
+                                  [1,   1, 0.569,  0.167,   0.112, 0.097,  0.108, 0.167, 0.332, 0.569, 0.569]])
     miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
     return miscarriage_interp
 
