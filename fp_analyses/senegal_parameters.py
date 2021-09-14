@@ -121,12 +121,12 @@ def default_age_mortality(bound):
 def default_female_age_fecundity(bound):
     '''
     Use fecundity rates from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
-    Fecundity rate in 12.5-20 age bins estimated equal to fecundity of 20-25 yr olds
+    Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
     45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds, based on fertility rates from Senegal
     '''
     fecundity = {
-        'bins': np.array([0., 5, 10, 12.5,  15,    20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
-        'f': np.array([0.,    0,  0, 70.8, 70.8, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+        'bins': np.array([0., 5, 10, 20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
+        'f': np.array([0.,    0,  0, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
 
     fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
