@@ -27,11 +27,9 @@ class TestFPSimFertility():
         else:
             self.cleanup_debug_files()
 
-    def get_results_by_filename(self, result_filename):
-        ret_dict = None
-        with open(result_filename) as infile:
-            ret_dict = json.load(infile)['results']
-        return ret_dict
+    @staticmethod
+    def get_results_by_filename(result_filename):
+        return sc.loadjson(result_filename)['results']
 
     def cleanup_debug_files(self):
         for f in self.output_files:
@@ -59,7 +57,62 @@ class TestFPSimFertility():
             sc.savejson(output_filename, sim_stuff)
             self.output_files.append(output_filename)
 
+    def verify_increasing_births(self, parameter_name, parameter_test_values,
+                                 parameter_method, parameters, seeds):
+        '''Verifies that as a specified parameter increases, the total number of births increases
+
+        Args:
+            parameter_name: name of the parameter in the model (key in parameters dictionary)
+            parameter__test_values: array of values used in creating parameter
+            parameter_method: method that creates parameter values
+            parameters: a parameters dictionary for fpsim
+            seeds: optional. Seeds to sweep against for deeper investigation
+        '''
+
+        if seeds is None:
+            seeds = self.default_seeds
+        if 0 not in parameter_test_values:
+            parameter_test_values = [0] + parameter_test_values
+        all_birth_sums = {}
+        current_birth_sums = []
+        # start populating all birth sums
+        for p_val in parameter_test_values:
+            parameters[parameter_name] = \
+                parameter_method(p_val)
+            self.sweep_seed(
+                seeds=seeds, pars=parameters, var_str=f'{parameter_name}_{p_val}'
+            )
+            for result_file in self.output_files[-(len(seeds)):]:
+                result_dict = self.get_results_by_filename(result_file)
+                current_birth_sums.append(sum(result_dict['births']))
+            self.log_lines.append(f"At rate {p_val} saw {sum(current_birth_sums)} births {current_birth_sums}")
+            all_birth_sums[p_val] = current_birth_sums
+            current_birth_sums = []
+        prev_key = None
+        for p_val in parameter_test_values:
+            # check first one for zeros
+            if p_val == 0:
+                zeros = [0] * len(seeds)
+                assert all_birth_sums[p_val] == zeros, f"Expected zeros with {p_val=}. Got {all_birth_sums[p_val]=}"
+            else:
+                # check rest for increasing
+                assert sum(all_birth_sums[prev_key]) < sum(all_birth_sums[p_val]), \
+                    f"Expected less births with exposure correction {prev_key}:({all_birth_sums[prev_key]}, " \
+                    f"than {p_val}:({all_birth_sums[p_val]}) "
+            prev_key = p_val
+        self.log_lines.append(all_birth_sums)
+
+
     def sweep_lam(self, lam_rates, parameters, seeds=None):
+        '''validates that increasing usage of lactational amenorrhea decreases births
+
+        sweeps the parameters object over a list of decreasing lam rates, and asserts
+        that as usage of lam decreases, each subsequent birth count should be higher
+
+        Args:
+            lam_rates: array of rates of usage of lactational amenorrhea in postpartum women.
+              should be in decreasing order.
+        '''
         if seeds is None:
             seeds = self.default_seeds
         previous_birth_sums = [0] * len(seeds)
@@ -81,55 +134,42 @@ class TestFPSimFertility():
         self.log_lines.append(all_birth_sums)
 
     def sweep_fecundity_nullip(self, nullip_rates, parameters, seeds=None):
-        if seeds is None:
-            seeds = self.default_seeds
-        nullip_rates = sorted(nullip_rates)
-        previous_birth_sums = [0] * len(seeds)
-        all_birth_sums = {}
-        current_birth_sums = []
-        for rate in nullip_rates:
-            parameters['fecundity_ratio_nullip'] = tp.default_fecundity_ratio_nullip(rate)
-            self.sweep_seed(
-                seeds=seeds, pars=parameters, end_year=1966, var_str="fecundity_nullip_ratio"
-            )
-            for result_file in self.output_files[-(len(seeds)):]:
-                result_dict = self.get_results_by_filename(result_file)
-                current_birth_sums.append(sum(result_dict['births']))
-            self.log_lines.append(f"At rate {rate} saw {sum(current_birth_sums)} births {current_birth_sums}")
-            assert sum(previous_birth_sums) < sum(current_birth_sums)
-            all_birth_sums[rate] = current_birth_sums
-            previous_birth_sums = current_birth_sums
-            current_birth_sums = []
-        self.log_lines.append(all_birth_sums)
+        '''validates that increasing fecundity_ratio_nullip (multiplier on
+        sexual activity postpartum) leads to increasing numbers of births
+
+        Args:
+            nullip_rates: array of multipliers on postpartum sexual activity. If not
+              included, 0 will be prepended (no sexual activity until end of postpartum)
+        '''
+        self.verify_increasing_births(
+            parameter_name='fecundity_ratio_nullip',
+            parameter_method=tp.default_fecundity_ratio_nullip,
+            parameter_test_values=nullip_rates,
+            parameters=parameters,
+            seeds=seeds
+        )
 
     def sweep_sexual_activity(self, sex_rates, parameters, seeds=None):
-        if seeds is None:
-            seeds = self.default_seeds
-        if 0 not in sex_rates:
-            sex_rates = [0] + sex_rates
-        sex_rates = sorted(sex_rates)
-        previous_birth_sums = None
-        all_birth_sums = {}
-        current_birth_sums = []
-        for rate in sex_rates:
-            parameters['sexual_activity'] = tp.default_sexual_activity(rate)
-            self.sweep_seed(
-                seeds=seeds, pars=parameters
-            )
-            for result_file in self.output_files[-(len(seeds)):]:
-                result_dict = self.get_results_by_filename(result_file)
-                current_birth_sums.append(sum(result_dict['births']))
-            self.log_lines.append(f"At rate {rate} saw {sum(current_birth_sums)} births {current_birth_sums}")
-            if previous_birth_sums:
-                assert sum(previous_birth_sums) < sum(current_birth_sums)
-            else: # Rate should be zero
-                assert sum(current_birth_sums) == 0
-            all_birth_sums[rate] = current_birth_sums
-            previous_birth_sums = current_birth_sums
-            current_birth_sums = []
-        self.log_lines.append(all_birth_sums)
+        '''validates that increasing rates of sexual activity lead to increased births
+
+        Args:
+            sex_rates: array of sex rates (which are the same for all age groups)
+              will start with 0 or be prepended with 0
+            '''
+        self.verify_increasing_births(
+            parameter_name='sexual_activity',
+            parameter_test_values=sex_rates,
+            parameter_method=tp.default_sexual_activity,
+            parameters=parameters,
+            seeds=seeds
+        )
 
     def sweep_exposure_correction(self, exposure_corrections, parameters, seeds=None):
+        '''validates that increasing the exposure correction parameter increases births
+
+        Args:
+            exposure_corrections: array of multipliers on birth probability
+        '''
         if seeds is None:
             seeds = self.default_seeds
         previous_birth_sums = [0, 0, 0, 0, 0]
@@ -152,6 +192,12 @@ class TestFPSimFertility():
         self.log_lines.append(all_birth_sums)
 
     def sweep_abortion_probability(self, abortion_probs, parameters, seeds=None):
+        '''validates that decreasing the probability of abortion increases total births
+
+        Args:
+            abortion_probs: array of decreasing probabilities of abortion. will start with
+              1 or be prepended with 1
+            '''
         if seeds is None:
             seeds = self.default_seeds
         if 1 not in abortion_probs: # Ensure that we get the zero baseline
@@ -203,40 +249,29 @@ class TestFPSimFertility():
         self.log_lines.append(all_birth_sums)
 
     def sweep_ec_age(self, ec_ages, parameters, seeds=None):
-        if seeds is None:
-            seeds = self.default_seeds
-        if 0 not in ec_ages:
-            ec_ages = [0] + ec_ages
-        all_birth_sums = {}
-        current_birth_sums = []
-        # start populating all birth sums
-        for ec in ec_ages:
-            parameters['exposure_correction_age'] = \
-                tp.default_exposure_correction_age(ec)
-            self.sweep_seed(
-                seeds=seeds, pars=parameters, var_str=f'ec_{ec}'
-            )
-            for result_file in self.output_files[-(len(seeds)):]:
-                result_dict = self.get_results_by_filename(result_file)
-                current_birth_sums.append(sum(result_dict['births']))
-            self.log_lines.append(f"At rate {ec} saw {sum(current_birth_sums)} births {current_birth_sums}")
-            all_birth_sums[ec] = current_birth_sums
-            current_birth_sums = []
-        prev_key = None
-        for ec in ec_ages:
-            # check first one for zeros
-            if ec == 0:
-                zeros = [0] * len(seeds)
-                assert all_birth_sums[ec] == zeros, f"Expected zeros with {ec=}. Got {all_birth_sums[ec]=}"
-            else:
-                # check rest for increasing
-                assert sum(all_birth_sums[prev_key]) < sum(all_birth_sums[ec]), \
-                    f"Expected less births with exposure correction {prev_key}:({all_birth_sums[prev_key]}, " \
-                    f"than {ec}:({all_birth_sums[ec]}) "
-            prev_key = ec
-        self.log_lines.append(all_birth_sums)
+        '''validates that increasing exposure correction by age increases total births
+
+        see also the sweep_exposure_correction method. this method sets all age groups to
+        the same multiplier
+
+        Args:
+            ec_ages: array of exposure correction multipliers to be applied to each age group
+        '''
+        self.verify_increasing_births(
+            parameter_name='exposure_correction_age',
+            parameter_test_values=ec_ages,
+            parameter_method=tp.default_exposure_correction_age,
+            parameters=parameters,
+            seeds=seeds
+        )
 
     def sweep_maternal_mortality(self, maternal_mortality_multipliers, parameters, seeds=None):
+        '''verifies that as you increase the rate of maternal mortality, you get increasing maternal death
+
+        Args:
+            maternal_mortality_multipliers: array of increasing multipliers on maternal mortality
+              will be prepended with 0 if not included
+            '''
         if seeds is None:
             seeds = self.default_seeds
         if 0 not in maternal_mortality_multipliers:
@@ -261,6 +296,12 @@ class TestFPSimFertility():
         pass
 
     def sweep_infant_mortality(self, infant_mortality_rates, parameters, seeds=None):
+        '''verifies that as you increase the infant mortality rate, you get increasing infant deaths
+
+        Args:
+            infant_mortality_rates: array of increasing infant mortality rates
+              will be prepended with 0 if not included
+        '''
         if seeds is None:
             seeds = self.default_seeds
         if 0 not in infant_mortality_rates:

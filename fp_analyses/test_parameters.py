@@ -6,11 +6,11 @@ one can set and to make writing tests of them easy.
   To extract this into an editable set of parameters:
 
   import fp_analyses.test_parameters as tp
-  import json
+  import sciris as sc
 
   params = tp.make_pars()
   with open("sample_parameters.json","w") as outfile:
-    json.dump(params, outfile, indent=4, sort_keys=True)
+    sc.savejson(outfile, params)
 '''
 
 import os
