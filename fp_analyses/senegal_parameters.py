@@ -679,9 +679,10 @@ def default_miscarriage_rates():
     Returns a linear interpolation of the likelihood of a miscarriage
     by age, taken from data from Magnus et al BMJ 2019: https://pubmed.ncbi.nlm.nih.gov/30894356/
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
+    Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
     '''
-    miscarriage_rates = np.array([[0, 5, 10,   12.5,   15,     20,   25,    30,    35,    40,    45,    50],
-                                  [0, 0,  0,  0.167, 0.167, 0.112, 0.097, 0.108, 0.167, 0.332, 0.569, 0.569]])
+    miscarriage_rates = np.array([[0,   5, 10,      15,     20,     25,    30,    35,    40,    45,    50],
+                                  [1,   1, 0.569,  0.167,   0.112, 0.097,  0.108, 0.167, 0.332, 0.569, 0.569]])
     miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
     return miscarriage_interp
 
