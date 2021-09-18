@@ -57,277 +57,225 @@ class TestFPSimFertility():
             sc.savejson(output_filename, sim_stuff)
             self.output_files.append(output_filename)
 
-    def verify_increasing_births(self, parameter_name, parameter_test_values,
-                                 parameter_method, parameters, seeds):
+    def verify_increasing_channel(self, parameter_name, parameter_test_values,
+                                  parameter_method, parameters, seeds,
+                                  has_zero_baseline=False, channel_name='births'):
         '''Verifies that as a specified parameter increases, the total number of births increases
 
         Args:
             parameter_name: name of the parameter in the model (key in parameters dictionary)
-            parameter__test_values: array of values used in creating parameter
+            parameter_test_values: array of values used in creating parameter.
+              should be sorted so that channel monitored will increase.
             parameter_method: method that creates parameter values
             parameters: a parameters dictionary for fpsim
             seeds: optional. Seeds to sweep against for deeper investigation
+            has_zero_baseline: (False) set to True if the first result should be zeroes
+            channel_name: ('births') channel monitored to observe increase
         '''
 
         if seeds is None:
             seeds = self.default_seeds
-        if 0 not in parameter_test_values:
-            parameter_test_values = [0] + parameter_test_values
-        all_birth_sums = {}
-        current_birth_sums = []
+        all_channel_sums = {}
+        current_channel_sums = []
         # start populating all birth sums
         for p_val in parameter_test_values:
-            parameters[parameter_name] = \
-                parameter_method(p_val)
+            if parameter_method:
+                parameters[parameter_name] = \
+                    parameter_method(p_val)
+            else:
+                parameters[parameter_name] = p_val
             self.sweep_seed(
                 seeds=seeds, pars=parameters, var_str=f'{parameter_name}_{p_val}'
             )
+            # This loop requires explanation
+            # self.output_files is a flat list of all sims created
+            # each p_val has been run as many times as there are seeds (3 seeds, run 3x)
+            # If you have three seeds, this next line says self.output_files[-3:]
+            # Which means "consider the last 3 (number of seeds) items in the list".
             for result_file in self.output_files[-(len(seeds)):]:
                 result_dict = self.get_results_by_filename(result_file)
-                current_birth_sums.append(sum(result_dict['births']))
-            self.log_lines.append(f"At rate {p_val} saw {sum(current_birth_sums)} births {current_birth_sums}")
-            all_birth_sums[p_val] = current_birth_sums
-            current_birth_sums = []
+                current_channel_sums.append(sum(result_dict[channel_name]))
+            self.log_lines.append(f"At rate {p_val} saw {sum(current_channel_sums)} {channel_name} {current_channel_sums}")
+            all_channel_sums[p_val] = current_channel_sums
+            current_channel_sums = []
+
         prev_key = None
+        checked = []
         for p_val in parameter_test_values:
             # check first one for zeros
-            if p_val == 0:
+            if has_zero_baseline and prev_key == None:
+                checked.append(p_val)
                 zeros = [0] * len(seeds)
-                assert all_birth_sums[p_val] == zeros, f"Expected zeros with {p_val=}. Got {all_birth_sums[p_val]=}"
-            else:
+                assert all_channel_sums[p_val] == zeros, f"Expected zeros with {p_val=}. Got {all_channel_sums[p_val]=}"
+            elif prev_key is not None:
+                checked.append(p_val)
                 # check rest for increasing
-                assert sum(all_birth_sums[prev_key]) < sum(all_birth_sums[p_val]), \
-                    f"Expected less births with exposure correction {prev_key}:({all_birth_sums[prev_key]}, " \
-                    f"than {p_val}:({all_birth_sums[p_val]}) "
+                assert sum(all_channel_sums[prev_key]) < sum(all_channel_sums[p_val]), \
+                    f"Expected less births with exposure correction {prev_key}:({all_channel_sums[prev_key]}, " \
+                    f"than {p_val}:({all_channel_sums[p_val]}) "
             prev_key = p_val
-        self.log_lines.append(all_birth_sums)
+        self.log_lines.append(all_channel_sums)
+        self.log_lines.append(f"Checked all these: {checked}")
 
-
-    def sweep_lam(self, lam_rates, parameters, seeds=None):
-        '''validates that increasing usage of lactational amenorrhea decreases births
-
-        sweeps the parameters object over a list of decreasing lam rates, and asserts
-        that as usage of lam decreases, each subsequent birth count should be higher
-
-        Args:
-            lam_rates: array of rates of usage of lactational amenorrhea in postpartum women.
-              should be in decreasing order.
-        '''
-        if seeds is None:
-            seeds = self.default_seeds
-        previous_birth_sums = [0] * len(seeds)
-        all_birth_sums = {}
-        current_birth_sums = []
-        for rate in lam_rates:
-            parameters['lactational_amenorrhea'] = tp.default_lactational_amenorrhea(rate)
-            self.sweep_seed(
-                seeds=seeds, pars=parameters, end_year=1966, num_humans=2000
-            )
-            for result_file in self.output_files[-(len(seeds)):]:
-                result_dict = self.get_results_by_filename(result_file)
-                current_birth_sums.append(sum(result_dict['births']))
-            self.log_lines.append(f"At rate {rate} saw {sum(current_birth_sums)} births {current_birth_sums}")
-            assert sum(previous_birth_sums) < sum(current_birth_sums)
-            all_birth_sums[rate] = current_birth_sums
-            previous_birth_sums = current_birth_sums
-            current_birth_sums = []
-        self.log_lines.append(all_birth_sums)
-
-    def sweep_fecundity_nullip(self, nullip_rates, parameters, seeds=None):
+    def sweep_fecundity_nullip(self, nullip_rates, parameters,
+                               channel_name='births', seeds=None):
         '''validates that increasing fecundity_ratio_nullip (multiplier on
         sexual activity postpartum) leads to increasing numbers of births
 
         Args:
             nullip_rates: array of multipliers on postpartum sexual activity. If not
               included, 0 will be prepended (no sexual activity until end of postpartum)
+            channel_name: (births) channel to be observed
         '''
-        self.verify_increasing_births(
+        if 0 not in nullip_rates:
+            nullip_rates = [0] + nullip_rates
+        nullip_rates = sorted(nullip_rates)
+        self.verify_increasing_channel(
             parameter_name='fecundity_ratio_nullip',
             parameter_method=tp.default_fecundity_ratio_nullip,
             parameter_test_values=nullip_rates,
             parameters=parameters,
-            seeds=seeds
+            seeds=seeds,
+            channel_name=channel_name,
+            has_zero_baseline=True
         )
 
-    def sweep_sexual_activity(self, sex_rates, parameters, seeds=None):
+    def sweep_sexual_activity(self, sex_rates, parameters,
+                              channel_name, seeds=None):
         '''validates that increasing rates of sexual activity lead to increased births
 
         Args:
             sex_rates: array of sex rates (which are the same for all age groups)
               will start with 0 or be prepended with 0
+            channel_name: (births) channel to be observed
             '''
-        self.verify_increasing_births(
+        if 0 not in sex_rates:
+            sex_rates = [0] + sex_rates
+        sex_rates = sorted(sex_rates)
+        self.verify_increasing_channel(
             parameter_name='sexual_activity',
             parameter_test_values=sex_rates,
             parameter_method=tp.default_sexual_activity,
             parameters=parameters,
-            seeds=seeds
+            channel_name=channel_name,
+            seeds=seeds,
+            has_zero_baseline=True
         )
 
-    def sweep_exposure_correction(self, exposure_corrections, parameters, seeds=None):
+    def sweep_exposure_correction(self, exposure_corrections, parameters,
+                                  channel_name, seeds=None):
         '''validates that increasing the exposure correction parameter increases births
 
         Args:
             exposure_corrections: array of multipliers on birth probability
+            channel_name: (births) channel to be observed
         '''
-        if seeds is None:
-            seeds = self.default_seeds
-        previous_birth_sums = [0, 0, 0, 0, 0]
-        all_birth_sums = {}
-        current_birth_sums = []
-        for ec in exposure_corrections:
-            parameters['exposure_correction'] = ec
-            self.sweep_seed(
-                seeds=seeds, pars=parameters, var_str=f'ec_{ec}'
-            )
-            for result_file in self.output_files[-(len(seeds)):]:
-                result_dict = self.get_results_by_filename(result_file)
-                current_birth_sums.append(sum(result_dict['births']))
-            # self.log_lines.append(sc.jsonify(parameters))
-            self.log_lines.append(f"At rate {ec} saw {sum(current_birth_sums)} births {current_birth_sums}")
-            assert sum(previous_birth_sums) < sum(current_birth_sums)
-            all_birth_sums[ec] = current_birth_sums
-            previous_birth_sums = current_birth_sums
-            current_birth_sums = []
-        self.log_lines.append(all_birth_sums)
+        if 0 not in exposure_corrections:
+            exposure_corrections = [0] + exposure_corrections
+        exposure_corrections = sorted(exposure_corrections)
+        self.verify_increasing_channel(
+            parameter_name='exposure_correction',
+            parameter_method=None,
+            parameters=parameters,
+            parameter_test_values=exposure_corrections,
+            seeds=seeds,
+            channel_name=channel_name,
+            has_zero_baseline=True
+        )
 
-    def sweep_abortion_probability(self, abortion_probs, parameters, seeds=None):
+    def sweep_abortion_probability(self, abortion_probs, parameters,
+                                   channel_name='births', seeds=None):
         '''validates that decreasing the probability of abortion increases total births
 
         Args:
             abortion_probs: array of decreasing probabilities of abortion. will start with
               1 or be prepended with 1
-            '''
-        if seeds is None:
-            seeds = self.default_seeds
+            channel_name: (births) channel to be observed
+        '''
         if 1 not in abortion_probs: # Ensure that we get the zero baseline
             abortion_probs = [1] + abortion_probs
-        previous_birth_sums = None
-        all_birth_sums = {}
-        current_birth_sums = []
-        for ap in abortion_probs:
-            parameters['abortion_prob'] = ap
-            self.sweep_seed(
-                seeds=seeds, pars=parameters
-            )
-            for result_file in self.output_files[-(len(seeds)):]:
-                result_dict = self.get_results_by_filename(result_file)
-                current_birth_sums.append(sum(result_dict['births']))
-            self.log_lines.append(f"At abortion prob {ap=} saw {sum(current_birth_sums)=} {current_birth_sums=}")
-            if previous_birth_sums:
-                assert sum(previous_birth_sums) < sum(current_birth_sums)
-            else: # rate must be 0 here
-                assert sum(current_birth_sums) == 0
-            all_birth_sums[ap] = current_birth_sums
-            previous_birth_sums = current_birth_sums
-            current_birth_sums = []
-        self.log_lines.append(all_birth_sums)
+        abortion_probs = sorted(abortion_probs, reverse=True)
+        self.verify_increasing_channel(
+            parameter_name='abortion_prob',
+            parameter_method=None,
+            parameter_test_values=abortion_probs,
+            parameters=parameters,
+            seeds=seeds,
+            channel_name=channel_name,
+            has_zero_baseline=True
+        )
 
-    def sweep_spacing_preference(self, spacing_prefs, parameters, seeds=None):
-        raise NotImplementedError("Test is skipped for now, please do not use this until feature better understood.")
-        if seeds is None:
-            seeds = self.default_seeds
-        if 0 not in spacing_prefs:
-            spacing_prefs = [0] + spacing_prefs
-        previous_birth_sums = None
-        all_birth_sums = {}
-        current_birth_sums = []
-        for sp in spacing_prefs:
-            parameters['pref_spacing'] = tp.default_birth_spacing_preference(sp)
-            self.sweep_seed(
-                seeds=seeds, pars=parameters
-            )
-            for result_file in self.output_files[-(len(seeds)):]:
-                result_dict = self.get_results_by_filename(result_file)
-                current_birth_sums.append(sum(result_dict['births']))
-            self.log_lines.append(f"At spacing pref {sp=} saw {sum(current_birth_sums)=} {current_birth_sums=}")
-            if previous_birth_sums:
-                assert sum(previous_birth_sums) < sum(current_birth_sums)
-            all_birth_sums[sp] = current_birth_sums
-            previous_birth_sums = current_birth_sums
-            current_birth_sums = []
-        self.log_lines.append(all_birth_sums)
-
-    def sweep_ec_age(self, ec_ages, parameters, seeds=None):
+    def sweep_ec_age(self, ec_ages, parameters,
+                     channel_name, seeds=None):
         '''validates that increasing exposure correction by age increases total births
 
         see also the sweep_exposure_correction method. this method sets all age groups to
         the same multiplier
 
         Args:
-            ec_ages: array of exposure correction multipliers to be applied to each age group
+            ec_ages: array of exposure correction multipliers to be
+              applied to each age group
+            channel_name: (births) channel to be observed
         '''
-        self.verify_increasing_births(
+        if 0 not in ec_ages:
+            ec_ages = [0] + ec_ages
+        ec_ages = sorted(ec_ages)
+        self.verify_increasing_channel(
             parameter_name='exposure_correction_age',
             parameter_test_values=ec_ages,
             parameter_method=tp.default_exposure_correction_age,
             parameters=parameters,
-            seeds=seeds
+            channel_name=channel_name,
+            seeds=seeds,
+            has_zero_baseline=True
         )
 
-    def sweep_maternal_mortality(self, maternal_mortality_multipliers, parameters, seeds=None):
+    def sweep_maternal_mortality(self, maternal_mortality_multipliers, parameters,
+                                 channel_name='maternal_deaths', seeds=None):
         '''verifies that as you increase the rate of maternal mortality, you get increasing maternal death
 
         Args:
             maternal_mortality_multipliers: array of increasing multipliers on maternal mortality
               will be prepended with 0 if not included
+            channel_name: (maternal_deaths) channel to be observed
             '''
-        if seeds is None:
-            seeds = self.default_seeds
         if 0 not in maternal_mortality_multipliers:
             maternal_mortality_multipliers = [0] + maternal_mortality_multipliers
-        previous_maternal_deaths = 0
-        all_maternal_death_sums = {}
-        for mmm in maternal_mortality_multipliers:
-            current_maternal_death_sums = []
-            parameters['maternal_mortality'] = tp.default_maternal_mortality(mmm)
-            self.sweep_seed(
-                seeds=seeds, pars=parameters
-            )
-            for result_file in self.output_files[-(len(seeds)):]:
-                result_dict = self.get_results_by_filename(result_file)
-                current_maternal_death_sums.append(sum(result_dict['maternal_deaths']))
-            self.log_lines.append(f"At maternal mortality multiplier {mmm=}, saw {sum(current_maternal_death_sums)=} {current_maternal_death_sums=}")
-            if previous_maternal_deaths:
-                assert sum(previous_maternal_deaths) <= sum (current_maternal_death_sums)
-            all_maternal_death_sums[mmm] = current_maternal_death_sums
-            previous_maternal_deaths = current_maternal_death_sums
-        self.log_lines.append(all_maternal_death_sums)
-        pass
+        maternal_mortality_multipliers = sorted(maternal_mortality_multipliers)
+        self.verify_increasing_channel(
+            parameter_name='maternal_mortality',
+            parameter_test_values=maternal_mortality_multipliers,
+            parameter_method=tp.default_maternal_mortality,
+            parameters=parameters,
+            seeds=seeds,
+            has_zero_baseline=True,
+            channel_name=channel_name
+        )
 
-    def sweep_infant_mortality(self, infant_mortality_rates, parameters, seeds=None):
+    def sweep_infant_mortality(self, infant_mortality_rates, parameters,
+                               channel_name='infant_deaths', seeds=None):
         '''verifies that as you increase the infant mortality rate, you get increasing infant deaths
 
         Args:
             infant_mortality_rates: array of increasing infant mortality rates
               will be prepended with 0 if not included
+            channel_name: (infant_deaths) channel to be observed
         '''
-        if seeds is None:
-            seeds = self.default_seeds
         if 0 not in infant_mortality_rates:
             infant_mortality_rates = [0] + infant_mortality_rates
-        previous_infant_deaths = 0
-        all_infant_death_sums = {}
-        for imr in infant_mortality_rates:
-            current_infant_death_sums = []
-            parameters['infant_mortality'] = tp.default_infant_mortality(test_rate=imr)
-            self.sweep_seed(
-                seeds=seeds, pars=parameters
-            )
-            for result_file in self.output_files[-(len(seeds)):]:
-                result_dict = self.get_results_by_filename(result_file)
-                current_infant_death_sums.append(sum(result_dict['infant_deaths']))
-            self.log_lines.append(f"At infant mortality rate {imr=}, saw {sum(current_infant_death_sums)=} {current_infant_death_sums=}")
-            if previous_infant_deaths:
-                assert sum(previous_infant_deaths) <= sum (current_infant_death_sums)
-            all_infant_death_sums[imr] = current_infant_death_sums
-            previous_infant_deaths = current_infant_death_sums
-        self.log_lines.append(all_infant_death_sums)
-        pass
+        infant_mortality_rates = sorted(infant_mortality_rates)
+        self.verify_increasing_channel(
+            parameter_name='infant_mortality',
+            parameter_test_values=infant_mortality_rates,
+            parameters=parameters,
+            parameter_method=tp.default_infant_mortality,
+            seeds=seeds,
+            has_zero_baseline=True,
+            channel_name=channel_name
+        )
 
     def test_sweep_sexual_activity(self):
-        """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
-        have non-overlapping birth counts"""
+        """as you increase sexual activity, births should increase"""
         self.is_debugging = False
         pars = tp.make_pars()
         sex_rates = [30.0, 60.0, 120.0]
@@ -335,34 +283,11 @@ class TestFPSimFertility():
         self.sweep_sexual_activity(
             sex_rates=sex_rates,
             parameters=pars,
-            seeds=seeds)
-
-    @unittest.skip("Test is unstable at this time")
-    def test_sweep_lam(self):
-        """model at lam rates [1.0, 0.4, 0.1] should
-        have increasing birth counts"""
-        self.is_debugging = False
-        pars = tp.make_pars()
-
-        # Crank up birth rate
-        pars['sexual_activity'] = tp.default_sexual_activity(320.0)
-        pars['abortion_prob'] = 0.0
-        pars['miscarriage_rates'] = tp.default_miscarriage_rates(0)
-
-        # Make LAM very important
-        pars['breastfeeding_dur_low'] = 48
-        pars['breastfeeding_dur_high'] = 48
-        pars['LAM_efficacy'] = 1.0
-        lam_rates = [1.0, 0.4, 0.1]
-        seeds = self.default_seeds
-        self.sweep_lam(
-            lam_rates=lam_rates,
-            parameters=pars,
+            channel_name='births',
             seeds=seeds)
 
     def test_sweep_nullip_ratio_array(self):
-        """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
-        have non-overlapping birth counts"""
+        """as you increase nulliparous fecundity, you should increase births"""
         self.is_debugging = False
         pars = tp.make_pars()
         pars['sexual_activity'] = tp.default_sexual_activity(320.0)
@@ -372,89 +297,73 @@ class TestFPSimFertility():
         self.sweep_fecundity_nullip(
             nullip_rates=nullip_ratios,
             parameters=pars,
+            channel_name='births',
             seeds=seeds)
 
     def test_sweep_exposure_correction(self):
-        """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
-        have non-overlapping birth counts"""
+        """as you increase exposure correction, births should increase"""
+        self.is_debugging = True
         pars = tp.make_pars()
-        exposure_corrections = [0.1, 0.5, 1.0, 2.0, 4.0]
+        exposure_corrections = [0.1, 1.0, 4.0]
+        if self.is_debugging:
+            exposure_corrections = [0.1, 0.5, 1.0, 2.0, 4.0]
         seeds = self.default_seeds
         self.sweep_exposure_correction(
             exposure_corrections=exposure_corrections,
             parameters=pars,
+            channel_name='births',
             seeds=seeds)
 
     def test_sweep_ec_age(self):
-        """model at 0.1, 0.2, 0.4, 0.8 sexual_activity should
-        have non-overlapping birth counts"""
+        """as you increase exposure correction by age, births should increase"""
+        self.is_debugging = False
         pars = tp.make_pars()
-        exposure_corrections = [0.0, 0.1, 0.5, 1.0, 2.0]
+        exposure_corrections = [0.0, 1.0, 2.0]
+        if self.is_debugging:
+            exposure_corrections = [0.0, 0.1, 0.5, 1.0, 2.0]
         seeds = self.default_seeds
         self.sweep_ec_age(
             ec_ages=exposure_corrections,
             parameters=pars,
+            channel_name='births',
             seeds=seeds)
 
     def test_sweep_abortion(self):
-        """model at abortion rates [1.0 to 0.0] should
-        start at 0.0 and have increasing birth counts"""
+        """as you decrease abortion probability, number of births should increase"""
+        self.is_debugging = False
         pars = tp.make_pars()
         pars['sexual_activity'] = tp.default_sexual_activity(320.0)
         pars['lactational_amenorrhea'] = tp.default_lactational_amenorrhea(0.0)
-        abortion_probs = [1.0, 0.5, 0.25, 0.1, 0.0]
+        abortion_probs = [1.0, 0.25, 0.0]
+        if self.is_debugging:
+            abortion_probs = [1.0, 0.5, 0.25, 0.1, 0.0]
         seeds = self.default_seeds
         self.sweep_abortion_probability(
             abortion_probs=abortion_probs,
             parameters=pars,
+            channel_name='births',
             seeds=seeds)
 
-    @pytest.mark.skip("Not yet ready")
-    def test_sweep_spacing_preference(self):
-        """
-        Spacing preference is a multiplier on sexual activity in the 12 months postpartum.
-        Test is like the sexual activity test other than greatly cranking up the birth rates
-        so that we have enough data to consdier the scaling.
-        """
-        self.is_debugging = False
-        pars = tp.make_pars()
-        pars['sexual_activity'] = tp.default_sexual_activity(320.0)
-        pars['']
-        uniform_spacing_preferences = [0.3, 1.0, 2.0]
-        seeds = self.default_seeds
-        seeds = [1, 2, 3, 4, 5]
-        self.sweep_spacing_preference(
-            spacing_prefs=uniform_spacing_preferences,
-            parameters=pars,
-            seeds=seeds
-        )
-
     def test_sweep_maternal_mortality(self):
+        """as you increase maternal mortality, maternal deaths should increase"""
         self.is_debugging = False
         pars = tp.make_pars()
         pars['sexual_activity'] = tp.default_sexual_activity(320.0) # many conceptions
-        multipliers = [10, 50, 100, 200] # default is 2/1000
+        multipliers = [10, 100] # default is 2/1000. Increased for observability
+        if self.is_debugging:
+            multipliers = [10, 50, 100, 200] # default is 2/1000
         self.sweep_maternal_mortality(maternal_mortality_multipliers=multipliers,
-                                      parameters=pars)
+                                      channel_name='maternal_deaths', parameters=pars)
 
     def test_sweep_infant_mortality(self):
+        """as you increase infant mortality, infant deaths should increase"""
         self.is_debugging = False
         pars = tp.make_pars()
         pars['sexual_activity'] = tp.default_sexual_activity(320.0) # many conceptions
         infant_mortality_rates = [10, 50, 100, 200]
         self.sweep_infant_mortality(infant_mortality_rates=infant_mortality_rates,
-                                    parameters=pars)
+                                    channel_name='infant_deaths', parameters=pars)
 
-    @pytest.mark.skip("NYI")
-    def test_sweep_sexual_activity_postpartum(self):
-        # Possible:
-        # # Set default sexual activity rate to 50 or something with a larger overall population
-        # # Sweep postpartum across much larger numbers (100, 200, 400)
-        # Better:
-        # # Set all women of age to "pregnant" in year 0 with a large base population
-        # # Sweep postpartum rates of 0 to 320 in years 0 and 1
-        raise NotImplementedError()
-        pass
 
 
 if __name__ == "__main__":
