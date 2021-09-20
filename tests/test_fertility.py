@@ -1,5 +1,3 @@
-import unittest
-
 import pytest
 import fpsim as fp
 
@@ -111,7 +109,7 @@ class TestFPSimFertility():
                 checked.append(p_val)
                 # check rest for increasing
                 assert sum(all_channel_sums[prev_key]) < sum(all_channel_sums[p_val]), \
-                    f"Expected less births with exposure correction {prev_key}:({all_channel_sums[prev_key]}, " \
+                    f"Expected less {channel_name} with {parameter_name} {prev_key}:({all_channel_sums[prev_key]}, " \
                     f"than {p_val}:({all_channel_sums[p_val]}) "
             prev_key = p_val
         self.log_lines.append(all_channel_sums)
@@ -292,7 +290,9 @@ class TestFPSimFertility():
         pars = tp.make_pars()
         pars['sexual_activity'] = tp.default_sexual_activity(320.0)
         pars['lactational_amenorrhea'] = tp.default_lactational_amenorrhea(0.0)
-        nullip_ratios = [0.1, 0.5, 1.0, 2.0, 4.0]
+        nullip_ratios = [0.1, 1.0, 4.0]
+        if self.is_debugging:
+            nullip_ratios = [0.1, 0.5, 1.0, 2.0, 4.0]
         seeds = self.default_seeds
         self.sweep_fecundity_nullip(
             nullip_rates=nullip_ratios,
@@ -360,7 +360,9 @@ class TestFPSimFertility():
         self.is_debugging = False
         pars = tp.make_pars()
         pars['sexual_activity'] = tp.default_sexual_activity(320.0) # many conceptions
-        infant_mortality_rates = [10, 50, 100, 200]
+        infant_mortality_rates = [0, 50, 200]
+        if self.is_debugging:
+            infant_mortality_rates = [0, 10, 50, 100, 200]
         self.sweep_infant_mortality(infant_mortality_rates=infant_mortality_rates,
                                     channel_name='infant_deaths', parameters=pars)
 
