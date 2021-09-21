@@ -11,14 +11,14 @@ import fpsim.defaults as fpd
 # Define default user-tunable parameters and values
 defaults = {
   'name'                          : 'Default',
-  'n'                             : 5000,
+  'n'                             : 100000,
   'start_year'                    : 1960,
   'end_year'                      : 2019,
   'timestep'                      : 1,
   'verbose'                       : 1,
   'seed'                          : 1,
-  'fecundity_variation_low'       : 0.4,
-  'fecundity_variation_high'      : 1.4,
+  'fecundity_variation_low'       : 0.8,
+  'fecundity_variation_high'      : 1.2,
   'method_age'                    : 15,
   'max_age'                       : 99,
   'preg_dur_low'                  : 9,
