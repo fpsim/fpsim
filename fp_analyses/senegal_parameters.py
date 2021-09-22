@@ -174,7 +174,7 @@ def default_maternal_mortality():
 
     maternal_mortality = {}
     maternal_mortality['year'] = data[:,0]
-    maternal_mortality['probs'] = data[:,2]
+    maternal_mortality['probs'] = data[:,3]
 
     return maternal_mortality
 
@@ -553,8 +553,8 @@ def default_birth_spacing_preference():
     NOTE: spacing bins must be uniform!
     '''
     postpartum_spacing = np.array([
-        [0, 0.02],
-        [3, 0.05],
+        [0, 0.05],
+        [3, 0.1],
         [6, 0.1],
         [9, 0.15],
         [12, 1.0],
