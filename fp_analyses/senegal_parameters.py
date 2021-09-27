@@ -553,10 +553,10 @@ def default_birth_spacing_preference():
     NOTE: spacing bins must be uniform!
     '''
     postpartum_spacing = np.array([
-        [0, 0.05],
-        [3, 0.1],
-        [6, 0.1],
-        [9, 0.15],
+        [0, 1.0],
+        [3, 1.0],
+        [6, 1.0],
+        [9, 1.0],
         [12, 1.0],
         [15, 2.0],
         [18, 2.0],
