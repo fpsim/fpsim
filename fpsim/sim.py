@@ -130,14 +130,14 @@ class People(fpb.BasePeople):
         pp_switch  = pp_methods['switch_postpartum']
         orig_methods = self.method
 
-        postpartum3 = (self.postpartum_dur == 3)
+        postpartum1 = (self.postpartum_dur == 0)
         postpartum6 = (self.postpartum_dur == 6)
 
-        # At 3 months, choice is by age but not previous method (since just gave birth)
+        # In first time step after delivery, choice is by age but not previous method (since just gave birth)
         for key,(age_low, age_high) in fpd.method_age_mapping.items():
             match_low  = (self.age >= age_low)
             match_high = (self.age <  age_high)
-            match = self.postpartum * postpartum3 * match_low * match_high
+            match = self.postpartum * postpartum1 * match_low * match_high
             this_method = self.filter(match)
 
             choices = pp_methods[key]
