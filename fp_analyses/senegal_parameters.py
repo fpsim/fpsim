@@ -421,10 +421,10 @@ def default_methods_postpartum():
                       'Injectables': 3,
                       'Condoms': 4,
                       'BTL': 5,
-                      'Rhythm': 6,
-                      'Withdrawal': 7,
-                      'Implants' : 8,
-                      'Other' : 9,}
+                      'Withdrawal': 6,
+                      'Implants': 7,
+                      'Other traditional' : 8,
+                      'Other modern' : 9,}
 
     methods_postpartum['names'] = list(methods_postpartum['map'].keys())
 
