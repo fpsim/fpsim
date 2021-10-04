@@ -29,7 +29,7 @@ defaults = {
   'age_limit_fecundity'           : 50,
   'postpartum_length'             : 24,
   'end_first_tri'                 : 3,
-  'abortion_prob'                 : 0.1,
+  'abortion_prob'                 : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
   'twins_prob'                    : 0.018,
   'LAM_efficacy'                  : 0.98,
   'maternal_mortality_multiplier' : 1
