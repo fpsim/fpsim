@@ -606,14 +606,14 @@ class Sim(fpb.BaseSim):
             self.pars['methods'][key] = switch_general[key]
 
         # Update postpartum initiation matrices for current year mCPR - stratified by age
-        for key, val in self.pars['methods_postpartum']['probs_matrix_0-3'].items():
+        for key, val in self.pars['methods_postpartum']['probs_matrix_1'].items():
             start_postpartum[key] = sc.dcp(val)
             start_postpartum[key][0] *= self.pars['methods_postpartum']['trend'][ind]
             start_postpartum[key] = start_postpartum[key] / start_postpartum[key].sum()
             self.pars['methods_postpartum'][key] = start_postpartum[key]  # 1d array for probs coming from birth, binned by age
 
         # Update postpartum switching or discontinuation matrices - not age stratified
-        switch_postpartum = sc.dcp(self.pars['methods_postpartum']['probs_matrix_4-6'])
+        switch_postpartum = sc.dcp(self.pars['methods_postpartum']['probs_matrix_1-6'])
         switch_postpartum[0, 0] *= self.pars['methods_postpartum']['trend'][ind]
         for i in range(len(switch_postpartum)):
             switch_postpartum[i] = switch_postpartum[i,:] / switch_postpartum[i,:].sum()  # Normalize so probabilities add to 1
