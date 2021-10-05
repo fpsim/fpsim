@@ -144,17 +144,21 @@ class People(fpb.BasePeople):
             new_methods = fpu.n_multinomial(choices, len(this_method))
             this_method.method = np.array(new_methods, dtype=np.int64)
 
-        # At 6 months, choice is by previous method but not age
+        # At 6 months, choice is by previous method and by age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
-        # Transitional probabilities are for 3 months, 4-6 months after delivery from DHS data
-        for m in self.pars['methods']['map'].values():
-            match_m    = (orig_methods == m)
-            match = self.postpartum * postpartum6 * match_m
-            this_method = self.filter(match)
+        # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
+        for m in pp_methods['map'].values():
+            for key,(age_low, age_high) in fpd.method_age_mapping.items():
+                match_m    = (orig_methods == m)
+                match_low  = (self.age >= age_low)
+                match_high = (self.age <  age_high)
+                match = self.postpartum * postpartum6 * match_m * match_low * match_high
+                this_method = self.filter(match)
 
-            choices = pp_switch[m]
-            new_methods = fpu.n_multinomial(choices, len(this_method))
-            this_method.method = np.array(new_methods, dtype=np.int64)
+                matrix = pp_methods[key]
+                choices = matrix[m]
+                new_methods = fpu.n_multinomial(choices, len(this_method))
+                this_method.method = np.array(new_methods, dtype=np.int64)
 
         return
 
