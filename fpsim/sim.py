@@ -608,16 +608,19 @@ class Sim(fpb.BaseSim):
         # Update postpartum initiation matrices for current year mCPR - stratified by age
         for key, val in self.pars['methods_postpartum']['probs_matrix_1'].items():
             start_postpartum[key] = sc.dcp(val)
-            start_postpartum[key][0] *= self.pars['methods_postpartum']['trend'][ind]
+            start_postpartum[key][0] *= self.pars['methods_postpartum']['trend'][ind]  # Takes into account mCPR during year of sim
             start_postpartum[key] = start_postpartum[key] / start_postpartum[key].sum()
             self.pars['methods_postpartum'][key] = start_postpartum[key]  # 1d array for probs coming from birth, binned by age
 
-        # Update postpartum switching or discontinuation matrices - not age stratified
-        switch_postpartum = sc.dcp(self.pars['methods_postpartum']['probs_matrix_1-6'])
-        switch_postpartum[0, 0] *= self.pars['methods_postpartum']['trend'][ind]
-        for i in range(len(switch_postpartum)):
-            switch_postpartum[i] = switch_postpartum[i,:] / switch_postpartum[i,:].sum()  # Normalize so probabilities add to 1
-        self.pars['methods_postpartum']['switch_postpartum'] = switch_postpartum  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
+        # Update postpartum switching or discontinuation matrices from 1-6 months - stratified by age
+        for key, val in self.pars['methods_postpartum']['probs_matrix_1-6'].items():
+            switch_postpartuml[key] = sc.dcp(val)
+            switch_postpartum[key][0, 0] *= self.pars['methods_postpartum']['trend'][ind]  # Takes into account mCPR during year of sim
+            for i in range(len(switch_postpartum[key])):
+                denom = switch_postpartum[key][i,:].sum()
+                if denom > 0:
+                    switch_postpartum[key][i] = switch_postpartum[key][i,:] / denom  # Normalize so probabilities add to 1
+                self.pars['methods_postpartum']['switch_postpartum'][key] = switch_postpartum[key]  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
 
         return
 
