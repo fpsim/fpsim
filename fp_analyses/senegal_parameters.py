@@ -415,7 +415,7 @@ def default_methods_postpartum():
     Probabilities at postpartum month 1 are 1 month transitional probabilities for starting a method after delivery.
     Probabilities at postpartum month 6 are 5 month transitional probabilities for starting or changing methods over
     the first 6 months postpartum.
-    Data from Senegal DHS 2018
+    Data from Senegal DHS contraceptive calendars, 2017 and 2018 combined 
     '''
     methods_postpartum = {}
 
