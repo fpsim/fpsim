@@ -596,6 +596,7 @@ class Sim(fpb.BaseSim):
 
         switch_general = {}
         start_postpartum = {}
+        switch_postpartum = {}
 
         ind = sc.findnearest(self.pars['methods']['mcpr_years'], self.y)  # Find the closest year to the timestep we are on
 
@@ -618,7 +619,7 @@ class Sim(fpb.BaseSim):
 
         # Update postpartum switching or discontinuation matrices from 1-6 months - stratified by age
         for key, val in self.pars['methods_postpartum']['probs_matrix_1-6'].items():
-            switch_postpartuml[key] = sc.dcp(val)
+            switch_postpartum[key] = sc.dcp(val)
             switch_postpartum[key][0, 0] *= self.pars['methods_postpartum']['trend'][ind]  # Takes into account mCPR during year of sim
             for i in range(len(switch_postpartum[key])):
                 denom = switch_postpartum[key][i,:].sum()
