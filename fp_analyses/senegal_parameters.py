@@ -323,18 +323,16 @@ def default_methods():
     or switching methods'''
     methods = {}
 
-    methods['map'] = {
-        'None': 0,
-        'Pill': 1,
-        'IUDs': 2,
-        'Injectables': 3,
-        'Condoms': 4,
-        'BTL': 5,
-        'Rhythm': 6,
-        'Withdrawal': 7,
-        'Implants': 8,
-        'Other': 9,
-    }
+    methods['map'] = {'None': 0,
+                      'Pill': 1,
+                      'IUDs': 2,
+                      'Injectables': 3,
+                      'Condoms': 4,
+                      'BTL': 5,
+                      'Withdrawal': 6,
+                      'Implants': 7,
+                      'Other traditional': 8,
+                      'Other modern': 9}
 
     methods['names'] = list(methods['map'].keys())
 
