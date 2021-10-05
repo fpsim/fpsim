@@ -127,7 +127,7 @@ class People(fpb.BasePeople):
         # Transitional probabilities are for the first 3 month time period after delivery from DHS data
 
         pp_methods = self.pars['methods_postpartum']
-        pp_switch  = pp_methods['switch_postpartum']
+        pp_switch  = pp_methods['probs_matrix_1-6']
         orig_methods = self.method
 
         postpartum1 = (self.postpartum_dur == 0)
@@ -155,7 +155,7 @@ class People(fpb.BasePeople):
                 match = self.postpartum * postpartum6 * match_m * match_low * match_high
                 this_method = self.filter(match)
 
-                matrix = pp_methods[key]
+                matrix = pp_switch[key]
                 choices = matrix[m]
                 new_methods = fpu.n_multinomial(choices, len(this_method))
                 this_method.method = np.array(new_methods, dtype=np.int64)
@@ -625,7 +625,7 @@ class Sim(fpb.BaseSim):
                 denom = switch_postpartum[key][i,:].sum()
                 if denom > 0:
                     switch_postpartum[key][i] = switch_postpartum[key][i,:] / denom  # Normalize so probabilities add to 1
-                self.pars['methods_postpartum']['switch_postpartum'][key] = switch_postpartum[key]  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
+            self.pars['methods_postpartum']['probs_matrix_1-6'][key] = switch_postpartum[key]  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
 
         return
 
