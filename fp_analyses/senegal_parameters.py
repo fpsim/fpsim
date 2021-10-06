@@ -795,6 +795,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     # Complicated parameters
     pars['methods']            = default_methods()
     pars['methods_postpartum'] = default_methods_postpartum()
+    pars['methods_postpartum_switch'] = {}
     pars['age_pyramid']        = default_age_pyramid()
     pars['age_mortality']      = default_age_mortality(bound=True)
     pars['age_fecundity']      = default_female_age_fecundity(bound=True)  # Changed to age_fecundity for now from age_fertility for use with LEMOD
