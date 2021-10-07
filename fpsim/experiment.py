@@ -374,20 +374,20 @@ class Experiment(sc.prettyobj):
         # Load data from DHS -- from dropbox/Method_v312.csv
 
         data = [
-            ['Other', 'emergency contraception', 0.015216411570543636, 2017.698615635373],
+            ['Other modern', 'emergency contraception', 0.015216411570543636, 2017.698615635373],
             ['Condoms', 'female condom', 0.005239036180154552, 2017.698615635373],
             ['BTL', 'female sterilization', 0.24609377594176307, 2017.698615635373],
             ['Implants', 'implants/norplant', 5.881839602070953, 2017.698615635373],
             ['Injectables', 'injections', 7.101718239287355, 2017.698615635373],
             ['IUDs', 'iud', 1.4865067612487317, 2017.698615635373],
-            ['Other', 'lactational amenorrhea (lam)', 0.04745447091361792, 2017.698615635373],
+            ['Other modern', 'lactational amenorrhea (lam)', 0.04745447091361792, 2017.698615635373],
             ['Condoms', 'male condom', 1.0697377418682412, 2017.698615635373],
             ['None', 'not using', 80.10054235699272, 2017.698615635373],
-            ['Other', 'other modern method', 0.007832257135437748, 2017.698615635373],
-            ['Other', 'other traditional', 0.5127850142889963, 2017.698615635373],
-            ['Rhythm', 'periodic abstinence', 0.393946698444533, 2017.698615635373],
+            ['Other modern', 'other modern method', 0.007832257135437748, 2017.698615635373],
+            ['Other traditional', 'other traditional', 0.5127850142889963, 2017.698615635373],
+            ['Other traditional', 'periodic abstinence', 0.393946698444533, 2017.698615635373],
             ['Pill', 'pill', 2.945874450486654, 2017.698615635373],
-            ['Rhythm', 'standard days method (sdm)', 0.06132534128612159, 2017.698615635373],
+            ['Other modern', 'standard days method (sdm)', 0.06132534128612159, 2017.698615635373],
             ['Withdrawal', 'withdrawal', 0.12388784228417069, 2017.698615635373],
         ]
 
