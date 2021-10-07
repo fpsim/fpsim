@@ -206,14 +206,20 @@ def default_methods_postpartum():
     methods_postpartum['names'] = list(available_methods.keys())
     all_none = np.zeros(len(available_methods))
     all_none[0] = 1.0 # Sets 1.0 probability of none
-    methods_postpartum['probs_matrix_0-3'] = {
+    methods_postpartum['probs_matrix_1'] = {
         '<18': sc.dcp(all_none),
         '18-20': sc.dcp(all_none),
         '21-25': sc.dcp(all_none),
         '>25': sc.dcp(all_none)
     }
 
-    methods_postpartum['probs_matrix_4-6'] = np.eye(len(available_methods))
+    no_switch = np.eye(len(available_methods))
+    methods_postpartum['probs_matrix_1-6'] = {
+        '<18': sc.dcp(no_switch),
+        '18-20': sc.dcp(no_switch),
+        '21-25': sc.dcp(no_switch),
+        '>25': sc.dcp(no_switch)
+    }
 
     methods_postpartum['mcpr_years'] = np.array(
         [1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019])
