@@ -154,18 +154,16 @@ def default_methods():
     '''
     methods = {}
 
-    methods['map'] = {
-        'None': 0,
-        'Pill': 1,
-        'IUDs': 2,
-        'Injectables': 3,
-        'Condoms': 4,
-        'BTL': 5,
-        'Rhythm': 6,
-        'Withdrawal': 7,
-        'Implants': 8,
-        'Other': 9,
-    }
+    methods['map'] = {'None': 0,
+                      'Pill': 1,
+                      'IUDs': 2,
+                      'Injectables': 3,
+                      'Condoms': 4,
+                      'BTL': 5,
+                      'Withdrawal': 6,
+                      'Implants': 7,
+                      'Other traditional': 8,
+                      'Other modern': 9}
 
     methods['names'] = list(methods['map'].keys())
 
@@ -191,18 +189,17 @@ def default_methods_postpartum():
     Probabilities are transitional probabilities over 3 month period.
     This method sets an identity matrix, method does not change postpartum.
     '''
-    available_methods = {
-        'None': 0,
-        'Pill': 1,
-        'IUDs': 2,
-        'Injectables': 3,
-        'Condoms': 4,
-        'BTL': 5,
-        'Rhythm': 6,
-        'Withdrawal': 7,
-        'Implants': 8,
-        'Other': 9
-    }
+    available_methods = {'None': 0,
+                      'Pill': 1,
+                      'IUDs': 2,
+                      'Injectables': 3,
+                      'Condoms': 4,
+                      'BTL': 5,
+                      'Withdrawal': 6,
+                      'Implants': 7,
+                      'Other traditional': 8,
+                      'Other modern': 9}
+
     methods_postpartum = {}
 
     methods_postpartum['map'] = available_methods
@@ -492,6 +489,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     # Complicated parameters
     pars['methods'] = default_methods()
     pars['methods_postpartum'] = default_methods_postpartum()
+    pars['methods_postpartum_switch'] = {}
     pars['age_pyramid'] = default_age_pyramid()
     pars['age_mortality'] = default_age_mortality(is_bound=True)
     pars['age_fecundity'] = default_female_age_fecundity(
