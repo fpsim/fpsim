@@ -28,6 +28,7 @@ do_plot_skyscrapers = 1
 do_plot_methods     = 1
 do_plot_spacing     = 1
 do_save             = 1
+do_save_spaces      = 0
 
 min_age = 15
 max_age = 50
@@ -546,8 +547,9 @@ if do_run:
 
         print(f'Model birth spacing bin percentages:{model_spacing_counts}')
         print(f'Data birth spacing bin percentages: {data_spacing_counts}')
-        spaces = pd.DataFrame(data = model_spacing)
-        spaces.to_csv(sp.abspath('model_files/model_birth_spaces.csv'))
+        if do_save_spaces:
+            spaces = pd.DataFrame(data = model_spacing)
+            spaces.to_csv(sp.abspath('model_files/model_birth_spaces.csv'))
         #print(f'Mean spacing preference: {pref['preference'][spacing_bins].mean()}')
 
         # Plotting
