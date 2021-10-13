@@ -11,7 +11,7 @@ import fpsim.defaults as fpd
 # Define default user-tunable parameters and values
 defaults = {
   'name'                          : 'Default',
-  'n'                             : 100000,
+  'n'                             : 5000,
   'start_year'                    : 1960,
   'end_year'                      : 2019,
   'timestep'                      : 1,

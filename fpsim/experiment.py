@@ -331,15 +331,16 @@ class Experiment(sc.prettyobj):
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         ppl = self.people
         for i in  range(len(ppl)):
-            if len(ppl.dobs[i]):
-                model_age_first.append(ppl.dobs[i][0])
-            if len(ppl.dobs[i]) > 1:
-                for d in range(len(ppl.dobs[i]) - 1):
-                    space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
-                    ind = sc.findinds(space > spacing_bins[:])[-1]
-                    model_spacing_counts[ind] += 1
+            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+                if len(ppl.dobs[i]):
+                    model_age_first.append(ppl.dobs[i][0])
+                if len(ppl.dobs[i]) > 1:
+                    for d in range(len(ppl.dobs[i]) - 1):
+                        space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
+                        ind = sc.findinds(space > spacing_bins[:])[-1]
+                        model_spacing_counts[ind] += 1
 
-                    model_spacing.append(space)
+                        model_spacing.append(space)
 
         model_spacing_counts[:] /= model_spacing_counts[:].sum()
         model_spacing_counts[:] *= 100
