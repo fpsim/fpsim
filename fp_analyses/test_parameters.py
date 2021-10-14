@@ -154,18 +154,16 @@ def default_methods():
     '''
     methods = {}
 
-    methods['map'] = {
-        'None': 0,
-        'Pill': 1,
-        'IUDs': 2,
-        'Injectables': 3,
-        'Condoms': 4,
-        'BTL': 5,
-        'Rhythm': 6,
-        'Withdrawal': 7,
-        'Implants': 8,
-        'Other': 9,
-    }
+    methods['map'] = {'None': 0,
+                      'Pill': 1,
+                      'IUDs': 2,
+                      'Injectables': 3,
+                      'Condoms': 4,
+                      'BTL': 5,
+                      'Withdrawal': 6,
+                      'Implants': 7,
+                      'Other traditional': 8,
+                      'Other modern': 9}
 
     methods['names'] = list(methods['map'].keys())
 
@@ -191,32 +189,37 @@ def default_methods_postpartum():
     Probabilities are transitional probabilities over 3 month period.
     This method sets an identity matrix, method does not change postpartum.
     '''
-    available_methods = {
-        'None': 0,
-        'Pill': 1,
-        'IUDs': 2,
-        'Injectables': 3,
-        'Condoms': 4,
-        'BTL': 5,
-        'Rhythm': 6,
-        'Withdrawal': 7,
-        'Implants': 8,
-        'Other': 9
-    }
+    available_methods = {'None': 0,
+                      'Pill': 1,
+                      'IUDs': 2,
+                      'Injectables': 3,
+                      'Condoms': 4,
+                      'BTL': 5,
+                      'Withdrawal': 6,
+                      'Implants': 7,
+                      'Other traditional': 8,
+                      'Other modern': 9}
+
     methods_postpartum = {}
 
     methods_postpartum['map'] = available_methods
     methods_postpartum['names'] = list(available_methods.keys())
     all_none = np.zeros(len(available_methods))
     all_none[0] = 1.0 # Sets 1.0 probability of none
-    methods_postpartum['probs_matrix_0-3'] = {
+    methods_postpartum['probs_matrix_1'] = {
         '<18': sc.dcp(all_none),
         '18-20': sc.dcp(all_none),
         '21-25': sc.dcp(all_none),
         '>25': sc.dcp(all_none)
     }
 
-    methods_postpartum['probs_matrix_4-6'] = np.eye(len(available_methods))
+    no_switch = np.eye(len(available_methods))
+    methods_postpartum['probs_matrix_1-6'] = {
+        '<18': sc.dcp(no_switch),
+        '18-20': sc.dcp(no_switch),
+        '21-25': sc.dcp(no_switch),
+        '>25': sc.dcp(no_switch)
+    }
 
     methods_postpartum['mcpr_years'] = np.array(
         [1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019])
@@ -492,6 +495,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     # Complicated parameters
     pars['methods'] = default_methods()
     pars['methods_postpartum'] = default_methods_postpartum()
+    pars['methods_postpartum_switch'] = {}
     pars['age_pyramid'] = default_age_pyramid()
     pars['age_mortality'] = default_age_mortality(is_bound=True)
     pars['age_fecundity'] = default_female_age_fecundity(
