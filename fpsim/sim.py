@@ -171,8 +171,9 @@ class People(fpb.BasePeople):
         age_mort = self.pars['age_mortality']
         f_spline = age_mort['f_spline'] * trend_val
         m_spline = age_mort['m_spline'] * trend_val
-        female   = self.filter(self.is_female)
-        male     = self.filter(self.is_male)
+        over_one = self.filter(self.age >= 1)
+        female   = over_one.filter(over_one.is_female)
+        male     = over_one.filter(over_one.is_male)
         f_ages = female.int_age
         m_ages = male.int_age
 

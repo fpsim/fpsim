@@ -29,7 +29,6 @@ do_plot_methods = 1
 do_plot_spacing = 1
 do_save = 1
 do_save_spaces = 0
-
 min_age = 15
 max_age = 50
 bin_size = 5
@@ -526,15 +525,16 @@ if do_run:
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         ppl = sim.people
         for i in range(len(ppl)):
-            if len(ppl.dobs[i]):
-                model_age_first.append(ppl.dobs[i][0])
-            if len(ppl.dobs[i]) > 1:
-                for d in range(len(ppl.dobs[i]) - 1):
-                    space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
-                    ind = sc.findinds(space > spacing_bins[:])[-1]
-                    model_spacing_counts[ind] += 1
+            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+                if len(ppl.dobs[i]):
+                    model_age_first.append(ppl.dobs[i][0])
+                if len(ppl.dobs[i])>1:
+                    for d in range(len(ppl.dobs[i])-1):
+                        space = ppl.dobs[i][d+1] - ppl.dobs[i][d]
+                        ind = sc.findinds(space>spacing_bins[:])[-1]
+                        model_spacing_counts[ind] += 1
 
-                    model_spacing.append(space)
+                        model_spacing.append(space)
 
         model_ax = pl.linspace(0, 100, len(model_spacing))
 
@@ -559,7 +559,7 @@ if do_run:
         if do_save_spaces:
             spaces = pd.DataFrame(data=model_spacing)
             spaces.to_csv(sp.abspath('model_files/model_birth_spaces.csv'))
-        # print(f'Mean spacing preference: {pref['preference'][spacing_bins].mean()}')
+        #print(f'Mean spacing preference: {pref['preference'][spacing_bins].mean()}')
 
         # Plotting
         fig = pl.figure(figsize=(30, 12))
