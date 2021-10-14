@@ -127,34 +127,38 @@ class People(fpb.BasePeople):
         # Transitional probabilities are for the first 3 month time period after delivery from DHS data
 
         pp_methods = self.pars['methods_postpartum']
-        pp_switch  = pp_methods['switch_postpartum']
+        pp_switch  = self.pars['methods_postpartum_switch']
         orig_methods = self.method
 
-        postpartum3 = (self.postpartum_dur == 3)
+        postpartum1 = (self.postpartum_dur == 0)
         postpartum6 = (self.postpartum_dur == 6)
 
-        # At 3 months, choice is by age but not previous method (since just gave birth)
+        # In first time step after delivery, choice is by age but not previous method (since just gave birth)
         for key,(age_low, age_high) in fpd.method_age_mapping.items():
             match_low  = (self.age >= age_low)
             match_high = (self.age <  age_high)
-            match = self.postpartum * postpartum3 * match_low * match_high
+            match = self.postpartum * postpartum1 * match_low * match_high
             this_method = self.filter(match)
 
             choices = pp_methods[key]
             new_methods = fpu.n_multinomial(choices, len(this_method))
             this_method.method = np.array(new_methods, dtype=np.int64)
 
-        # At 6 months, choice is by previous method but not age
+        # At 6 months, choice is by previous method and by age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
-        # Transitional probabilities are for 3 months, 4-6 months after delivery from DHS data
-        for m in self.pars['methods']['map'].values():
-            match_m    = (orig_methods == m)
-            match = self.postpartum * postpartum6 * match_m
-            this_method = self.filter(match)
+        # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
+        for m in pp_methods['map'].values():
+            for key,(age_low, age_high) in fpd.method_age_mapping.items():
+                match_m    = (orig_methods == m)
+                match_low  = (self.age >= age_low)
+                match_high = (self.age <  age_high)
+                match = match_m * self.postpartum * postpartum6 * match_low * match_high
+                this_method = self.filter(match)
 
-            choices = pp_switch[m]
-            new_methods = fpu.n_multinomial(choices, len(this_method))
-            this_method.method = np.array(new_methods, dtype=np.int64)
+                matrix = pp_switch[key]
+                choices = matrix[m]
+                new_methods = fpu.n_multinomial(choices, len(this_method))
+                this_method.method = np.array(new_methods, dtype=np.int64)
 
         return
 
@@ -593,6 +597,7 @@ class Sim(fpb.BaseSim):
 
         switch_general = {}
         start_postpartum = {}
+        switch_postpartum = {}
 
         ind = sc.findnearest(self.pars['methods']['mcpr_years'], self.y)  # Find the closest year to the timestep we are on
 
@@ -607,18 +612,21 @@ class Sim(fpb.BaseSim):
             self.pars['methods'][key] = switch_general[key]
 
         # Update postpartum initiation matrices for current year mCPR - stratified by age
-        for key, val in self.pars['methods_postpartum']['probs_matrix_0-3'].items():
+        for key, val in self.pars['methods_postpartum']['probs_matrix_1'].items():
             start_postpartum[key] = sc.dcp(val)
-            start_postpartum[key][0] *= self.pars['methods_postpartum']['trend'][ind]
+            start_postpartum[key][0] *= self.pars['methods_postpartum']['trend'][ind]  # Takes into account mCPR during year of sim
             start_postpartum[key] = start_postpartum[key] / start_postpartum[key].sum()
             self.pars['methods_postpartum'][key] = start_postpartum[key]  # 1d array for probs coming from birth, binned by age
 
-        # Update postpartum switching or discontinuation matrices - not age stratified
-        switch_postpartum = sc.dcp(self.pars['methods_postpartum']['probs_matrix_4-6'])
-        switch_postpartum[0, 0] *= self.pars['methods_postpartum']['trend'][ind]
-        for i in range(len(switch_postpartum)):
-            switch_postpartum[i] = switch_postpartum[i,:] / switch_postpartum[i,:].sum()  # Normalize so probabilities add to 1
-        self.pars['methods_postpartum']['switch_postpartum'] = switch_postpartum  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
+        # Update postpartum switching or discontinuation matrices from 1-6 months - stratified by age
+        for key, val in self.pars['methods_postpartum']['probs_matrix_1-6'].items():
+            switch_postpartum[key] = sc.dcp(val)
+            switch_postpartum[key][0, 0] *= self.pars['methods_postpartum']['trend'][ind]  # Takes into account mCPR during year of sim
+            for i in range(len(switch_postpartum[key])):
+                denom = switch_postpartum[key][i,:].sum()
+                if denom > 0:
+                    switch_postpartum[key][i] = switch_postpartum[key][i,:] / denom  # Normalize so probabilities add to 1
+            self.pars['methods_postpartum_switch'][key] = switch_postpartum[key]  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
 
         return
 
