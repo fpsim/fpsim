@@ -27,7 +27,7 @@ defaults = {
   'breastfeeding_dur_low'         : 1,
   'breastfeeding_dur_high'        : 24,
   'age_limit_fecundity'           : 50,
-  'postpartum_length'             : 24,
+  'postpartum_length'             : 35,
   'end_first_tri'                 : 3,
   'abortion_prob'                 : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
   'twins_prob'                    : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
@@ -592,23 +592,18 @@ def default_birth_spacing_preference():
     NOTE: spacing bins must be uniform!
     '''
     postpartum_spacing = np.array([
-        [0, 1.0],
-        [3, 1.0],
-        [6, 1.0],
-        [9, 1.0],
-        [12, 1.0],
-        [15, 2.0],
-        [18, 2.0],
-        [21, 2.0],
+        [0, 0.8],
+        [3, 0.5],
+        [6, 0.5],
+        [9, 0.5],
+        [12, 0.8],
+        [15, 1.2],
+        [18, 5.0],
+        [21, 5.0],
         [24, 9.0],
         [27, 9.0],
         [30, 9.0],
-        [33, 9.0],
-        [36, 12.0],
-        [39, 5.0],
-        [42, 2.0],
-        [45, 1.0],
-        [48, 0.6]])
+        [33, 9.0]])
 
     # Calculate the intervals and check they're all the same
     intervals = np.diff(postpartum_spacing[:, 0])
