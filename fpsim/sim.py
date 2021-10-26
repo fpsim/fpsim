@@ -477,8 +477,9 @@ class People(fpb.BasePeople):
         t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)'''
 
         self.init_step_results()   # Initialize outputs
+        alive_start = self.filter(self.alive)
+        alive_start.check_mortality()  # Decide if person dies at this t in the simulation
         alive = self.filter(self.alive)
-        alive.check_mortality()  # Decide if person dies at this t in the simulation
 
         fecund  = alive.filter((alive.sex == 0) * (alive.age < alive.pars['age_limit_fecundity']))
         preg    = fecund.filter(fecund.pregnant)
