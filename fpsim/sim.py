@@ -477,16 +477,24 @@ class People(fpb.BasePeople):
         t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)'''
 
         self.init_step_results()   # Initialize outputs
-        alive = self.filter(self.alive)
-        alive.check_mortality()  # Decide if person dies at this t in the simulation
+        alive_start = self.filter(self.alive)
+        alive_start.check_mortality()  # Decide if person dies at this t in the simulation
+        alive_check = self.filter(self.alive)  # Reselect live agents after exposure to general mortality
 
-        fecund  = alive.filter((alive.sex == 0) * (alive.age < alive.pars['age_limit_fecundity']))
-        preg    = fecund.filter(fecund.pregnant)
+        fecund_start  = alive_check.filter((alive_check.sex == 0) * (alive_check.age < alive_check.pars['age_limit_fecundity']))
+        preg_start    = fecund_start.filter(fecund_start.pregnant)
+
+        # Update pregnancy with maternal mortality outcome
+        preg_start.check_delivery()  # Deliver with birth outcomes if reached pregnancy duration
+
+        # Reselect for live agents after exposure to maternal mortality
+        alive_now = self.filter(self.alive)
+        fecund = alive_now.filter((alive_now.sex == 0) * (alive_now.age < alive_now.pars['age_limit_fecundity']))
+        preg = fecund.filter(fecund.pregnant)
         nonpreg = fecund.filter(~fecund.pregnant)
         lact    = fecund.filter(fecund.lactating)
 
-        # Update everything
-        preg.check_delivery()  # Deliver with birth outcomes if reached pregnancy duration
+        # Update everything else
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
         nonpreg.update_contraception()
@@ -500,7 +508,7 @@ class People(fpb.BasePeople):
         self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
 
         # Age person at end of timestep
-        alive.age_person()  # Important to keep this here so birth spacing gets recorded accurately
+        alive_now.age_person()  # Important to keep this here so birth spacing gets recorded accurately
 
         return self.step_results
 
