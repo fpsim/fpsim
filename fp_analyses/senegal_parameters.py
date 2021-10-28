@@ -500,21 +500,21 @@ def default_methods_postpartum():
 def default_efficacy():
     ''' From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
     BTL failure rate from general published data
-    Pooled efficacy rates for women ages 25+
+    Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
     '''
 
 
     method_efficacy = sc.odict({
             "None":        0.0,
-            "Pill":        95.6,
-            "IUDs":        98.9,
-            "Injectable": 98.4,
+            "Pill":        94.5,
+            "IUDs":        98.6,
+            "Injectable": 98.3,
             "Condoms":     94.6,
             "BTL":         99.5,
-            "Rhythm":       86.7,
-            "Withdrawal":   88.3,
-            "Implants":     99.4,
-            "Other":       94.5,
+            "Withdrawal":  86.6,
+            "Implants":    99.4,
+            "Other traditional": 86.1, # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+            "Other modern":   88, # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https://www.aafp.org/afp/2004/0815/p707.html
             })
 
     # method_efficacy[:] = 100 # To disable contraception
