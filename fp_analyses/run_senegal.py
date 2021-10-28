@@ -422,7 +422,7 @@ if do_run:
         # From model
         ppl = sim.people
         for i in range(len(ppl)):
-            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age and not ppl.pregnant[i]:
                 model_method_counts[ppl.method[i]] += 1
         model_method_counts[:] /= model_method_counts[:].sum()
 
