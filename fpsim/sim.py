@@ -268,6 +268,7 @@ class People(fpb.BasePeople):
         preg.postpartum = False
         preg.postpartum_dur = 0
         preg.reset_breastfeeding() # Stop lactating if becoming pregnant
+        preg.method = 0
 
         return
 
