@@ -429,11 +429,15 @@ class People(fpb.BasePeople):
     def update_contraception(self):
         '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
 
-        self.get_method_postpartum()
+        postpartum = (self.postpartum) * (self.postpartum_dur <= 6)
+        pp = self.filter(postpartum)
+        non_pp = self.filter(~postpartum)
+
+        pp.get_method_postpartum()
 
         # If switching frequency in months has passed, allows switching only on whole years -- TODO: have it per-woman rather than per-timestep
         if self.t % (self.pars['switch_frequency']/fpd.mpy) == 0:
-            self.get_method()
+            non_pp.get_method()
 
         return
 
