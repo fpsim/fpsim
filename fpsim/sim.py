@@ -497,11 +497,12 @@ class People(fpb.BasePeople):
         preg = fecund.filter(fecund.pregnant)
         nonpreg = fecund.filter(~fecund.pregnant)
         lact    = fecund.filter(fecund.lactating)
+        methods = nonpreg.filter(nonpreg.age >= self.pars['methoda_age'])
 
         # Update everything else
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
-        nonpreg.update_contraception()
+        methods.update_contraception()
         nonpreg.check_lam()
         nonpreg.update_postpartum() # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
