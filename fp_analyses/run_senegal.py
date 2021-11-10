@@ -27,6 +27,7 @@ do_plot_model_pyramid = 1
 do_plot_skyscrapers = 1
 do_plot_methods = 1
 do_plot_spacing = 1
+do_plot_unintended_pregnancies = 1
 do_save = 1
 do_save_spaces = 0
 min_age = 15
@@ -227,6 +228,21 @@ if do_run:
             pl.savefig(sp.abspath('figs', 'senegal_popsize-mcpr.png'))
 
         # 350434.0 <--- Factor previously used to adjust population
+
+    if do_plot_unintended_pregnancies:
+
+        whole_years_model = res['tfr_years']
+        method_failures_model = res['method_failures_over_year']
+
+        fig = pl.figure(figsize=(16, 16))
+        pl.plot(whole_years_model, method_failures_model, c='b', label='Model')
+        pl.title('Uninteded pregnancies from method failures each year (exluding LAM)')
+        pl.xlabel('Years')
+        pl.ylabel('Number of pregnancies resulting from contraceptive method failures')
+        pl.legend()
+
+        if do_save:
+            pl.savefig(sp.abspath('figs', 'unintended_pregnancies.png'))
 
     if do_plot_tfr:
 
