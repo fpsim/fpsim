@@ -236,7 +236,7 @@ if do_run:
 
         fig = pl.figure(figsize=(16, 16))
         pl.plot(whole_years_model, method_failures_model, c='b', label='Model')
-        pl.title('Uninteded pregnancies from method failures each year (exluding LAM)')
+        pl.title('Unintended pregnancies from method failures each year (excluding LAM)')
         pl.xlabel('Years')
         pl.ylabel('Number of pregnancies resulting from contraceptive method failures')
         pl.legend()
