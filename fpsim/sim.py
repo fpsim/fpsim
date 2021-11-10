@@ -251,6 +251,8 @@ class People(fpb.BasePeople):
 
         # Use a single binomial trial to check for conception successes this month
         conceived = active.binomial(preg_probs[active.inds], as_filter=True)
+        unintended = conceived.filter(conceived.method != 0)
+        self.step_results['unintended_pregs'] += len(unintended)
 
         # Check for abortion
         is_abort = conceived.binomial(self.pars['abortion_prob'])
@@ -472,6 +474,7 @@ class People(fpb.BasePeople):
             pp6to11         = 0,
             pp12to23        = 0,
             total_women_fecund = 0,
+            unintended_pregs = 0,
         )
         return
 
@@ -546,7 +549,7 @@ class Sim(fpb.BaseSim):
 
     def init_results(self):
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths', 'on_method',
-                       'no_method', 'mcpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund']
+                       'no_method', 'mcpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs']
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
@@ -554,6 +557,7 @@ class Sim(fpb.BaseSim):
         self.results['tfr_rates'] = []
         self.results['pop_size'] = []
         self.results['mcpr_by_year'] = []
+        self.results['method_failures_over_year'] = []
         return
 
 
@@ -777,16 +781,19 @@ class Sim(fpb.BaseSim):
             self.results['pp12to23'][i]           = percent12to23
             self.results['nonpostpartum'][i]      = nonpostpartum
             self.results['total_women_fecund'][i] = r.total_women_fecund
+            self.results['unintended_pregs'][i]   = r.unintended_pregs
 
-            # Calculate TFR over the last year in the model and save whole years and tfr rates to an array
+            # Calculate metrics (TFR, mCPR, and unintended pregnancies) over the last year in the model and save whole years and stats to an array
             if i % fpd.mpy == 0:
                 self.results['tfr_years'].append(self.y)
                 start_index = (int(self.t)-1)*fpd.mpy
                 stop_index = int(self.t)*fpd.mpy
                 births_over_year = pl.sum(self.results['births'][start_index:stop_index])  # Grabs sum of birth over the last 12 months of calendar year
+                unintended_pregs_over_year = pl.sum(self.results['unintended_pregs'][start_index:stop_index]) # Grabs sum of unintended pregnancies due to method failures over the last 12 months of calendar year
                 self.results['tfr_rates'].append(35*(births_over_year/self.results['total_women_fecund'][i]))
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
+                self.results['method_failures_over_year'].append(unintended_pregs_over_year)
 
             if self.test_mode:
                 for state in fpd.debug_states:
