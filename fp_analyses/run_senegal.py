@@ -187,7 +187,7 @@ if do_run:
         print(f'TFR rates over last 10 years: {res["tfr_rates"][-10:]}.  TFR in Senegal in 2015: 4.84; 2018: 4.625')
         print(f'TFR rates in 2015: {res["tfr_rates"][-5]}.  TFR in Senegal in 2015: 4.84')
         print(f'TFR rates in 2019: {res["tfr_rates"][-1]}.  TFR in Senegal in 2018: 4.56')
-        print(f'Unintended pregnancies from method failures over the last 10 years: {pl.sum(res["method_failures_over_year"][10:])}')
+        print(f'Unintended pregnancies specifically due to method failures over the last 10 years: {pl.sum(res["method_failures_over_year"][10:])}')
 
     if do_plot_popsize:
 
