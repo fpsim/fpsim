@@ -147,12 +147,14 @@ if do_run:
         births_last_year = pl.sum(res['births'][-12:])
         births_last_3_years = pl.sum(res['births'][-36:])
         births_last_7_years = pl.sum(res['births'][-84:])
+        births_last_10_years = pl.sum(res['births'][-120:])
         all_maternal_deaths = pl.sum(res['maternal_deaths'])
         all_births = pl.sum(res['births'])
         births_2017 = pl.sum(res['births'][-48:-36])
         maternal_deaths_2017 = pl.sum(res['births'][-48:-36])
         stillbirths_3_years = pl.sum(res['stillbirths'][-36])
-        total_births_3_years = pl.sum(res['total_births'][-36])
+        total_births_3_years = pl.sum(res['total_births'][-36]) # includes stillbirths
+
 
         ppl = sim.people
         alive = ppl.filter(ppl.alive == 1)
@@ -163,6 +165,7 @@ if do_run:
 
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
         print(f'Total live births last year: {(births_last_year)}')
+        print(f'Total live births last 10 years: {births_last_10_years}')
         print(
             f'Crude live birth rate per 1000 inhabitants in model: {(births_last_year / res["pop_size"][-1]) * 1000}.  Crude birth rate Senegal 2018: 34.52 per 1000 inhabitants')
         print(
