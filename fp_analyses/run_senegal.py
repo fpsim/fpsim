@@ -27,6 +27,7 @@ do_plot_model_pyramid = 1
 do_plot_skyscrapers = 1
 do_plot_methods = 1
 do_plot_spacing = 1
+do_plot_unintended_pregnancies = 1
 do_save = 1
 do_save_spaces = 0
 min_age = 15
@@ -146,12 +147,14 @@ if do_run:
         births_last_year = pl.sum(res['births'][-12:])
         births_last_3_years = pl.sum(res['births'][-36:])
         births_last_7_years = pl.sum(res['births'][-84:])
+        births_last_10_years = pl.sum(res['births'][-120:])
         all_maternal_deaths = pl.sum(res['maternal_deaths'])
         all_births = pl.sum(res['births'])
         births_2017 = pl.sum(res['births'][-48:-36])
         maternal_deaths_2017 = pl.sum(res['births'][-48:-36])
         stillbirths_3_years = pl.sum(res['stillbirths'][-36])
-        total_births_3_years = pl.sum(res['total_births'][-36])
+        total_births_3_years = pl.sum(res['total_births'][-36]) # includes stillbirths
+
 
         ppl = sim.people
         alive = ppl.filter(ppl.alive == 1)
@@ -162,6 +165,7 @@ if do_run:
 
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
         print(f'Total live births last year: {(births_last_year)}')
+        print(f'Total live births last 10 years: {births_last_10_years}')
         print(
             f'Crude live birth rate per 1000 inhabitants in model: {(births_last_year / res["pop_size"][-1]) * 1000}.  Crude birth rate Senegal 2018: 34.52 per 1000 inhabitants')
         print(
@@ -183,6 +187,7 @@ if do_run:
         print(f'TFR rates over last 10 years: {res["tfr_rates"][-10:]}.  TFR in Senegal in 2015: 4.84; 2018: 4.625')
         print(f'TFR rates in 2015: {res["tfr_rates"][-5]}.  TFR in Senegal in 2015: 4.84')
         print(f'TFR rates in 2019: {res["tfr_rates"][-1]}.  TFR in Senegal in 2018: 4.56')
+        print(f'Unintended pregnancies specifically due to method failures over the last 10 years: {pl.sum(res["method_failures_over_year"][10:])}')
 
     if do_plot_popsize:
 
@@ -227,6 +232,21 @@ if do_run:
             pl.savefig(sp.abspath('figs', 'senegal_popsize-mcpr.png'))
 
         # 350434.0 <--- Factor previously used to adjust population
+
+    if do_plot_unintended_pregnancies:
+
+        whole_years_model = res['tfr_years']
+        method_failures_model = res['method_failures_over_year']
+
+        fig = pl.figure(figsize=(16, 16))
+        pl.plot(whole_years_model, method_failures_model, c='b', label='Model')
+        pl.title('Unintended pregnancies due only to method failures each year (excluding LAM)')
+        pl.xlabel('Years')
+        pl.ylabel('Number of pregnancies resulting from contraceptive method failures')
+        pl.legend()
+
+        if do_save:
+            pl.savefig(sp.abspath('figs', 'unintended_pregnancies.png'))
 
     if do_plot_tfr:
 
