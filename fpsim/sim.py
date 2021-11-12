@@ -438,9 +438,9 @@ class People(fpb.BasePeople):
 
         pp.get_method_postpartum()
 
-        # If switching frequency in months has passed, allows switching only on whole years -- TODO: have it per-woman rather than per-timestep
-        if self.t % (self.pars['switch_frequency']/fpd.mpy) == 0:
-            non_pp.get_method()
+        whole_years = np.isclose(non_pp.int_age, non_pp.age, atol = (1/12))
+        birthdays = non_pp.filter(whole_years)
+        birthdays.get_method()
 
         return
 
