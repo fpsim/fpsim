@@ -438,7 +438,7 @@ class People(fpb.BasePeople):
 
         pp.get_method_postpartum()
 
-        whole_years = (non_pp.round_age - non_pp.age) < (1/12)
+        whole_years = ((non_pp.round_age - non_pp.age) < (1/12)) * ((non_pp.round_age - non_pp.age) > 0)
         birthdays = non_pp.filter(whole_years)
         birthdays.get_method()
         self.step_results['birthday_fraction'] = len(birthdays)/len(non_pp)
