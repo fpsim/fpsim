@@ -438,9 +438,10 @@ class People(fpb.BasePeople):
 
         pp.get_method_postpartum()
 
-        whole_years = np.isclose(non_pp.int_age, non_pp.age, atol = (1/12))
+        whole_years = (non_pp.round_age - non_pp.age) < (1/12)
         birthdays = non_pp.filter(whole_years)
         birthdays.get_method()
+        self.step_results['birthday_fraction'] = len(birthdays)/len(non_pp)
 
         return
 
@@ -475,6 +476,7 @@ class People(fpb.BasePeople):
             pp12to23        = 0,
             total_women_fecund = 0,
             unintended_pregs = 0,
+            birthday_fraction = None,
         )
         return
 
@@ -549,7 +551,7 @@ class Sim(fpb.BaseSim):
 
     def init_results(self):
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths', 'on_method',
-                       'no_method', 'mcpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs']
+                       'no_method', 'mcpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction']
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
@@ -558,6 +560,7 @@ class Sim(fpb.BaseSim):
         self.results['pop_size'] = []
         self.results['mcpr_by_year'] = []
         self.results['method_failures_over_year'] = []
+        self.results['birthday_fraction'] = []
         return
 
 
@@ -580,6 +583,7 @@ class Sim(fpb.BaseSim):
                 age_data_prob  = age_data_prob/age_data_prob.sum() # Ensure it sums to 1
                 age_bins       = fpu.n_multinomial(age_data_prob, len(inds)) # Choose age bins
                 ages[inds]     = age_data_min[age_bins] + age_data_range[age_bins]*np.random.random(len(inds)) # Uniformly distribute within this age bin
+
 
         return ages, sexes
 
@@ -794,6 +798,7 @@ class Sim(fpb.BaseSim):
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
+                self.results['birthday_fraction'].append(r.birthday_fraction)
 
             if self.test_mode:
                 for state in fpd.debug_states:
