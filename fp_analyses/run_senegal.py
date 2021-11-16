@@ -190,8 +190,8 @@ if do_run:
         print(f'TFR rates in 2019: {res["tfr_rates"][-1]}.  TFR in Senegal in 2018: 4.56')
         print(f'Unintended pregnancies specifically due to method failures over the last 10 years: {pl.sum(res["method_failures_over_year"][10:])}')
 
-        frame = pd.DataFrame(data = res['birthday_fraction'])
-        frame.to_csv(sp.abspath('model_files/birthday_fraction.csv'))
+        #frame = pd.DataFrame(data = res['birthday_fraction'])
+        #frame.to_csv(sp.abspath('model_files/birthday_fraction.csv'))
 
     if do_plot_popsize:
 
