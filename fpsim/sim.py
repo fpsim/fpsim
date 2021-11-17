@@ -441,7 +441,7 @@ class People(fpb.BasePeople):
         whole_years = ((non_pp.round_age - non_pp.age) < (1/fpd.mpy)) * ((non_pp.round_age - non_pp.age) > 0)
         birthdays = non_pp.filter(whole_years)
         birthdays.get_method()
-        #self.step_results['birthday_fraction'] = len(birthdays)/len(non_pp)
+        #self.step_results['birthday_fraction'] = len(birthdays)/len(non_pp) # Debugs and tracks fraction of birthday months, remove comment if debugging
 
         return
 
@@ -798,7 +798,7 @@ class Sim(fpb.BaseSim):
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
-                #self.results['birthday_fraction'].append(r.birthday_fraction)
+                #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
 
             if self.test_mode:
                 for state in fpd.debug_states:
