@@ -10,6 +10,7 @@ import seaborn as sns
 import fpsim as fp
 import senegal_parameters as sp
 from plotnine import *
+import pandas as pd
 
 # Housekeeping
 sc.tic()
@@ -188,6 +189,9 @@ if do_run:
         print(f'TFR rates in 2015: {res["tfr_rates"][-5]}.  TFR in Senegal in 2015: 4.84')
         print(f'TFR rates in 2019: {res["tfr_rates"][-1]}.  TFR in Senegal in 2018: 4.56')
         print(f'Unintended pregnancies specifically due to method failures over the last 10 years: {pl.sum(res["method_failures_over_year"][10:])}')
+
+        #frame = pd.DataFrame(data = res['birthday_fraction']) # uncomment if needing to debug birthday fraction
+        #frame.to_csv(sp.abspath('model_files/birthday_fraction.csv')) # uncomment if needing to debug birthday fraction
 
     if do_plot_popsize:
 

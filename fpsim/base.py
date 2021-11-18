@@ -179,6 +179,11 @@ class BasePeople(sc.prettyobj):
         return np.array(self.age, dtype=np.int64)
 
     @property
+    def round_age(self):
+        ''' Rounds age up to the next highest integer'''
+        return np.array(np.ceil(self.age))
+
+    @property
     def int_age_clip(self):
         ''' Return ages as integers, clipped to maximum allowable age for pregnancy '''
         return np.minimum(self.int_age, fpd.max_age_preg)
