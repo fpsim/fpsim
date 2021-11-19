@@ -584,6 +584,7 @@ class Sim(fpb.BaseSim):
         self.results['birthday_fraction'] = []
         self.results['birth_bins']     = {}
         self.results['age_bin_totals']       = {}
+        self.results['asfr']     = []
         return
 
 
@@ -824,6 +825,14 @@ class Sim(fpb.BaseSim):
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
+
+                if t - 3 > 0:
+                    start_index_3 = int(self.t)-3*fpd.mpy
+                    stop_index_3 = int(self.t)*fpd.mpy
+
+                    for totals in self.results['age_bin_totals'].values():
+                        for births in self.results['birth_bins'].values():
+                            self.results['asfr'].append = births[start_index_3:stop_index_3]/totals[start_index_3:stop_index_3]
 
             if self.test_mode:
                 for state in fpd.debug_states:
