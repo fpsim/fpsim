@@ -415,6 +415,10 @@ class People(fpb.BasePeople):
         #Calculate total births
         self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
+        for key, (age_low, age_high) in fpd.age_bin_mapping.items():
+            this_age_bin = live.filter((live.age >= age_low) * (live.age < age_high))
+            self.step_results['birth_bins'][key] += len(this_age_bin)
+
         # Check mortality
         live.maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
         live.infant_mortality()
