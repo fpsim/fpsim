@@ -49,6 +49,19 @@ postpartum_mapping = {
     'pp12to23': [12, 24]
 }
 
+## Age bins for tracking age-specific fertility rate
+
+age_bin_mapping = {
+    '10-14':   [10, 15],
+    '15-19':   [15, 20],
+    '20-24':   [20, 25],
+    '25-29':   [25, 30],
+    '30-34':   [30, 35],
+    '35-39':   [35, 40],
+    '40-44':   [40, 45],
+    '45-49':   [45, 50]
+}
+
 spline_ages      = np.arange(max_age + 1)
 spline_preg_ages = np.arange(max_age_preg + 1)
 spline_parities  = np.arange(max_parity + 1)
