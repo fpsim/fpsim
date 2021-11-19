@@ -433,6 +433,16 @@ class People(fpb.BasePeople):
         return
 
 
+    def update_age_bin_totals(self):
+        '''
+        Count how many total live women in each 5-year age bin 10-50, for tabulating ASFR
+        '''
+        for key, (age_low, age_high) in fpd.age_bin_mapping.items():
+            this_age_bin = self.filter((live.age >= age_low) * (live.age < age_high))
+            self.step_results['age_bin_totals'][key] += len(this_age_bin)
+        return
+
+
     def update_contraception(self):
         '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
 
@@ -481,6 +491,8 @@ class People(fpb.BasePeople):
             total_women_fecund = 0,
             unintended_pregs = 0,
             birthday_fraction = None,
+            birth_bins        = {},
+            age_bin_totals    = {}
         )
         return
 
@@ -519,10 +531,15 @@ class People(fpb.BasePeople):
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
         # Update results
+        fecund.update_age_bin_totals()
+        #fecund.check_mcpr() TODO - build method to check mcpr at end of step, will be simpler than below
+        #fecund.update_total_fecund_women()  TODO- build method to track all live women 15-49 for TFR, below not working
+
+        # Update results
         self.check_mcpr()
         self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
 
-        # Age person at end of timestep
+        # Age person at end of timestep after tabulating results
         alive_now.age_person()  # Important to keep this here so birth spacing gets recorded accurately
 
         return self.step_results
@@ -565,6 +582,8 @@ class Sim(fpb.BaseSim):
         self.results['mcpr_by_year'] = []
         self.results['method_failures_over_year'] = []
         self.results['birthday_fraction'] = []
+        self.results['birth_bins']     = {}
+        self.results['age_bin_totals']       = {}
         return
 
 
@@ -790,6 +809,8 @@ class Sim(fpb.BaseSim):
             self.results['nonpostpartum'][i]      = nonpostpartum
             self.results['total_women_fecund'][i] = r.total_women_fecund
             self.results['unintended_pregs'][i]   = r.unintended_pregs
+            self.results['birth_bins'][i]         = r.birth_bins
+            self.results['age_bin_totals'][i]     = r.age_bin_totals
 
             # Calculate metrics (TFR, mCPR, and unintended pregnancies) over the last year in the model and save whole years and stats to an array
             if i % fpd.mpy == 0:
