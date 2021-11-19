@@ -438,7 +438,7 @@ class People(fpb.BasePeople):
         Count how many total live women in each 5-year age bin 10-50, for tabulating ASFR
         '''
         for key, (age_low, age_high) in fpd.age_bin_mapping.items():
-            this_age_bin = self.filter((live.age >= age_low) * (live.age < age_high))
+            this_age_bin = self.filter((self.age >= age_low) * (self.age < age_high))
             self.step_results['age_bin_totals'][key] += len(this_age_bin)
         return
 
@@ -494,6 +494,11 @@ class People(fpb.BasePeople):
             birth_bins        = {},
             age_bin_totals    = {}
         )
+
+        for key in fpd.age_bin_mapping.keys():
+            self.step_results['birth_bins'][key] = 0
+            self.step_results['age_bin_totals'][key] = 0
+
         return
 
 
@@ -582,9 +587,15 @@ class Sim(fpb.BaseSim):
         self.results['mcpr_by_year'] = []
         self.results['method_failures_over_year'] = []
         self.results['birthday_fraction'] = []
-        self.results['birth_bins']     = {}
-        self.results['age_bin_totals']       = {}
-        self.results['asfr']     = []
+        self.results['birth_bins'] = {}
+        self.results['age_bin_totals'] = {}
+        self.results['asfr'] = {}
+
+        for key in fpd.age_bin_mapping.keys():
+            self.results['birth_bins'][key] = []
+            self.results['age_bin_totals'][key] = []
+            self.results['asfr'][key] = []
+
         return
 
 
@@ -810,8 +821,10 @@ class Sim(fpb.BaseSim):
             self.results['nonpostpartum'][i]      = nonpostpartum
             self.results['total_women_fecund'][i] = r.total_women_fecund
             self.results['unintended_pregs'][i]   = r.unintended_pregs
-            self.results['birth_bins'][i]         = r.birth_bins
-            self.results['age_bin_totals'][i]     = r.age_bin_totals
+
+            for key in fpd.age_bin_mapping.keys():
+                self.results['birth_bins'][key][i] = r.birth_bins[key]
+                self.results['age_bin_totals'][key][i] = r.age_bin_totals[key]
 
             # Calculate metrics (TFR, mCPR, and unintended pregnancies) over the last year in the model and save whole years and stats to an array
             if i % fpd.mpy == 0:
@@ -826,13 +839,13 @@ class Sim(fpb.BaseSim):
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
 
-                if t - 3 > 0:
+                if self.t - 3 > 0:
                     start_index_3 = int(self.t)-3*fpd.mpy
                     stop_index_3 = int(self.t)*fpd.mpy
 
-                    for totals in self.results['age_bin_totals'].values():
-                        for births in self.results['birth_bins'].values():
-                            self.results['asfr'].append = births[start_index_3:stop_index_3]/totals[start_index_3:stop_index_3]
+                    for key, totals in self.results['age_bin_totals'].items():
+                        for key, births in self.results['birth_bins'].items():
+                            self.results['asfr'][key].append = (births[key][start_index_3:stop_index_3])/(totals[key][start_index_3:stop_index_3])
 
             if self.test_mode:
                 for state in fpd.debug_states:
