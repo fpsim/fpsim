@@ -8,6 +8,7 @@ import pandas as pd
 import sciris as sc
 import seaborn as sns
 import fpsim as fp
+from fpsim import defaults as fpd
 import senegal_parameters as sp
 from plotnine import *
 import pandas as pd
@@ -189,6 +190,9 @@ if do_run:
         print(f'TFR rates in 2015: {res["tfr_rates"][-5]}.  TFR in Senegal in 2015: 4.84')
         print(f'TFR rates in 2019: {res["tfr_rates"][-1]}.  TFR in Senegal in 2018: 4.56')
         print(f'Unintended pregnancies specifically due to method failures over the last 10 years: {pl.sum(res["method_failures_over_year"][10:])}')
+
+        for key in fpd.age_bin_mapping.keys():
+            print(f'ASFR for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
 
         #frame = pd.DataFrame(data = res['birthday_fraction']) # uncomment if needing to debug birthday fraction
         #frame.to_csv(sp.abspath('model_files/birthday_fraction.csv')) # uncomment if needing to debug birthday fraction
