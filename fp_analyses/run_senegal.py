@@ -192,7 +192,7 @@ if do_run:
         print(f'Unintended pregnancies specifically due to method failures over the last 10 years: {pl.sum(res["method_failures_over_year"][10:])}')
 
         for key in fpd.age_bin_mapping.keys():
-            print(f'ASFR for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
+            print(f'ASFR (annual) for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
 
         #frame = pd.DataFrame(data = res['birthday_fraction']) # uncomment if needing to debug birthday fraction
         #frame.to_csv(sp.abspath('model_files/birthday_fraction.csv')) # uncomment if needing to debug birthday fraction
