@@ -821,7 +821,7 @@ class Sim(fpb.BaseSim):
             self.results['total_women_fecund'][i] = r.total_women_fecund
             self.results['unintended_pregs'][i]   = r.unintended_pregs
 
-            # Sore results of total births per age bin for ASFR
+            # Store results of total births per age bin for ASFR
             self.results['total_births_10-14'][i]    = r.birth_bins['10-14']
             self.results['total_births_15-19'][i]    = r.birth_bins['15-19']
             self.results['total_births_20-24'][i]    = r.birth_bins['20-24']
@@ -856,8 +856,8 @@ class Sim(fpb.BaseSim):
 
                 for key in fpd.age_bin_mapping.keys():
                         age_bin_births_year = pl.sum(self.results['total_births_'+key][start_index:stop_index])
-                        age_bin_total_women_year = pl.sum(self.results['total_women_'+key][start_index:stop_index])
-                        self.results['asfr'][key].append((age_bin_births_year / age_bin_total_women_year)*10000)
+                        age_bin_total_women_year = self.results['total_women_'+key][stop_index]
+                        self.results['asfr'][key].append((age_bin_births_year / age_bin_total_women_year)*1000)
 
             if self.test_mode:
                 for state in fpd.debug_states:
