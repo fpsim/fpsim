@@ -578,9 +578,9 @@ class Sim(fpb.BaseSim):
     def init_results(self):
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths', 'on_method',
                        'no_method', 'mcpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
-                       'total_births_10', 'total_births_15', 'total_births_20', 'total_births_25', 'total_births_30', 'total_births_35', 'total_births_40',
-                       'total_births_45', 'total_women_10', 'total_women_15', 'total_women_20', 'total_women_25', 'total_women_30', 'total_women_35',
-                       'total_women_40', 'total_women_45']
+                       'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
+                       'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
+                       'total_women_40-44', 'total_women_45-49']
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
@@ -821,19 +821,25 @@ class Sim(fpb.BaseSim):
             self.results['total_women_fecund'][i] = r.total_women_fecund
             self.results['unintended_pregs'][i]   = r.unintended_pregs
 
-            self.results['total_births_10'][i]    = r.birth_bins['10-14']
-            self.results['total_births_15'][i]    = r.birth_bins['15-19']
-            self.results['total_births_20'][i]    = r.birth_bins['20-24']
-            self.results['total_births_25'][i]    = r.birth_bins['25-29']
-            self.results['total_births_30'][i]    = r.birth_bins['30-34']
-            self.results['total_births_35'][i]    = r.birth_bins['35-39']
-            self.results['total_births_40'][i]    = r.birth_bins['40-44']
-            self.results['total_births_45'][i]    = r.birth_bins['45-49']
+            # Sore results of total births per age bin for ASFR
+            self.results['total_births_10-14'][i]    = r.birth_bins['10-14']
+            self.results['total_births_15-19'][i]    = r.birth_bins['15-19']
+            self.results['total_births_20-24'][i]    = r.birth_bins['20-24']
+            self.results['total_births_25-29'][i]    = r.birth_bins['25-29']
+            self.results['total_births_30-34'][i]    = r.birth_bins['30-34']
+            self.results['total_births_35-39'][i]    = r.birth_bins['35-39']
+            self.results['total_births_40-44'][i]    = r.birth_bins['40-44']
+            self.results['total_births_45-49'][i]    = r.birth_bins['45-49']
 
-            self.results[]
-            for key in fpd.age_bin_mapping.keys():
-                self.results['birth_bins'][key][i] = r.birth_bins[key]
-                self.results['age_bin_totals'][key][i] = r.age_bin_totals[key]
+            # Store results of total fecund women per age bin for ASFR
+            self.results['total_women_10-14'][i] = r.age_bin_totals['10-14']
+            self.results['total_women_15-19'][i] = r.age_bin_totals['15-19']
+            self.results['total_women_20-24'][i] = r.age_bin_totals['20-24']
+            self.results['total_women_25-29'][i] = r.age_bin_totals['25-29']
+            self.results['total_women_30-34'][i] = r.age_bin_totals['30-34']
+            self.results['total_women_35-39'][i] = r.age_bin_totals['35-39']
+            self.results['total_women_40-44'][i] = r.age_bin_totals['40-44']
+            self.results['total_women_45-49'][i] = r.age_bin_totals['45-49']
 
             # Calculate metrics (TFR, mCPR, and unintended pregnancies) over the last year in the model and save whole years and stats to an array
             if i % fpd.mpy == 0:
@@ -852,9 +858,10 @@ class Sim(fpb.BaseSim):
                     start_index_3 = int(self.t)-3*fpd.mpy
                     stop_index_3 = int(self.t)*fpd.mpy
 
-                    for key, totals in self.results['age_bin_totals'].items():
-                        for key, births in self.results['birth_bins'].items():
-                            self.results['asfr'][key].append = (births[key][start_index_3:stop_index_3])/(totals[key][start_index_3:stop_index_3])
+                    for key in fpd.age_bin_mapping.keys():
+                        births_3_years = pl.sum(self.results['total_births_'+key][start_index_3:stop_index_3])
+                        women_3_years = pl.sum(self.results['total_women_'+key][start_index_3:stop_index_3])
+                        self.results['asfr'][key].append((births_3_years / women_3_years)*1000)
 
             if self.test_mode:
                 for state in fpd.debug_states:
