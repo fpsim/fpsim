@@ -30,6 +30,7 @@ do_plot_skyscrapers = 1
 do_plot_methods = 1
 do_plot_spacing = 1
 do_plot_unintended_pregnancies = 1
+do_plot_asfr = 1
 do_save = 1
 do_save_spaces = 0
 min_age = 15
@@ -241,6 +242,7 @@ if do_run:
 
         # 350434.0 <--- Factor previously used to adjust population
 
+
     if do_plot_unintended_pregnancies:
 
         whole_years_model = res['tfr_years']
@@ -275,6 +277,32 @@ if do_run:
 
         if do_save:
             pl.savefig(sp.abspath('figs', 'senegal_tfr.png'))
+
+    if do_plot_asfr:  # Plots ASFR for the last year of the sim in comparison to Senegal 2019 ASFR
+
+        x = [1,2,3,4,5,6,7,8]
+        asfr_data = [1, 71, 185, 228, 195, 171, 74, 21] # From DHS Stat Compiler Senegal 2019 ASFR
+        x_labels = []
+        asfr_model = []
+
+        for key in fpd.age_bin_mapping.keys():
+            x_labels.append(key)
+            asfr_model.append(res['asfr'][key][-1])
+
+        fig, ax = pl.subplots()
+
+        ax.plot(x, asfr_model, marker='*', color='green', label="FPSim")
+        ax.plot(x, asfr_data, marker='^', color='blue', label="DHS data")
+        ax.set_xticks(x)
+        ax.set_xticklabels(x_labels, rotation='vertical')
+        ax.margins(0.2)
+        ax.set_title('ASFR by age bin in the last year of sim (2019)')
+        ax.set_xlabel('Age bins')
+        ax.set_ylabel('Age specific fertility rate per 1000 woman years')
+        ax.legend()
+
+        if do_save:
+            pl.savefig(sp.abspath('figs', 'ASFR_last_year.png'))
 
     if do_plot_pyramids:
         fig = pl.figure(figsize=(16, 16))
