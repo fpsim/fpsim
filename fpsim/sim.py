@@ -415,6 +415,10 @@ class People(fpb.BasePeople):
         #Calculate total births
         self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
+        for key, (age_low, age_high) in fpd.age_bin_mapping.items():
+            this_age_bin = live.filter((live.age >= age_low) * (live.age < age_high))
+            self.step_results['birth_bins'][key] += len(this_age_bin)
+
         # Check mortality
         live.maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
         live.infant_mortality()
@@ -426,6 +430,16 @@ class People(fpb.BasePeople):
         '''Advance age in the simulation'''
         self.age += self.pars['timestep'] / fpd.mpy  # Age the person for the next timestep
         self.age = np.minimum(self.age, self.pars['max_age'])
+        return
+
+
+    def update_age_bin_totals(self):
+        '''
+        Count how many total live women in each 5-year age bin 10-50, for tabulating ASFR
+        '''
+        for key, (age_low, age_high) in fpd.age_bin_mapping.items():
+            this_age_bin = self.filter((self.age >= age_low) * (self.age < age_high))
+            self.step_results['age_bin_totals'][key] += len(this_age_bin)
         return
 
 
@@ -477,7 +491,14 @@ class People(fpb.BasePeople):
             total_women_fecund = 0,
             unintended_pregs = 0,
             birthday_fraction = None,
+            birth_bins        = {},
+            age_bin_totals    = {}
         )
+
+        for key in fpd.age_bin_mapping.keys():
+            self.step_results['birth_bins'][key] = 0
+            self.step_results['age_bin_totals'][key] = 0
+
         return
 
 
@@ -515,10 +536,15 @@ class People(fpb.BasePeople):
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
         # Update results
+        fecund.update_age_bin_totals()
+        #fecund.check_mcpr() TODO - build method to check mcpr at end of step, will be simpler than below
+        #fecund.update_total_fecund_women()  TODO- build method to track all live women 15-49 for TFR, below not working
+
+        # Update results
         self.check_mcpr()
         self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
 
-        # Age person at end of timestep
+        # Age person at end of timestep after tabulating results
         alive_now.age_person()  # Important to keep this here so birth spacing gets recorded accurately
 
         return self.step_results
@@ -551,7 +577,10 @@ class Sim(fpb.BaseSim):
 
     def init_results(self):
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths', 'on_method',
-                       'no_method', 'mcpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction']
+                       'no_method', 'mcpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
+                       'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
+                       'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
+                       'total_women_40-44', 'total_women_45-49']
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
@@ -561,6 +590,11 @@ class Sim(fpb.BaseSim):
         self.results['mcpr_by_year'] = []
         self.results['method_failures_over_year'] = []
         self.results['birthday_fraction'] = []
+        self.results['asfr'] = {}
+
+        for key in fpd.age_bin_mapping.keys():
+            self.results['asfr'][key] = []
+
         return
 
 
@@ -787,6 +821,26 @@ class Sim(fpb.BaseSim):
             self.results['total_women_fecund'][i] = r.total_women_fecund
             self.results['unintended_pregs'][i]   = r.unintended_pregs
 
+            # Store results of total births per age bin for ASFR
+            self.results['total_births_10-14'][i]    = r.birth_bins['10-14']
+            self.results['total_births_15-19'][i]    = r.birth_bins['15-19']
+            self.results['total_births_20-24'][i]    = r.birth_bins['20-24']
+            self.results['total_births_25-29'][i]    = r.birth_bins['25-29']
+            self.results['total_births_30-34'][i]    = r.birth_bins['30-34']
+            self.results['total_births_35-39'][i]    = r.birth_bins['35-39']
+            self.results['total_births_40-44'][i]    = r.birth_bins['40-44']
+            self.results['total_births_45-49'][i]    = r.birth_bins['45-49']
+
+            # Store results of total fecund women per age bin for ASFR
+            self.results['total_women_10-14'][i] = r.age_bin_totals['10-14']
+            self.results['total_women_15-19'][i] = r.age_bin_totals['15-19']
+            self.results['total_women_20-24'][i] = r.age_bin_totals['20-24']
+            self.results['total_women_25-29'][i] = r.age_bin_totals['25-29']
+            self.results['total_women_30-34'][i] = r.age_bin_totals['30-34']
+            self.results['total_women_35-39'][i] = r.age_bin_totals['35-39']
+            self.results['total_women_40-44'][i] = r.age_bin_totals['40-44']
+            self.results['total_women_45-49'][i] = r.age_bin_totals['45-49']
+
             # Calculate metrics (TFR, mCPR, and unintended pregnancies) over the last year in the model and save whole years and stats to an array
             if i % fpd.mpy == 0:
                 self.results['tfr_years'].append(self.y)
@@ -799,6 +853,11 @@ class Sim(fpb.BaseSim):
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
+
+                for key in fpd.age_bin_mapping.keys():
+                        age_bin_births_year = pl.sum(self.results['total_births_'+key][start_index:stop_index])
+                        age_bin_total_women_year = self.results['total_women_'+key][stop_index]
+                        self.results['asfr'][key].append((age_bin_births_year / age_bin_total_women_year)*1000)
 
             if self.test_mode:
                 for state in fpd.debug_states:
@@ -1009,22 +1068,27 @@ class MultiSim(sc.prettyobj):
         axis = 1
 
         for reskey in base_sim.results.keys():
-            results[reskey] = sc.objdict()
-            npts = len(base_sim.results[reskey])
-            raw[reskey] = np.zeros((npts, len(self.sims)))
-            for s,sim in enumerate(self.sims):
-                raw[reskey][:, s] = sim.results[reskey] # Stack into an array for processing
-
-            if use_mean:
-                r_mean = np.mean(raw[reskey], axis=axis)
-                r_std = np.std(raw[reskey], axis=axis)
-                results[reskey].best = r_mean
-                results[reskey].low = r_mean - bounds * r_std
-                results[reskey].high = r_mean + bounds * r_std
+            if isinstance(base_sim.results[reskey], dict):
+                if return_raw:
+                    for s, sim in enumerate(self.sims):
+                        raw[reskey][s] = base_sim.results[reskey]
             else:
-                results[reskey].best = np.quantile(raw[reskey], q=0.5, axis=axis)
-                results[reskey].low = np.quantile(raw[reskey], q=quantiles['low'], axis=axis)
-                results[reskey].high = np.quantile(raw[reskey], q=quantiles['high'], axis=axis)
+                results[reskey] = sc.objdict()
+                npts = len(base_sim.results[reskey])
+                raw[reskey] = np.zeros((npts, len(self.sims)))
+                for s,sim in enumerate(self.sims):
+                    raw[reskey][:, s] = sim.results[reskey] # Stack into an array for processing
+
+                if use_mean:
+                    r_mean = np.mean(raw[reskey], axis=axis)
+                    r_std = np.std(raw[reskey], axis=axis)
+                    results[reskey].best = r_mean
+                    results[reskey].low = r_mean - bounds * r_std
+                    results[reskey].high = r_mean + bounds * r_std
+                else:
+                    results[reskey].best = np.quantile(raw[reskey], q=0.5, axis=axis)
+                    results[reskey].low = np.quantile(raw[reskey], q=quantiles['low'], axis=axis)
+                    results[reskey].high = np.quantile(raw[reskey], q=quantiles['high'], axis=axis)
 
         self.results = results
 
