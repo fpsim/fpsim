@@ -36,6 +36,8 @@ def test_null(do_plot=False):
     pars['maternal_mortality']['probs'] *= 0
     pars['infant_mortality']['probs'] *= 0
     pars['exposure_correction'] = 0
+    pars['high_parity']         = 4
+    pars['high_parity_nonuse_correction']  = 0
 
     sim = make(pars)
 
