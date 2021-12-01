@@ -1068,22 +1068,27 @@ class MultiSim(sc.prettyobj):
         axis = 1
 
         for reskey in base_sim.results.keys():
-            results[reskey] = sc.objdict()
-            npts = len(base_sim.results[reskey])
-            raw[reskey] = np.zeros((npts, len(self.sims)))
-            for s,sim in enumerate(self.sims):
-                raw[reskey][:, s] = sim.results[reskey] # Stack into an array for processing
-
-            if use_mean:
-                r_mean = np.mean(raw[reskey], axis=axis)
-                r_std = np.std(raw[reskey], axis=axis)
-                results[reskey].best = r_mean
-                results[reskey].low = r_mean - bounds * r_std
-                results[reskey].high = r_mean + bounds * r_std
+            if isinstance(base_sim.results[reskey], dict):
+                if return_raw:
+                    for s, sim in enumerate(self.sims):
+                        raw[reskey][s] = base_sim.results[reskey]
             else:
-                results[reskey].best = np.quantile(raw[reskey], q=0.5, axis=axis)
-                results[reskey].low = np.quantile(raw[reskey], q=quantiles['low'], axis=axis)
-                results[reskey].high = np.quantile(raw[reskey], q=quantiles['high'], axis=axis)
+                results[reskey] = sc.objdict()
+                npts = len(base_sim.results[reskey])
+                raw[reskey] = np.zeros((npts, len(self.sims)))
+                for s,sim in enumerate(self.sims):
+                    raw[reskey][:, s] = sim.results[reskey] # Stack into an array for processing
+
+                if use_mean:
+                    r_mean = np.mean(raw[reskey], axis=axis)
+                    r_std = np.std(raw[reskey], axis=axis)
+                    results[reskey].best = r_mean
+                    results[reskey].low = r_mean - bounds * r_std
+                    results[reskey].high = r_mean + bounds * r_std
+                else:
+                    results[reskey].best = np.quantile(raw[reskey], q=0.5, axis=axis)
+                    results[reskey].low = np.quantile(raw[reskey], q=quantiles['low'], axis=axis)
+                    results[reskey].high = np.quantile(raw[reskey], q=quantiles['high'], axis=axis)
 
         self.results = results
 
