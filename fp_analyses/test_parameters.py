@@ -18,6 +18,7 @@ import numpy as np
 import sciris as sc
 from scipy import interpolate as si
 import fpsim.defaults as fpd
+import senegal_parameters as sp
 
 
 # %% Set parameters for the simulation
@@ -487,8 +488,14 @@ def make_pars(configuration_file=None, defaults_file=None):
         'abortion_prob': 0.1,
         'twins_prob': 0.018,
         'LAM_efficacy': 0.98,
-        'maternal_mortality_multiplier': 1
+        'maternal_mortality_multiplier': 1,
+        'high_parity': 4,
+        'high_parity_nonuse_correction': 0.6
     }
+    differences = [set(defaults.keys()) - set(sp.defaults.keys())]
+    if len(differences) != 0:
+        print(differences)
+        assert len(differences) != 0, "The test parameter keys do not match most recent sim parameter keys, see list for difference"
 
     pars = sc.dcp(defaults)
 

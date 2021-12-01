@@ -32,7 +32,9 @@ defaults = {
   'abortion_prob'                 : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
   'twins_prob'                    : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
   'LAM_efficacy'                  : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
-  'maternal_mortality_multiplier' : 1
+  'maternal_mortality_multiplier' : 1,
+  'high_parity'                   : 4,
+  'high_parity_nonuse_correction' : 0.6
 }
 
 
@@ -125,8 +127,8 @@ def default_female_age_fecundity(bound):
     45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds, based on fertility rates from Senegal
     '''
     fecundity = {
-        'bins': np.array([0., 5, 10, 20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
-        'f': np.array([0.,    0,  0, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+        'bins': np.array([0., 5, 10, 15, 20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
+        'f': np.array([0.,    0,  0, 65, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
 
     fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
