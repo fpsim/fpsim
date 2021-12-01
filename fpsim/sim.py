@@ -134,15 +134,24 @@ class People(fpb.BasePeople):
         postpartum6 = (self.postpartum_dur == 6)
 
         # In first time step after delivery, choice is by age but not previous method (since just gave birth)
-        for key,(age_low, age_high) in fpd.method_age_mapping.items():
-            match_low  = (self.age >= age_low)
-            match_high = (self.age <  age_high)
-            match = self.postpartum * postpartum1 * match_low * match_high
+        # All women are coming from birth and on no method to start, either will stay on no method or initiate a method
+        for key, (age_low, age_high) in fpd.method_age_mapping.items():
+            match_low = (self.age >= age_low)
+            match_high = (self.age < age_high)
+            match = (self.postpartum * postpartum1 * match_low * match_high * (self.parity < self.pars['high_parity']))
+            match_high_parity = (self.postpartum * postpartum1 * match_low * match_high * (
+                        self.parity >= self.pars['high_parity']))
             this_method = self.filter(match)
+            this_method_high_parity = self.filter(match_high_parity)
 
             choices = pp_methods[key]
+            choices_high_parity = sc.dcp(choices)
+            choices_high_parity[0] *= self.pars['high_parity_nonuse_correction']
+            choices_high_parity = choices_high_parity / choices_high_parity.sum()
             new_methods = fpu.n_multinomial(choices, len(this_method))
+            new_methods_high_parity = fpu.n_multinomial(choices_high_parity, len(this_method_high_parity))
             this_method.method = np.array(new_methods, dtype=np.int64)
+            this_method_high_parity.method = np.array(new_methods_high_parity, dtype=np.int64)
 
         # At 6 months, choice is by previous method and by age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
