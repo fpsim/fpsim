@@ -292,13 +292,13 @@ class People(fpb.BasePeople):
         lam_candidates = self.filter((self.postpartum) * (self.postpartum_dur <= max_lam_dur))
         probs = self.pars['lactational_amenorrhea']['rate'][lam_candidates.postpartum_dur]
         lam_candidates.lam = lam_candidates.binomial(probs)
-        
+
         not_postpartum    = self.postpartum == 0
         over5mo           = self.postpartum_dur > max_lam_dur
         not_breastfeeding = self.breastfeed_dur == 0
         not_lam = self.filter(not_postpartum + over5mo + not_breastfeeding)
         not_lam.lam = False
-        
+
         return
 
 
@@ -1105,6 +1105,26 @@ class MultiSim(sc.prettyobj):
             return raw
         else:
             return
+
+
+    def to_df(self):
+        '''
+        Export all individual sim results to a dataframe
+        '''
+        raw_res = sc.odict(defaultdict=list)
+        for s,sim in enumerate(self.sims):
+            for reskey in sim.results.keys():
+                res = sim.results[reskey]
+                if sc.isarray(res) and len(res) == sim.npts:
+                    raw_res[reskey] += res.tolist()
+            raw_res['sim'] += [s]*sim.npts
+            raw_res['sim_label'] += [sim.label]*sim.npts
+        df = pd.DataFrame(raw_res)
+        self.df = df
+        return df
+
+
+
 
 
 def single_run(sim):
