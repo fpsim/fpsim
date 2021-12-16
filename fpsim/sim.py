@@ -939,10 +939,25 @@ class Sim(fpb.BaseSim):
         return pp
 
 
-    def plot(self, dosave=None, figargs=None, plotargs=None, axisargs=None, as_years=True):
+    def to_df(self):
+        '''
+        Export all sim results to a dataframe
+        '''
+        raw_res = sc.odict(defaultdict=list)
+        for reskey in self.results.keys():
+            res = self.results[reskey]
+            if sc.isarray(res) and len(res) == self.npts:
+                raw_res[reskey] += res.tolist()
+        df = pd.DataFrame(raw_res)
+        self.df = df
+        return df
+
+
+    def plot(self, dosave=None, figargs=None, plotargs=None, axisargs=None, as_years=True, new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
-        Parameters
+
+        Args:
         ----------
         dosave : bool or str
             Whether or not to save the figure. If a string, save to that filename.
@@ -961,12 +976,16 @@ class Sim(fpb.BaseSim):
         if plotargs is None: plotargs = {'lw':2, 'alpha':0.7, 'marker':'o'}
         if axisargs is None: axisargs = {'left':0.1, 'bottom':0.05, 'right':0.9, 'top':0.97, 'wspace':0.2, 'hspace':0.25}
 
-        fig = pl.figure(**figargs)
+        fig = pl.figure(**figargs) if new_fig else pl.gcf()
         pl.subplots_adjust(**axisargs)
+
+        def getbest(res):
+            ''' If it's best/high/low, return best; else return unchanged '''
+            return res.best if hasattr(res, 'best') else res
 
         res = self.results # Shorten since heavily used
 
-        x = res['t'] # Likewise
+        x = getbest(res['t']) # Likewise
         if not as_years:
             x *= fpd.mpy
             x -= x[0]
@@ -984,12 +1003,13 @@ class Sim(fpb.BaseSim):
         for p,title,keylabels in to_plot.enumitems():
             pl.subplot(2,2,p+1)
             for i,key,label in keylabels.enumitems():
+                this_res = getbest(res[key])
                 if label.startswith('Cumulative'):
-                    y = pl.cumsum(res[key])
+                    y = pl.cumsum(this_res)
                 elif key == 'mcpr':
-                    y = res[key]*100
+                    y = this_res*100
                 else:
-                    y = res[key]
+                    y = this_res
                 pl.plot(x, y, label=label, **plotargs)
             fpu.fixaxis(useSI=fpd.useSI)
             if key == 'mcpr':
@@ -1100,6 +1120,7 @@ class MultiSim(sc.prettyobj):
                     results[reskey].high = np.quantile(raw[reskey], q=quantiles['high'], axis=axis)
 
         self.results = results
+        self.base_sim.results = results # Store here too, to enable plotting
 
         if return_raw:
             return raw
@@ -1122,6 +1143,22 @@ class MultiSim(sc.prettyobj):
         df = pd.DataFrame(raw_res)
         self.df = df
         return df
+
+
+    def plot(self, plot_sims=False, fig_args=None, **kwargs):
+        '''
+        Plot the MultiSim
+        '''
+        fig_args = sc.mergedicts(fig_args)
+        if plot_sims:
+            fig = pl.figure(**fig_args)
+            for sim in self.sims:
+                print('k')
+                sim.plot(new_fig=False, **kwargs)
+            return fig
+        else:
+            return self.base_sim.plot(**kwargs)
+
 
 
 
