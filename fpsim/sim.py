@@ -572,17 +572,23 @@ class Sim(fpb.BaseSim):
         self.test_mode = False
         self.to_feather = False
         self.custom_feather_tables = None
+        self.initialized = False
 
         # contains additional results of each timestep
         self.total_results = defaultdict(lambda: {})
-
         self.label = label
-        fpu.set_seed(self.pars['seed'])
-        self.init_results()
-        self.init_people()
-        self.interventions = {}  # dictionary for possible interventions to add to the sim
         fpu.set_metadata(self) # Set version, date, and git info
         return
+
+
+    def initialize(self, force=False):
+        if force or not self.initialized:
+            fpu.set_seed(self.pars['seed'])
+            self.init_results()
+            self.init_people()
+            self.interventions = {}  # dictionary for possible interventions to add to the sim
+        return
+
 
     def init_results(self):
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths', 'on_method',
@@ -762,9 +768,7 @@ class Sim(fpb.BaseSim):
         # Reset settings and results
         if verbose is None:
             verbose = self.pars['verbose']
-        self.update_pars()
-        self.init_results()
-        self.init_people() # Actually create the people
+        self.initialize()
 
         # Main simulation loop
 
@@ -972,7 +976,7 @@ class Sim(fpb.BaseSim):
         Figure handle
         '''
 
-        if figargs  is None: figargs  = {'figsize':(20,8)}
+        if figargs  is None: figargs  = {'figsize':(16,8)}
         if plotargs is None: plotargs = {'lw':2, 'alpha':0.7, 'marker':'o'}
         if axisargs is None: axisargs = {'left':0.1, 'bottom':0.05, 'right':0.9, 'top':0.97, 'wspace':0.2, 'hspace':0.25}
 
@@ -997,21 +1001,26 @@ class Sim(fpb.BaseSim):
         to_plot = sc.odict({
             'Population size': sc.odict({'pop_size_months':'Population size'}),
             'MCPR': sc.odict({'mcpr':'Modern contraceptive prevalence rate (%)'}),
-            'Births and deaths': sc.odict({'births':'Births', 'deaths':'Deaths'}),
-            'Birth-related mortality': sc.odict({'maternal_deaths':'Cumulative birth-related maternal deaths', 'infant_deaths':'Cumulative infant deaths'}),
+            'Births': sc.odict({'births':'Births'}),
+            'Deaths': sc.odict({'deaths':'Deaths'}),
+            'Maternal mortality': sc.odict({'maternal_deaths':'Cumulative birth-related maternal deaths'}),
+            'Infant mortality': sc.odict({'infant_deaths':'Cumulative infant deaths'}),
             })
         for p,title,keylabels in to_plot.enumitems():
-            pl.subplot(2,2,p+1)
+            pl.subplot(2,3,p+1)
             for i,key,label in keylabels.enumitems():
                 this_res = getbest(res[key])
+
                 if label.startswith('Cumulative'):
                     y = pl.cumsum(this_res)
                 elif key == 'mcpr':
                     y = this_res*100
                 else:
                     y = this_res
+                if not new_fig: # Replace with sim label to avoid duplicate labels
+                    label = self.label
                 pl.plot(x, y, label=label, **plotargs)
-            fpu.fixaxis(useSI=fpd.useSI)
+            fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
             if key == 'mcpr':
                 pl.ylabel('Percentage')
             else:
@@ -1043,7 +1052,21 @@ class MultiSim(sc.prettyobj):
     The MultiSim class handles the running of multiple simulations
     '''
 
-    def __init__(self, sims=None, label=None, **kwargs):
+    def __init__(self, sims=None, label=None, n=None, **kwargs):
+
+        # A single sim is supplied -- convert to a list
+        if isinstance(sims, Sim):
+            if n is None:
+                errormsg = 'If providing a single sim, you must supply the n argument to specify how many duplicates of that sim you want to run'
+                raise ValueError(errormsg)
+            base_sim = sims
+            sims = []
+            for i in range(n):
+                sim = sc.dcp(base_sim)
+                sim['seed'] += i # Increment the seed
+                if sim.label is None:
+                    sim.label = f'Sim {i}'
+                sims.append(sim)
 
         # Basic checks
         assert isinstance(sims, list), "Must supply sims as a list"
@@ -1152,8 +1175,7 @@ class MultiSim(sc.prettyobj):
         fig_args = sc.mergedicts(fig_args)
         if plot_sims:
             fig = pl.figure(**fig_args)
-            for sim in self.sims:
-                print('k')
+            for sim in self.sims: # Note: produces duplicate legend entries
                 sim.plot(new_fig=False, **kwargs)
             return fig
         else:
