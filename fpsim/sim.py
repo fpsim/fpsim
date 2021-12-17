@@ -1168,7 +1168,7 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, plot_sims=False, fig_args=None, **kwargs):
+    def plot(self, plot_sims=True, fig_args=None, **kwargs):
         '''
         Plot the MultiSim
         '''
