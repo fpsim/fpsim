@@ -859,18 +859,20 @@ class Sim(fpb.BaseSim):
                 self.results['tfr_years'].append(self.y)
                 start_index = (int(self.t)-1)*fpd.mpy
                 stop_index = int(self.t)*fpd.mpy
-                births_over_year = pl.sum(self.results['births'][start_index:stop_index])  # Grabs sum of birth over the last 12 months of calendar year
                 unintended_pregs_over_year = pl.sum(self.results['unintended_pregs'][start_index:stop_index]) # Grabs sum of unintended pregnancies due to method failures over the last 12 months of calendar year
-                self.results['tfr_rates'].append(35*(births_over_year/self.results['total_women_fecund'][i]))
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
 
+                tfr = 0
                 for key in fpd.age_bin_mapping.keys():
                         age_bin_births_year = pl.sum(self.results['total_births_'+key][start_index:stop_index])
                         age_bin_total_women_year = self.results['total_women_'+key][stop_index]
                         self.results['asfr'][key].append((age_bin_births_year / age_bin_total_women_year)*1000)
+                        tfr += ((self.results['asfr'][key][-1])/1000)
+
+                self.results['tfr_rates'].append(tfr*5)
 
             if self.test_mode:
                 for state in fpd.debug_states:
