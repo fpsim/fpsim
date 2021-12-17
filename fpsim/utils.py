@@ -135,10 +135,11 @@ def numba_miscarriage_prob(miscarriage_rates, age, resolution):
     return miscarriage_prob
 
 
-def fixaxis(useSI=True):
+def fixaxis(useSI=True, set_lim=True):
     ''' Fix the plotting '''
     pl.legend()  # Add legend
-    sc.setylim()  # Rescale y to start at 0
+    if set_lim:
+        sc.setylim()
     if useSI:
         sc.SIticks()
     return
