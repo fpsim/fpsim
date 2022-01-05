@@ -223,8 +223,8 @@ if do_run:
         fig = pl.figure(figsize=(16, 16))
         # Population size plot
         pl.subplot(2, 1, 1)
-        pl.plot(pop_years_model, popsize_model, c='b', label='Model')
-        pl.scatter(pop_years_data, popsize_data, c='k', label='Data', zorder=1000)
+        pl.plot(pop_years_model, popsize_model, color='cornflowerblue', label='FPsim')
+        pl.scatter(pop_years_data, popsize_data, color='black', label='Data', zorder=1000)
         pl.title('Population growth')
         pl.xlabel('Years')
         pl.ylabel('Population')
@@ -233,8 +233,8 @@ if do_run:
         # ax = fig.axes[1,0] # First axis on plot
 
         pl.subplot(2, 1, 2)  # Second axis on plot
-        pl.plot(mcpr_years_model, mcpr_rates_model, c='b', label='Model')
-        pl.scatter(mcpr_years_data, mcpr_rates_data, c='k', label='Data', zorder=1000)
+        pl.plot(mcpr_years_model, mcpr_rates_model, color='cornflowerblue', label='FPsim')
+        pl.scatter(mcpr_years_data, mcpr_rates_data, color='black', label='Data', zorder=1000)
         pl.title('Modern contraceptive prevalence')
         pl.xlabel('Years')
         pl.ylabel('Percent reproductive age women using modern contraception')
@@ -252,7 +252,7 @@ if do_run:
         method_failures_model = res['method_failures_over_year']
 
         fig = pl.figure(figsize=(16, 16))
-        pl.plot(whole_years_model, method_failures_model, c='b', label='Model')
+        pl.plot(whole_years_model, method_failures_model, c='cornflowerblue')
         pl.title('Unintended pregnancies due only to method failures each year (excluding LAM)')
         pl.xlabel('Years')
         pl.ylabel('Number of pregnancies resulting from contraceptive method failures')
