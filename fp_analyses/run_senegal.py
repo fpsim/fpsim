@@ -117,13 +117,16 @@ if do_run:
         fig, axes = pl.subplots(3, 2, figsize=(16, 12))
 
         # fig.suptitle('FP Sim Model vs DHS data on age, pregnancy, and parity')
-
         sns.distplot(model['Age'], bins=37, ax=axes[0, 0], color="cornflowerblue").set_title('Age histogram in FPsim')
         sns.distplot(dhs['Age'], bins=35, ax=axes[0, 1], color="black").set_title('Age histogram in Senegal 2018 DHS')
+        
+        #Only useful to see pregnant (remove non-pregnant)
+        model_preg = model[model['Pregnant'] == 1]
+        dhs_preg = dhs[dhs['Pregnant'] == 1]
 
-        sns.violinplot(ax=axes[1, 0], x='Pregnant', y='Age', data=model, color="cornflowerblue").set_title(
+        sns.violinplot(ax=axes[1, 0], x='Pregnant', y='Age', data=model_preg, color="cornflowerblue").set_title(
             'Age distribution of agents currently pregnant in FP model')
-        sns.violinplot(ax=axes[1, 1], x='Pregnant', y='Age', data=dhs, color="black").set_title(
+        sns.violinplot(ax=axes[1, 1], x='Pregnant', y='Age', data=dhs_preg, color="black").set_title(
             'Age distribution currently pregnant in 2018 DHS data')
 
         sns.boxplot(ax=axes[2, 0], x='Parity', y='Age', data=model, color="cornflowerblue").set_title('Age-parity distributions FP model')
