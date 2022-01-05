@@ -117,17 +117,20 @@ if do_run:
         fig, axes = pl.subplots(3, 2, figsize=(16, 12))
 
         # fig.suptitle('FP Sim Model vs DHS data on age, pregnancy, and parity')
+        sns.distplot(model['Age'], bins=37, ax=axes[0, 0], color="cornflowerblue").set_title('Age histogram in FPsim')
+        sns.distplot(dhs['Age'], bins=35, ax=axes[0, 1], color="black").set_title('Age histogram in Senegal 2018 DHS')
+        
+        #Only useful to see pregnant (remove non-pregnant)
+        model_preg = model[model['Pregnant'] == 1]
+        dhs_preg = dhs[dhs['Pregnant'] == 1]
 
-        sns.distplot(model['Age'], bins=37, ax=axes[0, 0]).set_title('Age histogram in FP model')
-        sns.distplot(dhs['Age'], bins=35, ax=axes[0, 1]).set_title('Age histogram in Senegal 2018 DHS data')
-
-        sns.violinplot(ax=axes[1, 0], x='Pregnant', y='Age', data=model).set_title(
+        sns.violinplot(ax=axes[1, 0], x='Pregnant', y='Age', data=model_preg, color="cornflowerblue").set_title(
             'Age distribution of agents currently pregnant in FP model')
-        sns.violinplot(ax=axes[1, 1], x='Pregnant', y='Age', data=dhs).set_title(
+        sns.violinplot(ax=axes[1, 1], x='Pregnant', y='Age', data=dhs_preg, color="black").set_title(
             'Age distribution currently pregnant in 2018 DHS data')
 
-        sns.boxplot(ax=axes[2, 0], x='Parity', y='Age', data=model).set_title('Age-parity distributions FP model')
-        sns.boxplot(ax=axes[2, 1], x='Parity', y='Age', data=dhs).set_title('Age-parity distributions 2018 DHS data')
+        sns.boxplot(ax=axes[2, 0], x='Parity', y='Age', data=model, color="cornflowerblue").set_title('Age-parity distributions FP model')
+        sns.boxplot(ax=axes[2, 1], x='Parity', y='Age', data=dhs, color="black").set_title('Age-parity distributions 2018 DHS data')
 
         pl.tight_layout()
 
@@ -220,8 +223,8 @@ if do_run:
         fig = pl.figure(figsize=(16, 16))
         # Population size plot
         pl.subplot(2, 1, 1)
-        pl.plot(pop_years_model, popsize_model, c='b', label='Model')
-        pl.scatter(pop_years_data, popsize_data, c='k', label='Data', zorder=1000)
+        pl.plot(pop_years_model, popsize_model, color='cornflowerblue', label='FPsim')
+        pl.scatter(pop_years_data, popsize_data, color='black', label='Data', zorder=1000)
         pl.title('Population growth')
         pl.xlabel('Years')
         pl.ylabel('Population')
@@ -230,8 +233,8 @@ if do_run:
         # ax = fig.axes[1,0] # First axis on plot
 
         pl.subplot(2, 1, 2)  # Second axis on plot
-        pl.plot(mcpr_years_model, mcpr_rates_model, c='b', label='Model')
-        pl.scatter(mcpr_years_data, mcpr_rates_data, c='k', label='Data', zorder=1000)
+        pl.plot(mcpr_years_model, mcpr_rates_model, color='cornflowerblue', label='FPsim')
+        pl.scatter(mcpr_years_data, mcpr_rates_data, color='black', label='Data', zorder=1000)
         pl.title('Modern contraceptive prevalence')
         pl.xlabel('Years')
         pl.ylabel('Percent reproductive age women using modern contraception')
@@ -249,7 +252,7 @@ if do_run:
         method_failures_model = res['method_failures_over_year']
 
         fig = pl.figure(figsize=(16, 16))
-        pl.plot(whole_years_model, method_failures_model, c='b', label='Model')
+        pl.plot(whole_years_model, method_failures_model, c='cornflowerblue')
         pl.title('Unintended pregnancies due only to method failures each year (excluding LAM)')
         pl.xlabel('Years')
         pl.ylabel('Number of pregnancies resulting from contraceptive method failures')
@@ -291,15 +294,17 @@ if do_run:
 
         fig, ax = pl.subplots()
 
-        ax.plot(x, asfr_model, marker='*', color='green', label="FPSim")
-        ax.plot(x, asfr_data, marker='^', color='blue', label="DHS data")
-        ax.set_xticks(x)
-        ax.set_xticklabels(x_labels, rotation='vertical')
-        ax.margins(0.2)
-        ax.set_title('ASFR by age bin in the last year of sim (2019)')
-        ax.set_xlabel('Age bins')
-        ax.set_ylabel('Age specific fertility rate per 1000 woman years')
-        ax.legend()
+        kw = dict(lw=3, alpha=0.7, markersize=10)
+        ax.plot(x, asfr_data, marker='^', color='black', label="DHS data", **kw)
+        ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
+        pl.xticks(x, x_labels)
+        pl.ylim(bottom=-10)
+        ax.set_title('Age specific fertility rate per 1000 woman years')
+        ax.set_xlabel('Ages')
+        ax.set_ylabel('ASFR in 2019')
+        ax.legend(frameon=False)
+        sc.boxoff()
+        pl.show()
 
         if do_save:
             pl.savefig(sp.abspath('figs', 'ASFR_last_year.png'))
@@ -431,24 +436,24 @@ if do_run:
         data_method_counts = sc.odict().make(keys=sim.pars['methods']['names'], vals=0.0)
         model_method_counts = sc.dcp(data_method_counts)
 
-        # Load data from DHS -- from dropbox/Method_v312.csv
+        # Updated to use 2019 data from DHS statcompiler
 
         data = [
-            ['Other modern', 'emergency contraception', 0.015216411570543636, 2017.698615635373],
-            ['Condoms', 'female condom', 0.005239036180154552, 2017.698615635373],
-            ['BTL', 'female sterilization', 0.24609377594176307, 2017.698615635373],
-            ['Implants', 'implants/norplant', 5.881839602070953, 2017.698615635373],
-            ['Injectables', 'injections', 7.101718239287355, 2017.698615635373],
-            ['IUDs', 'iud', 1.4865067612487317, 2017.698615635373],
-            ['Other modern', 'lactational amenorrhea (lam)', 0.04745447091361792, 2017.698615635373],
-            ['Condoms', 'male condom', 1.0697377418682412, 2017.698615635373],
-            ['None', 'not using', 80.10054235699272, 2017.698615635373],
-            ['Other modern', 'other modern method', 0.007832257135437748, 2017.698615635373],
-            ['Other traditional', 'other traditional', 0.5127850142889963, 2017.698615635373],
-            ['Other traditional', 'periodic abstinence', 0.393946698444533, 2017.698615635373],
-            ['Pill', 'pill', 2.945874450486654, 2017.698615635373],
-            ['Other modern', 'standard days method (sdm)', 0.06132534128612159, 2017.698615635373],
-            ['Withdrawal', 'withdrawal', 0.12388784228417069, 2017.698615635373],
+            ['Other modern', 'emergency contraception', 0.00, 2019.698615635373],
+            ['Condoms', 'female condom', 0.0, 2019.698615635373],
+            ['BTL', 'female sterilization', 0.5, 2019.698615635373],
+            ['Implants', 'implants/norplant', 7.0, 2019.698615635373],
+            ['Injectables', 'injections', 5.6, 2019.698615635373],
+            ['IUDs', 'iud', 1.3, 2019.698615635373],
+            ['Other modern', 'lactational amenorrhea (lam)', 0.04745447091361792, 2019.698615635373],
+            ['Condoms', 'male condom', 0.6, 2019.698615635373],
+            ['None', 'not using', 81.2, 2019.698615635373],
+            ['Other modern', 'other modern method', 0.0, 2019.698615635373],
+            ['Other traditional', 'other traditional', 0.5, 2019.698615635373],
+            ['Other traditional', 'periodic abstinence', 0.4, 2019.698615635373],
+            ['Pill', 'pill', 2.8, 2019.698615635373],
+            ['Other modern', 'standard days method (sdm)', 0.1, 2019.698615635373],
+            ['Withdrawal', 'withdrawal', 0.1, 2019.698615635373],
         ]
 
         '''
@@ -496,6 +501,7 @@ if do_run:
             else:
                 model_labels[d] = ''
 
+       
         # Plot pies
         fig = pl.figure(figsize=(20, 14))
         explode = (0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
