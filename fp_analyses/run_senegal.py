@@ -12,6 +12,7 @@ from fpsim import defaults as fpd
 import senegal_parameters as sp
 from plotnine import *
 import pandas as pd
+import numpy as np
 
 # Housekeeping
 sc.tic()
