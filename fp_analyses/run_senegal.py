@@ -292,15 +292,17 @@ if do_run:
 
         fig, ax = pl.subplots()
 
-        ax.plot(x, asfr_model, marker='*', color='green', label="FPSim")
-        ax.plot(x, asfr_data, marker='^', color='blue', label="DHS data")
-        ax.set_xticks(x)
-        ax.set_xticklabels(x_labels, rotation='vertical')
-        ax.margins(0.2)
-        ax.set_title('ASFR by age bin in the last year of sim (2019)')
-        ax.set_xlabel('Age bins')
-        ax.set_ylabel('Age specific fertility rate per 1000 woman years')
-        ax.legend()
+        kw = dict(lw=3, alpha=0.7, markersize=10)
+        ax.plot(x, asfr_data, marker='^', color='black', label="DHS data", **kw)
+        ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
+        pl.xticks(x, x_labels)
+        pl.ylim(bottom=-10)
+        ax.set_title('Age specific fertility rate per 1000 woman years')
+        ax.set_xlabel('Ages')
+        ax.set_ylabel('ASFR in 2019')
+        ax.legend(frameon=False)
+        sc.boxoff()
+        pl.show()
 
         if do_save:
             pl.savefig(sp.abspath('figs', 'ASFR_last_year.png'))
@@ -497,6 +499,7 @@ if do_run:
             else:
                 model_labels[d] = ''
 
+       
         # Plot pies
         fig = pl.figure(figsize=(20, 14))
         explode = (0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
