@@ -12,7 +12,6 @@ from fpsim import defaults as fpd
 import senegal_parameters as sp
 from plotnine import *
 import pandas as pd
-import numpy as np
 
 # Housekeeping
 sc.tic()
@@ -119,16 +118,16 @@ if do_run:
 
         # fig.suptitle('FP Sim Model vs DHS data on age, pregnancy, and parity')
 
-        sns.distplot(model['Age'], bins=37, ax=axes[0, 0]).set_title('Age histogram in FP model')
-        sns.distplot(dhs['Age'], bins=35, ax=axes[0, 1]).set_title('Age histogram in Senegal 2018 DHS data')
+        sns.distplot(model['Age'], bins=37, ax=axes[0, 0], color="cornflowerblue").set_title('Age histogram in FPsim')
+        sns.distplot(dhs['Age'], bins=35, ax=axes[0, 1], color="black").set_title('Age histogram in Senegal 2018 DHS')
 
-        sns.violinplot(ax=axes[1, 0], x='Pregnant', y='Age', data=model).set_title(
+        sns.violinplot(ax=axes[1, 0], x='Pregnant', y='Age', data=model, color="cornflowerblue").set_title(
             'Age distribution of agents currently pregnant in FP model')
-        sns.violinplot(ax=axes[1, 1], x='Pregnant', y='Age', data=dhs).set_title(
+        sns.violinplot(ax=axes[1, 1], x='Pregnant', y='Age', data=dhs, color="black").set_title(
             'Age distribution currently pregnant in 2018 DHS data')
 
-        sns.boxplot(ax=axes[2, 0], x='Parity', y='Age', data=model).set_title('Age-parity distributions FP model')
-        sns.boxplot(ax=axes[2, 1], x='Parity', y='Age', data=dhs).set_title('Age-parity distributions 2018 DHS data')
+        sns.boxplot(ax=axes[2, 0], x='Parity', y='Age', data=model, color="cornflowerblue").set_title('Age-parity distributions FP model')
+        sns.boxplot(ax=axes[2, 1], x='Parity', y='Age', data=dhs, color="black").set_title('Age-parity distributions 2018 DHS data')
 
         pl.tight_layout()
 
