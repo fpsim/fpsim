@@ -253,6 +253,11 @@ def default_infant_mortality():
     infant_mortality = {}
     infant_mortality['year'] = data[:,0]
     infant_mortality['probs'] = data[:,1]/1000   # Rate per 1000 live births, used after stillbirth is filtered out
+    infant_mortality['ages'] = np.array([0, 15, 16.5,   18.5, 21,   24,    28,  33,   38,   45, 50])
+    infant_mortality['age_probs'] = np.array([3.00, 2.32, 1.76, 1.40, 1.22, 1.08, 1.00, 1.09, 1.07, 1.03, 1.03])
+    im_interp_model = si.interp1d(x=infant_mortality['ages'], y=infant_mortality['age_probs'])
+    im_interp = im_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
+    infant_mortality['age_gradient'] = im_interp
 
     return infant_mortality
 
