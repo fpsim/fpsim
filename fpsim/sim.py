@@ -606,6 +606,8 @@ class Sim(fpb.BaseSim):
         self.results['pop_size'] = []
         self.results['mcpr_by_year'] = []
         self.results['method_failures_over_year'] = []
+        self.results['infant_deaths_over_year'] = []
+        self.results['total_births_over_year'] = []
         self.results['birthday_fraction'] = []
         self.results['asfr'] = {}
 
@@ -862,9 +864,13 @@ class Sim(fpb.BaseSim):
                 start_index = (int(self.t)-1)*fpd.mpy
                 stop_index = int(self.t)*fpd.mpy
                 unintended_pregs_over_year = pl.sum(self.results['unintended_pregs'][start_index:stop_index]) # Grabs sum of unintended pregnancies due to method failures over the last 12 months of calendar year
+                infant_deaths_over_year = pl.sum(self.results['infant_deaths'][start_index:stop_index])
+                total_births_over_year = pl.sum(self.results['total_births'][start_index:stop_index])
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
+                self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
+                self.results['total_births_over_year'].append(total_births_over_year)
                 #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
 
                 tfr = 0
