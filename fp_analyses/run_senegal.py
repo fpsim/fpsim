@@ -178,15 +178,9 @@ if do_run:
             f'Stillbirth rate per 1000 total births last 3 years: {(stillbirths_3_years / total_births_3_years) * 1000}.  Stillbirth rate Senegal 2019: 19.7 per 1000 total births')
         print(
             f'Total infant mortality rate in last year of model: {(infant_deaths / births_last_year) * 1000}.  Infant mortality rate 2015 Senegal: 36.4')
-        print(f'Total maternal deaths last year: {(maternal_deaths1)}')
         print(f'Total maternal deaths last three years: {(maternal_deaths3)}')
-        print(f'Total maternal deaths last seven years: {(maternal_deaths7)}')
-        print(
-            f'Total model maternal mortality ratio 2019: {(maternal_deaths1 / births_last_year) * 100000}. Maternal mortality ratio 2019 Senegal: Unknown ')
         print(
             f'Total model maternal mortality ratio 2017-2019: {(maternal_deaths3 / births_last_3_years) * 100000}.  Maternal mortality ratio 2017 Senegal: 315 ')
-        print(
-            f'Total model maternal mortality ratio 2013-2019: {(maternal_deaths7 / births_last_7_years) * 100000}.  Maternal mortality ratio 2013 Senegal:  381')
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
         print(
             f'Final percent 15-49 on LAM: {(total_LAM * 100)}. LAM in Senegal, 2017 (v312): 0.047% (Note: Model output intended to be significantly higher.)')
