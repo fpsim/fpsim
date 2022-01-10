@@ -393,22 +393,48 @@ if do_run:
         for key in ['Data', 'Model']:
             sky_arr[key] /= sky_arr[key].sum() / 100
 
-        # Plot skyscrapers
-        for key in ['Data', 'Model']:
-            fig = pl.figure(figsize=(20, 14))
 
-            sc.bar3d(fig=fig, data=sky_arr[key], cmap='jet')
-            pl.xlabel('Age', fontweight='bold')
-            pl.ylabel('Parity', fontweight='bold')
-            pl.title(f'Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
-            pl.gca().set_xticks(pl.arange(n_age))
-            pl.gca().set_yticks(pl.arange(n_parity))
-            pl.gca().set_xticklabels(age_bins)
-            pl.gca().set_yticklabels(parity_bins)
-            pl.gca().view_init(30, 45)
-            pl.draw()
-            if do_save:
-                pl.savefig(sp.abspath(f'figs/senegal_skyscrapers_{key}.png'))
+        n_age = 8
+        n_par = 7
+
+        # Plot skyscrapers
+        ages = pl.arange(n_age)
+        parities = pl.arange(n_par)
+
+        age_labels = [f'{5*x+10}-{5*(x+1)+10-1}' for x in ages]
+        parity_labels = [f'{x}' for x in parities]
+
+        sc.options(dpi=150)
+        fig, axs = pl.subplots(figsize=(7,8), nrows=2)
+        axdhs, axfps = axs
+        cax = pl.axes([0.87, 0.07, 0.03, 0.88])
+
+        cmap = 'viridis'
+        vmax = max(sky_arr['Data'].max(), sky_arr['Model'].max())
+        kw = dict(vmin=0, vmax=vmax, cmap=cmap, origin='lower', aspect='auto')
+
+        pc1 = axdhs.imshow(sky_arr['Data'], **kw)
+        pc2 = axfps.imshow(sky_arr['Model'], **kw)
+        cb = fig.colorbar(pc1, cax=cax)
+        cb.set_label('% of women', rotation=270, labelpad=15)
+
+        # Configure labels
+        kw = dict(fontweight='bold')
+        axdhs.set_title('DHS data', **kw)
+        axfps.set_title('FPsim', **kw)
+        axdhs.set_xticklabels([])
+        axfps.set_xlabel('Age')
+        axfps.set_xticklabels(age_labels)
+        for ax in axs:
+            ax.set_xticks(ages)
+            ax.set_yticks(parities)
+            ax.set_ylabel('Parity')
+            ax.set_yticklabels(parity_labels)
+
+        # Adjust layout and show
+        sc.figlayout(right=0.8)
+        if do_save:
+            pl.savefig(sp.abspath('figs/senegal_skyscrapers.png'))
 
         # Plot sums
         fig = pl.figure(figsize=(20, 14))
