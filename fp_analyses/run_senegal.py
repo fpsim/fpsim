@@ -264,9 +264,12 @@ if do_run:
 
         pl.plot(x, y, label='Total fertility rates', c='cornflowerblue')
         pl.scatter(data_tfr_years, data_tfr, c='black')
-
+        
+        pl.ylim(bottom=3)
+        pl.xlim(bottom=1980) #skip burn in
+        pl.title('Total Fertility Rate')
         pl.xlabel('Year')
-        pl.ylabel('Total fertility rate - children per woman')
+        pl.ylabel('TFR - children per woman')
 
         if do_save:
             pl.savefig(sp.abspath('figs', 'senegal_tfr.png'))
