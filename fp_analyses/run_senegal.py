@@ -266,7 +266,6 @@ if do_run:
         pl.scatter(data_tfr_years, data_tfr, c='black')
         
         pl.ylim(bottom=3)
-        pl.xlim(bottom=1980) #skip burn in
         pl.title('Total Fertility Rate')
         pl.xlabel('Year')
         pl.ylabel('TFR - children per woman')
