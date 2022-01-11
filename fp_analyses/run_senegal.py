@@ -245,7 +245,7 @@ if do_run:
         fig = pl.figure(figsize=(16, 16))
         pl.plot(whole_years_model, method_failures_model, c='cornflowerblue')
         pl.title('Unintended pregnancies due only to method failures each year (excluding LAM)')
-        pl.xlabel('Years')
+        pl.xlabel('Year')
         pl.ylabel('Number of pregnancies resulting from contraceptive method failures')
         pl.legend()
 
@@ -267,7 +267,6 @@ if do_run:
 
         pl.xlabel('Year')
         pl.ylabel('Total fertility rate - children per woman')
-        pl.title('Total fertility rate in model compared data - Senegal', fontweight='bold')
 
         if do_save:
             pl.savefig(sp.abspath('figs', 'senegal_tfr.png'))
@@ -291,7 +290,7 @@ if do_run:
         pl.xticks(x, x_labels)
         pl.ylim(bottom=-10)
         ax.set_title('Age specific fertility rate per 1000 woman years')
-        ax.set_xlabel('Ages')
+        ax.set_xlabel('Age')
         ax.set_ylabel('ASFR in 2019')
         ax.legend(frameon=False)
         sc.boxoff()
