@@ -262,8 +262,8 @@ if do_run:
         x = res['tfr_years'] + 3
         y = res['tfr_rates']
 
-        pl.plot(x, y, label='Total fertility rates')
-        pl.scatter(data_tfr_years, data_tfr)
+        pl.plot(x, y, label='Total fertility rates', c='cornflowerblue')
+        pl.scatter(data_tfr_years, data_tfr, c='black')
 
         pl.xlabel('Year')
         pl.ylabel('Total fertility rate - children per woman')
