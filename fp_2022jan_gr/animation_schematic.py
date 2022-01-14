@@ -53,17 +53,28 @@ else:
 
 if doplot:
 
+    sc.options(font='Avenir')
+
     cmap = sc.objdict(
-        default = '#000',
-        dead = '#ccc',
-        active = '#0a0',
-        preg = '#ff0',
-        method = '#f00'
+        inactive = '#000',
+        active   = '#0a0',
+        preg     = '#ff0',
+        method   = '#f00',
+        dead     = '#ccc',
+    )
+
+    cnames = sc.objdict(
+        inactive = 'Not sexually\nactive',
+        active   = 'Sexually\nactive',
+        preg     = 'Pregnant',
+        method   = 'Using\ncontraception',
+        dead     = 'Dead',
     )
 
     max_children = 9
     max_method = 10
     radius = 0.2
+    mothersize = 100
 
     x = np.arange(n_side)
     y = np.arange(n_side)
@@ -72,12 +83,12 @@ if doplot:
     yy = yy.flatten()
 
     sc.options(dpi=200)
-    fig,ax = pl.subplots(figsize=(6,6))
+    fig,ax = pl.subplots(figsize=(7.5,6))
     δ = 0.5
     pl.axis('off')
     pl.xlim((-δ, n_side-1+δ))
     pl.ylim((-δ, n_side-1+δ))
-    sc.figlayout()
+    sc.figlayout(top=0.93, right=0.72)
 
     frames = []
 
@@ -90,13 +101,23 @@ if doplot:
             if not dosave:
                 pl.cla()
 
-            cc = np.array([cmap.default]*n, dtype=object)
-            for key in ['dead', 'active', 'preg', 'method']:
+            # Handle counts
+            counts = sc.objdict()
+            cc = np.array([cmap.inactive]*n, dtype=object)
+            colorkeys = ['dead', 'active', 'preg', 'method']
+            for key in colorkeys:
                 inds = sc.findinds(entry[key][:n])
                 cc[inds] = cmap[key]
+                counts[key] = len(inds)
+            counts['inactive'] = n - counts[:].sum()
 
-            # cc = entry.method[:n] > 0
-            frame += pl.scatter(xx, yy, s=100, c=cc, marker='o')
+            # Plot legend
+            for key,label in cnames.items():
+                pl.scatter(np.nan, np.nan, s=mothersize, c=cmap[key], label=f'{label} ({counts[key]})')
+            frame += ax.legend(loc=(1.05,0.7))
+
+            # Actually plot
+            frame += pl.scatter(xx, yy, s=mothersize, c=cc)
             for m, (ix,iy) in enumerate(zip(xx,yy)):
                 n_children = len(entry.children[m])
                 if n_children:
@@ -106,8 +127,8 @@ if doplot:
                     dy = radius*np.sin(rad)
                     frame += pl.scatter(ix+dx, iy+dy, s=10, c='k')
 
-            kwargs = {'transform':pl.gca().transAxes, 'horizontalalignment':'center'} # Set the "title" properties
-            frame += pl.text(0.5, 1.00, f'{entry.y:0.1f}', **kwargs) # Unfortunately pl.title() can't be dynamically updated
+            kwargs = dict(transform=pl.gca().transAxes, horizontalalignment='center', fontweight='bold') # Set the "title" properties
+            frame += pl.text(0.5, 1.02, f'Year: {entry.y:0.1f}', **kwargs) # Unfortunately pl.title() can't be dynamically updated
             frames.append(frame)
             pl.xlim((-δ, n_side-1+δ))
             pl.ylim((-δ, n_side-1+δ))
@@ -118,6 +139,6 @@ if doplot:
     if dosave:
         with sc.timer('saving'):
             print('Saving...')
-            sc.savemovie(frames, 'fp_animation_schematic.mp4', fps=20, quality='high') # Save movie as a high-quality mp4
+            sc.savemovie(frames, 'fp_animation_schematic.mp4', fps=10, quality='high') # Save movie as a high-quality mp4
 
 print('Done.')
