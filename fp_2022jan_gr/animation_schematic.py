@@ -15,7 +15,7 @@ n = n_side**2
 filename = 'animation_data.obj'
 rerun  = 0
 doplot = 1
-dosave = 0
+dosave = 1
 
 if rerun or not os.path.exists(filename):
 
@@ -25,13 +25,13 @@ if rerun or not os.path.exists(filename):
         entry = sc.objdict()
         entry.i = sim.i
         entry.y = sim.y
-        entry.sex = sim.people.sex
-        entry.age = sc.dcp(sim.people.age)
-        entry.dead     = sc.dcp(~sim.people.alive)
-        entry.active   = sc.dcp(sim.people.sexually_active)
-        entry.preg     = sc.dcp(sim.people.pregnant)
-        entry.method   = sc.dcp(sim.people.method)
-        entry.children = sc.dcp(sim.people.children)
+        entry.sex      = sc.dcp(sim.people.sex[:n])
+        entry.age      = sc.dcp(sim.people.age[:n])
+        entry.dead     = sc.dcp(~sim.people.alive[:n])
+        entry.active   = sc.dcp(sim.people.sexually_active[:n])
+        entry.preg     = sc.dcp(sim.people.pregnant[:n])
+        entry.method   = sc.dcp(sim.people.method[:n])
+        entry.children = sc.dcp(sim.people.children[:n])
         data[sim.i] = entry
         return
 
@@ -111,25 +111,30 @@ if doplot:
 
             # Handle counts
             counts = sc.objdict()
-            f = ~entry.sex[:n]
-            m = entry.sex[:n]
+            f = ~entry.sex
+            m = entry.sex
+            alive = ~entry.dead
+            alive_women = f * alive
+
+            counts.active   = entry.active[alive_women].sum()
+            counts.inactive = alive_women.sum() - counts.active
+            counts.preg     = entry.preg[alive_women].sum()
+            counts.method   = (entry.method[alive_women]>0).sum()
+            counts.dead     = entry.dead.sum()
+
             cc = np.array([cmap.inactive]*n, dtype=object)
             colorkeys = ['active', 'preg', 'method', 'dead']
             for key in colorkeys:
-                inds = sc.findinds(entry[key][:n])
+                inds = sc.findinds(entry[key])
                 cc[inds] = cmap[key]
-                counts[key] = len(inds)
 
-            alive = n - counts.dead
-            alive_women = sum(f) - entry.dead[sc.findinds(f)].sum()
-            counts.inactive = alive_women - counts.active
             percents = sc.objdict()
-            percents.inactive = sc.safedivide(counts.inactive, alive_women) * 100
-            percents.active   = sc.safedivide(counts.active, alive_women) * 100
-            percents.preg     = sc.safedivide(counts.preg, alive_women) * 100
-            percents.method   = sc.safedivide(counts.method, counts.active) * 100
+            percents.inactive = sc.safedivide(counts.inactive, alive_women.sum()) * 100
+            percents.active   = sc.safedivide(counts.active, alive_women.sum()) * 100
+            percents.preg     = sc.safedivide(counts.preg, alive_women.sum()) * 100
+            percents.method   = sc.safedivide(counts.method, alive_women.sum()) * 100
             percents.dead     = sc.safedivide(counts.dead, n) * 100
-            ave_age = np.median(entry.age[sc.findinds(~entry.sex[:n]*~entry.dead[:n])])
+            ave_age = np.median(entry.age[alive_women])
 
             # Plot legend -- have to do manually since legend not supported by animation
             dy = 0.7
