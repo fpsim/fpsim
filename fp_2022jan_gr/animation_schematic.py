@@ -13,9 +13,9 @@ import fp_analyses as fa
 n_side = 10
 n = n_side**2
 filename = 'animation_data.obj'
-rerun  = 0
+rerun  = 1
 doplot = 1
-dosave = 1
+dosave = 0
 
 if rerun or not os.path.exists(filename):
 
@@ -33,6 +33,12 @@ if rerun or not os.path.exists(filename):
         entry.method   = sc.dcp(sim.people.method[:n])
         entry.children = sc.dcp(sim.people.children[:n])
         data[sim.i] = entry
+
+        # inds = [0, 36, 37]
+        # print(sim.i, end='')
+        # for i in inds:
+        #     print(i, entry.dead[i], entry.active[i], entry.method[i], end='')
+        # print()
         return
 
     pars = fa.senegal_parameters.make_pars()
