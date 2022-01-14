@@ -15,7 +15,7 @@ n = n_side**2
 filename = 'animation_data.obj'
 rerun  = 0
 doplot = 1
-dosave = 0
+dosave = 1
 
 if rerun or not os.path.exists(filename):
 
@@ -75,6 +75,7 @@ if doplot:
     max_method = 10
     radius = 0.2
     mothersize = 100
+    childsize = 10
 
     x = np.arange(n_side)
     y = np.arange(n_side)
@@ -83,15 +84,19 @@ if doplot:
     yy = yy.flatten()
 
     sc.options(dpi=200)
-    fig,ax = pl.subplots(figsize=(7.5,6))
+    fig = pl.figure(figsize=(7.5,6))
     ax = pl.axes([0,0,1,1])
     δ = 0.5
     pl.axis('off')
-    ax.xlim((-δ, n_side-1+δ))
-    pl.ylim((-δ, n_side-1+δ))
-    sc.figlayout(top=0.93, right=0.72)
+    # sc.figlayout(top=0.93, right=0.72)
 
     frames = []
+
+    def xtr(x):
+        return 0.05+x/(n_side+3.5)
+
+    def ytr(y):
+        return 0.05+y/(n_side+1)
 
     stride = 2 # Don't render every frame
     with sc.timer('generating'):
@@ -101,7 +106,6 @@ if doplot:
             frame = sc.autolist()
             if not dosave:
                 ax.clear()
-                lax.clear()
 
             # Handle counts
             counts = sc.objdict()
@@ -115,14 +119,26 @@ if doplot:
 
             # Plot legend -- have to do manually since legend not supported by animation
 
+            dy = 0.7
             for i,key,label in cnames.enumitems():
-                x = 0.8#n_side + 1
-                y = 0.8#n_side - 1.3 - 0.5*i
-                frame += lax.scatter(x, y, s=mothersize, c=cmap[key])
-                frame += lax.text(n_side, y, f'{label} ({counts[key]})')
+                kwargs = dict(horizontalalignment='left', verticalalignment='center')
+                x = n_side + 0.2
+                x2 = x + 0.25
+                y = n_side - 2.5 - dy*i
+                y2 = y - 0.05
+                frame += ax.scatter(xtr(x), ytr(y), s=mothersize, c=cmap[key])
+                frame += ax.text(xtr(x2), ytr(y2), f'{label} ({counts[key]})', **kwargs)
+
+
+            y3 = y2 + 4
+            y4 = y3 - dy/2
+            frame += ax.scatter(xtr(x), ytr(y3), s=mothersize, c='k')
+            frame += ax.scatter(xtr(x), ytr(y4), s=childsize, c='k')
+            frame += ax.text(xtr(x2), ytr(y3), 'Woman', **kwargs)
+            frame += ax.text(xtr(x2), ytr(y4), 'Child', **kwargs)
 
             # Actually plot
-            frame += pl.scatter(xx, yy, s=mothersize, c=cc)
+            frame += pl.scatter(xtr(xx), ytr(yy), s=mothersize, c=cc)
             for m, (ix,iy) in enumerate(zip(xx,yy)):
                 n_children = len(entry.children[m])
                 if n_children:
@@ -130,13 +146,13 @@ if doplot:
                     rad = 2*np.pi*c_arr/max_children
                     dx = radius*np.cos(rad)
                     dy = radius*np.sin(rad)
-                    frame += ax.scatter(ix+dx, iy+dy, s=10, c='k')
+                    frame += ax.scatter(xtr(ix+dx), ytr(iy+dy), s=childsize, c='k')
 
-            kwargs = dict(transform=pl.gca().transAxes, horizontalalignment='center', fontweight='bold') # Set the "title" properties
-            frame += ax.text(0.5, 1.02, f'Year: {entry.y:0.1f}', **kwargs) # Unfortunately pl.title() can't be dynamically updated
+            kwargs = dict(horizontalalignment='center', fontweight='bold') # Set the "title" properties
+            frame += ax.text(0.4, 0.93, f'Year {entry.y:0.1f}', **kwargs) # Unfortunately pl.title() can't be dynamically updated
             frames.append(frame)
-            ax.set_xlim((-δ, n_side-1+δ))
-            ax.set_ylim((-δ, n_side-1+δ))
+            ax.set_xlim((0, 1))
+            ax.set_ylim((0, 1))
             ax.axis('off')
             if not dosave:
                 pl.pause(0.01)
