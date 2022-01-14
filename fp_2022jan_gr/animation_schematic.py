@@ -15,7 +15,7 @@ n = n_side**2
 filename = 'animation_data.obj'
 rerun  = 0
 doplot = 1
-dosave = 1
+dosave = 0
 
 if rerun or not os.path.exists(filename):
 
@@ -84,9 +84,10 @@ if doplot:
 
     sc.options(dpi=200)
     fig,ax = pl.subplots(figsize=(7.5,6))
+    ax = pl.axes([0,0,1,1])
     δ = 0.5
     pl.axis('off')
-    pl.xlim((-δ, n_side-1+δ))
+    ax.xlim((-δ, n_side-1+δ))
     pl.ylim((-δ, n_side-1+δ))
     sc.figlayout(top=0.93, right=0.72)
 
@@ -99,7 +100,8 @@ if doplot:
             print(f'  Working on {entry.i} of {len(data)}...')
             frame = sc.autolist()
             if not dosave:
-                pl.cla()
+                ax.clear()
+                lax.clear()
 
             # Handle counts
             counts = sc.objdict()
@@ -111,10 +113,13 @@ if doplot:
                 counts[key] = len(inds)
             counts['inactive'] = n - counts[:].sum()
 
-            # Plot legend
-            for key,label in cnames.items():
-                pl.scatter(np.nan, np.nan, s=mothersize, c=cmap[key], label=f'{label} ({counts[key]})')
-            frame += ax.legend(loc=(1.05,0.7))
+            # Plot legend -- have to do manually since legend not supported by animation
+
+            for i,key,label in cnames.enumitems():
+                x = 0.8#n_side + 1
+                y = 0.8#n_side - 1.3 - 0.5*i
+                frame += lax.scatter(x, y, s=mothersize, c=cmap[key])
+                frame += lax.text(n_side, y, f'{label} ({counts[key]})')
 
             # Actually plot
             frame += pl.scatter(xx, yy, s=mothersize, c=cc)
@@ -125,14 +130,14 @@ if doplot:
                     rad = 2*np.pi*c_arr/max_children
                     dx = radius*np.cos(rad)
                     dy = radius*np.sin(rad)
-                    frame += pl.scatter(ix+dx, iy+dy, s=10, c='k')
+                    frame += ax.scatter(ix+dx, iy+dy, s=10, c='k')
 
             kwargs = dict(transform=pl.gca().transAxes, horizontalalignment='center', fontweight='bold') # Set the "title" properties
-            frame += pl.text(0.5, 1.02, f'Year: {entry.y:0.1f}', **kwargs) # Unfortunately pl.title() can't be dynamically updated
+            frame += ax.text(0.5, 1.02, f'Year: {entry.y:0.1f}', **kwargs) # Unfortunately pl.title() can't be dynamically updated
             frames.append(frame)
-            pl.xlim((-δ, n_side-1+δ))
-            pl.ylim((-δ, n_side-1+δ))
-            pl.axis('off')
+            ax.set_xlim((-δ, n_side-1+δ))
+            ax.set_ylim((-δ, n_side-1+δ))
+            ax.axis('off')
             if not dosave:
                 pl.pause(0.01)
 
