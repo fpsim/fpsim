@@ -15,7 +15,7 @@ n = n_side**2
 filename = 'animation_data.obj'
 rerun  = 0
 doplot = 1
-dosave = 1
+dosave = 0
 
 if rerun or not os.path.exists(filename):
 
@@ -25,6 +25,8 @@ if rerun or not os.path.exists(filename):
         entry = sc.objdict()
         entry.i = sim.i
         entry.y = sim.y
+        entry.sex = sim.people.sex
+        entry.age = sc.dcp(sim.people.age)
         entry.dead     = sc.dcp(~sim.people.alive)
         entry.active   = sc.dcp(sim.people.sexually_active)
         entry.preg     = sc.dcp(sim.people.pregnant)
@@ -109,20 +111,25 @@ if doplot:
 
             # Handle counts
             counts = sc.objdict()
+            f = ~entry.sex[:n]
+            m = entry.sex[:n]
             cc = np.array([cmap.inactive]*n, dtype=object)
             colorkeys = ['active', 'preg', 'method', 'dead']
             for key in colorkeys:
                 inds = sc.findinds(entry[key][:n])
                 cc[inds] = cmap[key]
                 counts[key] = len(inds)
-            counts.inactive = n - counts[:].sum()
+
             alive = n - counts.dead
+            alive_women = sum(f) - entry.dead[sc.findinds(f)].sum()
+            counts.inactive = alive_women - counts.active
             percents = sc.objdict()
-            percents.inactive = sc.safedivide(counts.inactive, alive) * 100
-            percents.active   = sc.safedivide(counts.active, alive) * 100
-            percents.preg     = sc.safedivide(counts.preg, alive) * 100
+            percents.inactive = sc.safedivide(counts.inactive, alive_women) * 100
+            percents.active   = sc.safedivide(counts.active, alive_women) * 100
+            percents.preg     = sc.safedivide(counts.preg, alive_women) * 100
             percents.method   = sc.safedivide(counts.method, counts.active) * 100
             percents.dead     = sc.safedivide(counts.dead, n) * 100
+            ave_age = np.median(entry.age[sc.findinds(~entry.sex[:n]*~entry.dead[:n])])
 
             # Plot legend -- have to do manually since legend not supported by animation
             dy = 0.7
@@ -135,15 +142,19 @@ if doplot:
                 frame += ax.scatter(xtr(x), ytr(y), s=mothersize, c=cmap[key])
                 frame += ax.text(xtr(x2), ytr(y2), f'{label} ({percents[key]:0.0f}%)', **kwargs)
 
-            y3 = y2 + 4
+            y3 = y2 + 4.5
             y4 = y3 - dy/2
-            frame += ax.scatter(xtr(x), ytr(y3), s=mothersize, c='k')
-            frame += ax.scatter(xtr(x), ytr(y4), s=childsize, c='k')
+            y5 = y4 - dy/2
+            frame += ax.scatter(xtr(x), ytr(y3), s=mothersize, c='k', marker='o')
+            frame += ax.scatter(xtr(x), ytr(y4), s=mothersize, c='k', marker='s')
+            frame += ax.scatter(xtr(x), ytr(y5), s=childsize, c='k', marker='o')
             frame += ax.text(xtr(x2), ytr(y3), 'Woman', **kwargs)
-            frame += ax.text(xtr(x2), ytr(y4), 'Child', **kwargs)
+            frame += ax.text(xtr(x2), ytr(y4), 'Man', **kwargs)
+            frame += ax.text(xtr(x2), ytr(y5), 'Child', **kwargs)
 
             # Actually plot
-            frame += pl.scatter(xtr(xx), ytr(yy), s=mothersize, c=cc)
+            frame += pl.scatter(xtr(xx[f]), ytr(yy[f]), s=mothersize, c=cc[f], marker='o')
+            frame += pl.scatter(xtr(xx[m]), ytr(yy[m]), s=mothersize, c=cc[m], marker='s')
             for m, (ix,iy) in enumerate(zip(xx,yy)):
                 n_children = len(entry.children[m])
                 if n_children:
@@ -153,8 +164,8 @@ if doplot:
                     dy = radius*np.sin(rad)
                     frame += ax.scatter(xtr(ix+dx), ytr(iy+dy), s=childsize, c='k')
 
-            kwargs = dict(horizontalalignment='center', fontweight='bold') # Set the "title" properties
-            frame += ax.text(0.4, 0.93, f'Year {entry.y:0.1f}', **kwargs) # Unfortunately pl.title() can't be dynamically updated
+            kwargs = dict(horizontalalignment='center', fontsize=12) # Set the "title" properties
+            frame += ax.text(0.4, 0.93, f'Year {entry.y:0.0f}\nMedian age of cohort {ave_age:0.1f}', **kwargs) # Unfortunately pl.title() can't be dynamically updated
             frames.append(frame)
             ax.set_xlim((0, 1))
             ax.set_ylim((0, 1))
