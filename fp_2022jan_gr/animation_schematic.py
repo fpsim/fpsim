@@ -110,15 +110,21 @@ if doplot:
             # Handle counts
             counts = sc.objdict()
             cc = np.array([cmap.inactive]*n, dtype=object)
-            colorkeys = ['dead', 'active', 'preg', 'method']
+            colorkeys = ['active', 'preg', 'method', 'dead']
             for key in colorkeys:
                 inds = sc.findinds(entry[key][:n])
                 cc[inds] = cmap[key]
                 counts[key] = len(inds)
-            counts['inactive'] = n - counts[:].sum()
+            counts.inactive = n - counts[:].sum()
+            alive = n - counts.dead
+            percents = sc.objdict()
+            percents.inactive = sc.safedivide(counts.inactive, alive) * 100
+            percents.active   = sc.safedivide(counts.active, alive) * 100
+            percents.preg     = sc.safedivide(counts.preg, alive) * 100
+            percents.method   = sc.safedivide(counts.method, counts.active) * 100
+            percents.dead     = sc.safedivide(counts.dead, n) * 100
 
             # Plot legend -- have to do manually since legend not supported by animation
-
             dy = 0.7
             for i,key,label in cnames.enumitems():
                 kwargs = dict(horizontalalignment='left', verticalalignment='center')
@@ -127,8 +133,7 @@ if doplot:
                 y = n_side - 2.5 - dy*i
                 y2 = y - 0.05
                 frame += ax.scatter(xtr(x), ytr(y), s=mothersize, c=cmap[key])
-                frame += ax.text(xtr(x2), ytr(y2), f'{label} ({counts[key]})', **kwargs)
-
+                frame += ax.text(xtr(x2), ytr(y2), f'{label} ({percents[key]:0.0f}%)', **kwargs)
 
             y3 = y2 + 4
             y4 = y3 - dy/2
@@ -143,7 +148,7 @@ if doplot:
                 n_children = len(entry.children[m])
                 if n_children:
                     c_arr = np.arange(n_children)
-                    rad = 2*np.pi*c_arr/max_children
+                    rad = 2*np.pi*c_arr/max_children - np.pi/2
                     dx = radius*np.cos(rad)
                     dy = radius*np.sin(rad)
                     frame += ax.scatter(xtr(ix+dx), ytr(iy+dy), s=childsize, c='k')
