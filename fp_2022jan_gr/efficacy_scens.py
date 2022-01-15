@@ -8,11 +8,14 @@ import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
 
+# Define basic things here
 default_pars = fa.senegal_parameters.make_pars()
 method_names = default_pars['methods']['names']
 age_keys = list(default_pars['methods']['probs_matrix'].keys())
 
+
 def key2ind(sim, key):
+    ''' Take a method key and convert to an int, e.g. 'Condoms' → 7 '''
     ind = key
     if ind in [None, 'all']:
         ind = slice(None) # This is equivalent to ":" in matrix[:,:]
@@ -22,6 +25,7 @@ def key2ind(sim, key):
 
 
 class update_methods(fp.Intervention):
+    ''' Intervention to modify method efficacy and/or switching matrix '''
 
     def __init__(self, year, scen):
         super().__init__()
@@ -67,6 +71,7 @@ class update_methods(fp.Intervention):
         return
 
 def make_sim(label='<no label>', **kwargs):
+    ''' Create a single sim, with a label and updated parameters '''
     pars = fa.senegal_parameters.make_pars()
     pars.update(kwargs)
     sim = fp.Sim(pars=pars, label=label)
@@ -74,6 +79,7 @@ def make_sim(label='<no label>', **kwargs):
 
 
 def make_sims(repeats=5, **kwargs):
+    ''' Create a list of sims that are all identical except for the random seed '''
     sims = sc.autolist()
     for i in range(repeats):
         kwargs.setdefault('seed', 0)
@@ -83,12 +89,14 @@ def make_sims(repeats=5, **kwargs):
 
 
 def run_sims(sims):
+    ''' Actually run a list of sims '''
     msim = fp.MultiSim(sims)
     msim.run()
     return msim
 
 
 def analyze_sims(msim, start_year=2010, end_year=2020):
+    ''' Take a list of sims that have different labels and count the births in each '''
 
     def count_births(sim):
         year = sim.results['t']
@@ -137,41 +145,43 @@ if __name__ == '__main__':
     )
 
     # Run options
-    repeats   = 3
-    scen_year = 2005
-    debug     = False
+    repeats   = 10 # How many duplicates of each sim to run
+    scen_year = 2005 # Year to start the different scenarios
+    debug     = False # Just run one sim
+
 
     #%% Define scenarios
 
     # Increased efficacy
     eff_scen = sc.objdict(
-        eff={k:1.0 for k in method_names if k != 'None'}
+        eff={method:1.0 for method in method_names if method != 'None'} # Set all efficacies to 1.0 except for None
     )
-    eff = update_methods(scen_year, eff_scen)
+    eff = update_methods(scen_year, eff_scen) # Create intervention
 
     # Increased uptake
     uptake_scen = sc.objdict(
-        eff = {'BTL':0.8},
+        eff = {'BTL':0.8}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
                 dest   = 'BTL', # Destination
                 factor = None, # Factor by which to multiply existing probability
-                value  = 0.2, # Alternatively, specify the absolute probability
+                value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
                 keys   = None, # Which age keys to modify -- if not specified, all
             ),
         ]
     )
-    uptake = update_methods(scen_year, uptake_scen)
+    uptake = update_methods(scen_year, uptake_scen) # Create intervention
 
 
-    #%% Run
+    #%% Create sims
     sims = sc.autolist()
-
     sims += make_sims(repeats=repeats, label='Baseline', **pars)
     sims += make_sims(repeats=repeats, interventions=eff, label='Increased efficacy', **pars)
     sims += make_sims(repeats=repeats, interventions=uptake, label='Increased uptake', **pars)
 
+
+    #%% Run
     if debug:
         sim = sims[4]
         sim.run()
