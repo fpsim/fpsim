@@ -111,6 +111,7 @@ class People(fpb.BasePeople):
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
+                choices = choices/choices.sum()
                 new_methods = fpu.n_multinomial(choices, len(this_method))
                 this_method.method = np.array(new_methods, dtype=np.int64)
 
@@ -752,7 +753,7 @@ class Sim(fpb.BaseSim):
     def apply_interventions(self):
         ''' Apply each intervention in the model '''
         if 'interventions' in self.pars:
-            for i,intervention in enumerate(self.pars['interventions']):
+            for i,intervention in enumerate(sc.tolist(self.pars['interventions'])):
                 if isinstance(intervention, fpi.Intervention):
                     if not intervention.initialized: # pragma: no cover
                         intervention.initialize(self)
@@ -768,7 +769,7 @@ class Sim(fpb.BaseSim):
     def apply_analyzers(self):
         ''' Apply each analyzer in the model '''
         if 'analyzers' in self.pars:
-            for i,analyzer in enumerate(self.pars['analyzers']):
+            for i,analyzer in enumerate(sc.tolist(self.pars['analyzers'])):
                 if isinstance(analyzer, fpi.Analyzer):
                     if not analyzer.initialized: # pragma: no cover
                         analyzer.initialize(self)
