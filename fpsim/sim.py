@@ -72,8 +72,9 @@ class People(fpb.BasePeople):
         self.postpartum      = arr(n, d['postpartum'])
         self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
+        self.children        = arr(n, []) # Indices of children -- list of lists
         self.dobs            = arr(n, []) # Dates of births -- list of lists
-        self.still_dates     = arr(n, [])  # Dates of stillbirths -- list of lists
+        self.still_dates     = arr(n, []) # Dates of stillbirths -- list of lists
         self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
 
@@ -110,6 +111,7 @@ class People(fpb.BasePeople):
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
+                choices = choices/choices.sum()
                 new_methods = fpu.n_multinomial(choices, len(this_method))
                 this_method.method = np.array(new_methods, dtype=np.int64)
 
@@ -371,7 +373,7 @@ class People(fpb.BasePeople):
         death.alive = False
         self.step_results['maternal_deaths'] += len(death)
         self.step_results['deaths'] += len(death)
-        return
+        return death
 
 
     def infant_mortality(self):
@@ -380,7 +382,7 @@ class People(fpb.BasePeople):
         death = self.filter(is_death)
         self.step_results['infant_deaths'] += len(death)
         death.reset_breastfeeding()
-        return
+        return death
 
 
     def check_delivery(self):
@@ -430,7 +432,27 @@ class People(fpb.BasePeople):
 
         # Check mortality
         live.maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
-        live.infant_mortality()
+        i_death = live.infant_mortality()
+
+        # TEMP -- update children, need to refactor
+        r = fpu.dict2obj(self.step_results)
+        new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
+        children_map = sc.ddict(int)
+        for i in live.inds:
+            children_map[i] += 1
+        for i in twin.inds:
+            children_map[i] += 1
+        for i in i_death.inds:
+            children_map[i] -= 1
+
+        assert sum(list(children_map.values())) == new_people
+        start_ind = len(all_ppl)
+        for mother,n_children in children_map.items():
+            end_ind = start_ind+n_children
+            children = list(range(start_ind, end_ind))
+            # print(mother, children)
+            all_ppl.children[mother] += children
+            start_ind = end_ind
 
         return
 
@@ -728,7 +750,7 @@ class Sim(fpb.BaseSim):
     def apply_interventions(self):
         ''' Apply each intervention in the model '''
         if 'interventions' in self.pars:
-            for i,intervention in enumerate(self.pars['interventions']):
+            for i,intervention in enumerate(sc.tolist(self.pars['interventions'])):
                 if isinstance(intervention, fpi.Intervention):
                     if not intervention.initialized: # pragma: no cover
                         intervention.initialize(self)
@@ -744,7 +766,7 @@ class Sim(fpb.BaseSim):
     def apply_analyzers(self):
         ''' Apply each analyzer in the model '''
         if 'analyzers' in self.pars:
-            for i,analyzer in enumerate(self.pars['analyzers']):
+            for i,analyzer in enumerate(sc.tolist(self.pars['analyzers'])):
                 if isinstance(analyzer, fpi.Analyzer):
                     if not analyzer.initialized: # pragma: no cover
                         analyzer.initialize(self)
@@ -804,7 +826,6 @@ class Sim(fpb.BaseSim):
 
             people = People(pars=self.pars, n=new_people, **data)
             self.people += people
-            # print('hididid', new_people, np.mean(data['sex']), np.mean(people['sex']))
 
             # Results
             percent0to5   = (r.pp0to5 / r.total_women_fecund) * 100

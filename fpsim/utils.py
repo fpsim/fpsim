@@ -146,7 +146,7 @@ def fixaxis(useSI=True, set_lim=True):
 
 
 def dict2obj(d):
-    ''' Convert a dictionary to an object '''
+    ''' Convert a dictionary to an object -- REFACTOR to use sc.dictobj() '''
     o = sc.prettyobj()
     for k,v in d.items():
         setattr(o, k, v)
