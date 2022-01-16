@@ -521,16 +521,13 @@ class People(fpb.BasePeople):
         alive_start.check_mortality()  # Decide if person dies at this t in the simulation
         alive_check = self.filter(self.alive)  # Reselect live agents after exposure to general mortality
 
-        fecund_start  = alive_check.filter((alive_check.sex == 0) * (alive_check.age < alive_check.pars['age_limit_fecundity']))
-        preg_start    = fecund_start.filter(fecund_start.pregnant)
-
         # Update pregnancy with maternal mortality outcome
-        preg_start.check_delivery()  # Deliver with birth outcomes if reached pregnancy duration
+        preg = alive_check.filter(alive_check.pregnant)
+        preg.check_delivery()  # Deliver with birth outcomes if reached pregnancy duration
 
         # Reselect for live agents after exposure to maternal mortality
         alive_now = self.filter(self.alive)
         fecund = alive_now.filter((alive_now.sex == 0) * (alive_now.age < alive_now.pars['age_limit_fecundity']))
-        preg = fecund.filter(fecund.pregnant)
         nonpreg = fecund.filter(~fecund.pregnant)
         lact    = fecund.filter(fecund.lactating)
         methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
