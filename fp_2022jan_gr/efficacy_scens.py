@@ -133,10 +133,9 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
             n_fails  = method_failure(sim)
             n_pop = count_pop(sim)
             raw.scenario += key      # Append scenario key
-            raw.pop += n_pop
             raw.births   += n_births # Append births
             raw.fails    += n_fails  # Append failures
-            # raw.pop      += n_pop    # Append population size
+            raw.pop      += n_pop    # Append population size
 
     # Calculate basic stats
     results.stats = sc.objdict()
