@@ -111,6 +111,13 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
         inds = sc.findinds((year >= start_year), year < end_year)
         output = meth_fail[inds].sum()
         return output
+    
+    def count_pop(sim):
+        year = sim.results['tfr_years']
+        pop = sim.results['pop_size']
+        inds = sc.findinds((year >= start_year), year < end_year)
+        output = pop[inds].sum()
+        return output
 
     # Split the sims up by scenario
     results = sc.objdict()
@@ -124,9 +131,12 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
         for sim in sims:
             n_births = count_births(sim)
             n_fails  = method_failure(sim)
+            n_pop = count_pop(sim)
             raw.scenario += key      # Append scenario key
+            raw.pop += n_pop
             raw.births   += n_births # Append births
             raw.fails    += n_fails  # Append failures
+            # raw.pop      += n_pop    # Append population size
 
     # Calculate basic stats
     results.stats = sc.objdict()
@@ -149,13 +159,13 @@ if __name__ == '__main__':
 
     #%% Define sim parameters
     pars = dict(
-        n          = [10_000, 1_000][debug],
-        start_year = [2000, 1980][debug],
-        end_year   = [2020, 2010][debug],
+        n          = [100_000, 100_000, 100_000][debug],
+        start_year = [2000, 2000, 2000][debug],
+        end_year   = [2020, 2020, 2020][debug],
     )
 
     # Run options
-    repeats   = [10, 5][debug] # How many duplicates of each sim to run
+    repeats   = [10, 10, 10][debug] # How many duplicates of each sim to run
     scen_year = 2005 # Year to start the different scenarios
     one_sim   = False # Just run one sim
 
@@ -164,13 +174,13 @@ if __name__ == '__main__':
 
     # Increased efficacy
     eff_scen = sc.objdict(
-        eff={method:1.0 for method in method_names if method != 'None'} # Set all efficacies to 1.0 except for None
+        eff={method:0.994 for method in method_names if method != 'None'} # Set all efficacies to 1.0 except for None
     )
     eff = update_methods(scen_year, eff_scen) # Create intervention
 
     # Increased uptake
     uptake_scen = sc.objdict(
-        eff = {'BTL':0.8}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'BTL':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
