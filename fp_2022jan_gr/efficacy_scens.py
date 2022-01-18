@@ -124,9 +124,11 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
     for key,sims in results.sims.items():
         for sim in sims:
             n_births = count_births(sim)
+            n_fails = method_failure(sim)
             results.raw[key] += n_births
             raw.scenario += key
             raw.births += n_births
+            raw.fails += n_fails
 
     # Calculate basic stats
     results.stats = sc.objdict()
