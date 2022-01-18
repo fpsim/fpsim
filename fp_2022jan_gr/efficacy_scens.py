@@ -139,7 +139,7 @@ if __name__ == '__main__':
 
     #%% Define sim parameters
     pars = dict(
-        n = 10_000,
+        n = 1_000,
         start_year = 1980,
         end_year = 2020,
     )

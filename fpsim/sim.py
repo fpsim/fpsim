@@ -977,13 +977,14 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot(self, dosave=None, doshow=True, figargs=None, plotargs=None, axisargs=None, as_years=True, new_fig=True):
+    def plot(self, dosave=None, doshow=True, legend=True, figargs=None, plotargs=None, axisargs=None, as_years=True, new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
         Args:
             dosave (bool): Whether or not to save the figure. If a string, save to that filename.
             doshow (bool): Whether to show the plots at the end
+            legend (bool): whether to show the legend
             figargs (dict):  Dictionary of kwargs to be passed to pl.figure()
             plotargs (dict): Dictionary of kwargs to be passed to pl.plot()
             as_years (bool): Whether to plot the x-axis as years or time points
@@ -1033,7 +1034,7 @@ class Sim(fpb.BaseSim):
                 if not new_fig: # Replace with sim label to avoid duplicate labels
                     label = self.label
                 pl.plot(x, y, label=label, **plotargs)
-            fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
+            fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig, legend=legend) # If it's not a new fig, don't set the lim
             if key == 'mcpr':
                 pl.ylabel('Percentage')
             else:
@@ -1181,18 +1182,16 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, doshow=True, plot_sims=True, fig_args=None, **kwargs):
+    def plot(self, doshow=True, legend=True, plot_sims=True, fig_args=None, **kwargs):
         '''
         Plot the MultiSim
         '''
         fig_args = sc.mergedicts(fig_args)
         if plot_sims:
             fig = pl.figure(**fig_args)
-            doshow = kwargs.pop('doshow', True)
-            for sim in self.sims: # Note: produces duplicate legend entries
-                sim.plot(new_fig=False, doshow=False, **kwargs)
-            if doshow:
-                pl.show()
+            for s,sim in enumerate(self.sims): # Note: produces duplicate legend entries
+                last = s == len(self.sims)-1
+                sim.plot(new_fig=False, doshow=(doshow and last), legend=(legend and last), **kwargs)
             return fig
         else:
             return self.base_sim.plot(doshow=doshow, fig_args=fig_args, **kwargs)
