@@ -145,7 +145,7 @@ if __name__ == '__main__':
     )
 
     # Run options
-    repeats   = 10 # How many duplicates of each sim to run
+    repeats   = 5 # How many duplicates of each sim to run
     scen_year = 2005 # Year to start the different scenarios
     debug     = False # Just run one sim
 

@@ -1182,7 +1182,7 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, doshow=True, legend=True, plot_sims=True, fig_args=None, **kwargs):
+    def plot(self, doshow=True, legend=True, maxlegends=1, plot_sims=True, fig_args=None, **kwargs):
         '''
         Plot the MultiSim
         '''
@@ -1190,8 +1190,9 @@ class MultiSim(sc.prettyobj):
         if plot_sims:
             fig = pl.figure(**fig_args)
             for s,sim in enumerate(self.sims): # Note: produces duplicate legend entries
-                last = s == len(self.sims)-1
-                sim.plot(new_fig=False, doshow=(doshow and last), legend=(legend and last), **kwargs)
+                legend_ok = (s < maxlegends)
+                last = (s == len(self.sims)-1)
+                sim.plot(new_fig=False, doshow=(doshow and last), legend=(legend and legend_ok), **kwargs)
             return fig
         else:
             return self.base_sim.plot(doshow=doshow, fig_args=fig_args, **kwargs)
