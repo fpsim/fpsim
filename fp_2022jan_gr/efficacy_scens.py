@@ -111,12 +111,12 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
         inds = sc.findinds((year >= start_year), year < end_year)
         output = meth_fail[inds].sum()
         return output
-    
+
     def count_pop(sim):
         year = sim.results['tfr_years']
-        pop = sim.results['pop_size']
+        popsize = sim.results['pop_size']
         inds = sc.findinds((year >= start_year), year < end_year)
-        output = pop[inds].sum()
+        output = popsize[inds].sum()
         return output
 
     # Split the sims up by scenario
@@ -135,7 +135,7 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
             raw.scenario += key      # Append scenario key
             raw.births   += n_births # Append births
             raw.fails    += n_fails  # Append failures
-            raw.pop      += n_pop    # Append population size
+            raw.popsize  += n_pop    # Append population size
 
     # Calculate basic stats
     results.stats = sc.objdict()
@@ -154,20 +154,25 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
 
 if __name__ == '__main__':
 
-    debug = True # Set population size and duration
+    debug   = True # Set population size and duration
+    one_sim = False # Just run one sim
 
     #%% Define sim parameters
-    pars = dict(
-        n          = [100_000, 100_000, 100_000][debug],
-        start_year = [2000, 2000, 2000][debug],
-        end_year   = [2020, 2020, 2020][debug],
-    )
-
-    # Run options
-    repeats   = [10, 10, 10][debug] # How many duplicates of each sim to run
     scen_year = 2005 # Year to start the different scenarios
-    one_sim   = False # Just run one sim
-
+    if not debug:
+        pars = dict(
+            n          = 10_000,
+            start_year = 1980,
+            end_year   = 2020,
+        )
+        repeats   = 10 # How many duplicates of each sim to run
+    else:
+        pars = dict(
+            n          = 1_000,
+            start_year = 2000,
+            end_year   = 2010,
+        )
+        repeats = 3
 
     #%% Define scenarios
 
