@@ -920,10 +920,15 @@ class Sim(fpb.BaseSim):
         # Apply analyzers
         self.apply_analyzers()
 
-        self.results['tfr_rates']    = np.array(self.results['tfr_rates']) # Store TFR rates for each year of model
-        self.results['tfr_years']    = np.array(self.results['tfr_years']) # Save an array of whole years that model runs (ie, 1950, 1951...)
-        self.results['pop_size']     = np.array(self.results['pop_size'])  # Store population size array in years and not months for calibration
-        self.results['mcpr_by_year'] = np.array(self.results['mcpr_by_year'])
+        # Convert all results to Numpy arrays
+        for key,arr in self.results.items():
+            if isinstance(arr, list):
+                self.results[key] = np.array(arr) # Convert any lists to arrays
+
+        # self.results['tfr_rates']    = np.array(self.results['tfr_rates']) # Store TFR rates for each year of model
+        # self.results['tfr_years']    = np.array(self.results['tfr_years']) # Save an array of whole years that model runs (ie, 1950, 1951...)
+        # self.results['pop_size']     = np.array(self.results['pop_size'])  # Store population size array in years and not months for calibration
+        # self.results['mcpr_by_year'] = np.array(self.results['mcpr_by_year'])
 
 
         print(f'Final population size: {self.n}.')

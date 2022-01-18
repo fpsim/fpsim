@@ -104,7 +104,7 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
         inds = sc.findinds((year >= start_year), year < end_year)
         output = births[inds].sum()
         return output
-    
+
     def method_failure(sim):
         year = sim.results['tfr_years']
         meth_fail = sim.results['method_failures_over_year']
@@ -135,7 +135,7 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
         for k,vals in results.raw.items():
             results.stats[statkey][k] = getattr(np, statkey)(vals)
 
-            
+
     # Count method failures across the scenarios
     fails = sc.objdict(scenario=sc.autolist(), meth_fail=sc.autolist())
     results.fails = sc.objdict(defaultdict=sc.autolist)
@@ -151,8 +151,8 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
     for statkey in ['mean', 'median', 'std', 'min', 'max']:
         results.stats_fail[statkey] = sc.objdict()
         for k,vals in results.fails.items():
-            results.fails[statkey][k] = getattr(np, statkey)(vals)            
-            
+            results.stats_fail[statkey][k] = getattr(np, statkey)(vals)
+
     # Also save as pandas
     results.df = pd.DataFrame(raw)
 
@@ -162,11 +162,13 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
 
 if __name__ == '__main__':
 
+    debug = True # Set population size and duration
+
     #%% Define sim parameters
     pars = dict(
-        n = 10_000,
+        n = [10_000, 1_000][debug],
         start_year = 1980,
-        end_year = 2020,
+        end_year = [2020, 2000][debug],
     )
 
     # Run options
