@@ -162,13 +162,13 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
 
 if __name__ == '__main__':
 
-    debug = True # Set population size and duration
+    debug = False # Set population size and duration
 
     #%% Define sim parameters
     pars = dict(
-        n = [10_000, 1_000][debug],
-        start_year = 1980,
-        end_year = [2020, 2000][debug],
+        n          = [10_000, 1_000][debug],
+        start_year = [2000, 1980][debug],
+        end_year   = [2020, 2010][debug],
     )
 
     # Run options
