@@ -119,41 +119,22 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
         results.sims[sim.label] += sim
 
     # Count the births across the scenarios
-    raw = sc.objdict(scenario=sc.autolist(), births=sc.autolist())
-    results.raw = sc.objdict(defaultdict=sc.autolist)
+    raw = sc.objdict(defaultdict=sc.autolist)
     for key,sims in results.sims.items():
         for sim in sims:
             n_births = count_births(sim)
-            n_fails = method_failure(sim)
-            results.raw[key] += n_births
-            raw.scenario += key
-            raw.births += n_births
-            raw.fails += n_fails
+            n_fails  = method_failure(sim)
+            raw.scenario += key      # Append scenario key
+            raw.births   += n_births # Append births
+            raw.fails    += n_fails  # Append failures
 
     # Calculate basic stats
     results.stats = sc.objdict()
     for statkey in ['mean', 'median', 'std', 'min', 'max']:
         results.stats[statkey] = sc.objdict()
-        for k,vals in results.raw.items():
-            results.stats[statkey][k] = getattr(np, statkey)(vals)
-
-
-    # Count method failures across the scenarios
-    fails = sc.objdict(scenario=sc.autolist(), meth_fail=sc.autolist())
-    results.fails = sc.objdict(defaultdict=sc.autolist)
-    for key,sims in results.sims.items():
-        for sim in sims:
-            n_fails = method_failure(sim)
-            results.fails[key] += n_fails
-            fails.scenario += key
-            fails.meth_fail += n_fails
-
-    #Calculate basic stats
-    results.stats_fail = sc.objdict()
-    for statkey in ['mean', 'median', 'std', 'min', 'max']:
-        results.stats_fail[statkey] = sc.objdict()
-        for k,vals in results.fails.items():
-            results.stats_fail[statkey][k] = getattr(np, statkey)(vals)
+        for k,vals in raw.items():
+            if k != 'scenario':
+                results.stats[statkey][k] = getattr(np, statkey)(vals)
 
     # Also save as pandas
     results.df = pd.DataFrame(raw)
@@ -164,7 +145,7 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
 
 if __name__ == '__main__':
 
-    debug = False # Set population size and duration
+    debug = True # Set population size and duration
 
     #%% Define sim parameters
     pars = dict(
@@ -174,9 +155,9 @@ if __name__ == '__main__':
     )
 
     # Run options
-    repeats   = 10 # How many duplicates of each sim to run
+    repeats   = [10, 5][debug] # How many duplicates of each sim to run
     scen_year = 2005 # Year to start the different scenarios
-    debug     = False # Just run one sim
+    one_sim   = False # Just run one sim
 
 
     #%% Define scenarios
@@ -211,7 +192,7 @@ if __name__ == '__main__':
 
 
     #%% Run
-    if debug:
+    if one_sim:
         sim = sims[4]
         sim.run()
         sim.plot()
