@@ -977,23 +977,16 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot(self, dosave=None, figargs=None, plotargs=None, axisargs=None, as_years=True, new_fig=True):
+    def plot(self, dosave=None, doshow=True, figargs=None, plotargs=None, axisargs=None, as_years=True, new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
         Args:
-        ----------
-        dosave : bool or str
-            Whether or not to save the figure. If a string, save to that filename.
-        figargs : dict
-            Dictionary of kwargs to be passed to pl.figure()
-        plotargs : dict
-            Dictionary of kwargs to be passed to pl.plot()
-        as_years : bool
-            Whether to plot the x-axis as years or time points
-        Returns
-        -------
-        Figure handle
+            dosave (bool): Whether or not to save the figure. If a string, save to that filename.
+            doshow (bool): Whether to show the plots at the end
+            figargs (dict):  Dictionary of kwargs to be passed to pl.figure()
+            plotargs (dict): Dictionary of kwargs to be passed to pl.plot()
+            as_years (bool): Whether to plot the x-axis as years or time points
         '''
 
         if figargs  is None: figargs  = {'figsize':(16,8)}
@@ -1055,7 +1048,7 @@ class Sim(fpb.BaseSim):
             else:
                 filename = 'fp_sim.png' # Just give it a default name
             pl.savefig(filename)
-        else:
+        if doshow:
             pl.show() # Only show if we're not saving
 
         return fig
@@ -1188,18 +1181,21 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, plot_sims=True, fig_args=None, **kwargs):
+    def plot(self, doshow=True, plot_sims=True, fig_args=None, **kwargs):
         '''
         Plot the MultiSim
         '''
         fig_args = sc.mergedicts(fig_args)
         if plot_sims:
             fig = pl.figure(**fig_args)
+            doshow = kwargs.pop('doshow', True)
             for sim in self.sims: # Note: produces duplicate legend entries
-                sim.plot(new_fig=False, **kwargs)
+                sim.plot(new_fig=False, doshow=False, **kwargs)
+            if doshow:
+                pl.show()
             return fig
         else:
-            return self.base_sim.plot(**kwargs)
+            return self.base_sim.plot(doshow=doshow, fig_args=fig_args, **kwargs)
 
 
 
