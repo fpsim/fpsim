@@ -154,14 +154,14 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
 
 if __name__ == '__main__':
 
-    debug   = True # Set population size and duration
+    debug   = False # Set population size and duration
     one_sim = False # Just run one sim
 
     #%% Define sim parameters
     scen_year = 2005 # Year to start the different scenarios
     if not debug:
         pars = dict(
-            n          = 10_000,
+            n          = 100_000,
             start_year = 1980,
             end_year   = 2020,
         )
@@ -184,7 +184,7 @@ if __name__ == '__main__':
 
     # Increased uptake
     uptake_scen = sc.objdict(
-        eff = {'BTL':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'BTL':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
@@ -213,7 +213,7 @@ if __name__ == '__main__':
 
     else:
         msim = run_sims(sims)
-        msim.plot()
+        msim.plot(fig_args=dict(dpi = 200, figsize=(40, 50))) #use to change plot size
 
         # Analyze
         results = analyze_sims(msim)
