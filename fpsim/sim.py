@@ -977,7 +977,7 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot(self, dosave=None, doshow=True, figargs=None, plotargs=None, axisargs=None, as_years=True, new_fig=True):
+    def plot(self, dosave=None, doshow=True, fig_args=None, plot_args=None, axis_args=None, as_years=True, new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
@@ -985,16 +985,17 @@ class Sim(fpb.BaseSim):
             dosave (bool): Whether or not to save the figure. If a string, save to that filename.
             doshow (bool): Whether to show the plots at the end
             figargs (dict):  Dictionary of kwargs to be passed to pl.figure()
-            plotargs (dict): Dictionary of kwargs to be passed to pl.plot()
+            plot_args (dict): Dictionary of kwargs to be passed to pl.plot()
+            axis_args (dict): Dictionary of kwargs to be passed to pl.subplots_adjust()
             as_years (bool): Whether to plot the x-axis as years or time points
         '''
 
-        if figargs  is None: figargs  = {'figsize':(16,8)}
-        if plotargs is None: plotargs = {'lw':2, 'alpha':0.7, 'marker':'o'}
-        if axisargs is None: axisargs = {'left':0.1, 'bottom':0.05, 'right':0.9, 'top':0.97, 'wspace':0.2, 'hspace':0.25}
+        if fig_args  is None: fig_args  = {'figsize':(16,8)}
+        if plot_args is None: plot_args = {'lw':2, 'alpha':0.7, 'marker':'o'}
+        if axis_args is None: axis_args = {'left':0.1, 'bottom':0.05, 'right':0.9, 'top':0.97, 'wspace':0.2, 'hspace':0.25}
 
-        fig = pl.figure(**figargs) if new_fig else pl.gcf()
-        pl.subplots_adjust(**axisargs)
+        fig = pl.figure(**fig_args) if new_fig else pl.gcf()
+        pl.subplots_adjust(**axis_args)
 
         def getbest(res):
             ''' If it's best/high/low, return best; else return unchanged '''
@@ -1032,7 +1033,7 @@ class Sim(fpb.BaseSim):
                     y = this_res
                 if not new_fig: # Replace with sim label to avoid duplicate labels
                     label = self.label
-                pl.plot(x, y, label=label, **plotargs)
+                pl.plot(x, y, label=label, **plot_args)
             fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
             if key == 'mcpr':
                 pl.ylabel('Percentage')
