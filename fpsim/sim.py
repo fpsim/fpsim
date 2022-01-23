@@ -924,8 +924,8 @@ class Sim(fpb.BaseSim):
                 self.results[key] = np.array(arr) # Convert any lists to arrays
 
         # Calculate cumulative totals
-        self.results['cum_maternal_deaths'] = np.cumsum(self.results['cum_maternal_deaths'])
-        self.results['cum_infant_deaths']   = np.cumsum(self.results['cum_infant_deaths'])
+        self.results['cum_maternal_deaths'] = np.cumsum(self.results['maternal_deaths'])
+        self.results['cum_infant_deaths']   = np.cumsum(self.results['infant_deaths'])
 
         print(f'Final population size: {self.n}.')
 
@@ -978,8 +978,8 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot(self, dosave=None, doshow=True, fig_args=None, plot_args=None, axis_args=None, fill_args=None,
-             new_fig=True):
+    def plot(self, do_save=None, do_show=True, fig_args=None, plot_args=None, axis_args=None, fill_args=None,
+             label=None, new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
@@ -990,12 +990,14 @@ class Sim(fpb.BaseSim):
             plot_args (dict): Passed to pl.plot()
             axis_args (dict): Passed to pl.subplots_adjust()
             fill_args (dict): Passed to pl.fill_between())
+            label     (str):  Label to override default
+            new_fig   (bool): whether to create a new figure (true unless part of a multisim)
         '''
 
-        fig_args  = sc.mergedicts(dict(figsize=(16,8)), fig_args)
-        plot_args = sc.mergedicts(dict(lw=2, alpha=0.7, marker='o'), plot_args)
+        fig_args  = sc.mergedicts(dict(figsize=(16,10)), fig_args)
+        plot_args = sc.mergedicts(dict(lw=2, alpha=0.7), plot_args)
         axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.25), axis_args)
-        fill_args = sc.mergedicts(dict(facealpha=0.2), fill_args)
+        fill_args = sc.mergedicts(dict(alpha=0.2), fill_args)
 
         fig = pl.figure(**fig_args) if new_fig else pl.gcf()
         pl.subplots_adjust(**axis_args)
@@ -1016,21 +1018,27 @@ class Sim(fpb.BaseSim):
         for p,title,keylabels in to_plot.enumitems():
             ax = pl.subplot(2,3,p+1)
             for i,key,reslabel in keylabels.enumitems():
-                is_dist = hasattr(res, 'best')
+                this_res = res[key]
+                is_dist = hasattr(this_res, 'best')
                 if is_dist:
-                    y, low, high = res.best, res.low, res.high
+                    y, low, high = this_res.best, this_res.low, this_res.high
                 else:
-                    y, low, high = res, None, None
+                    y, low, high = this_res, None, None
 
                 if key == 'mcpr':
                     y *= 100
                     if is_dist:
                         low *= 100
                         high *= 100
-                if not new_fig: # Replace with sim label to avoid duplicate labels
-                    label = self.label
+                if label is None:
+                    if new_fig:
+                        label = reslabel
+                    else: # Replace with sim label to avoid duplicate labels
+                        label = self.label
                 ax.plot(x, y, label=label, **plot_args)
                 if is_dist:
+                    if 'c' in plot_args:
+                        fill_args['facecolor'] = plot_args['c']
                     ax.fill_between(x, low, high, **fill_args)
             fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
             if key == 'mcpr':
@@ -1041,13 +1049,13 @@ class Sim(fpb.BaseSim):
             pl.title(title, fontweight='bold')
 
         # Ensure the figure actually renders or saves
-        if dosave:
-            if isinstance(dosave, str):
-                filename = dosave # It's a string, assume it's a filename
+        if do_save:
+            if isinstance(do_save, str):
+                filename = do_save # It's a string, assume it's a filename
             else:
                 filename = 'fpsim.png' # Just give it a default name
             pl.savefig(filename)
-        if doshow:
+        if do_show:
             pl.show() # Only show if we're not saving
 
         return fig
@@ -1183,25 +1191,39 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, doshow=True, plot_sims=True, fig_args=None, **kwargs):
+    def plot(self, do_show=True, plot_sims=True, fig_args=None, plot_args=None, **kwargs):
         '''
         Plot the MultiSim
         '''
-        fig_args = sc.mergedicts(fig_args)
+        fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
+
         if plot_sims:
             fig = pl.figure(**fig_args)
-            doshow = kwargs.pop('doshow', True)
-            for sim in self.sims: # Note: produces duplicate legend entries
-                sim.plot(new_fig=False, doshow=False, **kwargs)
-            if doshow:
+            do_show = kwargs.pop('do_show', True)
+            labels = sc.autolist()
+            labellist = sc.autolist() # TODO: shouldn't need this
+            for sim in self.sims: # Loop over and find unique labels
+                if sim.label not in labels:
+                    labels += sim.label
+                    labellist += sim.label
+                    label = sim.label
+                else:
+                    labellist += ''
+                n_unique = len(np.unique(labels)) # How many unique sims there are
+            colors = sc.gridcolors(n_unique)
+            colors = {k:c for k,c in zip(labels, colors)}
+            for s,sim in enumerate(self.sims): # Note: produces duplicate legend entries
+                label = labellist[s]
+                n_unique = len(labels) # How many unique sims there are
+                color = colors[sim.label]
+                alpha = max(0.2, 1/np.sqrt(n_unique))
+                sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
+                sim.plot(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args, **kwargs)
+            if do_show:
                 pl.show()
             return fig
         else:
-            return self.base_sim.plot(doshow=doshow, fig_args=fig_args, **kwargs)
-
-
-
-
+            return self.base_sim.plot(do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
 
 def single_run(sim):
