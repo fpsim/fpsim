@@ -6,7 +6,7 @@ import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
 
-do_plot = 0
+do_plot = 1
 
 
 def test_multisim(do_plot=False):
@@ -29,6 +29,9 @@ def test_multisim(do_plot=False):
 
     births = msim.results.births
     assert sum(births.low) < sum(births.high), 'Expecting the higher bound of births to be higher than the lower bound'
+
+    if do_plot:
+        msim.plot()
 
     return msim
 

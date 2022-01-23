@@ -976,7 +976,8 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot(self, dosave=None, doshow=True, legend=True, figargs=None, plotargs=None, axisargs=None, as_years=True, new_fig=True):
+    def plot(self, dosave=None, doshow=True, legend=True, figargs=None, plotargs=None,
+             axisargs=None, as_years=True, new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
@@ -1046,7 +1047,7 @@ class Sim(fpb.BaseSim):
             if isinstance(dosave, str):
                 filename = dosave # It's a string, assume it's a filename
             else:
-                filename = 'fp_sim.png' # Just give it a default name
+                filename = 'fpsim.png' # Just give it a default name
             pl.savefig(filename)
         if doshow:
             pl.show() # Only show if we're not saving
