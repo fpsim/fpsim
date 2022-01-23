@@ -610,8 +610,9 @@ class Sim(fpb.BaseSim):
 
 
     def init_results(self):
-        resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths', 'on_method',
-                       'no_method', 'mcpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
+        resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths',
+                       'cum_maternal_deaths', 'cum_infant_deaths', 'on_method', 'no_method', 'mcpr',
+                       'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
                        'total_women_40-44', 'total_women_45-49']
@@ -796,7 +797,7 @@ class Sim(fpb.BaseSim):
             self.t = self.ind2year(i)  # t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
             self.y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
             if verbose:
-                if not (self.t % int(1.0/verbose)):
+                if (self.t % int(1.0/verbose)) < 0.01:
                     string = f'  Running {self.y:0.1f} of {self.pars["end_year"]}...'
                     sc.progressbar(i+1, self.npts, label=string, length=20, newline=True)
 
@@ -892,30 +893,27 @@ class Sim(fpb.BaseSim):
 
                 self.results['tfr_rates'].append(tfr*5)
 
-            if self.test_mode:
-                for state in fpd.debug_states:
-                    self.total_results[self.y][state] = getattr(self.people, state)
+        #     if self.test_mode:
+        #         for state in fpd.debug_states:
+        #             self.total_results[self.y][state] = getattr(self.people, state)
 
-        if self.test_mode:
-            if not self.to_feather:
-                sc.savejson(filename="sim_output/total_results.json", obj=self.total_results)
-            else:
-                if self.custom_feather_tables is None:
-                    states = fpd.debug_states
-                else:
-                    states = self.custom_feather_tables
-                for state in states:
-                    state_frame = pd.DataFrame()
-                    max_length = len(self.total_results[max(self.total_results.keys())][state])
-                    for timestep, _ in self.total_results.items():
-                        colname = str(timestep) + "_" + state
-                        adjustment = max_length - len(self.total_results[timestep][state])
-                        state_frame[colname] = list(self.total_results[timestep][state]) + [None] * adjustment # ONLY WORKS IF LAST YEAR HAS MOST PEOPLE
+        # if self.test_mode:
+        #     if not self.to_feather:
+        #         sc.savejson(filename="sim_output/total_results.json", obj=self.total_results)
+        #     else:
+        #         if self.custom_feather_tables is None:
+        #             states = fpd.debug_states
+        #         else:
+        #             states = self.custom_feather_tables
+        #         for state in states:
+        #             state_frame = pd.DataFrame()
+        #             max_length = len(self.total_results[max(self.total_results.keys())][state])
+        #             for timestep, _ in self.total_results.items():
+        #                 colname = str(timestep) + "_" + state
+        #                 adjustment = max_length - len(self.total_results[timestep][state])
+        #                 state_frame[colname] = list(self.total_results[timestep][state]) + [None] * adjustment # ONLY WORKS IF LAST YEAR HAS MOST PEOPLE
 
-                    feather.write_feather(state_frame, f"sim_output/{state}_state")
-
-
-
+        #             feather.write_feather(state_frame, f"sim_output/{state}_state")
 
         # Apply analyzers
         self.apply_analyzers()
@@ -924,6 +922,10 @@ class Sim(fpb.BaseSim):
         for key,arr in self.results.items():
             if isinstance(arr, list):
                 self.results[key] = np.array(arr) # Convert any lists to arrays
+
+        # Calculate cumulative totals
+        self.results['cum_maternal_deaths'] = np.cumsum(self.results['cum_maternal_deaths'])
+        self.results['cum_infant_deaths']   = np.cumsum(self.results['cum_infant_deaths'])
 
         print(f'Final population size: {self.n}.')
 
@@ -976,69 +978,66 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot(self, dosave=None, doshow=True, fig_args=None, plot_args=None, axis_args=None, as_years=True, new_fig=True):
+    def plot(self, dosave=None, doshow=True, fig_args=None, plot_args=None, axis_args=None, fill_args=None,
+             new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
         Args:
-            dosave (bool): Whether or not to save the figure. If a string, save to that filename.
-            doshow (bool): Whether to show the plots at the end
-            figargs (dict):  Dictionary of kwargs to be passed to pl.figure()
-            plot_args (dict): Dictionary of kwargs to be passed to pl.plot()
-            axis_args (dict): Dictionary of kwargs to be passed to pl.subplots_adjust()
-            as_years (bool): Whether to plot the x-axis as years or time points
+            dosave    (bool): Whether or not to save the figure. If a string, save to that filename.
+            doshow    (bool): Whether to show the plots at the end
+            figargs   (dict): Passed to pl.figure()
+            plot_args (dict): Passed to pl.plot()
+            axis_args (dict): Passed to pl.subplots_adjust()
+            fill_args (dict): Passed to pl.fill_between())
         '''
 
-        if fig_args  is None: fig_args  = {'figsize':(16,8)}
-        if plot_args is None: plot_args = {'lw':2, 'alpha':0.7, 'marker':'o'}
-        if axis_args is None: axis_args = {'left':0.1, 'bottom':0.05, 'right':0.9, 'top':0.97, 'wspace':0.2, 'hspace':0.25}
+        fig_args  = sc.mergedicts(dict(figsize=(16,8)), fig_args)
+        plot_args = sc.mergedicts(dict(lw=2, alpha=0.7, marker='o'), plot_args)
+        axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.25), axis_args)
+        fill_args = sc.mergedicts(dict(facealpha=0.2), fill_args)
 
         fig = pl.figure(**fig_args) if new_fig else pl.gcf()
         pl.subplots_adjust(**axis_args)
 
-        def getbest(res):
-            ''' If it's best/high/low, return best; else return unchanged '''
-            return res.best if hasattr(res, 'best') else res
-
         res = self.results # Shorten since heavily used
 
-        x = getbest(res['t']) # Likewise
-        if not as_years:
-            x *= fpd.mpy
-            x -= x[0]
-            timelabel = 'Timestep'
-        else:
-            timelabel = 'Year'
+        x = res['t'] # Likewise
 
         # Plot everything
         to_plot = sc.odict({
-            'Population size': sc.odict({'pop_size_months':'Population size'}),
-            'MCPR': sc.odict({'mcpr':'Modern contraceptive prevalence rate (%)'}),
-            'Births': sc.odict({'births':'Births'}),
-            'Deaths': sc.odict({'deaths':'Deaths'}),
-            'Maternal mortality': sc.odict({'maternal_deaths':'Cumulative birth-related maternal deaths'}),
-            'Infant mortality': sc.odict({'infant_deaths':'Cumulative infant deaths'}),
+            'Population size':    sc.odict({'pop_size_months':     'Population size'}),
+            'MCPR':               sc.odict({'mcpr':                'Modern contraceptive prevalence rate (%)'}),
+            'Births':             sc.odict({'births':              'Births'}),
+            'Deaths':             sc.odict({'deaths':              'Deaths'}),
+            'Maternal mortality': sc.odict({'cum_maternal_deaths': 'Cumulative birth-related maternal deaths'}),
+            'Infant mortality':   sc.odict({'cum_infant_deaths':   'Cumulative infant deaths'}),
             })
         for p,title,keylabels in to_plot.enumitems():
-            pl.subplot(2,3,p+1)
-            for i,key,label in keylabels.enumitems():
-                this_res = getbest(res[key])
-
-                if label.startswith('Cumulative'):
-                    y = pl.cumsum(this_res)
-                elif key == 'mcpr':
-                    y = this_res*100
+            ax = pl.subplot(2,3,p+1)
+            for i,key,reslabel in keylabels.enumitems():
+                is_dist = hasattr(res, 'best')
+                if is_dist:
+                    y, low, high = res.best, res.low, res.high
                 else:
-                    y = this_res
+                    y, low, high = res, None, None
+
+                if key == 'mcpr':
+                    y *= 100
+                    if is_dist:
+                        low *= 100
+                        high *= 100
                 if not new_fig: # Replace with sim label to avoid duplicate labels
                     label = self.label
-                pl.plot(x, y, label=label, **plot_args)
+                ax.plot(x, y, label=label, **plot_args)
+                if is_dist:
+                    ax.fill_between(x, low, high, **fill_args)
             fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
             if key == 'mcpr':
                 pl.ylabel('Percentage')
             else:
                 pl.ylabel('Count')
-            pl.xlabel(timelabel)
+            pl.xlabel('Year')
             pl.title(title, fontweight='bold')
 
         # Ensure the figure actually renders or saves
@@ -1132,7 +1131,10 @@ class MultiSim(sc.prettyobj):
         results = sc.objdict()
         axis = 1
 
-        for reskey in base_sim.results.keys():
+        reskeys = list(base_sim.results.keys())
+        results['t'] = base_sim.results['t']
+        reskeys.remove('t') # Don't compute high/low for this
+        for reskey in reskeys:
             if isinstance(base_sim.results[reskey], dict):
                 if return_raw:
                     for s, sim in enumerate(self.sims):
