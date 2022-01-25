@@ -1267,6 +1267,23 @@ class MultiSim(sc.prettyobj):
         return mlist
 
 
+    def remerge(self, base=True, **kwargs):
+        '''
+        Split a sim, compute stats, and re-merge.
+
+        Args:
+            base (bool): whether to use the base sim (otherwise, has no effect)
+            kwargs (dict): passed to msim.split()
+
+        Note: returns a new MultiSim object (if that concerns you).
+        '''
+        ms = self.split(**kwargs)
+        for m in ms:
+            m.compute_stats() # Recompute the statistics on each separate MultiSim
+        out = MultiSim.merge(*ms, base=base) # Now re-merge, this time using the base_sim
+        return out
+
+
     def to_df(self):
         '''
         Export all individual sim results to a dataframe
