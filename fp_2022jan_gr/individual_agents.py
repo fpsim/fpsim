@@ -97,7 +97,7 @@ stillbirths = pd.DataFrame(data=rows_stillbirths)
 
 if do_save:
     states.to_csv('/Users/Annie/model_postprocess_files/states_agent_'+{ppl.uid[agent]}+'.csv')
-    deliveries.to_csv('/Users/Annie/model_postprocess_files/deliveries.csv')
-    stillbirths.to_csv('/Users/Annie/model_postprocess_files/stillbirths.csv')
+    deliveries.to_csv('/Users/Annie/model_postprocess_files/deliveries_'+{ppl.uid[agent]}+'.csv')
+    stillbirths.to_csv('/Users/Annie/model_postprocess_files/stillbirths_'+{ppl.uid[agent]}+'.csv')
 
 
