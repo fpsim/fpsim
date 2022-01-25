@@ -15,6 +15,8 @@ n = n_side**2
 filename = 'animation_data_v2.obj'
 rerun  = 0
 doplot = 1
+animate = 1
+overlay = 0
 dosave = 0
 
 if rerun or not os.path.exists(filename):
@@ -60,6 +62,18 @@ else:
     data = sc.load(filename)
 
 
+#%% Assemble people object
+def count_ppl(entry):
+    return len(entry.sex) # Can be anything, just get the length of the array
+
+npts    = len(data.trim)
+last_entry = data.raw[npts-1]
+npeople = count_ppl(last_entry)
+years   = np.array([data.raw[i].y for i in range(npts)])
+paxmin, paxmax = years.min(), years.max()
+ppl     = np.ones((npeople, npts, 3))
+
+
 #%% Plot
 
 if doplot:
@@ -67,12 +81,14 @@ if doplot:
     sc.options(font='Avenir')
 
     cmap = sc.objdict(
-        inactive = '#000',
-        active   = '#0a0',
-        preg     = '#ff0',
-        method   = '#f00',
-        dead     = '#ccc',
+        inactive = '#bec7ff',
+        active   = '#65c581',#'#63a763',
+        preg     = '#1c8446',#'#e0e04d',
+        method   = '#c43b3b',
+        dead     = '#ffffff',
     )
+
+    cmaparr = sc.objdict({k:sc.hex2rgb(v) for k,v in cmap.items()})
 
     cnames = sc.objdict(
         inactive = 'Not sexually\nactive',
@@ -114,14 +130,15 @@ if doplot:
         return 0.05+y/(n_side+1)
 
     stride = 2 # Don't render every frame
-    axvl = None # Create reference for updating
+    h_axvl = None # Create reference for updating
+    h_img = None
     with sc.timer('generating'):
         print('Generating...')
-        npts = len(data.trim)
         for e in range(npts)[::stride]:
 
             #%% Preliminaries
             entry = data.trim[e]
+            r_ent = data.raw[e]
             print(f'  Working on {entry.i} of {npts}...')
             frame = sc.autolist()
             if not dosave:
@@ -143,10 +160,16 @@ if doplot:
             counts.dead     = entry.dead.sum()
 
             cc = np.array([cmap.inactive]*n, dtype=object)
+            n_raw = count_ppl(r_ent)
+            ccarr = np.array([cmaparr.inactive]*n_raw)
             colorkeys = ['active', 'preg', 'method', 'dead']
             for key in colorkeys:
-                inds = sc.findinds(entry[key])
+                inds   = sc.findinds(entry[key])
+                r_inds = sc.findinds(r_ent[key])
                 cc[inds] = cmap[key]
+                ccarr[r_inds,:] = cmaparr[key]
+
+            ppl[:n_raw, e, :] = ccarr # Copy into people object
 
             percents = sc.objdict()
             percents.inactive = sc.safedivide(counts.inactive, alive_women.sum()) * 100
@@ -161,18 +184,15 @@ if doplot:
             for i,key,label in cnames.enumitems():
                 kwargs = dict(horizontalalignment='left', verticalalignment='center')
                 x = n_side + 0.2
-                x2 = x + 0.25
                 y = n_side - 2.5 - dy*i
+                x2 = x + 0.25
                 y2 = y - 0.05
                 frame += ax.scatter(xtr(x), ytr(y), s=mothersize, c=cmap[key])
                 frame += ax.text(xtr(x2), ytr(y2), f'{label} ({percents[key]:0.0f}%)', **kwargs)
 
             # Define markers
-            fmark = 'o'
-            mmark = 's'
-            def sexmark(val):
-                out = fmark if val==0 else mmark
-                return out
+            fmark = 'o' # Female
+            mmark = 's' # Male
 
             # Legend
             y3 = y2 + 4.5
@@ -187,7 +207,7 @@ if doplot:
 
             # Actually plot
             frame += ax.scatter(xtr(xx[f]), ytr(yy[f]), s=mothersize, c=cc[f], marker=fmark)
-            frame += ax.scatter(xtr(xx[m]), ytr(yy[m]), s=mothersize, c=cc[m], marker=fmark)
+            frame += ax.scatter(xtr(xx[m]), ytr(yy[m]), s=mothersize, c=cc[m], marker=mmark)
             for m, (ix,iy) in enumerate(zip(xx,yy)):
                 n_children = len(entry.children[m])
                 if n_children:
@@ -198,7 +218,7 @@ if doplot:
                     girls = sc.findinds(entry.children[m]==0)
                     boys  = sc.findinds(entry.children[m]==1)
                     for inds,mark in zip([girls, boys], [fmark, mmark]):
-                        frame += ax.scatter(xtr(ix+dx[inds]), ytr(iy+dy[inds]), s=childsize, c='k', marker=mark)
+                        frame += ax.scatter(xtr(ix+dx[inds]), ytr(iy+dy[inds]), s=childsize, c=cmap.inactive, marker=mark)
 
             kwargs = dict(horizontalalignment='center', fontsize=12) # Set the "title" properties
             frame += ax.text(0.4, 0.93, f'Year {entry.y:0.0f}\nMedian age of cohort {ave_age:0.1f}', **kwargs) # Unfortunately pl.title() can't be dynamically updated
@@ -208,37 +228,31 @@ if doplot:
             ax.axis('off')
 
             #%% RHS -- cumulative sim
-            raw = data.raw[e] # Raw entry
-            years = np.array([data.raw[i].y for i in range(npts)])
-            xmin, xmax = years.min(), years.max()
-            last = data.raw[npts-1]
-            npeople = len(last.sex)
-
-            # People
-            ppl = pl.rand(npts, npeople, 3)#np.full((npts, npeople), np.nan)
-            pax.imshow(ppl, origin='lower', aspect='auto', extent=[xmin, xmax, 0, npeople])
-
-            # Births and deaths
             if e:
-                if axvl:
-                    axvl.remove()
-                cum_births = np.cumsum(data.births[:e])
-                cum_deaths = np.cumsum(data.deaths[:e])
-                x = years[:e]
-                pax.plot(x, cum_births, c='green')
-                pax.plot(x, cum_deaths, c='k')
-                axvl = pax.axvline(x[-1], c='#bbb', lw=1)
 
-            # # Tidying
-            # pax.set_xlim((xmin, xmax))
-            # pax.set_ylim((0, npeople))
-            # pax.set_xlabel('Year')
-            # pax.set_ylabel('Count')
-            # sc.boxoff(pax)
+                # People
+                if h_img: h_img.remove()
+                img = ppl[:, 0:e:stride, :]
+                h_img = pax.imshow(img, origin='lower', aspect='auto',  extent=[years[0], years[e], 0, npeople])
 
+                # Births and deaths
+                if overlay:
+                    if h_axvl: h_axvl.remove()
+                    cum_births = np.cumsum(data.births[:e])
+                    cum_deaths = np.cumsum(data.deaths[:e])
+                    x = years[:e]
+                    pax.plot(x, cum_births, c='green')
+                    pax.plot(x, cum_deaths, c='k')
+                    h_axvl = pax.axvline(x[-1], c='#bbb', lw=1)
 
-            #%% Tidy up
-            if not dosave:
+            #%% Tidying
+            pax.set_xlim((paxmin, paxmax))
+            pax.set_ylim((0, npeople))
+            pax.set_xlabel('Year')
+            pax.set_ylabel('Count')
+            sc.boxoff(pax)
+
+            if not dosave and animate:
                 pl.pause(0.01)
 
     if dosave:
