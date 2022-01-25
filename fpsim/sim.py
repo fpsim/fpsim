@@ -69,7 +69,10 @@ class People(fpb.BasePeople):
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
         self.stillbirth      = arr(n, d['stillbirth'])
+        self.miscarriage     = arr(n, d['miscarriage'])
+        self.abortion        = arr(n, d['abortion'])
         self.postpartum      = arr(n, d['postpartum'])
+
         self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
         self.children        = arr(n, []) # Indices of children -- list of lists
