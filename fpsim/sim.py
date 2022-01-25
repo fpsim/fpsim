@@ -68,9 +68,9 @@ class People(fpb.BasePeople):
         self.lactating       = arr(n, d['lactating'])
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
-        self.stillbirth      = arr(n, d['stillbirth'])
-        self.miscarriage     = arr(n, d['miscarriage'])
-        self.abortion        = arr(n, d['abortion'])
+        self.stillbirth      = arr(n, d['stillbirth']) # Number of stillbirths
+        self.miscarriage     = arr(n, d['miscarriage']) # Number of miscarriages
+        self.abortion        = arr(n, d['abortion']) # Number of abortions
         self.postpartum      = arr(n, d['postpartum'])
 
         self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
@@ -278,6 +278,7 @@ class People(fpb.BasePeople):
         # Update states
         all_ppl = self.unfilter()
         abort.postpartum = False
+        abort.abortion += 1 # Add 1 to number of abortions agent has had
         abort.postpartum_dur = 0
         for i in abort.inds: # Handle adding dates
             all_ppl.abortion_dates[i].append(all_ppl.age[i])
@@ -361,6 +362,7 @@ class People(fpb.BasePeople):
         # Reset states and track miscarriages
         all_ppl = self.unfilter()
         miscarriage.pregnant   = False
+        miscarriage.miscarriage += 1 # Add 1 to number of miscarriages agent has had
         miscarriage.postpartum = False
         miscarriage.gestation  = 0  # Reset gestation counter
         for i in miscarriage.inds: # Handle adding dates
