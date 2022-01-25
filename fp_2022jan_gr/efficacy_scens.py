@@ -88,9 +88,12 @@ def make_sims(repeats=5, **kwargs):
     return sims
 
 
-def run_sims(sims):
+def run_sims(*args):
     ''' Actually run a list of sims '''
-    msim = fp.MultiSim(sims)
+    msims = sc.autolist()
+    for sims in args:
+        msims += fp.MultiSim(sims)
+    msim = fp.MultiSim.merge(*msims)
     msim.run()
     return msim
 
@@ -199,24 +202,29 @@ if __name__ == '__main__':
 
 
     #%% Create sims
-    sims = sc.autolist()
-    sims += make_sims(repeats=repeats, label='Baseline', **pars)
-    sims += make_sims(repeats=repeats, interventions=eff, label='Increased efficacy', **pars)
-    sims += make_sims(repeats=repeats, interventions=uptake, label='Increased uptake', **pars)
+    sims1 = make_sims(repeats=repeats, label='Baseline', **pars)
+    sims2 = make_sims(repeats=repeats, interventions=eff, label='Increased efficacy', **pars)
+    sims3 = make_sims(repeats=repeats, interventions=uptake, label='Increased uptake', **pars)
 
 
     #%% Run
     if one_sim:
-        sim = sims[4]
+        sim = sims1[4]
         sim.run()
         sim.plot()
 
     else:
-        msim = run_sims(sims)
-        msim.plot(fig_args=dict(dpi = 200, figsize=(40, 50))) #use to change plot size
+        msim = run_sims(sims1, sims2, sims3)
+
+
+    #%% Plotting
+    msim2 = msim.remerge()
+    msim.plot(plot_sims=True) # This plots all 15 individual sims as lines of 3 colors
+    msim2.plot(plot_sims=True) # This plots 3 multisims with uncertainty bands in the same 3 colors
+
 
         # Analyze
-        results = analyze_sims(msim)
-        print(results.df)
-        print(results.stats)
+    results = analyze_sims(msim)
+    print(results.df)
+    print(results.stats)
 
