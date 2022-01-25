@@ -271,8 +271,11 @@ class People(fpb.BasePeople):
         preg = conceived.filter(~is_abort)
 
         # Update states
+        all_ppl = self.unfilter()
         abort.postpartum = False
         abort.postpartum_dur = 0
+        for i in abort.inds: # Handle adding dates
+            all_ppl.abortion_dates[i].append(all_ppl.age[i])
 
         preg.pregnant = True
         preg.gestation = 1  # Start the counter at 1
@@ -350,10 +353,13 @@ class People(fpb.BasePeople):
         miscarriage_probs = self.pars['miscarriage_rates'][end_first_tri.int_age_clip]
         miscarriage  = end_first_tri.binomial(miscarriage_probs, as_filter=True)
 
-        # Reset states
+        # Reset states and track miscarriages
+        all_ppl = self.unfilter()
         miscarriage.pregnant   = False
         miscarriage.postpartum = False
         miscarriage.gestation  = 0  # Reset gestation counter
+        for i in miscarriage.inds: # Handle adding dates
+            all_ppl.miscarriage_dates[i].append(all_ppl.age[i])
         return
 
 
