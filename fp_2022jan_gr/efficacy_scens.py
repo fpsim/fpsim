@@ -214,9 +214,24 @@ if __name__ == '__main__':
     else:
         msim = run_sims(sims)
         msim.plot(fig_args=dict(dpi = 200, figsize=(40, 50))) #use to change plot size
+    
+    
+    #%% Split into 3 separate multisims -- this is SUPER ugly and could be automated as msim.split() / msim.merge() a la Covasimms = sc.autolist()
+    for i in range(3):
+        m = fp.MultiSim(msim.sims[n_seeds*i:n_seeds*(i+1)]) 
+        # Split into 3 chunks of 5 each
+        m.compute_stats() 
+        # Recompute the statistics
+        ms += mmsim2 = fp.MultiSim([ms[i].base_sim for i in range(n_exp)]) 
+        # Now re-merge, this time using the base_sim
+        
+    #%% Plotting
+    msim.plot(plot_sims=False) # This plots all 15 individual sims as lines of 3 colors
+    msim2.plot(plot_sims=True) # This plots 3 multisims with uncertainty bands in the same 3 colors
+
 
         # Analyze
-        results = analyze_sims(msim)
-        print(results.df)
-        print(results.stats)
+    results = analyze_sims(msim)
+    print(results.df)
+    print(results.stats)
 
