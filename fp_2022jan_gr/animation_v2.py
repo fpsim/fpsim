@@ -13,11 +13,11 @@ import fp_analyses as fa
 n_side = 10
 n = n_side**2
 filename = 'animation_data_v2.obj'
-rerun  = 0
-doplot = 1
-animate = 1
+rerun   = 0
+doplot  = 1
+animate = 0
 overlay = 0
-dosave = 0
+dosave  = 1
 
 if rerun or not os.path.exists(filename):
 
@@ -83,7 +83,7 @@ if doplot:
     cmap = sc.objdict(
         inactive = '#bec7ff',
         active   = '#65c581',#'#63a763',
-        preg     = '#1c8446',#'#e0e04d',
+        preg     = '#d6e754',#'#1c8446',#'#e0e04d',
         method   = '#c43b3b',
         dead     = '#ffffff',
     )
@@ -129,11 +129,12 @@ if doplot:
     def ytr(y):
         return 0.05+y/(n_side+1)
 
-    stride = 2 # Don't render every frame
+    stride = 1 # Don't render every frame
     h_axvl = None # Create reference for updating
     h_img = None
     with sc.timer('generating'):
         print('Generating...')
+        anim = sc.animation(fig=fig)
         for e in range(npts)[::stride]:
 
             #%% Preliminaries
@@ -141,8 +142,8 @@ if doplot:
             r_ent = data.raw[e]
             print(f'  Working on {entry.i} of {npts}...')
             frame = sc.autolist()
-            if not dosave:
-                ax.clear()
+            ax.clear()
+            pax.clear()
 
             # LHS -- animation
 
@@ -252,12 +253,15 @@ if doplot:
             pax.set_ylabel('Count')
             sc.boxoff(pax)
 
-            if not dosave and animate:
+            if dosave:
+                anim.addframe()
+            if animate:
                 pl.pause(0.01)
 
     if dosave:
         with sc.timer('saving'):
             print('Saving...')
-            sc.savemovie(frames, 'fp_animation_schematic.mp4', fps=10, quality='high') # Save movie as a high-quality mp4
+            sc.runcommand('ffmpeg -r 10 -i animation_%04d.png -q:v 1 fp_animation_schematic_v2.mp4')
+            # anim.save('fp_animation_schematic_v2.mp4', fps=10, tidy=False) # SLOW AND BROKEN
 
 print('Done.')
