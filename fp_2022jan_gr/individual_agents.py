@@ -50,7 +50,7 @@ sim.run()
 # Pull out the people at the end of the sim
 ppl = sim.people
 
-# Set criteria for who kind of agent you'd like to track and then pick one at random
+# Set criteria for what kind of agent you'd like to track and then pick one at random
 inds = sc.findinds((ppl.stillbirth == 1) * (ppl.alive == 1) * (ppl.parity >= 4) * (ppl.sex == 0) * (ppl.method != 0))
 print(f'Indices meeting criteria: {inds}')
 agent = random.choice(inds)
