@@ -75,6 +75,8 @@ class People(fpb.BasePeople):
         self.children        = arr(n, []) # Indices of children -- list of lists
         self.dobs            = arr(n, []) # Dates of births -- list of lists
         self.still_dates     = arr(n, []) # Dates of stillbirths -- list of lists
+        self.miscarriage_dates = arr(n, []) # Dates of miscarriages -- list of lists
+        self.abortion_dates = arr(n, [])  # Dates of abortions -- list of lists
         self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
 
