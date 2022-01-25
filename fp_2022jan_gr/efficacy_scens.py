@@ -105,6 +105,20 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
         output = births[inds].sum()
         return output
 
+    def method_failure(sim):
+        year = sim.results['tfr_years']
+        meth_fail = sim.results['method_failures_over_year']
+        inds = sc.findinds((year >= start_year), year < end_year)
+        output = meth_fail[inds].sum()
+        return output
+
+    def count_pop(sim):
+        year = sim.results['tfr_years']
+        popsize = sim.results['pop_size']
+        inds = sc.findinds((year >= start_year), year < end_year)
+        output = popsize[inds].sum()
+        return output
+
     # Split the sims up by scenario
     results = sc.objdict()
     results.sims = sc.objdict(defaultdict=sc.autolist)
@@ -112,21 +126,24 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
         results.sims[sim.label] += sim
 
     # Count the births across the scenarios
-    raw = sc.objdict(scenario=sc.autolist(), births=sc.autolist())
-    results.raw = sc.objdict(defaultdict=sc.autolist)
+    raw = sc.objdict(defaultdict=sc.autolist)
     for key,sims in results.sims.items():
         for sim in sims:
             n_births = count_births(sim)
-            results.raw[key] += n_births
-            raw.scenario += key
-            raw.births += n_births
+            n_fails  = method_failure(sim)
+            n_pop = count_pop(sim)
+            raw.scenario += key      # Append scenario key
+            raw.births   += n_births # Append births
+            raw.fails    += n_fails  # Append failures
+            raw.popsize  += n_pop    # Append population size
 
     # Calculate basic stats
     results.stats = sc.objdict()
     for statkey in ['mean', 'median', 'std', 'min', 'max']:
         results.stats[statkey] = sc.objdict()
-        for k,vals in results.raw.items():
-            results.stats[statkey][k] = getattr(np, statkey)(vals)
+        for k,vals in raw.items():
+            if k != 'scenario':
+                results.stats[statkey][k] = getattr(np, statkey)(vals)
 
     # Also save as pandas
     results.df = pd.DataFrame(raw)
@@ -137,30 +154,37 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
 
 if __name__ == '__main__':
 
+    debug   = False # Set population size and duration
+    one_sim = False # Just run one sim
+
     #%% Define sim parameters
-    pars = dict(
-        n = 10_000,
-        start_year = 1980,
-        end_year = 2020,
-    )
-
-    # Run options
-    repeats   = 10 # How many duplicates of each sim to run
     scen_year = 2005 # Year to start the different scenarios
-    debug     = False # Just run one sim
-
+    if not debug:
+        pars = dict(
+            n          = 100_000,
+            start_year = 1980,
+            end_year   = 2020,
+        )
+        repeats   = 10 # How many duplicates of each sim to run
+    else:
+        pars = dict(
+            n          = 1_000,
+            start_year = 2000,
+            end_year   = 2010,
+        )
+        repeats = 3
 
     #%% Define scenarios
 
     # Increased efficacy
     eff_scen = sc.objdict(
-        eff={method:1.0 for method in method_names if method != 'None'} # Set all efficacies to 1.0 except for None
+        eff={method:0.994 for method in method_names if method != 'None'} # Set all efficacies to 1.0 except for None
     )
     eff = update_methods(scen_year, eff_scen) # Create intervention
 
     # Increased uptake
     uptake_scen = sc.objdict(
-        eff = {'BTL':0.8}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'BTL':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
@@ -182,14 +206,14 @@ if __name__ == '__main__':
 
 
     #%% Run
-    if debug:
+    if one_sim:
         sim = sims[4]
         sim.run()
         sim.plot()
 
     else:
         msim = run_sims(sims)
-        msim.plot()
+        msim.plot(fig_args=dict(dpi = 200, figsize=(40, 50))) #use to change plot size
 
         # Analyze
         results = analyze_sims(msim)
