@@ -53,7 +53,7 @@ class update_methods(fp.Intervention):
                     dest   = key2ind(sim, entry['dest'])
                     factor = entry.pop('factor', None)
                     value  = entry.pop('value', None)
-                    keys   = entry.pop('keys', '>25')
+                    keys   = entry.pop('keys', None)
                     if keys is None:
                         keys = age_keys
 
@@ -142,10 +142,12 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
             n_births = count_births(sim)
             n_fails  = method_failure(sim)
             n_pop = count_pop(sim)
+            n_tfr = mean_tfr(sim)
             raw.scenario += key      # Append scenario key
             raw.births   += n_births # Append births
             raw.fails    += n_fails  # Append failures
             raw.popsize  += n_pop    # Append population size
+            raw.tfr      += n_tfr    # Append mean tfr rates
 
     # Calculate basic stats
     results.stats = sc.objdict()
@@ -173,9 +175,9 @@ if __name__ == '__main__':
         pars = dict(
             n          = 100_000,
             start_year = 1980,
-            end_year   = 2020,
+            end_year   = 2030,
         )
-        repeats   = 25 # How many duplicates of each sim to run
+        repeats   = 10 # How many duplicates of each sim to run
     else:
         pars = dict(
             n          = 1_000,
@@ -201,29 +203,15 @@ if __name__ == '__main__':
                 dest   = 'Other modern', # Destination
                 factor = None, # Factor by which to multiply existing probability
                 value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-                keys   = None, # Which age keys to modify -- if not specified, all
+                keys   = ['>25'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
     uptake = update_methods(scen_year, uptake_scen) # Create intervention
     
-        # Increased uptake low efficacy
-    uptake_scen2 = sc.objdict(
-        eff = {'Other modern':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
-        probs = [
-            dict(
-                source = 'None', # Source method, 'all' for all methods
-                dest   = 'Other modern', # Destination
-                factor = None, # Factor by which to multiply existing probability
-                value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-                keys   = None, # Which age keys to modify -- if not specified, all
-            ),
-        ]
-    )
-    uptake2 = update_methods(scen_year, uptake_scen2) # Create intervention
     
-            # Increased uptake moderate efficacy
-    uptake_scen3 = sc.objdict(
+    # Increased uptake moderate efficacy
+    uptake_scen_mod = sc.objdict(
         eff = {'Other modern':0.93}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
@@ -231,20 +219,69 @@ if __name__ == '__main__':
                 dest   = 'Other modern', # Destination
                 factor = None, # Factor by which to multiply existing probability
                 value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-                keys   = None, # Which age keys to modify -- if not specified, all
+                keys   = ['>25'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
-    uptake3 = update_methods(scen_year, uptake_scen3) # Create intervention
+    uptake_mod = update_methods(scen_year, uptake_scen_mod) # Create intervention    
+    
+    
+    # Increased uptake low efficacy
+    uptake_scen_low = sc.objdict(
+        eff = {'Other modern':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
+        probs = [
+            dict(
+                source = 'None', # Source method, 'all' for all methods
+                dest   = 'Other modern', # Destination
+                factor = None, # Factor by which to multiply existing probability
+                value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
+                keys   = ['>25'], # Which age keys to modify -- if not specified, all
+            ),
+        ]
+    )
+    uptake_low = update_methods(scen_year, uptake_scen_low) # Create intervention
+    
+
+        # Increased uptake low efficacy
+    uptake_scen_25 = sc.objdict(
+        eff = {'Other modern':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
+        probs = [
+            dict(
+                source = 'None', # Source method, 'all' for all methods
+                dest   = 'Other modern', # Destination
+                factor = None, # Factor by which to multiply existing probability
+                value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
+                keys   = ['>25'], # Which age keys to modify -- if not specified, all
+            ),
+        ]
+    )
+    uptake_25 = update_methods(scen_year, uptake_scen_25) # Create intervention
+    
+            # Increased uptake low efficacy
+    uptake_scen_20 = sc.objdict(
+        eff = {'Other modern':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
+        probs = [
+            dict(
+                source = 'None', # Source method, 'all' for all methods
+                dest   = 'Other modern', # Destination
+                factor = None, # Factor by which to multiply existing probability
+                value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
+                keys   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
+            ),
+        ]
+    )
+    uptake_20 = update_methods(scen_year, uptake_scen_20) # Create intervention
 
 
 
     #%% Create sims
     sims1 = make_sims(repeats=repeats, label='Baseline', **pars)
-    sims2 = make_sims(repeats=repeats, interventions=eff, label='Increased efficacy', **pars)
-    sims3 = make_sims(repeats=repeats, interventions=uptake, label='Increased uptake, high eff', **pars)
-    sims4 = make_sims(repeats=repeats, interventions=uptake2, label='Increased uptake, low eff', **pars)
-    sims5 = make_sims(repeats=repeats, interventions=uptake3, label='Increased uptake, mod eff', **pars)
+    # sims2 = make_sims(repeats=repeats, interventions=eff, label='Increased efficacy', **pars)
+    # sims3 = make_sims(repeats=repeats, interventions=uptake, label='Increased uptake, high eff', **pars)
+    # sims4 = make_sims(repeats=repeats, interventions=uptake_mod, label='Increased uptake, mod eff', **pars)
+    # sims5 = make_sims(repeats=repeats, interventions=uptake_low, label='Increased uptake, low eff', **pars)
+    sims6 = make_sims(repeats=repeats, interventions=uptake_25, label='Increased uptake over age 25', **pars)
+    sims7 = make_sims(repeats=repeats, interventions=uptake_20, label='Increased uptake under age 21', **pars)
 
 
     #%% Run
@@ -255,15 +292,17 @@ if __name__ == '__main__':
 
     else:
         msim = run_sims(sims1, 
-                        sims2, 
-                        sims3, 
-                        sims4, 
-                        sims5)
+                        # sims2, 
+                        # sims3, 
+                        # sims4, 
+                        # sims5,
+                        sims6,
+                        sims7)
 
 
     #%% Plotting
     msim2 = msim.remerge()
-    # msim.plot(plot_sims=True) # This plots all 15 individual sims as lines of 3 colors
+    msim.plot(plot_sims=False) # This plots all 15 individual sims as lines of 3 colors
     msim2.plot(plot_sims=True) # This plots 3 multisims with uncertainty bands in the same 3 colors
 
 
