@@ -8,7 +8,7 @@ import numpy as np # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
 import pandas as pd
-import pyarrow.feather as feather
+# import pyarrow.feather as feather
 from . import defaults as fpd
 from . import utils as fpu
 from . import base as fpb
@@ -194,7 +194,12 @@ class People(fpb.BasePeople):
         f_died = female.binomial(f_mort_prob, as_filter=True)
         m_died = male.binomial(m_mort_prob, as_filter=True)
         for died in [f_died, m_died]:
-            died.alive = False
+            died.alive           = False,
+            died.pregnant        = False,
+            died.sexually_active = False,
+            died.lactating       = False,
+            died.postpartum      = False,
+            died.lam             = False,
             self.step_results['deaths'] += len(died)
 
         return
