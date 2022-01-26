@@ -53,7 +53,7 @@ class update_methods(fp.Intervention):
                     dest   = key2ind(sim, entry['dest'])
                     factor = entry.pop('factor', None)
                     value  = entry.pop('value', None)
-                    keys   = entry.pop('keys', None)
+                    keys   = entry.pop('keys', '>25')
                     if keys is None:
                         keys = age_keys
 
@@ -121,6 +121,13 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
         inds = sc.findinds((year >= start_year), year < end_year)
         output = popsize[inds].sum()
         return output
+    
+    def mean_tfr(sim):
+        year = sim.results['tfr_years']
+        rates = sim.results['tfr_rates']
+        inds = sc.findinds((year >= start_year), year < end_year)
+        output = rates[inds].mean()
+        return output
 
     # Split the sims up by scenario
     results = sc.objdict()
@@ -187,7 +194,7 @@ if __name__ == '__main__':
 
     # Increased uptake high efficacy
     uptake_scen = sc.objdict(
-        eff = {'BTL':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'Other modern':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
@@ -202,7 +209,7 @@ if __name__ == '__main__':
     
         # Increased uptake low efficacy
     uptake_scen2 = sc.objdict(
-        eff = {'BTL':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'Other modern':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
@@ -217,7 +224,7 @@ if __name__ == '__main__':
     
             # Increased uptake moderate efficacy
     uptake_scen3 = sc.objdict(
-        eff = {'BTL':0.93}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'Other modern':0.93}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
@@ -248,7 +255,7 @@ if __name__ == '__main__':
 
     else:
         msim = run_sims(sims1, 
-                        # sims2, 
+                        sims2, 
                         sims3, 
                         sims4, 
                         sims5)
@@ -263,5 +270,6 @@ if __name__ == '__main__':
         # Analyze
     results = analyze_sims(msim)
     print(results.df)
-    print(results.stats)
+    # print(results.stats)
+    print('Done.')
 
