@@ -183,7 +183,7 @@ if __name__ == '__main__':
     scen_year = 2005 # Year to start the different scenarios
     if not debug:
         pars = dict(
-            n          = 100_000,
+            n          = 10_000,
             start_year = 1980,
             end_year   = 2030,
         )
