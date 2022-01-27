@@ -29,7 +29,7 @@ def getval(v):
     if sc.isnumber(v):
         return v
     elif isinstance(v, dict):
-        return fp.sample(**v)
+        return fp.sample(**v)[0]
     elif callable(v):
         return v()
 
