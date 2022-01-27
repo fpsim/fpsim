@@ -135,9 +135,10 @@ def numba_miscarriage_prob(miscarriage_rates, age, resolution):
     return miscarriage_prob
 
 
-def fixaxis(useSI=True, set_lim=True):
+def fixaxis(useSI=True, set_lim=True, legend=True):
     ''' Fix the plotting '''
-    pl.legend()  # Add legend
+    if legend:
+        pl.legend()  # Add legend
     if set_lim:
         sc.setylim()
     if useSI:
@@ -146,7 +147,7 @@ def fixaxis(useSI=True, set_lim=True):
 
 
 def dict2obj(d):
-    ''' Convert a dictionary to an object '''
+    ''' Convert a dictionary to an object -- REFACTOR to use sc.dictobj() '''
     o = sc.prettyobj()
     for k,v in d.items():
         setattr(o, k, v)

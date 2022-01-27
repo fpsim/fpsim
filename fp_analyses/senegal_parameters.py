@@ -17,8 +17,8 @@ defaults = {
   'timestep'                      : 1,
   'verbose'                       : 1,
   'seed'                          : 1,
-  'fecundity_variation_low'       : 0.8,
-  'fecundity_variation_high'      : 1.2,
+  'fecundity_variation_low'       : 0.7,
+  'fecundity_variation_high'      : 1.1,
   'method_age'                    : 15,
   'max_age'                       : 99,
   'preg_dur_low'                  : 9,
@@ -599,7 +599,7 @@ def default_birth_spacing_preference():
     NOTE: spacing bins must be uniform!
     '''
     postpartum_spacing = np.array([
-        [0, 0.8],
+        [0, 0.5],
         [3, 0.5],
         [6, 0.5],
         [9, 0.5],
@@ -610,7 +610,8 @@ def default_birth_spacing_preference():
         [24, 9.0],
         [27, 9.0],
         [30, 9.0],
-        [33, 9.0]])
+        [33, 9.0],
+        [36, 5.0]])
 
     # Calculate the intervals and check they're all the same
     intervals = np.diff(postpartum_spacing[:, 0])

@@ -72,8 +72,9 @@ class People(fpb.BasePeople):
         self.postpartum      = arr(n, d['postpartum'])
         self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
+        self.children        = arr(n, []) # Indices of children -- list of lists
         self.dobs            = arr(n, []) # Dates of births -- list of lists
-        self.still_dates     = arr(n, [])  # Dates of stillbirths -- list of lists
+        self.still_dates     = arr(n, []) # Dates of stillbirths -- list of lists
         self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
 
@@ -110,6 +111,7 @@ class People(fpb.BasePeople):
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
+                choices = choices/choices.sum()
                 new_methods = fpu.n_multinomial(choices, len(this_method))
                 this_method.method = np.array(new_methods, dtype=np.int64)
 
@@ -371,7 +373,7 @@ class People(fpb.BasePeople):
         death.alive = False
         self.step_results['maternal_deaths'] += len(death)
         self.step_results['deaths'] += len(death)
-        return
+        return death
 
 
     def infant_mortality(self):
@@ -382,7 +384,7 @@ class People(fpb.BasePeople):
         death = self.filter(is_death)
         self.step_results['infant_deaths'] += len(death)
         death.reset_breastfeeding()
-        return
+        return death
 
 
     def check_delivery(self):
@@ -432,7 +434,27 @@ class People(fpb.BasePeople):
 
         # Check mortality
         live.maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
-        live.infant_mortality()
+        i_death = live.infant_mortality()
+
+        # TEMP -- update children, need to refactor
+        r = fpu.dict2obj(self.step_results)
+        new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
+        children_map = sc.ddict(int)
+        for i in live.inds:
+            children_map[i] += 1
+        for i in twin.inds:
+            children_map[i] += 1
+        for i in i_death.inds:
+            children_map[i] -= 1
+
+        assert sum(list(children_map.values())) == new_people
+        start_ind = len(all_ppl)
+        for mother,n_children in children_map.items():
+            end_ind = start_ind+n_children
+            children = list(range(start_ind, end_ind))
+            # print(mother, children)
+            all_ppl.children[mother] += children
+            start_ind = end_ind
 
         return
 
@@ -523,16 +545,13 @@ class People(fpb.BasePeople):
         alive_start.check_mortality()  # Decide if person dies at this t in the simulation
         alive_check = self.filter(self.alive)  # Reselect live agents after exposure to general mortality
 
-        fecund_start  = alive_check.filter((alive_check.sex == 0) * (alive_check.age < alive_check.pars['age_limit_fecundity']))
-        preg_start    = fecund_start.filter(fecund_start.pregnant)
-
         # Update pregnancy with maternal mortality outcome
-        preg_start.check_delivery()  # Deliver with birth outcomes if reached pregnancy duration
+        preg = alive_check.filter(alive_check.pregnant)
+        preg.check_delivery()  # Deliver with birth outcomes if reached pregnancy duration
 
         # Reselect for live agents after exposure to maternal mortality
         alive_now = self.filter(self.alive)
         fecund = alive_now.filter((alive_now.sex == 0) * (alive_now.age < alive_now.pars['age_limit_fecundity']))
-        preg = fecund.filter(fecund.pregnant)
         nonpreg = fecund.filter(~fecund.pregnant)
         lact    = fecund.filter(fecund.lactating)
         methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
@@ -593,8 +612,9 @@ class Sim(fpb.BaseSim):
 
 
     def init_results(self):
-        resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths', 'on_method',
-                       'no_method', 'mcpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
+        resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths',
+                       'cum_maternal_deaths', 'cum_infant_deaths', 'on_method', 'no_method', 'mcpr',
+                       'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
                        'total_women_40-44', 'total_women_45-49']
@@ -735,7 +755,7 @@ class Sim(fpb.BaseSim):
     def apply_interventions(self):
         ''' Apply each intervention in the model '''
         if 'interventions' in self.pars:
-            for i,intervention in enumerate(self.pars['interventions']):
+            for i,intervention in enumerate(sc.tolist(self.pars['interventions'])):
                 if isinstance(intervention, fpi.Intervention):
                     if not intervention.initialized: # pragma: no cover
                         intervention.initialize(self)
@@ -751,7 +771,7 @@ class Sim(fpb.BaseSim):
     def apply_analyzers(self):
         ''' Apply each analyzer in the model '''
         if 'analyzers' in self.pars:
-            for i,analyzer in enumerate(self.pars['analyzers']):
+            for i,analyzer in enumerate(sc.tolist(self.pars['analyzers'])):
                 if isinstance(analyzer, fpi.Analyzer):
                     if not analyzer.initialized: # pragma: no cover
                         analyzer.initialize(self)
@@ -781,7 +801,7 @@ class Sim(fpb.BaseSim):
             self.t = self.ind2year(i)  # t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
             self.y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
             if verbose:
-                if not (self.t % int(1.0/verbose)):
+                if (self.t % int(1.0/verbose)) < 0.01:
                     string = f'  Running {self.y:0.1f} of {self.pars["end_year"]}...'
                     sc.progressbar(i+1, self.npts, label=string, length=20, newline=True)
 
@@ -811,7 +831,6 @@ class Sim(fpb.BaseSim):
 
             people = People(pars=self.pars, n=new_people, **data)
             self.people += people
-            # print('hididid', new_people, np.mean(data['sex']), np.mean(people['sex']))
 
             # Results
             percent0to5   = (r.pp0to5 / r.total_women_fecund) * 100
@@ -882,39 +901,39 @@ class Sim(fpb.BaseSim):
 
                 self.results['tfr_rates'].append(tfr*5)
 
-            if self.test_mode:
-                for state in fpd.debug_states:
-                    self.total_results[self.y][state] = getattr(self.people, state)
+        #     if self.test_mode:
+        #         for state in fpd.debug_states:
+        #             self.total_results[self.y][state] = getattr(self.people, state)
 
-        if self.test_mode:
-            if not self.to_feather:
-                sc.savejson(filename="sim_output/total_results.json", obj=self.total_results)
-            else:
-                if self.custom_feather_tables is None:
-                    states = fpd.debug_states
-                else:
-                    states = self.custom_feather_tables
-                for state in states:
-                    state_frame = pd.DataFrame()
-                    max_length = len(self.total_results[max(self.total_results.keys())][state])
-                    for timestep, _ in self.total_results.items():
-                        colname = str(timestep) + "_" + state
-                        adjustment = max_length - len(self.total_results[timestep][state])
-                        state_frame[colname] = list(self.total_results[timestep][state]) + [None] * adjustment # ONLY WORKS IF LAST YEAR HAS MOST PEOPLE
+        # if self.test_mode:
+        #     if not self.to_feather:
+        #         sc.savejson(filename="sim_output/total_results.json", obj=self.total_results)
+        #     else:
+        #         if self.custom_feather_tables is None:
+        #             states = fpd.debug_states
+        #         else:
+        #             states = self.custom_feather_tables
+        #         for state in states:
+        #             state_frame = pd.DataFrame()
+        #             max_length = len(self.total_results[max(self.total_results.keys())][state])
+        #             for timestep, _ in self.total_results.items():
+        #                 colname = str(timestep) + "_" + state
+        #                 adjustment = max_length - len(self.total_results[timestep][state])
+        #                 state_frame[colname] = list(self.total_results[timestep][state]) + [None] * adjustment # ONLY WORKS IF LAST YEAR HAS MOST PEOPLE
 
-                    feather.write_feather(state_frame, f"sim_output/{state}_state")
-
-
-
+        #             feather.write_feather(state_frame, f"sim_output/{state}_state")
 
         # Apply analyzers
         self.apply_analyzers()
 
-        self.results['tfr_rates']    = np.array(self.results['tfr_rates']) # Store TFR rates for each year of model
-        self.results['tfr_years']    = np.array(self.results['tfr_years']) # Save an array of whole years that model runs (ie, 1950, 1951...)
-        self.results['pop_size']     = np.array(self.results['pop_size'])  # Store population size array in years and not months for calibration
-        self.results['mcpr_by_year'] = np.array(self.results['mcpr_by_year'])
+        # Convert all results to Numpy arrays
+        for key,arr in self.results.items():
+            if isinstance(arr, list):
+                self.results[key] = np.array(arr) # Convert any lists to arrays
 
+        # Calculate cumulative totals
+        self.results['cum_maternal_deaths'] = np.cumsum(self.results['maternal_deaths'])
+        self.results['cum_infant_deaths']   = np.cumsum(self.results['infant_deaths'])
 
         print(f'Final population size: {self.n}.')
 
@@ -967,85 +986,84 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot(self, dosave=None, figargs=None, plotargs=None, axisargs=None, as_years=True, new_fig=True):
+    def plot(self, do_save=None, do_show=True, fig_args=None, plot_args=None, axis_args=None, fill_args=None,
+             label=None, new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
         Args:
-        ----------
-        dosave : bool or str
-            Whether or not to save the figure. If a string, save to that filename.
-        figargs : dict
-            Dictionary of kwargs to be passed to pl.figure()
-        plotargs : dict
-            Dictionary of kwargs to be passed to pl.plot()
-        as_years : bool
-            Whether to plot the x-axis as years or time points
-        Returns
-        -------
-        Figure handle
+            dosave    (bool): Whether or not to save the figure. If a string, save to that filename.
+            doshow    (bool): Whether to show the plots at the end
+            figargs   (dict): Passed to pl.figure()
+            plot_args (dict): Passed to pl.plot()
+            axis_args (dict): Passed to pl.subplots_adjust()
+            fill_args (dict): Passed to pl.fill_between())
+            label     (str):  Label to override default
+            new_fig   (bool): whether to create a new figure (true unless part of a multisim)
         '''
 
-        if figargs  is None: figargs  = {'figsize':(16,8)}
-        if plotargs is None: plotargs = {'lw':2, 'alpha':0.7, 'marker':'o'}
-        if axisargs is None: axisargs = {'left':0.1, 'bottom':0.05, 'right':0.9, 'top':0.97, 'wspace':0.2, 'hspace':0.25}
+        fig_args  = sc.mergedicts(dict(figsize=(16,10)), fig_args)
+        plot_args = sc.mergedicts(dict(lw=2, alpha=0.7), plot_args)
+        axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.25), axis_args)
+        fill_args = sc.mergedicts(dict(alpha=0.2), fill_args)
 
-        fig = pl.figure(**figargs) if new_fig else pl.gcf()
-        pl.subplots_adjust(**axisargs)
-
-        def getbest(res):
-            ''' If it's best/high/low, return best; else return unchanged '''
-            return res.best if hasattr(res, 'best') else res
+        fig = pl.figure(**fig_args) if new_fig else pl.gcf()
+        pl.subplots_adjust(**axis_args)
 
         res = self.results # Shorten since heavily used
 
-        x = getbest(res['t']) # Likewise
-        if not as_years:
-            x *= fpd.mpy
-            x -= x[0]
-            timelabel = 'Timestep'
-        else:
-            timelabel = 'Year'
+        x = res['t'] # Likewise
 
         # Plot everything
         to_plot = sc.odict({
-            'Population size': sc.odict({'pop_size_months':'Population size'}),
-            'MCPR': sc.odict({'mcpr':'Modern contraceptive prevalence rate (%)'}),
-            'Births': sc.odict({'births':'Births'}),
-            'Deaths': sc.odict({'deaths':'Deaths'}),
-            'Maternal mortality': sc.odict({'maternal_deaths':'Cumulative birth-related maternal deaths'}),
-            'Infant mortality': sc.odict({'infant_deaths':'Cumulative infant deaths'}),
+            'Population size':    sc.odict({'pop_size_months':     'Population size'}),
+            'MCPR':               sc.odict({'mcpr':                'Modern contraceptive prevalence rate (%)'}),
+            'Births':             sc.odict({'births':              'Births'}),
+            'Deaths':             sc.odict({'deaths':              'Deaths'}),
+            'Maternal mortality': sc.odict({'cum_maternal_deaths': 'Cumulative birth-related maternal deaths'}),
+            'Infant mortality':   sc.odict({'cum_infant_deaths':   'Cumulative infant deaths'}),
             })
         for p,title,keylabels in to_plot.enumitems():
-            pl.subplot(2,3,p+1)
-            for i,key,label in keylabels.enumitems():
-                this_res = getbest(res[key])
-
-                if label.startswith('Cumulative'):
-                    y = pl.cumsum(this_res)
-                elif key == 'mcpr':
-                    y = this_res*100
+            ax = pl.subplot(2,3,p+1)
+            for i,key,reslabel in keylabels.enumitems():
+                this_res = res[key]
+                is_dist = hasattr(this_res, 'best')
+                if is_dist:
+                    y, low, high = this_res.best, this_res.low, this_res.high
                 else:
-                    y = this_res
-                if not new_fig: # Replace with sim label to avoid duplicate labels
-                    label = self.label
-                pl.plot(x, y, label=label, **plotargs)
+                    y, low, high = this_res, None, None
+
+                if key == 'mcpr':
+                    y *= 100
+                    if is_dist:
+                        low *= 100
+                        high *= 100
+                if label is None:
+                    if new_fig:
+                        label = reslabel
+                    else: # Replace with sim label to avoid duplicate labels
+                        label = self.label
+                ax.plot(x, y, label=label, **plot_args)
+                if is_dist:
+                    if 'c' in plot_args:
+                        fill_args['facecolor'] = plot_args['c']
+                    ax.fill_between(x, low, high, **fill_args)
             fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
             if key == 'mcpr':
                 pl.ylabel('Percentage')
             else:
                 pl.ylabel('Count')
-            pl.xlabel(timelabel)
+            pl.xlabel('Year')
             pl.title(title, fontweight='bold')
 
         # Ensure the figure actually renders or saves
-        if dosave:
-            if isinstance(dosave, str):
-                filename = dosave # It's a string, assume it's a filename
+        if do_save:
+            if isinstance(do_save, str):
+                filename = do_save # It's a string, assume it's a filename
             else:
-                filename = 'fp_sim.png' # Just give it a default name
+                filename = 'fpsim.png' # Just give it a default name
             pl.savefig(filename)
-        else:
+        if do_show:
             pl.show() # Only show if we're not saving
 
         return fig
@@ -1062,30 +1080,23 @@ class MultiSim(sc.prettyobj):
     The MultiSim class handles the running of multiple simulations
     '''
 
-    def __init__(self, sims=None, label=None, n=None, **kwargs):
+    def __init__(self, sims=None, base_sim=None, label=None, n=None, **kwargs):
 
-        # A single sim is supplied -- convert to a list
-        if isinstance(sims, Sim):
-            if n is None:
-                errormsg = 'If providing a single sim, you must supply the n argument to specify how many duplicates of that sim you want to run'
-                raise ValueError(errormsg)
-            base_sim = sims
-            sims = []
-            for i in range(n):
-                sim = sc.dcp(base_sim)
-                sim['seed'] += i # Increment the seed
-                if sim.label is None:
-                    sim.label = f'Sim {i}'
-                sims.append(sim)
-
-        # Basic checks
-        assert isinstance(sims, list), "Must supply sims as a list"
-        assert len(sims)>0, "Must supply at least 1 sim"
+        # Handle inputs
+        if base_sim is None:
+            if isinstance(sims, Sim):
+                base_sim = sims
+                sims = None
+            elif isinstance(sims, list):
+                base_sim = sims[0]
+            else:
+                errormsg = f'If base_sim is not supplied, sims must be either a single sim (treated as base_sim) or a list of sims, not {type(sims)}'
+                raise TypeError(errormsg)
 
         # Set properties
         self.sims      = sims
-        self.base_sim  = sc.dcp(sims[0])
-        self.label     = self.base_sim.label if label is None else label
+        self.base_sim  = base_sim
+        self.label     = base_sim.label if (label is None and base_sim is not None) else label
         self.run_args  = sc.mergedicts(kwargs)
         self.results   = None
         self.which     = None # Whether the multisim is to be reduced, combined, etc.
@@ -1129,7 +1140,10 @@ class MultiSim(sc.prettyobj):
         results = sc.objdict()
         axis = 1
 
-        for reskey in base_sim.results.keys():
+        reskeys = list(base_sim.results.keys())
+        results['t'] = base_sim.results['t']
+        reskeys.remove('t') # Don't compute high/low for this
+        for reskey in reskeys:
             if isinstance(base_sim.results[reskey], dict):
                 if return_raw:
                     for s, sim in enumerate(self.sims):
@@ -1161,6 +1175,123 @@ class MultiSim(sc.prettyobj):
             return
 
 
+    @staticmethod
+    def merge(*args, base=False):
+        '''
+        Convenience method for merging two MultiSim objects.
+
+        Args:
+            args (MultiSim): the MultiSims to merge (either a list, or separate)
+            base (bool): if True, make a new list of sims from the multisim's two base sims; otherwise, merge the multisim's lists of sims
+
+        Returns:
+            msim (MultiSim): a new MultiSim object
+
+        **Examples**:
+
+            mm1 = fp.MultiSim.merge(msim1, msim2, base=True)
+            mm2 = fp.MultiSim.merge([m1, m2, m3, m4], base=False)
+        '''
+
+        # Handle arguments
+        if len(args) == 1 and isinstance(args[0], list):
+            args = args[0] # A single list of MultiSims has been provided
+
+        # Create the multisim from the base sim of the first argument
+        msim = MultiSim(base_sim=sc.dcp(args[0].base_sim), sims=[], label=args[0].label)
+        msim.sims = []
+        msim.chunks = [] # This is used to enable automatic splitting later
+
+        # Handle different options for combining
+        if base: # Only keep the base sims
+            for i,ms in enumerate(args):
+                sim = sc.dcp(ms.base_sim)
+                sim.label = ms.label
+                msim.sims.append(sim)
+                msim.chunks.append([[i]])
+        else: # Keep all the sims
+            for ms in args:
+                len_before = len(msim.sims)
+                msim.sims += list(sc.dcp(ms.sims))
+                len_after= len(msim.sims)
+                msim.chunks.append(list(range(len_before, len_after)))
+
+        return msim
+
+
+    def split(self, inds=None, chunks=None):
+        '''
+        Convenience method for splitting one MultiSim into several. You can specify
+        either individual indices of simulations to extract, via inds, or consecutive
+        chunks of indices, via chunks. If this function is called on a merged MultiSim,
+        the chunks can be retrieved automatically and no arguments are necessary.
+
+        Args:
+            inds (list): a list of lists of indices, with each list turned into a MultiSim
+            chunks (int or list): if an int, split the MultiSim into that many chunks; if a list return chunks of that many sims
+
+        Returns:
+            A list of MultiSim objects
+
+        **Examples**::
+
+            m1 = fp.MultiSim(fp.Sim(label='sim1'))
+            m2 = fp.MultiSim(fp.Sim(label='sim2'))
+            m3 = fp.MultiSim.merge(m1, m2)
+            m3.run()
+            m1b, m2b = m3.split()
+
+            msim = fp.MultiSim(fp.Sim(), n_runs=6)
+            msim.run()
+            m1, m2 = msim.split(inds=[[0,2,4], [1,3,5]])
+            mlist1 = msim.split(chunks=[2,4]) # Equivalent to inds=[[0,1], [2,3,4,5]]
+            mlist2 = msim.split(chunks=2) # Equivalent to inds=[[0,1,2], [3,4,5]]
+        '''
+
+        # Process indices and chunks
+        if inds is None: # Indices not supplied
+            if chunks is None: # Chunks not supplied
+                if hasattr(self, 'chunks'): # Created from a merged MultiSim
+                    inds = self.chunks
+                else: # No indices or chunks and not created from a merge
+                    errormsg = 'If a MultiSim has not been created via merge(), you must supply either inds or chunks to split it'
+                    raise ValueError(errormsg)
+            else: # Chunks supplied, but not inds
+                inds = [] # Initialize
+                sim_inds = np.arange(len(self)) # Indices for the simulations
+                if sc.isiterable(chunks): # e.g. chunks = [2,4]
+                    chunk_inds = np.cumsum(chunks)[:-1]
+                    inds = np.split(sim_inds, chunk_inds)
+                else: # e.g. chunks = 3
+                    inds = np.split(sim_inds, chunks) # This will fail if the length is wrong
+
+        # Do the conversion
+        mlist = []
+        for indlist in inds:
+            sims = sc.dcp([self.sims[i] for i in indlist])
+            msim = MultiSim(sims=sims)
+            mlist.append(msim)
+
+        return mlist
+
+
+    def remerge(self, base=True, **kwargs):
+        '''
+        Split a sim, compute stats, and re-merge.
+
+        Args:
+            base (bool): whether to use the base sim (otherwise, has no effect)
+            kwargs (dict): passed to msim.split()
+
+        Note: returns a new MultiSim object (if that concerns you).
+        '''
+        ms = self.split(**kwargs)
+        for m in ms:
+            m.compute_stats() # Recompute the statistics on each separate MultiSim
+        out = MultiSim.merge(*ms, base=base) # Now re-merge, this time using the base_sim
+        return out
+
+
     def to_df(self):
         '''
         Export all individual sim results to a dataframe
@@ -1178,22 +1309,39 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, plot_sims=True, fig_args=None, **kwargs):
+    def plot(self, do_show=True, plot_sims=True, fig_args=None, plot_args=None, **kwargs):
         '''
         Plot the MultiSim
         '''
-        fig_args = sc.mergedicts(fig_args)
+        fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
+
         if plot_sims:
             fig = pl.figure(**fig_args)
-            for sim in self.sims: # Note: produces duplicate legend entries
-                sim.plot(new_fig=False, **kwargs)
+            do_show = kwargs.pop('do_show', True)
+            labels = sc.autolist()
+            labellist = sc.autolist() # TODO: shouldn't need this
+            for sim in self.sims: # Loop over and find unique labels
+                if sim.label not in labels:
+                    labels += sim.label
+                    labellist += sim.label
+                    label = sim.label
+                else:
+                    labellist += ''
+                n_unique = len(np.unique(labels)) # How many unique sims there are
+            colors = sc.gridcolors(n_unique)
+            colors = {k:c for k,c in zip(labels, colors)}
+            for s,sim in enumerate(self.sims): # Note: produces duplicate legend entries
+                label = labellist[s]
+                n_unique = len(labels) # How many unique sims there are
+                color = colors[sim.label]
+                alpha = max(0.2, 1/np.sqrt(n_unique))
+                sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
+                sim.plot(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args, **kwargs)
+            if do_show:
+                pl.show()
             return fig
         else:
-            return self.base_sim.plot(**kwargs)
-
-
-
-
+            return self.base_sim.plot(do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
 
 def single_run(sim):
