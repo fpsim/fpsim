@@ -24,6 +24,16 @@ def key2ind(sim, key):
     return ind
 
 
+def getval(v):
+    ''' Handle different ways of supplying a value -- number, distribution, function '''
+    if sc.isnumber(v):
+        return v
+    elif isinstance(v, dict):
+        return fp.sample(**v)
+    elif callable(v):
+        return v()
+
+
 class update_methods(fp.Intervention):
     ''' Intervention to modify method efficacy and/or switching matrix '''
 
@@ -42,7 +52,7 @@ class update_methods(fp.Intervention):
                 for k,v in self.scen.eff.items():
                     ind = key2ind(sim, k)
                     orig = sim.pars['method_efficacy'][ind]
-                    sim.pars['method_efficacy'][ind] = v
+                    sim.pars['method_efficacy'][ind] = getval(v)
                     if verbose:
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
@@ -61,9 +71,9 @@ class update_methods(fp.Intervention):
                         matrix = sim.pars['methods']['probs_matrix'][k]
                         orig = matrix[source, dest]
                         if factor is not None:
-                            matrix[source, dest] *= factor
+                            matrix[source, dest] *= getval(factor)
                         elif value is not None:
-                            matrix[source, dest] = value
+                            matrix[source, dest] = getval(value)
                         if verbose:
                             print(f'At time {sim.y:0.1f}, matrix for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
 
@@ -121,7 +131,7 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
         inds = sc.findinds((year >= start_year), year < end_year)
         output = popsize[inds].sum()
         return output
-    
+
     def mean_tfr(sim):
         year = sim.results['tfr_years']
         rates = sim.results['tfr_rates']
@@ -208,8 +218,8 @@ if __name__ == '__main__':
         ]
     )
     uptake = update_methods(scen_year, uptake_scen) # Create intervention
-    
-    
+
+
     # Increased uptake moderate efficacy
     uptake_scen_mod = sc.objdict(
         eff = {'Other modern':0.93}, # Co-opt an unused method and simulate a medium-efficacy method
@@ -223,12 +233,14 @@ if __name__ == '__main__':
             ),
         ]
     )
-    uptake_mod = update_methods(scen_year, uptake_scen_mod) # Create intervention    
-    
-    
+    uptake_mod = update_methods(scen_year, uptake_scen_mod) # Create intervention
+
+    # Define distribution for low efficacy
+    low_eff = dict(dist='uniform', par1=0.80, par2=0.90)
+
     # Increased uptake low efficacy
     uptake_scen_low = sc.objdict(
-        eff = {'Other modern':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'Other modern':low_eff}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
@@ -240,11 +252,11 @@ if __name__ == '__main__':
         ]
     )
     uptake_low = update_methods(scen_year, uptake_scen_low) # Create intervention
-    
+
 
         # Increased uptake low efficacy
     uptake_scen_25 = sc.objdict(
-        eff = {'Other modern':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'Other modern':low_eff}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
@@ -256,10 +268,10 @@ if __name__ == '__main__':
         ]
     )
     uptake_25 = update_methods(scen_year, uptake_scen_25) # Create intervention
-    
+
             # Increased uptake low efficacy
     uptake_scen_20 = sc.objdict(
-        eff = {'Other modern':0.86}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'Other modern':low_eff}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
@@ -291,10 +303,10 @@ if __name__ == '__main__':
         sim.plot()
 
     else:
-        msim = run_sims(sims1, 
-                        # sims2, 
-                        # sims3, 
-                        # sims4, 
+        msim = run_sims(sims1,
+                        # sims2,
+                        # sims3,
+                        # sims4,
                         # sims5,
                         sims6,
                         sims7)
