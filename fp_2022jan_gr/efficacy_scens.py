@@ -49,10 +49,11 @@ class update_methods(fp.Intervention):
 
             # Implement efficacy
             if 'eff' in self.scen:
-                for k,v in self.scen.eff.items():
+                for k,rawval in self.scen.eff.items():
+                    v = getval(rawval)
                     ind = key2ind(sim, k)
                     orig = sim.pars['method_efficacy'][ind]
-                    sim.pars['method_efficacy'][ind] = getval(v)
+                    sim.pars['method_efficacy'][ind] = v
                     if verbose:
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
