@@ -1085,30 +1085,23 @@ class MultiSim(sc.prettyobj):
     The MultiSim class handles the running of multiple simulations
     '''
 
-    def __init__(self, sims=None, label=None, n=None, **kwargs):
+    def __init__(self, sims=None, base_sim=None, label=None, n=None, **kwargs):
 
-        # A single sim is supplied -- convert to a list
-        if isinstance(sims, Sim):
-            if n is None:
-                errormsg = 'If providing a single sim, you must supply the n argument to specify how many duplicates of that sim you want to run'
-                raise ValueError(errormsg)
-            base_sim = sims
-            sims = []
-            for i in range(n):
-                sim = sc.dcp(base_sim)
-                sim['seed'] += i # Increment the seed
-                if sim.label is None:
-                    sim.label = f'Sim {i}'
-                sims.append(sim)
-
-        # Basic checks
-        assert isinstance(sims, list), "Must supply sims as a list"
-        assert len(sims)>0, "Must supply at least 1 sim"
+        # Handle inputs
+        if base_sim is None:
+            if isinstance(sims, Sim):
+                base_sim = sims
+                sims = None
+            elif isinstance(sims, list):
+                base_sim = sims[0]
+            else:
+                errormsg = f'If base_sim is not supplied, sims must be either a single sim (treated as base_sim) or a list of sims, not {type(sims)}'
+                raise TypeError(errormsg)
 
         # Set properties
         self.sims      = sims
-        self.base_sim  = sc.dcp(sims[0])
-        self.label     = self.base_sim.label if label is None else label
+        self.base_sim  = base_sim
+        self.label     = base_sim.label if (label is None and base_sim is not None) else label
         self.run_args  = sc.mergedicts(kwargs)
         self.results   = None
         self.which     = None # Whether the multisim is to be reduced, combined, etc.
@@ -1185,6 +1178,123 @@ class MultiSim(sc.prettyobj):
             return raw
         else:
             return
+
+
+    @staticmethod
+    def merge(*args, base=False):
+        '''
+        Convenience method for merging two MultiSim objects.
+
+        Args:
+            args (MultiSim): the MultiSims to merge (either a list, or separate)
+            base (bool): if True, make a new list of sims from the multisim's two base sims; otherwise, merge the multisim's lists of sims
+
+        Returns:
+            msim (MultiSim): a new MultiSim object
+
+        **Examples**:
+
+            mm1 = fp.MultiSim.merge(msim1, msim2, base=True)
+            mm2 = fp.MultiSim.merge([m1, m2, m3, m4], base=False)
+        '''
+
+        # Handle arguments
+        if len(args) == 1 and isinstance(args[0], list):
+            args = args[0] # A single list of MultiSims has been provided
+
+        # Create the multisim from the base sim of the first argument
+        msim = MultiSim(base_sim=sc.dcp(args[0].base_sim), sims=[], label=args[0].label)
+        msim.sims = []
+        msim.chunks = [] # This is used to enable automatic splitting later
+
+        # Handle different options for combining
+        if base: # Only keep the base sims
+            for i,ms in enumerate(args):
+                sim = sc.dcp(ms.base_sim)
+                sim.label = ms.label
+                msim.sims.append(sim)
+                msim.chunks.append([[i]])
+        else: # Keep all the sims
+            for ms in args:
+                len_before = len(msim.sims)
+                msim.sims += list(sc.dcp(ms.sims))
+                len_after= len(msim.sims)
+                msim.chunks.append(list(range(len_before, len_after)))
+
+        return msim
+
+
+    def split(self, inds=None, chunks=None):
+        '''
+        Convenience method for splitting one MultiSim into several. You can specify
+        either individual indices of simulations to extract, via inds, or consecutive
+        chunks of indices, via chunks. If this function is called on a merged MultiSim,
+        the chunks can be retrieved automatically and no arguments are necessary.
+
+        Args:
+            inds (list): a list of lists of indices, with each list turned into a MultiSim
+            chunks (int or list): if an int, split the MultiSim into that many chunks; if a list return chunks of that many sims
+
+        Returns:
+            A list of MultiSim objects
+
+        **Examples**::
+
+            m1 = fp.MultiSim(fp.Sim(label='sim1'))
+            m2 = fp.MultiSim(fp.Sim(label='sim2'))
+            m3 = fp.MultiSim.merge(m1, m2)
+            m3.run()
+            m1b, m2b = m3.split()
+
+            msim = fp.MultiSim(fp.Sim(), n_runs=6)
+            msim.run()
+            m1, m2 = msim.split(inds=[[0,2,4], [1,3,5]])
+            mlist1 = msim.split(chunks=[2,4]) # Equivalent to inds=[[0,1], [2,3,4,5]]
+            mlist2 = msim.split(chunks=2) # Equivalent to inds=[[0,1,2], [3,4,5]]
+        '''
+
+        # Process indices and chunks
+        if inds is None: # Indices not supplied
+            if chunks is None: # Chunks not supplied
+                if hasattr(self, 'chunks'): # Created from a merged MultiSim
+                    inds = self.chunks
+                else: # No indices or chunks and not created from a merge
+                    errormsg = 'If a MultiSim has not been created via merge(), you must supply either inds or chunks to split it'
+                    raise ValueError(errormsg)
+            else: # Chunks supplied, but not inds
+                inds = [] # Initialize
+                sim_inds = np.arange(len(self)) # Indices for the simulations
+                if sc.isiterable(chunks): # e.g. chunks = [2,4]
+                    chunk_inds = np.cumsum(chunks)[:-1]
+                    inds = np.split(sim_inds, chunk_inds)
+                else: # e.g. chunks = 3
+                    inds = np.split(sim_inds, chunks) # This will fail if the length is wrong
+
+        # Do the conversion
+        mlist = []
+        for indlist in inds:
+            sims = sc.dcp([self.sims[i] for i in indlist])
+            msim = MultiSim(sims=sims)
+            mlist.append(msim)
+
+        return mlist
+
+
+    def remerge(self, base=True, **kwargs):
+        '''
+        Split a sim, compute stats, and re-merge.
+
+        Args:
+            base (bool): whether to use the base sim (otherwise, has no effect)
+            kwargs (dict): passed to msim.split()
+
+        Note: returns a new MultiSim object (if that concerns you).
+        '''
+        ms = self.split(**kwargs)
+        for m in ms:
+            m.compute_stats() # Recompute the statistics on each separate MultiSim
+        out = MultiSim.merge(*ms, base=base) # Now re-merge, this time using the base_sim
+        return out
 
 
     def to_df(self):
