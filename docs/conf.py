@@ -70,7 +70,7 @@ autodoc_default_options = {
     'exclude-members': '__all__'
 }
 
-autodoc_mock_imports = []
+autodoc_mock_imports = ['fp_analyses']
 
 napoleon_google_docstring = True
 # napoleon_numpy_docstring = True
