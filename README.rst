@@ -14,6 +14,10 @@ Installation
 
 Run ``pip install -e .`` to install these packages and their required dependencies. This will make both ``fpsim`` and ``fp_analyses`` available on the Python path.
 
+Documentation
+-------------
+
+Documentation is available at https://docs.idmod.org/projects/fpsim/en/latest/.
 
 Contributing
 ------------
@@ -35,7 +39,7 @@ Contributing
    - What if there are two people working on PRs at the same time?
 
       - Take a look at the issue priority. The PR addressing the higher priority issue should merge first. Make sure you pull the new master after that merge before you push changes for your PR. If both issues are high priority, the one with more time-sensitive commits should be merged first. If you're unsure, ask. 
-      
+
 * High priority issues are organized from top (most urgent) to bottom (least urgent) and can be labelled with ``urgent`` or ``blocking`` as appropriate. If you are working on something that is urgent or blocks other development, please set a reasonable deadline for review (can be updated, of course!)
 * If we do have a backlog of PRs, it's fine to make a new branch off your current PR, and make a new PR from that. These "cumulative PRs are not ideal, but they are better than creating merge conflicts with yourself!
 * Before starting work, always ensure you've pulled from master. If you spend more than a few days on your PR, make sure you pull from master regularly. Before making a PR, ensure that your branch is up to date with master.
