@@ -27,7 +27,7 @@ Contributing
 * All PRs should have another person assigned for review. If assigned to more than one person, use the comment section to assign an issue owner/main reviewer. Use your best judgement here, as roles shift, but in general: 
 
    - Anyone you've worked with on this issue 1:1
-   - @MOBrien-IDM as FPsim lead
+   - @MOBrien-IDM as FPsim lead (approval required to merge)
    - @cliffckerr to ensure new feature performance and compatibility with FPsim
    - @mzimmermann-IDM for subject matter expertise, economic and empowerment questions, questions about modeling best practices
    - @avictorious for questions about historical FPsim decisions and subject matter expertise
