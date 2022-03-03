@@ -120,7 +120,7 @@ class People(fpb.BasePeople):
 
     def get_method_postpartum(self):
         '''Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by
-         3 months postpartum and then initiate, continue, or discontinue a method by 6 months postpartum.
+        3 months postpartum and then initiate, continue, or discontinue a method by 6 months postpartum.
         Next opportunity to switch methods will be on whole calendar years, whenever that falls.
         '''
         # TODO- Probabilities need to be adjusted for postpartum women on the next annual draw in "get_method" since they may be less than one year
