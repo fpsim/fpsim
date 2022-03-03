@@ -251,7 +251,7 @@ class People(fpb.BasePeople):
         preg_probs[lam.inds]    = lam_probs
         preg_probs[nonlam.inds] = nonlam_probs
 
-        # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from data
+        # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from PRESTO data
         nullip = active.filter(active.parity == 0) # Nulliparous
         preg_probs[nullip.inds] *= self.pars['fecundity_ratio_nullip'][nullip.int_age_clip]
 
