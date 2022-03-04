@@ -587,15 +587,9 @@ class Sim(fpb.BaseSim):
     def __init__(self, pars=None, label=None):
         super().__init__(pars) # Initialize and set the parameters as attributes
 
-        # Test settings
-        self.test_mode = False
-        self.to_feather = False
-        self.custom_feather_tables = None
         self.initialized = False
-
-        # contains additional results of each timestep
-        self.total_results = defaultdict(lambda: {})
         self.label = label
+        self.test_mode = False
         fpu.set_metadata(self) # Set version, date, and git info
         return
 
@@ -883,7 +877,7 @@ class Sim(fpb.BaseSim):
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
-
+                
                 tfr = 0
                 for key in fpd.age_bin_mapping.keys():
                         age_bin_births_year = pl.sum(self.results['total_births_'+key][start_index:stop_index])
@@ -893,27 +887,11 @@ class Sim(fpb.BaseSim):
 
                 self.results['tfr_rates'].append(tfr*5)
 
-        #     if self.test_mode:
-        #         for state in fpd.debug_states:
-        #             self.total_results[self.y][state] = getattr(self.people, state)
+            if self.test_mode:
+                self.log_daily_totals()
 
-        # if self.test_mode:
-        #     if not self.to_feather:
-        #         sc.savejson(filename="sim_output/total_results.json", obj=self.total_results)
-        #     else:
-        #         if self.custom_feather_tables is None:
-        #             states = fpd.debug_states
-        #         else:
-        #             states = self.custom_feather_tables
-        #         for state in states:
-        #             state_frame = pd.DataFrame()
-        #             max_length = len(self.total_results[max(self.total_results.keys())][state])
-        #             for timestep, _ in self.total_results.items():
-        #                 colname = str(timestep) + "_" + state
-        #                 adjustment = max_length - len(self.total_results[timestep][state])
-        #                 state_frame[colname] = list(self.total_results[timestep][state]) + [None] * adjustment # ONLY WORKS IF LAST YEAR HAS MOST PEOPLE
-
-        #             feather.write_feather(state_frame, f"sim_output/{state}_state")
+        if self.test_mode:
+            self.save_daily_totals()
 
         # Apply analyzers
         self.apply_analyzers()
@@ -1065,6 +1043,13 @@ class Sim(fpb.BaseSim):
         ''' Use imshow() to show all individuals as rows, with time as columns, one pixel per timestep per person '''
         # The test_mode might help with this
         raise NotImplementedError
+
+    # Used in verbose model
+    def log_daily_totals(self):
+        pass
+
+    def save_daily_totals(self):
+        pass
 
 
 class MultiSim(sc.prettyobj):
