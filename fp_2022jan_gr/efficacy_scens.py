@@ -11,75 +11,7 @@ import fp_analyses as fa
 # Define basic things here
 default_pars = fa.senegal_parameters.make_pars()
 method_names = default_pars['methods']['names']
-age_keys = list(default_pars['methods']['probs_matrix'].keys())
 
-
-def key2ind(sim, key):
-    ''' Take a method key and convert to an int, e.g. 'Condoms' → 7 '''
-    ind = key
-    if ind in [None, 'all']:
-        ind = slice(None) # This is equivalent to ":" in matrix[:,:]
-    elif isinstance(ind, str):
-        ind = sim.pars['methods']['map'][key]
-    return ind
-
-
-def getval(v):
-    ''' Handle different ways of supplying a value -- number, distribution, function '''
-    if sc.isnumber(v):
-        return v
-    elif isinstance(v, dict):
-        return fp.sample(**v)[0]
-    elif callable(v):
-        return v()
-
-
-class update_methods(fp.Intervention):
-    ''' Intervention to modify method efficacy and/or switching matrix '''
-
-    def __init__(self, year, scen):
-        super().__init__()
-        self.year = year
-        self.scen = scen
-
-    def apply(self, sim, verbose=True):
-
-        if sim.y >= self.year and not(hasattr(sim, 'modified')):
-            sim.modified = True
-
-            # Implement efficacy
-            if 'eff' in self.scen:
-                for k,rawval in self.scen.eff.items():
-                    v = getval(rawval)
-                    ind = key2ind(sim, k)
-                    orig = sim.pars['method_efficacy'][ind]
-                    sim.pars['method_efficacy'][ind] = v
-                    if verbose:
-                        print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
-
-            # Implement method mix shift
-            if 'probs' in self.scen:
-                for entry in self.scen.probs:
-                    source = key2ind(sim, entry['source'])
-                    dest   = key2ind(sim, entry['dest'])
-                    factor = entry.pop('factor', None)
-                    value  = entry.pop('value', None)
-                    keys   = entry.pop('keys', None)
-                    if keys is None:
-                        keys = age_keys
-
-                    for k in keys:
-                        matrix = sim.pars['methods']['probs_matrix'][k]
-                        orig = matrix[source, dest]
-                        if factor is not None:
-                            matrix[source, dest] *= getval(factor)
-                        elif value is not None:
-                            matrix[source, dest] = getval(value)
-                        if verbose:
-                            print(f'At time {sim.y:0.1f}, matrix for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
-
-
-        return
 
 def make_sim(label='<no label>', **kwargs):
     ''' Create a single sim, with a label and updated parameters '''
@@ -177,7 +109,7 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
 
 if __name__ == '__main__':
 
-    debug   = False # Set population size and duration
+    debug   = True # Set population size and duration
     one_sim = False # Just run one sim
 
     #%% Define sim parameters
@@ -203,7 +135,7 @@ if __name__ == '__main__':
     eff_scen = sc.objdict(
         eff={method:0.994 for method in method_names if method != 'None'} # Set all efficacies to 1.0 except for None
     )
-    eff = update_methods(scen_year, eff_scen) # Create intervention
+    eff = fp.update_methods(scen_year, eff_scen) # Create intervention
 
     # Increased uptake high efficacy
     uptake_scen = sc.objdict(
@@ -218,7 +150,7 @@ if __name__ == '__main__':
             ),
         ]
     )
-    uptake = update_methods(scen_year, uptake_scen) # Create intervention
+    uptake = fp.update_methods(scen_year, uptake_scen) # Create intervention
 
 
     # Increased uptake moderate efficacy
@@ -234,7 +166,7 @@ if __name__ == '__main__':
             ),
         ]
     )
-    uptake_mod = update_methods(scen_year, uptake_scen_mod) # Create intervention
+    uptake_mod = fp.update_methods(scen_year, uptake_scen_mod) # Create intervention
 
     # Define distribution for low efficacy
     low_eff = dict(dist='uniform', par1=0.80, par2=0.90)
@@ -252,7 +184,7 @@ if __name__ == '__main__':
             ),
         ]
     )
-    uptake_low = update_methods(scen_year, uptake_scen_low) # Create intervention
+    uptake_low = fp.update_methods(scen_year, uptake_scen_low) # Create intervention
 
 
         # Increased uptake low efficacy
@@ -268,7 +200,7 @@ if __name__ == '__main__':
             ),
         ]
     )
-    uptake_25 = update_methods(scen_year, uptake_scen_25) # Create intervention
+    uptake_25 = fp.update_methods(scen_year, uptake_scen_25) # Create intervention
 
             # Increased uptake low efficacy
     uptake_scen_20 = sc.objdict(
@@ -283,7 +215,7 @@ if __name__ == '__main__':
             ),
         ]
     )
-    uptake_20 = update_methods(scen_year, uptake_scen_20) # Create intervention
+    uptake_20 = fp.update_methods(scen_year, uptake_scen_20) # Create intervention
 
 
 

@@ -431,10 +431,17 @@ def getval(v):
 class update_methods(Intervention):
     ''' Intervention to modify method efficacy and/or switching matrix '''
 
-    def __init__(self, year, scen):
+
+    def __init__(self, year, scen, matrix='probs_matrix'):
         super().__init__()
-        self.year = year
-        self.scen = scen
+        self.year   = year
+        self.scen   = scen
+        self.matrix = matrix
+        valid_matrices = ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] # TODO: be less subtle about the difference between normal and postpartum matrices
+        if matrix not in valid_matrices:
+            raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{matrix}"')
+        return
+
 
     def apply(self, sim, verbose=True):
 
@@ -463,7 +470,11 @@ class update_methods(Intervention):
                         keys = sim.pars['methods']['probs_matrix'].keys()
 
                     for k in keys:
-                        matrix = sim.pars['methods']['probs_matrix'][k]
+                        if self.matrix == 'probs_matrix':
+                            matrices = sim.pars['methods']
+                        else:
+                            matrices = sim.pars['methods_postpartum']
+                        matrix = matrices[self.matrix][k]
                         orig = matrix[source, dest]
                         if factor is not None:
                             matrix[source, dest] *= getval(factor)
