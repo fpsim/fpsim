@@ -7,11 +7,12 @@ import numpy as np
 import pylab as pl
 import sciris as sc
 import inspect
+from . import utils as fpu
 
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids']
+__all__ = ['Intervention', 'Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids', 'update_methods']
 
 
 
@@ -404,3 +405,72 @@ class age_pyramids(Analyzer):
         pl.xlabel('Timestep')
         pl.ylabel('Age (years)')
         return fig
+
+
+
+def key2ind(sim, key):
+    ''' Take a method key and convert to an int, e.g. 'Condoms' → 7 '''
+    ind = key
+    if ind in [None, 'all']:
+        ind = slice(None) # This is equivalent to ":" in matrix[:,:]
+    elif isinstance(ind, str):
+        ind = sim.pars['methods']['map'][key]
+    return ind
+
+
+def getval(v):
+    ''' Handle different ways of supplying a value -- number, distribution, function '''
+    if sc.isnumber(v):
+        return v
+    elif isinstance(v, dict):
+        return fpu.sample(**v)[0]
+    elif callable(v):
+        return v()
+
+
+class update_methods(Intervention):
+    ''' Intervention to modify method efficacy and/or switching matrix '''
+
+    def __init__(self, year, scen):
+        super().__init__()
+        self.year = year
+        self.scen = scen
+
+    def apply(self, sim, verbose=True):
+
+        if sim.y >= self.year and not(hasattr(sim, 'modified')):
+            sim.modified = True
+
+            # Implement efficacy
+            if 'eff' in self.scen:
+                for k,rawval in self.scen.eff.items():
+                    v = getval(rawval)
+                    ind = key2ind(sim, k)
+                    orig = sim.pars['method_efficacy'][ind]
+                    sim.pars['method_efficacy'][ind] = v
+                    if verbose:
+                        print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
+
+            # Implement method mix shift
+            if 'probs' in self.scen:
+                for entry in self.scen.probs:
+                    source = key2ind(sim, entry['source'])
+                    dest   = key2ind(sim, entry['dest'])
+                    factor = entry.pop('factor', None)
+                    value  = entry.pop('value', None)
+                    keys   = entry.pop('keys', None)
+                    if keys is None:
+                        keys = sim.pars['methods']['probs_matrix'].keys()
+
+                    for k in keys:
+                        matrix = sim.pars['methods']['probs_matrix'][k]
+                        orig = matrix[source, dest]
+                        if factor is not None:
+                            matrix[source, dest] *= getval(factor)
+                        elif value is not None:
+                            matrix[source, dest] = getval(value)
+                        if verbose:
+                            print(f'At time {sim.y:0.1f}, matrix for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
+
+
+        return
