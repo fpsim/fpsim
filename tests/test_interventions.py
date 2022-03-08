@@ -120,8 +120,8 @@ if __name__ == '__main__':
     # Start timing and optionally enable interactive plotting
     T = sc.tic()
 
-    #sim1 = test_interventions()
-    #sim2 = test_analyzers()
+    sim1 = test_interventions()
+    sim2 = test_analyzers()
     test_update_methods()
 
     print('\n'*2)
