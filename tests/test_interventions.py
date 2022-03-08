@@ -104,10 +104,11 @@ def test_update_matrix():
 
     assert msim.sims[0].pars['methods']['probs_matrix']['21-25'][0][9] != msim.sims[1].pars['methods']['probs_matrix']['21-25'][0][9]
     assert msim.sims[0].pars['methods']['probs_matrix']['21-25'][0][9] == 0.2
-    #assert (msim.sims[0].pars['methods_postpartum'] == msim.sims[1].pars['methods_postpartum']).all()
-    #assert (msim.sims[2].pars['methods'] == msim.sims[3].pars['methods']).all()
+    assert msim.sims[1].pars['methods']['probs_matrix']['<18'][0][9] == 0.2
+
     assert msim.sims[2].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][0][9] != msim.sims[3].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][0][9]
     assert msim.sims[2].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][0][9] == 0.2
+    assert msim.sims[3].pars['methods_postpartum']['probs_matrix_1-6']['<18'][0][9] == 0.2
 
 if __name__ == '__main__':
 
