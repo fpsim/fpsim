@@ -52,7 +52,7 @@ def test_analyzers():
 
     return sim
 
-def test_update_matrix():
+def test_update_methods():
     """
     Checks that fp.update_methods() function properly updates sim.pars for
     both the selected age keys, and the type (methods or postpartum_methods) of
@@ -122,7 +122,7 @@ if __name__ == '__main__':
 
     #sim1 = test_interventions()
     #sim2 = test_analyzers()
-    test_update_matrix()
+    test_update_methods()
 
     print('\n'*2)
     sc.toc(T)
