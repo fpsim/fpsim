@@ -87,6 +87,7 @@ def test_update_matrix():
         ]
     )
 
+
     uptake_no_keys_methods = fp.update_methods(2005, scen_no_keys, matrix='probs_matrix') # Create intervention
     uptake_keys_methods = fp.update_methods(2005, scen_keys, matrix='probs_matrix') # Create intervention
     uptake_no_keys_pp = fp.update_methods(2005, scen_no_keys, matrix='probs_matrix_1-6') # Create intervention
@@ -102,13 +103,17 @@ def test_update_matrix():
     msim = fp.MultiSim(sims=simlist)
     msim.run()
 
-    assert msim.sims[0].pars['methods']['probs_matrix']['21-25'][0][9] != msim.sims[1].pars['methods']['probs_matrix']['21-25'][0][9]
-    assert msim.sims[0].pars['methods']['probs_matrix']['21-25'][0][9] == 0.2
-    assert msim.sims[1].pars['methods']['probs_matrix']['<18'][0][9] == 0.2
+    none_index = msim.sims[0].pars['methods']['map']['None']
+    other_modern_index = msim.sims[0].pars['methods']['map']['Other modern']
 
-    assert msim.sims[2].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][0][9] != msim.sims[3].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][0][9]
-    assert msim.sims[2].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][0][9] == 0.2
-    assert msim.sims[3].pars['methods_postpartum']['probs_matrix_1-6']['<18'][0][9] == 0.2
+
+    assert msim.sims[0].pars['methods']['probs_matrix']['21-25'][none_index][other_modern_index] != msim.sims[1].pars['methods']['probs_matrix']['21-25'][none_index][other_modern_index]
+    assert msim.sims[0].pars['methods']['probs_matrix']['21-25'][none_index][other_modern_index] == 0.2
+    assert msim.sims[1].pars['methods']['probs_matrix']['<18'][none_index][other_modern_index] == 0.2
+
+    assert msim.sims[2].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][none_index][other_modern_index] != msim.sims[3].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][none_index][other_modern_index]
+    assert msim.sims[2].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][none_index][other_modern_index] == 0.2
+    assert msim.sims[3].pars['methods_postpartum']['probs_matrix_1-6']['<18'][none_index][other_modern_index] == 0.2
 
 if __name__ == '__main__':
 
