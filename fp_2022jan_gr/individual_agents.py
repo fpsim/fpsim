@@ -40,7 +40,7 @@ def record(sim):
 
 # Run the sim and record it
 pars = fa.senegal_parameters.make_pars()
-n = 5000
+n = 50000
 pars['n'] = n
 pars['start_year'] = 1990
 pars['interventions'] = [record]
@@ -51,7 +51,7 @@ sim.run()
 ppl = sim.people
 
 # Set criteria for what kind of agent you'd like to track and then pick one at random
-inds = sc.findinds((ppl.stillbirth == 1) * (ppl.alive == 1) * (ppl.parity >= 6) * (ppl.sex == 0) * (ppl.method != 0))
+inds = sc.findinds((ppl.abortion != 0) * (ppl.alive == 1) * (ppl.parity >= 3) * (ppl.sex == 0))
 print(f'Indices meeting criteria: {inds}')
 agent = random.choice(inds)
 print(f'Index chosen of agent: {agent}')
