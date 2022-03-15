@@ -68,13 +68,18 @@ class People(fpb.BasePeople):
         self.lactating       = arr(n, d['lactating'])
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
-        self.stillbirth      = arr(n, d['stillbirth'])
+        self.stillbirth      = arr(n, d['stillbirth']) # Number of stillbirths
+        self.miscarriage     = arr(n, d['miscarriage']) # Number of miscarriages
+        self.abortion        = arr(n, d['abortion']) # Number of abortions
         self.postpartum      = arr(n, d['postpartum'])
+
         self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
         self.children        = arr(n, []) # Indices of children -- list of lists
         self.dobs            = arr(n, []) # Dates of births -- list of lists
         self.still_dates     = arr(n, []) # Dates of stillbirths -- list of lists
+        self.miscarriage_dates = arr(n, []) # Dates of miscarriages -- list of lists
+        self.abortion_dates = arr(n, [])  # Dates of abortions -- list of lists
         self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
 
@@ -271,8 +276,12 @@ class People(fpb.BasePeople):
         preg = conceived.filter(~is_abort)
 
         # Update states
+        all_ppl = self.unfilter()
         abort.postpartum = False
+        abort.abortion += 1 # Add 1 to number of abortions agent has had
         abort.postpartum_dur = 0
+        for i in abort.inds: # Handle adding dates
+            all_ppl.abortion_dates[i].append(all_ppl.age[i])
 
         preg.pregnant = True
         preg.gestation = 1  # Start the counter at 1
@@ -350,10 +359,14 @@ class People(fpb.BasePeople):
         miscarriage_probs = self.pars['miscarriage_rates'][end_first_tri.int_age_clip]
         miscarriage  = end_first_tri.binomial(miscarriage_probs, as_filter=True)
 
-        # Reset states
+        # Reset states and track miscarriages
+        all_ppl = self.unfilter()
         miscarriage.pregnant   = False
+        miscarriage.miscarriage += 1 # Add 1 to number of miscarriages agent has had
         miscarriage.postpartum = False
         miscarriage.gestation  = 0  # Reset gestation counter
+        for i in miscarriage.inds: # Handle adding dates
+            all_ppl.miscarriage_dates[i].append(all_ppl.age[i])
         return
 
 

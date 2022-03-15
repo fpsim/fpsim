@@ -12,7 +12,7 @@ import pandas as pd
 import random
 
 
-do_save = 0
+do_save = 1
 
 # A function to record the sim states over a run
 
@@ -40,7 +40,7 @@ def record(sim):
 
 # Run the sim and record it
 pars = fa.senegal_parameters.make_pars()
-n = 5000
+n = 50000
 pars['n'] = n
 pars['start_year'] = 1990
 pars['interventions'] = [record]
@@ -51,7 +51,7 @@ sim.run()
 ppl = sim.people
 
 # Set criteria for what kind of agent you'd like to track and then pick one at random
-inds = sc.findinds((ppl.stillbirth == 1) * (ppl.alive == 1) * (ppl.parity >= 4) * (ppl.sex == 0) * (ppl.method != 0))
+inds = sc.findinds((ppl.abortion != 0) * (ppl.alive == 1) * (ppl.parity >= 3) * (ppl.sex == 0))
 print(f'Indices meeting criteria: {inds}')
 agent = random.choice(inds)
 print(f'Index chosen of agent: {agent}')
@@ -91,13 +91,29 @@ for stillbirth in ppl.still_dates[agent]:
     row['stillbirths'] = stillbirth
     rows_stillbirths.append(row)
 
+rows_miscarriages = []
+for miscarriage in ppl.miscarriage_dates[agent]:
+    row = {'miscarriages': None}
+    row['miscarriages'] = miscarriage
+    rows_miscarriages.append(row)
+
+rows_abortions = []
+for abortion in ppl.abortion_dates[agent]:
+    row = {'abortions': None}
+    row['abortions'] = abortion
+    rows_abortions.append(row)
+
 states = pd.DataFrame(data=rows)
 deliveries = pd.DataFrame(data=rows_deliveries)
 stillbirths = pd.DataFrame(data=rows_stillbirths)
+miscarriages = pd.DataFrame(data=rows_miscarriages)
+abortions = pd.DataFrame(data=rows_abortions)
 
 if do_save:
-    states.to_csv('/Users/Annie/model_postprocess_files/states_agent_'+{ppl.uid[agent]}+'.csv')
-    deliveries.to_csv('/Users/Annie/model_postprocess_files/deliveries.csv')
-    stillbirths.to_csv('/Users/Annie/model_postprocess_files/stillbirths.csv')
+    states.to_csv('/Users/Annie/model_postprocess_files/states_agent_'+str(ppl.uid[agent])+'.csv')
+    deliveries.to_csv('/Users/Annie/model_postprocess_files/deliveries_'+str(ppl.uid[agent])+'.csv')
+    stillbirths.to_csv('/Users/Annie/model_postprocess_files/stillbirths_'+str(ppl.uid[agent])+'.csv')
+    miscarriages.to_csv('/Users/Annie/model_postprocess_files/miscarriages_' +str(ppl.uid[agent])+ '.csv')
+    abortions.to_csv('/Users/Annie/model_postprocess_files/abortions_' +str(ppl.uid[agent])+ '.csv')
 
 
