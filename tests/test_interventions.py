@@ -97,6 +97,7 @@ def test_update_methods():
 
     simlist = []
     for index, pars in enumerate([pars_no_keys_methods, pars_keys_methods, pars_no_keys_pp, pars_keys_pp]):
+        pars['n'] = 500
         pars.update(interventions=interventions[index])
         simlist.append(fp.Sim(pars=pars))
     
