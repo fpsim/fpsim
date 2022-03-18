@@ -27,6 +27,7 @@ do_plot_tfr = 1
 do_plot_pyramids = 1
 do_plot_model_pyramid = 1
 do_plot_skyscrapers = 1
+do_plot_heatmap = 1
 do_plot_methods = 1
 do_plot_spacing = 1
 do_plot_unintended_pregnancies = 1
@@ -178,21 +179,12 @@ if do_run:
             f'Stillbirth rate per 1000 total births last 3 years: {(stillbirths_3_years / total_births_3_years) * 1000}.  Stillbirth rate Senegal 2019: 19.7 per 1000 total births')
         print(
             f'Total infant mortality rate in last year of model: {(infant_deaths / births_last_year) * 1000}.  Infant mortality rate 2015 Senegal: 36.4')
-        print(f'Total maternal deaths last year: {(maternal_deaths1)}')
         print(f'Total maternal deaths last three years: {(maternal_deaths3)}')
-        print(f'Total maternal deaths last seven years: {(maternal_deaths7)}')
-        print(
-            f'Total model maternal mortality ratio 2019: {(maternal_deaths1 / births_last_year) * 100000}. Maternal mortality ratio 2019 Senegal: Unknown ')
         print(
             f'Total model maternal mortality ratio 2017-2019: {(maternal_deaths3 / births_last_3_years) * 100000}.  Maternal mortality ratio 2017 Senegal: 315 ')
-        print(
-            f'Total model maternal mortality ratio 2013-2019: {(maternal_deaths7 / births_last_7_years) * 100000}.  Maternal mortality ratio 2013 Senegal:  381')
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
         print(
             f'Final percent 15-49 on LAM: {(total_LAM * 100)}. LAM in Senegal, 2017 (v312): 0.047% (Note: Model output intended to be significantly higher.)')
-        print(f'TFR rates over last 10 years: {res["tfr_rates"][-10:]}.  TFR in Senegal in 2015: 4.84; 2018: 4.625')
-        print(f'TFR rates in 2015: {res["tfr_rates"][-5]}.  TFR in Senegal in 2015: 4.84')
-        print(f'TFR rates in 2019: {res["tfr_rates"][-1]}.  TFR in Senegal in 2018: 4.56')
         print(f'Unintended pregnancies specifically due to method failures over the last 10 years: {pl.sum(res["method_failures_over_year"][10:])}')
 
         for key in fpd.age_bin_mapping.keys():
@@ -254,7 +246,7 @@ if do_run:
         fig = pl.figure(figsize=(16, 16))
         pl.plot(whole_years_model, method_failures_model, c='cornflowerblue')
         pl.title('Unintended pregnancies due only to method failures each year (excluding LAM)')
-        pl.xlabel('Years')
+        pl.xlabel('Year')
         pl.ylabel('Number of pregnancies resulting from contraceptive method failures')
         pl.legend()
 
@@ -271,12 +263,13 @@ if do_run:
         x = res['tfr_years'] + 3
         y = res['tfr_rates']
 
-        pl.plot(x, y, label='Total fertility rates')
-        pl.scatter(data_tfr_years, data_tfr)
-
+        pl.plot(x, y, label='Total fertility rates', c='cornflowerblue')
+        pl.scatter(data_tfr_years, data_tfr, c='black')
+        
+        pl.ylim(bottom=3)
+        pl.title('Total Fertility Rate')
         pl.xlabel('Year')
-        pl.ylabel('Total fertility rate - children per woman')
-        pl.title('Total fertility rate in model compared data - Senegal', fontweight='bold')
+        pl.ylabel('TFR - children per woman')
 
         if do_save:
             pl.savefig(sp.abspath('figs', 'senegal_tfr.png'))
@@ -300,7 +293,7 @@ if do_run:
         pl.xticks(x, x_labels)
         pl.ylim(bottom=-10)
         ax.set_title('Age specific fertility rate per 1000 woman years')
-        ax.set_xlabel('Ages')
+        ax.set_xlabel('Age')
         ax.set_ylabel('ASFR in 2019')
         ax.legend(frameon=False)
         sc.boxoff()
@@ -394,10 +387,51 @@ if do_run:
             sky_arr[key] /= sky_arr[key].sum() / 100
 
 
+        # Plot skyscrapers
+        for key in ['Data', 'Model']:
+            fig = pl.figure(figsize=(20, 14))
+
+            sc.bar3d(fig=fig, data=sky_arr[key], cmap='jet')
+            pl.xlabel('Age', fontweight='bold')
+            pl.ylabel('Parity', fontweight='bold')
+            pl.title(f'Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
+            pl.gca().set_xticks(pl.arange(n_age))
+            pl.gca().set_yticks(pl.arange(n_parity))
+            pl.gca().set_xticklabels(age_bins)
+            pl.gca().set_yticklabels(parity_bins)
+            pl.gca().view_init(30, 45)
+            pl.draw()
+            if do_save:
+                pl.savefig(sp.abspath(f'figs/senegal_skyscrapers_{key}.png'))
+
+        # Plot sums
+
+        fig = pl.figure(figsize=(20, 14))
+        labels = ['Parity', 'Age']
+        x_axes = [x_parity, x_age]
+        x_labels = [['0', '1', '2', '3', '4', '5', '6', '7+'],
+                    ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']]
+        offsets = [0, 0.4]
+        for i in range(2):
+            pl.subplot(2, 1, i + 1)
+            for k, key in enumerate(['Data', 'Model']):
+                y_data = sky_arr[key].sum(axis=i)
+                # y_data = y_data/y_data.sum()
+                pl.bar(x_axes[i] + offsets[k], y_data, width=0.4, label=key)
+                pl.gca().set_xticks(x_axes[i] + 0.2)
+                pl.gca().set_xticklabels(x_labels[i])
+                pl.xlabel(labels[i])
+                pl.ylabel('Percentage of population')
+                pl.title(f'Population by: {labels[i]}', fontweight='bold')
+                pl.legend()
+                if do_save:
+                    pl.savefig(sp.abspath(f'figs/senegal_age_parity_sums.png'))
+
+        # heatmap
+    if do_plot_heatmap:
         n_age = 8
         n_par = 7
 
-        # Plot skyscrapers
         ages = pl.arange(n_age)
         parities = pl.arange(n_par)
 
@@ -434,29 +468,7 @@ if do_run:
         # Adjust layout and show
         sc.figlayout(right=0.8)
         if do_save:
-            pl.savefig(sp.abspath('figs/senegal_skyscrapers.png'))
-
-        # Plot sums
-        fig = pl.figure(figsize=(20, 14))
-        labels = ['Parity', 'Age']
-        x_axes = [x_parity, x_age]
-        x_labels = [['0', '1', '2', '3', '4', '5', '6', '7+'],
-                    ['15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']]
-        offsets = [0, 0.4]
-        for i in range(2):
-            pl.subplot(2, 1, i + 1)
-            for k, key in enumerate(['Data', 'Model']):
-                y_data = sky_arr[key].sum(axis=i)
-                # y_data = y_data/y_data.sum()
-                pl.bar(x_axes[i] + offsets[k], y_data, width=0.4, label=key)
-                pl.gca().set_xticks(x_axes[i] + 0.2)
-                pl.gca().set_xticklabels(x_labels[i])
-                pl.xlabel(labels[i])
-                pl.ylabel('Percentage of population')
-                pl.title(f'Population by: {labels[i]}', fontweight='bold')
-                pl.legend()
-                if do_save:
-                    pl.savefig(sp.abspath(f'figs/senegal_age_parity_sums.png'))
+            pl.savefig(sp.abspath('figs/senegal_heatmap.png'))
 
     if do_plot_methods:
         data_method_counts = sc.odict().make(keys=sim.pars['methods']['names'], vals=0.0)
