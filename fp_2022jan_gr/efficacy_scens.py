@@ -109,7 +109,7 @@ def analyze_sims(msim, start_year=2010, end_year=2020):
 
 if __name__ == '__main__':
 
-    debug   = True # Set population size and duration
+    debug   = False # Set population size and duration
     one_sim = False # Just run one sim
 
     #%% Define sim parameters
@@ -189,13 +189,13 @@ if __name__ == '__main__':
 
         # Increased uptake low efficacy
     uptake_scen_25 = sc.objdict(
-        eff = {'Other modern':low_eff}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'Injectables': 0.983}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
-                dest   = 'Other modern', # Destination
+                dest   = 'Injectables', # Destination
                 factor = None, # Factor by which to multiply existing probability
-                value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
+                value  = 0.08, # Alternatively, specify the absolute probability of switching to this method
                 keys   = ['>25'], # Which age keys to modify -- if not specified, all
             ),
         ]
@@ -204,13 +204,13 @@ if __name__ == '__main__':
 
             # Increased uptake low efficacy
     uptake_scen_20 = sc.objdict(
-        eff = {'Other modern':low_eff}, # Co-opt an unused method and simulate a medium-efficacy method
+        eff = {'Injectables': 0.983}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
                 source = 'None', # Source method, 'all' for all methods
-                dest   = 'Other modern', # Destination
+                dest   = 'Injectables', # Destination
                 factor = None, # Factor by which to multiply existing probability
-                value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
+                value  = 0.08, # Alternatively, specify the absolute probability of switching to this method
                 keys   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
             ),
         ]
