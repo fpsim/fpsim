@@ -728,32 +728,15 @@ def default_miscarriage_rates():
     miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
     return miscarriage_interp
 
-
-# def default_fecundity_ratio_nullip():
-#     '''
-#     Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
-#     Help correct for decreased likelihood of conceiving if never conceived
-#     from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
-#     '''
-#
-#     fecundity_ratio_nullip = np.array([[  0,   5,  10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
-#                                        [1.0, 1.0, 1.0,  1.0, 1.0, 1.0, 1.0, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
-#     fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
-#
-#     return fecundity_nullip_interp
-
-
-
 def default_fecundity_ratio_nullip():
     '''
     Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
-    Help correct for decreased likelihood of conceiving if never conceived
-    Assumes higher rates (20%) of infecundability in LMICs than PRESTO (North America) due to environmental exposures
-    Could be adjusted with condom use later (STIs linked to infecundability)
+    from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+    Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
     '''
 
-    fecundity_ratio_nullip = np.array([[  0,   5,  10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
-                                       [1, 1, 1, 1, 1, 1, 1, 0.768, 0.76, 0.568, 0.584, 0.336, 0.336, 0.336]])
+    fecundity_ratio_nullip = np.array([[  0,  5,  10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
+                                        [1,    1,  1,   1,   1,   1,    1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
     fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
 
     return fecundity_nullip_interp

@@ -1,3 +1,5 @@
+import json
+from collections import defaultdict
 import unittest
 import os
 import pandas as pd
@@ -6,10 +8,17 @@ import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
 
-@unittest.skip("Must run this with test_mode on in model.py, should not be run with other regression tests in GHA")
 class TestStates(unittest.TestCase):
     @classmethod
     def setUpClass(self):
+        """
+        Sets up test class by storing useful variables ahead of running unittests
+        Configurable:
+            self.debug_mode::bool:
+                Prints useful sim run information from crossectional tests
+            self.year::float:
+                Limits crossectional tests to only year specified                
+        """
         if os.path.exists("total_results.json"):
             os.remove("total_results.json")
 
@@ -17,16 +26,10 @@ class TestStates(unittest.TestCase):
         pars = fa.senegal_parameters.make_pars()
         pars['n'] = 1000
 
-        exp = fp.Experiment(pars)
-        exp.run(keep_people = True)
-
-        if not os.path.exists("sim_output/total_results.json"):
-            raise ValueError("You must enable test mode in model.py. Currently disabled by default due to speed difference")
-        else:
-            with open("sim_output/total_results.json") as result_file:
-                self.result_dict = sc.loadjson(result_file)
-
-        self.year = None # Change to run the cross sectional tests on a specific year for the purpose of debugging specific reported values
+        exp = fp.ExperimentVerbose(pars)
+        exp.run_model()
+        self.result_dict = exp.total_results
+        self.year = None # change to make cross sectional tests apply to specific year
     
     def setUp(self):
         pass
@@ -34,17 +37,53 @@ class TestStates(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def find_indices(self, value_list, value):
-        return [i for i, x in enumerate(value_list) if i == value]
+    def save_person_states(self, person_id, filename):
+        """
+        Saves a json of the states of the given individual, typically for the sake
+        of debugging a failed assertion.
 
-    # Checks that no one is SA and pregnant
-    # Check that lam coincides with breastfeeding
-    # Everyone who is breastfeeding is lactating
-    # Check everyone who is gestating is pregnant (gestation > 0)
+        Inputs:
+            person_id::int
+                Index of the person logged
+            filename::str
+                Name of the file where the output is logged
+
+        Outputs:
+            json file in the debug/ directory
+        """
+        person_dict = defaultdict(list)
+        for timestep, attribute_dict in self.result_dict.items():
+            for state in attribute_dict:
+                if state != "dobs":
+                    person_dict[state].append(int(attribute_dict[state][person_id]))
+
+        if not os.path.exists("debug"):
+            os.mkdir("debug")
+        with open(filename, 'w') as output_file:
+            json.dump(person_dict, output_file)
+
+        print(f"Saved debug file at {filename}")
+
+    def find_indices(self, value_list, value):
+        """
+        Returns indices of value given in list
+        Input:
+            value_list::list:
+                List of values from which to find the indices value
+            value::any:
+                Value being queried from list, can be anything able to be equated with '=='
+        """
+        return [i for i, x in enumerate(value_list) if x == value]
+
     @unittest.skip("This reveals issue #113")
     def test_states_cross(self):
-
-        sex_and_preg = 0
+        """
+        Checks that:
+            no one is SA and pregnant
+            lam coincides with breastfeeding
+            everyone who is breastfeeding is lactating
+            everyone who is gestating is pregnant (gestation > 0)
+        """
         preg_count = 0
         gestation = {}
         feed_lact = 0
@@ -67,10 +106,7 @@ class TestStates(unittest.TestCase):
                 gestation_list = attribute_dict['gestation']
                 postpartum[year] = attribute_dict['postpartum']
                 postpartum_dur[year] = [attribute_dict['postpartum_dur'][index] for index in [i for i, x in enumerate(attribute_dict['postpartum']) if x]]
-                # If you are looking at postpartum values and want to change what's considered "reduced birth" here you can alter that. Currently set to < 7
-                postpartum_dur[year] = [attribute_dict['postpartum_dur'][index] for index in [i for i, x in enumerate(postpartum_dur[year]) if x < 7]]
 
-                # These are all of the checks being made
                 for index, preg_value in enumerate(pregnant):
                     if breastfeeding[index] > 0:
                         if not lactating[index]:
@@ -96,13 +132,13 @@ class TestStates(unittest.TestCase):
             average_lt6weeks = 0
             total_total_pop = 0
 
-            for key, value in postpartum_dur.items():
-                sum_num = sum_num + np.sum(postpartum_dur[key])
-                total_pop = total_pop + len(postpartum_dur[key])
+            for year, value in postpartum_dur.items():
+                sum_num = sum_num + np.sum(value)
+                total_pop = total_pop + len(value)
 
-            for key, value in postpartum_dur.items():
-                total_total_pop = total_total_pop + len(postpartum[key])
-                average_lt6weeks = average_lt6weeks + len(postpartum_dur[key])
+            for year, value in postpartum_dur.items():
+                total_total_pop = total_total_pop + len(value)
+                average_lt6weeks = average_lt6weeks + len(value)
 
             print(f"On average, {average_lt6weeks / total_total_pop} people were affected by post partum birth reduction (as a proportion of the whole)") # Would want to use SA, but can be SA and pregnant
                 
@@ -114,17 +150,19 @@ class TestStates(unittest.TestCase):
 
         descriptions = {0: "were breastfeeding while not lactating", 1: "were on LAM while not lactating", 2: "were gestating while not pregnant"}
         for index, count_check in enumerate([feed_lact, lam_lact, gest_not_preg]):
-            self.assertEqual(count_check, 0, msg=f"{count_check} {descriptions[index]}")
+            if count_check != 0:
+                self.save_person_states(index, "debug/cross_sectional_error.json")
+                self.assertEqual(count_check, 0, msg=f"{count_check} {descriptions[index]}")
 
-    # Checking that no dead people are updating any parameters
-    # dictionary with index: array with values of single person over time so we have dict[person][day]
     def test_states_long_dead(self):
+        """
+        Checking that no dead people are updating any parameters, specifically gestation and breastfeeding
+        """
         alive_recorder = {}
         gestation_dur = {}
         breastfeed_dur = {}
 
         for year, attribute_dict in self.result_dict.items():
-           # take the array add each attribute[i] into 
             for index, value in enumerate(attribute_dict["alive"]):
                 if index not in alive_recorder:
                     alive_recorder[index] = []
@@ -134,55 +172,82 @@ class TestStates(unittest.TestCase):
                 gestation_dur[index].append(attribute_dict["gestation"][index])
                 breastfeed_dur[index].append(attribute_dict["breastfeed_dur"][index])
 
-        print("Checking alive against updated parameter")
-        for i in range(1, gestation_dur):
-            prec_gestation = 100 # value of gestation on the previous day
-            prec_breastfeed = 100
+        prec_gestation = 100
+        prec_breastfeed = 100
+        for person in gestation_dur:
+            for index, compared_value in enumerate(gestation_dur[person]):
+                if prec_gestation < compared_value and not alive_recorder[person][index-1]:
+                    self.save_person_states(index, "debug/dead_pregnancy_error.json")
+                    self.assertTrue(alive_recorder[person][index-1], msg="At [{i}, {index}] a person's pregnancy is progressing while they are dead")
+                if prec_breastfeed < breastfeed_dur[person][index] and not alive_recorder[person][index-1]:
+                    self.save_person_states(index, "debug/dead_breastfeed_error.json")
+                    self.assertTrue(alive_recorder[person][index-1], msg="At [{i}, {index}] a person is breastfeeding while they are dead")
 
-            for index, compared_value in enumerate(gestation_dur[i]):
-                if prec_gestation < compared_value:
-                    # print(f"{i} is the index of the person (key in dict)")
-                    # print(f"{index} is the index of the compared value")
-                    # print(f"{prec_gestation} is the previous gestation and {compared_value} is current.")
-                    self.assertEqual(alive_recorder[i][index-1], True, msg="At [{i}, {index}] a person's pregnancy is progressing while they are dead")
-                if prec_breastfeed < breastfeed_dur[i][index]:
-                    self.assertEqual(alive_recorder[i][index-1], True, msg="At [{i}, {index}] a person is breastfeeding while they are dead")
-
-    # Nobody should have their pregnancy reset after month 4 (unless they give birth at month 9)
     @unittest.skip("This reveals issue 117")
     def test_states_long_gestation_reset(self):
+        """
+        Checks that:
+            nobody has their pregnancy reset after month 4 (unless they give birth at month 9)
+            pregnancies increase after 4 months until completion
+        """
         gestation_dur = {}
-        # Getting everyone's total gestation history
         for year, attribute_dict in self.result_dict.items():
             for index, value in enumerate(attribute_dict["gestation"]): 
                 if index not in gestation_dur:
                     gestation_dur[index] = []
                 if attribute_dict["alive"][index]:
                     gestation_dur[index].append(value)
-            if year == "2019.0":
-                # count pregnant people at end 
-                print(f"At the end of the sim there are: {sum(attribute_dict['pregnant'])} pregnant people" )
-               
-        
+
         for person, gest_history in gestation_dur.items():
             last = -5
-            for index, current_dur in enumerate(gest_history):
-                if last in range(4, 9):
+            for index, current_dur in enumerate(gest_history):   
+                if last in range(4, 9) and current_dur != last + 1:
+                    self.save_person_states(person, "debug/pregnancy_error.json")
                     self.assertEqual(current_dur, last + 1, msg=f"Person at index {person} has gestation history: {gest_history} which is faulty at index {index}")
-                if last == 9:
-                    self.assertEqual(current_dur, 0, msg=f"Person at index {person} has gestation history: {gest_history} which is faulty at index {index}")
+                    break
+                    
+                if last == 9 and current_dur not in [0, 1]:
+                    self.save_person_states(person, "debug/end_pregnancy_error.json")
+                    self.assertTrue(current_dur in [0, 1], msg=f"Person at index {person} has gestation history: {gest_history} which is faulty at index {index}")
+                    break
                 last = current_dur
 
-    # Checking that lactation, gestation, postpartum do not preclude pregnancy
     def test_states_long_pre_pregnancy(self):
+        """
+        Checks that lactation, gestation, postpartum do not preclude pregnancy
+        """
         was_pregnant = {}
         for year, attribute_dict in self.result_dict.items():
             for index, value in enumerate(attribute_dict["pregnant"]):
                 if index not in was_pregnant or value:
                     was_pregnant[index] = value
-                # If it's false, check if it's
+
                 gestation = attribute_dict["gestation"][index]
                 lactating = attribute_dict["lactating"][index]
                 postpartum = attribute_dict["postpartum"][index]
-                if (gestation > 0 or lactating or postpartum > 0):
-                    self.assertTrue(was_pregnant[index], msg=f"In year {year} there was a person whose gestation is {gestation} lactation is {lactating} and postpartum is {postpartum} and their was_pregnant status is {was_pregnant[index]}")                
+                if (gestation > 0 or lactating or postpartum > 0) and not was_pregnant[index]:
+                    self.save_person_states(index, "debug/preclude_pregnancy_error.json")
+                    self.assertTrue(was_pregnant[index], msg=f"In year {year} there was a person whose gestation is {gestation} lactation is {lactating} and postpartum is {postpartum} and their was_pregnant status is {was_pregnant[index]}")   
+
+    def test_age_boundaries(self):
+        """
+        Checks that people under 13 or over 40 can't get pregnant
+        """
+        for year, attribute_dict in self.result_dict.items():
+            for index, pregnant_bool in enumerate(attribute_dict["pregnant"]):
+                age = attribute_dict['age'][index]
+                if age < 11 or age > 99:
+                    self.assertFalse(pregnant_bool, msg=f"Individual {index} can't be pregnant she's {age}")
+
+    @unittest.skip("Reveals issue #305")
+    def test_ages(self):
+        for year, attribute_dict in self.result_dict.items():
+            if year in sorted(self.result_dict.keys())[-10:]:
+                for individual, age in enumerate(attribute_dict['age']):
+                    age_year = int(age)
+                    month = (age - age_year)
+                    self.assertAlmostEqual(month * 12, round(month * 12), delta=0.01, msg=f"Individual at index: {individual} in year {year} has an age of {age} with a month ({month}) that is not a multiple of 1/12. month * 12 = {month * 12}")
+            
+                    
+if __name__ == "__main__":
+    unittest.main()
