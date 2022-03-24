@@ -30,6 +30,7 @@ do_plot_skyscrapers = 1
 do_plot_heatmap = 1
 do_plot_methods = 1
 do_plot_spacing = 1
+do_plot_debut   = 1
 do_plot_unintended_pregnancies = 1
 do_plot_asfr = 1
 do_save = 1
@@ -169,6 +170,8 @@ if do_run:
         age_low = women.filter(women.age >= 15)
         age_high = age_low.filter(age_low.age < 49)
         total_LAM = age_high.lam.mean()
+
+        print(f'Mean sexual debut age: {pl.mean(age_high.sexual_debut_age)}+/-{pl.std(age_high.sexual_debut_age)}')
 
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
         print(f'Total live births last year: {(births_last_year)}')
@@ -697,6 +700,34 @@ if do_run:
 
     if do_save:
         pl.savefig(sp.abspath(f'figs/senegal_birth_spacing.png'))
+
+    if do_plot_debut:
+
+        fig, ax = pl.subplots(figsize=(25, 10))
+
+        model_age_debut = []
+        x_list = ['FPsim']
+
+        ppl = sim.people
+        for i in range(len(ppl)):
+            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] < max_age:
+                if ppl.sexual_debut_age[i] is not None:
+                    model_age_debut.append(ppl.sexual_debut_age[i])
+
+        x_pos = pl.arange(len(x_list))
+        ax.bar(x_pos, pl.mean(model_age_debut), yerr = pl.std(model_age_debut), alpha = 0.5)
+
+        ax.set_title('Age at first sexual debut in model')
+
+        ax.set_xticks(x_pos)
+        ax.set_xticklabels(x_list[0])
+        ax.set_ylabel('Age at first sex (years)')
+        ax.yaxis.grid(True)
+        ax.legend()
+
+        if do_save:
+            pl.savefig(sp.abspath(f'figs/senegal_sexual_debut.png'))
+
 
 sc.toc()
 
