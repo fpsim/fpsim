@@ -33,6 +33,7 @@ person_defaults = dict(
     pregnant             = False,
     sexually_active      = False,
     sexual_debut         = False,
+    sexual_debut_age     = None,
     lactating            = False,
     postpartum           = False,
     lam                  = False,
