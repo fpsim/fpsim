@@ -625,7 +625,7 @@ if do_run:
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         ppl = sim.people
         for i in range(len(ppl)):
-            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] < max_age:
                 if len(ppl.dobs[i]):
                     model_age_first.append(ppl.dobs[i][0])
                 if len(ppl.dobs[i])>1:
