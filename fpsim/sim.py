@@ -64,6 +64,8 @@ class People(fpb.BasePeople):
 
         # Sexual and reproductive history
         self.sexually_active = arr(n, d['sexually_active'])
+        self.sexual_debut    = arr(n, d['sexual_debut'])
+        self.sexual_debut_age = arr(n, np.float64(d['age'])) # Age at first sexual debut in years
         self.lactating       = arr(n, d['lactating'])
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
@@ -230,6 +232,14 @@ class People(fpb.BasePeople):
         # Can revert to active or not active each timestep
         pp.sexually_active = fpu.binomial_arr(probs_pp)
         non_pp.sexually_active = fpu.binomial_arr(probs_non_pp)
+
+        # Set debut to True if sexually active for the first time
+        # Record agent age at sexual debut in their memory
+        never_sex = non_pp.sexual_debut == 0
+        now_active = non_pp.sexually_active
+        first_debut = non_pp.filter(now_active * never_sex)
+        first_debut.sexual_debut = True
+        first_debut.sexual_debut_age = first_debut.age
 
         return
 
