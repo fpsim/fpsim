@@ -701,33 +701,6 @@ if do_run:
     if do_save:
         pl.savefig(sp.abspath(f'figs/senegal_birth_spacing.png'))
 
-    if do_plot_debut:
-
-        fig, ax = pl.subplots(figsize=(25, 10))
-
-        model_age_debut = []
-        x_list = ['FPsim']
-
-        ppl = sim.people
-        for i in range(len(ppl)):
-            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] < max_age:
-                if ppl.sexual_debut_age[i] is not None:
-                    model_age_debut.append(ppl.sexual_debut_age[i])
-
-        x_pos = pl.arange(len(x_list))
-        ax.bar(x_pos, pl.mean(model_age_debut), yerr = pl.std(model_age_debut), alpha = 0.5)
-
-        ax.set_title('Age at first sexual debut in model')
-
-        ax.set_xticks(x_pos)
-        ax.set_xticklabels(x_list[0])
-        ax.set_ylabel('Age at first sex (years)')
-        ax.yaxis.grid(True)
-        ax.legend()
-
-        if do_save:
-            pl.savefig(sp.abspath(f'figs/senegal_sexual_debut.png'))
-
 
 sc.toc()
 
