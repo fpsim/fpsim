@@ -236,7 +236,7 @@ class People(fpb.BasePeople):
         # Set debut to True if sexually active for the first time
         # Record agent age at sexual debut in their memory
         never_sex = non_pp.sexual_debut == 0
-        now_active = non_pp.sexually_active
+        now_active = non_pp.sexually_active == 1
         first_debut = non_pp.filter(now_active * never_sex)
         first_debut.sexual_debut = True
         first_debut.sexual_debut_age = first_debut.age
