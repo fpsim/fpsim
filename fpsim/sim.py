@@ -71,6 +71,7 @@ class People(fpb.BasePeople):
         self.miscarriage     = arr(n, d['miscarriage']) # Number of miscarriages
         self.abortion        = arr(n, d['abortion']) # Number of abortions
         self.postpartum      = arr(n, d['postpartum'])
+        self.mothers         = arr(n, d['mothers'])
 
         self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
@@ -402,6 +403,7 @@ class People(fpb.BasePeople):
 
         # Update states
         deliv = self.filter(self.gestation == self.preg_dur)
+        
         deliv.pregnant = False
         deliv.gestation = 0  # Reset gestation counter
         deliv.lactating = True
@@ -785,6 +787,13 @@ class Sim(fpb.BaseSim):
                     raise TypeError(errormsg)
         return
 
+    def update_mothers(self):
+        '''Add link between newly added individuals and their mothers'''
+        all_ppl = self.people.unfilter()
+        for mother_index in range(len(all_ppl.children)):
+            for child in all_ppl.children[mother_index]:
+                all_ppl.mothers[child] = mother_index
+
 
     def run(self, verbose=None):
         ''' Run the simulation '''
@@ -833,6 +842,9 @@ class Sim(fpb.BaseSim):
 
             people = People(pars=self.pars, n=new_people, **data)
             self.people += people
+
+            # Update mothers
+            self.update_mothers()
 
             # Results
             percent0to5   = (r.pp0to5 / r.total_women_fecund) * 100
