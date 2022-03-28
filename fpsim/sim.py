@@ -65,7 +65,9 @@ class People(fpb.BasePeople):
         # Sexual and reproductive history
         self.sexually_active = arr(n, d['sexually_active'])
         self.sexual_debut    = arr(n, d['sexual_debut'])
-        self.sexual_debut_age = arr(n, np.float64(d['age'])) # Age at first sexual debut in years
+        self.first_birth     = arr(n, d['first_birth'])
+        self.sexual_debut_age = arr(n, np.float64(d['age'])) # Age at first sexual debut in years, If not debuted, None
+        self.first_birth_age  = arr(n, np.float64(d['age'])) # Age at first birth.  If no births, None
         self.lactating       = arr(n, d['lactating'])
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
@@ -418,6 +420,13 @@ class People(fpb.BasePeople):
         deliv.postpartum = True # Start postpartum state at time of birth
         deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
         deliv.postpartum_dur = 0
+        all_ppl = self.unfilter()
+        for i in deliv.inds:  # check if this is the first ever birth (live or still)
+            if all_ppl.dobs[i] == []:
+                all_ppl.first_birth = True  # Transiently set as true to be able to filter
+        first_ever_birth = deliv.filter(deliv.first_birth == True)
+        first_ever_birth.first_birth_age = first_ever_birth.age
+        all_ppl.first_birth = False # reset all people to false
 
         # Handle stillbirth
         is_stillborn = deliv.binomial(self.pars['mortality_probs']['stillbirth'])
@@ -431,6 +440,7 @@ class People(fpb.BasePeople):
         live = deliv.filter(~is_stillborn)
         for i in live.inds: # Handle DOBs
             all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
+
         for i in stillborn.inds: # Handle adding dates
             all_ppl.still_dates[i].append(all_ppl.age[i])
 
