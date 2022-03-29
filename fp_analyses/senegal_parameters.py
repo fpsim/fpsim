@@ -563,6 +563,25 @@ def default_barriers():
     barriers[:] /= barriers[:].sum() # Ensure it adds to 1
     return barriers
 
+def sexual_debut():
+    '''
+    Returns a linear interpolation of probability that a woman of a certain age has had sexual debut
+    From STAT Compiler DHS https://www.statcompiler.com/en/
+    Using indicator "
+    Data taken from 2019 DHS
+    Onset of sexual debut assumed to be linear from age 10 to first data point at age 15
+    '''
+
+    sexual_debut = np.array([[0, 5, 10,  15, 18,    20,  22,    25,    50],
+                                [0, 0, 0, 9, 35.2, 52.3, 64.7,  77.1, 93.3]])
+
+    sexual_debut[1] /= 100  # Convert from percent to rate per woman
+    debut_ages = sexual_debut[0]
+    debut_interp_model = si.interp1d(x=debut_ages, y=sexual_debut[1])
+    debut_interp = debut_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
+
+    return debut_interp
+
 
 def default_sexual_activity():
     '''
@@ -572,7 +591,7 @@ def default_sexual_activity():
     Using indicator "Timing of sexual intercourse"
     Includes women who have had sex "within the last four weeks"
     Data taken from 2018 DHS, no trend over years for now
-    Onset of sexual activity assumed to be linear from age 10 to first data point at age 15
+    Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
     '''
 
     sexually_active = np.array([[0, 5, 10, 15,  20,   25,   30,   35,   40,    45,   50],
@@ -760,7 +779,7 @@ def default_exposure_correction_parity():
     Michelle note: Thinking about this in terms of child preferences/ideal number of children
     '''
     exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
-                                           [0.5, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10,  0.05, 0.01]])
+                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10,  0.05, 0.01]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
     #
     # exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
@@ -786,6 +805,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['maternal_mortality'] = default_maternal_mortality()
     pars['infant_mortality']   = default_infant_mortality()
     pars['stillbirth_rate']    = default_stillbirth()
+    pars['sexual_debut']       = default_sexual_debut()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['pref_spacing']       = default_birth_spacing_preference()
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
