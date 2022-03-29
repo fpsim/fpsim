@@ -17,6 +17,7 @@ do_save = 1
 do_print_stats = 1
 do_plot_debut = 1
 do_plot_age_first = 1
+do_plot_nullip_ages = 1
 
 # Set up sim
 
@@ -119,6 +120,17 @@ if do_plot_age_first:
 
     sns.histplot(data=df_plot_age_first, x="age_first_birth", binwidth=1)
     plt.show()
+
+if do_plot_nullip_ages:
+
+    agents_15_49 = {}
+    agents_15_49['uid'] = ppl.uid[inds_live_women_15_49]
+    agents_15_49['age'] = ppl.age[inds_live_women_15_49]
+    agents_15_49['parity'] = ppl.parity[inds_live_women_15_49]
+    agents_15_49['age_first_birth'] = ppl.first_birth_age[inds_live_women_15_49]
+
+    df_parity = pd.DataFrame(data=agents_15_49)
+    df_parity.to_csv('/Users/Annie/model_postprocess_files/adolescents/agents_parity' + '.csv')
 
 '''
 if do_plot_method_use:
