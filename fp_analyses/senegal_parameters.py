@@ -563,7 +563,7 @@ def default_barriers():
     barriers[:] /= barriers[:].sum() # Ensure it adds to 1
     return barriers
 
-def sexual_debut():
+def default_sexual_debut():
     '''
     Returns a linear interpolation of probability that a woman of a certain age has had sexual debut
     From STAT Compiler DHS https://www.statcompiler.com/en/
