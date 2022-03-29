@@ -791,7 +791,7 @@ class Sim(fpb.BaseSim):
         '''Add link between newly added individuals and their mothers'''
         all_ppl = self.people.unfilter()
         for mother_index, postpartum in enumerate(all_ppl.postpartum):
-            if postpartum:
+            if postpartum and all_ppl.postpartum_dur[mother_index] < 2:
                 for child in all_ppl.children[mother_index]:
                     all_ppl.mothers[child] = mother_index
 
