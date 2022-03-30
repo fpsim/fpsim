@@ -390,8 +390,9 @@ class People(fpb.BasePeople):
 
     def infant_mortality(self):
         '''Check for probability of infant mortality (death < 1 year of age)'''
-        age_gradient = self.pars['infant_mortality']['age_gradient'][self.int_age_clip]
-        death_prob = (self.pars['mortality_probs']['infant']) * age_gradient
+        age_inds = sc.findnearest(self.pars['infant_mortality']['ages'], self.age)
+        death_prob = (self.pars['mortality_probs']['infant'])
+        death_prob = death_prob * (self.pars['infant_mortality']['age_probs'][age_inds])
         is_death = self.binomial(death_prob)
         death = self.filter(is_death)
         self.step_results['infant_deaths'] += len(death)
