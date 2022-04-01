@@ -64,6 +64,9 @@ class People(fpb.BasePeople):
 
         # Sexual and reproductive history
         self.sexually_active = arr(n, d['sexually_active'])
+        self.sexual_debut    = arr(n, d['sexual_debut'])
+        self.sexual_debut_age = arr(n, np.float64(d['age'])) # Age at first sexual debut in years, If not debuted, None
+        self.first_birth_age  = arr(n, np.float64(d['age'])) # Age at first birth.  If no births, None
         self.lactating       = arr(n, d['lactating'])
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
@@ -230,6 +233,14 @@ class People(fpb.BasePeople):
         # Can revert to active or not active each timestep
         pp.sexually_active = fpu.binomial_arr(probs_pp)
         non_pp.sexually_active = fpu.binomial_arr(probs_non_pp)
+
+        # Set debut to True if sexually active for the first time
+        # Record agent age at sexual debut in their memory
+        never_sex = non_pp.sexual_debut == 0
+        now_active = non_pp.sexually_active == 1
+        first_debut = non_pp.filter(now_active * never_sex)
+        first_debut.sexual_debut = True
+        first_debut.sexual_debut_age = first_debut.age
 
         return
 
@@ -409,6 +420,7 @@ class People(fpb.BasePeople):
         deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
         deliv.postpartum_dur = 0
 
+
         # Handle stillbirth
         is_stillborn = deliv.binomial(self.pars['mortality_probs']['stillbirth'])
         stillborn = deliv.filter(is_stillborn)
@@ -421,6 +433,8 @@ class People(fpb.BasePeople):
         live = deliv.filter(~is_stillborn)
         for i in live.inds: # Handle DOBs
             all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
+            if len(all_ppl.dobs[i]) == 1:
+                all_ppl.first_birth_age[i] = all_ppl.age[i]
         for i in stillborn.inds: # Handle adding dates
             all_ppl.still_dates[i].append(all_ppl.age[i])
 
