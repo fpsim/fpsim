@@ -99,7 +99,7 @@ if do_plot_debut:
 
     df_debut = df_debut[df_debut.debut_age != 0]
 
-    #df_debut.to_csv('/Users/Annie/model_postprocess_files/adolescents/sexual_debut'+'.csv')
+    df_debut.to_csv('/Users/Annie/model_postprocess_files/adolescents/sexual_debut_fated_debut'+'.csv')
 
     sns.histplot(data=df_debut, x="debut_age", binwidth=1)
     plt.show()
@@ -114,7 +114,7 @@ if do_plot_age_first:
 
     df_age_first = pd.DataFrame(data=agents_10_49)
 
-    df_age_first.to_csv('/Users/Annie/model_postprocess_files/adolescents/age_first_birth' + '.csv')
+    df_age_first.to_csv('/Users/Annie/model_postprocess_files/adolescents/age_first_birth_fated_debut' + '.csv')
 
     df_plot_age_first = df_age_first[df_age_first.parity > 0]
 
@@ -130,7 +130,7 @@ if do_plot_nullip_ages:
     agents_15_49['age_first_birth'] = ppl.first_birth_age[inds_live_women_15_49]
 
     df_parity = pd.DataFrame(data=agents_15_49)
-    df_parity.to_csv('/Users/Annie/model_postprocess_files/adolescents/agents_parity' + '.csv')
+    df_parity.to_csv('/Users/Annie/model_postprocess_files/adolescents/agents_parity_fated_debut' + '.csv')
 
 '''
 if do_plot_method_use:
