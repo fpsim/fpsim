@@ -583,6 +583,10 @@ def default_sexual_debut():
     return debut_interp
 
 def default_debut_age():
+    '''
+    Returns an array of weighted probabilities of sexual debut by a certain age 10-43.
+    Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
+    '''
 
     debut_age = {}
 
