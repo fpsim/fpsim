@@ -11,7 +11,7 @@ import fpsim.defaults as fpd
 # Define default user-tunable parameters and values
 defaults = {
   'name'                          : 'Default',
-  'n'                             : 100000,
+  'n'                             : 6000,
   'start_year'                    : 1960,
   'end_year'                      : 2019,
   'timestep'                      : 1,
@@ -582,6 +582,50 @@ def default_sexual_debut():
 
     return debut_interp
 
+def default_debut_age():
+
+    debut_age = {}
+
+    debut_age['ages'] = np.arange(10, 44)
+
+    debut_age['probs'] = np.array(
+        [0.004362494588533180,
+         0.005887267309386780,
+         0.016249279181639800,
+         0.0299019826473517,
+         0.055785658051997,
+         0.09813952463469960,
+         0.112872333807184,
+         0.11953800217275100,
+         0.10881048442282400,
+         0.08688267743864320,
+         0.0781062086093285,
+         0.055562127900473800,
+         0.047649966917757800,
+         0.03670233295320280,
+         0.02962171655627400,
+         0.03071900157389080,
+         0.020088166028125700,
+         0.012959307423989900,
+         0.009789125590573670,
+         0.010992698492904500,
+         0.0064009386756690000,
+         0.00531499008144595,
+         0.004500210075413140,
+         0.004643541107103950,
+         0.0015287248836055500,
+         0.0012933308143284600,
+         0.0008169702220519970,
+         0.0005138447212362420,
+         0.0030994890039629400,
+         0.0007583698086919300,
+         0.0001470674087999730,
+         0.00018238823303343100,
+         0.0000620676775406016,
+         0.0001177109855848480])
+
+    return debut_age
+
 
 def default_sexual_activity():
     '''
@@ -595,7 +639,7 @@ def default_sexual_activity():
     '''
 
     sexually_active = np.array([[0, 5, 10, 15,  20,   25,   30,   35,   40,    45,   50],
-                                [0, 0,  0,  11.5, 35.5, 49.6, 57.4, 64.4, 64.45, 64.5, 66.8]])
+                                [0, 0,  0,  50.4, 55.9, 57.3, 60.8, 66.4, 67.5, 68.2, 68.2]])
 
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     activity_ages = sexually_active[0]
@@ -806,6 +850,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['infant_mortality']   = default_infant_mortality()
     pars['stillbirth_rate']    = default_stillbirth()
     pars['sexual_debut']       = default_sexual_debut()
+    pars['debut_age']          = default_debut_age()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['pref_spacing']       = default_birth_spacing_preference()
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
