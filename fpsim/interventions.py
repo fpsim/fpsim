@@ -458,8 +458,46 @@ class update_methods(Intervention):
                     if verbose:
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
+            # probs looks like this:
+            #     probs = [
+            #     dict(
+            #         source = 'None', # Source method, 'all' for all methods
+            #         dest   = 'Other modern', # Destination
+            #         factor = None, # Factor by which to multiply existing probability
+            #         value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
+            #         keys   = ['>25'], # Which age keys to modify -- if not specified, all
+            #     ),
+            # ]
+
+            # reduce_transition looks like this
+            #     reduce_transition = [
+            #     dict(
+            #         source = 'None', # Source method, 'all' for all methods
+            #         factor = None, # Factor by which to multiply existing probability
+            #         value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
+            #         keys   = ['>25'], # Which age keys to modify -- if not specified, all
+            #     ),
+            # ]
+
             # Implement method mix shift
             if 'probs' in self.scen:
+                if 'reduce_transition' in self.scen:
+                    method_names = self.sim.pars['methods']['names']
+                    prob_updates = []
+                    for entry in self.scen.reduce_transition:
+                        target = entry.target
+                        factor = entry.factor
+                        value = entry.value
+                        keys = entry.keys
+                        for method in  method_names:
+                            if method not in ["None", target]:
+                                prob_updates.append({source: target,
+                                                     dest: method,
+                                                     factor: factor,
+                                                     value: value,
+                                                     keys: keys })                            
+                    self.scen.probs.append(prob_updates)
+
                 for entry in self.scen.probs:
                     source = key2ind(sim, entry['source'])
                     dest   = key2ind(sim, entry['dest'])
