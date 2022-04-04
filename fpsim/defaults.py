@@ -38,6 +38,7 @@ person_defaults = dict(
     lactating            = False,
     postpartum           = False,
     lam                  = False,
+    mothers              = -1,
 )
 
 #%% Age bins for different method switching matrices
