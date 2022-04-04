@@ -598,12 +598,13 @@ class Sim(fpb.BaseSim):
     The Sim class handles the running of the simulation
     '''
 
-    def __init__(self, pars=None, label=None):
+    def __init__(self, pars=None, label=None, mother_ids=False):
         super().__init__(pars) # Initialize and set the parameters as attributes
 
         self.initialized = False
         self.label = label
         self.test_mode = False
+        self.mother_ids = mother_ids
         fpu.set_metadata(self) # Set version, date, and git info
         return
 
@@ -845,7 +846,8 @@ class Sim(fpb.BaseSim):
             self.people += people
 
             # Update mothers
-            self.update_mothers()
+            if self.mother_ids:
+                self.update_mothers()
 
             # Results
             percent0to5   = (r.pp0to5 / r.total_women_fecund) * 100
@@ -917,6 +919,9 @@ class Sim(fpb.BaseSim):
 
         if self.test_mode:
             self.save_daily_totals()
+
+        if not self.mother_ids:
+            delattr(self.people, "mothers")
 
         # Apply analyzers
         self.apply_analyzers()

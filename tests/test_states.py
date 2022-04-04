@@ -28,7 +28,7 @@ class TestStates(unittest.TestCase):
 
 
         self.exp = fp.ExperimentVerbose(pars)
-        self.exp.run_model()
+        self.exp.run_model(mother_ids=True)
 
         self.people = self.exp.people
         self.result_dict = self.exp.total_results

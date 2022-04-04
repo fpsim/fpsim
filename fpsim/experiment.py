@@ -140,7 +140,7 @@ class Experiment(sc.prettyobj):
         return
 
 
-    def run_model(self, pars=None):
+    def run_model(self, pars=None, mother_ids=False):
         ''' Create the sim and run the model '''
 
         if not self.initialized:
@@ -149,7 +149,7 @@ class Experiment(sc.prettyobj):
         if pars is None:
             pars = self.pars
 
-        self.sim = fps.Sim(pars=pars)
+        self.sim = fps.Sim(pars=pars, mother_ids=mother_ids)
         self.sim.run()
         self.post_process_sim()
 
