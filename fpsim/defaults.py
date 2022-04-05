@@ -32,9 +32,13 @@ person_defaults = dict(
     alive                = True,
     pregnant             = False,
     sexually_active      = False,
+    sexual_debut         = False,
+    sexual_debut_age     = None,
+    first_birth_age      = None,
     lactating            = False,
     postpartum           = False,
     lam                  = False,
+    mothers              = -1,
 )
 
 #%% Age bins for different method switching matrices

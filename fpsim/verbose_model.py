@@ -6,7 +6,7 @@ import pandas as pd
 from copy import deepcopy
 
 class SimVerbose(fp.Sim):
-    def __init__(self, pars=None):
+    def __init__(self, pars=None, mother_ids=False):
         """
         Initializes a SimVerbose object which extends the logging functionality of a normal fp.Sim for the sake of testing
 
@@ -18,7 +18,7 @@ class SimVerbose(fp.Sim):
             self.to_file::bool:
                 Save the results of the sim (either json or multiple csv's)
         """
-        super().__init__(pars)
+        super().__init__(pars, mother_ids=mother_ids)
         self.test_mode = True
         self.to_csv = False
         self.custom_csv_tables = None

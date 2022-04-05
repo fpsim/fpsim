@@ -30,6 +30,7 @@ do_plot_skyscrapers = 1
 do_plot_heatmap = 1
 do_plot_methods = 1
 do_plot_spacing = 1
+do_plot_debut   = 1
 do_plot_unintended_pregnancies = 1
 do_plot_asfr = 1
 do_save = 1
@@ -169,6 +170,8 @@ if do_run:
         age_low = women.filter(women.age >= 15)
         age_high = age_low.filter(age_low.age < 49)
         total_LAM = age_high.lam.mean()
+
+        print(f'Mean sexual debut age: {pl.mean(age_high.sexual_debut_age)}+/-{pl.std(age_high.sexual_debut_age)}')
 
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
         print(f'Total live births last year: {(births_last_year)}')
@@ -625,7 +628,7 @@ if do_run:
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         ppl = sim.people
         for i in range(len(ppl)):
-            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] < max_age:
                 if len(ppl.dobs[i]):
                     model_age_first.append(ppl.dobs[i][0])
                 if len(ppl.dobs[i])>1:
@@ -697,6 +700,7 @@ if do_run:
 
     if do_save:
         pl.savefig(sp.abspath(f'figs/senegal_birth_spacing.png'))
+
 
 sc.toc()
 

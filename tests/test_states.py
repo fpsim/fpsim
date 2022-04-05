@@ -26,9 +26,12 @@ class TestStates(unittest.TestCase):
         pars = fa.senegal_parameters.make_pars()
         pars['n'] = 1000
 
-        exp = fp.ExperimentVerbose(pars)
-        exp.run_model()
-        self.result_dict = exp.total_results
+
+        self.exp = fp.ExperimentVerbose(pars)
+        self.exp.run_model(mother_ids=True)
+
+        self.people = self.exp.people
+        self.result_dict = self.exp.total_results
         self.year = None # change to make cross sectional tests apply to specific year
     
     def setUp(self):
@@ -229,6 +232,17 @@ class TestStates(unittest.TestCase):
                     self.save_person_states(index, "debug/preclude_pregnancy_error.json")
                     self.assertTrue(was_pregnant[index], msg=f"In year {year} there was a person whose gestation is {gestation} lactation is {lactating} and postpartum is {postpartum} and their was_pregnant status is {was_pregnant[index]}")   
 
+    def test_mothers_indices(self):
+        mothers = self.people.mothers
+        children = self.people.children
+
+        flattened_children = [item for sublist in children for item in sublist]
+        self.assertGreater(len(mothers), len(flattened_children))
+
+        for mother_index, child_list in enumerate(children):
+            for child in child_list:
+                self.assertEqual(mothers[child], mother_index)
+    
     def test_age_boundaries(self):
         """
         Checks that people under 13 or over 40 can't get pregnant
