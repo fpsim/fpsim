@@ -8,7 +8,7 @@ import numpy as np
 useSI          = True
 mpy            = 12   # Months per year, to avoid magic numbers
 eps            = 1e-9 # To avoid divide-by-zero
-max_age        = 50   # Maximum age
+max_age        = 99   # Maximum age
 max_age_preg   = 49   # Maximum age to become pregnant
 max_parity     = 20   # Maximum number of children
 
