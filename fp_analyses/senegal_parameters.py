@@ -132,7 +132,7 @@ def default_female_age_fecundity(bound):
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
 
     fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
-    fecundity_interp = fecundity_interp_model(fpd.spline_ages)
+    fecundity_interp = fecundity_interp_model(fpd.spline_preg_ages)
     if bound:
         fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp))
 
