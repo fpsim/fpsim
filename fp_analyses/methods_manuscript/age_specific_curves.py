@@ -1,11 +1,17 @@
-import os
+'''
+File to generate age-specific probability curves informing parameters for
+fecundability, sexual activity, and miscarriage
+Corresponds to Figure 2 of FPsim methods manuscript
+- Sexual activity is calibrated to Senegal from DHS data asking about sexual activity in the last 4 weeks.
+- Fecundability is from the PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+- Miscarriage probability is from Magnus et al BMJ 2019: https://pubmed.ncbi.nlm.nih.gov/30894356/
+Visualizations are from data in senegal_parameters.py
+'''
 
 import matplotlib.pyplot as plt
 import numpy as np
-import pandas as pd
 import sciris as sc
-import seaborn as sns
-
+from fp_analyses.methods_manuscript import base
 import fpsim as fp
 from fp_analyses import senegal_parameters as sp
 
@@ -13,6 +19,7 @@ from fp_analyses import senegal_parameters as sp
 sc.tic()
 
 do_plot_figure_2 = 1
+do_save = 1
 
 # Set up sim
 pars = sp.make_pars()
@@ -29,7 +36,7 @@ max_postpartum_months = 35
 if do_plot_figure_2:
     ages = np.arange(max_age + 1)
 
-    fig1, axs = plt.subplots(3)
+    fig, axs = plt.subplots(3)
     axs[0].plot(ages, pars['age_fecundity'], color='b', linewidth=2)
     axs[0].set_title('Fecundability', fontsize = 40)
     axs[0].set_ylabel('Probability conception per 12 months', fontsize = 30)
@@ -41,21 +48,17 @@ if do_plot_figure_2:
     axs[2].plot(ages, pars['miscarriage_rates'], color='b', linewidth=2)
     axs[2].set_title('Miscarriage', fontsize = 40)
     axs[2].set_ylabel('Probability per pregnancy', fontsize = 30)
-
+    axs[2].set_xlabel('Age', fontweight='bold', fontsize=50)
 
     for ax in axs:
         ax.tick_params(labelsize= 30)
 
-    fig1.text(0.5, 0.001,'Age' ,fontsize=40, fontweight='bold', ha='center', va='center' )
-
-    fig1.set_figwidth(20)
-    fig1.set_figheight(38)
+    fig.set_figwidth(20)
+    fig.set_figheight(40)
 
     plt.show()
 
-    #plt.savefig('Age parameters.png', dpi = 600)
+    if do_save:
+        plt.savefig(base.abspath('output_files/age_parameter_curves.png'))
 
-
-    #axs[3].plot(ages, nullip_interp_model(ages),  color='b', linewidth=2)
-    #axs[3].set_title('Nulliparous fecundability correction', fontsize = 40)
-    #axs[3].set_ylabel('Correction ratio nullip vs parous', fontsize = 30)
+sc.toc()
