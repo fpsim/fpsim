@@ -55,7 +55,6 @@ for i in range(start_timestep, stop_timestep):
     postpartum += results["switching_events_postpartum"][i]
     for key in fpd.method_age_mapping.keys():
         annual_ages[key] += results["switching_events_" + key][i]
-        print(f'i in range start to stop: {i}')
         postpartum_ages[key] += results["switching_events_pp_" + key][i]
     a_df_step = pd.DataFrame(results["switching_events_general"][i], columns=names, index=names) # only need next 5 lines for animations
     p_df_step = pd.DataFrame(results["switching_events_postpartum"][i], columns=names, index=names)
@@ -79,10 +78,12 @@ for key in fpd.method_age_mapping.keys():
     postpartum_ages_df[key] = pd.DataFrame(postpartum_ages[key], columns=names, index=names)
     postpartum_ages_log[key] = np.log10(postpartum_ages_df[key])
 
-fix, axs = plt.subplots(4,1)
+# Plot heatmaps of switching events by annual events and postpartum among different age groups
+# TODO - need to keep working on plotting
+fix, axs = plt.subplots(4)
 for x in range(4):
-    axs[x, 0].sns.heatmap(annual_ages_log[key], vmin=0, vmax=5.6, cmap = "YlGnBu", cbar_kws={'label': 'number of transitions (log 10)'})
-    plt.title(f'Age {key}')
+    axs[x] = sns.heatmap(annual_ages_log[key], vmin=0, vmax=5.6, cmap = "YlGnBu", cbar_kws={'label': 'number of transitions (log 10)'})
+    axs[x].set_title(f'Age {key}')
 
 plt.show()
 
@@ -90,7 +91,7 @@ plt.show()
 
 
 
-'''Uncomment blocks of code below if you'd like to print switching matrices out'''
+'''Uncomment blocks of code below to print switching matrices'''
 # Print matrices
 #new_line = '\n'
 #print(f'Annual switching event matrix for the last {y} years of the simulation:{new_line}{annual_df}')
@@ -104,7 +105,7 @@ plt.show()
 #for key in fpd.method_age_mapping.keys():
     #print(f'{key}: {postpartum_ages_df[key]}')
 
-'''Uncomment blocks of code below if you'd like to save switching events as csv'''
+'''Uncomment blocks of code below to save switching events as csv'''
 # Save matrices
 #annual_df.to_csv('/model_postprocess_files/annual_switching.csv')  # Change filepath to yours
 #postpartum_df.to_csv('/model_postprocess_files/postpartum_switching.csv') # Change filepath to yours
@@ -115,7 +116,7 @@ plt.show()
 
 # Save each step matrix to be able to cycle through in animation
 '''
-Uncomment this code if you want to save all switching matrices at each time step
+Uncomment this code to save all switching matrices at each time step, used for animation
 NOTE - this will save ~120 dataframes in separate csv files twice for annual and postpartum steps
 '''
 #for n in range(1, end_step):
