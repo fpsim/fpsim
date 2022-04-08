@@ -84,8 +84,8 @@ def test_update_methods_eff():
     msim = fp.MultiSim(sims=simlist)
     msim.run()
 
-    low_eff_post_sim = msim.sims[0].pars['method_efficacy']["Other modern"]
-    high_eff_post_sim = msim.sims[1].pars['method_efficacy']["Other modern"]
+    low_eff_post_sim = msim.sims[0].pars['method_efficacy'][9]
+    high_eff_post_sim = msim.sims[1].pars['method_efficacy'][9]
 
     assert high_eff_post_sim > low_eff_post_sim
 
@@ -169,6 +169,7 @@ if __name__ == '__main__':
     sim1 = test_interventions()
     sim2 = test_analyzers()
     test_update_methods_probs()
+    test_update_methods_eff()
 
     print('\n'*2)
     sc.toc(T)
