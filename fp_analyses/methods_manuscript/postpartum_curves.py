@@ -28,23 +28,25 @@ max_postpartum_months = 35
 
 if plot_postpartum_curves:
     months = np.arange(max_postpartum_months + 1)
+    extended_postpartum = np.zeros(24)
+    lam = np.append(pars['lactational_amenorrhea']['rate'], extended_postpartum)
 
-    fig, axs = plt.subplots()
-    axs.plot(months, pars['sexual_activity_postpartum']['percent_active'], color='g', linewidth=2)
-    axs.set_title('Sexual activity postpartum', fontsize=37)
-    axs.set_ylabel('Probability per 1 month', fontsize=28)
-    #axs[1].plot(months, pars['lactational_amenorrhea'], color='g', linewidth=2) #TODO- Need to build out LAM array to 35 months, add 24 more 0s
-    #axs[1].set_title('Lactational amenorrhea', fontsize=37)
-    #axs[1].set_ylabel('Probability per 1 month', fontsize=28)
-    #axs[1].axvline(x=5, color='g', linestyle='--', label='limit of LAM use')
-    #axs[1].legend(prop={"size": 18}, fancybox=True, framealpha=1, shadow=True, borderpad=1)
-    axs.set_xlabel('Month postpartum', fontsize=40, fontweight='bold')
+    fig, axs = plt.subplots(2)
+    axs[0].plot(months, pars['sexual_activity_postpartum']['percent_active'], color='g', linewidth=2)
+    axs[0].set_title('Sexual activity postpartum', fontsize=37)
+    axs[0].set_ylabel('Probability per 1 month', fontsize=28)
+    axs[1].plot(months, lam, color='g', linewidth=2)
+    axs[1].set_title('Lactational amenorrhea', fontsize=37)
+    axs[1].set_ylabel('Probability per 1 month', fontsize=28)
+    axs[1].axvline(x=5, color='g', linestyle='--', label='limit of LAM use')
+    axs[1].legend(prop={"size": 18}, fancybox=True, framealpha=1, shadow=True, borderpad=1)
+    axs[1].set_xlabel('Month postpartum', fontsize=40, fontweight='bold')
 
-    #for ax in axs:
-        #ax.tick_params(labelsize=30)
+    for ax in axs:
+        ax.tick_params(labelsize=30)
 
-    fig.set_figwidth(12)
-    fig.set_figheight(18)
+    fig.set_figwidth(18)
+    fig.set_figheight(30)
 
     plt.show()
 
