@@ -19,7 +19,7 @@ y = 10 # number of years to go backwards from end of simulation to calculate tra
 
 # Run FPsim and extract results
 pars = sp.make_pars()
-#pars['n'] = 2000 # Adjust running parameters easily here if needed
+pars['n'] = 2000 # Adjust running parameters easily here if needed
 #pars['start_year'] = 1960
 sim = fp.Sim(pars=pars)
 sim.run()
@@ -77,7 +77,7 @@ for key in fpd.method_age_mapping.keys():
     annual_ages_df[key] = pd.DataFrame(annual_ages[key], columns=names, index=names)
     annual_ages_log[key] = np.log10(annual_ages_df[key])
     postpartum_ages_df[key] = pd.DataFrame(postpartum_ages[key], columns=names, index=names)
-    postpartum_ages_log[key] = np.log10(postpartum_ages_log[key])
+    postpartum_ages_log[key] = np.log10(postpartum_ages_df[key])
 
 fix, axs = plt.subplots(4,1)
 for x in range(4):
