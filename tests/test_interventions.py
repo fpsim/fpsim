@@ -168,6 +168,7 @@ if __name__ == '__main__':
 
     sim1 = test_interventions()
     sim2 = test_analyzers()
+    test_update_methods_effs()
     test_update_methods_probs()
     test_update_methods_eff()
 
