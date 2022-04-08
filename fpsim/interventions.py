@@ -21,9 +21,7 @@ class Intervention:
     Base class for interventions. By default, interventions are printed using a
     dict format, which they can be recreated from. To display all the attributes
     of the intervention, use disp() instead.
-
     To retrieve a particular intervention from a sim, use sim.get_intervention().
-
     Args:
         label       (str): a label for the intervention (used for plotting, and for ease of identification)
         show_label (bool): whether or not to include the label in the legend
@@ -95,7 +93,6 @@ class Intervention:
     def finalize(self, sim=None):
         '''
         Finalize intervention
-
         This method is run once as part of `sim.finalize()` enabling the intervention to perform any
         final operations after the simulation is complete (e.g. rescaling)
         '''
@@ -111,10 +108,8 @@ class Intervention:
         class must implement. This method gets called at each timestep and can make
         arbitrary changes to the Sim object, as well as storing or modifying the
         state of the intervention.
-
         Args:
             sim: the Sim instance
-
         Returns:
             None
         '''
@@ -124,21 +119,16 @@ class Intervention:
     def plot_intervention(self, sim, ax=None, **kwargs):
         '''
         Plot the intervention
-
         This can be used to do things like add vertical lines on days when
         interventions take place. Can be disabled by setting self.do_plot=False.
-
         Note 1: you can modify the plotting style via the ``line_args`` argument when
         creating the intervention.
-
         Note 2: By default, the intervention is plotted at the days stored in self.days.
         However, if there is a self.plot_days attribute, this will be used instead.
-
         Args:
             sim: the Sim instance
             ax: the axis instance
             kwargs: passed to ax.axvline()
-
         Returns:
             None
         '''
@@ -166,16 +156,13 @@ class Intervention:
     def to_json(self):
         '''
         Return JSON-compatible representation
-
         Custom classes can't be directly represented in JSON. This method is a
         one-way export to produce a JSON-compatible representation of the
         intervention. In the first instance, the object dict will be returned.
         However, if an intervention itself contains non-standard variables as
         attributes, then its `to_json` method will need to handle those.
-
         Note that simply printing an intervention will usually return a representation
         that can be used to recreate it.
-
         Returns:
             JSON-serializable representation (typically a dict, but could be anything else)
         '''
@@ -192,9 +179,7 @@ class Analyzer(sc.prettyobj):
     to provide more detailed information about a simulation than is available by
     default -- for example, pulling states out of sim.people on a particular timestep
     before it gets updated in the next timestep.
-
     To retrieve a particular analyzer from a sim, use sim.get_analyzer().
-
     Args:
         label (str): a label for the Analyzer (used for ease of identification)
     '''
@@ -220,7 +205,6 @@ class Analyzer(sc.prettyobj):
     def finalize(self, sim=None):
         '''
         Finalize analyzer
-
         This method is run once as part of `sim.finalize()` enabling the analyzer to perform any
         final operations after the simulation is complete (e.g. rescaling)
         '''
@@ -235,7 +219,6 @@ class Analyzer(sc.prettyobj):
         Apply analyzer at each time point. The analyzer has full access to the
         sim object, and typically stores data/results in itself. This is the core
         method which each analyzer object needs to implement.
-
         Args:
             sim: the Sim instance
         '''
@@ -245,12 +228,10 @@ class Analyzer(sc.prettyobj):
     def to_json(self):
         '''
         Return JSON-compatible representation
-
         Custom classes can't be directly represented in JSON. This method is a
         one-way export to produce a JSON-compatible representation of the
         intervention. This method will attempt to JSONify each attribute of the
         intervention, skipping any that fail.
-
         Returns:
             JSON-serializable representation
         '''
@@ -278,16 +259,12 @@ class snapshot(Analyzer):
     '''
     Analyzer that takes a "snapshot" of the sim.people array at specified points
     in time, and saves them to itself.
-
     Args:
         timesteps (list): list of timesteps on which to take the snapshot
         args   (list): additional timestep(s)
         die    (bool): whether or not to raise an exception if a date is not found (default true)
         kwargs (dict): passed to Analyzer()
-
-
     **Example**::
-
         sim = cv.Sim(analyzers=fps.snapshot('2020-04-04', '2020-04-14'))
         sim.run()
         snapshot = sim.pars['analyzers'][0]
@@ -458,46 +435,8 @@ class update_methods(Intervention):
                     if verbose:
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
-            # probs looks like this:
-            #     probs = [
-            #     dict(
-            #         source = 'None', # Source method, 'all' for all methods
-            #         dest   = 'Other modern', # Destination
-            #         factor = None, # Factor by which to multiply existing probability
-            #         value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-            #         keys   = ['>25'], # Which age keys to modify -- if not specified, all
-            #     ),
-            # ]
-
-            # reduce_transition looks like this
-            #     reduce_transition = [
-            #     dict(
-            #         source = 'None', # Source method, 'all' for all methods
-            #         factor = None, # Factor by which to multiply existing probability
-            #         value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-            #         keys   = ['>25'], # Which age keys to modify -- if not specified, all
-            #     ),
-            # ]
-
             # Implement method mix shift
             if 'probs' in self.scen:
-                if 'reduce_transition' in self.scen:
-                    method_names = self.sim.pars['methods']['names']
-                    prob_updates = []
-                    for entry in self.scen.reduce_transition:
-                        target = entry.target
-                        factor = entry.factor
-                        value = entry.value
-                        keys = entry.keys
-                        for method in  method_names:
-                            if method not in ["None", target]:
-                                prob_updates.append({source: target,
-                                                     dest: method,
-                                                     factor: factor,
-                                                     value: value,
-                                                     keys: keys })                            
-                    self.scen.probs.append(prob_updates)
-
                 for entry in self.scen.probs:
                     source = key2ind(sim, entry['source'])
                     dest   = key2ind(sim, entry['dest'])
