@@ -18,22 +18,21 @@ from fp_analyses import senegal_parameters as sp
 # Housekeeping
 sc.tic()
 
-do_plot_figure_2 = 1
+plot_age_specific_curves = 1
 do_save = 1
 
-# Set up sim
+# Set up parameters
 pars = sp.make_pars()
-pars['n'] = 2000 # Adjust running parameters easily here
-pars['start_year'] = 1960
-sim = fp.Sim(pars)
-sim.run()
+#pars['n'] = 2000 # Adjust running parameters easily here
+#pars['start_year'] = 1960
+#sim = fp.Sim(pars)
+#sim.run()
 
 # global variables for use in plotting
 max_age = 50
-max_postpartum_months = 35
 
 # Plot age-specific FPsim parameters
-if do_plot_figure_2:
+if plot_age_specific_curves:
     ages = np.arange(max_age + 1)
 
     fig, axs = plt.subplots(3)
