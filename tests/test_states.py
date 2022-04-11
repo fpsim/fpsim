@@ -232,7 +232,7 @@ class TestStates(unittest.TestCase):
                     self.save_person_states(index, "debug/preclude_pregnancy_error.json")
                     self.assertTrue(was_pregnant[index], msg=f"In year {year} there was a person whose gestation is {gestation} lactation is {lactating} and postpartum is {postpartum} and their was_pregnant status is {was_pregnant[index]}")   
 
-    @unittest.skip("Need to consider infant mortality")
+    @unittest.skip("Mothers needs to be configured on for this to work")
     def test_mothers_indices(self):
         mothers = self.people.mothers
         children = self.people.children
