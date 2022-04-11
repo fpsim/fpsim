@@ -2,6 +2,7 @@
 A script to run a sim and calculate the total transitions between methods in a square matrix in the last 10 years of the sim
 Separates both annual transitions and postpartum transitions
 Can adjust how many timesteps to sum and output
+Also able to save each timestep as one transition matrix to collated and run as an animated if desired
 '''
 
 import pandas as pd
@@ -79,11 +80,17 @@ for key in fpd.method_age_mapping.keys():
     postpartum_ages_log[key] = np.log10(postpartum_ages_df[key])
 
 # Plot heatmaps of switching events by annual events and postpartum among different age groups
-# TODO - need to keep working on plotting
-fix, axs = plt.subplots(4)
-for x in range(4):
-    axs[x] = sns.heatmap(annual_ages_log[key], vmin=0, vmax=5.6, cmap = "YlGnBu", cbar_kws={'label': 'number of transitions (log 10)'})
-    axs[x].set_title(f'Age {key}')
+fig, axes = plt.subplots(4,2, figsize= (25,38))
+
+titles = {0: "Annual", 1: "Postpartum"}
+
+for n, value in titles.items():
+    for i, key in enumerate(fpd.method_age_mapping):
+        sns.heatmap(annual_ages_log[key], vmin=0, vmax=5.6, cmap = "YlGnBu", cbar_kws={'label': 'number of transitions (log 10)'}, ax=axes[i,n])
+        axes[i,n].set_title(f'{value} Switching Age {key}')
+
+# a_steps (annual transitions per step) and p_steps (postpartum transitions per step) may be access
+# from this file and extracted to create an animation
 
 plt.show()
 
