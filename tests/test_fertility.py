@@ -8,6 +8,7 @@ import sciris as sc
 import os
 from pathlib import Path
 
+@pytest.mark.skip("Need to refactor test parameters to be within the test suite")
 class TestFPSimFertility():
     def setup_method(self):
         self.is_debugging = False
