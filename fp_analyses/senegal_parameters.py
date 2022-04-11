@@ -634,6 +634,7 @@ def default_birth_spacing_preference():
     pref_spacing = {}
     pref_spacing['interval'] = interval # Store the interval (which we've just checked is always the same)
     pref_spacing['n_bins'] = len(intervals) # Actually n_bins - 1, but we're counting 0 so it's OK
+    pref_spacing['months'] = postpartum_spacing[:,0]
     pref_spacing['preference'] = postpartum_spacing[:, 1] # Store the actual birth spacing data
 
     return pref_spacing
