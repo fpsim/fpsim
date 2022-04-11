@@ -13,6 +13,7 @@ from fp_analyses.methods_manuscript import base
 import numpy as np
 import matplotlib.pyplot as plt
 import seaborn as sns
+from matplotlib.animation import FuncAnimation
 
 mpy = 12 # months per year to avoid magic numbers
 
@@ -20,7 +21,7 @@ y = 10 # number of years to go backwards from end of simulation to calculate tra
 
 # Run FPsim and extract results
 pars = sp.make_pars()
-pars['n'] = 2000 # Adjust running parameters easily here if needed
+pars['n'] = 5000 # Adjust running parameters easily here if needed
 #pars['start_year'] = 1960
 sim = fp.Sim(pars=pars)
 sim.run()
@@ -84,17 +85,19 @@ fig, axes = plt.subplots(4,2, figsize= (25,38))
 
 titles = {0: "Annual", 1: "Postpartum"}
 
+sns.set(font_scale=2.0)
 for n, value in titles.items():
     for i, key in enumerate(fpd.method_age_mapping):
-        sns.heatmap(annual_ages_log[key], vmin=0, vmax=5.6, cmap = "YlGnBu", cbar_kws={'label': 'number of transitions (log 10)'}, ax=axes[i,n])
-        axes[i,n].set_title(f'{value} Switching Age {key}')
+        sns.heatmap(annual_ages_log[key], vmin=0, vmax=5.6, cmap = "YlGnBu", cbar_kws={'label': 'number of transitions (log 10)'}, ax=axes[i, n])
+        axes[i, n].set_title(f'{value} Switching Age {key}')
+        axes[i, n].set_xticklabels(axes[i, n].get_xmajorticklabels(), fontsize=16)
+        axes[i, n].set_yticklabels(axes[i, n].get_ymajorticklabels(), fontsize=16)
+
 
 # a_steps (annual transitions per step) and p_steps (postpartum transitions per step) may be access
 # from this file and extracted to create an animation
 
 plt.show()
-
-
 
 
 
@@ -127,6 +130,35 @@ Uncomment this code to save all switching matrices at each time step, used for a
 NOTE - this will save ~120 dataframes in separate csv files twice for annual and postpartum steps
 '''
 #for n in range(1, end_step):
-    #a_steps[n].to_csv('annual_switching_step_'+str(n)+'.csv')
+    #a_steps[n].to_csv('/annual_switching_step_'+str(n)+'.csv')
     #p_steps[n].to_csv('/postpartum_switching_step_'+str(n)+'.csv')
 
+'''
+Code for producing an animation of the switching by step of sim
+'''
+
+'''
+step = 1
+end_step = 118
+
+annual_steps = {}
+postpartum_steps = {}
+
+for n in range(step, end_step+1):
+    annual_steps[n] = pd.read_csv('annual_switching_step_'+str(n)+'.csv', index_col = 0)
+    postpartum_steps[n] = pd.read_csv('postpartum_switching_step_'+str(n)+'.csv', index_col = 0)
+    annual_steps[n] = np.log10(annual_steps[n])
+    postpartum_steps[n] = np.log10(postpartum_steps[n])
+
+fig = plt.figure(figsize = (12, 10))
+
+def animate(frames):
+    plt.clf()
+    n = frames + 1
+    heat = sns.heatmap(data = postpartum_steps[n], vmin = 0, vmax = 6, cmap= "YlGnBu")
+    plt.title(f'Step of simulation: {n}')
+
+anim = FuncAnimation(fig = fig, func = animate, frames = len(postpartum_steps)-1, interval = 200)
+anim.save('test_postpartum.gif', writer = 'imagemagick')
+plt.show()
+'''
