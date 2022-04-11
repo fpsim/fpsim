@@ -174,6 +174,7 @@ plot_6 = ax2.plot(states['age'], states['age-based fecundability'], color=colors
                   label="Age-based\n fecundability")
 
 # Need to print out df for agent states to look at which methods they are using along the timeline and then manually add the method name at the right location
+# x corresponds to agents age when they take up method, y needs to be adjusted for individual's plot
 
 #ax2.annotate('Injectables', (25.8, 0.35), fontsize=30, fontweight='bold')
 #ax2.annotate('Condoms', (28.9, 0.35), fontsize=30, fontweight='bold')
