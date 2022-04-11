@@ -144,6 +144,8 @@ def default_infant_mortality(test_rate=50):
     infant_mortality = {}
     infant_mortality['year'] = data[:, 0]
     infant_mortality['probs'] = data[:, 1] / 1000  # Rate per 1000 live births
+    infant_mortality['ages'] = np.array([16, 17,   19, 22,   25, 50])
+    infant_mortality['age_probs'] = np.array([2.28, 1.63, 1.3, 1.12, 1.0, 1.0])
 
     return infant_mortality
 
