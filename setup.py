@@ -35,7 +35,7 @@ setup(
         'scipy',
         'pandas>=1.3', 
         'sciris>=1.2.1',
-        'matplotlib',
+        'matplotlib>=3.5.0',
         'seaborn>=0.9',
         'optuna',
         'plotnine',
