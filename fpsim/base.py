@@ -179,7 +179,7 @@ class BasePeople(sc.prettyobj):
         return np.array(self.age, dtype=np.int64)
 
     @property
-    def round_age(self):
+    def ceil_age(self):
         ''' Rounds age up to the next highest integer'''
         return np.array(np.ceil(self.age))
 

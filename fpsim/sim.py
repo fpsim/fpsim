@@ -511,7 +511,8 @@ class People(fpb.BasePeople):
 
         pp.get_method_postpartum()
 
-        whole_years = ((non_pp.round_age - non_pp.age) < (1/fpd.mpy)) * ((non_pp.round_age - non_pp.age) > 0)
+        age_diff = non_pp.ceil_age - non_pp.age
+        whole_years = ((age_diff < (1/fpd.mpy)) * (age_diff > 0))
         birthdays = non_pp.filter(whole_years)
         birthdays.get_method()
         #self.step_results['birthday_fraction'] = len(birthdays)/len(non_pp) # Debugs and tracks fraction of birthday months, remove comment if debugging
