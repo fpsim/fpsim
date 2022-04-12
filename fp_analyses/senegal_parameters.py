@@ -185,6 +185,9 @@ def default_infant_mortality():
     '''
     From World Bank indicators for infant morality (< 1 year) for Senegal, per 1000 live births
     From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
+    Adolescent increased risk of infant mortality gradient taken
+    from Noori et al for Sub-Saharan African from 2014-2018.  Odds ratios with age 23-25 as reference group:
+    https://www.medrxiv.org/content/10.1101/2021.06.10.21258227v1
     '''
 
     data = np.array([
@@ -253,6 +256,8 @@ def default_infant_mortality():
     infant_mortality = {}
     infant_mortality['year'] = data[:,0]
     infant_mortality['probs'] = data[:,1]/1000   # Rate per 1000 live births, used after stillbirth is filtered out
+    infant_mortality['ages'] = np.array([16, 17,   19, 22,   25, 50])
+    infant_mortality['age_probs'] = np.array([2.28, 1.63, 1.3, 1.12, 1.0, 1.0])
 
     return infant_mortality
 
