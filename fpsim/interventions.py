@@ -549,4 +549,3 @@ class update_methods(Intervention):
                             print(f'At time {sim.y:0.1f}, matrix for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
 
         return
-# %%
