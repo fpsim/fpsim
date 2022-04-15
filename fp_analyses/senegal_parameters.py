@@ -132,7 +132,7 @@ def default_female_age_fecundity(bound):
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
 
     fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
-    fecundity_interp = fecundity_interp_model(fpd.spline_ages)
+    fecundity_interp = fecundity_interp_model(fpd.spline_preg_ages)
     if bound:
         fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp))
 
@@ -639,6 +639,7 @@ def default_birth_spacing_preference():
     pref_spacing = {}
     pref_spacing['interval'] = interval # Store the interval (which we've just checked is always the same)
     pref_spacing['n_bins'] = len(intervals) # Actually n_bins - 1, but we're counting 0 so it's OK
+    pref_spacing['months'] = postpartum_spacing[:,0]
     pref_spacing['preference'] = postpartum_spacing[:, 1] # Store the actual birth spacing data
 
     return pref_spacing
@@ -727,7 +728,7 @@ def default_lactational_amenorrhea():
 
 
 def data2interp(data, ages, normalize=False):
-    ''' Convert unevently spaced data into an even spline interpolation '''
+    ''' Convert unevenly spaced data into an even spline interpolation '''
     model = si.interp1d(data[0], data[1])
     interp = model(ages)
     if normalize:
