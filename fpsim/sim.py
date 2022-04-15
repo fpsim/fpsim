@@ -654,6 +654,8 @@ class Sim(fpb.BaseSim):
         self.results['method_failures_over_year'] = []
         self.results['infant_deaths_over_year'] = []
         self.results['total_births_over_year'] = []
+        self.results['live_births_over_year'] = []
+        self.results['maternal_deaths_over_year'] = []
         self.results['birthday_fraction'] = []
         self.results['asfr'] = {}
 
@@ -915,7 +917,7 @@ class Sim(fpb.BaseSim):
             self.results['total_women_40-44'][i] = r.age_bin_totals['40-44']
             self.results['total_women_45-49'][i] = r.age_bin_totals['45-49']
 
-            # Calculate metrics (TFR, mCPR, and unintended pregnancies) over the last year in the model and save whole years and stats to an array
+            # Calculate metrics over the last year in the model and save whole years and stats to an array
             if i % fpd.mpy == 0:
                 self.results['tfr_years'].append(self.y)
                 start_index = (int(self.t)-1)*fpd.mpy
@@ -923,11 +925,19 @@ class Sim(fpb.BaseSim):
                 unintended_pregs_over_year = pl.sum(self.results['unintended_pregs'][start_index:stop_index]) # Grabs sum of unintended pregnancies due to method failures over the last 12 months of calendar year
                 infant_deaths_over_year = pl.sum(self.results['infant_deaths'][start_index:stop_index])
                 total_births_over_year = pl.sum(self.results['total_births'][start_index:stop_index])
+                live_births_over_year = pl.sum(self.results['births'][start_index:stop_index])
+                maternal_deaths_over_year = pl.sum(self.results['maternal_deaths'][start_index:stop_index])
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
                 self.results['total_births_over_year'].append(total_births_over_year)
+                self.results['live_births_over_year'].append(live_births_over_year)
+                self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
+                maternal_mortality_ratio = maternal_deaths_over_year / live_births_over_year * 100000
+                infant_mortality_rate = infant_deaths_over_year / live_births_over_year * 1000
+                self.results['mmr'].append(maternal_mortality_ratio)
+                self.results['imr'].append(infant_mortality_rate)
                 #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
                 
                 tfr = 0
@@ -958,7 +968,7 @@ class Sim(fpb.BaseSim):
 
         # Calculate cumulative totals
         self.results['cum_maternal_deaths'] = np.cumsum(self.results['maternal_deaths'])
-        self.results['cum_infant_deaths']   = np.cumsum(self.results['infant_deaths'])
+        self.results['cum_infant_deaths']   = np.cumsum(self.results['infant_deaths_over_year'])
 
         print(f'Final population size: {self.n}.')
 
@@ -1037,16 +1047,16 @@ class Sim(fpb.BaseSim):
 
         res = self.results # Shorten since heavily used
 
-        x = res['t'] # Likewise
+        x = res['tfr years'] # Likewise
 
         # Plot everything
         to_plot = sc.odict({
-            'Population size':    sc.odict({'pop_size_months':     'Population size'}),
-            'MCPR':               sc.odict({'mcpr':                'Modern contraceptive prevalence rate (%)'}),
-            'Births':             sc.odict({'births':              'Births'}),
-            'Deaths':             sc.odict({'deaths':              'Deaths'}),
-            'Maternal mortality': sc.odict({'cum_maternal_deaths': 'Cumulative birth-related maternal deaths'}),
-            'Infant mortality':   sc.odict({'cum_infant_deaths':   'Cumulative infant deaths'}),
+            'Population size':    sc.odict({'pop_size':     'Population size'}),
+            'MCPR':               sc.odict({'mcpr_by_year': 'Modern contraceptive prevalence rate (%)'}),
+            'Person-centered CPR': sc.odict({'cpr_by_year': 'Person-centered contraceptive prevalence rate (%)'})
+            'Total infant deaths': sc.odict({'cum_infant_deaths':  'Infant deaths'})
+            'Maternal mortality ratio': sc.odict({'mmr': 'Maternal mortality ratio'}),
+            'Infant mortality rate':   sc.odict({'imr':   'Infant mortality rate'}),
             })
         for p,title,keylabels in to_plot.enumitems():
             ax = pl.subplot(2,3,p+1)
