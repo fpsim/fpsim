@@ -535,7 +535,7 @@ class People(fpb.BasePeople):
         denominator = (self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * \
                       (self.sex == 0) * (self.pregnant == 0) * (self.alive)
         no_method_mcpr = np.sum((self.method == 0) * denominator)
-        on_method_mcpr = np.sum((self.method == any(modern_methods)) * denominator)
+        on_method_mcpr = np.sum((np.isin(self.method, modern_methods)) * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
         self.step_results['on_methods_mcpr'] += on_method_mcpr
         return
