@@ -529,16 +529,31 @@ class People(fpb.BasePeople):
         Track for purposes of calculating mCPR at the end of the timestep after all people are updated
         Not including LAM users in mCPR as this model counts all women passively using LAM but
         DHS data records only women who self-report LAM which is much lower.
+        Follows the DHS definition of mCPR
         '''
-        denominator = (self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * (self.pregnant == 0) * (self.sex == 0) * (self.alive)
-        no_method = np.sum((self.method == 0) * denominator)
-        on_method = np.sum((self.method != 0) * denominator)
-        self.step_results['no_methods_mcpr'] += no_method
-        self.step_results['on_methods_mcpr'] += on_method
+        modern_methods = [1, 2, 3, 4, 5, 7, 9]
+        denominator = (self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * \
+                      (self.sex == 0) * (self.pregnant == 0) * (self.alive)
+        no_method_mcpr = np.sum((self.method == 0) * denominator)
+        on_method_mcpr = np.sum((self.method != 0) * denominator)
+        self.step_results['no_methods_mcpr'] += no_method_mcpr
+        self.step_results['on_methods_mcpr'] += on_method_mcpr
         return
 
     def check_cpr(self):
-
+        '''
+        Track for purposes of calculating newer ways to conceptualize contraceptive prevalence
+        at the end of the timestep after all people are updated
+        Denominator of possible users excludes pregnant women and those not sexually active in the last 4 weeks
+        Used to compare new metrics of contraceptive prevalence and eventually unmet need to traditional mCPR definitions
+        '''
+        denominator = ((self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * (
+                    self.sex == 0) * (self.pregnant == 0) * (self.sexually_active == 1) * (self.alive))
+        no_method_cpr = np.sum((self.method == 0) * denominator)
+        on_method_cpr = np.sum((self.method != 0) * denominator)
+        self.step_results['no_methods_cpr'] += no_method_cpr
+        self.step_results['on_methods_cpr'] += on_method_cpr
+        return
 
     def init_step_results(self):
         self.step_results = dict(
@@ -643,7 +658,8 @@ class Sim(fpb.BaseSim):
 
     def init_results(self):
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths',
-                       'cum_maternal_deaths', 'cum_infant_deaths', 'on_methods_mcpr', 'no_methods_cpr', 'on_methods_cpr', 'no_methods_cpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
+                       'cum_maternal_deaths', 'cum_infant_deaths', 'on_methods_mcpr', 'no_methods_mcpr', 'on_methods_cpr', 'no_methods_cpr', 'mcpr', 'cpr',
+                       'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
                        'total_women_40-44', 'total_women_45-49']
@@ -660,6 +676,8 @@ class Sim(fpb.BaseSim):
         self.results['total_births_over_year'] = []
         self.results['live_births_over_year'] = []
         self.results['maternal_deaths_over_year'] = []
+        self.results['mmr'] = []
+        self.results['imr'] = []
         self.results['birthday_fraction'] = []
         self.results['asfr'] = {}
 
@@ -895,7 +913,7 @@ class Sim(fpb.BaseSim):
             self.results['no_methods_mcpr'][i] = r.no_methods_mcpr
             self.results['on_methods_cpr'][i] = r.on_methods_cpr
             self.results['no_methods_cpr'][i] = r.no_methods_cpr
-            self.results['mcpr'][i]           = r.on_methods_mcpr/r.no_method_mcpr
+            self.results['mcpr'][i]           = r.on_methods_mcpr/r.no_methods_mcpr
             self.results['cpr'][i]             = r.on_methods_cpr/r.no_methods_cpr
             self.results['pp0to5'][i]          = percent0to5
             self.results['pp6to11'][i]         = percent6to11
@@ -1055,7 +1073,7 @@ class Sim(fpb.BaseSim):
 
         res = self.results # Shorten since heavily used
 
-        x = res['tfr years'] # Likewise
+        x = res['tfr_years'] # Likewise
 
         # Plot everything
         to_plot = sc.odict({
