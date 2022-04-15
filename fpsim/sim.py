@@ -535,7 +535,7 @@ class People(fpb.BasePeople):
         denominator = (self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * \
                       (self.sex == 0) * (self.pregnant == 0) * (self.alive)
         no_method_mcpr = np.sum((self.method == 0) * denominator)
-        on_method_mcpr = np.sum((self.method != 0) * denominator)
+        on_method_mcpr = np.sum((self.method == any(modern_methods)) * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
         self.step_results['on_methods_mcpr'] += on_method_mcpr
         return
@@ -913,8 +913,8 @@ class Sim(fpb.BaseSim):
             self.results['no_methods_mcpr'][i] = r.no_methods_mcpr
             self.results['on_methods_cpr'][i] = r.on_methods_cpr
             self.results['no_methods_cpr'][i] = r.no_methods_cpr
-            self.results['mcpr'][i]           = r.on_methods_mcpr/r.no_methods_mcpr
-            self.results['cpr'][i]             = r.on_methods_cpr/r.no_methods_cpr
+            self.results['mcpr'][i]           = r.on_methods_mcpr/(r.no_methods_mcpr + r.on_methods_mcpr)
+            self.results['cpr'][i]             = r.on_methods_cpr/(r.no_methods_cpr + r.on_methods_cpr)
             self.results['pp0to5'][i]          = percent0to5
             self.results['pp6to11'][i]         = percent6to11
             self.results['pp12to23'][i]           = percent12to23
