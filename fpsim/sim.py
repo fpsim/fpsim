@@ -529,14 +529,15 @@ class People(fpb.BasePeople):
         Track for purposes of calculating mCPR at the end of the timestep after all people are updated
         Not including LAM users in mCPR as this model counts all women passively using LAM but
         DHS data records only women who self-report LAM which is much lower.
-        If wanting to include LAM here need to add "or self.lam == False" to 2nd if statemnt
         '''
         denominator = (self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * (self.pregnant == 0) * (self.sex == 0) * (self.alive)
         no_method = np.sum((self.method == 0) * denominator)
         on_method = np.sum((self.method != 0) * denominator)
-        self.step_results['no_methods'] += no_method
-        self.step_results['on_methods'] += on_method
+        self.step_results['no_methods_mcpr'] += no_method
+        self.step_results['on_methods_mcpr'] += on_method
         return
+
+    def check_cpr(self):
 
 
     def init_step_results(self):
@@ -547,8 +548,10 @@ class People(fpb.BasePeople):
             total_births    = 0,
             maternal_deaths = 0,
             infant_deaths   = 0,
-            on_methods      = 0,
-            no_methods      = 0,
+            on_methods_mcpr = 0,
+            no_methods_mcpr = 0,
+            on_methods_cpr  = 0,
+            no_methods_cpr  = 0,
             pp0to5          = 0,
             pp6to11         = 0,
             pp12to23        = 0,
@@ -603,6 +606,7 @@ class People(fpb.BasePeople):
 
         # Update results
         self.check_mcpr()
+        self.check_cpr()
         self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
 
         # Age person at end of timestep after tabulating results
@@ -639,8 +643,7 @@ class Sim(fpb.BaseSim):
 
     def init_results(self):
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths',
-                       'cum_maternal_deaths', 'cum_infant_deaths', 'on_method', 'no_method', 'mcpr',
-                       'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
+                       'cum_maternal_deaths', 'cum_infant_deaths', 'on_methods_mcpr', 'no_methods_cpr', 'on_methods_cpr', 'no_methods_cpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
                        'total_women_40-44', 'total_women_45-49']
@@ -651,6 +654,7 @@ class Sim(fpb.BaseSim):
         self.results['tfr_rates'] = []
         self.results['pop_size'] = []
         self.results['mcpr_by_year'] = []
+        self.results['cpr_by_year']  = []
         self.results['method_failures_over_year'] = []
         self.results['infant_deaths_over_year'] = []
         self.results['total_births_over_year'] = []
@@ -887,9 +891,12 @@ class Sim(fpb.BaseSim):
             self.results['total_births'][i]    = r.total_births
             self.results['maternal_deaths'][i] = r.maternal_deaths
             self.results['infant_deaths'][i]   = r.infant_deaths
-            self.results['on_method'][i]       = r.on_methods
-            self.results['no_method'][i]       = r.no_methods
-            self.results['mcpr'][i]            = r.on_methods/(r.on_methods+r.no_methods)
+            self.results['on_methods_mcpr'][i] = r.on_methods_mcpr
+            self.results['no_methods_mcpr'][i] = r.no_methods_mcpr
+            self.results['on_methods_cpr'][i] = r.on_methods_cpr
+            self.results['no_methods_cpr'][i] = r.no_methods_cpr
+            self.results['mcpr'][i]           = r.on_methods_mcpr/r.no_method_mcpr
+            self.results['cpr'][i]             = r.on_methods_cpr/r.no_methods_cpr
             self.results['pp0to5'][i]          = percent0to5
             self.results['pp6to11'][i]         = percent6to11
             self.results['pp12to23'][i]           = percent12to23
@@ -929,6 +936,7 @@ class Sim(fpb.BaseSim):
                 maternal_deaths_over_year = pl.sum(self.results['maternal_deaths'][start_index:stop_index])
                 self.results['pop_size'].append(self.n)
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
+                self.results['cpr_by_year'].append(self.results['cpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
                 self.results['total_births_over_year'].append(total_births_over_year)
@@ -968,7 +976,7 @@ class Sim(fpb.BaseSim):
 
         # Calculate cumulative totals
         self.results['cum_maternal_deaths'] = np.cumsum(self.results['maternal_deaths'])
-        self.results['cum_infant_deaths']   = np.cumsum(self.results['infant_deaths_over_year'])
+        self.results['cum_infant_deaths_by_year']   = np.cumsum(self.results['infant_deaths_over_year'])
 
         print(f'Final population size: {self.n}.')
 
@@ -1053,8 +1061,8 @@ class Sim(fpb.BaseSim):
         to_plot = sc.odict({
             'Population size':    sc.odict({'pop_size':     'Population size'}),
             'MCPR':               sc.odict({'mcpr_by_year': 'Modern contraceptive prevalence rate (%)'}),
-            'Person-centered CPR': sc.odict({'cpr_by_year': 'Person-centered contraceptive prevalence rate (%)'})
-            'Total infant deaths': sc.odict({'cum_infant_deaths':  'Infant deaths'})
+            'Person-centered CPR': sc.odict({'cpr_by_year': 'Person-centered contraceptive prevalence rate (%)'}),
+            'Total infant deaths': sc.odict({'cum_infant_deaths_by_year':  'Infant deaths'}),
             'Maternal mortality ratio': sc.odict({'mmr': 'Maternal mortality ratio'}),
             'Infant mortality rate':   sc.odict({'imr':   'Infant mortality rate'}),
             })
