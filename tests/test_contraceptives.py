@@ -5,13 +5,15 @@ import json
 from copy import deepcopy
 import pylab as pl
 import numpy as np
+import pytest
 
 @unittest.skip("Need to optimize with multisim before it can be in GHA")
+@pytest.mark.long
 class TestContraceptiveEfficacy(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.pars = fa.senegal_parameters.make_pars()
-        self.pars['n'] = 1000
+        self.pars['n'] = 500
         self.contraceptives =  [
             "None",
             "Pill",
@@ -32,7 +34,6 @@ class TestContraceptiveEfficacy(unittest.TestCase):
             method::str
                 method name, for example 'BTL'
         """
-        #print(type(fa.senegal_parameters.default_efficacy()))
         base_pars = deepcopy(self.pars)
         method_index = self.pars['methods']['map'][method]
 
@@ -49,21 +50,19 @@ class TestContraceptiveEfficacy(unittest.TestCase):
         self.pars['methods']['probs_matrix'] = prob_dict
 
         efficacy = [0] * 10
-
+        sims = []
         last_result = 100000 # Sentinel
-        for index, efficacy_value in enumerate([0, .3, 0.6, 1.0]):
+        for efficacy_value in [0, .3, 0.6, 1.0]:
             efficacy[method_index] = efficacy_value
             self.pars["method_efficacy"] = np.array(efficacy)
-            exp = fp.ExperimentVerbose(self.pars)
-            exp.run_model()
-            exp.to_json(filename=f"{method}_efficacy.json")
-
-            with open(f"{method}_efficacy.json") as efficacy_file:
-                efficacy_dict = json.load(efficacy_file) 
-            
-            self.assertGreater(last_result, efficacy_dict['model']["pop_growth_rate_mean"])
-            if index == 3:
-                self.assertLessEqual(efficacy_dict['model']["pop_growth_rate_mean"], 0)
+            sim = fp.SimVerbose(self.pars)
+            sims.append(sim)
+        
+        multi = fp.MultiSim(sims=sims)
+        multi.run()
+        for sim in multi.sims:
+            self.assertGreater(last_result, sim['results']['pop_size'][-1])
+            last_result = sim['results']['pop_size'][-1]
 
         self.pars = base_pars
 
