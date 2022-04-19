@@ -108,13 +108,13 @@ def test_update_methods():
     other_modern_index = msim.sims[0].pars['methods']['map']['Other modern']
 
 
-    assert msim.sims[0].pars['methods']['probs_matrix']['21-25'][none_index][other_modern_index] != msim.sims[1].pars['methods']['probs_matrix']['21-25'][none_index][other_modern_index]
-    assert msim.sims[0].pars['methods']['probs_matrix']['21-25'][none_index][other_modern_index] == 0.2
-    assert msim.sims[1].pars['methods']['probs_matrix']['<18'][none_index][other_modern_index] == 0.2
+    assert msim.sims[0].pars['methods']['probs_matrix']['21-25'][none_index][other_modern_index] != msim.sims[1].pars['methods']['probs_matrix']['21-25'][none_index][other_modern_index], "update_methods did not change contraceptive matrix for key 21-25"
+    assert msim.sims[0].pars['methods']['probs_matrix']['21-25'][none_index][other_modern_index] == 0.2, "update_methods did not change contraceptive matrix 21-25 to spcified 0.2"
+    assert msim.sims[1].pars['methods']['probs_matrix']['<18'][none_index][other_modern_index] == 0.2, "update_methods did not change contraceptive matrix <25 to spcified 0.2"
 
-    assert msim.sims[2].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][none_index][other_modern_index] != msim.sims[3].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][none_index][other_modern_index]
-    assert msim.sims[2].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][none_index][other_modern_index] == 0.2
-    assert msim.sims[3].pars['methods_postpartum']['probs_matrix_1-6']['<18'][none_index][other_modern_index] == 0.2
+    assert msim.sims[2].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][none_index][other_modern_index] != msim.sims[3].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][none_index][other_modern_index], "update_methods did not change postpartum contraceptive matrix for key 21-25"
+    assert msim.sims[2].pars['methods_postpartum']['probs_matrix_1-6']['21-25'][none_index][other_modern_index] == 0.2, "update_methods did not change postpartum contraceptive matrix for 21-25to specified 0.2"
+    assert msim.sims[3].pars['methods_postpartum']['probs_matrix_1-6']['<18'][none_index][other_modern_index] == 0.2, "update_methods did not change postpartum contraceptive matrix for <18 to specified 0.2"
 
 if __name__ == '__main__':
 

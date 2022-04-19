@@ -238,11 +238,11 @@ class TestStates(unittest.TestCase):
         children = self.people.children
 
         flattened_children = [item for sublist in children for item in sublist]
-        self.assertGreater(len(mothers), len(flattened_children))
+        self.assertGreater(len(mothers), len(flattened_children), msg="Number of mothers not equal to number of children in .children")
 
         for mother_index, child_list in enumerate(children):
             for child in child_list:
-                self.assertEqual(mothers[child], mother_index)
+                self.assertEqual(mothers[child], mother_index, msg="Mismatch between index recorded in mothers and mother's index in children")
     
     def test_age_boundaries(self):
         """
