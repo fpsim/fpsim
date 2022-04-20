@@ -960,10 +960,16 @@ class Sim(fpb.BaseSim):
                 self.results['total_births_over_year'].append(total_births_over_year)
                 self.results['live_births_over_year'].append(live_births_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
-                maternal_mortality_ratio = maternal_deaths_over_year / live_births_over_year * 100000
-                infant_mortality_rate = infant_deaths_over_year / live_births_over_year * 1000
-                self.results['mmr'].append(maternal_mortality_ratio)
-                self.results['imr'].append(infant_mortality_rate)
+                if maternal_deaths_over_year == 0:
+                    self.results['mmr'].append(maternal_deaths_over_year)
+                else:
+                    maternal_mortality_ratio = maternal_deaths_over_year / live_births_over_year * 100000
+                    self.results['mmr'].append(maternal_mortality_ratio)
+                if infant_deaths_over_year == 0:
+                    self.results['imr'].append(infant_deaths_over_year)
+                else:
+                    infant_mortality_rate = infant_deaths_over_year / live_births_over_year * 1000
+                    self.results['imr'].append(infant_mortality_rate)
                 #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
                 
                 tfr = 0
@@ -993,8 +999,9 @@ class Sim(fpb.BaseSim):
                 self.results[key] = np.array(arr) # Convert any lists to arrays
 
         # Calculate cumulative totals
-        self.results['cum_maternal_deaths'] = np.cumsum(self.results['maternal_deaths'])
+        self.results['cum_maternal_deaths_by_year'] = np.cumsum(self.results['maternal_deaths_over_year'])
         self.results['cum_infant_deaths_by_year']   = np.cumsum(self.results['infant_deaths_over_year'])
+        self.results['cum_live_births_by_year']     = np.cumsum(self.results['live_births_over_year'])
 
         print(f'Final population size: {self.n}.')
 
@@ -1077,12 +1084,12 @@ class Sim(fpb.BaseSim):
 
         # Plot everything
         to_plot = sc.odict({
-            'Population size':    sc.odict({'pop_size':     'Population size'}),
-            'MCPR':               sc.odict({'mcpr_by_year': 'Modern contraceptive prevalence rate (%)'}),
-            'Person-centered CPR': sc.odict({'cpr_by_year': 'Person-centered contraceptive prevalence rate (%)'}),
-            'Total infant deaths': sc.odict({'cum_infant_deaths_by_year':  'Infant deaths'}),
+            'mCPR':               sc.odict({'mcpr_by_year': 'Modern contraceptive prevalence rate (%)'}),
             'Maternal mortality ratio': sc.odict({'mmr': 'Maternal mortality ratio'}),
-            'Infant mortality rate':   sc.odict({'imr':   'Infant mortality rate'}),
+            'Infant mortality rate': sc.odict({'imr': 'Infant mortality rate'}),
+            'Cumulative live births': sc.odict({'cum_live_births_by_year': 'Live births'}),
+            'Cumulative maternal deaths': sc.odict({'cum_maternal_deaths_by_year': 'Maternal deaths'}),
+            'Cumulative infant deaths': sc.odict({'cum_infant_deaths_by_year':  'Infant deaths'}),
             })
         for p,title,keylabels in to_plot.enumitems():
             ax = pl.subplot(2,3,p+1)
@@ -1094,23 +1101,23 @@ class Sim(fpb.BaseSim):
                 else:
                     y, low, high = this_res, None, None
 
-                if key == 'mcpr':
+                if key == 'mcpr_by_year':
                     y *= 100
                     if is_dist:
                         low *= 100
                         high *= 100
-                if label is None:
-                    if new_fig:
-                        label = reslabel
-                    else: # Replace with sim label to avoid duplicate labels
-                        label = self.label
-                ax.plot(x, y, label=label, **plot_args)
+                #if label is None:
+                    #if new_fig:
+                        #label = reslabel
+                    #else: # Replace with sim label to avoid duplicate labels
+                        #label = self.label
+                ax.plot(x, y, **plot_args)
                 if is_dist:
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
                     ax.fill_between(x, low, high, **fill_args)
             fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
-            if key == 'mcpr':
+            if key == 'mcpr_by_year':
                 pl.ylabel('Percentage')
             else:
                 pl.ylabel('Count')
