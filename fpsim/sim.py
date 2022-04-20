@@ -107,6 +107,11 @@ class People(fpb.BasePeople):
         '''
         methods = self.pars['methods']
         orig_methods = self.method
+        m = len(self.pars['methods']['map'])
+        switching_events_matrix = np.zeros((m, m), dtype=int)
+        switching_events_matrix_ages = {}
+        for key in fpd.method_age_mapping.keys():
+            switching_events_matrix_ages[key] = np.zeros((m, m), dtype=int)
 
         # Method switching depends both on agent age and also on their current method, so we need to loop over both
         for m in methods['map'].values():
@@ -116,12 +121,23 @@ class People(fpb.BasePeople):
                 match_high = (self.age <  age_high)
                 match = match_m * match_low * match_high
                 this_method = self.filter(match)
+                old_method = sc.dcp(this_method.method)
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
                 choices = choices/choices.sum()
                 new_methods = fpu.n_multinomial(choices, len(this_method))
                 this_method.method = np.array(new_methods, dtype=np.int64)
+
+                for i in range(len(old_method)):
+                    x = old_method[i]
+                    y = new_methods[i]
+                    switching_events_matrix[x, y] += 1
+                    switching_events_matrix_ages[key][x, y] += 1
+
+        self.step_results_switching['general'] += switching_events_matrix
+        for key in fpd.method_age_mapping.keys():
+            self.step_results['switching_general'][key] += switching_events_matrix_ages[key]
 
         return
 
@@ -140,6 +156,12 @@ class People(fpb.BasePeople):
         pp_switch  = self.pars['methods_postpartum_switch']
         orig_methods = self.method
 
+        m = len(self.pars['methods']['map'])
+        switching_events_matrix = np.zeros((m, m), dtype=int)
+        switching_events_matrix_ages = {}
+        for key in fpd.method_age_mapping.keys():
+            switching_events_matrix_ages[key] = np.zeros((m, m), dtype=int)
+
         postpartum1 = (self.postpartum_dur == 0)
         postpartum6 = (self.postpartum_dur == 6)
 
@@ -153,6 +175,8 @@ class People(fpb.BasePeople):
                         self.parity >= self.pars['high_parity']))
             this_method = self.filter(match)
             this_method_high_parity = self.filter(match_high_parity)
+            old_method = sc.dcp(this_method.method)
+            old_method_high_parity = sc.dcp(this_method_high_parity.method)
 
             choices = pp_methods[key]
             choices_high_parity = sc.dcp(choices)
@@ -162,6 +186,17 @@ class People(fpb.BasePeople):
             new_methods_high_parity = fpu.n_multinomial(choices_high_parity, len(this_method_high_parity))
             this_method.method = np.array(new_methods, dtype=np.int64)
             this_method_high_parity.method = np.array(new_methods_high_parity, dtype=np.int64)
+            for i in range(len(old_method)):
+                x = old_method[i]
+                y = new_methods[i]
+                switching_events_matrix[x, y] += 1
+                switching_events_matrix_ages[key][x, y] += 1
+
+            for i in range(len(old_method_high_parity)):
+                x = old_method_high_parity[i]
+                y = new_methods_high_parity[i]
+                switching_events_matrix[x, y] += 1
+                switching_events_matrix_ages[key][x, y] += 1
 
         # At 6 months, choice is by previous method and by age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
@@ -173,11 +208,21 @@ class People(fpb.BasePeople):
                 match_high = (self.age <  age_high)
                 match = match_m * self.postpartum * postpartum6 * match_low * match_high
                 this_method = self.filter(match)
+                old_method = this_method.method
 
                 matrix = pp_switch[key]
                 choices = matrix[m]
                 new_methods = fpu.n_multinomial(choices, len(this_method))
                 this_method.method = np.array(new_methods, dtype=np.int64)
+                for i in range(len(old_method)):
+                    x = old_method[i]
+                    y = new_methods[i]
+                    switching_events_matrix[x, y] += 1
+                    switching_events_matrix_ages[key][x, y] += 1
+
+        self.step_results_switching['postpartum'] += switching_events_matrix
+        for key in fpd.method_age_mapping.keys():
+            self.step_results['switching_postpartum'][key] += switching_events_matrix_ages[key]
 
         return
 
@@ -574,12 +619,25 @@ class People(fpb.BasePeople):
             unintended_pregs = 0,
             birthday_fraction = None,
             birth_bins        = {},
-            age_bin_totals    = {}
+            age_bin_totals    = {},
+            switching_general={},
+            switching_postpartum={}
         )
 
         for key in fpd.age_bin_mapping.keys():
             self.step_results['birth_bins'][key] = 0
             self.step_results['age_bin_totals'][key] = 0
+
+        m = len(self.pars['methods']['map'])
+
+        for key in fpd.method_age_mapping.keys():
+            self.step_results['switching_general'][key] = np.zeros((m, m), dtype=int)
+            self.step_results['switching_postpartum'][key] = np.zeros((m, m), dtype=int)
+
+        self.step_results_switching = dict(
+            general=np.zeros((m, m), dtype=int),
+            postpartum=np.zeros((m, m), dtype=int)
+        )
 
         return
 
@@ -627,7 +685,7 @@ class People(fpb.BasePeople):
         # Age person at end of timestep after tabulating results
         alive_now.age_person()  # Important to keep this here so birth spacing gets recorded accurately
 
-        return self.step_results
+        return self.step_results, self.step_results_switching
 
 
 
@@ -657,6 +715,7 @@ class Sim(fpb.BaseSim):
 
 
     def init_results(self):
+        m = len(self.pars['methods']['map'])
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths',
                        'cum_maternal_deaths', 'cum_infant_deaths', 'on_methods_mcpr', 'no_methods_mcpr', 'on_methods_cpr', 'no_methods_cpr', 'mcpr', 'cpr',
                        'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
@@ -680,6 +739,27 @@ class Sim(fpb.BaseSim):
         self.results['imr'] = []
         self.results['birthday_fraction'] = []
         self.results['asfr'] = {}
+        self.results['switching_events_general'] = {}
+        self.results['switching_events_postpartum'] = {}
+        self.results['switching_events_<18'] = {}
+        self.results['switching_events_18-20'] = {}
+        self.results['switching_events_21-25'] = {}
+        self.results['switching_events_>25'] = {}
+        self.results['switching_events_pp_<18'] = {}
+        self.results['switching_events_pp_18-20'] = {}
+        self.results['switching_events_pp_21-25'] = {}
+        self.results['switching_events_pp_>25'] = {}
+        for p in range(self.npts):
+            self.results['switching_events_general'][p] = np.zeros((m, m), dtype=int)
+            self.results['switching_events_postpartum'][p] = np.zeros((m, m), dtype=int)
+            self.results['switching_events_<18'][p] = np.zeros((m, m), dtype=int)
+            self.results['switching_events_18-20'][p] = np.zeros((m, m), dtype=int)
+            self.results['switching_events_21-25'][p] = np.zeros((m, m), dtype=int)
+            self.results['switching_events_>25'][p] = np.zeros((m, m), dtype=int)
+            self.results['switching_events_pp_<18'][p] = np.zeros((m, m), dtype=int)
+            self.results['switching_events_pp_18-20'][p] = np.zeros((m, m), dtype=int)
+            self.results['switching_events_pp_21-25'][p] = np.zeros((m, m), dtype=int)
+            self.results['switching_events_pp_>25'][p] = np.zeros((m, m), dtype=int)
 
         for key in fpd.age_bin_mapping.keys():
             self.results['asfr'][key] = []
@@ -878,8 +958,9 @@ class Sim(fpb.BaseSim):
 
             # Update the people
             self.people.t = self.t
-            step_results = self.people.update()
+            step_results, step_results_switching = self.people.update()
             r = fpu.dict2obj(step_results)
+            switch_events = step_results_switching
 
             # Start calculating results
             new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
@@ -941,6 +1022,19 @@ class Sim(fpb.BaseSim):
             self.results['total_women_35-39'][i] = r.age_bin_totals['35-39']
             self.results['total_women_40-44'][i] = r.age_bin_totals['40-44']
             self.results['total_women_45-49'][i] = r.age_bin_totals['45-49']
+            
+            # Store results of number of switching events in each age group
+            self.results['switching_events_<18'][i] = r.switching_general['<18']
+            self.results['switching_events_18-20'][i] = r.switching_general['18-20']
+            self.results['switching_events_21-25'][i] = r.switching_general['21-25']
+            self.results['switching_events_>25'][i] = r.switching_general['>25']
+            self.results['switching_events_pp_<18'][i] = r.switching_postpartum['<18']
+            self.results['switching_events_pp_18-20'][i] = r.switching_postpartum['18-20']
+            self.results['switching_events_pp_21-25'][i] = r.switching_postpartum['21-25']
+            self.results['switching_events_pp_>25'][i] = r.switching_postpartum['>25']
+
+            self.results['switching_events_general'][i] = switch_events['general']
+            self.results['switching_events_postpartum'][i] = switch_events['postpartum']
 
             # Calculate metrics over the last year in the model and save whole years and stats to an array
             if i % fpd.mpy == 0:
