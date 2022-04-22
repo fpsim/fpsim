@@ -578,7 +578,7 @@ class People(fpb.BasePeople):
         '''
         modern_methods = [1, 2, 3, 4, 5, 7, 9]
         denominator = (self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * \
-                      (self.sex == 0) * (self.pregnant == 0) * (self.alive)
+                      (self.sex == 0) * (self.alive)
         no_method_mcpr = np.sum((self.method == 0) * denominator)
         on_method_mcpr = np.sum((np.isin(self.method, modern_methods)) * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
@@ -589,15 +589,30 @@ class People(fpb.BasePeople):
         '''
         Track for purposes of calculating newer ways to conceptualize contraceptive prevalence
         at the end of the timestep after all people are updated
-        Denominator of possible users excludes pregnant women and those not sexually active in the last 4 weeks
-        Used to compare new metrics of contraceptive prevalence and eventually unmet need to traditional mCPR definitions
+        Includes women using any method of contraception, including LAM
+        Denominator of possible users includes all women aged 15-49
         '''
         denominator = ((self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * (
-                    self.sex == 0) * (self.pregnant == 0) * (self.sexually_active == 1) * (self.alive))
+                    self.sex == 0) * (self.alive))
         no_method_cpr = np.sum((self.method == 0) * denominator)
         on_method_cpr = np.sum((self.method != 0) * denominator)
         self.step_results['no_methods_cpr'] += no_method_cpr
         self.step_results['on_methods_cpr'] += on_method_cpr
+        return
+
+    def check_acpr(self):
+        '''
+        Track for purposes of calculating newer ways to conceptualize contraceptive prevalence
+        at the end of the timestep after all people are updated
+        Denominator of possible users excludes pregnant women and those not sexually active in the last 4 weeks
+        Used to compare new metrics of contraceptive prevalence and eventually unmet need to traditional mCPR definitions
+        '''
+        denominator = ((self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * (
+                self.sex == 0) * (self.pregnant == 0) * (self.sexually_active == 1) * (self.alive))
+        no_method_cpr = np.sum((self.method == 0) * denominator)
+        on_method_cpr = np.sum((self.method != 0) * denominator)
+        self.step_results['no_methods_acpr'] += no_method_cpr
+        self.step_results['on_methods_acpr'] += on_method_cpr
         return
 
     def init_step_results(self):
@@ -612,6 +627,8 @@ class People(fpb.BasePeople):
             no_methods_mcpr = 0,
             on_methods_cpr  = 0,
             no_methods_cpr  = 0,
+            on_methods_acpr = 0,
+            no_methods_acpr = 0,
             pp0to5          = 0,
             pp6to11         = 0,
             pp12to23        = 0,
@@ -680,6 +697,7 @@ class People(fpb.BasePeople):
         # Update results
         self.check_mcpr()
         self.check_cpr()
+        self.check_acpr()
         self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
 
         # Age person at end of timestep after tabulating results
@@ -717,8 +735,8 @@ class Sim(fpb.BaseSim):
     def init_results(self):
         m = len(self.pars['methods']['map'])
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths',
-                       'cum_maternal_deaths', 'cum_infant_deaths', 'on_methods_mcpr', 'no_methods_mcpr', 'on_methods_cpr', 'no_methods_cpr', 'mcpr', 'cpr',
-                       'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
+                       'cum_maternal_deaths', 'cum_infant_deaths', 'on_methods_mcpr', 'no_methods_mcpr', 'on_methods_cpr', 'no_methods_cpr', 'on_methods_acpr',
+                       'no_methods_acpr', 'mcpr', 'cpr', 'acpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
                        'total_women_40-44', 'total_women_45-49']
@@ -994,8 +1012,11 @@ class Sim(fpb.BaseSim):
             self.results['no_methods_mcpr'][i] = r.no_methods_mcpr
             self.results['on_methods_cpr'][i] = r.on_methods_cpr
             self.results['no_methods_cpr'][i] = r.no_methods_cpr
+            self.results['on_methods_acpr'][i] = r.on_methods_acpr
+            self.results['no_methods_acpr'][i]  = r.no_methods_acpr
             self.results['mcpr'][i]           = r.on_methods_mcpr/(r.no_methods_mcpr + r.on_methods_mcpr)
             self.results['cpr'][i]             = r.on_methods_cpr/(r.no_methods_cpr + r.on_methods_cpr)
+            self.results['acpr'][i]            = r.on_methods_acpr/(r.no_methods_acpr + r.on_methods_acpr)
             self.results['pp0to5'][i]          = percent0to5
             self.results['pp6to11'][i]         = percent6to11
             self.results['pp12to23'][i]           = percent12to23
@@ -1230,6 +1251,82 @@ class Sim(fpb.BaseSim):
 
         return fig
 
+    def plot_cpr(self, do_save=None, do_show=True, fig_args=None, plot_args=None, axis_args=None, fill_args=None,
+             label=None, new_fig=True):
+        '''
+        Plot the results -- can supply arguments for both the figure and the plots.
+
+        Args:
+            dosave    (bool): Whether or not to save the figure. If a string, save to that filename.
+            doshow    (bool): Whether to show the plots at the end
+            figargs   (dict): Passed to pl.figure()
+            plot_args (dict): Passed to pl.plot()
+            axis_args (dict): Passed to pl.subplots_adjust()
+            fill_args (dict): Passed to pl.fill_between())
+            label     (str):  Label to override default
+            new_fig   (bool): whether to create a new figure (true unless part of a multisim)
+        '''
+
+        fig_args  = sc.mergedicts(dict(figsize=(20,8)), fig_args)
+        plot_args = sc.mergedicts(dict(lw=2, alpha=0.7), plot_args)
+        axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.25), axis_args)
+        fill_args = sc.mergedicts(dict(alpha=0.2), fill_args)
+
+        fig = pl.figure(**fig_args) if new_fig else pl.gcf()
+        pl.subplots_adjust(**axis_args)
+
+        res = self.results # Shorten since heavily used
+
+        x = res['t'] # Likewise
+
+        # Plot everything
+        to_plot = sc.odict({
+            'mCPR - modern method users / all women 15-49':               sc.odict({'mcpr': 'Modern contraceptive prevalence rate'}),
+            'CPR - all method users / all women 15-49': sc.odict({'cpr': 'Contraceptive prevalence rate'}),
+            'ACPR - all method users / nonpregnant, sexually active women 15-49': sc.odict({'acpr': 'Alternative contraceptive prevalence rate'}),
+            })
+        for p,title,keylabels in to_plot.enumitems():
+            ax = pl.subplot(1,3,p+1)
+            for i,key,reslabel in keylabels.enumitems():
+                this_res = res[key]
+                is_dist = hasattr(this_res, 'best')
+                if is_dist:
+                    y, low, high = this_res.best, this_res.low, this_res.high
+                else:
+                    y, low, high = this_res, None, None
+
+                y *= 100
+                if is_dist:
+                    low *= 100
+                    high *= 100
+                if label is None:
+                    if new_fig:
+                        label = reslabel
+                    else: # Replace with sim label to avoid duplicate labels
+                        label = self.label
+                ax.plot(x, y, **plot_args)
+                if is_dist:
+                    if 'c' in plot_args:
+                        fill_args['facecolor'] = plot_args['c']
+                    ax.fill_between(x, low, high, **fill_args)
+            fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
+            pl.ylabel('Percentage')
+            pl.xlabel('Year')
+            pl.title(title, fontweight='bold')
+
+        # Ensure the figure actually renders or saves
+        if do_save:
+            if isinstance(do_save, str):
+                filename = do_save # It's a string, assume it's a filename
+            else:
+                filename = 'fpsim.png' # Just give it a default name
+            pl.savefig(filename)
+        if do_show:
+            pl.show() # Only show if we're not saving
+
+        return fig
+
+
 
     def plot_people(self):
         ''' Use imshow() to show all individuals as rows, with time as columns, one pixel per timestep per person '''
@@ -1310,8 +1407,8 @@ class MultiSim(sc.prettyobj):
         axis = 1
 
         reskeys = list(base_sim.results.keys())
-        results['t'] = base_sim.results['t']
-        reskeys.remove('t') # Don't compute high/low for this
+        results['tfr_years'] = base_sim.results['tfr_years']
+        reskeys.remove('tfr_years') # Don't compute high/low for this
         for reskey in reskeys:
             if isinstance(base_sim.results[reskey], dict):
                 if return_raw:
@@ -1506,6 +1603,40 @@ class MultiSim(sc.prettyobj):
                 alpha = max(0.2, 1/np.sqrt(n_unique))
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
                 sim.plot(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args, **kwargs)
+            if do_show:
+                pl.show()
+            return fig
+        else:
+            return self.base_sim.plot(do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
+
+    def plot_cpr(self, do_show=True, plot_sims=True, fig_args=None, plot_args=None, **kwargs):
+        '''
+        Plot the MultiSim
+        '''
+        fig_args = sc.mergedicts(dict(figsize=(20,8)), fig_args)
+
+        if plot_sims:
+            fig = pl.figure(**fig_args)
+            do_show = kwargs.pop('do_show', True)
+            labels = sc.autolist()
+            labellist = sc.autolist() # TODO: shouldn't need this
+            for sim in self.sims: # Loop over and find unique labels
+                if sim.label not in labels:
+                    labels += sim.label
+                    labellist += sim.label
+                    label = sim.label
+                else:
+                    labellist += ''
+                n_unique = len(np.unique(labels)) # How many unique sims there are
+            colors = sc.gridcolors(n_unique)
+            colors = {k:c for k,c in zip(labels, colors)}
+            for s,sim in enumerate(self.sims): # Note: produces duplicate legend entries
+                label = labellist[s]
+                n_unique = len(labels) # How many unique sims there are
+                color = colors[sim.label]
+                alpha = max(0.2, 1/np.sqrt(n_unique))
+                sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
+                sim.plot_cpr(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args, **kwargs)
             if do_show:
                 pl.show()
             return fig
