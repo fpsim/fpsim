@@ -5,6 +5,7 @@ Defines the Sim class, the core class of the FP model (FPsim).
 #%% Imports
 import numpy as np # Needed for a few things not provided by pl
 import pylab as pl
+import seaborn as sns
 import sciris as sc
 import pandas as pd
 import pyarrow.feather as feather
@@ -1483,37 +1484,29 @@ class MultiSim(sc.prettyobj):
         Plot the MultiSim
         '''
         if "method_mix" in outputs:
-            # compile a dataframe with sim.people for each sim
-            # columns: sim_label, method_name, proportion
-            
-            data_dict = {"sim": [], "method": [], "proportion": []}
+            data_dict = {"sim": [], "method": [], "count": []}
             for sim in self.sims:
                 people = sim.people
                 unique, counts = np.unique(people.method, return_counts=True)
                 count_dict = dict(zip(unique, counts))
                 for method in count_dict:
                     if method != 0:
-                        data_dict["proportion"].append(count_dict[method])
+                        data_dict["count"].append(count_dict[method])
                         data_dict["sim"].append(sim.label)
                         data_dict["method"].append(method)
             # Plotting
             df = pd.DataFrame(data_dict) # Makes it a bit easier to subset for bar charts
-            method_fig, method_ax = pl.subplots()
-            bottom = [0] * len(self.sims)
-            for method in count_dict:
-                method_df = df[df["method"] == method]
-                for empty_sim in set(df['sim']) - set(method_df['sim']):
-                    method_df = method_df.append({"sim": empty_sim, "method": method, "proportion": 0}, ignore_index=True)
-                print(method_df.head())
-                print(f"Shapes: bottom: {len(bottom)}, sim: {len(method_df['sim'])}, proportion: {len(method_df['proportion'])}")
-                method_ax.bar(method_df["sim"], method_df["proportion"], 0.5, bottom=bottom)
 
-                bottom =  [sum(num) for num in zip(bottom, method_df['proportion'])]
+            # We want names for the methods
+            methods_map = self.sims[0].pars['methods']['map']
+            inv_methods_map = {value: key for key, value in methods_map.items()}
+            print(inv_methods_map)
+            df['method'] = df['method'].map(inv_methods_map)
 
-            pl.xlabel("Sim")
-            pl.ylabel("People using method")
-            pl.title("Method mix by sim")
-            pl.legend(["Pill", "IUDs", "Injectable", "Condoms", "BTL", "Withdrawal", "Implants", "Other traditional", "Other modern"])
+            # plotting and saving
+            sns.set(rc={'figure.figsize':(12,8.27)})
+            sns.barplot(data=df, x="count", y="method", hue="sim")
+            
             pl.savefig("method_mix.png")
                      
         fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
