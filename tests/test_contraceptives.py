@@ -10,7 +10,6 @@ import sys
 import os
 
 @unittest.skip("Need to optimize with multisim before it can be in GHA")
-@pytest.mark.long
 class TestContraceptiveEfficacy(unittest.TestCase):
     @classmethod
     def setUpClass(self):
@@ -28,6 +27,9 @@ class TestContraceptiveEfficacy(unittest.TestCase):
             "Implants",
             "Other"
         ]
+
+        # suppresses unnecessary print statements to increase runtime
+        sys.stdout = open(os.devnull, 'w')
 
     def all_but(self, method="BTL"):
         """
@@ -99,9 +101,6 @@ class TestContraceptiveEfficacy(unittest.TestCase):
         self.all_but("BTL")
 
 if __name__ == '__main__':
-
-    # suppresses unnecessary warning statements to increase runtime
-    sys.stdout = open(os.devnull, 'w')
 
     # run test suite
     unittest.main()

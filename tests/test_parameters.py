@@ -15,6 +15,9 @@ class TestParameters(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.do_plot=False
+        self.n=1000
+        self.verbose=True
+        self.do_run=True
         
         # suppresses unnecessary warning statements to increase runtime
         sys.stdout = open(os.devnull, 'w')
@@ -22,17 +25,17 @@ class TestParameters(unittest.TestCase):
     def get_pars(self):
         return fa.senegal_parameters.make_pars()
 
-    def make(self, pars, n=1000, verbose=0, do_run=True, **kwargs):
+    def make(self, pars, **kwargs):
         '''
         Define a default simulation for testing the baseline.
         '''
 
-        pars['n'] = n
-        pars['verbose'] = verbose
+        pars['n'] = self.n
+        pars['verbose'] = self.verbose
         pars.update(kwargs)
         sim = fp.Sim(pars=pars)
 
-        if do_run:
+        if self.do_run:
             sim.run()
 
         return sim
