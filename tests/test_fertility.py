@@ -1,7 +1,7 @@
 import pytest
 import fpsim as fp
 
-import fp_analyses.test_parameters as tp
+# import fp_analyses.test_parameters as tp
 
 import json
 import sciris as sc
