@@ -1,7 +1,7 @@
 import pytest
 import fpsim as fp
 
-# import fp_analyses.test_parameters as tp
+import fp_analyses.senegal_parameters as sp
 
 import json
 import sciris as sc
@@ -40,7 +40,7 @@ class TestFertility(unittest.TestCase):
             if Path(f).exists():
                 os.remove(f)
 
-    def sweep_seed(self, seeds=None, pars=tp.make_pars(),
+    def sweep_seed(self, seeds=None, pars=sp.make_pars(),
                    num_humans=1000, end_year=1963,
                    var_str=None):
         '''Sweep the specified parameters over random seed and save to disk'''
@@ -136,7 +136,7 @@ class TestFertility(unittest.TestCase):
         nullip_rates = sorted(nullip_rates)
         self.verify_increasing_channel(
             parameter_name='fecundity_ratio_nullip',
-            parameter_method=tp.default_fecundity_ratio_nullip,
+            parameter_method=sp.default_fecundity_ratio_nullip,
             parameter_test_values=nullip_rates,
             parameters=parameters,
             seeds=seeds,
@@ -159,7 +159,7 @@ class TestFertility(unittest.TestCase):
         self.verify_increasing_channel(
             parameter_name='sexual_activity',
             parameter_test_values=sex_rates,
-            parameter_method=tp.default_sexual_activity,
+            parameter_method=sp.default_sexual_activity,
             parameters=parameters,
             channel_name=channel_name,
             seeds=seeds,
@@ -227,7 +227,7 @@ class TestFertility(unittest.TestCase):
         self.verify_increasing_channel(
             parameter_name='exposure_correction_age',
             parameter_test_values=ec_ages,
-            parameter_method=tp.default_exposure_correction_age,
+            parameter_method=sp.default_exposure_correction_age,
             parameters=parameters,
             channel_name=channel_name,
             seeds=seeds,
@@ -249,7 +249,7 @@ class TestFertility(unittest.TestCase):
         self.verify_increasing_channel(
             parameter_name='maternal_mortality',
             parameter_test_values=maternal_mortality_multipliers,
-            parameter_method=tp.default_maternal_mortality,
+            parameter_method=sp.default_maternal_mortality,
             parameters=parameters,
             seeds=seeds,
             has_zero_baseline=True,
@@ -272,7 +272,7 @@ class TestFertility(unittest.TestCase):
             parameter_name='infant_mortality',
             parameter_test_values=infant_mortality_rates,
             parameters=parameters,
-            parameter_method=tp.default_infant_mortality,
+            parameter_method=sp.default_infant_mortality,
             seeds=seeds,
             has_zero_baseline=True,
             channel_name=channel_name
@@ -281,7 +281,7 @@ class TestFertility(unittest.TestCase):
     def test_sweep_sexual_activity(self):
         """as you increase sexual activity, births should increase"""
         self.is_debugging = False
-        pars = tp.make_pars()
+        pars = sp.make_pars()
         sex_rates = [30.0, 60.0, 120.0]
         seeds = self.default_seeds
         self.sweep_sexual_activity(
@@ -293,9 +293,9 @@ class TestFertility(unittest.TestCase):
     def test_sweep_nullip_ratio_array(self):
         """as you increase nulliparous fecundity, you should increase births"""
         self.is_debugging = False
-        pars = tp.make_pars()
-        pars['sexual_activity'] = tp.default_sexual_activity(320.0)
-        pars['lactational_amenorrhea'] = tp.default_lactational_amenorrhea(0.0)
+        pars = sp.make_pars()
+        pars['sexual_activity'] = sp.default_sexual_activity(320.0)
+        pars['lactational_amenorrhea'] = sp.default_lactational_amenorrhea(0.0)
         nullip_ratios = [0.1, 1.0, 4.0]
         if self.is_debugging:
             nullip_ratios = [0.1, 0.5, 1.0, 2.0, 4.0]
@@ -309,7 +309,7 @@ class TestFertility(unittest.TestCase):
     def test_sweep_exposure_correction(self):
         """as you increase exposure correction, births should increase"""
         self.is_debugging = True
-        pars = tp.make_pars()
+        pars = sp.make_pars()
         exposure_corrections = [0.1, 1.0, 4.0]
         if self.is_debugging:
             exposure_corrections = [0.1, 0.5, 1.0, 2.0, 4.0]
@@ -323,7 +323,7 @@ class TestFertility(unittest.TestCase):
     def test_sweep_ec_age(self):
         """as you increase exposure correction by age, births should increase"""
         self.is_debugging = False
-        pars = tp.make_pars()
+        pars = sp.make_pars()
         exposure_corrections = [0.0, 1.0, 2.0]
         if self.is_debugging:
             exposure_corrections = [0.0, 0.1, 0.5, 1.0, 2.0]
@@ -337,9 +337,9 @@ class TestFertility(unittest.TestCase):
     def test_sweep_abortion(self):
         """as you decrease abortion probability, number of births should increase"""
         self.is_debugging = False
-        pars = tp.make_pars()
-        pars['sexual_activity'] = tp.default_sexual_activity(320.0)
-        pars['lactational_amenorrhea'] = tp.default_lactational_amenorrhea(0.0)
+        pars = sp.make_pars()
+        pars['sexual_activity'] = sp.default_sexual_activity(320.0)
+        pars['lactational_amenorrhea'] = sp.default_lactational_amenorrhea(0.0)
         abortion_probs = [1.0, 0.25, 0.0]
         if self.is_debugging:
             abortion_probs = [1.0, 0.5, 0.25, 0.1, 0.0]
@@ -353,8 +353,8 @@ class TestFertility(unittest.TestCase):
     def test_sweep_maternal_mortality(self):
         """as you increase maternal mortality, maternal deaths should increase"""
         self.is_debugging = False
-        pars = tp.make_pars()
-        pars['sexual_activity'] = tp.default_sexual_activity(320.0) # many conceptions
+        pars = sp.make_pars()
+        pars['sexual_activity'] = sp.default_sexual_activity(320.0) # many conceptions
         multipliers = [10, 100] # default is 2/1000. Increased for observability
         if self.is_debugging:
             multipliers = [10, 50, 100, 200] # default is 2/1000
@@ -364,8 +364,8 @@ class TestFertility(unittest.TestCase):
     def test_sweep_infant_mortality(self):
         """as you increase infant mortality, infant deaths should increase"""
         self.is_debugging = False
-        pars = tp.make_pars()
-        pars['sexual_activity'] = tp.default_sexual_activity(320.0) # many conceptions
+        pars = sp.make_pars()
+        pars['sexual_activity'] = sp.default_sexual_activity(320.0) # many conceptions
         infant_mortality_rates = [0, 50, 200]
         if self.is_debugging:
             infant_mortality_rates = [0, 10, 50, 100, 200]
