@@ -10,8 +10,8 @@ from pathlib import Path
 import unittest
 import sys
 
-#@pytest.mark.skip("Need to refactor test parameters to be within the test suite")
-class TestFPSimFertility(unittest.TestCase):
+@pytest.mark.skip("Need to refactor test parameters to be within the test suite")
+class TestFertility(unittest.TestCase):
     def setUp(self):
         self.is_debugging = False
         self.output_files = []
