@@ -7,6 +7,8 @@ import numpy as np
 import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
+import sys
+import os
 
 class TestStates(unittest.TestCase):
     @classmethod
@@ -33,6 +35,9 @@ class TestStates(unittest.TestCase):
         self.people = self.exp.people
         self.result_dict = self.exp.total_results
         self.year = None # change to make cross sectional tests apply to specific year
+
+        # suppresses unnecessary warning statements to increase runtime
+        sys.stdout = open(os.devnull, 'w')
     
     def setUp(self):
         pass
@@ -254,7 +259,7 @@ class TestStates(unittest.TestCase):
         for year, attribute_dict in self.result_dict.items():
             for index, pregnant_bool in enumerate(attribute_dict["pregnant"]):
                 age = attribute_dict['age'][index]
-                if age < 11 or age > 45:
+                if age < 11 or age > 50:
                     self.assertFalse(pregnant_bool, msg=f"Individual {index} can't be pregnant she's {age}")
 
     def test_ages(self):
@@ -269,5 +274,7 @@ class TestStates(unittest.TestCase):
                     self.assertAlmostEqual(month * 12, round(month * 12), delta=0.5, msg=f"Individual at index: {individual} in year {year} has an age of {age} with a month ({month}) that is not a multiple of 1/12. month * 12 = {month * 12}")
             
                     
-if __name__ == "__main__":
+if __name__ == '__main__':
+
+    # run test suite
     unittest.main()

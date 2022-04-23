@@ -20,6 +20,9 @@ class TestChannels(unittest.TestCase):
         self.events = exp.events
         self.channels = ["Births", "Conceptions", "Miscarriages", "Sexual_Debut", "Deaths"]
 
+        # suppresses unnecessary warning statements to increase runtime
+        sys.stdout = open(os.devnull, 'w')
+
     def test_channels_sanity_check(self):
         """
         Checks that none of the channels from self.channels contain no entries.
@@ -89,4 +92,6 @@ class TestChannels(unittest.TestCase):
                 sexually_active.update(self.events[timestep]['Sexual_Debut'])
 
 if __name__ == '__main__':
+
+    # run test suite
     unittest.main()

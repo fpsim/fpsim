@@ -6,6 +6,8 @@ from copy import deepcopy
 import pylab as pl
 import numpy as np
 import pytest
+import sys
+import os
 
 @unittest.skip("Need to optimize with multisim before it can be in GHA")
 @pytest.mark.long
@@ -95,3 +97,11 @@ class TestContraceptiveEfficacy(unittest.TestCase):
 
     def test_efficacy_BTL(self):
         self.all_but("BTL")
+
+if __name__ == '__main__':
+
+    # suppresses unnecessary warning statements to increase runtime
+    sys.stdout = open(os.devnull, 'w')
+
+    # run test suite
+    unittest.main()

@@ -7,18 +7,23 @@ import json
 import sciris as sc
 import os
 from pathlib import Path
+import unittest
+import sys
 
-@pytest.mark.skip("Need to refactor test parameters to be within the test suite")
-class TestFPSimFertility():
-    def setup_method(self):
+#@pytest.mark.skip("Need to refactor test parameters to be within the test suite")
+class TestFPSimFertility(unittest.TestCase):
+    def setUp(self):
         self.is_debugging = False
         self.output_files = []
-        self.testname = os.environ.get('PYTEST_CURRENT_TEST').split(':')[-1].split(' ')[0]
+        self.testname = self._testMethodName
         self.log_lines = []
         self.default_seeds = [1] # Add more when debugging
+
+        # suppresses unnecessary warning statements to increase runtime
+        sys.stdout = open(os.devnull, 'w')
         pass
 
-    def teardown_method(self):
+    def tearDown(self):
         if self.is_debugging:
             with open(f'DEBUG_log_{self.testname}.json', 'w') as outfile:
                 log = {'lines': self.log_lines}
@@ -368,6 +373,7 @@ class TestFPSimFertility():
                                     channel_name='infant_deaths', parameters=pars)
 
 
+if __name__ == '__main__':
 
-if __name__ == "__main__":
-    pytest.main(['-vs', __file__])
+    # run test suite
+    unittest.main()
