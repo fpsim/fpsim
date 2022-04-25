@@ -1686,7 +1686,6 @@ class MultiSim(sc.prettyobj):
 
         # Plotting
         df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
-        print(df.head())
 
         # We want names for the methods
         methods_map = self.sims[0].pars['methods']['map']
@@ -1695,7 +1694,7 @@ class MultiSim(sc.prettyobj):
 
         # plotting and saving
         sns.set(rc={'figure.figsize':(12,8.27)})
-        sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd")
+        sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=['Implants', 'Injectables', 'Pill', 'Condoms', 'Other modern', 'IUD', 'Traditional'])
         pl.title(f"Mean method mix over {n_sims} sims")
         
         if do_save:
