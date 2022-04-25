@@ -97,6 +97,7 @@ if do_run:
     # sim = lfp.multi_run(sim, n=1)
     sim.run()
     sim.plot()
+    sim.plot_cpr()
     # people = list(sim.people.values()) # Pull out people
 
     # Ensure the figures folder exists
