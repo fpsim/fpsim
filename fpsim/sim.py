@@ -14,6 +14,7 @@ from . import utils as fpu
 from . import base as fpb
 from . import interventions as fpi
 from collections import defaultdict
+import copy
 
 
 # Specify all externally visible things this file defines
@@ -1576,36 +1577,10 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, do_show=True, plot_sims=True, fig_args=None, plot_args=None, outputs=[], **kwargs):
+    def plot(self, do_show=True, plot_sims=True, fig_args=None, plot_args=None, **kwargs):
         '''
         Plot the MultiSim
-        '''
-        if "method_mix" in outputs:
-            data_dict = {"sim": [], "method": [], "count": []}
-            for sim in self.sims:
-                people = sim.people
-                unique, counts = np.unique(people.method, return_counts=True)
-                count_dict = dict(zip(unique, counts))
-                for method in count_dict:
-                    if method != 0:
-                        data_dict["count"].append(count_dict[method])
-                        data_dict["sim"].append(sim.label)
-                        data_dict["method"].append(method)
-            # Plotting
-            df = pd.DataFrame(data_dict) # Makes it a bit easier to subset for bar charts
-
-            # We want names for the methods
-            methods_map = self.sims[0].pars['methods']['map']
-            inv_methods_map = {value: key for key, value in methods_map.items()}
-            print(inv_methods_map)
-            df['method'] = df['method'].map(inv_methods_map)
-
-            # plotting and saving
-            sns.set(rc={'figure.figsize':(12,8.27)})
-            sns.barplot(data=df, x="count", y="method", hue="sim")
-            
-            pl.savefig("method_mix.png")
-                     
+        '''              
         fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
 
         if plot_sims:
@@ -1670,6 +1645,63 @@ class MultiSim(sc.prettyobj):
         else:
             return self.base_sim.plot(do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
+    def plot_method_mix(self, n_sims=10, do_show=False, do_save=True, filepath="method_mix.png"):
+        """
+        Plots the average method mix for n_sims runs
+        Input:
+            n_sims::int
+                number of sims you want to run to calculate average mix and standard deviation
+            do_show::bool
+                whether or not the user wants to show the output plot
+            do_save::bool
+                whether or not the user wants to save the plot to filepath
+            filepath::str
+                the name of the path to output the plot
+        """
+        method_table = {"sim" : [], "sim_index": [], "proportion": [], "method": []}
+        
+        # Run each sim n_sims times, get save proportion and let barplot calculate averages
+        for sim in self.sims:
+            print(f"Processing sim: {sim.label}")
+            sim_run_list = [0] * n_sims
+            for sim_index in range(n_sims):
+                new_sim = copy.deepcopy(sim)
+                new_sim.pars['seed'] = sim_index
+                sim_run_list[sim_index] = new_sim
+
+            multi = MultiSim(sims=sim_run_list)
+            multi.run()
+
+            for sim_index in range(n_sims):
+                people = multi.sims[sim_index].people               
+                unique, counts = np.unique(people.method, return_counts=True)
+                count_dict = dict(zip(unique, counts))
+
+                for method in count_dict:
+                    if method != 0:
+                        method_table["proportion"].append(count_dict[method] / len(people.method))
+                        method_table["sim_index"].append(sim_index)
+                        method_table["method"].append(method)
+                        method_table["sim"].append(sim.label)       
+
+        # Plotting
+        df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
+        print(df.head())
+
+        # We want names for the methods
+        methods_map = self.sims[0].pars['methods']['map']
+        inv_methods_map = {value: key for key, value in methods_map.items()}
+        df['method'] = df['method'].map(inv_methods_map)
+
+        # plotting and saving
+        sns.set(rc={'figure.figsize':(12,8.27)})
+        sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd")
+        pl.title(f"Mean method mix over {n_sims} sims")
+        
+        if do_save:
+            pl.savefig(filepath)
+        if do_show:
+            pl.show()
 
 def single_run(sim):
     ''' Helper function for multi_run(); rarely used on its own '''
