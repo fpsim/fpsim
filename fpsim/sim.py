@@ -1694,7 +1694,7 @@ class MultiSim(sc.prettyobj):
 
         # plotting and saving
         sns.set(rc={'figure.figsize':(12,8.27)})
-        sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=['Implants', 'Injectables', 'Pill', 'Condoms', 'Other modern', 'IUD', 'Traditional'])
+        sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=['Implants', 'Injectables', 'Pill', 'IUDs', 'Other traditional', 'Condoms', "BTL", 'Other modern', 'Withdrawal'])
         pl.title(f"Mean method mix over {n_sims} sims")
         
         if do_save:
