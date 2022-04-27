@@ -486,7 +486,8 @@ class People(fpb.BasePeople):
         live = deliv.filter(~is_stillborn)
         for i in live.inds: # Handle DOBs
             all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
-            if len(all_ppl.dobs[i]) == 1:
+            if len(all_ppl.dobs[i]) == 1: # if they didn't give birth but already had one baby, age at first birth would update to current age
+                print("Baby is born!")
                 all_ppl.first_birth_age[i] = all_ppl.age[i]
         for i in stillborn.inds: # Handle adding dates
             all_ppl.still_dates[i].append(all_ppl.age[i])
