@@ -1328,6 +1328,17 @@ class Sim(fpb.BaseSim):
 
         return fig
 
+    def plot_age_first_birth(self, do_show=False, do_save=True, output_file="first_birth_age.png"):
+        to_plot = [age for age in self.people.first_birth_age if age is not None]
+
+        sns.set(rc={'figure.figsize':(7,5)})
+        pl.title("Age at first birth")
+        sns.boxplot(x=to_plot, orient='v', notch=True)
+        if do_show:
+            pl.show()
+        if do_save:
+            print(f"Saved age at first birth plot at {output_file}")
+            pl.savefig(output_file)
 
 
     def plot_people(self):
