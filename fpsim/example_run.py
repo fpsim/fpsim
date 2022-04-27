@@ -21,9 +21,13 @@ do_run = 1
 do_plot_popsize = 1
 do_plot_asfr = 1
 do_plot_age_parity_heatmap = 1
+do_plot_method_mix = 1
 do_save = 0
 
 if do_run:
+    '''
+    Run the sim using sample parameters calibrated to Senegal
+    '''
     pars = sp.make_pars()
     sim = fp.Sim(pars=pars)
 
@@ -33,6 +37,9 @@ if do_run:
     res = sim.results
 
 if do_plot_popsize:
+    '''
+    Plots population growth over time in the sim vs Senegal data
+    '''
 
     # Load data
     popsize = pd.read_csv(popsize_file, header=None)
@@ -60,7 +67,10 @@ if do_plot_popsize:
     if do_save:
         pl.savefig('senegal_popsize.png')
 
-if do_plot_asfr:  # Plots ASFR for the last year of the sim in comparison to Senegal 2019 ASFR
+if do_plot_asfr:
+    '''
+    Plots ASFR for the last year of the sim in comparison to Senegal 2019 ASFR
+    '''
 
     x = pl.arange(1,9)
     asfr_data = [1, 71, 185, 228, 195, 171, 74, 21] # From DHS Stat Compiler Senegal 2019 ASFR
@@ -89,6 +99,9 @@ if do_plot_asfr:  # Plots ASFR for the last year of the sim in comparison to Sen
         pl.savefig('ASFR_last_year.png')
 
 if do_plot_age_parity_heatmap:
+    '''
+    Plot heatmap of distribution of ages and parity levels between sim and DHS data
+    '''
 
     # Set up
     min_age = 15
@@ -171,3 +184,97 @@ if do_plot_age_parity_heatmap:
     pl.show()
     if do_save:
         pl.savefig('senegal_heatmap.png')
+
+if do_plot_method_mix:
+    '''
+    Plot a horizontal bar graph of method use
+    '''
+
+    data_method_counts = sc.odict().make(keys=sim.pars['methods']['names'], vals=0.0)
+    model_method_counts = sc.dcp(data_method_counts)
+
+    # Uses 2019 data from DHS
+
+    data = [
+        ['Other modern', 'emergency contraception', 0.00, 2019.698615635373],
+        ['Condoms', 'female condom', 0.0, 2019.698615635373],
+        ['BTL', 'female sterilization', 0.5, 2019.698615635373],
+        ['Implants', 'implants/norplant', 7.0, 2019.698615635373],
+        ['Injectables', 'injections', 5.6, 2019.698615635373],
+        ['IUDs', 'iud', 1.3, 2019.698615635373],
+        ['Other modern', 'lactational amenorrhea (lam)', 0.04745447091361792, 2019.698615635373],
+        ['Condoms', 'male condom', 0.6, 2019.698615635373],
+        ['None', 'not using', 81.2, 2019.698615635373],
+        ['Other modern', 'other modern method', 0.0, 2019.698615635373],
+        ['Other traditional', 'other traditional', 0.5, 2019.698615635373],
+        ['Other traditional', 'periodic abstinence', 0.4, 2019.698615635373],
+        ['Pill', 'pill', 2.8, 2019.698615635373],
+        ['Other modern', 'standard days method (sdm)', 0.1, 2019.698615635373],
+        ['Withdrawal', 'withdrawal', 0.1, 2019.698615635373],
+    ]
+
+    for entry in data:
+        data_method_counts[entry[0]] += entry[2]
+    data_method_counts[:] /= data_method_counts[:].sum()
+
+    # From model
+    ppl = sim.people
+    for i in range(len(ppl)):
+        if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age and not ppl.pregnant[i]:
+            model_method_counts[ppl.method[i]] += 1
+    model_method_counts[:] /= model_method_counts[:].sum()
+
+    # Make labels
+    data_labels = data_method_counts.keys()
+    for d in range(len(data_labels)):
+        if data_method_counts[d] > 0.01:
+            data_labels[d] = f'{data_labels[d]}: {data_method_counts[d] * 100:0.1f}%'
+        else:
+            data_labels[d] = ''
+    model_labels = model_method_counts.keys()
+    for d in range(len(model_labels)):
+        if model_method_counts[d] > 0.01:
+            model_labels[d] = f'{model_labels[d]}: {model_method_counts[d] * 100:0.1f}%'
+        else:
+            model_labels[d] = ''
+    n = len(data_labels)
+    dhs = np.array([.059, .011, .071, .015, .029, .004, .004])*100
+    fps = np.array([.074, .009, .057, .016, .027, .005, .004])*100
+    y = pl.arange(n)
+    order = pl.argsort(data_method_counts)
+
+    # Remake without None
+    data_method_counts['None'] = 0.0
+    model_method_counts['None'] = 0.0
+    data_method_counts[:] /= data_method_counts[:].sum()
+    model_method_counts[:] /= model_method_counts[:].sum()
+
+
+    fig,ax = pl.subplots()
+    h = 0.4
+    pl.barh(y+h/2, dhs[order], height=h, label='DHS', facecolor='black')
+    pl.barh(y-h/2, fps[order], height=h, label='FPsim', facecolor='cornflowerblue')
+
+    pl.yticks(ticks=y, labels=labels[order])
+    pl.xlabel('% of women on method')
+    pl.legend(loc='upper right', frameon=False)
+    sc.boxoff()
+    sc.figlayout()
+    pl.xlim([0,10])
+
+
+    ax2 = pl.axes([0.55, 0.25, 0.4, 0.3])
+    labels2 = ['No method', 'On method']
+    dhs2 = 100 = data_method_counts
+    dhs2 = [100 - dhs.sum(), dhs.sum()]
+    fps2 = [100 - fps.sum(), fps.sum()]
+    y2 = np.arange(2)[::-1]
+    pl.barh(y2+h/2, dhs2, height=h, label='DHS', facecolor='black')
+    pl.barh(y2-h/2, fps2, height=h, label='FPsim', facecolor='cornflowerblue')
+    pl.yticks(ticks=y2, labels=labels2)
+    pl.xlim([0,100])
+
+    sc.boxoff()
+    pl.savefig('method-mix.png', dpi=200)
+    pl.show()
+
