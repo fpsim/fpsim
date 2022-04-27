@@ -243,7 +243,22 @@ class TestStates(unittest.TestCase):
         for mother_index, child_list in enumerate(children):
             for child in child_list:
                 self.assertEqual(mothers[child], mother_index)
-    
+
+    def test_first_birth_age(self):
+        last_year_first_age = []
+        for year, attribute_dict in self.result_dict.items():
+            # dobs and age at first birth should be consistent (specifically checks that mothers represented in first_birth_age is subset of those represented in dobs)
+            for index, age_first_birth in enumerate(attribute_dict['first_birth_age']):
+                if age_first_birth is not None:
+                    self.assertGreater(len(attribute_dict['dobs'][index]), 0, "Some people are shown as having given birth in first_birth_age but not in dobs")
+
+            # once assigned, age at first birth should stay the same
+            for index, last_year_age_first_birth in enumerate(last_year_first_age):
+                if last_year_age_first_birth is not None:
+                    self.assertEqual(last_year_age_first_birth, attribute_dict['first_birth_age'][index])
+
+            last_year_first_age = attribute_dict['first_birth_age']
+
     def test_age_boundaries(self):
         """
         Checks that people under 13 or over 40 can't get pregnant
