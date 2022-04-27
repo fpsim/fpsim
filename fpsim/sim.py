@@ -1713,6 +1713,27 @@ class MultiSim(sc.prettyobj):
         if do_show:
             pl.show()
 
+    def plot_age_first_birth(self, do_show=False, do_save=True, output_file='age_first_birth_multi.png'):
+        length = sum([len([num for num in sim.people.first_birth_age if num is not None]) for sim in self.sims])
+        print(f"Length of total is: {length}")
+        data_dict = {"age": [0] * length, "sim": [0] * length}
+        i = 0
+        for sim in self.sims:
+            for value in [num for num in sim.people.first_birth_age if num is not None]:
+                data_dict['age'][i] = value
+                data_dict['sim'][i] = sim.label
+                i = i + 1
+
+        data = pd.DataFrame(data_dict)
+        pl.title("Age at first birth")
+        sns.boxplot(data=data, y='age', x='sim', orient='v', notch=True)
+        if do_show:
+            pl.show()
+        if do_save:
+            print(f"Saved age at first birth plot at {output_file}")
+            pl.savefig(output_file)
+        
+
 def single_run(sim):
     ''' Helper function for multi_run(); rarely used on its own '''
     sim.run()
