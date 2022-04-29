@@ -3,6 +3,7 @@ from collections import defaultdict
 import unittest
 import os
 import pandas as pd
+import copy
 import numpy as np
 import sciris as sc
 import fpsim as fp
@@ -245,19 +246,16 @@ class TestStates(unittest.TestCase):
                 self.assertEqual(mothers[child], mother_index)
 
     def test_first_birth_age(self):
-        last_year_first_age = []
+        last_year_lengths = [len(dob) for dob in self.result_dict[min(self.result_dict.keys())]['dobs']] # get first value of dobs to initialize
         for year, attribute_dict in self.result_dict.items():
+            age_first_birth = attribute_dict['first_birth_age']
+            ages = attribute_dict['age']
+            this_year_lengths = [len(dob) for dob in attribute_dict['dobs']]
             # dobs and age at first birth should be consistent (specifically checks that mothers represented in first_birth_age is subset of those represented in dobs)
-            for index, age_first_birth in enumerate(attribute_dict['first_birth_age']):
-                if age_first_birth is not None:
-                    self.assertGreater(len(attribute_dict['dobs'][index]), 0, "Some people are shown as having given birth in first_birth_age but not in dobs")
-
-            # once assigned, age at first birth should stay the same
-            for index, last_year_age_first_birth in enumerate(last_year_first_age):
-                if last_year_age_first_birth is not None:
-                    self.assertEqual(last_year_age_first_birth, attribute_dict['first_birth_age'][index])
-
-            last_year_first_age = attribute_dict['first_birth_age']
+            for index, last_year_length in enumerate(last_year_lengths):
+                if last_year_length == 0 and this_year_lengths[index] == 1:
+                    self.assertAlmostEqual(ages[index], age_first_birth[index], delta=0.1, msg=f"Age at first birth is {ages[index]} but recorded as {age_first_birth[index]}")
+            last_year_lengths = copy.deepcopy(this_year_lengths)
 
     def test_age_boundaries(self):
         """
