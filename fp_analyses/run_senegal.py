@@ -172,7 +172,8 @@ if do_run:
         age_high = age_low.filter(age_low.age < 49)
         total_LAM = age_high.lam.mean()
 
-        print(f'Mean sexual debut age: {pl.mean(age_high.sexual_debut_age)}+/-{pl.std(age_high.sexual_debut_age)}')
+        filtered_sexual_debut_age = [num for num in age_high.sexual_debut_age if num is not None]
+        print(f'Mean sexual debut age: {pl.mean(filtered_sexual_debut_age)}+/-{pl.std(filtered_sexual_debut_age)}')
 
         print(f'Final percent non-postpartum : {res["nonpostpartum"][-1]}')
         print(f'Total live births last year: {(births_last_year)}')
