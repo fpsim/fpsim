@@ -629,7 +629,7 @@ def default_debut_age():
         [45, 0.0001177109855848480]])
 
     debut_age = {}
-    debut_age['age'] = sexual_debut[:, 0]
+    debut_age['ages'] = sexual_debut[:, 0]
     debut_age['probs'] = sexual_debut[:, 1]
 
     return debut_age
