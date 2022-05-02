@@ -92,7 +92,7 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'FPSim'
+project = u'FPsim'
 copyright = f'1999 - {datetime.today().year}, Bill & Melinda Gates Foundation. All rights reserved.'
 author = u'Institute for Disease Modeling'
 
@@ -379,7 +379,7 @@ man_show_urls = True
 #  dir menu entry, description, category)
 texinfo_documents = [
     (master_doc, 'fpsim-docs', u'fpsim',
-     author, 'Institute for Disease Modeling', 'How to use the FPSim model for family planning simulations.',
+     author, 'Institute for Disease Modeling', 'How to use the FPsim model for family planning simulations.',
      'Miscellaneous'),
 ]
 
