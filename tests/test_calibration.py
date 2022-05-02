@@ -5,52 +5,58 @@ Run tests on the calibration object.
 import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
-
-do_plot = 1
-
-def make_calib(n=500):
-    '''
-    Define a default simulation for testing the baseline.
-    '''
-    pars = fa.senegal_parameters.make_pars()
-    pars['n'] = n
-    pars['verbose'] = 0
-    calib = fp.Calibration(pars=pars)
-
-    return calib
+import unittest
+import pytest
+import sys
+import os
 
 
-def test_calibration(n_trials=5, do_plot=False):
-    ''' Compare the current default sim against the saved baseline '''
-    sc.heading('Testing calibration...')
+class TestCalibration(unittest.TestCase):
 
-    calib_pars = dict(
-        exposure_correction = [1.5, 0.7, 1.5],
-    )
+    @classmethod
+    def setUpClass(self):
+        self.do_plot = 1
+        self.n_trials = 5
+        
+        # suppresses unnecessary print statements to increase runtime
+        sys.stdout = open(os.devnull, 'w')
 
-    # Calculate calibration
-    calib = make_calib()
-    calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=2)
-    before,after = calib.summarize()
+    def make_calib(self, n=500):
+        '''
+        Define a default simulation for testing the baseline.
+        '''
+        pars = fa.senegal_parameters.make_pars()
+        pars['n'] = n
+        pars['verbose'] = 0
+        calib = fp.Calibration(pars=pars)
 
-    # assert before > after
+        return calib
 
-    if do_plot:
-        calib.before.plot()
-        calib.after.plot()
-        calib.before.fit.plot()
-        calib.after.fit.plot()
 
-    return calib
+    def test_calibration(self):
+        ''' Compare the current default sim against the saved baseline '''
+        sc.heading('Testing calibration...')
 
+        calib_pars = dict(
+            exposure_correction = [1.5, 0.7, 1.5],
+        )
+
+        # Calculate calibration
+        calib = self.make_calib()
+        calib.calibrate(calib_pars=calib_pars, n_trials=self.n_trials, n_workers=2)
+        before,after = calib.summarize()
+
+        # assert before > after
+
+        if self.do_plot:
+            calib.before.plot()
+            calib.after.plot()
+            calib.before.fit.plot()
+            calib.after.fit.plot()
+
+        return calib
 
 if __name__ == '__main__':
 
-    # Start timing and optionally enable interactive plotting
-    T = sc.tic()
-
-    calib = test_calibration(do_plot=do_plot)
-
-    print('\n'*2)
-    sc.toc(T)
-    print('Done.')
+    # run test suite
+    unittest.main()
