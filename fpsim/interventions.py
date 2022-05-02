@@ -316,12 +316,14 @@ class snapshot(Analyzer):
 class timeseries_recorder(Analyzer):
     '''
     Record every attribute in people as a timeseries.
-    Attributes
-        self.i is the list of timesteps (ie, 0 to 261 steps)
-        self.t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
-        self.y is calendar year of timestep (ie, 1975.75)
-        self.keys is a list of people states excluding 'dobs'
-        self.data is a dictionary where self.data[state][timestep] is the mean of the state at that timestep
+
+    Attributes:
+
+        self.i: The list of timesteps (ie, 0 to 261 steps).
+        self.t: The time elapsed in years given how many timesteps have passed (ie, 25.75 years).
+        self.y: The calendar year of timestep (ie, 1975.75).
+        self.keys: A list of people states excluding 'dobs'.
+        self.data: A dictionary where self.data[state][timestep] is the mean of the state at that timestep.
     '''
 
     def __init__(self):
@@ -390,9 +392,11 @@ class timeseries_recorder(Analyzer):
 class age_pyramids(Analyzer):
     '''
     Records age pyramids for each timestep.
-    Attributes
-        self.bins is a list of ages, default is a sequence from 0 to max_age + 1
-        self.data is a matrix of shape (number of timesteps, number of bins - 1) containing age pyramid data
+
+    Attributes:
+
+        self.bins: A list of ages, default is a sequence from 0 to max_age + 1.
+        self.data: A matrix of shape (number of timesteps, number of bins - 1) containing age pyramid data.
     '''
 
     def __init__(self, bins=None):
@@ -472,22 +476,41 @@ def getval(v):
 
 class update_methods(Intervention):
     """
-    Intervention to modify method efficacy and/or switching matrix
+    Intervention to modify method efficacy and/or switching matrix.
+
     Attributes:
-        self.year::float is the year we want to change the method
-        self.scen::dict has the following keys:
-            probs::str is an optional key with the value of a list of dictionaries where each dictionary has the following keys:
-                source::str is the source method to be changed
-                dest::str is the destination method to be changed
-                factor::float is the factor by which to multiply existing probability
-                value::float is the value to replace the switching probability value
-                keys::list is a list of strings representing age groups to affect
-            eff::str is an optional key for changing efficacy, its value is a dictionary with the following schema:
-                {method: efficacy} where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys)  
-        self.matrix::str is one of ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] where:
-            probs_matrix changes the specified uptake at the corresponding year regardless of state
-            probs_matrix_1  changes the specified uptake for all individuals in their first month postpartum
-            probs_matrix_1-6  changes the specified uptake for all individuals that are in the first 6 months postpartum
+        self.year::float: The year we want to change the method.
+        self.scen::dict: Has the following keys:
+
+            probs::str
+                An optional key with the value of a list of dictionaries where each dictionary has 
+                the following keys:
+
+                source::str
+                    The source method to be changed.
+                dest::str
+                    The destination method to be changed.
+                factor::float
+                    The factor by which to multiply existing probability.
+                value::float
+                    The value to replace the switching probability value.
+                keys::list
+                    A list of strings representing age groups to affect.
+
+            eff::str
+                An optional key for changing efficacy; its value is a dictionary with the following schema:
+
+                    {method: efficacy}
+                        Where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys). 
+
+        self.matrix::str: One of ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] where:
+
+            probs_matrix:
+                Changes the specified uptake at the corresponding year regardless of state.
+            probs_matrix_1
+                Changes the specified uptake for all individuals in their first month postpartum.
+            probs_matrix_1-6
+                Changes the specified uptake for all individuals that are in the first 6 months postpartum.
     """
 
     def __init__(self, year, scen, matrix='probs_matrix'):
