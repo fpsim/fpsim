@@ -3,6 +3,7 @@ from collections import defaultdict
 from . import defaults as fpd
 import sciris as sc
 import pandas as pd
+from copy import deepcopy, copy
 from copy import deepcopy
 
 class SimVerbose(fp.Sim):
@@ -48,7 +49,7 @@ class SimVerbose(fp.Sim):
                 Dictionary of events correponding to self.channels formatted as {timestep: channel: [indices]}.
         """
         for state in fpd.debug_states:
-            self.total_results[self.y][state] = getattr(self.people, state)
+            self.total_results[self.y][state] = deepcopy(getattr(self.people, state))
 
         # Getting births gestation and sexual_activity
         self.this_year_births = deepcopy(self.total_results[self.y]["parity"])
