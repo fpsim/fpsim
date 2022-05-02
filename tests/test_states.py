@@ -259,7 +259,7 @@ class TestStates(unittest.TestCase):
         for year, attribute_dict in self.result_dict.items():
             for index, pregnant_bool in enumerate(attribute_dict["pregnant"]):
                 age = attribute_dict['age'][index]
-                if age < 11 or age > 50:
+                if age < 10 or age > 51:
                     self.assertFalse(pregnant_bool, msg=f"Individual {index} can't be pregnant she's {age}")
 
     def test_ages(self):

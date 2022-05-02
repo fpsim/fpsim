@@ -187,9 +187,9 @@ if do_plot_age_parity_heatmap:
 
 '''
 if do_plot_method_mix:
-    '''
-    #Plot a horizontal bar graph of method use
-    '''
+'''
+#Plot a horizontal bar graph of method use
+'''
 
     data_method_counts = sc.odict().make(keys=sim.pars['methods']['names'], vals=0.0)
     model_method_counts = sc.dcp(data_method_counts)
