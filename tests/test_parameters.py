@@ -5,56 +5,63 @@ Run tests on individual parameters.
 import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
-
-def get_pars():
-    return fa.senegal_parameters.make_pars()
-
-
-def make(pars, n=1000, verbose=0, do_run=True, **kwargs):
-    '''
-    Define a default simulation for testing the baseline.
-    '''
-
-    pars['n'] = n
-    pars['verbose'] = verbose
-    pars.update(kwargs)
-    sim = fp.Sim(pars=pars)
-
-    if do_run:
-        sim.run()
-
-    return sim
+import unittest
+import pytest
+import os
+import sys
 
 
-def test_null(do_plot=False):
-    sc.heading('Testing no births, no deaths...')
+class TestParameters(unittest.TestCase):
+    @classmethod
+    def setUpClass(self):
+        self.do_plot=False
+        self.n=1000
+        self.verbose=True
+        self.do_run=True
+        
+        # suppresses unnecessary warning statements to increase runtime
+        sys.stdout = open(os.devnull, 'w')
 
-    pars = get_pars() # For default pars
-    pars['age_mortality']['f'] *= 0
-    pars['age_mortality']['m'] *= 0
-    pars['age_mortality']['trend'] *= 0
-    pars['maternal_mortality']['probs'] *= 0
-    pars['infant_mortality']['probs'] *= 0
-    pars['exposure_correction'] = 0
-    pars['high_parity']         = 4
-    pars['high_parity_nonuse_correction']  = 0
+    def get_pars(self):
+        return fa.senegal_parameters.make_pars()
 
-    sim = make(pars)
+    def make(self, pars, **kwargs):
+        '''
+        Define a default simulation for testing the baseline.
+        '''
 
-    if do_plot:
-        sim.plot()
+        pars['n'] = self.n
+        pars['verbose'] = self.verbose
+        pars.update(kwargs)
+        sim = fp.Sim(pars=pars)
 
-    return sim
+        if self.do_run:
+            sim.run()
 
+        return sim
+
+
+    def test_null(self):
+        sc.heading('Testing no births, no deaths...')
+
+        pars = self.get_pars() # For default pars
+        pars['age_mortality']['f'] *= 0
+        pars['age_mortality']['m'] *= 0
+        pars['age_mortality']['trend'] *= 0
+        pars['maternal_mortality']['probs'] *= 0
+        pars['infant_mortality']['probs'] *= 0
+        pars['exposure_correction'] = 0
+        pars['high_parity']         = 4
+        pars['high_parity_nonuse_correction']  = 0
+
+        sim = self.make(pars)
+
+        if self.do_plot:
+            sim.plot()
+
+        return sim
 
 if __name__ == '__main__':
 
-    # Start timing and optionally enable interactive plotting
-    T = sc.tic()
-
-    do_plot = True
-    null = test_null(do_plot=do_plot)
-
-    print('\n'*2)
-    sc.toc(T)
-    print('Done.')
+    # run test suite
+    unittest.main()

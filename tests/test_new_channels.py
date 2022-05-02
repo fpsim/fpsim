@@ -20,6 +20,9 @@ class TestChannels(unittest.TestCase):
         self.events = exp.events
         self.channels = ["Births", "Conceptions", "Miscarriages", "Sexual_Debut", "Deaths"]
 
+        # suppresses unnecessary warning statements to increase runtime
+        sys.stdout = open(os.devnull, 'w')
+
     def test_channels_sanity_check(self):
         """
         Checks that none of the channels from self.channels contain no entries.
@@ -31,7 +34,7 @@ class TestChannels(unittest.TestCase):
                     if len(self.events[timestep][channel]) > max:
                         max = len(self.events[timestep][channel])
 
-                self.assertGreater(max, 0)
+                self.assertGreater(max, 0, msg=f"Detected empty channel: {channel}")
     
     def test_births(self):
         """
@@ -43,7 +46,7 @@ class TestChannels(unittest.TestCase):
         for timestep in self.events:
             births_step += self.events[timestep]["Step_Results"]["births"]
             births += len(self.events[timestep]['Births'])
-        self.assertEqual(births, births_step)
+        self.assertEqual(births, births_step, f"Mismatch between step results births and births channel")
     
     def test_conceptions(self):
         """
@@ -57,8 +60,8 @@ class TestChannels(unittest.TestCase):
             conceptions = conceptions + len(self.events[timestep]['Conceptions']) 
 
         # We wouldn't expect more than a quarter of conceptions to end in miscarriages
-        self.assertAlmostEqual(births, conceptions, delta = 0.25 * births)
-        self.assertGreater(conceptions, births)
+        self.assertAlmostEqual(births, conceptions, delta = 0.25 * births, msg="Less than 75 percent of conceptions result in births")
+        self.assertGreater(conceptions, births, msg="Number of conceptions not greater than recorded live births")
 
     def test_miscarriages(self):
         """
@@ -72,7 +75,7 @@ class TestChannels(unittest.TestCase):
             conceptions += len(self.events[timestep]['Conceptions']) 
             miscarriages += len(self.events[timestep]['Miscarriages']) 
 
-        self.assertGreater(conceptions - births, miscarriages)
+        self.assertGreater(conceptions - births, miscarriages, msg="The number of miscarriages is greater than the differences between conceptions and births")
 
     @unittest.skip("Need to verify this works over multiple runs")
     def test_sexual_debut(self):
@@ -84,9 +87,11 @@ class TestChannels(unittest.TestCase):
         for timestep in self.events:
             if timestep != 1960.0:
                 for item in self.events[timestep]['Sexual_Debut']:
-                    self.assertTrue(item not in sexually_active)
-                    self.assertTrue(self.total_results[timestep]['sexually_active'][item], msg=f"Inconsistency at timestep {timestep} index {item}")
+                    self.assertTrue(item not in sexually_active, msg=f"Record of individual at timestep {timestep} sexual debuted but not sexually active")
+                    self.assertTrue(self.total_results[timestep]['sexually_active'][item], msg=f"Sexual debut but not sexually active at timestep {timestep} index {item}")
                 sexually_active.update(self.events[timestep]['Sexual_Debut'])
 
 if __name__ == '__main__':
+
+    # run test suite
     unittest.main()

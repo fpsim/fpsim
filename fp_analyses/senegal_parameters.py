@@ -132,7 +132,7 @@ def default_female_age_fecundity(bound):
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
 
     fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
-    fecundity_interp = fecundity_interp_model(fpd.spline_ages)
+    fecundity_interp = fecundity_interp_model(fpd.spline_preg_ages)
     if bound:
         fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp))
 
@@ -185,6 +185,9 @@ def default_infant_mortality():
     '''
     From World Bank indicators for infant morality (< 1 year) for Senegal, per 1000 live births
     From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
+    Adolescent increased risk of infant mortality gradient taken
+    from Noori et al for Sub-Saharan African from 2014-2018.  Odds ratios with age 23-25 as reference group:
+    https://www.medrxiv.org/content/10.1101/2021.06.10.21258227v1
     '''
 
     data = np.array([
@@ -253,6 +256,8 @@ def default_infant_mortality():
     infant_mortality = {}
     infant_mortality['year'] = data[:,0]
     infant_mortality['probs'] = data[:,1]/1000   # Rate per 1000 live births, used after stillbirth is filtered out
+    infant_mortality['ages'] = np.array([16, 17,   19, 22,   25, 50])
+    infant_mortality['age_probs'] = np.array([2.28, 1.63, 1.3, 1.12, 1.0, 1.0])
 
     return infant_mortality
 
@@ -349,15 +354,14 @@ def default_methods():
             [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.2002612324, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.7997387676, 0.0000000000, 0.0000000000],
             [0.0525041055, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.9474958945, 0.0000000000],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000],
-            [0.9462131116, 0.0123838433, 0.0029627055, 0.0209275401, 0.0013426008, 0.0001399314, 0.0001399314, 0.0139046297, 0.0017618246, 0.0002238816]]),
+            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000]]),
         '18-20': np.array([
             [0.9773550478, 0.0027107826, 0.0002856633, 0.0103783776, 0.0027107826, 0.0000000000, 0.0000000000, 0.0048461143, 0.0014275685, 0.0002856633],
             [0.4549090811, 0.4753537374, 0.0000000000, 0.0463236223, 0.0000000000, 0.0000000000, 0.0000000000, 0.0234135593, 0.0000000000, 0.0000000000],
             [0.1606987622, 0.0000000000, 0.8393012378, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.4388765348, 0.0196152254, 0.0000000000, 0.5217816111, 0.0098521372, 0.0000000000, 0.0000000000, 0.0049372457, 0.0049372457, 0.0000000000],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.1820343429, 0.0000000000, 0.0000000000, 0.0000000000, 0.8179656571, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
             [0.1700250992, 0.0000000000, 0.0000000000, 0.0196339461, 0.0000000000, 0.0000000000, 0.0000000000, 0.8103409547, 0.0000000000, 0.0000000000],
             [0.3216043236, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.6783956764, 0.0000000000],
@@ -682,6 +686,7 @@ def default_birth_spacing_preference():
     pref_spacing = {}
     pref_spacing['interval'] = interval # Store the interval (which we've just checked is always the same)
     pref_spacing['n_bins'] = len(intervals) # Actually n_bins - 1, but we're counting 0 so it's OK
+    pref_spacing['months'] = postpartum_spacing[:,0]
     pref_spacing['preference'] = postpartum_spacing[:, 1] # Store the actual birth spacing data
 
     return pref_spacing
@@ -770,7 +775,7 @@ def default_lactational_amenorrhea():
 
 
 def data2interp(data, ages, normalize=False):
-    ''' Convert unevently spaced data into an even spline interpolation '''
+    ''' Convert unevenly spaced data into an even spline interpolation '''
     model = si.interp1d(data[0], data[1])
     interp = model(ages)
     if normalize:

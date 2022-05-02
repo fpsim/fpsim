@@ -9,7 +9,7 @@ useSI          = True
 mpy            = 12   # Months per year, to avoid magic numbers
 eps            = 1e-9 # To avoid divide-by-zero
 max_age        = 99   # Maximum age
-max_age_preg   = 49   # Maximum age to become pregnant
+max_age_preg   = 50   # Maximum age to become pregnant
 max_parity     = 20   # Maximum number of children
 
 #%% Defaults when creating a new person
@@ -38,6 +38,7 @@ person_defaults = dict(
     lactating            = False,
     postpartum           = False,
     lam                  = False,
+    mothers              = -1,
 )
 
 #%% Age bins for different method switching matrices
