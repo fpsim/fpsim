@@ -67,8 +67,8 @@ class People(fpb.BasePeople):
         # Sexual and reproductive history
         self.sexually_active = arr(n, d['sexually_active'])
         self.sexual_debut    = arr(n, d['sexual_debut'])
-        self.sexual_debut_age = arr(n, np.float64(d['age'])) # Age at first sexual debut in years, If not debuted, None
-        self.first_birth_age  = arr(n, np.float64(d['age'])) # Age at first birth.  If no births, None
+        self.sexual_debut_age = arr(n, d['sexual_debut_age']) # Age at first sexual debut in years, If not debuted, None
+        self.first_birth_age  = arr(n, d['first_birth_age']) # Age at first birth.  If no births, None
         self.lactating       = arr(n, d['lactating'])
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
@@ -486,7 +486,7 @@ class People(fpb.BasePeople):
         live = deliv.filter(~is_stillborn)
         for i in live.inds: # Handle DOBs
             all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
-            if len(all_ppl.dobs[i]) == 1:
+            if len(all_ppl.dobs[i]) == 1: 
                 all_ppl.first_birth_age[i] = all_ppl.age[i]
         for i in stillborn.inds: # Handle adding dates
             all_ppl.still_dates[i].append(all_ppl.age[i])
@@ -1332,6 +1332,17 @@ class Sim(fpb.BaseSim):
 
         return fig
 
+    def plot_age_first_birth(self, do_show=False, do_save=True, output_file="first_birth_age.png"):
+        to_plot = [age for age in self.people.first_birth_age if age is not None]
+
+        sns.set(rc={'figure.figsize':(7,5)})
+        pl.title("Age at first birth")
+        sns.boxplot(x=to_plot, orient='v', notch=True)
+        if do_show:
+            pl.show()
+        if do_save:
+            print(f"Saved age at first birth plot at {output_file}")
+            pl.savefig(output_file)
 
 
     def plot_people(self):
@@ -1705,6 +1716,27 @@ class MultiSim(sc.prettyobj):
             pl.savefig(filepath)
         if do_show:
             pl.show()
+
+    def plot_age_first_birth(self, do_show=False, do_save=True, output_file='age_first_birth_multi.png'):
+        length = sum([len([num for num in sim.people.first_birth_age if num is not None]) for sim in self.sims])
+        print(f"Length of total is: {length}")
+        data_dict = {"age": [0] * length, "sim": [0] * length}
+        i = 0
+        for sim in self.sims:
+            for value in [num for num in sim.people.first_birth_age if num is not None]:
+                data_dict['age'][i] = value
+                data_dict['sim'][i] = sim.label
+                i = i + 1
+
+        data = pd.DataFrame(data_dict)
+        pl.title("Age at first birth")
+        sns.boxplot(data=data, y='age', x='sim', orient='v', notch=True)
+        if do_show:
+            pl.show()
+        if do_save:
+            print(f"Saved age at first birth plot at {output_file}")
+            pl.savefig(output_file)
+        
 
 def single_run(sim):
     ''' Helper function for multi_run(); rarely used on its own '''
