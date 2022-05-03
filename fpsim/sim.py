@@ -1223,12 +1223,12 @@ class Sim(fpb.BaseSim):
                     if is_dist:
                         low *= 100
                         high *= 100
-                #if label is None:
-                    #if new_fig:
-                        #label = reslabel
-                    #else: # Replace with sim label to avoid duplicate labels
-                        #label = self.label
-                ax.plot(x, y, **plot_args)
+                if label is None:
+                    if new_fig:
+                        label = reslabel
+                    else: # Replace with sim label to avoid duplicate labels
+                        label = self.label
+                ax.plot(x, y, label=label, **plot_args)
                 if is_dist:
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
@@ -1236,6 +1236,10 @@ class Sim(fpb.BaseSim):
             fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
             if key == 'mcpr_by_year':
                 pl.ylabel('Percentage')
+            elif key == 'mmr':
+                pl.ylabel('Deaths per 100,000 live births')
+            elif key == 'imr':
+                pl.ylabel('Deaths per 1,000 live births')
             else:
                 pl.ylabel('Count')
             pl.xlabel('Year')
@@ -1306,7 +1310,7 @@ class Sim(fpb.BaseSim):
                         label = reslabel
                     else: # Replace with sim label to avoid duplicate labels
                         label = self.label
-                ax.plot(x, y, **plot_args)
+                ax.plot(x, y, label=label, **plot_args)
                 if is_dist:
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
