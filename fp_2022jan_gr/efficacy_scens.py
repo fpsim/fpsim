@@ -196,11 +196,11 @@ if __name__ == '__main__':
                 dest   = 'Injectables', # Destination
                 factor = 2, # Factor by which to multiply existing probability
                 value  = None, # Alternatively, specify the absolute probability of switching to this method
-                keys   = None, # Which age keys to modify -- if not specified, all
+                keys   = ['>25'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
-    uptake_2x = fp.update_methods(scen_year, uptake_scen_25) # Create intervention
+    uptake_2x_25 = fp.update_methods(scen_year, uptake_scen_25) # Create intervention
 
             # Increased uptake low efficacy
     uptake_scen_20 = sc.objdict(
@@ -210,12 +210,12 @@ if __name__ == '__main__':
                 source = 'None', # Source method, 'all' for all methods
                 dest   = 'Injectables', # Destination
                 factor = None, # Factor by which to multiply existing probability
-                value  = 0.25, # Alternatively, specify the absolute probability of switching to this method
-                keys   = None, # Which age keys to modify -- if not specified, all
+                value  = 0.75, # Alternatively, specify the absolute probability of switching to this method
+                keys   = ['<18', '18-20'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
-    uptake_pp = fp.update_methods(scen_year, uptake_scen_20, matrix='probs_matrix_1-6') # Create intervention
+    uptake_pp_20 = fp.update_methods(scen_year, uptake_scen_20, matrix='probs_matrix_1-6') # Create intervention
 
     uptake_scen_20 = sc.objdict(
         eff={'Injectables': 0.983},  # Co-opt an unused method and simulate a medium-efficacy method
@@ -225,7 +225,7 @@ if __name__ == '__main__':
                 dest='None',  # Destination
                 factor=0.5,  # Factor by which to multiply existing probability
                 value=None,  # Alternatively, specify the absolute probability of switching to this method
-                keys=None,  # Which age keys to modify -- if not specified, all
+                keys=['<18', '18-20'],  # Which age keys to modify -- if not specified, all
             ),
         ]
     )
@@ -239,10 +239,10 @@ if __name__ == '__main__':
     # sims3 = make_sims(repeats=repeats, interventions=uptake, label='Increased uptake, high eff', **pars)
     # sims4 = make_sims(repeats=repeats, interventions=uptake_mod, label='Increased uptake, mod eff', **pars)
     # sims5 = make_sims(repeats=repeats, interventions=uptake_low, label='Increased uptake, low eff', **pars)
-    sims6 = make_sims(repeats=repeats, interventions=uptake_2x, label='Increased inj 2x uptake annually', **pars)
-    sims7 = make_sims(repeats=repeats, interventions=uptake_pp, label='Increased inj 25% prob uptake pp', **pars)
+    sims6 = make_sims(repeats=repeats, interventions=uptake_2x_25, label='Inj 2x uptake >25 annually', **pars)
+    sims7 = make_sims(repeats=repeats, interventions=uptake_pp_20, label='Inj 75% prob uptake pp < 21', **pars)
     sims8 = make_sims(repeats=repeats, interventions=disc,
-                      label='Half disc prob inj', **pars)
+                      label='Half disc prob inj < 21', **pars)
 
 
     #%% Run
