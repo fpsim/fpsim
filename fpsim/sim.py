@@ -1663,15 +1663,16 @@ class MultiSim(sc.prettyobj):
     def plot_method_mix(self, n_sims=10, do_show=False, do_save=True, filepath="method_mix.png"):
         """
         Plots the average method mix for n_sims runs
-        Input:
-            n_sims::int
-                number of sims you want to run to calculate average mix and standard deviation
-            do_show::bool
-                whether or not the user wants to show the output plot
-            do_save::bool
-                whether or not the user wants to save the plot to filepath
-            filepath::str
-                the name of the path to output the plot
+
+        Args:
+            n_sims (int):
+                The number of sims you want to run to calculate average mix and standard deviation.
+            do_show (bool):
+                Whether or not the user wants to show the output plot.
+            do_save (bool):
+                Whether or not the user wants to save the plot to filepath.
+            filepath (str):
+                The name of the path to output the plot.
         """
         method_table = {"sim" : [], "sim_index": [], "proportion": [], "method": []}
         
