@@ -11,7 +11,7 @@ import fpsim.defaults as fpd
 # Define default user-tunable parameters and values
 defaults = {
   'name'                          : 'Default',
-  'n'                             : 6000,
+  'n'                             : 100000,
   'start_year'                    : 1960,
   'end_year'                      : 2019,
   'timestep'                      : 1,
@@ -34,7 +34,8 @@ defaults = {
   'LAM_efficacy'                  : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
   'maternal_mortality_multiplier' : 1,
   'high_parity'                   : 4,
-  'high_parity_nonuse_correction' : 0.6
+  'high_parity_nonuse_correction' : 0.6,
+  'primary_infertility'           : 0.065
 }
 
 
@@ -834,7 +835,7 @@ def default_exposure_correction_parity():
     Michelle note: Thinking about this in terms of child preferences/ideal number of children
     '''
     exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
-                                           [0.5, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10,  0.05, 0.01]])
+                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10,  0.05, 0.01]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
     #
     # exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
