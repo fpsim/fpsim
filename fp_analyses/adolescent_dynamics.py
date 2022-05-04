@@ -46,6 +46,7 @@ inds_live_women_25_30 = sc.findinds(ppl.alive * (ppl.age >= 25) * (ppl.age < 30)
 inds_live_women_30_35 = sc.findinds(ppl.alive * (ppl.age >= 30) * (ppl.age < 35) * (ppl.sex == 0))
 inds_live_women_35_40 = sc.findinds(ppl.alive * (ppl.age >= 35) * (ppl.age < 40) * (ppl.sex == 0))
 inds_live_women_40_50 = sc.findinds(ppl.alive * (ppl.age >= 40) * (ppl.age < 50) * (ppl.sex == 0))
+inds_live_women_45_50 = sc.findinds(ppl.alive * (ppl.age >= 45) * (ppl.age < 50) * (ppl.sex == 0))
 
 # Calculate total live women in each age group
 total_women_10_49 = len(ppl.uid[inds_live_women_10_49])
@@ -73,17 +74,23 @@ if do_print_stats:
     }
 
     for key,(age_low, age_high) in debut_age_mapping.items():
-        inds_debuted = sc.findinds(ppl.alive * (ppl.age >= 25) * (ppl.age < 50) * (ppl.sex == 0) * (ppl.sexual_debut_age <= age_high))
+        inds_debuted = sc.findinds(ppl.alive * (ppl.age >= 25) * (ppl.age < 50) * (ppl.sex == 0) * (ppl.sexual_debut==1) * (ppl.sexual_debut_age <= age_high))
         num_debuted = len(ppl.uid[inds_debuted])
         debut_by_age[key] = num_debuted / total_women_25_49
 
     inds_abstinent = sc.findinds(ppl.alive * (ppl.age >= 25) * (ppl.age < 50) * (ppl.sex == 0) * (ppl.sexual_debut == 0))
     abstinent = len(ppl.uid[inds_abstinent])
 
+    inds_childfree = sc.findinds(ppl.alive * (ppl.age >= 45) * (ppl.age < 50) * (ppl.sex == 0) * (ppl.parity == 0))
+    num_childfree = len(ppl.uid[inds_childfree])
+    num_45_50 = len(ppl.uid[inds_live_women_45_50])
+    percent_childfree = (num_childfree/num_45_50)*100
+
     print(f'Mean age of sexual debut for live women age 25-49 at end of sim: {mean_debut_age} +/- {error_debut_age}')
     print(f'Percent of live women age 25-49 who debuted by exact age given at end of sim: {debut_by_age}')
     print(f'Percent of live women age 25-49 who never have had sex: {abstinent/total_women_25_49}')
     print(f'Mean age of first (only live) birth for live women age age 25-49, including never given birth: {mean_first_birth_age} +/- {error_first_birth_age}')
+    print(f'Percent of live women age 45-50 who with no children ever born: {percent_childfree}')
 
 if do_plot_debut:
 
