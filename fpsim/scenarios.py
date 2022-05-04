@@ -10,7 +10,7 @@ import fp_analyses as fa
 from . import utils as fpu
 from . import interentions as fpi
 
-__all__ = ['Scenarios']
+__all__ = ['Scenarios','update_methods']
 
 
 # Define basic things here
