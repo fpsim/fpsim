@@ -8,12 +8,10 @@ import pylab as pl
 import seaborn as sns
 import sciris as sc
 import pandas as pd
-import pyarrow.feather as feather
 from . import defaults as fpd
 from . import utils as fpu
 from . import base as fpb
 from . import interventions as fpi
-from collections import defaultdict
 import copy
 
 
@@ -468,7 +466,7 @@ class People(fpb.BasePeople):
 
         # Update states
         deliv = self.filter(self.gestation == self.preg_dur)
-        
+
         deliv.pregnant = False
         deliv.gestation = 0  # Reset gestation counter
         deliv.lactating = True
@@ -489,7 +487,7 @@ class People(fpb.BasePeople):
         live = deliv.filter(~is_stillborn)
         for i in live.inds: # Handle DOBs
             all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
-            if len(all_ppl.dobs[i]) == 1: 
+            if len(all_ppl.dobs[i]) == 1:
                 all_ppl.first_birth_age[i] = all_ppl.age[i]
         for i in stillborn.inds: # Handle adding dates
             all_ppl.still_dates[i].append(all_ppl.age[i])
@@ -1050,7 +1048,7 @@ class Sim(fpb.BaseSim):
             self.results['total_women_35-39'][i] = r.age_bin_totals['35-39']
             self.results['total_women_40-44'][i] = r.age_bin_totals['40-44']
             self.results['total_women_45-49'][i] = r.age_bin_totals['45-49']
-            
+
             # Store results of number of switching events in each age group
             self.results['switching_events_<18'][i] = r.switching_general['<18']
             self.results['switching_events_18-20'][i] = r.switching_general['18-20']
@@ -1093,7 +1091,7 @@ class Sim(fpb.BaseSim):
                     infant_mortality_rate = infant_deaths_over_year / live_births_over_year * 1000
                     self.results['imr'].append(infant_mortality_rate)
                 #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
-                
+
                 tfr = 0
                 for key in fpd.age_bin_mapping.keys():
                         age_bin_births_year = pl.sum(self.results['total_births_'+key][start_index:stop_index])
@@ -1296,8 +1294,10 @@ class Sim(fpb.BaseSim):
             'CPR - all method users / all women 15-49': sc.odict({'cpr': 'Contraceptive prevalence rate'}),
             'ACPR - all method users / nonpregnant, sexually active women 15-49': sc.odict({'acpr': 'Alternative contraceptive prevalence rate'}),
             })
+
+        ax = None
         for p,title,keylabels in to_plot.enumitems():
-            ax = pl.subplot(1,3,p+1)
+            ax = pl.subplot(1, 3, p+1, sharey=ax)
             for i,key,reslabel in keylabels.enumitems():
                 this_res = res[key]
                 is_dist = hasattr(this_res, 'best')
@@ -1320,10 +1320,12 @@ class Sim(fpb.BaseSim):
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
                     ax.fill_between(x, low, high, **fill_args)
-            fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
+
             pl.ylabel('Percentage')
             pl.xlabel('Year')
             pl.title(title, fontweight='bold')
+
+        fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
 
         # Ensure the figure actually renders or saves
         if do_save:
@@ -1600,7 +1602,7 @@ class MultiSim(sc.prettyobj):
     def plot(self, do_show=True, plot_sims=True, fig_args=None, plot_args=None, **kwargs):
         '''
         Plot the MultiSim
-        '''              
+        '''
         fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
 
         if plot_sims:
@@ -1668,18 +1670,19 @@ class MultiSim(sc.prettyobj):
     def plot_method_mix(self, n_sims=10, do_show=False, do_save=True, filepath="method_mix.png"):
         """
         Plots the average method mix for n_sims runs
-        Input:
-            n_sims::int
-                number of sims you want to run to calculate average mix and standard deviation
-            do_show::bool
-                whether or not the user wants to show the output plot
-            do_save::bool
-                whether or not the user wants to save the plot to filepath
-            filepath::str
-                the name of the path to output the plot
+
+        Args:
+            n_sims (int):
+                The number of sims you want to run to calculate average mix and standard deviation.
+            do_show (bool):
+                Whether or not the user wants to show the output plot.
+            do_save (bool):
+                Whether or not the user wants to save the plot to filepath.
+            filepath (str):
+                The name of the path to output the plot.
         """
         method_table = {"sim" : [], "sim_index": [], "proportion": [], "method": []}
-        
+
         # Run each sim n_sims times, get save proportion and let barplot calculate averages
         for sim in self.sims:
             print(f"Processing sim: {sim.label}")
@@ -1693,7 +1696,7 @@ class MultiSim(sc.prettyobj):
             multi.run()
 
             for sim_index in range(n_sims):
-                people = multi.sims[sim_index].people               
+                people = multi.sims[sim_index].people
                 unique, counts = np.unique(people.method, return_counts=True)
                 count_dict = dict(zip(unique, counts))
 
@@ -1702,7 +1705,7 @@ class MultiSim(sc.prettyobj):
                         method_table["proportion"].append(count_dict[method] / len(people.method))
                         method_table["sim_index"].append(sim_index)
                         method_table["method"].append(method)
-                        method_table["sim"].append(sim.label)       
+                        method_table["sim"].append(sim.label)
 
         # Plotting
         df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
@@ -1716,7 +1719,7 @@ class MultiSim(sc.prettyobj):
         sns.set(rc={'figure.figsize':(12,8.27)})
         sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=['Implants', 'Injectables', 'Pill', 'IUDs', 'Other traditional', 'Condoms', "BTL", 'Other modern', 'Withdrawal'])
         pl.title(f"Mean method mix over {n_sims} sims")
-        
+
         if do_save:
             pl.savefig(filepath)
         if do_show:
@@ -1741,7 +1744,7 @@ class MultiSim(sc.prettyobj):
         if do_save:
             print(f"Saved age at first birth plot at {output_file}")
             pl.savefig(output_file)
-        
+
 
 def single_run(sim):
     ''' Helper function for multi_run(); rarely used on its own '''
