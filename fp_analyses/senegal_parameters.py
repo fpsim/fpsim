@@ -35,7 +35,7 @@ defaults = {
   'maternal_mortality_multiplier' : 1,
   'high_parity'                   : 4,
   'high_parity_nonuse_correction' : 0.6,
-  'primary_infertility'           : 0.065
+  'primary_infertility'           : 0.05
 }
 
 
@@ -871,6 +871,6 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['fecundity_ratio_nullip']     = default_fecundity_ratio_nullip()
     pars['exposure_correction_age']    = default_exposure_correction_age()
     pars['exposure_correction_parity'] = default_exposure_correction_parity()
-    pars['exposure_correction'] = 1 # Overall exposure correction factor
+    pars['exposure_correction'] = 0.9 # Overall exposure correction factor
 
     return pars
