@@ -141,26 +141,19 @@ class update_methods(fpi.Intervention):
     """
     Intervention to modify method efficacy and/or switching matrix.
 
-    Attributes:
-        self.year::float: The year we want to change the method.
-        self.scen::dict: Has the following keys:
+    Args:
+        year (float): The year we want to change the method.
+        scen (dict): Define the scenario to run:
 
-            probs::str
-                An optional key with the value of a list of dictionaries where each dictionary has
-                the following keys:
+            probs (list): A list of dictionaries where each dictionary has the following keys:
 
-                source::str
-                    The source method to be changed.
-                dest::str
-                    The destination method to be changed.
-                factor::float
-                    The factor by which to multiply existing probability.
-                value::float
-                    The value to replace the switching probability value.
-                keys::list
-                    A list of strings representing age groups to affect.
+                source (str): The source method to be changed.
+                dest (str) The destination method to be changed.
+                factor (float): The factor by which to multiply existing probability; OR
+                value (float): The value to replace the switching probability value.
+                keys (list): A list of strings representing age groups to affect.
 
-            eff::str
+            eff (dict):
                 An optional key for changing efficacy; its value is a dictionary with the following schema:
 
                     {method: efficacy}
