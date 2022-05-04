@@ -73,7 +73,7 @@ if do_print_stats:
     }
 
     for key,(age_low, age_high) in debut_age_mapping.items():
-        inds_debuted = sc.findinds(ppl.alive * (ppl.age >= 25) * (ppl.age < 50) * (ppl.sex == 0) * (ppl.sexual_debut_age<= age_high))
+        inds_debuted = sc.findinds(ppl.alive * (ppl.age >= 25) * (ppl.age < 50) * (ppl.sex == 0) * (ppl.sexual_debut_age <= age_high))
         num_debuted = len(ppl.uid[inds_debuted])
         debut_by_age[key] = num_debuted / total_women_25_49
 

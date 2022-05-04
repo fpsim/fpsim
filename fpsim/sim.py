@@ -67,9 +67,9 @@ class People(fpb.BasePeople):
         # Sexual and reproductive history
         self.sexually_active = arr(n, d['sexually_active'])
         self.sexual_debut    = arr(n, d['sexual_debut'])
-        self.sexual_debut_age = arr(n, d['sexual_debut_age']) # Age at first sexual debut in years, If not debuted, None
+        self.sexual_debut_age = arr(n, d['sexual_debut_age']) # Age at first sexual debut in years, If not debuted, -1
         self.fated_debut      = arr(n, np.float64(d['debut_age']))
-        self.first_birth_age  = arr(n, d['first_birth_age']) # Age at first birth.  If no births, None
+        self.first_birth_age  = arr(n, d['first_birth_age']) # Age at first birth.  If no births, -1
         self.lactating       = arr(n, d['lactating'])
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
