@@ -3,6 +3,7 @@ from collections import defaultdict
 import unittest
 import os
 import pandas as pd
+import copy
 import numpy as np
 import sciris as sc
 import fpsim as fp
@@ -250,8 +251,40 @@ class TestStates(unittest.TestCase):
 
         for mother_index, child_list in enumerate(children):
             for child in child_list:
-                self.assertEqual(mothers[child], mother_index, msg="Mismatch between index recorded in mothers and mother's index in children")
-    
+                self.assertEqual(mothers[child], mother_index)
+
+    def test_first_birth_age(self):
+        """
+        Checks that age at first birth is consistent with dobs and ages
+        """
+        last_year_lengths = [len(dob) for dob in self.result_dict[min(self.result_dict.keys())]['dobs']] # get first value of dobs to initialize
+        for year, attribute_dict in self.result_dict.items():
+            age_first_birth = attribute_dict['first_birth_age']
+            ages = attribute_dict['age']
+            this_year_lengths = [len(dob) for dob in attribute_dict['dobs']]
+            # dobs and age at first birth should be consistent (specifically checks that mothers represented in first_birth_age is subset of those represented in dobs)
+            for index, last_year_length in enumerate(last_year_lengths):
+                if last_year_length == 0 and this_year_lengths[index] == 1:
+                    self.assertAlmostEqual(ages[index], age_first_birth[index], delta=0.1, msg=f"Age at first birth is {ages[index]} but recorded as {age_first_birth[index]}")
+            last_year_lengths = copy.deepcopy(this_year_lengths)
+
+    def test_sexual_debut(self):
+        """
+        Checks that sexual debut and sexual debut age are consistent with sexually active and ages respectively
+        """
+        all_sa = set([index for index, value in enumerate(self.result_dict[min(self.result_dict.keys())]['sexually_active']) if value])
+        for year, attribute_dict in self.result_dict.items():
+            ages = attribute_dict['age']
+            sexual_debut = attribute_dict['sexual_debut']
+            sexual_debut_age = attribute_dict['sexual_debut_age']
+            sexually_active_indices = set([index for index, value in enumerate(attribute_dict['sexually_active']) if value])
+            newly_sexually_active = sexually_active_indices - all_sa
+            for index in newly_sexually_active:
+                self.assertTrue(sexual_debut[index], msg="Person is newly sexually active but not marked as such in sexual debut list")
+                self.assertAlmostEqual(sexual_debut_age[index], ages[index], delta=0.1, msg="Age of person at sexual_debut_age doesn't match age when newly sexually active")
+
+            all_sa = all_sa | sexually_active_indices
+
     def test_age_boundaries(self):
         """
         Checks that people under 11 or over 45 can't get pregnant
@@ -262,6 +295,7 @@ class TestStates(unittest.TestCase):
                 if age < 10 or age > 51:
                     self.assertFalse(pregnant_bool, msg=f"Individual {index} can't be pregnant she's {age}")
 
+    #@unittest.skip("Reveals issue #305")
     def test_ages(self):
         """
         Checks that ages aren't wrong due to rounding the months incorrectly
