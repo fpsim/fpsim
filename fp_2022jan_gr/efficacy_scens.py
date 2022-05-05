@@ -139,7 +139,6 @@ if __name__ == '__main__':
             ),
         ]
     )
-    # disc = fp.update_methods(scen_year, uptake_scen_20)  # Create intervention
 
 
     #%% Create sims
