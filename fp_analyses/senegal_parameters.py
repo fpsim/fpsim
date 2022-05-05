@@ -412,7 +412,7 @@ def default_methods():
     # Projected out past 2020 with a 2% assumed growth rate for baseline scenarios
     mcpr_rates = np.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20, 20.4, 21.2, 22.08, 22.97, 23.9, 24.87])
 
-    methods['trend'] = mcpr_rates[-2] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
+    methods['trend'] = mcpr_rates[-8] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods
 
@@ -501,7 +501,7 @@ def default_methods_postpartum():
         [0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20, 20.4, 21.2, 22.08, 22.97, 23.9, 24.87])  # Combintion of DHS data and Track20 data.
 
     methods_postpartum['trend'] = mcpr_rates[
-                           -2] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
+                           -8] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods_postpartum
 
@@ -871,6 +871,6 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['fecundity_ratio_nullip']     = default_fecundity_ratio_nullip()
     pars['exposure_correction_age']    = default_exposure_correction_age()
     pars['exposure_correction_parity'] = default_exposure_correction_parity()
-    pars['exposure_correction'] = 0.9 # Overall exposure correction factor
+    pars['exposure_correction'] = 1 # Overall exposure correction factor
 
     return pars
