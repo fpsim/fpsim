@@ -8,7 +8,7 @@ import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
 from . import utils as fpu
-from . import interentions as fpi
+from . import interventions as fpi
 
 __all__ = ['Scenarios','update_methods']
 
