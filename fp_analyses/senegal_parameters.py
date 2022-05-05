@@ -591,7 +591,7 @@ def default_sexual_debut():
 
 def default_debut_age():
     '''
-    Returns an array of weighted probabilities of sexual debut by a certain age 10-43.
+    Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
     Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
     '''
 
@@ -645,6 +645,7 @@ def default_sexual_activity():
     From STAT Compiler DHS https://www.statcompiler.com/en/
     Using indicator "Timing of sexual intercourse"
     Includes women who have had sex "within the last four weeks"
+    Excludes women who answer "never had sex", probabilities are only applied to agents who have sexually debuted
     Data taken from 2018 DHS, no trend over years for now
     Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
     '''
