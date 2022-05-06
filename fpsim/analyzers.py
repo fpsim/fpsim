@@ -12,7 +12,7 @@ from . import defaults as fpd
 
 #%% Generic intervention classes
 
-__all__ = ['Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids']
+__all__ = ['Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids', 'verbose']
 
 
 class Analyzer(sc.prettyobj):
