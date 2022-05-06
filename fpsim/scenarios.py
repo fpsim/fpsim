@@ -108,6 +108,7 @@ class Scenarios(sc.prettyobj):
 
         # Process
         self.msim_merged =self.msim.remerge()
+        self.analyze_sims()
         return
 
 
@@ -180,8 +181,9 @@ class Scenarios(sc.prettyobj):
 
         # Also save as pandas
         results.df = pd.DataFrame(raw)
+        self.results = results
 
-        return results
+        return
 
 
 def key2ind(sim, key):
