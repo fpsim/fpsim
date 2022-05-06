@@ -142,7 +142,7 @@ if __name__ == '__main__':
 
 
     #%% Create sims
-    scens = fp.Scenarios(pars=pars, repeats=repeats)
+    scens = fp.Scenarios(pars=pars, repeats=repeats, scen_year=2020)
     scens.add_scen(label='Baseline')
     scens.add_scen(uptake_2x_25)
     scens.add_scen(uptake_pp_20)
@@ -152,8 +152,8 @@ if __name__ == '__main__':
     scens.run()
 
     # Plot and print results
-    scens.plot(plot_sims=False)
-    scens.plot(plot_sims=True)
+    scens.plot_sims()
+    scens.plot_scens()
 
     print(scens.results.df)
 

@@ -18,73 +18,142 @@ default_pars = fa.senegal_parameters.make_pars()
 method_names = default_pars['methods']['names']
 
 
+def get_pars(location=None):
+    ''' Temporary function for getting parameters '''
+    if not location:
+        pars = default_pars
+    elif location == 'senegal':
+        pars = fa.senegal_parameters.make_pars()
+    else:
+        errormsg = f'Location "{location}" is not currently supported'
+        raise NotImplementedError(errormsg)
+    return sc.dcp(pars)
+
+
 
 class Scenarios(sc.prettyobj):
+    '''
+    Run different intervention scenarios
+    '''
+
+    def __init__(self, pars=None, repeats=None, scen_year=None, scens=None, location=None):
+        self.pars = pars
+        self.repeats = repeats
+        self.scen_year = scen_year
+        self.scens = sc.tolist(scens)
+        self.location = location
+        self.simslist = []
+        self.msim = None
+        self.msims = []
+        return
 
 
-    def make_sim(self, label='<no label>', **kwargs):
-        ''' Create a single sim, with a label and updated parameters '''
-        pars = fa.senegal_parameters.make_pars()
-        pars.update(kwargs)
-        sim = fp.Sim(pars=pars, label=label)
-        return sim
+    def add_scen(self, scen=None, label=None):
+        ''' Add a scenario or scenarios to the Scenarios object '''
+        scens = sc.tolist(scen)
+        if label:
+            for scen in scens:
+                scen['label'] = label
+        self.scens += scens
+        return
 
 
-    def make_sims(self, repeats=5, **kwargs):
+    def make_sims(self, label=None, **kwargs):
         ''' Create a list of sims that are all identical except for the random seed '''
         sims = sc.autolist()
-        for i in range(repeats):
-            kwargs.setdefault('seed', 0)
-            kwargs['seed'] += i
-            sims += self.make_sim(**kwargs)
+        for i in range(self.repeats):
+            pars = sc.mergedicts(get_pars(self.location), self.pars, _copy=True)
+            pars.setdefault('seed', 0)
+            pars.update(kwargs)
+            pars['seed'] += i
+            sims += fp.Sim(pars=pars, label=label)
         return sims
 
 
-    def run_sims(self, *args):
+    def make_scens(self):
+        ''' Convert a scenario specification into a list of sims '''
+        for scen in self.scens:
+            interventions = sc.autolist()
+            for entry in sc.tolist(scen):
+                year = entry.pop('scen_year', self.scen_year)
+                matrix = entry.pop('matrix', None)
+                label = entry.pop('label', None)
+                if year is None:
+                    errormsg = 'Scenario year must be specified in either the scenario entry or the Scenarios object'
+                    raise ValueError(errormsg)
+                interventions += fp.update_methods(scen=entry, year=year, matrix=matrix)
+            sims = self.make_sims(interventions=interventions, label=label)
+            self.simslist.append(sims)
+        return
+
+
+    def run(self, *args, **kwargs):
         ''' Actually run a list of sims '''
+
+        # Check that it's set up
+        if not self.scens:
+            errormsg = 'No scenarios are defined'
+            raise ValueError(errormsg)
+        if not self.simslist:
+            self.make_scens()
+
+        # Create msim
         msims = sc.autolist()
-        for sims in args:
+        for sims in self.simslist:
             msims += fp.MultiSim(sims)
-        msim = fp.MultiSim.merge(*msims)
-        msim.run()
-        return msim
+        self.msim = fp.MultiSim.merge(*msims)
+
+        # Run
+        self.msim.run(**kwargs)
+
+        # Process
+        self.msim_merged =self.msim.remerge()
+        return
 
 
-    def analyze_sims(self, msim, start_year=2010, end_year=2020):
+    def plot_sims(self, **kwargs):
+        return self.msim.plot(plot_sims=False, **kwargs)
+
+
+    def plot_scens(self, **kwargs):
+        return self.msim_merged.plot(plot_sims=True, **kwargs)
+
+
+    def analyze_sims(self, start, end):
         ''' Take a list of sims that have different labels and count the births in each '''
 
         def count_births(sim):
             year = sim.results['t']
             births = sim.results['births']
-            inds = sc.findinds((year >= start_year), year < end_year)
+            inds = sc.findinds((year >= start), year < end)
             output = births[inds].sum()
             return output
 
         def method_failure(sim):
             year = sim.results['tfr_years']
             meth_fail = sim.results['method_failures_over_year']
-            inds = sc.findinds((year >= start_year), year < end_year)
+            inds = sc.findinds((year >= start), year < end)
             output = meth_fail[inds].sum()
             return output
 
         def count_pop(sim):
             year = sim.results['tfr_years']
             popsize = sim.results['pop_size']
-            inds = sc.findinds((year >= start_year), year < end_year)
+            inds = sc.findinds((year >= start), year < end)
             output = popsize[inds].sum()
             return output
 
         def mean_tfr(sim):
             year = sim.results['tfr_years']
             rates = sim.results['tfr_rates']
-            inds = sc.findinds((year >= start_year), year < end_year)
+            inds = sc.findinds((year >= start), year < end)
             output = rates[inds].mean()
             return output
 
         # Split the sims up by scenario
         results = sc.objdict()
         results.sims = sc.objdict(defaultdict=sc.autolist)
-        for sim in msim.sims:
+        for sim in self.msim.sims:
             results.sims[sim.label] += sim
 
         # Count the births across the scenarios
@@ -159,7 +228,7 @@ class update_methods(fpi.Intervention):
                     {method: efficacy}
                         Where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys).
 
-        self.matrix::str: One of ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] where:
+        matrix (str): One of ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] where:
 
             probs_matrix:
                 Changes the specified uptake at the corresponding year regardless of state.
@@ -169,16 +238,16 @@ class update_methods(fpi.Intervention):
                 Changes the specified uptake for all individuals that are in the first 6 months postpartum.
     """
 
-    def __init__(self, year, scen, matrix='probs_matrix'):
+    def __init__(self, year, scen, matrix=None):
         """
         Initializes self.year/scen/matrix from parameters
         """
         super().__init__()
         self.year   = year
         self.scen   = scen
-        self.matrix = matrix
+        self.matrix = matrix if matrix else 'probs_matrix'
         valid_matrices = ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] # TODO: be less subtle about the difference between normal and postpartum matrices
-        if matrix not in valid_matrices:
+        if self.matrix not in valid_matrices:
             raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{matrix}"')
         return
 
