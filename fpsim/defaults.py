@@ -25,7 +25,7 @@ def pars(location=None, **kwargs):
         raise NotImplementedError(errormsg)
 
     # Merge with kwargs and copy
-    pars = sc.mergedicts(pars, **kwargs, _copy=True)
+    pars = sc.mergedicts(pars, kwargs, _copy=True)
 
     return pars
 
