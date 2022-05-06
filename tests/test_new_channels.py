@@ -8,7 +8,6 @@ import fpsim as fp
 import unittest
 import pytest
 
-pytest.skip(allow_module_level=True)
 
 class TestChannels(unittest.TestCase):
     @classmethod
