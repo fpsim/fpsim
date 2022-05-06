@@ -34,7 +34,8 @@ defaults = {
   'LAM_efficacy'                  : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
   'maternal_mortality_multiplier' : 1,
   'high_parity'                   : 4,
-  'high_parity_nonuse_correction' : 0.6
+  'high_parity_nonuse_correction' : 0.6,
+  'primary_infertility'           : 0.05
 }
 
 
@@ -588,6 +589,54 @@ def default_sexual_debut():
 
     return debut_interp
 
+def default_debut_age():
+    '''
+    Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
+    Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
+    '''
+
+    sexual_debut = np.array([
+        [10, 0.004362494588533180],
+        [11, 0.005887267309386780],
+        [12, 0.016249279181639800],
+        [13, 0.0299019826473517],
+        [14, 0.055785658051997],
+        [15, 0.09813952463469960],
+        [16, 0.112872333807184],
+        [17, 0.11953800217275100],
+        [18, 0.10881048442282400],
+        [19, 0.08688267743864320],
+        [20, 0.0781062086093285],
+        [21, 0.055562127900473800],
+        [22, 0.047649966917757800],
+        [23, 0.03670233295320280],
+        [24, 0.02962171655627400],
+        [25, 0.03071900157389080],
+        [26, 0.020088166028125700],
+        [27, 0.012959307423989900],
+        [28, 0.009789125590573670],
+        [29, 0.010992698492904500],
+        [30, 0.0064009386756690000],
+        [31, 0.00531499008144595],
+        [32, 0.004500210075413140],
+        [33, 0.004643541107103950],
+        [34, 0.0015287248836055500],
+        [35, 0.0012933308143284600],
+        [36, 0.0008169702220519970],
+        [37, 0.0005138447212362420],
+        [38, 0.0030994890039629400],
+        [39, 0.0007583698086919300],
+        [40, 0.0001470674087999730],
+        [42, 0.00018238823303343100],
+        [43, 0.0000620676775406016],
+        [45, 0.0001177109855848480]])
+
+    debut_age = {}
+    debut_age['ages'] = sexual_debut[:, 0]
+    debut_age['probs'] = sexual_debut[:, 1]
+
+    return debut_age
+
 
 def default_sexual_activity():
     '''
@@ -596,12 +645,13 @@ def default_sexual_activity():
     From STAT Compiler DHS https://www.statcompiler.com/en/
     Using indicator "Timing of sexual intercourse"
     Includes women who have had sex "within the last four weeks"
+    Excludes women who answer "never had sex", probabilities are only applied to agents who have sexually debuted
     Data taken from 2018 DHS, no trend over years for now
     Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
     '''
 
     sexually_active = np.array([[0, 5, 10, 15,  20,   25,   30,   35,   40,    45,   50],
-                                [0, 0,  0,  11.5, 35.5, 49.6, 57.4, 64.4, 64.45, 64.5, 66.8]])
+                                [0, 0,  0,  50.4, 55.9, 57.3, 60.8, 66.4, 67.5, 68.2, 68.2]])
 
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     activity_ages = sexually_active[0]
@@ -786,7 +836,7 @@ def default_exposure_correction_parity():
     Michelle note: Thinking about this in terms of child preferences/ideal number of children
     '''
     exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
-                                           [0.5, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10,  0.05, 0.01]])
+                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10,  0.05, 0.01]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
     #
     # exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
@@ -813,6 +863,7 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['infant_mortality']   = default_infant_mortality()
     pars['stillbirth_rate']    = default_stillbirth()
     pars['sexual_debut']       = default_sexual_debut()
+    pars['debut_age']          = default_debut_age()
     pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['pref_spacing']       = default_birth_spacing_preference()
     pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
