@@ -95,7 +95,7 @@ if __name__ == '__main__':
 
 
     # Increased uptake low efficacy
-    uptake_scen_25 = sc.objdict(
+    uptake_2x_25 = sc.objdict(
         label='Inj 2x uptake >25 annually',
         eff = {'Injectables': 0.983}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
@@ -111,7 +111,7 @@ if __name__ == '__main__':
     # uptake_2x_25 = fp.update_methods(scen_year, uptake_scen_25) # Create intervention
 
     # Increased uptake low efficacy
-    uptake_scen_20 = sc.objdict(
+    uptake_pp_20 = sc.objdict(
         label='Inj 75% prob uptake pp < 21',
         eff = {'Injectables': 0.983}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
