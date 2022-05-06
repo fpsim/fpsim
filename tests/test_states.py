@@ -28,9 +28,10 @@ class TestStates(unittest.TestCase):
         self.debug_mode = True
         pars = fa.senegal_parameters.make_pars()
         pars['n'] = 1000
+        pars['analyzers'] = fp.sim_verbose()
 
 
-        self.exp = fp.ExperimentVerbose(pars)
+        self.exp = fp.Experiment(pars)
         self.exp.run_model(mother_ids=True)
 
         self.people = self.exp.people

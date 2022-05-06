@@ -13,7 +13,7 @@ import pytest
 class TestMultisim(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.do_plot = True
+        self.do_plot = False
     
     def test_multisim(self):
         ''' Try running a multisim '''
