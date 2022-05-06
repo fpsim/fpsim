@@ -1,8 +1,6 @@
 import pytest
 import fpsim as fp
 
-import fp_analyses.senegal_parameters as sp
-
 import json
 import sciris as sc
 import os

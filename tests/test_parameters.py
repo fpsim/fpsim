@@ -7,7 +7,7 @@ import fpsim as fp
 import fp_analyses as fa
 
 def get_pars():
-    return fa.senegal_parameters.make_pars()
+    return fp.pars()
 
 
 def make(pars, n=100, verbose=0, do_run=True, **kwargs):

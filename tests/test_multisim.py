@@ -4,7 +4,6 @@ Run tests on the multisim object.
 
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
 
 do_plot = 1
 
@@ -17,10 +16,7 @@ def test_multisim(do_plot=False):
     sims = []
     for i in range(3):
         exposure = 0.5 + 0.5*i # Run a sweep over exposure
-        pars = fa.senegal_parameters.make_pars()
-        pars['n'] = 100
-        pars['verbose'] = 0.1
-        pars['exposure_correction'] = exposure
+        pars = fp.pars(n=100, verbose=0.1, exposure_correction=exposure)
         sim = fp.Sim(pars=pars, label=f'Exposure {exposure}')
         sims.append(sim)
 

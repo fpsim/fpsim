@@ -11,11 +11,7 @@ def make_sim(n=100, **kwargs):
     '''
     Define a default simulation for testing the baseline.
     '''
-    pars = fa.senegal_parameters.make_pars()
-    pars['n'] = n
-    pars['verbose'] = 0.1
-    pars.update(kwargs)
-    sim = fp.Sim(pars=pars)
+    sim = fp.Sim(n=n, verbose=0.1, **kwargs)
     return sim
 
 

@@ -8,7 +8,7 @@ import sciris as sc
 __all__ = ['pars']
 
 
-def pars(location=None):
+def pars(location=None, **kwargs):
     ''' Function for getting default parameters '''
     from . import data as fpdata # Here to avoid circular import
 
@@ -24,7 +24,10 @@ def pars(location=None):
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
 
-    return sc.dcp(pars)
+    # Merge with kwargs and copy
+    pars = sc.mergedicts(pars, **kwargs, _copy=True)
+
+    return pars
 
 
 #%% Global defaults

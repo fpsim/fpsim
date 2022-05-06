@@ -1,5 +1,4 @@
 import fpsim as fp
-import fp_analyses as fa
 import unittest
 import json
 from copy import deepcopy
@@ -13,8 +12,7 @@ import os
 class TestContraceptiveEfficacy(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.pars = fa.senegal_parameters.make_pars()
-        self.pars['n'] = 500
+        self.pars pars = fp.pars(n=500)
         self.contraceptives =  [
             "None",
             "Pill",

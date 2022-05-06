@@ -7,7 +7,6 @@ the baseline results. To update baseline, run ./update_baseline.
 import numpy as np
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
 
 do_plot = 0
 do_save = 0
@@ -18,8 +17,7 @@ def make_exp(n=1000, do_run=False, do_plot=False):
     '''
     Define a default simulation for testing the baseline.
     '''
-    pars = fa.senegal_parameters.make_pars()
-    pars['n'] = n
+    pars = fp.pars(n=n)
     exp = fp.Experiment(pars=pars)
 
     if do_run or do_plot:

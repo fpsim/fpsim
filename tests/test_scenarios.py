@@ -4,7 +4,6 @@ Run tests on the calibration object.
 
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
 import unittest
 import os
 import sys
@@ -23,8 +22,8 @@ class TestScenarios(unittest.TestCase):
         low_eff = dict(dist='uniform', par1=0.80, par2=0.90)
         high_eff = dict(dist='uniform', par1=0.91, par2=0.95)
 
-        pars_high_eff = fa.senegal_parameters.make_pars()
-        pars_low_eff = fa.senegal_parameters.make_pars()
+        pars_high_eff = fp.pars()
+        pars_low_eff = fp.pars()
 
         scen_low_eff = sc.objdict(
             eff = {'Other modern':low_eff},
@@ -60,10 +59,11 @@ class TestScenarios(unittest.TestCase):
         both the selected age keys, and the type (methods or postpartum_methods) of
         transition matrix
         """
-        pars_no_keys_methods = fa.senegal_parameters.make_pars()
-        pars_keys_methods = fa.senegal_parameters.make_pars()
-        pars_no_keys_pp = fa.senegal_parameters.make_pars()
-        pars_keys_pp = fa.senegal_parameters.make_pars()
+        pars = fp.pars()
+        pars_no_keys_methods = sc.dcp(pars)
+        pars_keys_methods    = sc.dcp(pars)
+        pars_no_keys_pp      = sc.dcp(pars)
+        pars_keys_pp         = sc.dcp(pars)
 
         scen_no_keys = sc.objdict(
             probs = [
