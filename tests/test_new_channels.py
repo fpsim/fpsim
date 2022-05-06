@@ -1,12 +1,11 @@
-from collections import defaultdict
+'''
+Test births, conceptions, etc.
+'''
+
 import sys
-import argparse
 import os
-import pandas as pd
-import numpy as np
 import fpsim as fp
 import unittest
-import pytest
 
 
 class TestChannels(unittest.TestCase):
@@ -36,7 +35,7 @@ class TestChannels(unittest.TestCase):
                         max = len(self.events[timestep][channel])
 
                 self.assertGreater(max, 0, msg=f"Detected empty channel: {channel}")
-    
+
     def test_births(self):
         """
         Checks that births (formatted as timestep: [indices]) is consistent with
@@ -48,7 +47,7 @@ class TestChannels(unittest.TestCase):
             births_step += self.events[timestep]["Step_Results"]["births"]
             births += len(self.events[timestep]['Births'])
         self.assertEqual(births, births_step, f"Mismatch between step results births and births channel")
-    
+
     def test_conceptions(self):
         """
         Checks that conceptions is approximately births, and that conceptions is greater
@@ -57,8 +56,8 @@ class TestChannels(unittest.TestCase):
         births = 0
         conceptions = 0
         for timestep in self.events:
-            births = births + len(self.events[timestep]['Births']) 
-            conceptions = conceptions + len(self.events[timestep]['Conceptions']) 
+            births = births + len(self.events[timestep]['Births'])
+            conceptions = conceptions + len(self.events[timestep]['Conceptions'])
 
         # We wouldn't expect more than a quarter of conceptions to end in miscarriages
         self.assertAlmostEqual(births, conceptions, delta = 0.25 * births, msg="Less than 75 percent of conceptions result in births")
@@ -72,16 +71,16 @@ class TestChannels(unittest.TestCase):
         conceptions = 0
         miscarriages = 0
         for timestep in self.events:
-            births += len(self.events[timestep]['Births']) 
-            conceptions += len(self.events[timestep]['Conceptions']) 
-            miscarriages += len(self.events[timestep]['Miscarriages']) 
+            births += len(self.events[timestep]['Births'])
+            conceptions += len(self.events[timestep]['Conceptions'])
+            miscarriages += len(self.events[timestep]['Miscarriages'])
 
         self.assertGreater(conceptions - births, miscarriages, msg="The number of miscarriages is greater than the differences between conceptions and births")
 
     @unittest.skip("Need to verify this works over multiple runs")
     def test_sexual_debut(self):
         """
-        Checks that a person is SA at their sexual debut, 
+        Checks that a person is SA at their sexual debut,
         and doesn't show up twice in the log of sexual debuts
         """
         sexually_active = set()
