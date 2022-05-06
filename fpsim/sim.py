@@ -12,6 +12,7 @@ from . import defaults as fpd
 from . import utils as fpu
 from . import base as fpb
 from . import interventions as fpi
+from . import analyzers as fpa
 import copy
 
 
@@ -920,7 +921,7 @@ class Sim(fpb.BaseSim):
         ''' Apply each analyzer in the model '''
         if 'analyzers' in self.pars:
             for i,analyzer in enumerate(sc.tolist(self.pars['analyzers'])):
-                if isinstance(analyzer, fpi.Analyzer):
+                if isinstance(analyzer, fpa.Analyzer):
                     if not analyzer.initialized: # pragma: no cover
                         analyzer.initialize(self)
                     analyzer.apply(self) # If it's an intervention, call the apply() method
