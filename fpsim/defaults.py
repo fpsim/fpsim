@@ -3,6 +3,32 @@ Define defaults for use throughout FPsim
 '''
 
 import numpy as np
+import sciris as sc
+
+__all__ = ['pars']
+
+
+def pars(location=None, **kwargs):
+    ''' Function for getting default parameters '''
+    from . import data as fpdata # Here to avoid circular import
+
+    if not location:
+        location = 'default'
+
+    # Define valid locations
+    if location in ['senegal', 'default']:
+        pars = fpdata.senegal.make_pars()
+
+    # Else, error
+    else:
+        errormsg = f'Location "{location}" is not currently supported'
+        raise NotImplementedError(errormsg)
+
+    # Merge with kwargs and copy
+    pars = sc.mergedicts(pars, kwargs, _copy=True)
+
+    return pars
+
 
 #%% Global defaults
 useSI          = True

@@ -12,7 +12,7 @@ from . import defaults as fpd
 
 #%% Generic intervention classes
 
-__all__ = ['Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids', 'verbose']
+__all__ = ['Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids', 'sim_verbose']
 
 
 class Analyzer(sc.prettyobj):
@@ -280,7 +280,7 @@ class age_pyramids(Analyzer):
         return fig
 
 
-class verbose(Analyzer):
+class sim_verbose(Analyzer):
     """
     Initializes a verbose analyzer which extends the logging functionality of a
     normal fp.Sim for the sake of testing
