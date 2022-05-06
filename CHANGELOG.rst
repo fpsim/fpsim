@@ -9,6 +9,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.9.0 (2022-05-05)
+--------------------------
+- Added a new ``Scenarios`` class.
+- *GitHub info*: PR `416 <https://github.com/amath-idm/fp_analyses/pull/416>`__
+
+
 Version 0.8.0 (2021-08-28)
 --------------------------
 - Refactored the ``People`` object to use a new filtering-based approach.
