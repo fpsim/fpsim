@@ -15,13 +15,13 @@ class TestCalibration(unittest.TestCase):
 
     @classmethod
     def setUpClass(self):
-        self.do_plot = 1
-        self.n_trials = 5
+        self.do_plot = 0
+        self.n_trials = 3
         
         # suppresses unnecessary print statements to increase runtime
         sys.stdout = open(os.devnull, 'w')
 
-    def make_calib(self, n=500):
+    def make_calib(self, n=50):
         '''
         Define a default simulation for testing the baseline.
         '''
