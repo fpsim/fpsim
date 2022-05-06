@@ -2,11 +2,10 @@
 Set the parameters for FPsim, specifically for Senegal.
 '''
 
-import os
 import numpy as np
 import sciris as sc
 from scipy import interpolate as si
-import fpsim.defaults as fpd
+from .. import defaults as fpd
 
 # Define default user-tunable parameters and values
 defaults = {
@@ -38,26 +37,9 @@ defaults = {
 }
 
 
-#%% Helper function
-
-def abspath(path, *args):
-    '''
-    Turn a relative path into an absolute path. Accepts a
-    list of arguments and joins them into a path.
-
-    Example:
-
-        import senegal_parameters as sp
-        figpath = sp.abspath('figs', 'myfig.png')
-    '''
-    cwd = os.path.abspath(os.path.dirname(__file__))
-    output = os.path.join(cwd, path, *args)
-    return output
-
-
 # %% Set parameters for the simulation
 
-def default_age_pyramid():
+def age_pyramid():
     ''' Starting age bin, male population, female population '''
     pyramid = np.array([ [0,  318225,  314011], # Senegal 1962
                          [5,  249054,  244271],
@@ -80,7 +62,7 @@ def default_age_pyramid():
 
     return pyramid
 
-# def default_wealth_index():
+# def wealth_index():
 #     '''
 #     Relative wealth as represented by the DHS 2019 household wealth index
 #     '''
@@ -92,7 +74,7 @@ def default_age_pyramid():
 #     "Richest" 15.5
 
 
-def default_age_mortality(bound):
+def age_mortality(bound):
     ''' Age-dependent mortality rates, Senegal specific from 1990-1995 -- see age_dependent_mortality.py in the fp_analyses repository
     Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
     '''
@@ -120,7 +102,7 @@ def default_age_mortality(bound):
     return mortality
 
 
-def default_female_age_fecundity(bound):
+def female_age_fecundity(bound):
     '''
     Use fecundity rates from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
     Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
@@ -139,7 +121,7 @@ def default_female_age_fecundity(bound):
     return fecundity_interp
 
 
-def default_maternal_mortality():
+def maternal_mortality():
     '''
     Risk of maternal death assessed at each pregnancy. Data from Huchon et al. (2013) prospective study on risk of maternal death in Senegal and Mali.
     Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
@@ -181,7 +163,7 @@ def default_maternal_mortality():
     return maternal_mortality
 
 
-def default_infant_mortality():
+def infant_mortality():
     '''
     From World Bank indicators for infant morality (< 1 year) for Senegal, per 1000 live births
     From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
@@ -261,7 +243,7 @@ def default_infant_mortality():
 
     return infant_mortality
 
-def default_stillbirth():
+def stillbirth():
     '''
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
@@ -283,7 +265,7 @@ def default_stillbirth():
 ''''
 OLD INITIATION, DISCONTINUATION, AND SWITCHING CONTRACEPTIVE MATRICES.  LEAVING HERE IN CASE USEFUL.
 CAN'T COMMENT ON HOW THESE PROBABILITIES WERE CALCULATED
-def default_methods():
+def methods():
     methods = {}
 
     methods['map'] = {'None':0,
@@ -324,7 +306,7 @@ def default_methods():
 '''
 
 
-def default_methods():
+def methods():
     '''Matrices to give transitional probabilities from 2018 DHS Senegal contraceptive calendar data
     Probabilities in this function are annual probabilities of initiating, discontinuing, continuing
     or switching methods'''
@@ -416,7 +398,7 @@ def default_methods():
     return methods
 
 
-def default_methods_postpartum():
+def methods_postpartum():
     '''Function to give probabilities postpartum.
     Probabilities at postpartum month 1 are 1 month transitional probabilities for starting a method after delivery.
     Probabilities at postpartum month 6 are 5 month transitional probabilities for starting or changing methods over
@@ -505,7 +487,7 @@ def default_methods_postpartum():
     return methods_postpartum
 
 
-def default_efficacy():
+def efficacy():
     ''' From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
     BTL failure rate from general published data
     Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
@@ -531,7 +513,7 @@ def default_efficacy():
 
     return method_efficacy
 
-def default_efficacy25():
+def efficacy25():
     ''' From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
     BTL failure rate from general published data
     Pooled efficacy rates for women ages 25+
@@ -558,7 +540,7 @@ def default_efficacy25():
     return method_efficacy25
 
 
-def default_barriers():
+def barriers():
     barriers = sc.odict({
           'No need'   :  54.2,
           'Opposition':  30.5,
@@ -569,7 +551,7 @@ def default_barriers():
     barriers[:] /= barriers[:].sum() # Ensure it adds to 1
     return barriers
 
-def default_sexual_debut():
+def sexual_debut():
     '''
     Returns a linear interpolation of probability that a woman of a certain age has had sexual debut
     From STAT Compiler DHS https://www.statcompiler.com/en/
@@ -589,7 +571,7 @@ def default_sexual_debut():
     return debut_interp
 
 
-def default_sexual_activity():
+def sexual_activity():
     '''
     Returns a linear interpolation of rates of female sexual activity, defined as
     percentage women who have had sex within the last four weeks.
@@ -611,7 +593,7 @@ def default_sexual_activity():
     return activity_interp
 
 
-def default_birth_spacing_preference():
+def birth_spacing_preference():
     '''
     Returns an array of birth spacing preferences by closest postpartum month.
     Applied to postpartum pregnancy likelihoods.
@@ -646,7 +628,7 @@ def default_birth_spacing_preference():
     return pref_spacing
 
 
-def default_sexual_activity_postpartum():
+def sexual_activity_postpartum():
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
     Uses DHS Senegal 2018 individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
@@ -698,7 +680,7 @@ def default_sexual_activity_postpartum():
 
     return postpartum_activity
 
-def default_lactational_amenorrhea():
+def lactational_amenorrhea():
     '''
     Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
     Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
@@ -737,7 +719,7 @@ def data2interp(data, ages, normalize=False):
     return interp
 
 
-def default_miscarriage_rates():
+def miscarriage_rates():
     '''
     Returns a linear interpolation of the likelihood of a miscarriage
     by age, taken from data from Magnus et al BMJ 2019: https://pubmed.ncbi.nlm.nih.gov/30894356/
@@ -749,7 +731,7 @@ def default_miscarriage_rates():
     miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
     return miscarriage_interp
 
-def default_fecundity_ratio_nullip():
+def fecundity_ratio_nullip():
     '''
     Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
     from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
@@ -763,7 +745,7 @@ def default_fecundity_ratio_nullip():
     return fecundity_nullip_interp
 
 
-def default_exposure_correction_age():
+def exposure_correction_age():
     '''
     Returns an array of experimental factors to be applied to account for
     residual exposure to either pregnancy or live birth by age.  Exposure to pregnancy will
@@ -778,7 +760,7 @@ def default_exposure_correction_age():
     return exposure_age_interp
 
 
-def default_exposure_correction_parity():
+def exposure_correction_parity():
     '''
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
     or live birth by parity.
@@ -800,27 +782,27 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars = sc.dcp(defaults)
 
     # Complicated parameters
-    pars['methods']            = default_methods()
-    pars['methods_postpartum'] = default_methods_postpartum()
+    pars['methods']            = methods()
+    pars['methods_postpartum'] = methods_postpartum()
     pars['methods_postpartum_switch'] = {}
-    pars['age_pyramid']        = default_age_pyramid()
-    pars['age_mortality']      = default_age_mortality(bound=True)
-    pars['age_fecundity']      = default_female_age_fecundity(bound=True)  # Changed to age_fecundity for now from age_fertility for use with LEMOD
-    pars['method_efficacy']    = default_efficacy()
-    pars['method_efficacy25']  = default_efficacy25()
-    pars['barriers']           = default_barriers()
-    pars['maternal_mortality'] = default_maternal_mortality()
-    pars['infant_mortality']   = default_infant_mortality()
-    pars['stillbirth_rate']    = default_stillbirth()
-    pars['sexual_debut']       = default_sexual_debut()
-    pars['sexual_activity']    = default_sexual_activity() # Returns linear interpolation of annual sexual activity based on age
-    pars['pref_spacing']       = default_birth_spacing_preference()
-    pars['sexual_activity_postpartum'] = default_sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
-    pars['lactational_amenorrhea']     = default_lactational_amenorrhea()
-    pars['miscarriage_rates']          = default_miscarriage_rates()
-    pars['fecundity_ratio_nullip']     = default_fecundity_ratio_nullip()
-    pars['exposure_correction_age']    = default_exposure_correction_age()
-    pars['exposure_correction_parity'] = default_exposure_correction_parity()
+    pars['age_pyramid']        = age_pyramid()
+    pars['age_mortality']      = age_mortality(bound=True)
+    pars['age_fecundity']      = female_age_fecundity(bound=True)  # Changed to age_fecundity for now from age_fertility for use with LEMOD
+    pars['method_efficacy']    = efficacy()
+    pars['method_efficacy25']  = efficacy25()
+    pars['barriers']           = barriers()
+    pars['maternal_mortality'] = maternal_mortality()
+    pars['infant_mortality']   = infant_mortality()
+    pars['stillbirth_rate']    = stillbirth()
+    pars['sexual_debut']       = sexual_debut()
+    pars['sexual_activity']    = sexual_activity() # Returns linear interpolation of annual sexual activity based on age
+    pars['pref_spacing']       = birth_spacing_preference()
+    pars['sexual_activity_postpartum'] = sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
+    pars['lactational_amenorrhea']     = lactational_amenorrhea()
+    pars['miscarriage_rates']          = miscarriage_rates()
+    pars['fecundity_ratio_nullip']     = fecundity_ratio_nullip()
+    pars['exposure_correction_age']    = exposure_correction_age()
+    pars['exposure_correction_parity'] = exposure_correction_parity()
     pars['exposure_correction'] = 1 # Overall exposure correction factor
 
     return pars

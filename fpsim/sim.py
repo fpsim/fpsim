@@ -713,8 +713,10 @@ class Sim(fpb.BaseSim):
     The Sim class handles the running of the simulation
     '''
 
-    def __init__(self, pars=None, label=None, mother_ids=False):
-        super().__init__(pars) # Initialize and set the parameters as attributes
+    def __init__(self, pars=None, location=None, label=None, mother_ids=False, **kwargs):
+        if pars is None:
+            pars = fpd.pars(location)
+        super().__init__(pars, **kwargs) # Initialize and set the parameters as attributes
 
         self.initialized = False
         self.label = label

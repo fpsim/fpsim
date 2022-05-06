@@ -4,13 +4,14 @@ Define defaults for use throughout FPsim
 
 import numpy as np
 import sciris as sc
-from . import data as fpdata
 
 __all__ = ['pars']
 
 
 def pars(location=None):
     ''' Function for getting default parameters '''
+    from . import data as fpdata # Here to avoid circular import
+
     if not location:
         location = 'default'
 
