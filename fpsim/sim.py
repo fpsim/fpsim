@@ -964,7 +964,7 @@ class Sim(fpb.BaseSim):
             elapsed = T.toc(output=True)
             if verbose:
                 simlabel = f'"{self.label}": ' if self.label else ''
-                string = f'  Running {simlabel}{self.y:0.1f} ({i:2.0f}/{self.npts}) ({elapsed:0.2f} s) '
+                string = f'  Running {simlabel}{self.y:0.0f} of {self.pars["end_year"]} ({i:2.0f}/{self.npts}) ({elapsed:0.2f} s) '
                 if verbose >= 2:
                     sc.heading(string)
                 elif verbose>0:
