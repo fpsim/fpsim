@@ -7,12 +7,11 @@ import numpy as np
 import pylab as pl
 import sciris as sc
 import inspect
-from . import utils as fpu
 
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids', 'update_methods']
+__all__ = ['Intervention', 'Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids']
 
 
 
@@ -21,9 +20,9 @@ class Intervention:
     Base class for interventions. By default, interventions are printed using a
     dict format, which they can be recreated from. To display all the attributes
     of the intervention, use disp() instead.
-    
+
     To retrieve a particular intervention from a sim, use sim.get_intervention().
-    
+
     Args:
         label       (str): a label for the intervention (used for plotting, and for ease of identification)
         show_label (bool): whether or not to include the label in the legend
@@ -95,7 +94,7 @@ class Intervention:
     def finalize(self, sim=None):
         '''
         Finalize intervention
-        
+
         This method is run once as part of `sim.finalize()` enabling the intervention to perform any
         final operations after the simulation is complete (e.g. rescaling)
         '''
@@ -111,10 +110,10 @@ class Intervention:
         class must implement. This method gets called at each timestep and can make
         arbitrary changes to the Sim object, as well as storing or modifying the
         state of the intervention.
-        
+
         Args:
             sim: the Sim instance
-            
+
         Returns:
             None
         '''
@@ -124,21 +123,21 @@ class Intervention:
     def plot_intervention(self, sim, ax=None, **kwargs):
         '''
         Plot the intervention
-        
+
         This can be used to do things like add vertical lines on days when
         interventions take place. Can be disabled by setting self.do_plot=False.
-        
+
         Note 1: you can modify the plotting style via the ``line_args`` argument when
         creating the intervention.
-        
+
         Note 2: By default, the intervention is plotted at the days stored in self.days.
         However, if there is a self.plot_days attribute, this will be used instead.
-        
+
         Args:
             sim: the Sim instance
             ax: the axis instance
             kwargs: passed to ax.axvline()
-            
+
         Returns:
             None
         '''
@@ -166,16 +165,16 @@ class Intervention:
     def to_json(self):
         '''
         Return JSON-compatible representation
-        
+
         Custom classes can't be directly represented in JSON. This method is a
         one-way export to produce a JSON-compatible representation of the
         intervention. In the first instance, the object dict will be returned.
         However, if an intervention itself contains non-standard variables as
         attributes, then its `to_json` method will need to handle those.
-        
+
         Note that simply printing an intervention will usually return a representation
         that can be used to recreate it.
-        
+
         Returns:
             JSON-serializable representation (typically a dict, but could be anything else)
         '''
@@ -192,9 +191,9 @@ class Analyzer(sc.prettyobj):
     to provide more detailed information about a simulation than is available by
     default -- for example, pulling states out of sim.people on a particular timestep
     before it gets updated in the next timestep.
-    
+
     To retrieve a particular analyzer from a sim, use sim.get_analyzer().
-    
+
     Args:
         label (str): a label for the Analyzer (used for ease of identification)
     '''
@@ -220,7 +219,7 @@ class Analyzer(sc.prettyobj):
     def finalize(self, sim=None):
         '''
         Finalize analyzer
-        
+
         This method is run once as part of `sim.finalize()` enabling the analyzer to perform any
         final operations after the simulation is complete (e.g. rescaling)
         '''
@@ -235,7 +234,7 @@ class Analyzer(sc.prettyobj):
         Apply analyzer at each time point. The analyzer has full access to the
         sim object, and typically stores data/results in itself. This is the core
         method which each analyzer object needs to implement.
-        
+
         Args:
             sim: the Sim instance
         '''
@@ -245,12 +244,12 @@ class Analyzer(sc.prettyobj):
     def to_json(self):
         '''
         Return JSON-compatible representation
-        
+
         Custom classes can't be directly represented in JSON. This method is a
         one-way export to produce a JSON-compatible representation of the
         intervention. This method will attempt to JSONify each attribute of the
         intervention, skipping any that fail.
-        
+
         Returns:
             JSON-serializable representation
         '''
@@ -278,16 +277,16 @@ class snapshot(Analyzer):
     '''
     Analyzer that takes a "snapshot" of the sim.people array at specified points
     in time, and saves them to itself.
-    
+
     Args:
         timesteps (list): list of timesteps on which to take the snapshot
         args   (list): additional timestep(s)
         die    (bool): whether or not to raise an exception if a date is not found (default true)
         kwargs (dict): passed to Analyzer()
-        
-        
+
+
     **Example**::
-    
+
         sim = cv.Sim(analyzers=fps.snapshot('2020-04-04', '2020-04-14'))
         sim.run()
         snapshot = sim.pars['analyzers'][0]
@@ -449,127 +448,3 @@ class age_pyramids(Analyzer):
         pl.xlabel('Timestep')
         pl.ylabel('Age (years)')
         return fig
-
-
-
-def key2ind(sim, key):
-    """
-    Take a method key and convert to an int, e.g. 'Condoms' → 7
-    """
-    ind = key
-    if ind in [None, 'all']:
-        ind = slice(None) # This is equivalent to ":" in matrix[:,:]
-    elif isinstance(ind, str):
-        ind = sim.pars['methods']['map'][key]
-    return ind
-
-
-def getval(v):
-    ''' Handle different ways of supplying a value -- number, distribution, function '''
-    if sc.isnumber(v):
-        return v
-    elif isinstance(v, dict):
-        return fpu.sample(**v)[0]
-    elif callable(v):
-        return v()
-
-
-class update_methods(Intervention):
-    """
-    Intervention to modify method efficacy and/or switching matrix.
-
-    Attributes:
-        self.year::float: The year we want to change the method.
-        self.scen::dict: Has the following keys:
-
-            probs::str
-                An optional key with the value of a list of dictionaries where each dictionary has 
-                the following keys:
-
-                source::str
-                    The source method to be changed.
-                dest::str
-                    The destination method to be changed.
-                factor::float
-                    The factor by which to multiply existing probability.
-                value::float
-                    The value to replace the switching probability value.
-                keys::list
-                    A list of strings representing age groups to affect.
-
-            eff::str
-                An optional key for changing efficacy; its value is a dictionary with the following schema:
-
-                    {method: efficacy}
-                        Where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys). 
-
-        self.matrix::str: One of ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] where:
-
-            probs_matrix:
-                Changes the specified uptake at the corresponding year regardless of state.
-            probs_matrix_1
-                Changes the specified uptake for all individuals in their first month postpartum.
-            probs_matrix_1-6
-                Changes the specified uptake for all individuals that are in the first 6 months postpartum.
-    """
-
-    def __init__(self, year, scen, matrix='probs_matrix'):
-        """
-        Initializes self.year/scen/matrix from parameters
-        """
-        super().__init__()
-        self.year   = year
-        self.scen   = scen
-        self.matrix = matrix
-        valid_matrices = ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] # TODO: be less subtle about the difference between normal and postpartum matrices
-        if matrix not in valid_matrices:
-            raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{matrix}"')
-        return
-
-
-    def apply(self, sim, verbose=True):
-        """
-        Applies the efficacy or contraceptive uptake changes if it is the specified year
-        based on scenario specifications.
-        """
-
-        if sim.y >= self.year and not(hasattr(sim, 'modified')):
-            sim.modified = True
-
-            # Implement efficacy
-            if 'eff' in self.scen:
-                for k,rawval in self.scen.eff.items():
-                    v = getval(rawval)
-                    ind = key2ind(sim, k)
-                    orig = sim.pars['method_efficacy'][ind]
-                    sim.pars['method_efficacy'][ind] = v
-                    if verbose:
-                        print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
-
-            # Implement method mix shift
-            if 'probs' in self.scen:
-                for entry in self.scen.probs:
-                    source = key2ind(sim, entry['source'])
-                    dest   = key2ind(sim, entry['dest'])
-                    factor = entry.pop('factor', None)
-                    value  = entry.pop('value', None)
-                    keys   = entry.pop('keys', None)
-                    if keys is None:
-                        keys = sim.pars['methods']['probs_matrix'].keys()
-
-                    for k in keys:
-                        if self.matrix == 'probs_matrix':
-                            matrices = sim.pars['methods']
-                        else:
-                            matrices = sim.pars['methods_postpartum']
-                        matrix = matrices[self.matrix][k]
-                        orig = matrix[source, dest]
-                        if factor is not None:
-                            matrix[source, dest] *= getval(factor)
-                        elif value is not None:
-                            matrix[source, dest] = getval(value)
-                        if verbose:
-                            print(f'At time {sim.y:0.1f}, matrix for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
-
-
-        return

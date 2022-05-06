@@ -22,6 +22,10 @@ Documentation is available at https://docs.idmod.org/projects/fpsim/en/latest/.
 Contributing
 ------------
 
+**Style guide**
+
+Please follow the starsim style guide at: https://github.com/amath-idm/styleguide
+
 **Issues**
 
 * Everything you're working on must be linked to an issue. If you notice that something needs to be done (even small things or things nearly finished) and there isn't an issue for it, create an issue. This helps track who is doing what and why.
