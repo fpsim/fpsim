@@ -1,5 +1,4 @@
 import json
-from collections import defaultdict
 import unittest
 import os
 import pandas as pd
@@ -7,7 +6,6 @@ import copy
 import numpy as np
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
 import sys
 import os
 import pytest
@@ -29,7 +27,7 @@ class TestStates(unittest.TestCase):
             os.remove("total_results.json")
 
         self.debug_mode = True
-        pars = fa.senegal_parameters.make_pars()
+        pars = fp.pars()
         pars['n'] = 1000
         pars['analyzers'] = fp.sim_verbose()
 
@@ -64,7 +62,7 @@ class TestStates(unittest.TestCase):
         Outputs:
             json file in the debug/ directory
         """
-        person_dict = defaultdict(list)
+        person_dict = sc.ddict(list)
         for timestep, attribute_dict in self.result_dict.items():
             for state in attribute_dict:
                 if state != "dobs" and person_id < len(attribute_dict[state]):

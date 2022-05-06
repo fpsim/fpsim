@@ -4,7 +4,6 @@ Run tests on the calibration object.
 
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
 import pytest
 
 pytest.skip(allow_module_level=True)
@@ -15,7 +14,7 @@ def make_calib(n=500):
     '''
     Define a default simulation for testing the baseline.
     '''
-    pars = fa.senegal_parameters.make_pars()
+    pars = fp.pars()
     pars['n'] = n
     pars['verbose'] = 0
     calib = fp.Calibration(pars=pars)

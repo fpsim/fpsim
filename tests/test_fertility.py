@@ -38,7 +38,7 @@ class TestFertility(unittest.TestCase):
             if Path(f).exists():
                 os.remove(f)
 
-    def sweep_seed(self, seeds=None, pars=sp.make_pars(),
+    def sweep_seed(self, seeds=None, pars=fp.pars(), # CK: this is a mutable object so shouldn't be defined here
                    num_humans=1000, end_year=1963,
                    var_str=None):
         '''Sweep the specified parameters over random seed and save to disk'''

@@ -5,7 +5,6 @@ import os
 import pandas as pd
 import numpy as np
 import fpsim as fp
-import fp_analyses as fa
 import unittest
 import pytest
 
@@ -14,7 +13,7 @@ pytest.skip(allow_module_level=True)
 class TestChannels(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.pars = fa.senegal_parameters.make_pars()
+        self.pars = fp.pars()
         self.pars['n'] = 1000
         exp = fp.ExperimentVerbose(self.pars)
         exp.run_model()

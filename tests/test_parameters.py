@@ -4,7 +4,6 @@ Run tests on individual parameters.
 
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
 
 def get_pars():
     return fp.pars()

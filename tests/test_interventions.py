@@ -4,7 +4,6 @@ Run tests on the calibration object.
 
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
 
 
 def make_sim(n=100, **kwargs):
