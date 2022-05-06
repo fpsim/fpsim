@@ -10,6 +10,9 @@ import fpsim as fp
 import fp_analyses as fa
 import sys
 import os
+import pytest
+
+pytest.skip(allow_module_level=True)
 
 class TestStates(unittest.TestCase):
     @classmethod
