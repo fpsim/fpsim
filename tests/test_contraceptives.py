@@ -1,20 +1,17 @@
-import fpsim as fp
-import fp_analyses as fa
-import unittest
-import json
-from copy import deepcopy
+import os
+import sys
 import pylab as pl
 import numpy as np
-import pytest
-import sys
-import os
+import sciris as sc
+import fpsim as fp
+import unittest
+
 
 @unittest.skip("Need to optimize with multisim before it can be in GHA")
 class TestContraceptiveEfficacy(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.pars = fa.senegal_parameters.make_pars()
-        self.pars['n'] = 500
+        self.pars = fp.pars(n=500)
         self.contraceptives =  [
             "None",
             "Pill",
@@ -38,7 +35,7 @@ class TestContraceptiveEfficacy(unittest.TestCase):
             method::str
                 method name, for example 'BTL'
         """
-        base_pars = deepcopy(self.pars)
+        base_pars = sc.dcp(self.pars)
         method_index = self.pars['methods']['map'][method]
 
         prob_dict = {}
@@ -61,7 +58,7 @@ class TestContraceptiveEfficacy(unittest.TestCase):
             self.pars["method_efficacy"] = np.array(efficacy)
             sim = fp.SimVerbose(self.pars)
             sims.append(sim)
-        
+
         multi = fp.MultiSim(sims=sims)
         multi.run()
         for sim in multi.sims:
@@ -85,16 +82,16 @@ class TestContraceptiveEfficacy(unittest.TestCase):
     def test_efficacy_condoms(self):
         self.all_but("Condoms")
 
-    def test_efficacy_condoms(self):
+    def test_efficacy_rythm(self):
         self.all_but("Rhythm")
 
-    def test_efficacy_condoms(self):
+    def test_efficacy_withdrawal(self):
         self.all_but("Withdrawal")
 
-    def test_efficacy_condoms(self):
+    def test_efficacy_implants(self):
         self.all_but("Implants")
 
-    def test_efficacy_condoms(self):
+    def test_efficacy_other(self):
         self.all_but("Other")
 
     def test_efficacy_BTL(self):

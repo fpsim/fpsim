@@ -6,29 +6,11 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
 from . import utils as fpu
+from . import defaults as fpd
 from . import interventions as fpi
 
 __all__ = ['Scenarios','update_methods']
-
-
-# Define basic things here
-default_pars = fa.senegal_parameters.make_pars()
-method_names = default_pars['methods']['names']
-
-
-def get_pars(location=None):
-    ''' Temporary function for getting parameters '''
-    if not location:
-        pars = default_pars
-    elif location == 'senegal':
-        pars = fa.senegal_parameters.make_pars()
-    else:
-        errormsg = f'Location "{location}" is not currently supported'
-        raise NotImplementedError(errormsg)
-    return sc.dcp(pars)
-
 
 
 class Scenarios(sc.prettyobj):
@@ -62,7 +44,7 @@ class Scenarios(sc.prettyobj):
         ''' Create a list of sims that are all identical except for the random seed '''
         sims = sc.autolist()
         for i in range(self.repeats):
-            pars = sc.mergedicts(get_pars(self.location), self.pars, _copy=True)
+            pars = sc.mergedicts(fpd.pars(self.location), self.pars, _copy=True)
             pars.setdefault('seed', 0)
             pars.update(kwargs)
             pars['seed'] += i
