@@ -13,15 +13,14 @@ class TestChannels(unittest.TestCase):
     def setUpClass(self):
         self.pars = fp.pars()
         self.pars['n'] = 1000
+        self.pars['verbose'] = 0 # suppress output
         exp = fp.ExperimentVerbose(self.pars)
         exp.run_model()
         self.exp = exp
         self.total_results = exp.total_results
         self.events = exp.events
         self.channels = ["Births", "Conceptions", "Miscarriages", "Sexual_Debut", "Deaths"]
-
-        # suppresses unnecessary warning statements to increase runtime
-        sys.stdout = open(os.devnull, 'w')
+        return
 
     def test_channels_sanity_check(self):
         """
