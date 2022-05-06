@@ -5,10 +5,13 @@ Run tests on the calibration object.
 import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
+import pytest
+
+pytest.skip(allow_module_level=True)
 
 do_plot = 0
 
-def make_calib(n=300):
+def make_calib(n=500):
     '''
     Define a default simulation for testing the baseline.
     '''
@@ -20,7 +23,7 @@ def make_calib(n=300):
     return calib
 
 
-def test_calibration(n_trials=2, do_plot=False):
+def test_calibration(n_trials=5, do_plot=False):
     ''' Compare the current default sim against the saved baseline '''
     sc.heading('Testing calibration...')
 
@@ -30,7 +33,7 @@ def test_calibration(n_trials=2, do_plot=False):
 
     # Calculate calibration
     calib = make_calib()
-    calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=1)
+    calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=2)
     before,after = calib.summarize()
 
     # assert before > after
