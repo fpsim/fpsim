@@ -11,9 +11,6 @@ import pandas as pd
 from . import defaults as fpd
 from . import utils as fpu
 from . import base as fpb
-from . import interventions as fpi
-from . import analyzers as fpa
-import copy
 
 
 # Specify all externally visible things this file defines
@@ -905,6 +902,7 @@ class Sim(fpb.BaseSim):
 
     def apply_interventions(self):
         ''' Apply each intervention in the model '''
+        from . import interventions as fpi # To avoid circular import
         if 'interventions' in self.pars:
             for i,intervention in enumerate(sc.tolist(self.pars['interventions'])):
                 if isinstance(intervention, fpi.Intervention):
@@ -921,6 +919,7 @@ class Sim(fpb.BaseSim):
 
     def apply_analyzers(self):
         ''' Apply each analyzer in the model '''
+        from . import analyzers as fpa # To avoid circular import
         if 'analyzers' in self.pars:
             for i,analyzer in enumerate(sc.tolist(self.pars['analyzers'])):
                 if isinstance(analyzer, fpa.Analyzer):
@@ -1675,6 +1674,7 @@ class MultiSim(sc.prettyobj):
         else:
             return self.base_sim.plot(do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
+
     def plot_method_mix(self, n_sims=10, do_show=False, do_save=True, filepath="method_mix.png"):
         """
         Plots the average method mix for n_sims runs
@@ -1695,8 +1695,8 @@ class MultiSim(sc.prettyobj):
         for sim in self.sims:
             print(f"Processing sim: {sim.label}")
             sim_run_list = [0] * n_sims
-            for sim_index in range(n_sims):
-                new_sim = copy.deepcopy(sim)
+            for sim_index in range(n_sims): # CK: TODO: a multisim should not run a new multisim
+                new_sim = sc.dcp(sim)
                 new_sim.pars['seed'] = sim_index
                 sim_run_list[sim_index] = new_sim
 
