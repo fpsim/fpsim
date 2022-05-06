@@ -1,5 +1,5 @@
 '''
-Define classes and functions for the Experiment class (running sims and comparing them to data)
+Define the Calibration class
 '''
 
 
