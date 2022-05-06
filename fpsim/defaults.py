@@ -3,6 +3,28 @@ Define defaults for use throughout FPsim
 '''
 
 import numpy as np
+import sciris as sc
+from . import data as fpdata
+
+__all__ = ['pars']
+
+
+def pars(location=None):
+    ''' Function for getting default parameters '''
+    if not location:
+        location = 'default'
+
+    # Define valid locations
+    if location in ['senegal', 'default']:
+        pars = fpdata.senegal.make_pars()
+
+    # Else, error
+    else:
+        errormsg = f'Location "{location}" is not currently supported'
+        raise NotImplementedError(errormsg)
+
+    return sc.dcp(pars)
+
 
 #%% Global defaults
 useSI          = True
