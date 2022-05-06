@@ -943,9 +943,8 @@ class Sim(fpb.BaseSim):
     def run(self, verbose=None):
         ''' Run the simulation '''
 
-        T = sc.tic()
-
-        # Reset settings and results
+        # Initialize -- reset settings and results
+        T = sc.timer()
         if verbose is None:
             verbose = self.pars['verbose']
         self.initialize()
@@ -956,10 +955,21 @@ class Sim(fpb.BaseSim):
             self.i = i # Timestep
             self.t = self.ind2year(i)  # t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
             self.y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
+            # if verbose:
+            #     if (self.t % int(1.0/verbose)) < 0.01:
+            #         string = f'  Running {self.y:0.1f} of {self.pars["end_year"]}...'
+            #         sc.progressbar(i+1, self.npts, label=string, length=20, newline=True)
+
+            # Print progress
+            elapsed = T.toc(output=True)
             if verbose:
-                if (self.t % int(1.0/verbose)) < 0.01:
-                    string = f'  Running {self.y:0.1f} of {self.pars["end_year"]}...'
-                    sc.progressbar(i+1, self.npts, label=string, length=20, newline=True)
+                simlabel = f'"{self.label}": ' if self.label else ''
+                string = f'  Running {simlabel}{self.y:0.1f} ({i:2.0f}/{self.npts}) ({elapsed:0.2f} s) '
+                if verbose >= 2:
+                    sc.heading(string)
+                elif verbose>0:
+                    if not (self.t % int(1.0/verbose)):
+                        sc.progressbar(self.t+1, self.npts, label=string, length=20, newline=True)
 
             # Apply interventions
             self.apply_interventions()
@@ -1120,7 +1130,7 @@ class Sim(fpb.BaseSim):
 
         print(f'Final population size: {self.n}.')
 
-        elapsed = sc.toc(T, output=True)
+        elapsed = T.toc(output=True)
         print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
 
         return self.results
