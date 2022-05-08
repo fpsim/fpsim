@@ -54,6 +54,7 @@ class People(fpb.BasePeople):
         self.barrier  = arr(n, d['barrier'])  # Reason for non-use
         self.alive    = arr(n, d['alive'])
         self.pregnant = arr(n, d['pregnant'])
+        self.fertile = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
 
         # #Socio-demographic
         # self.wealth   = arr(n, d['wealth'])
@@ -63,8 +64,9 @@ class People(fpb.BasePeople):
         # Sexual and reproductive history
         self.sexually_active = arr(n, d['sexually_active'])
         self.sexual_debut    = arr(n, d['sexual_debut'])
-        self.sexual_debut_age = arr(n, d['sexual_debut_age']) # Age at first sexual debut in years, If not debuted, None
-        self.first_birth_age  = arr(n, d['first_birth_age']) # Age at first birth.  If no births, None
+        self.sexual_debut_age = arr(n, np.float64(d['sexual_debut_age'])) # Age at first sexual debut in years, If not debuted, -1
+        self.fated_debut      = arr(n, np.float64(d['debut_age']))
+        self.first_birth_age  = arr(n, np.float64(d['first_birth_age'])) # Age at first birth.  If no births, -1
         self.lactating       = arr(n, d['lactating'])
         self.gestation       = arr(n, d['gestation'])
         self.preg_dur        = arr(n, d['preg_dur'])
@@ -259,9 +261,10 @@ class People(fpb.BasePeople):
         # Set postpartum probabilities
         match_low  = self.postpartum_dur >= 0
         match_high = self.postpartum_dur <= self.pars['postpartum_length']
-        match = self.postpartum * match_low * match_high
-        pp = self.filter(match)
-        non_pp = self.filter(~match)
+        pp_match = self.postpartum * match_low * match_high
+        non_pp_match = ((self.age >= self.fated_debut) * (~pp_match))
+        pp = self.filter(pp_match)
+        non_pp = self.filter(non_pp_match)
 
         # Adjust for postpartum women's birth spacing preferences
         pref = self.pars['pref_spacing'] # Shorten since used a lot
@@ -294,7 +297,7 @@ class People(fpb.BasePeople):
         Decide if person (female) becomes pregnant at a timestep.
         '''
         all_ppl = self.unfilter() # For complex array operations
-        active = self.filter(self.sexually_active)
+        active = self.filter(self.sexually_active * self.fertile)
         lam         = active.filter(active.lam)
         nonlam      = active.filter(~active.lam)
         preg_probs = np.zeros(len(all_ppl)) # Use full array
@@ -809,21 +812,23 @@ class Sim(fpb.BaseSim):
         return ages, sexes
 
 
-    def make_people(self, n=1, age=None, sex=None, method=None):
+    def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
         ''' Set up each person '''
         _age, _sex = self.get_age_sex(n)
         if age    is None: age    = _age
         if sex    is None: sex    = _sex
         if method is None: method = np.zeros(n, dtype=np.int64)
         barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
-        data = dict(age=age, sex=sex, method=method, barrier=barrier)
+        debut_age = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
+        fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], n)
+        data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile)
         return data
 
 
     def init_people(self, output=False, **kwargs):
         ''' Create the people '''
         p = sc.objdict(self.make_people(n=int(self.pars['n'])))
-        self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier)
+        self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier, debut_age=p.debut_age, fertile=p.fertile)
         return
 
 
