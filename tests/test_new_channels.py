@@ -2,8 +2,6 @@
 Test births, conceptions, etc.
 '''
 
-import sys
-import os
 import fpsim as fp
 import unittest
 
@@ -12,7 +10,7 @@ class TestChannels(unittest.TestCase):
     @classmethod
     def setUpClass(self):
         self.pars = fp.pars()
-        self.pars['n'] = 1000
+        self.pars['n'] = 200
         self.pars['verbose'] = 0 # suppress output
         exp = fp.ExperimentVerbose(self.pars)
         exp.run_model()

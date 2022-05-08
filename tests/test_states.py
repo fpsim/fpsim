@@ -28,7 +28,7 @@ class TestStates(unittest.TestCase):
 
         self.debug_mode = True
         pars = fp.pars()
-        pars['n'] = 1000
+        pars['n'] = 200
 
 
         self.exp = fp.ExperimentVerbose(pars)

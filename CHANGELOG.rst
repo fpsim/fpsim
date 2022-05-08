@@ -9,6 +9,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.10.0 (2022-05-08)
+--------------------------
+- Moved Senegal parameters into FPsim.
+- Added age of sexual debut.
+- *GitHub info*: PR `427 <https://github.com/amath-idm/fp_analyses/pull/427>`__
+
+
 Version 0.9.0 (2022-05-05)
 --------------------------
 - Added a new ``Scenarios`` class.
