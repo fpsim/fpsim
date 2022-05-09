@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.10.1 (2022-05-09)
+--------------------------
+- Fix ``Scenarios`` class.
+- *GitHub info*: PR `433 <https://github.com/amath-idm/fp_analyses/pull/433>`__
+
 
 Version 0.10.0 (2022-05-08)
 --------------------------
