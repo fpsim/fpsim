@@ -304,16 +304,31 @@ class snapshot(Analyzer):
 
 
     def apply(self, sim):
+        """
+        Apply snapshot at each timestep listed in timesteps and
+        save result at snapshot[str(timestep)]
+        """
         if sim.i in self.timesteps:
             self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
 
 
 class timeseries_recorder(Analyzer):
     '''
-    Record every attribute in people as a time series.
+    Record every attribute in people as a timeseries.
+
+    Attributes:
+
+        self.i: The list of timesteps (ie, 0 to 261 steps).
+        self.t: The time elapsed in years given how many timesteps have passed (ie, 25.75 years).
+        self.y: The calendar year of timestep (ie, 1975.75).
+        self.keys: A list of people states excluding 'dobs'.
+        self.data: A dictionary where self.data[state][timestep] is the mean of the state at that timestep.
     '''
 
     def __init__(self):
+        """
+        Initializes self.i/t/y as empty lists and self.data as empty dictionary
+        """
         super().__init__()
         self.i = []
         self.t = []
@@ -322,6 +337,9 @@ class timeseries_recorder(Analyzer):
         return
 
     def initialize(self, sim):
+        """
+        Initializes self.keys from sim.people
+        """
         super().initialize()
         self.keys = sim.people.keys()
         self.keys.remove('dobs')
@@ -329,6 +347,9 @@ class timeseries_recorder(Analyzer):
 
 
     def apply(self, sim):
+        """
+        Applies recorder at each timestep
+        """
         self.i.append(sim.i)
         self.t.append(sim.t)
         self.y.append(sim.y)
@@ -338,7 +359,9 @@ class timeseries_recorder(Analyzer):
 
 
     def plot(self, x='y', fig_args=None, pl_args=None):
-        ''' Plot time series of each quantity '''
+        """
+        Plots time series of each state as a line graph
+        """
 
         xmap = dict(i=self.i, t=self.t, y=self.y)
         x = xmap[x]
@@ -367,30 +390,48 @@ class timeseries_recorder(Analyzer):
 
 class age_pyramids(Analyzer):
     '''
-    Record age pyramids for each timestep.
+    Records age pyramids for each timestep.
+
+    Attributes:
+
+        self.bins: A list of ages, default is a sequence from 0 to max_age + 1.
+        self.data: A matrix of shape (number of timesteps, number of bins - 1) containing age pyramid data.
     '''
 
     def __init__(self, bins=None):
+        """
+        Initializes bins and data variables
+        """
         super().__init__()
         self.bins = bins
         self.data = None
         return
 
     def initialize(self, sim):
+        """
+        Initializes bins and data with proper shapes
+        """
         super().initialize()
         if self.bins is None:
             self.bins = np.arange(0, sim.pars['max_age']+2)
             nbins = len(self.bins)-1
         self.data = np.full((sim.npts, nbins), np.nan)
-        self.raw = sc.dcp(self.data)
+        self._raw = sc.dcp(self.data)
         return
 
     def apply(self, sim):
+        """
+        Records histogram of ages of all alive individuals at a timestep such that
+        self.data[timestep] = list of proportions where index signifies age
+        """
         ages = sim.people.age[sc.findinds(sim.people.alive)]
-        self.raw[sim.i, :] = np.histogram(ages, self.bins)[0]
-        self.data[sim.i, :] = self.raw[sim.i, :]/self.raw[sim.i, :].sum()
+        self._raw[sim.i, :] = np.histogram(ages, self.bins)[0]
+        self.data[sim.i, :] = self._raw[sim.i, :]/self._raw[sim.i, :].sum()
 
     def plot(self):
+        """
+        Plots self.data as 2D pyramid plot
+        """
         fig = pl.figure()
         pl.pcolormesh(self.data.T)
         pl.xlabel('Timestep')
@@ -398,6 +439,9 @@ class age_pyramids(Analyzer):
         return fig
 
     def plot3d(self):
+        """
+        Plots self.data as 3D pyramid plot
+        """
         print('Warning, very slow...')
         fig = pl.figure()
         sc.bar3d(self.data.T)

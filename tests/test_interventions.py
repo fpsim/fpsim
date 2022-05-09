@@ -5,62 +5,63 @@ Run tests on the calibration object.
 import sciris as sc
 import fpsim as fp
 import fp_analyses as fa
+import unittest
+import os
+import sys
 
-do_plot = 0
+class TestInterventions(unittest.TestCase):
 
-def make_sim(n=500, **kwargs):
-    '''
-    Define a default simulation for testing the baseline.
-    '''
-    pars = fa.senegal_parameters.make_pars()
-    pars['n'] = n
-    pars['verbose'] = 0.1
-    pars.update(kwargs)
-    sim = fp.Sim(pars=pars)
+    @classmethod
+    def setUpClass(self):
+        # suppresses unnecessary warning statements to increase runtime
+        sys.stdout = open(os.devnull, 'w')
+        pass
 
-    return sim
+    def make_sim(self, n=500, **kwargs):
+        '''
+        Define a default simulation for testing the baseline.
+        '''
+        pars = fa.senegal_parameters.make_pars()
+        pars['n'] = n
+        pars['verbose'] = 0.1
+        pars.update(kwargs)
+        sim = fp.Sim(pars=pars)
 
-
-def test_interventions():
-    ''' Test interventions '''
-    sc.heading('Testing interventions...')
-
-    def test_interv(sim):
-        if sim.i == 100:
-            print(f'Success on day {sim.t}/{sim.y}')
-
-    pars = dict(
-        interventions = [test_interv],
-    )
-
-    sim = make_sim(**pars)
-    sim.run()
-
-    return sim
+        return sim
 
 
-def test_analyzers():
-    ''' Test analyzers '''
-    sc.heading('Testing analyzers...')
+    def test_interventions(self):
+        ''' Test interventions '''
+        sc.heading('Testing interventions...')
 
-    pars = dict(
-        analyzers = [fp.snapshot(timesteps=[100, 200])],
-    )
+        def test_interv(sim):
+            if sim.i == 100:
+                print(f'Success on day {sim.t}/{sim.y}')
 
-    sim = make_sim(**pars)
-    sim.run()
+        pars = dict(
+            interventions = [test_interv],
+        )
 
-    return sim
+        sim = self.make_sim(**pars)
+        sim.run()
 
+        return sim
+
+
+    def test_analyzers(self):
+        ''' Test analyzers '''
+        sc.heading('Testing analyzers...')
+
+        pars = dict(
+            analyzers = [fp.snapshot(timesteps=[100, 200])],
+        )
+
+        sim = self.make_sim(**pars)
+        sim.run()
+
+        return sim
 
 if __name__ == '__main__':
 
-    # Start timing and optionally enable interactive plotting
-    T = sc.tic()
-
-    sim1 = test_interventions()
-    sim2 = test_analyzers()
-
-    print('\n'*2)
-    sc.toc(T)
-    print('Done.')
+    # run test suite
+    unittest.main()
