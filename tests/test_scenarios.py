@@ -10,6 +10,7 @@ n          = 100 # Population size
 int_year   = 2005 # Year to start the interventions
 start_year = 2000 # Start year of sims
 end_year   = 2010 # End year of sims
+verbose    = 0 # Verbosity to use
 serial     = True # Whether to run in serial
 
 
@@ -17,7 +18,7 @@ def make_sims(interventions):
     ''' Make simulations with paticular interventions '''
     simlist = sc.autolist()
     for intv in interventions:
-        pars = fp.pars(n=n, start_year=start_year, end_year=end_year, interventions=intv)
+        pars = fp.pars(n=n, verbose=verbose, start_year=start_year, end_year=end_year, interventions=intv)
         simlist += fp.Sim(pars=pars)
     return simlist
 
@@ -101,19 +102,19 @@ def test_update_methods_probs():
     m1 = msim.sims[1].pars['methods']
     m2 = msim.sims[2].pars['methods_postpartum']
     m3 = msim.sims[3].pars['methods_postpartum']
-    i_no  = m0['map']['None']
-    i_oth = m0['map']['Other modern']
+    none  = m0['map']['None']
+    other = m0['map']['Other modern']
 
-    assert m0['probs_matrix']['21-25'][i_no][i_oth] != m1['probs_matrix']['21-25'][i_no][i_oth], "update_methods did not change contraceptive matrix for key 21-25"
-    assert m0['probs_matrix']['21-25'][i_no][i_oth] == target_prob1, "update_methods did not change contraceptive matrix 21-25 to spcified 0.2"
-    assert m1['probs_matrix']['<18'][i_no][i_oth]   == target_prob1, "update_methods did not change contraceptive matrix <25 to spcified 0.2"
+    assert m0['probs_matrix']['21-25'][none][other] != m1['probs_matrix']['21-25'][none][other], "update_methods did not change contraceptive matrix for key 21-25"
+    assert m0['probs_matrix']['21-25'][none][other] == target_prob1, f"update_methods did not change contraceptive matrix 21-25 to spcified {target_prob1}"
+    assert m1['probs_matrix']['<18'][none][other]   == target_prob1, f"update_methods did not change contraceptive matrix <25 to spcified {target_prob1}"
 
-    assert m2['probs_matrix_1-6']['21-25'][i_no][i_oth] != m3['probs_matrix_1-6']['21-25'][i_no][i_oth], "update_methods did not change postpartum contraceptive matrix for key 21-25"
-    assert m2['probs_matrix_1-6']['21-25'][i_no][i_oth] == target_prob1, "update_methods did not change postpartum contraceptive matrix for 21-25 to specified 0.2"
-    assert m3['probs_matrix_1-6']['<18'][i_no][i_oth]   == target_prob1, "update_methods did not change postpartum contraceptive matrix for <18 to specified 0.2"
+    assert m2['probs_matrix_1-6']['21-25'][none][other] != m3['probs_matrix_1-6']['21-25'][none][other], "update_methods did not change postpartum contraceptive matrix for key 21-25"
+    assert m2['probs_matrix_1-6']['21-25'][none][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for 21-25 to specified {target_prob1}"
+    assert m3['probs_matrix_1-6']['<18'][none][other]   == target_prob1, f"update_methods did not change postpartum contraceptive matrix for <18 to specified {target_prob1}"
 
-    assert m3['probs_matrix_1-6']['<18'][i_oth][i_no] != target_prob2, "After updating method switching postpartum for <18 for None to 0.8, value didn't change"
-    assert m3['probs_matrix_1-6']['21-25'][i_oth][i_no] != target_prob2, "After updating method postpartum for 21-25, value is still 0.8"
+    assert m3['probs_matrix_1-6']['<18'][other][none]   == target_prob2, "After updating method switching postpartum for <18 for None to {target_prob2}, value didn't change"
+    assert m3['probs_matrix_1-6']['21-25'][other][none] != target_prob2, "After updating method postpartum for 21-25, value is still {target_prob2}"
 
     return msim
 
@@ -121,5 +122,6 @@ def test_update_methods_probs():
 if __name__ == '__main__':
 
     # run test suite
-    msim1 = test_update_methods_eff()
-    msim2 = test_update_methods_probs()
+    with sc.timer():
+        msim1 = test_update_methods_eff()
+        msim2 = test_update_methods_probs()
