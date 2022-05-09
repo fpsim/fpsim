@@ -6,19 +6,21 @@ import sciris as sc
 import fpsim as fp
 
 # Global settings
-n          = 100 # Population size
-int_year   = 2005 # Year to start the interventions
-start_year = 2000 # Start year of sims
-end_year   = 2010 # End year of sims
-verbose    = 0 # Verbosity to use
-serial     = True # Whether to run in serial
+p = sc.objdict() # Custom parameters
+p.n          = 100 # Population size
+p.start_year = 2000 # Start year of sims
+p.end_year   = 2010 # End year of sims
+p.verbose    = 0 # Verbosity to use
+int_year = 2005 # Year to start the interventions
+serial   = False # Whether to run in serial
+do_plot  = True # Whether to do plotting in interactive mode
 
 
 def make_sims(interventions):
     ''' Make simulations with paticular interventions '''
     simlist = sc.autolist()
     for intv in interventions:
-        pars = fp.pars(n=n, verbose=verbose, start_year=start_year, end_year=end_year, interventions=intv)
+        pars = fp.pars(interventions=intv, **p)
         simlist += fp.Sim(pars=pars)
     return simlist
 
@@ -119,9 +121,72 @@ def test_update_methods_probs():
     return msim
 
 
+def test_scenarios(do_plot=False):
+    ''' Test the actual Scenarios object '''
+
+    # Increased uptake high efficacy
+    uptake_scen1 = sc.objdict(
+        label='Increased modern',
+        eff = {'Other modern':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
+        probs = [ # Specify by value
+            dict(
+                source = 'None', # Source method, 'all' for all methods
+                dest   = 'Other modern', # Destination
+                value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
+                keys   = ['>25'], # Which age keys to modify -- if not specified, all
+            ),
+        ]
+    )
+
+    uptake_scen2 = [
+        # Include scenario 1 here
+        uptake_scen1,
+
+        # New scenario
+        sc.objdict(
+            label = 'Increased modern + increased injectables',
+            eff = {'Injectables': 0.983},
+            probs = [
+                # Reduce switching from injectables
+                dict( # Specify by factor
+                    source = 'Injectables',  # Source method, 'all' for all methods
+                    dest   = 'None',  # Destination
+                    factor = 0.5,  # Factor by which to multiply existing probability
+                    keys   = ['<18', '18-20'],  # Which age keys to modify -- if not specified, all
+                ),
+                # Increase switching to injectables
+                dict(
+                    source = 'None', # Source method, 'all' for all methods
+                    dest   = 'Injectables', # Destination
+                    factor = 2, # Factor by which to multiply existing probability
+                    keys   = ['>25'], # Which age keys to modify -- if not specified, all
+                ),
+            ]
+        )
+    ]
+
+
+    #%% Create sims
+    scens = fp.Scenarios(pars=p, repeats=2, scen_year=int_year)
+    scens.add_scen(label='Baseline')
+    scens.add_scen(uptake_scen1)
+    scens.add_scen(uptake_scen2)
+
+    # Run scenarios
+    scens.run(serial=serial)
+
+    # Plot and print results
+    if do_plot:
+        scens.plot_sims()
+        scens.plot_scens()
+
+    return scens
+
+
 if __name__ == '__main__':
 
     # run test suite
     with sc.timer():
         msim1 = test_update_methods_eff()
         msim2 = test_update_methods_probs()
+        scens = test_scenarios(do_plot=do_plot)

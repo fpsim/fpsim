@@ -32,6 +32,8 @@ class Scenarios(sc.prettyobj):
 
     def add_scen(self, scen=None, label=None):
         ''' Add a scenario or scenarios to the Scenarios object '''
+        if scen is None: # Handle no scenario
+            scen = {}
         scens = sc.tolist(scen)
         if label:
             for scen in scens:
@@ -40,15 +42,22 @@ class Scenarios(sc.prettyobj):
         return
 
 
-    def make_sims(self, label=None, **kwargs):
+    def make_sims(self, scenlabel, **kwargs):
         ''' Create a list of sims that are all identical except for the random seed '''
+        if scenlabel is None:
+            errormsg = 'Scenario label must be defined'
+            raise ValueError(errormsg)
         sims = sc.autolist()
         for i in range(self.repeats):
             pars = sc.mergedicts(fpd.pars(self.location), self.pars, _copy=True)
             pars.setdefault('seed', 0)
             pars.update(kwargs)
             pars['seed'] += i
-            sims += fp.Sim(pars=pars, label=label)
+            sim = fp.Sim(pars=pars)
+            sim.scenlabel = scenlabel # Special label for scenarios objects
+            if sim.label is None:
+                sim.label = scenlabel # Include here if no other label
+            sims += sim
         return sims
 
 
@@ -57,14 +66,15 @@ class Scenarios(sc.prettyobj):
         for scen in self.scens:
             interventions = sc.autolist()
             for entry in sc.tolist(scen):
-                year = entry.pop('scen_year', self.scen_year)
+                entry  = sc.dcp(entry) # Since we're popping, but this is used multiple times
+                year   = entry.pop('scen_year', self.scen_year)
                 matrix = entry.pop('matrix', None)
-                label = entry.pop('label', None)
+                label  = entry.pop('label', None)
                 if year is None:
                     errormsg = 'Scenario year must be specified in either the scenario entry or the Scenarios object'
                     raise ValueError(errormsg)
                 interventions += fp.update_methods(scen=entry, year=year, matrix=matrix)
-            sims = self.make_sims(interventions=interventions, label=label)
+            sims = self.make_sims(interventions=interventions, scenlabel=label)
             self.simslist.append(sims)
         return
 
@@ -102,8 +112,13 @@ class Scenarios(sc.prettyobj):
         return self.msim_merged.plot(plot_sims=True, **kwargs)
 
 
-    def analyze_sims(self, start, end):
+    def analyze_sims(self, start=None, end=None):
         ''' Take a list of sims that have different labels and count the births in each '''
+
+        # Pull out first sim and parameters
+        sim0 = self.msim.sims[0]
+        if start is None: start = sim0.pars['start_year']
+        if end   is None: end   = sim0.pars['end_year']
 
         def count_births(sim):
             year = sim.results['t']
@@ -137,21 +152,27 @@ class Scenarios(sc.prettyobj):
         results = sc.objdict()
         results.sims = sc.objdict(defaultdict=sc.autolist)
         for sim in self.msim.sims:
-            results.sims[sim.label] += sim
+            try:
+                label = sim.scenlabel
+            except:
+                errormsg = f'Warning, could not extract scenlabel from sim {sim.label}; using default...'
+                print(errormsg)
+                label = sim.label
+            results.sims[label] += sim
 
         # Count the births across the scenarios
-        raw = sc.objdict(defaultdict=sc.autolist)
+        raw = sc.ddict(list)
         for key,sims in results.sims.items():
             for sim in sims:
                 n_births = count_births(sim)
                 n_fails  = method_failure(sim)
                 n_pop = count_pop(sim)
                 n_tfr = mean_tfr(sim)
-                raw.scenario += key      # Append scenario key
-                raw.births   += n_births # Append births
-                raw.fails    += n_fails  # Append failures
-                raw.popsize  += n_pop    # Append population size
-                raw.tfr      += n_tfr    # Append mean tfr rates
+                raw['scenario'] += [key]      # Append scenario key
+                raw['births']   += [n_births] # Append births
+                raw['fails']    += [n_fails]  # Append failures
+                raw['popsize']  += [n_pop]    # Append population size
+                raw['tfr']      += [n_tfr]    # Append mean tfr rates
 
         # Calculate basic stats
         results.stats = sc.objdict()
