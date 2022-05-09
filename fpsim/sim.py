@@ -917,7 +917,7 @@ class Sim(fpb.BaseSim):
                 elif callable(intervention):
                     intervention(self) # If it's a function, call it directly
                 else: # pragma: no cover
-                    errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object'
+                    errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object: it is {type(intervention)}'
                     raise TypeError(errormsg)
         return
 
@@ -934,7 +934,7 @@ class Sim(fpb.BaseSim):
                 elif callable(analyzer):
                     analyzer(self) # If it's a function, call it directly
                 else: # pragma: no cover
-                    errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object'
+                    errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object: it is {type(analyzer)}'
                     raise TypeError(errormsg)
         return
 

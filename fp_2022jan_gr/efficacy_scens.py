@@ -15,7 +15,7 @@ if __name__ == '__main__':
 
     T = sc.timer()
 
-    debug   = False # Set population size and duration
+    debug   = True # Set population size and duration
     one_sim = False # Just run one sim
 
     #%% Define sim parameters
