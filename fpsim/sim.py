@@ -250,10 +250,12 @@ class People(fpb.BasePeople):
         for died in [f_died, m_died]:
             died.alive           = False,
             died.pregnant        = False,
+            died.gestation       = False,
             died.sexually_active = False,
             died.lactating       = False,
             died.postpartum      = False,
             died.lam             = False,
+            died.breastfeed_dur  = 0,
             self.step_results['deaths'] += len(died)
 
         return
