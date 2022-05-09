@@ -22,7 +22,7 @@ class Scenarios(sc.prettyobj):
         self.pars = pars
         self.repeats = repeats
         self.scen_year = scen_year
-        self.scens = sc.tolist(scens)
+        self.scens = sc.dcp(sc.tolist(scens))
         self.location = location
         self.simslist = []
         self.msim = None
@@ -34,11 +34,11 @@ class Scenarios(sc.prettyobj):
         ''' Add a scenario or scenarios to the Scenarios object '''
         if scen is None: # Handle no scenario
             scen = {}
-        scens = sc.tolist(scen)
+        scens = sc.dcp(sc.tolist(scen)) # To handle the case where multiple interventions are in a single scenario
         if label:
             for scen in scens:
                 scen['label'] = label
-        self.scens += scens
+        self.scens.append(scens)
         return
 
 
@@ -105,10 +105,12 @@ class Scenarios(sc.prettyobj):
 
 
     def plot_sims(self, **kwargs):
-        return self.msim.plot(plot_sims=False, **kwargs)
+        ''' Plot each sim as a separate line across all senarios '''
+        return self.msim.plot(plot_sims=True, **kwargs)
 
 
     def plot_scens(self, **kwargs):
+        ''' Plot the scenarios with bands '''
         return self.msim_merged.plot(plot_sims=True, **kwargs)
 
 
@@ -254,6 +256,7 @@ class update_methods(fpi.Intervention):
         valid_matrices = ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] # TODO: be less subtle about the difference between normal and postpartum matrices
         if self.matrix not in valid_matrices:
             raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{self.matrix}"')
+        self.applied = False
         return
 
 
@@ -263,8 +266,8 @@ class update_methods(fpi.Intervention):
         based on scenario specifications.
         """
 
-        if sim.y >= self.year and not(hasattr(sim, 'modified')):
-            sim.modified = True
+        if not self.applied and sim.y >= self.year:
+            self.applied = True # Ensure we don't apply this more than once
 
             # Implement efficacy
             if 'eff' in self.scen:

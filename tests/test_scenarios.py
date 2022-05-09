@@ -7,12 +7,12 @@ import fpsim as fp
 
 # Global settings
 p = sc.objdict() # Custom parameters
-p.n          = 100 # Population size
+p.n          = 500 # Population size
 p.start_year = 2000 # Start year of sims
 p.end_year   = 2010 # End year of sims
 p.verbose    = 0 # Verbosity to use
-int_year = 2005 # Year to start the interventions
-serial   = False # Whether to run in serial
+int_year = 2002 # Year to start the interventions
+serial   = False # Whether to run in serial (for debugging)
 do_plot  = True # Whether to do plotting in interactive mode
 
 
@@ -138,32 +138,28 @@ def test_scenarios(do_plot=False):
         ]
     )
 
-    uptake_scen2 = [
-        # Include scenario 1 here
-        uptake_scen1,
+    uptake_scen2 = sc.objdict(
+        label = 'Increased injectables',
+        eff = {'Injectables': 0.95},
+        probs = [
+            # Reduce switching from injectables
+            dict( # Specify by factor
+                source = 'Injectables',  # Source method, 'all' for all methods
+                dest   = 'None',  # Destination
+                factor = 0.0,  # Factor by which to multiply existing probability
+                keys   = ['<18', '18-20'],  # Which age keys to modify -- if not specified, all
+            ),
+            # Increase switching to injectables
+            dict(
+                source = 'None', # Source method, 'all' for all methods
+                dest   = 'Injectables', # Destination
+                factor = 5, # Factor by which to multiply existing probability
+                keys   = ['>25'], # Which age keys to modify -- if not specified, all
+            ),
+        ]
+    )
 
-        # New scenario
-        sc.objdict(
-            label = 'Increased modern + increased injectables',
-            eff = {'Injectables': 0.983},
-            probs = [
-                # Reduce switching from injectables
-                dict( # Specify by factor
-                    source = 'Injectables',  # Source method, 'all' for all methods
-                    dest   = 'None',  # Destination
-                    factor = 0.5,  # Factor by which to multiply existing probability
-                    keys   = ['<18', '18-20'],  # Which age keys to modify -- if not specified, all
-                ),
-                # Increase switching to injectables
-                dict(
-                    source = 'None', # Source method, 'all' for all methods
-                    dest   = 'Injectables', # Destination
-                    factor = 2, # Factor by which to multiply existing probability
-                    keys   = ['>25'], # Which age keys to modify -- if not specified, all
-                ),
-            ]
-        )
-    ]
+    uptake_scen3 = [uptake_scen1, uptake_scen2]
 
 
     #%% Create sims
@@ -171,9 +167,14 @@ def test_scenarios(do_plot=False):
     scens.add_scen(label='Baseline')
     scens.add_scen(uptake_scen1)
     scens.add_scen(uptake_scen2)
+    scens.add_scen(uptake_scen3, label='Increased modern + increased injectables')
 
     # Run scenarios
     scens.run(serial=serial)
+
+    # Ensure that everything is unique
+    tfr = scens.results.df.tfr
+    assert len(tfr) == len(tfr.unique()), 'Number of unique TFR values is less than the number of sims, could be unlucky or a bug'
 
     # Plot and print results
     if do_plot:
