@@ -89,7 +89,7 @@ def test_update_methods_probs():
     uptake_no_keys_methods = fp.update_methods(int_year, scen_no_keys, matrix='probs_matrix') # Create intervention
     uptake_keys_methods    = fp.update_methods(int_year, scen_keys,    matrix='probs_matrix') # Create intervention
     uptake_no_keys_pp      = fp.update_methods(int_year, scen_no_keys, matrix='probs_matrix_1-6') # Create intervention
-    uptake_keys_pp         = fp.update_methods(int_year, scen_keys,     matrix='probs_matrix_1-6') # Create intervention
+    uptake_keys_pp         = fp.update_methods(int_year, scen_keys,    matrix='probs_matrix_1-6') # Create intervention
 
     # Make and runs ims
     simlist = make_sims([uptake_no_keys_methods, uptake_keys_methods, uptake_no_keys_pp, uptake_keys_pp])

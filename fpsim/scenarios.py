@@ -229,10 +229,10 @@ class update_methods(fpi.Intervention):
         super().__init__()
         self.year   = year
         self.scen   = scen
-        self.matrix = matrix if matrix else 'probs_matrix'
+        self.matrix = matrix if matrix else scen.pop('matrix', 'probs_matrix') # Take matrix from scenario if supplied
         valid_matrices = ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] # TODO: be less subtle about the difference between normal and postpartum matrices
         if self.matrix not in valid_matrices:
-            raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{matrix}"')
+            raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{self.matrix}"')
         return
 
 
