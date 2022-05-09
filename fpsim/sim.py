@@ -12,7 +12,6 @@ from . import defaults as fpd
 from . import utils as fpu
 from . import base as fpb
 from . import interventions as fpi
-import copy
 
 
 # Specify all externally visible things this file defines
@@ -1703,12 +1702,12 @@ class MultiSim(sc.prettyobj):
             print(f"Processing sim: {sim.label}")
             sim_run_list = [0] * n_sims
             for sim_index in range(n_sims):
-                new_sim = copy.deepcopy(sim)
+                new_sim = sc.dcp(sim) # CK: TODO: should not need to be copied
                 new_sim.pars['seed'] = sim_index
                 sim_run_list[sim_index] = new_sim
 
             multi = MultiSim(sims=sim_run_list)
-            multi.run()
+            multi.run() # CK: TODO: should not need to be run
 
             for sim_index in range(n_sims):
                 people = multi.sims[sim_index].people
