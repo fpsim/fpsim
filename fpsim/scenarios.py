@@ -247,7 +247,7 @@ class update_methods(fpi.Intervention):
 
             # Implement efficacy
             if 'eff' in self.scen:
-                for k,rawval in self.scen.eff.items():
+                for k,rawval in self.scen['eff'].items():
                     v = getval(rawval)
                     ind = key2ind(sim, k)
                     orig = sim.pars['method_efficacy'][ind]
@@ -257,7 +257,7 @@ class update_methods(fpi.Intervention):
 
             # Implement method mix shift
             if 'probs' in self.scen:
-                for entry in self.scen.probs:
+                for entry in self.scen['probs']:
                     source = key2ind(sim, entry['source'])
                     dest   = key2ind(sim, entry['dest'])
                     factor = entry.pop('factor', None)
