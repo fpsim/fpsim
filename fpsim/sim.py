@@ -12,7 +12,6 @@ from . import defaults as fpd
 from . import utils as fpu
 from . import base as fpb
 from . import interventions as fpi
-import copy
 
 
 # Specify all externally visible things this file defines
@@ -249,7 +248,14 @@ class People(fpb.BasePeople):
         f_died = female.binomial(f_mort_prob, as_filter=True)
         m_died = male.binomial(m_mort_prob, as_filter=True)
         for died in [f_died, m_died]:
-            died.alive = False
+            died.alive           = False,
+            died.pregnant        = False,
+            died.gestation       = False,
+            died.sexually_active = False,
+            died.lactating       = False,
+            died.postpartum      = False,
+            died.lam             = False,
+            died.breastfeed_dur  = 0,
             self.step_results['deaths'] += len(died)
 
         return
@@ -1698,12 +1704,12 @@ class MultiSim(sc.prettyobj):
             print(f"Processing sim: {sim.label}")
             sim_run_list = [0] * n_sims
             for sim_index in range(n_sims):
-                new_sim = copy.deepcopy(sim)
+                new_sim = sc.dcp(sim) # CK: TODO: should not need to be copied
                 new_sim.pars['seed'] = sim_index
                 sim_run_list[sim_index] = new_sim
 
             multi = MultiSim(sims=sim_run_list)
-            multi.run()
+            multi.run() # CK: TODO: should not need to be run
 
             for sim_index in range(n_sims):
                 people = multi.sims[sim_index].people
