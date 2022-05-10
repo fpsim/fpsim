@@ -6,6 +6,7 @@ import sciris as sc
 import fpsim as fp
 
 do_plot = True
+sc.options(backend='agg') # Turn off interactive plots
 
 
 def test_multisim(do_plot=do_plot):
@@ -16,7 +17,7 @@ def test_multisim(do_plot=do_plot):
     sims = []
     for i in range(3):
         exposure = 0.5 + 0.5*i # Run a sweep over exposure
-        pars = fp.pars(n=100, verbose=0.1, exposure_correction=exposure)
+        pars = fp.pars(n=100, verbose=0, exposure_correction=exposure)
         sim = fp.Sim(pars=pars, label=f'Exposure {exposure}')
         sims.append(sim)
 
@@ -35,12 +36,6 @@ def test_multisim(do_plot=do_plot):
 
 
 if __name__ == '__main__':
-
-    # Start timing and optionally enable interactive plotting
-    T = sc.tic()
-
-    msim = test_multisim()
-
-    print('\n'*2)
-    sc.toc(T)
-    print('Done.')
+    sc.options(backend=None) # Turn on interactive plots
+    with sc.timer(): # Start timing
+        msim = test_multisim()
