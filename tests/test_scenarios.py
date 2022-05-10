@@ -11,6 +11,7 @@ p.n          = 500 # Population size
 p.start_year = 2000 # Start year of sims
 p.end_year   = 2010 # End year of sims
 p.verbose    = 0 # Verbosity to use
+
 int_year = 2002 # Year to start the interventions
 serial   = False # Whether to run in serial (for debugging)
 do_plot  = True # Whether to do plotting in interactive mode
