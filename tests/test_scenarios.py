@@ -11,9 +11,11 @@ p.n          = 500 # Population size
 p.start_year = 2000 # Start year of sims
 p.end_year   = 2010 # End year of sims
 p.verbose    = 0 # Verbosity to use
+
 int_year = 2002 # Year to start the interventions
 serial   = False # Whether to run in serial (for debugging)
 do_plot  = True # Whether to do plotting in interactive mode
+sc.options(backend='agg') # Turn off interactive plots
 
 
 def make_sims(interventions):
@@ -186,7 +188,7 @@ def test_scenarios(do_plot=do_plot):
 
 if __name__ == '__main__':
 
-    # run test suite
+    sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
         msim1 = test_update_methods_eff()
         msim2 = test_update_methods_probs()
