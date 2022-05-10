@@ -924,7 +924,7 @@ class Sim(fpb.BaseSim):
                 elif callable(intervention):
                     intervention(self) # If it's a function, call it directly
                 else: # pragma: no cover
-                    errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object'
+                    errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object: it is {type(intervention)}'
                     raise TypeError(errormsg)
         return
 
@@ -941,7 +941,7 @@ class Sim(fpb.BaseSim):
                 elif callable(analyzer):
                     analyzer(self) # If it's a function, call it directly
                 else: # pragma: no cover
-                    errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object'
+                    errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object: it is {type(analyzer)}'
                     raise TypeError(errormsg)
         return
 
@@ -1245,16 +1245,24 @@ class Sim(fpb.BaseSim):
                     if is_dist:
                         low *= 100
                         high *= 100
-                if label is None:
-                    if new_fig:
-                        label = reslabel
+
+                # Handle label
+                if label:
+                    plotlabel = label
+                else:
+                    if new_fig: # It's a new figure, use the result label
+                        plotlabel = reslabel
                     else: # Replace with sim label to avoid duplicate labels
-                        label = self.label
-                ax.plot(x, y, label=label, **plot_args)
+                        plotlabel = self.label
+
+                # Actually plot
+                ax.plot(x, y, label=plotlabel, **plot_args)
                 if is_dist:
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
                     ax.fill_between(x, low, high, **fill_args)
+
+            # Handle annotations
             fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
             if key == 'mcpr_by_year':
                 pl.ylabel('Percentage')
@@ -1278,6 +1286,7 @@ class Sim(fpb.BaseSim):
             pl.show() # Only show if we're not saving
 
         return fig
+
 
     def plot_cpr(self, do_save=None, do_show=True, fig_args=None, plot_args=None, axis_args=None, fill_args=None,
              label=None, new_fig=True):
@@ -1329,12 +1338,17 @@ class Sim(fpb.BaseSim):
                 if is_dist:
                     low *= 100
                     high *= 100
-                if label is None:
-                    if new_fig:
-                        label = reslabel
+
+                # Handle label
+                if label:
+                    plotlabel = label
+                else:
+                    if new_fig: # It's a new figure, use the result label
+                        plotlabel = reslabel
                     else: # Replace with sim label to avoid duplicate labels
-                        label = self.label
-                ax.plot(x, y, label=label, **plot_args)
+                        plotlabel = self.label
+
+                ax.plot(x, y, label=plotlabel, **plot_args)
                 if is_dist:
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
@@ -1357,6 +1371,7 @@ class Sim(fpb.BaseSim):
             pl.show() # Only show if we're not saving
 
         return fig
+
 
     def plot_age_first_birth(self, do_show=False, do_save=True, output_file="first_birth_age.png"):
         to_plot = [age for age in self.people.first_birth_age if age is not None]
