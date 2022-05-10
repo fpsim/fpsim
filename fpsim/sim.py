@@ -1186,7 +1186,8 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot(self, do_save=None, do_show=True, fig_args=None, plot_args=None, axis_args=None, fill_args=None, new_fig=True):
+    def plot(self, do_save=None, do_show=True, fig_args=None, plot_args=None, axis_args=None, fill_args=None,
+             label=None, new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
@@ -1197,6 +1198,7 @@ class Sim(fpb.BaseSim):
             plot_args (dict): Passed to pl.plot()
             axis_args (dict): Passed to pl.subplots_adjust()
             fill_args (dict): Passed to pl.fill_between())
+            label     (str):  Label to override default
             new_fig   (bool): whether to create a new figure (true unless part of a multisim)
         '''
 
@@ -1237,16 +1239,23 @@ class Sim(fpb.BaseSim):
                         low *= 100
                         high *= 100
 
-                if new_fig:
-                    label = reslabel
-                else: # Replace with sim label to avoid duplicate labels
-                    label = self.label
+                # Handle label
+                if label:
+                    plotlabel = label
+                else:
+                    if new_fig: # It's a new figure, use the result label
+                        plotlabel = reslabel
+                    else: # Replace with sim label to avoid duplicate labels
+                        plotlabel = self.label
 
-                ax.plot(x, y, label=label, **plot_args)
+                # Actually plot
+                ax.plot(x, y, label=plotlabel, **plot_args)
                 if is_dist:
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
                     ax.fill_between(x, low, high, **fill_args)
+
+            # Handle annotations
             fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
             if key == 'mcpr_by_year':
                 pl.ylabel('Percentage')
@@ -1270,6 +1279,7 @@ class Sim(fpb.BaseSim):
             pl.show() # Only show if we're not saving
 
         return fig
+
 
     def plot_cpr(self, do_save=None, do_show=True, fig_args=None, plot_args=None, axis_args=None, fill_args=None,
              label=None, new_fig=True):
@@ -1321,12 +1331,17 @@ class Sim(fpb.BaseSim):
                 if is_dist:
                     low *= 100
                     high *= 100
-                if label is None:
-                    if new_fig:
-                        label = reslabel
+
+                # Handle label
+                if label:
+                    plotlabel = label
+                else:
+                    if new_fig: # It's a new figure, use the result label
+                        plotlabel = reslabel
                     else: # Replace with sim label to avoid duplicate labels
-                        label = self.label
-                ax.plot(x, y, label=label, **plot_args)
+                        plotlabel = self.label
+
+                ax.plot(x, y, label=plotlabel, **plot_args)
                 if is_dist:
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
@@ -1349,6 +1364,7 @@ class Sim(fpb.BaseSim):
             pl.show() # Only show if we're not saving
 
         return fig
+
 
     def plot_age_first_birth(self, do_show=False, do_save=True, output_file="first_birth_age.png"):
         to_plot = [age for age in self.people.first_birth_age if age is not None]

@@ -121,7 +121,7 @@ def test_update_methods_probs():
     return msim
 
 
-def test_scenarios(do_plot=False):
+def test_scenarios(do_plot=do_plot):
     ''' Test the actual Scenarios object '''
 
     # Increased uptake high efficacy
@@ -190,4 +190,4 @@ if __name__ == '__main__':
     with sc.timer():
         msim1 = test_update_methods_eff()
         msim2 = test_update_methods_probs()
-        scens = test_scenarios(do_plot=do_plot)
+        scens = test_scenarios()

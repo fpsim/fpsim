@@ -5,10 +5,10 @@ Run tests on the multisim object.
 import sciris as sc
 import fpsim as fp
 
-do_plot = 1
+do_plot = True
 
 
-def test_multisim(do_plot=False):
+def test_multisim(do_plot=do_plot):
     ''' Try running a multisim '''
     sc.heading('Testing multisim...')
 
@@ -39,7 +39,7 @@ if __name__ == '__main__':
     # Start timing and optionally enable interactive plotting
     T = sc.tic()
 
-    msim = test_multisim(do_plot=do_plot)
+    msim = test_multisim()
 
     print('\n'*2)
     sc.toc(T)
