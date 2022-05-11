@@ -9,9 +9,7 @@ import unittest
 class TestChannels(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.pars = fp.pars()
-        self.pars['n'] = 200
-        self.pars['verbose'] = 0 # suppress output
+        self.pars = fp.pars('test', n=1000) # CK: TODO: check why this test fails for small n
         exp = fp.ExperimentVerbose(self.pars)
         exp.run_model()
         self.exp = exp
@@ -43,7 +41,7 @@ class TestChannels(unittest.TestCase):
         for timestep in self.events:
             births_step += self.events[timestep]["Step_Results"]["births"]
             births += len(self.events[timestep]['Births'])
-        self.assertEqual(births, births_step, f"Mismatch between step results births and births channel")
+        self.assertEqual(births, births_step, "Mismatch between step results births and births channel")
 
     def test_conceptions(self):
         """
