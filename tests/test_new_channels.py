@@ -7,7 +7,7 @@ import sciris as sc
 import fpsim as fp
 import pytest
 
-
+# class TestChannels(unittest.TestCase):
 def test_channels():
     pars = fp.pars('test', n=500, end_year=2020) # CK: TODO: check why this test fails for small n
     exp = fp.ExperimentVerbose(pars)
