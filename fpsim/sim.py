@@ -1150,7 +1150,7 @@ class Sim(fpb.BaseSim):
         if verbose:
             print(f'Final population size: {self.n}.')
             elapsed = T.toc(output=True)
-            print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
+            print(f'Run finished for "{self.label}" after {elapsed:0.1f} s')
 
         return self.results
 

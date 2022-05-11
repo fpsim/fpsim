@@ -9,8 +9,7 @@ from .. import defaults as fpd
 
 # Define default user-tunable parameters and values
 defaults = {
-  'name'                          : 'Default',
-  'n'                             : 100000,
+  'n'                             : 10_000, # Population size
   'start_year'                    : 1960,
   'end_year'                      : 2019,
   'timestep'                      : 1, # The simulation timestep in months
@@ -35,7 +34,9 @@ defaults = {
   'maternal_mortality_multiplier' : 1,
   'high_parity'                   : 4,
   'high_parity_nonuse_correction' : 0.6,
-  'primary_infertility'           : 0.05
+  'primary_infertility'           : 0.05,
+  'exposure_correction'           : 1, # Overall exposure correction factor
+  'mcpr_trend'                    : 1.02, # The year-on-year change in MCPR after the end of the data
 }
 
 
@@ -64,20 +65,10 @@ def age_pyramid():
 
     return pyramid
 
-# def wealth_index():
-#     '''
-#     Relative wealth as represented by the DHS 2019 household wealth index
-#     '''
-#
-# 2018 "Poorest" 22.7
-#     "Poorer" 22.8
-#     "Middle" 21.0
-#     "Richer" 18.0
-#     "Richest" 15.5
-
 
 def age_mortality(bound):
-    ''' Age-dependent mortality rates, Senegal specific from 1990-1995 -- see age_dependent_mortality.py in the fp_analyses repository
+    '''
+    Age-dependent mortality rates, Senegal specific from 1990-1995 -- see age_dependent_mortality.py in the fp_analyses repository
     Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
     '''
     mortality = {
@@ -155,8 +146,6 @@ def maternal_mortality():
         [2018, 0.00135, 0.00176, 0.00222],
         [2019, 0.00128, 0.00169, 0.00214]
     ])
-
-
 
     maternal_mortality = {}
     maternal_mortality['year'] = data[:,0]
@@ -245,6 +234,7 @@ def infant_mortality():
 
     return infant_mortality
 
+
 def stillbirth():
     '''
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
@@ -264,54 +254,12 @@ def stillbirth():
     return stillbirth_rate
 
 
-''''
-OLD INITIATION, DISCONTINUATION, AND SWITCHING CONTRACEPTIVE MATRICES.  LEAVING HERE IN CASE USEFUL.
-CAN'T COMMENT ON HOW THESE PROBABILITIES WERE CALCULATED
-def methods():
-    methods = {}
-
-    methods['map'] = {'None':0,
-                    'Lactation':1,
-                    'Implants':2,
-                    'Injectables':3,
-                    'IUDs':4,
-                    'Pill':5,
-                    'Condoms':6,
-                    'Other':7,
-                    'Traditional':8} # Add 'Novel'?
-    methods['names'] = list(methods['map'].keys())
-
-    methods['matrix'] = np.array([
-       [8.81230657e-01, 0.00000000e+00, 9.56761433e-04, 1.86518124e-03,        1.44017774e-04, 8.45978530e-04, 1.80273996e-04, 1.61138768e-05,        1.46032008e-04],
-       [2.21565806e-05, 1.52074712e-04, 2.01423460e-06, 3.02135189e-06,        0.00000000e+00, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,        0.00000000e+00],
-       [3.45441233e-04, 0.00000000e+00, 3.29206502e-02, 1.61138768e-05,        5.03558649e-06, 1.40996422e-05, 2.01423460e-06, 0.00000000e+00,        1.00711730e-06],
-       [1.22767599e-03, 0.00000000e+00, 3.02135189e-05, 4.28810403e-02,        1.40996422e-05, 6.94910936e-05, 8.05693838e-06, 0.00000000e+00,        6.04270379e-06],
-       [3.52491054e-05, 0.00000000e+00, 2.01423460e-06, 3.02135189e-06,        6.10715929e-03, 5.03558649e-06, 0.00000000e+00, 0.00000000e+00,        0.00000000e+00],
-       [6.33476780e-04, 0.00000000e+00, 1.30925249e-05, 5.03558649e-05,        6.04270379e-06, 1.97092855e-02, 4.02846919e-06, 1.00711730e-06,        6.04270379e-06],
-       [8.35907357e-05, 0.00000000e+00, 5.03558649e-06, 6.04270379e-06,        2.01423460e-06, 3.02135189e-06, 3.94689269e-03, 2.01423460e-06,        1.00711730e-06],
-       [1.20854076e-05, 0.00000000e+00, 0.00000000e+00, 0.00000000e+00,        0.00000000e+00, 0.00000000e+00, 3.02135189e-06, 1.74432716e-03,        1.00711730e-06],
-       [4.93487476e-05, 0.00000000e+00, 2.01423460e-06, 4.02846919e-06,        0.00000000e+00, 2.01423460e-06, 0.00000000e+00, 0.00000000e+00,        4.45145846e-03]])
-
-    methods['matrix'][0,0] *= 0.53 # Correct for 2015
-
-    methods['mcpr_years'] = np.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017])
-
-    mcpr_rates = np.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8])
-    # mcpr_rates /= 100
-    # methods['mcpr_multipliers'] = (1-mcpr_rates)**2.0
-
-    methods['trend'] = mcpr_rates[5]/mcpr_rates # normalize trend around 2005 so "no method to no method" matrix entry will increase or decrease based on mcpr that year
-
-    methods['mcpr_multipliers'] = 10/mcpr_rates # No idea why it should be this...
-
-    return methods
-'''
-
-
-def methods():
-    '''Matrices to give transitional probabilities from 2018 DHS Senegal contraceptive calendar data
+def methods(age_stratified=True):
+    '''
+    Matrices to give transitional probabilities from 2018 DHS Senegal contraceptive calendar data
     Probabilities in this function are annual probabilities of initiating, discontinuing, continuing
-    or switching methods'''
+    or switching methods
+    '''
     methods = {}
 
     methods['map'] = {'None': 0,
@@ -327,84 +275,86 @@ def methods():
 
     methods['names'] = list(methods['map'].keys())
 
-    methods['probs_matrix'] = {
-        '<18': np.array([
-            [0.9953132643, 0.0001774295, 0.0000506971, 0.0016717604, 0.0011907588, 0.0000000000, 0.0000000000, 0.0013933117, 0.0001774295, 0.0000253488],
-            [0.5357744265, 0.3956817610, 0.0000000000, 0.0685438124, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.3779420208, 0.0357636560, 0.0000000000, 0.5646930063, 0.0000000000, 0.0000000000, 0.0000000000, 0.0216013169, 0.0000000000, 0.0000000000],
-            [0.3069791534, 0.0000000000, 0.0000000000, 0.0000000000, 0.6930208466, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.2002612324, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.7997387676, 0.0000000000, 0.0000000000],
-            [0.0525041055, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.9474958945, 0.0000000000],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000]]),
-        '18-20': np.array([
-            [0.9773550478, 0.0027107826, 0.0002856633, 0.0103783776, 0.0027107826, 0.0000000000, 0.0000000000, 0.0048461143, 0.0014275685, 0.0002856633],
-            [0.4549090811, 0.4753537374, 0.0000000000, 0.0463236223, 0.0000000000, 0.0000000000, 0.0000000000, 0.0234135593, 0.0000000000, 0.0000000000],
-            [0.1606987622, 0.0000000000, 0.8393012378, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.4388765348, 0.0196152254, 0.0000000000, 0.5217816111, 0.0098521372, 0.0000000000, 0.0000000000, 0.0049372457, 0.0049372457, 0.0000000000],
-            [0.1820343429, 0.0000000000, 0.0000000000, 0.0000000000, 0.8179656571, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.1700250992, 0.0000000000, 0.0000000000, 0.0196339461, 0.0000000000, 0.0000000000, 0.0000000000, 0.8103409547, 0.0000000000, 0.0000000000],
-            [0.3216043236, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.6783956764, 0.0000000000],
-            [0.4773308708, 0.0000000000, 0.0000000000, 0.0000000000, 0.4773308708, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0453382584]]),
-        '21-25': np.array([
-            [0.9580844982, 0.0080857514, 0.0005744238, 0.0183734782, 0.0024392127, 0.0000000000, 0.0001436343, 0.0107913587, 0.0010767964, 0.0004308462],
-            [0.3714750489, 0.5703031529, 0.0000000000, 0.0434765586, 0.0000000000, 0.0000000000, 0.0029538440, 0.0088375516, 0.0029538440, 0.0000000000],
-            [0.1079007053, 0.0445194312, 0.8250878450, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0224920185, 0.0000000000, 0.0000000000],
-            [0.3776516335, 0.0257873675, 0.0023699011, 0.5835323377, 0.0035529200, 0.0000000000, 0.0000000000, 0.0035529200, 0.0035529200, 0.0000000000],
-            [0.1895749834, 0.0094301857, 0.0000000000, 0.0000000000, 0.7540070663, 0.0000000000, 0.0000000000, 0.0187787895, 0.0094301857, 0.0187787895],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.4471746024, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.5528253976, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.1370415572, 0.0044750998, 0.0029854437, 0.0044750998, 0.0029854437, 0.0000000000, 0.0000000000, 0.8480373557, 0.0000000000, 0.0000000000],
-            [0.2375959813, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.7624040187, 0.0000000000],
-            [0.3342350643, 0.0000000000, 0.0000000000, 0.0000000000, 0.1826479897, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.4831169460]]),
-        '>25': np.array([
-            [0.9462131116, 0.0123838433, 0.0029627055, 0.0209275401, 0.0013426008, 0.0001399314, 0.0001399314, 0.0139046297, 0.0017618246, 0.0002238816],
-            [0.3030708445, 0.6588856456, 0.0053038550, 0.0210610879, 0.0021246451, 0.0000000000, 0.0015938721, 0.0053038550, 0.0021246451, 0.0005315497],
-            [0.0774565806, 0.0058280554, 0.9050475430, 0.0043739679, 0.0000000000, 0.0000000000, 0.0000000000, 0.0043739679, 0.0014599426, 0.0014599426],
-            [0.2745544442, 0.0173002840, 0.0047711954, 0.6910279110, 0.0019671434, 0.0000000000, 0.0000000000, 0.0072886657, 0.0028091184, 0.0002812379],
-            [0.1548546967, 0.0041688319, 0.0083217274, 0.0124587419, 0.8077054428, 0.0000000000, 0.0000000000, 0.0083217274, 0.0000000000, 0.0041688319],
-            [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.0939227324, 0.0000000000, 0.0000000000, 0.0480226276, 0.0000000000, 0.0000000000, 0.8580546400, 0.0000000000, 0.0000000000, 0.0000000000],
-            [0.1114787085, 0.0059115428, 0.0024929872, 0.0068420105, 0.0003119354, 0.0003119354, 0.0003119354, 0.8714034061, 0.0009355387, 0.0000000000],
-            [0.1060688610, 0.0025335150, 0.0025335150, 0.0025335150, 0.0050611449, 0.0000000000, 0.0000000000, 0.0050611449, 0.8762083044, 0.0000000000],
-            [0.1581337279, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0121394565, 0.8297268156]])
-    }
+    if age_stratified:
 
-    '''
-    Not age-stratified, if wanting to revert to these
-    methods['probs_matrix'] = np.array([
-        [0.9675668047,   0.0067289610,   0.0013039766,   0.0131728314,   0.0016425499,   0.0000513672,  0.0005032939, 0.0000719133, 0.0081880486, 0.0007702535],
-        [0.3175086974,   0.6396387998,   0.0042690889,   0.0262002878,   0.0017096448,   0.0000000000,  0.0008551576, 0.0017096448,  0.0059720416, 0.0021366372],
-        [0.0785790764,   0.0079928528,   0.9014183760,   0.0040037760,   0.0000000000,   0.0000000000,  0.00267081978, 0.0000000000, 0.0053350991, 0.0000000000],
-        [0.3039655976,   0.0195387097,   0.0040997551,   0.6582634673,   0.0026665967,   0.0000000000,   0.0008211866, 0.0000000000, 0.0083879112, 0.0022567758],
-        [0.1856456515,   0.0043699858,   0.0043699858,   0.0087224598,   0.7794338635,   0.0000000000,   0.0021871859, 0.0000000000, 0.0087224598, 0.0065484078],
-        [0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000,   1.0000000000,   0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
-        [0.0758317932,   0.0032701974,  0.0032701974,   0.0000000000,   0.0065305891,   0.0000000000,   0.9110972228, 0.0000000000, 0.0000000000, 0.0000000000],
-        [0.1257421323,   0.0000000000,   0.0000000000,   0.0393606248,   0.0000000000Mat,   0.0000000000,   0.0000000000, 0.8348972429, 0.0000000000, 0.0000000000],
-        [0.1203931080,   0.0051669358,   0.0023516490,   0.0065718465,   0.0007060277,   0.0002353934,   0.0004707359, 0.0002353934, 0.8636335171, 0.0002353934],
-        [0.2027418204,   0.0000000000,   0.0000000000,   0.0032480686,   0.0097152118,   0.0000000000,   0.0032480686, 0.0000000000, 0.0064864638, 0.7745603668]])
+        methods['probs_matrix'] = {
+            '<18': np.array([
+                [0.9953132643, 0.0001774295, 0.0000506971, 0.0016717604, 0.0011907588, 0.0000000000, 0.0000000000, 0.0013933117, 0.0001774295, 0.0000253488],
+                [0.5357744265, 0.3956817610, 0.0000000000, 0.0685438124, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.3779420208, 0.0357636560, 0.0000000000, 0.5646930063, 0.0000000000, 0.0000000000, 0.0000000000, 0.0216013169, 0.0000000000, 0.0000000000],
+                [0.3069791534, 0.0000000000, 0.0000000000, 0.0000000000, 0.6930208466, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.2002612324, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.7997387676, 0.0000000000, 0.0000000000],
+                [0.0525041055, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.9474958945, 0.0000000000],
+                [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000]]),
+            '18-20': np.array([
+                [0.9773550478, 0.0027107826, 0.0002856633, 0.0103783776, 0.0027107826, 0.0000000000, 0.0000000000, 0.0048461143, 0.0014275685, 0.0002856633],
+                [0.4549090811, 0.4753537374, 0.0000000000, 0.0463236223, 0.0000000000, 0.0000000000, 0.0000000000, 0.0234135593, 0.0000000000, 0.0000000000],
+                [0.1606987622, 0.0000000000, 0.8393012378, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.4388765348, 0.0196152254, 0.0000000000, 0.5217816111, 0.0098521372, 0.0000000000, 0.0000000000, 0.0049372457, 0.0049372457, 0.0000000000],
+                [0.1820343429, 0.0000000000, 0.0000000000, 0.0000000000, 0.8179656571, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.1700250992, 0.0000000000, 0.0000000000, 0.0196339461, 0.0000000000, 0.0000000000, 0.0000000000, 0.8103409547, 0.0000000000, 0.0000000000],
+                [0.3216043236, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.6783956764, 0.0000000000],
+                [0.4773308708, 0.0000000000, 0.0000000000, 0.0000000000, 0.4773308708, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0453382584]]),
+            '21-25': np.array([
+                [0.9580844982, 0.0080857514, 0.0005744238, 0.0183734782, 0.0024392127, 0.0000000000, 0.0001436343, 0.0107913587, 0.0010767964, 0.0004308462],
+                [0.3714750489, 0.5703031529, 0.0000000000, 0.0434765586, 0.0000000000, 0.0000000000, 0.0029538440, 0.0088375516, 0.0029538440, 0.0000000000],
+                [0.1079007053, 0.0445194312, 0.8250878450, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0224920185, 0.0000000000, 0.0000000000],
+                [0.3776516335, 0.0257873675, 0.0023699011, 0.5835323377, 0.0035529200, 0.0000000000, 0.0000000000, 0.0035529200, 0.0035529200, 0.0000000000],
+                [0.1895749834, 0.0094301857, 0.0000000000, 0.0000000000, 0.7540070663, 0.0000000000, 0.0000000000, 0.0187787895, 0.0094301857, 0.0187787895],
+                [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.4471746024, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.5528253976, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.1370415572, 0.0044750998, 0.0029854437, 0.0044750998, 0.0029854437, 0.0000000000, 0.0000000000, 0.8480373557, 0.0000000000, 0.0000000000],
+                [0.2375959813, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.7624040187, 0.0000000000],
+                [0.3342350643, 0.0000000000, 0.0000000000, 0.0000000000, 0.1826479897, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.4831169460]]),
+            '>25': np.array([
+                [0.9462131116, 0.0123838433, 0.0029627055, 0.0209275401, 0.0013426008, 0.0001399314, 0.0001399314, 0.0139046297, 0.0017618246, 0.0002238816],
+                [0.3030708445, 0.6588856456, 0.0053038550, 0.0210610879, 0.0021246451, 0.0000000000, 0.0015938721, 0.0053038550, 0.0021246451, 0.0005315497],
+                [0.0774565806, 0.0058280554, 0.9050475430, 0.0043739679, 0.0000000000, 0.0000000000, 0.0000000000, 0.0043739679, 0.0014599426, 0.0014599426],
+                [0.2745544442, 0.0173002840, 0.0047711954, 0.6910279110, 0.0019671434, 0.0000000000, 0.0000000000, 0.0072886657, 0.0028091184, 0.0002812379],
+                [0.1548546967, 0.0041688319, 0.0083217274, 0.0124587419, 0.8077054428, 0.0000000000, 0.0000000000, 0.0083217274, 0.0000000000, 0.0041688319],
+                [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.0939227324, 0.0000000000, 0.0000000000, 0.0480226276, 0.0000000000, 0.0000000000, 0.8580546400, 0.0000000000, 0.0000000000, 0.0000000000],
+                [0.1114787085, 0.0059115428, 0.0024929872, 0.0068420105, 0.0003119354, 0.0003119354, 0.0003119354, 0.8714034061, 0.0009355387, 0.0000000000],
+                [0.1060688610, 0.0025335150, 0.0025335150, 0.0025335150, 0.0050611449, 0.0000000000, 0.0000000000, 0.0050611449, 0.8762083044, 0.0000000000],
+                [0.1581337279, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0121394565, 0.8297268156]])
+        }
 
-    '''
+    else:
+        methods['probs_matrix'] = np.array([
+            [0.9675668047,   0.0067289610,   0.0013039766,   0.0131728314,   0.0016425499,   0.0000513672,  0.0005032939,  0.0000719133, 0.0081880486, 0.0007702535],
+            [0.3175086974,   0.6396387998,   0.0042690889,   0.0262002878,   0.0017096448,   0.0000000000,  0.0008551576,  0.0017096448, 0.0059720416, 0.0021366372],
+            [0.0785790764,   0.0079928528,   0.9014183760,   0.0040037760,   0.0000000000,   0.0000000000,  0.00267081978, 0.0000000000, 0.0053350991, 0.0000000000],
+            [0.3039655976,   0.0195387097,   0.0040997551,   0.6582634673,   0.0026665967,   0.0000000000,  0.0008211866,  0.0000000000, 0.0083879112, 0.0022567758],
+            [0.1856456515,   0.0043699858,   0.0043699858,   0.0087224598,   0.7794338635,   0.0000000000,  0.0021871859,  0.0000000000, 0.0087224598, 0.0065484078],
+            [0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000,   0.0000000000,   1.0000000000,  0.0000000000,  0.0000000000, 0.0000000000, 0.0000000000],
+            [0.0758317932,   0.0032701974,   0.0032701974,   0.0000000000,   0.0065305891,   0.0000000000,  0.9110972228,  0.0000000000, 0.0000000000, 0.0000000000],
+            [0.1257421323,   0.0000000000,   0.0000000000,   0.0393606248,   0.0000000000,   0.0000000000,  0.0000000000,  0.8348972429, 0.0000000000, 0.0000000000],
+            [0.1203931080,   0.0051669358,   0.0023516490,   0.0065718465,   0.0007060277,   0.0002353934,  0.0004707359,  0.0002353934, 0.8636335171, 0.0002353934],
+            [0.2027418204,   0.0000000000,   0.0000000000,   0.0032480686,   0.0097152118,   0.0000000000,  0.0032480686,  0.0000000000, 0.0064864638, 0.7745603668]])
 
-    methods['mcpr_years'] = np.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2024, 2026, 2028, 2030])
+    methods['mcpr_years'] = np.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
 
     # Projected out past 2020 with a 2% assumed growth rate for baseline scenarios
-    mcpr_rates = np.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20, 20.4, 21.2, 22.08, 22.97, 23.9, 24.87])
+    mcpr_rates = np.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20, 20.4])
 
-    methods['trend'] = mcpr_rates[-8] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
+    methods['trend'] = mcpr_rates[-3] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods
 
 
 def methods_postpartum():
-    '''Function to give probabilities postpartum.
+    '''
+    Function to give probabilities postpartum.
+
     Probabilities at postpartum month 1 are 1 month transitional probabilities for starting a method after delivery.
     Probabilities at postpartum month 6 are 5 month transitional probabilities for starting or changing methods over
     the first 6 months postpartum.
+
     Data from Senegal DHS contraceptive calendars, 2017 and 2018 combined
     '''
     methods_postpartum = {}
@@ -476,66 +426,58 @@ def methods_postpartum():
             [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000]])
     }
 
-    methods_postpartum['mcpr_years'] = np.array(
-        [1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020, 2022, 2024, 2026, 2028, 2030])
-
-    # Projected out past 2020 with a 2% assumed growth rate for baseline scenarios
-    mcpr_rates = np.array(
-        [0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20, 20.4, 21.2, 22.08, 22.97, 23.9, 24.87])  # Combintion of DHS data and Track20 data.
-
-    methods_postpartum['trend'] = mcpr_rates[
-                           -8] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
-
     return methods_postpartum
 
 
-def efficacy():
-    ''' From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
+def efficacy(disable=False):
+    '''
+    From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
     BTL failure rate from general published data
     Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
     '''
-
-
     method_efficacy = sc.odict({
-            "None":        0.0,
-            "Pill":        94.5,
-            "IUDs":        98.6,
-            "Injectable": 98.3,
-            "Condoms":     94.6,
-            "BTL":         99.5,
-            "Withdrawal":  86.6,
-            "Implants":    99.4,
-            "Other traditional": 86.1, # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-            "Other modern":   88, # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https://www.aafp.org/afp/2004/0815/p707.html
-            })
+        'None'              :  0.0,
+        'Pill'              : 94.5,
+        'IUDs'              : 98.6,
+        'Injectable'        : 98.3,
+        'Condoms'           : 94.6,
+        'BTL'               : 99.5,
+        'Withdrawal'        : 86.6,
+        'Implants'          : 99.4,
+        'Other traditional' : 86.1, # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+        'Other modern'      : 88.0, # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
+    })
 
-    # method_efficacy[:] = 100 # To disable contraception
+    if disable:
+        method_efficacy[:] = 100 # To disable contraception
 
     method_efficacy = method_efficacy[:]/100
 
     return method_efficacy
 
-def efficacy25():
-    ''' From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
+
+def efficacy25(disable=False):
+    '''
+    From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
     BTL failure rate from general published data
     Pooled efficacy rates for women ages 25+
     '''
 
-
     method_efficacy25 = sc.odict({
-            "None":        0.0,
-            "Pill":        91.7,
-            "IUDs":        96.8,
-            "Injectable":  96.5,
-            "Condoms":     91.1,
-            "BTL":         99.5,
-            "Rhythm":       75.4,
-            "Withdrawal":   77.3,
-            "Implants":     99.4,
-            "Other":       94.5,
-            })
+        'None'       :  0.0,
+        'Pill'       : 91.7,
+        'IUDs'       : 96.8,
+        'Injectable' : 96.5,
+        'Condoms'    : 91.1,
+        'BTL'        : 99.5,
+        'Rhythm'     : 75.4,
+        'Withdrawal' : 77.3,
+        'Implants'   : 99.4,
+        'Other'      : 94.5,
+    })
 
-    # method_efficacy25[:] = 100 # To disable contraception
+    if disable:
+        method_efficacy25[:] = 100 # To disable contraception
 
     method_efficacy25 = method_efficacy25[:]/100
 
@@ -543,15 +485,19 @@ def efficacy25():
 
 
 def barriers():
+    ''' Reasons for nonuse -- taken from DHS '''
+
     barriers = sc.odict({
-          'No need'   :  54.2,
-          'Opposition':  30.5,
-          'Knowledge' :   1.7,
-          'Access'    :   4.5,
-          'Health'    :  12.9,
-        })
+      'No need'   :  54.2,
+      'Opposition':  30.5,
+      'Knowledge' :   1.7,
+      'Access'    :   4.5,
+      'Health'    :  12.9,
+    })
+
     barriers[:] /= barriers[:].sum() # Ensure it adds to 1
     return barriers
+
 
 def sexual_debut():
     '''
@@ -562,8 +508,8 @@ def sexual_debut():
     Onset of sexual debut assumed to be linear from age 10 to first data point at age 15
     '''
 
-    sexual_debut = np.array([[0, 5, 10,  15, 18,    20,  22,    25,    50],
-                                [0, 0, 0, 9, 35.2, 52.3, 64.7,  77.1, 93.3]])
+    sexual_debut = np.array([[0, 5, 10,  15,   18,    20,   22,   25,   50],
+                             [0, 0,  0,   9, 35.2,  52.3, 64.7, 77.1, 93.3]])
 
     sexual_debut[1] /= 100  # Convert from percent to rate per woman
     debut_ages = sexual_debut[0]
@@ -571,6 +517,7 @@ def sexual_debut():
     debut_interp = debut_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
 
     return debut_interp
+
 
 def debut_age():
     '''
@@ -633,7 +580,7 @@ def sexual_activity():
     Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
     '''
 
-    sexually_active = np.array([[0, 5, 10, 15,  20,   25,   30,   35,   40,    45,   50],
+    sexually_active = np.array([[0, 5, 10,    15,   20,   25,   30,   35,   40,   45,   50],
                                 [0, 0,  0,  50.4, 55.9, 57.3, 60.8, 66.4, 67.5, 68.2, 68.2]])
 
     sexually_active[1] /= 100 # Convert from percent to rate per woman
@@ -652,10 +599,10 @@ def birth_spacing_preference():
     NOTE: spacing bins must be uniform!
     '''
     postpartum_spacing = np.array([
-        [0, 0.5],
-        [3, 0.5],
-        [6, 0.5],
-        [9, 0.5],
+        [0,  0.5],
+        [3,  0.5],
+        [6,  0.5],
+        [9,  0.5],
         [12, 0.8],
         [15, 1.2],
         [18, 5.0],
@@ -664,7 +611,8 @@ def birth_spacing_preference():
         [27, 9.0],
         [30, 9.0],
         [33, 9.0],
-        [36, 5.0]])
+        [36, 5.0],
+    ])
 
     # Calculate the intervals and check they're all the same
     intervals = np.diff(postpartum_spacing[:, 0])
@@ -688,16 +636,16 @@ def sexual_activity_postpartum():
     '''
 
     postpartum_sex = np.array([
-        [0, 0.104166667],
-        [1, 0.300000000],
-        [2, 0.383177570],
-        [3, 0.461538462],
-        [4, 0.476635514],
-        [5, 0.500000000],
-        [6, 0.565217391],
-        [7, 0.541666667],
-        [8, 0.547368421],
-        [9, 0.617391304],
+        [0,  0.104166667],
+        [1,  0.300000000],
+        [2,  0.383177570],
+        [3,  0.461538462],
+        [4,  0.476635514],
+        [5,  0.500000000],
+        [6,  0.565217391],
+        [7,  0.541666667],
+        [8,  0.547368421],
+        [9,  0.617391304],
         [10, 0.578947368],
         [11, 0.637254902],
         [12, 0.608247423],
@@ -723,13 +671,15 @@ def sexual_activity_postpartum():
         [32, 0.676470588],
         [33, 0.645161290],
         [34, 0.606557377],
-        [35, 0.644736842]])
+        [35, 0.644736842],
+    ])
 
     postpartum_activity = {}
     postpartum_activity['month'] = postpartum_sex[:, 0]
     postpartum_activity['percent_active'] = postpartum_sex[:, 1]
 
     return postpartum_activity
+
 
 def lactational_amenorrhea():
     '''
@@ -777,10 +727,11 @@ def miscarriage_rates():
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
     Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
     '''
-    miscarriage_rates = np.array([[0,   5, 10,      15,     20,     25,    30,    35,    40,    45,    50],
-                                  [1,   1, 0.569,  0.167,   0.112, 0.097,  0.108, 0.167, 0.332, 0.569, 0.569]])
+    miscarriage_rates = np.array([[0, 5,    10,     15,     20,    25,    30,    35,    40,    45,    50],
+                                  [1, 1, 0.569,  0.167,  0.112, 0.097, 0.108, 0.167, 0.332, 0.569, 0.569]])
     miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
     return miscarriage_interp
+
 
 def fecundity_ratio_nullip():
     '''
@@ -789,8 +740,8 @@ def fecundity_ratio_nullip():
     Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
     '''
 
-    fecundity_ratio_nullip = np.array([[  0,  5,  10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
-                                        [1,    1,  1,   1,   1,   1,    1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
+    fecundity_ratio_nullip = np.array([[ 0,  5, 10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
+                                        [1,  1,  1,    1,   1,   1,   1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
     fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
 
     return fecundity_nullip_interp
@@ -805,7 +756,7 @@ def exposure_correction_age():
     '''
 
     exposure_correction_age = np.array([[0, 5, 10, 12.5,  15,  18,  20,  25,  30,  35,  40,  45,  50],
-                                        [1, 1, 1,   1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
+                                        [1, 1,  1,    1,   1,   1,   1,   1,   1, 1, 1, 1, 1]])
     exposure_age_interp = data2interp(exposure_correction_age, fpd.spline_preg_ages)
 
     return exposure_age_interp
@@ -818,43 +769,41 @@ def exposure_correction_parity():
 
     Michelle note: Thinking about this in terms of child preferences/ideal number of children
     '''
-    exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
+    exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6,   7,   8,   9,   10,   11,    12,  20],
                                            [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10,  0.05, 0.01]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
-    #
-    # exposure_correction_parity = np.array([[   0,   1,   2,   3,   4,   5,   6,   7,   8,   9,   10,  11,   12,  20],
-    #                                        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,  1, 1]])
-    # exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
 
 
 def make_pars(configuration_file=None, defaults_file=None):
+    ''' Take all parameters and construct into a dictionary '''
+
+    # Simple parameters
     pars = sc.dcp(defaults)
 
     # Complicated parameters
-    pars['methods']            = methods()
-    pars['methods_postpartum'] = methods_postpartum()
-    pars['methods_postpartum_switch'] = {}
-    pars['age_pyramid']        = age_pyramid()
-    pars['age_mortality']      = age_mortality(bound=True)
-    pars['age_fecundity']      = female_age_fecundity(bound=True)  # Changed to age_fecundity for now from age_fertility for use with LEMOD
-    pars['method_efficacy']    = efficacy()
-    pars['method_efficacy25']  = efficacy25()
-    pars['barriers']           = barriers()
-    pars['maternal_mortality'] = maternal_mortality()
-    pars['infant_mortality']   = infant_mortality()
-    pars['stillbirth_rate']    = stillbirth()
-    pars['sexual_debut']       = sexual_debut()
-    pars['debut_age']          = debut_age()
-    pars['sexual_activity']    = sexual_activity() # Returns linear interpolation of annual sexual activity based on age
-    pars['pref_spacing']       = birth_spacing_preference()
+    pars['methods']                    = methods()
+    pars['methods_postpartum']         = methods_postpartum()
+    pars['methods_postpartum_switch']  = {}
+    pars['age_pyramid']                = age_pyramid()
+    pars['age_mortality']              = age_mortality(bound=True)
+    pars['age_fecundity']              = female_age_fecundity(bound=True)  # Changed to age_fecundity for now from age_fertility for use with LEMOD
+    pars['method_efficacy']            = efficacy()
+    pars['method_efficacy25']          = efficacy25()
+    pars['barriers']                   = barriers()
+    pars['maternal_mortality']         = maternal_mortality()
+    pars['infant_mortality']           = infant_mortality()
+    pars['stillbirth_rate']            = stillbirth()
+    pars['sexual_debut']               = sexual_debut()
+    pars['debut_age']                  = debut_age()
+    pars['sexual_activity']            = sexual_activity() # Returns linear interpolation of annual sexual activity based on age
+    pars['pref_spacing']               = birth_spacing_preference()
     pars['sexual_activity_postpartum'] = sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
     pars['lactational_amenorrhea']     = lactational_amenorrhea()
     pars['miscarriage_rates']          = miscarriage_rates()
     pars['fecundity_ratio_nullip']     = fecundity_ratio_nullip()
     pars['exposure_correction_age']    = exposure_correction_age()
     pars['exposure_correction_parity'] = exposure_correction_parity()
-    pars['exposure_correction'] = 1 # Overall exposure correction factor
 
     return pars
