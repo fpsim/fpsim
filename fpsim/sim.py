@@ -208,8 +208,7 @@ class People(fpb.BasePeople):
             for m in pp_methods['map'].values():
                 match_m    = (orig_methods == m)
                 match = match_m * match_postpartum_age
-                # this_method = self.filter(match)
-                old_method = self.method[match].copy()
+                old_method = self.method[match]
 
                 matrix = pp_switch[key]
                 choices = matrix[m]
