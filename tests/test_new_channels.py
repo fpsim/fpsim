@@ -8,7 +8,7 @@ import fpsim as fp
 import pytest
 
 
-def test_vital_dynamics():
+def test_channels():
     pars = fp.pars('test', n=500, end_year=2020) # CK: TODO: check why this test fails for small n
     exp = fp.ExperimentVerbose(pars)
     exp.run_model()
@@ -73,4 +73,4 @@ def test_vital_dynamics():
 if __name__ == '__main__':
 
     with sc.timer():
-        test_vital_dynamics()
+        test_channels()
