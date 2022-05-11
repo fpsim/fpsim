@@ -7,7 +7,7 @@ import fpsim as fp
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-serial   = 1 # Whether to run in serial (for debugging)
+serial   = 0 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
 
@@ -176,6 +176,7 @@ def test_scenarios(do_plot=do_plot):
     if do_plot:
         scens.plot_sims()
         scens.plot_scens()
+        scens.plot_cpr()
 
     return scens
 

@@ -117,6 +117,11 @@ class Scenarios(sc.prettyobj):
         return self.msim_merged.plot(plot_sims=True, **kwargs)
 
 
+    def plot_cpr(self, **kwargs):
+        ''' Plot the CPR with bands '''
+        return self.msim_merged.plot_cpr(**kwargs)
+
+
     def analyze_sims(self, start=None, end=None):
         ''' Take a list of sims that have different labels and count the births in each '''
 

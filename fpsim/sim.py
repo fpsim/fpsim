@@ -1252,7 +1252,7 @@ class Sim(fpb.BaseSim):
                         high *= 100
 
                 # Handle label
-                if label:
+                if label is not None:
                     plotlabel = label
                 else:
                     if new_fig: # It's a new figure, use the result label
@@ -1323,9 +1323,9 @@ class Sim(fpb.BaseSim):
 
         # Plot everything
         to_plot = sc.odict({
-            'mCPR - modern method users / all women 15-49':               sc.odict({'mcpr': 'Modern contraceptive prevalence rate'}),
-            'CPR - all method users / all women 15-49': sc.odict({'cpr': 'Contraceptive prevalence rate'}),
-            'ACPR - all method users / nonpregnant, sexually active women 15-49': sc.odict({'acpr': 'Alternative contraceptive prevalence rate'}),
+            'mCPR - modern method users \n all women 15-49':               sc.odict({'mcpr': 'Modern contraceptive prevalence rate'}),
+            'CPR - all method users \n all women 15-49': sc.odict({'cpr': 'Contraceptive prevalence rate'}),
+            'ACPR - all method users \n nonpregnant, sexually active women 15-49': sc.odict({'acpr': 'Alternative contraceptive prevalence rate'}),
             })
 
         ax = None
@@ -1345,7 +1345,7 @@ class Sim(fpb.BaseSim):
                     high *= 100
 
                 # Handle label
-                if label:
+                if label is not None:
                     plotlabel = label
                 else:
                     if new_fig: # It's a new figure, use the result label
@@ -1362,10 +1362,10 @@ class Sim(fpb.BaseSim):
             pl.ylabel('Percentage')
             pl.xlabel('Year')
             pl.title(title, fontweight='bold')
-
-        fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
+            fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
 
         # Ensure the figure actually renders or saves
+        sc.figlayout()
         if do_save:
             if isinstance(do_save, str):
                 filename = do_save # It's a string, assume it's a filename
@@ -1470,8 +1470,9 @@ class MultiSim(sc.prettyobj):
         axis = 1
 
         reskeys = list(base_sim.results.keys())
-        results['tfr_years'] = base_sim.results['tfr_years']
-        reskeys.remove('tfr_years') # Don't compute high/low for this
+        for key in ['t', 'tfr_years']: # Don't compute high/low for these
+            results[key] = base_sim.results[key]
+            reskeys.remove(key)
         for reskey in reskeys:
             if isinstance(base_sim.results[reskey], dict):
                 if return_raw:
@@ -1638,7 +1639,7 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, do_show=True, plot_sims=True, fig_args=None, plot_args=None, **kwargs):
+    def plot(self, do_show=True, plot_sims=True, fig_args=None, plot_args=None, plot_cpr=False, **kwargs):
         '''
         Plot the MultiSim
         '''
@@ -1665,46 +1666,21 @@ class MultiSim(sc.prettyobj):
                 color = colors[sim.label]
                 alpha = max(0.2, 1/np.sqrt(n_unique))
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
-                sim.plot(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args, **kwargs)
-            if do_show:
-                pl.show()
-            return fig
-        else:
-            return self.base_sim.plot(do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
-
-    def plot_cpr(self, do_show=True, plot_sims=True, fig_args=None, plot_args=None, **kwargs):
-        '''
-        Plot the MultiSim
-        '''
-        fig_args = sc.mergedicts(dict(figsize=(20,8)), fig_args)
-
-        if plot_sims:
-            fig = pl.figure(**fig_args)
-            do_show = kwargs.pop('do_show', True)
-            labels = sc.autolist()
-            labellist = sc.autolist() # TODO: shouldn't need this
-            for sim in self.sims: # Loop over and find unique labels
-                if sim.label not in labels:
-                    labels += sim.label
-                    labellist += sim.label
-                    label = sim.label
+                kw = dict(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
+                if plot_cpr:
+                    sim.plot_cpr(**kw, **kwargs)
                 else:
-                    labellist += ''
-                n_unique = len(np.unique(labels)) # How many unique sims there are
-            colors = sc.gridcolors(n_unique)
-            colors = {k:c for k,c in zip(labels, colors)}
-            for s,sim in enumerate(self.sims): # Note: produces duplicate legend entries
-                label = labellist[s]
-                n_unique = len(labels) # How many unique sims there are
-                color = colors[sim.label]
-                alpha = max(0.2, 1/np.sqrt(n_unique))
-                sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
-                sim.plot_cpr(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args, **kwargs)
+                    sim.plot(**kw, **kwargs)
             if do_show:
                 pl.show()
             return fig
         else:
             return self.base_sim.plot(do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
+
+
+    def plot_cpr(self, *args, **kwargs):
+        ''' Plot the contraceptive prevalence rate '''
+        return self.plot(*args, **kwargs, plot_cpr=True)
 
 
     def plot_method_mix(self, n_sims=10, do_show=False, do_save=True, filepath="method_mix.png"):
@@ -1712,14 +1688,10 @@ class MultiSim(sc.prettyobj):
         Plots the average method mix for n_sims runs
 
         Args:
-            n_sims (int):
-                The number of sims you want to run to calculate average mix and standard deviation.
-            do_show (bool):
-                Whether or not the user wants to show the output plot.
-            do_save (bool):
-                Whether or not the user wants to save the plot to filepath.
-            filepath (str):
-                The name of the path to output the plot.
+            n_sims   (int): The number of sims you want to run to calculate average mix and standard deviation.
+            do_show (bool): Whether or not the user wants to show the output plot.
+            do_save (bool): Whether or not the user wants to save the plot to filepath.
+            filepath (str): The name of the path to output the plot.
         """
         method_table = {"sim" : [], "sim_index": [], "proportion": [], "method": []}
 
