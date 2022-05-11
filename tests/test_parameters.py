@@ -48,9 +48,8 @@ def test_null(do_plot=do_plot):
 def test_method_timestep():
     sc.heading('Test sim speed')
 
-    p = dict(n=100, verbose=0, start_year=2000, end_year=2010)
-    pars1 = fp.pars(method_timestep=1, **p)
-    pars2 = fp.pars(method_timestep=6, **p)
+    pars1 = fp.pars(location='test', method_timestep=1)
+    pars2 = fp.pars(location='test', method_timestep=6)
     sim1 = fp.Sim(pars1)
     sim2 = fp.Sim(pars2)
 

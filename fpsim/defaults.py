@@ -15,6 +15,14 @@ def pars(location=None, **kwargs):
     if not location:
         location = 'default'
 
+    # Set test parameters
+    if location == 'test':
+        location = 'default'
+        kwargs.setdefault('n', 100)
+        kwargs.setdefault('verbose', 0)
+        kwargs.setdefault('start_year', 2000)
+        kwargs.setdefault('end_year', 2010)
+
     # Define valid locations
     if location in ['senegal', 'default']:
         pars = fpdata.senegal.make_pars()
