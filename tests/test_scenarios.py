@@ -7,10 +7,10 @@ import fpsim as fp
 
 # Global settings
 p = sc.objdict() # Custom parameters
-p.n          = 2000 # Population size
+p.n          = 10000 # Population size
 p.start_year = 2000 # Start year of sims
-p.end_year   = 2030 # End year of sims
-p.verbose    = 0 # Verbosity to use
+p.end_year   = 2050 # End year of sims
+p.verbose    = 0.1 # Verbosity to use
 
 int_year = 2002 # Year to start the interventions
 serial   = False # Whether to run in serial (for debugging)

@@ -245,7 +245,7 @@ class update_methods(fpi.Intervention):
                 Changes the specified uptake for all individuals that are in the first 6 months postpartum.
     """
 
-    def __init__(self, year, scen, matrix=None, verbose=False):
+    def __init__(self, year, scen, matrix=None, verbose=True):
         """
         Initializes self.year/scen/matrix from parameters
         """
