@@ -1117,12 +1117,13 @@ class Sim(fpb.BaseSim):
 
                 tfr = 0
                 for key in fpd.age_bin_mapping.keys():
-                        age_bin_births_year = pl.sum(self.results['total_births_'+key][start_index:stop_index])
-                        age_bin_total_women_year = self.results['total_women_'+key][stop_index]
-                        self.results['asfr'][key].append((age_bin_births_year / age_bin_total_women_year)*1000)
-                        tfr += ((self.results['asfr'][key][-1])/1000)
+                    age_bin_births_year = pl.sum(self.results['total_births_'+key][start_index:stop_index])
+                    age_bin_total_women_year = self.results['total_women_'+key][stop_index]
+                    age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
+                    self.results['asfr'][key].append(age_bin_births_per_woman*1000)
+                    tfr += age_bin_births_per_woman # CK: TODO: check if this is right
 
-                self.results['tfr_rates'].append(tfr*5)
+                self.results['tfr_rates'].append(tfr*5) # CK: TODO: why *5?
 
             if self.test_mode:
                 self.log_daily_totals()
