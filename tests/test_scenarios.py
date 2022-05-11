@@ -159,7 +159,7 @@ def test_scenarios(do_plot=do_plot):
 
 
     #%% Create sims
-    scens = fp.Scenarios(location='test', repeats=2, scen_year=int_year)
+    scens = fp.Scenarios(location='test', n=200, repeats=2, scen_year=int_year)
     scens.add_scen(label='Baseline')
     scens.add_scen(uptake_scen1)
     scens.add_scen(uptake_scen2)

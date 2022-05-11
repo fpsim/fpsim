@@ -21,12 +21,11 @@ class Scenarios(sc.prettyobj):
     Run different intervention scenarios
     '''
 
-    def __init__(self, pars=None, repeats=None, scen_year=None, scens=None, location=None):
-        self.pars = pars
+    def __init__(self, pars=None, repeats=None, scen_year=None, scens=None, **kwargs):
+        self.pars = sc.mergedicts(pars, kwargs)
         self.repeats = repeats
         self.scen_year = scen_year
         self.scens = sc.dcp(sc.tolist(scens))
-        self.location = location
         self.simslist = []
         self.msim = None
         self.msims = []
@@ -52,8 +51,7 @@ class Scenarios(sc.prettyobj):
             raise ValueError(errormsg)
         sims = sc.autolist()
         for i in range(self.repeats):
-            pars = sc.mergedicts(fpd.pars(self.location), self.pars, _copy=True)
-            pars.setdefault('seed', 0)
+            pars = sc.mergedicts(fpd.pars(self.pars.get('location')), self.pars, _copy=True)
             pars.update(kwargs)
             pars['seed'] += i
             sim = fp.Sim(pars=pars)
