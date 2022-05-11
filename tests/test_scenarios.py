@@ -6,12 +6,6 @@ import sciris as sc
 import fpsim as fp
 
 # Global settings
-p = sc.objdict() # Custom parameters
-p.n          = 500 # Population size
-p.start_year = 2000 # Start year of sims
-p.end_year   = 2010 # End year of sims
-p.verbose    = 0 # Verbosity to use
-
 int_year = 2002 # Year to start the interventions
 serial   = False # Whether to run in serial (for debugging)
 do_plot  = True # Whether to do plotting in interactive mode
@@ -22,7 +16,7 @@ def make_sims(interventions):
     ''' Make simulations with paticular interventions '''
     simlist = sc.autolist()
     for intv in interventions:
-        pars = fp.pars(interventions=intv, **p)
+        pars = fp.pars('test', interventions=intv)
         simlist += fp.Sim(pars=pars)
     return simlist
 
@@ -165,7 +159,7 @@ def test_scenarios(do_plot=do_plot):
 
 
     #%% Create sims
-    scens = fp.Scenarios(pars=p, repeats=2, scen_year=int_year)
+    scens = fp.Scenarios(location='test', repeats=2, scen_year=int_year)
     scens.add_scen(label='Baseline')
     scens.add_scen(uptake_scen1)
     scens.add_scen(uptake_scen2)
