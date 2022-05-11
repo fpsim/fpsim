@@ -12,6 +12,9 @@ from . import interventions as fpi
 
 __all__ = ['Scenarios','update_methods']
 
+# Define allowable keys to select all (all ages, all methods, etc)
+none_all_keys = [None, 'all', ':', [None], ['all'], [':']]
+
 
 class Scenarios(sc.prettyobj):
     '''
@@ -196,7 +199,7 @@ def key2ind(sim, key):
     Take a method key and convert to an int, e.g. 'Condoms' → 7
     """
     ind = key
-    if ind in [None, 'all']:
+    if ind in none_all_keys:
         ind = slice(None) # This is equivalent to ":" in matrix[:,:]
     elif isinstance(ind, str):
         ind = sim.pars['methods']['map'][key]
@@ -288,7 +291,7 @@ class update_methods(fpi.Intervention):
                     factor = entry.pop('factor', None)
                     value  = entry.pop('value', None)
                     keys   = entry.pop('keys', None)
-                    if keys is None:
+                    if keys in none_all_keys:
                         keys = sim.pars['methods']['probs_matrix'].keys()
 
                     for k in keys:

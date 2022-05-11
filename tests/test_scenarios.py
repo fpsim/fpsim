@@ -7,8 +7,8 @@ import fpsim as fp
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-serial   = False # Whether to run in serial (for debugging)
-do_plot  = True # Whether to do plotting in interactive mode
+serial   = 1 # Whether to run in serial (for debugging)
+do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
 
 
@@ -150,7 +150,7 @@ def test_scenarios(do_plot=do_plot):
                 source = 'None', # Source method, 'all' for all methods
                 dest   = 'Injectables', # Destination
                 factor = 5, # Factor by which to multiply existing probability
-                keys   = ['>25'], # Which age keys to modify -- if not specified, all
+                keys   = ['all'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
