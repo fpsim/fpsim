@@ -114,20 +114,20 @@ class People(fpb.BasePeople):
             switching_events_matrix_ages[key] = np.zeros((m, m), dtype=int)
 
         # Method switching depends both on agent age and also on their current method, so we need to loop over both
-        for key,(age_low, age_high) in fpd.method_age_mapping.items():
-            match_low  = (self.age >= age_low)
-            match_high = (self.age <  age_high)
-            match_low_high = match_low * match_high
-            for m in methods['map'].values():
-                match_m = (orig_methods == m)
-                match = match_m * match_low_high
-                old_method = self.method[match].copy()
+        for m in methods['map'].values():
+            for key,(age_low, age_high) in fpd.method_age_mapping.items():
+                match_m    = (orig_methods == m)
+                match_low  = (self.age >= age_low)
+                match_high = (self.age <  age_high)
+                match = match_m * match_low * match_high
+                this_method = self.filter(match)
+                old_method = sc.dcp(this_method.method)
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
                 choices = choices/choices.sum()
-                new_methods = fpu.n_multinomial(choices, match.sum())
-                self.method[match] = new_methods
+                new_methods = fpu.n_multinomial(choices, len(this_method))
+                this_method.method = np.array(new_methods, dtype=np.int64)
 
                 for i in range(len(old_method)):
                     x = old_method[i]
@@ -175,7 +175,7 @@ class People(fpb.BasePeople):
                         self.parity >= self.pars['high_parity']))
             this_method = self.filter(match)
             this_method_high_parity = self.filter(match_high_parity)
-            old_method = this_method.method.copy()
+            old_method = sc.dcp(this_method.method)
             old_method_high_parity = sc.dcp(this_method_high_parity.method)
 
             choices = pp_methods[key]
@@ -201,20 +201,19 @@ class People(fpb.BasePeople):
         # At 6 months, choice is by previous method and by age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
         # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
-        for key,(age_low, age_high) in fpd.method_age_mapping.items():
-            match_low  = (self.age >= age_low)
-            match_high = (self.age <  age_high)
-            match_postpartum_age = self.postpartum * postpartum6 * match_low * match_high
-            for m in pp_methods['map'].values():
+        for m in pp_methods['map'].values():
+            for key,(age_low, age_high) in fpd.method_age_mapping.items():
                 match_m    = (orig_methods == m)
-                match = match_m * match_postpartum_age
-                # this_method = self.filter(match)
-                old_method = self.method[match]
+                match_low  = (self.age >= age_low)
+                match_high = (self.age <  age_high)
+                match = match_m * self.postpartum * postpartum6 * match_low * match_high
+                this_method = self.filter(match)
+                old_method = this_method.method
 
                 matrix = pp_switch[key]
                 choices = matrix[m]
-                new_methods = fpu.n_multinomial(choices, match.sum())
-                self.method[match] = new_methods
+                new_methods = fpu.n_multinomial(choices, len(this_method))
+                this_method.method = np.array(new_methods, dtype=np.int64)
                 for i in range(len(old_method)):
                     x = old_method[i]
                     y = new_methods[i]
@@ -512,10 +511,9 @@ class People(fpb.BasePeople):
         #Calculate total births
         self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
-        live_age = live.age
         for key, (age_low, age_high) in fpd.age_bin_mapping.items():
-            birth_bins = np.sum((live_age >= age_low) * (live_age < age_high))
-            self.step_results['birth_bins'][key] += birth_bins
+            this_age_bin = live.filter((live.age >= age_low) * (live.age < age_high))
+            self.step_results['birth_bins'][key] += len(this_age_bin)
 
         # Check mortality
         live.maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
@@ -564,17 +562,17 @@ class People(fpb.BasePeople):
     def update_contraception(self):
         '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
 
-        if not (self.i % self.pars['method_timestep']): # Allow skipping timesteps
-            postpartum = (self.postpartum) * (self.postpartum_dur <= 6)
-            pp = self.filter(postpartum)
-            non_pp = self.filter(~postpartum)
+        postpartum = (self.postpartum) * (self.postpartum_dur <= 6)
+        pp = self.filter(postpartum)
+        non_pp = self.filter(~postpartum)
 
-            pp.get_method_postpartum()
+        pp.get_method_postpartum()
 
-            age_diff = non_pp.ceil_age - non_pp.age
-            whole_years = ((age_diff < (1/fpd.mpy)) * (age_diff > 0))
-            birthdays = non_pp.filter(whole_years)
-            birthdays.get_method()
+        age_diff = non_pp.ceil_age - non_pp.age
+        whole_years = ((age_diff < (1/fpd.mpy)) * (age_diff > 0))
+        birthdays = non_pp.filter(whole_years)
+        birthdays.get_method()
+        #self.step_results['birthday_fraction'] = len(birthdays)/len(non_pp) # Debugs and tracks fraction of birthday months, remove comment if debugging
 
         return
 
@@ -708,7 +706,7 @@ class People(fpb.BasePeople):
         self.check_mcpr()
         self.check_cpr()
         self.check_acpr()
-        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity'])) # CK: TODO: remove hardcoding
+        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
 
         # Age person at end of timestep after tabulating results
         alive_now.age_person()  # Important to keep this here so birth spacing gets recorded accurately
@@ -755,7 +753,7 @@ class Sim(fpb.BaseSim):
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
-        self.results['tfr_years'] = [] # CK: TODO: refactor into loop with keys
+        self.results['tfr_years'] = []
         self.results['tfr_rates'] = []
         self.results['pop_size'] = []
         self.results['mcpr_by_year'] = []
@@ -1001,7 +999,6 @@ class Sim(fpb.BaseSim):
                 self.interventions[i](self)
 
             # Update the people
-            self.people.i = self.i
             self.people.t = self.t
             step_results, step_results_switching = self.people.update()
             r = fpu.dict2obj(step_results)
@@ -1145,10 +1142,10 @@ class Sim(fpb.BaseSim):
         self.results['cum_infant_deaths_by_year']   = np.cumsum(self.results['infant_deaths_over_year'])
         self.results['cum_live_births_by_year']     = np.cumsum(self.results['live_births_over_year'])
 
-        if verbose:
-            print(f'Final population size: {self.n}.')
-            elapsed = T.toc(output=True)
-            print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
+        print(f'Final population size: {self.n}.')
+
+        elapsed = T.toc(output=True)
+        print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
 
         return self.results
 
