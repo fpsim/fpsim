@@ -1,12 +1,8 @@
 import pytest
 import fpsim as fp
-
-import json
 import sciris as sc
 import os
-from pathlib import Path
 import unittest
-import sys
 
 @pytest.mark.skip("Need to refactor test parameters to be within the test suite")
 class TestFertility(unittest.TestCase):
@@ -17,15 +13,10 @@ class TestFertility(unittest.TestCase):
         self.log_lines = []
         self.default_seeds = [1] # Add more when debugging
 
-        # suppresses unnecessary warning statements to increase runtime
-        sys.stdout = open(os.devnull, 'w')
-        pass
-
     def tearDown(self):
         if self.is_debugging:
-            with open(f'DEBUG_log_{self.testname}.json', 'w') as outfile:
-                log = {'lines': self.log_lines}
-                json.dump(log, outfile, indent=4, sort_keys=True)
+            log = {'lines': self.log_lines}
+            sc.savejson(f'DEBUG_log_{self.testname}.json', log, indent=4, sort_keys=True)
         else:
             self.cleanup_debug_files()
 
@@ -35,7 +26,7 @@ class TestFertility(unittest.TestCase):
 
     def cleanup_debug_files(self):
         for f in self.output_files:
-            if Path(f).exists():
+            if sc.path(f).exists():
                 os.remove(f)
 
     def sweep_seed(self, seeds=None, pars=fp.pars(), # CK: this is a mutable object so shouldn't be defined here
@@ -134,7 +125,7 @@ class TestFertility(unittest.TestCase):
         nullip_rates = sorted(nullip_rates)
         self.verify_increasing_channel(
             parameter_name='fecundity_ratio_nullip',
-            parameter_method=sp.default_fecundity_ratio_nullip,
+            parameter_method=fp.data.senegal.fecundity_ratio_nullip,
             parameter_test_values=nullip_rates,
             parameters=parameters,
             seeds=seeds,
@@ -157,7 +148,7 @@ class TestFertility(unittest.TestCase):
         self.verify_increasing_channel(
             parameter_name='sexual_activity',
             parameter_test_values=sex_rates,
-            parameter_method=sp.default_sexual_activity,
+            parameter_method=fp.data.senegal.sexual_activity,
             parameters=parameters,
             channel_name=channel_name,
             seeds=seeds,
@@ -225,7 +216,7 @@ class TestFertility(unittest.TestCase):
         self.verify_increasing_channel(
             parameter_name='exposure_correction_age',
             parameter_test_values=ec_ages,
-            parameter_method=sp.default_exposure_correction_age,
+            parameter_method=fp.data.senegal.exposure_correction_age,
             parameters=parameters,
             channel_name=channel_name,
             seeds=seeds,
@@ -247,7 +238,7 @@ class TestFertility(unittest.TestCase):
         self.verify_increasing_channel(
             parameter_name='maternal_mortality',
             parameter_test_values=maternal_mortality_multipliers,
-            parameter_method=sp.default_maternal_mortality,
+            parameter_method=fp.data.senegal.maternal_mortality,
             parameters=parameters,
             seeds=seeds,
             has_zero_baseline=True,
@@ -270,7 +261,7 @@ class TestFertility(unittest.TestCase):
             parameter_name='infant_mortality',
             parameter_test_values=infant_mortality_rates,
             parameters=parameters,
-            parameter_method=sp.default_infant_mortality,
+            parameter_method=fp.data.senegal.infant_mortality,
             seeds=seeds,
             has_zero_baseline=True,
             channel_name=channel_name
@@ -279,7 +270,7 @@ class TestFertility(unittest.TestCase):
     def test_sweep_sexual_activity(self):
         """as you increase sexual activity, births should increase"""
         self.is_debugging = False
-        pars = sp.make_pars()
+        pars = fp.pars('test')
         sex_rates = [30.0, 60.0, 120.0]
         seeds = self.default_seeds
         self.sweep_sexual_activity(
@@ -291,9 +282,9 @@ class TestFertility(unittest.TestCase):
     def test_sweep_nullip_ratio_array(self):
         """as you increase nulliparous fecundity, you should increase births"""
         self.is_debugging = False
-        pars = sp.make_pars()
-        pars['sexual_activity'] = sp.default_sexual_activity(320.0)
-        pars['lactational_amenorrhea'] = sp.default_lactational_amenorrhea(0.0)
+        pars = fp.pars('test')
+        # pars['sexual_activity'] = fp.data.senegal.sexual_activity(320.0)
+        # pars['lactational_amenorrhea'] = fp.data.senegal.lactational_amenorrhea(0.0)
         nullip_ratios = [0.1, 1.0, 4.0]
         if self.is_debugging:
             nullip_ratios = [0.1, 0.5, 1.0, 2.0, 4.0]
@@ -307,7 +298,7 @@ class TestFertility(unittest.TestCase):
     def test_sweep_exposure_correction(self):
         """as you increase exposure correction, births should increase"""
         self.is_debugging = True
-        pars = sp.make_pars()
+        pars = fp.pars('test')
         exposure_corrections = [0.1, 1.0, 4.0]
         if self.is_debugging:
             exposure_corrections = [0.1, 0.5, 1.0, 2.0, 4.0]
@@ -321,7 +312,7 @@ class TestFertility(unittest.TestCase):
     def test_sweep_ec_age(self):
         """as you increase exposure correction by age, births should increase"""
         self.is_debugging = False
-        pars = sp.make_pars()
+        pars = fp.pars('test')
         exposure_corrections = [0.0, 1.0, 2.0]
         if self.is_debugging:
             exposure_corrections = [0.0, 0.1, 0.5, 1.0, 2.0]
@@ -335,9 +326,9 @@ class TestFertility(unittest.TestCase):
     def test_sweep_abortion(self):
         """as you decrease abortion probability, number of births should increase"""
         self.is_debugging = False
-        pars = sp.make_pars()
-        pars['sexual_activity'] = sp.default_sexual_activity(320.0)
-        pars['lactational_amenorrhea'] = sp.default_lactational_amenorrhea(0.0)
+        pars = fp.pars('test')
+        # pars['sexual_activity'] = fp.data.senegal.sexual_activity(320.0)
+        # pars['lactational_amenorrhea'] = fp.data.senegal.lactational_amenorrhea(0.0)
         abortion_probs = [1.0, 0.25, 0.0]
         if self.is_debugging:
             abortion_probs = [1.0, 0.5, 0.25, 0.1, 0.0]
@@ -351,8 +342,8 @@ class TestFertility(unittest.TestCase):
     def test_sweep_maternal_mortality(self):
         """as you increase maternal mortality, maternal deaths should increase"""
         self.is_debugging = False
-        pars = sp.make_pars()
-        pars['sexual_activity'] = sp.default_sexual_activity(320.0) # many conceptions
+        pars = fp.pars('test')
+        # pars['sexual_activity'] = fp.data.senegal.sexual_activity(320.0) # many conceptions
         multipliers = [10, 100] # default is 2/1000. Increased for observability
         if self.is_debugging:
             multipliers = [10, 50, 100, 200] # default is 2/1000
@@ -362,8 +353,8 @@ class TestFertility(unittest.TestCase):
     def test_sweep_infant_mortality(self):
         """as you increase infant mortality, infant deaths should increase"""
         self.is_debugging = False
-        pars = sp.make_pars()
-        pars['sexual_activity'] = sp.default_sexual_activity(320.0) # many conceptions
+        pars = fp.pars('test')
+        # pars['sexual_activity'] = fp.data.senegal.sexual_activity(320.0) # many conceptions
         infant_mortality_rates = [0, 50, 200]
         if self.is_debugging:
             infant_mortality_rates = [0, 10, 50, 100, 200]

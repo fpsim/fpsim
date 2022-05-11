@@ -17,7 +17,7 @@ def test_multisim(do_plot=do_plot):
     sims = []
     for i in range(3):
         exposure = 0.5 + 0.5*i # Run a sweep over exposure
-        pars = fp.pars(n=100, verbose=0, exposure_correction=exposure)
+        pars = fp.pars('test', exposure_correction=exposure)
         sim = fp.Sim(pars=pars, label=f'Exposure {exposure}')
         sims.append(sim)
 
