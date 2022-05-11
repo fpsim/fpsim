@@ -54,7 +54,7 @@ class People(fpb.BasePeople):
         self.barrier  = arr(n, d['barrier'])  # Reason for non-use
         self.alive    = arr(n, d['alive'])
         self.pregnant = arr(n, d['pregnant'])
-        self.fertile = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
+        self.fertile  = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
 
         # #Socio-demographic
         # self.wealth   = arr(n, d['wealth'])
@@ -62,29 +62,30 @@ class People(fpb.BasePeople):
         # self.urban    = arr(n, d['urban'])
 
         # Sexual and reproductive history
-        self.sexually_active = arr(n, d['sexually_active'])
-        self.sexual_debut    = arr(n, d['sexual_debut'])
+        self.sexually_active  = arr(n, d['sexually_active'])
+        self.sexual_debut     = arr(n, d['sexual_debut'])
         self.sexual_debut_age = arr(n, np.float64(d['sexual_debut_age'])) # Age at first sexual debut in years, If not debuted, -1
         self.fated_debut      = arr(n, np.float64(d['debut_age']))
         self.first_birth_age  = arr(n, np.float64(d['first_birth_age'])) # Age at first birth.  If no births, -1
-        self.lactating       = arr(n, d['lactating'])
-        self.gestation       = arr(n, d['gestation'])
-        self.preg_dur        = arr(n, d['preg_dur'])
-        self.stillbirth      = arr(n, d['stillbirth']) # Number of stillbirths
-        self.miscarriage     = arr(n, d['miscarriage']) # Number of miscarriages
-        self.abortion        = arr(n, d['abortion']) # Number of abortions
-        self.postpartum      = arr(n, d['postpartum'])
-        self.mothers         = arr(n, d['mothers'])
+        self.lactating        = arr(n, d['lactating'])
+        self.gestation        = arr(n, d['gestation'])
+        self.preg_dur         = arr(n, d['preg_dur'])
+        self.stillbirth       = arr(n, d['stillbirth']) # Number of stillbirths
+        self.miscarriage      = arr(n, d['miscarriage']) # Number of miscarriages
+        self.abortion         = arr(n, d['abortion']) # Number of abortions
+        self.postpartum       = arr(n, d['postpartum'])
+        self.mothers          = arr(n, d['mothers'])
 
-        self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
-        self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
-        self.children        = arr(n, []) # Indices of children -- list of lists
-        self.dobs            = arr(n, []) # Dates of births -- list of lists
-        self.still_dates     = arr(n, []) # Dates of stillbirths -- list of lists
-        self.miscarriage_dates = arr(n, []) # Dates of miscarriages -- list of lists
-        self.abortion_dates = arr(n, [])  # Dates of abortions -- list of lists
-        self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
+        self.postpartum_dur       = arr(n, d['postpartum_dur']) # Tracks # months postpartum
+        self.lam                  = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
+        self.breastfeed_dur       = arr(n, d['breastfeed_dur'])
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
+
+        self.children          = arr(n, []) # Indices of children -- list of lists
+        self.dobs              = arr(n, []) # Dates of births -- list of lists
+        self.still_dates       = arr(n, []) # Dates of stillbirths -- list of lists
+        self.miscarriage_dates = arr(n, []) # Dates of miscarriages -- list of lists
+        self.abortion_dates    = arr(n, []) # Dates of abortions -- list of lists
 
         # Fecundity variation
         fv = [self.pars['fecundity_variation_low'], self.pars['fecundity_variation_high']]
@@ -107,7 +108,7 @@ class People(fpb.BasePeople):
         '''
         methods = self.pars['methods']
         orig_methods = self.method
-        m = len(self.pars['methods']['map'])
+        m = len(methods['map'])
         switching_events_matrix = np.zeros((m, m), dtype=int)
         switching_events_matrix_ages = {}
         for key in fpd.method_age_mapping.keys():
@@ -124,7 +125,7 @@ class People(fpb.BasePeople):
                 this_method = self.filter(match)
                 old_method = this_method.method.copy()
 
-                matrix = self.pars['methods'][key]
+                matrix = methods['probs'][key]
                 choices = matrix[m]
                 choices = choices/choices.sum()
                 new_methods = fpu.n_multinomial(choices, match.sum())
@@ -153,11 +154,12 @@ class People(fpb.BasePeople):
         # Probability of initiating a postpartum method at 0-3 months postpartum
         # Transitional probabilities are for the first 3 month time period after delivery from DHS data
 
-        pp_methods = self.pars['methods_postpartum']
-        pp_switch  = self.pars['methods_postpartum_switch']
+        methods_pp = self.pars['methods_pp']
+        pp_switch  = self.pars['methods_pp_switch']
+        methods_map = self.pars['methods']['map']
         orig_methods = self.method
 
-        m = len(self.pars['methods']['map'])
+        m = len(methods_map)
         switching_events_matrix = np.zeros((m, m), dtype=int)
         switching_events_matrix_ages = {}
         for key in fpd.method_age_mapping.keys():
@@ -179,7 +181,7 @@ class People(fpb.BasePeople):
             old_method = this_method.method.copy()
             old_method_high_parity = sc.dcp(this_method_high_parity.method)
 
-            choices = pp_methods[key]
+            choices = methods_pp[key]
             choices_high_parity = sc.dcp(choices)
             choices_high_parity[0] *= self.pars['high_parity_nonuse_correction']
             choices_high_parity = choices_high_parity / choices_high_parity.sum()
@@ -206,7 +208,7 @@ class People(fpb.BasePeople):
             match_low  = (self.age >= age_low)
             match_high = (self.age <  age_high)
             match_postpartum_age = self.postpartum * postpartum6 * match_low * match_high
-            for m in pp_methods['map'].values():
+            for m in methods_map.values():
                 match_m    = (orig_methods == m)
                 match = match_m * match_postpartum_age
                 this_method = self.filter(match)
@@ -232,9 +234,9 @@ class People(fpb.BasePeople):
     def check_mortality(self):
         '''Decide if person dies at a timestep'''
 
-        timestep = self.pars['timestep']
+        timestep  = self.pars['timestep']
         trend_val = self.pars['mortality_probs']['gen_trend']
-        age_mort = self.pars['age_mortality']
+        age_mort  = self.pars['age_mortality']
         f_spline = age_mort['f_spline'] * trend_val
         m_spline = age_mort['m_spline'] * trend_val
         over_one = self.filter(self.age >= 1)
@@ -305,17 +307,17 @@ class People(fpb.BasePeople):
         '''
         Decide if person (female) becomes pregnant at a timestep.
         '''
-        all_ppl = self.unfilter() # For complex array operations
-        active = self.filter(self.sexually_active * self.fertile)
-        lam         = active.filter(active.lam)
-        nonlam      = active.filter(~active.lam)
+        all_ppl    = self.unfilter() # For complex array operations
+        active     = self.filter(self.sexually_active * self.fertile)
+        lam        = active.filter(active.lam)
+        nonlam     = active.filter(~active.lam)
         preg_probs = np.zeros(len(all_ppl)) # Use full array
 
         # Find monthly probability of pregnancy based on fecundity and any use of contraception including LAM - from data
-        preg_eval_lam     = self.pars['age_fecundity'][lam.int_age_clip] * lam.personal_fecundity
-        preg_eval_nonlam  = self.pars['age_fecundity'][nonlam.int_age_clip] * nonlam.personal_fecundity
-        method_eff  = self.pars['method_efficacy'][nonlam.method]
-        lam_eff     = self.pars['LAM_efficacy']
+        preg_eval_lam    = self.pars['age_fecundity'][lam.int_age_clip] * lam.personal_fecundity
+        preg_eval_nonlam = self.pars['age_fecundity'][nonlam.int_age_clip] * nonlam.personal_fecundity
+        method_eff       = self.pars['method_efficacy'][nonlam.method]
+        lam_eff          = self.pars['LAM_efficacy']
 
         lam_probs    = fpu.annprob2ts((1-lam_eff)*preg_eval_lam,       self.pars['timestep'])
         nonlam_probs = fpu.annprob2ts((1-method_eff)*preg_eval_nonlam, self.pars['timestep'])
@@ -738,7 +740,7 @@ class Sim(fpb.BaseSim):
 
     def initialize(self, force=False):
         if force or not self.initialized:
-            fpu.set_seed(self.pars['seed'])
+            fpu.set_seed(self['seed'])
             self.init_results()
             self.init_people()
             self.interventions = {}  # dictionary for possible interventions to add to the sim
@@ -746,7 +748,7 @@ class Sim(fpb.BaseSim):
 
 
     def init_results(self):
-        m = len(self.pars['methods']['map'])
+        m = len(self['methods']['map'])
         resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths',
                        'cum_maternal_deaths', 'cum_infant_deaths', 'on_methods_mcpr', 'no_methods_mcpr', 'on_methods_cpr', 'no_methods_cpr', 'on_methods_acpr',
                        'no_methods_acpr', 'mcpr', 'cpr', 'acpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
@@ -800,7 +802,7 @@ class Sim(fpb.BaseSim):
 
     def get_age_sex(self, n):
         ''' For an ex nihilo person, figure out if they are male and female, and how old '''
-        pyramid = self.pars['age_pyramid']
+        pyramid = self['age_pyramid']
         self.m_frac = pyramid[:,1].sum() / pyramid[:,1:3].sum()
 
         ages = np.zeros(n)
@@ -809,7 +811,7 @@ class Sim(fpb.BaseSim):
         m_inds = sc.findinds(sexes == 1)
 
         age_data_min   = pyramid[:,0]
-        age_data_max   = np.append(pyramid[1:,0], self.pars['max_age'])
+        age_data_max   = np.append(pyramid[1:,0], self['max_age'])
         age_data_range = age_data_max - age_data_min
         for i,inds in enumerate([m_inds, f_inds]):
             if len(inds):
@@ -828,16 +830,16 @@ class Sim(fpb.BaseSim):
         if age    is None: age    = _age
         if sex    is None: sex    = _sex
         if method is None: method = np.zeros(n, dtype=np.int64)
-        barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
-        debut_age = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
-        fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], n)
+        barrier = fpu.n_multinomial(self['barriers'][:], n)
+        debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
+        fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
         data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile)
         return data
 
 
     def init_people(self, output=False, **kwargs):
         ''' Create the people '''
-        p = sc.objdict(self.make_people(n=int(self.pars['n'])))
+        p = sc.objdict(self.make_people(n=int(self['n'])))
         self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier, debut_age=p.debut_age, fertile=p.fertile)
         return
 
@@ -856,42 +858,44 @@ class Sim(fpb.BaseSim):
         switch_general    = {}
         start_postpartum  = {}
         switch_postpartum = {}
+        methods    = self['methods']
+        methods_pp = self['methods_pp']
 
         # Compute the trend in MCPR
-        trend_years = self.pars['methods']['mcpr_years']
-        trend_vals = self.pars['methods']['trend']
+        trend_years = methods['mcpr_years']
+        trend_vals = methods['mcpr_trend']
         ind = sc.findnearest(trend_years, self.y)
         nearest_val = trend_vals[ind]
         year_diff = self.y - trend_years[ind]
-        correction = self['mcpr_trend']**year_diff
+        correction = self['mcpr_growth_rate']**year_diff
         trend_val = nearest_val*correction
 
         # Update general population switching matrices for current year mCPR - stratified by age
-        for key, val in self.pars['methods']['probs_matrix'].items():
+        for key, val in methods['probs'].items():
             switch_general[key] = sc.dcp(val)
             switch_general[key][0, 0] *= trend_val  # Takes into account mCPR during year of sim
             for i in range(len(switch_general[key])):
                 denom = switch_general[key][i,:].sum()
                 if denom > 0:
                     switch_general[key][i] = switch_general[key][i, :] / denom  # Normalize so probabilities add to 1
-            self.pars['methods'][key] = switch_general[key]
+            methods[key] = switch_general[key]
 
         # Update postpartum initiation matrices for current year mCPR - stratified by age
-        for key, val in self.pars['methods_postpartum']['probs_matrix_1'].items():
+        for key, val in methods_pp['probs1'].items():
             start_postpartum[key] = sc.dcp(val)
             start_postpartum[key][0] *= trend_val  # Takes into account mCPR during year of sim
             start_postpartum[key] = start_postpartum[key] / start_postpartum[key].sum()
-            self.pars['methods_postpartum'][key] = start_postpartum[key]  # 1d array for probs coming from birth, binned by age
+            methods_pp[key] = start_postpartum[key]  # 1d array for probs coming from birth, binned by age
 
         # Update postpartum switching or discontinuation matrices from 1-6 months - stratified by age
-        for key, val in self.pars['methods_postpartum']['probs_matrix_1-6'].items():
+        for key, val in methods_pp['probs1to6'].items():
             switch_postpartum[key] = sc.dcp(val)
             switch_postpartum[key][0, 0] *= trend_val  # Takes into account mCPR during year of sim
             for i in range(len(switch_postpartum[key])):
                 denom = switch_postpartum[key][i,:].sum()
                 if denom > 0:
                     switch_postpartum[key][i] = switch_postpartum[key][i,:] / denom  # Normalize so probabilities add to 1
-            self.pars['methods_postpartum_switch'][key] = switch_postpartum[key]  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
+            self['methods_pp_switch'][key] = switch_postpartum[key]  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
 
         return
 
@@ -900,19 +904,19 @@ class Sim(fpb.BaseSim):
         ''' Update infant and maternal mortality for the sim's current year.  Update general mortality trend
         as this uses a spline interpolation instead of an array'''
 
-        ind = sc.findnearest(self.pars['age_mortality']['years'], self.y)
-        gen_mortality_trend = self.pars['age_mortality']['trend'][ind]
+        ind = sc.findnearest(self['age_mortality']['years'], self.y)
+        gen_mortality_trend = self['age_mortality']['trend'][ind]
 
-        ind = sc.findnearest(self.pars['infant_mortality']['year'], self.y)
-        infant_mort_prob = self.pars['infant_mortality']['probs'][ind]
+        ind = sc.findnearest(self['infant_mortality']['year'], self.y)
+        infant_mort_prob = self['infant_mortality']['probs'][ind]
 
-        ind = sc.findnearest(self.pars['maternal_mortality']['year'], self.y)
-        maternal_death_prob = self.pars['maternal_mortality']['probs'][ind]
+        ind = sc.findnearest(self['maternal_mortality']['year'], self.y)
+        maternal_death_prob = self['maternal_mortality']['probs'][ind]
 
-        ind = sc.findnearest(self.pars['stillbirth_rate']['year'], self.y)
-        stillbirth_prob = self.pars['stillbirth_rate']['probs'][ind]
+        ind = sc.findnearest(self['stillbirth_rate']['year'], self.y)
+        stillbirth_prob = self['stillbirth_rate']['probs'][ind]
 
-        self.pars['mortality_probs'] = {
+        self['mortality_probs'] = {
             'gen_trend': gen_mortality_trend,
             'infant': infant_mort_prob,
             'maternal': maternal_death_prob,
@@ -926,7 +930,7 @@ class Sim(fpb.BaseSim):
         ''' Apply each intervention in the model '''
         from . import interventions as fpi # To avoid circular import
         if 'interventions' in self.pars:
-            for i,intervention in enumerate(sc.tolist(self.pars['interventions'])):
+            for i,intervention in enumerate(sc.tolist(self['interventions'])):
                 if isinstance(intervention, fpi.Intervention):
                     if not intervention.initialized: # pragma: no cover
                         intervention.initialize(self)
@@ -943,7 +947,7 @@ class Sim(fpb.BaseSim):
         ''' Apply each analyzer in the model '''
         from . import analyzers as fpa # To avoid circular import
         if 'analyzers' in self.pars:
-            for i,analyzer in enumerate(sc.tolist(self.pars['analyzers'])):
+            for i,analyzer in enumerate(sc.tolist(self['analyzers'])):
                 if isinstance(analyzer, fpa.Analyzer):
                     if not analyzer.initialized: # pragma: no cover
                         analyzer.initialize(self)
@@ -970,7 +974,7 @@ class Sim(fpb.BaseSim):
         # Initialize -- reset settings and results
         T = sc.timer()
         if verbose is None:
-            verbose = self.pars['verbose']
+            verbose = self['verbose']
         self.initialize()
 
         # Main simulation loop
@@ -981,14 +985,14 @@ class Sim(fpb.BaseSim):
             self.y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
             # if verbose:
             #     if (self.t % int(1.0/verbose)) < 0.01:
-            #         string = f'  Running {self.y:0.1f} of {self.pars["end_year"]}...'
+            #         string = f'  Running {self.y:0.1f} of {self["end_year"]}...'
             #         sc.progressbar(i+1, self.npts, label=string, length=20, newline=True)
 
             # Print progress
             elapsed = T.toc(output=True)
             if verbose:
                 simlabel = f'"{self.label}": ' if self.label else ''
-                string = f'  Running {simlabel}{self.y:0.0f} of {self.pars["end_year"]} ({i:2.0f}/{self.npts}) ({elapsed:0.2f} s) '
+                string = f'  Running {simlabel}{self.y:0.0f} of {self["end_year"]} ({i:2.0f}/{self.npts}) ({elapsed:0.2f} s) '
                 if verbose >= 2:
                     sc.heading(string)
                 elif verbose>0:
@@ -1168,7 +1172,7 @@ class Sim(fpb.BaseSim):
         postpartum states in final step of model for use in calibration'''
 
         min_age = 12.5
-        max_age = self.pars['age_limit_fecundity']
+        max_age = self['age_limit_fecundity']
 
         ppl = self.people
         rows = []
