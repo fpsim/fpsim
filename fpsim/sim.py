@@ -1145,10 +1145,10 @@ class Sim(fpb.BaseSim):
         self.results['cum_infant_deaths_by_year']   = np.cumsum(self.results['infant_deaths_over_year'])
         self.results['cum_live_births_by_year']     = np.cumsum(self.results['live_births_over_year'])
 
-        print(f'Final population size: {self.n}.')
-
-        elapsed = T.toc(output=True)
-        print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
+        if verbose:
+            print(f'Final population size: {self.n}.')
+            elapsed = T.toc(output=True)
+            print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
 
         return self.results
 
