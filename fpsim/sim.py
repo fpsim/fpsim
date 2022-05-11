@@ -121,7 +121,7 @@ class People(fpb.BasePeople):
             for m in methods['map'].values():
                 match_m = (orig_methods == m)
                 match = match_m * match_low_high
-                old_method = self.method[match]
+                old_method = self.method[match].copy()
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
@@ -175,7 +175,7 @@ class People(fpb.BasePeople):
                         self.parity >= self.pars['high_parity']))
             this_method = self.filter(match)
             this_method_high_parity = self.filter(match_high_parity)
-            old_method = sc.dcp(this_method.method)
+            old_method = this_method.method.copy()
             old_method_high_parity = sc.dcp(this_method_high_parity.method)
 
             choices = pp_methods[key]
