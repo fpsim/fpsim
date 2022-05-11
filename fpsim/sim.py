@@ -114,20 +114,21 @@ class People(fpb.BasePeople):
             switching_events_matrix_ages[key] = np.zeros((m, m), dtype=int)
 
         # Method switching depends both on agent age and also on their current method, so we need to loop over both
-        for m in methods['map'].values():
-            for key,(age_low, age_high) in fpd.method_age_mapping.items():
-                match_m    = (orig_methods == m)
-                match_low  = (self.age >= age_low)
-                match_high = (self.age <  age_high)
-                match = match_m * match_low * match_high
+        for key,(age_low, age_high) in fpd.method_age_mapping.items():
+            match_low  = (self.age >= age_low)
+            match_high = (self.age <  age_high)
+            match_low_high = match_low * match_high
+            for m in methods['map'].values():
+                match_m = (orig_methods == m)
+                match = match_m * match_low_high
                 this_method = self.filter(match)
-                old_method = sc.dcp(this_method.method)
+                old_method = self.method[match].copy()
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
                 choices = choices/choices.sum()
-                new_methods = fpu.n_multinomial(choices, len(this_method))
-                this_method.method = np.array(new_methods, dtype=np.int64)
+                new_methods = fpu.n_multinomial(choices, match.sum())
+                this_method.method = new_methods
 
                 for i in range(len(old_method)):
                     x = old_method[i]
@@ -175,7 +176,7 @@ class People(fpb.BasePeople):
                         self.parity >= self.pars['high_parity']))
             this_method = self.filter(match)
             this_method_high_parity = self.filter(match_high_parity)
-            old_method = sc.dcp(this_method.method)
+            old_method = this_method.method.copy()
             old_method_high_parity = sc.dcp(this_method_high_parity.method)
 
             choices = pp_methods[key]
