@@ -5,11 +5,10 @@ Test births, conceptions, etc.
 import fpsim as fp
 import unittest
 
-
 class TestChannels(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.pars = fp.pars('test', n=5000) # CK: TODO: check why this test fails for small n
+        self.pars = fp.pars('test', n=500, end_year=2020) # CK: TODO: check why this test fails for small n
         exp = fp.ExperimentVerbose(self.pars)
         exp.run_model()
         self.exp = exp
