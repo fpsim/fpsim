@@ -5,7 +5,7 @@ Benchmark the simulation
 import sciris as sc
 import fpsim as fp
 
-do_profile = 1
+do_profile = 0
 sim = fp.Sim()
 sim.initialize()
 
@@ -17,10 +17,10 @@ to_profile = sc.objdict(
     contra =      ppl.update_contraception, # 46%
     method_pp =   ppl.get_method_postpartum, # 56%, no obvious performance improvements
     get_method =  ppl.get_method, # 46%, could maybe be merged with previous
-)['update']
+)['method_pp']
 
 def run():
-    sim = fp.Sim(n=10e3)
+    sim = fp.Sim(n=10e4)
     sim.run()
     return sim
 

@@ -114,20 +114,20 @@ class People(fpb.BasePeople):
             switching_events_matrix_ages[key] = np.zeros((m, m), dtype=int)
 
         # Method switching depends both on agent age and also on their current method, so we need to loop over both
-        for m in methods['map'].values():
-            for key,(age_low, age_high) in fpd.method_age_mapping.items():
-                match_m    = (orig_methods == m)
-                match_low  = (self.age >= age_low)
-                match_high = (self.age <  age_high)
-                match = match_m * match_low * match_high
-                this_method = self.filter(match)
-                old_method = sc.dcp(this_method.method)
+        for key,(age_low, age_high) in fpd.method_age_mapping.items():
+            match_low  = (self.age >= age_low)
+            match_high = (self.age <  age_high)
+            match_low_high = match_low * match_high
+            for m in methods['map'].values():
+                match_m = (orig_methods == m)
+                match = match_m * match_low_high
+                old_method = self.method[match]
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
                 choices = choices/choices.sum()
-                new_methods = fpu.n_multinomial(choices, len(this_method))
-                this_method.method = np.array(new_methods, dtype=np.int64)
+                new_methods = fpu.n_multinomial(choices, match.sum())
+                self.method[match] = new_methods
 
                 for i in range(len(old_method)):
                     x = old_method[i]
@@ -201,19 +201,20 @@ class People(fpb.BasePeople):
         # At 6 months, choice is by previous method and by age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
         # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
-        for m in pp_methods['map'].values():
-            for key,(age_low, age_high) in fpd.method_age_mapping.items():
+        for key,(age_low, age_high) in fpd.method_age_mapping.items():
+            match_low  = (self.age >= age_low)
+            match_high = (self.age <  age_high)
+            match_postpartum_age = self.postpartum * postpartum6 * match_low * match_high
+            for m in pp_methods['map'].values():
                 match_m    = (orig_methods == m)
-                match_low  = (self.age >= age_low)
-                match_high = (self.age <  age_high)
-                match = match_m * self.postpartum * postpartum6 * match_low * match_high
-                this_method = self.filter(match)
-                old_method = this_method.method
+                match = match_m * match_postpartum_age
+                # this_method = self.filter(match)
+                old_method = self.method[match]
 
                 matrix = pp_switch[key]
                 choices = matrix[m]
-                new_methods = fpu.n_multinomial(choices, len(this_method))
-                this_method.method = np.array(new_methods, dtype=np.int64)
+                new_methods = fpu.n_multinomial(choices, match.sum())
+                self.method[match] = new_methods
                 for i in range(len(old_method)):
                     x = old_method[i]
                     y = new_methods[i]
@@ -706,7 +707,7 @@ class People(fpb.BasePeople):
         self.check_mcpr()
         self.check_cpr()
         self.check_acpr()
-        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
+        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity'])) # CK: TODO: remove hardcoding
 
         # Age person at end of timestep after tabulating results
         alive_now.age_person()  # Important to keep this here so birth spacing gets recorded accurately
@@ -753,7 +754,7 @@ class Sim(fpb.BaseSim):
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
-        self.results['tfr_years'] = []
+        self.results['tfr_years'] = [] # CK: TODO: refactor into loop with keys
         self.results['tfr_rates'] = []
         self.results['pop_size'] = []
         self.results['mcpr_by_year'] = []

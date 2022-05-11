@@ -68,9 +68,12 @@ def mt(probs):
     return np.searchsorted(np.cumsum(probs), np.random.random())
 
 
-def n_multinomial(probs, n): # No speed gain from Numba
+@func_decorator((nb.float64[:], nb.int64), cache=True)
+def n_multinomial(probs, n):
     '''
     An array of multinomial trials.
+
+    Equivalent to, but faster than, `np.random.choice(len(probs), size=n, p=probs)`
 
     Args:
         probs (array): probability of each outcome, which usually should sum to 1
@@ -81,7 +84,7 @@ def n_multinomial(probs, n): # No speed gain from Numba
 
     **Example**::
 
-        outcomes = cv.multinomial(np.ones(6)/6.0, 50)+1 # Return 50 die-rolls
+        outcomes = fp.n_multinomial(np.ones(6)/6.0, 50)+1 # Return 50 die-rolls
     '''
     return np.searchsorted(np.cumsum(probs), np.random.random(n))
 
