@@ -16,6 +16,7 @@ Version 0.10.2 (2022-05-10)
 - Added a ``method_timestep`` parameter to allow skipping contraceptive matrix updates (saves significant time for small sims).
 - Added ``fp.pars(location='test')`` to use defaults for testing (e.g. small population size).
 - Fixed divide-by-zero bug for small population sizes in total fertility rate.
+- Refactored tests; they should now run locally in ~15 s.
 - *GitHub info*: PR `448 <https://github.com/amath-idm/fp_analyses/pull/448>`__
 
 
