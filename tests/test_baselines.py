@@ -17,7 +17,7 @@ def make_exp(n=1000, do_run=False, do_plot=False):
     '''
     Define a default simulation for testing the baseline.
     '''
-    pars = fp.pars(n=n)
+    pars = fp.pars(n=n, verbose=0)
     exp = fp.Experiment(pars=pars)
 
     if do_run or do_plot:

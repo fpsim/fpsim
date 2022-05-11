@@ -122,7 +122,7 @@ class People(fpb.BasePeople):
                 match_m = (orig_methods == m)
                 match = match_m * match_low_high
                 this_method = self.filter(match)
-                old_method = this_method.copy()
+                old_method = this_method.method.copy()
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
@@ -209,12 +209,13 @@ class People(fpb.BasePeople):
             for m in pp_methods['map'].values():
                 match_m    = (orig_methods == m)
                 match = match_m * match_postpartum_age
-                old_method = self.method[match]
+                this_method = self.filter(match)
+                old_method = self.method[match].copy()
 
                 matrix = pp_switch[key]
                 choices = matrix[m]
                 new_methods = fpu.n_multinomial(choices, match.sum())
-                self.method[match] = new_methods
+                this_method.method = new_methods
                 for i in range(len(old_method)):
                     x = old_method[i]
                     y = new_methods[i]
