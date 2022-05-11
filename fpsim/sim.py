@@ -122,7 +122,7 @@ class People(fpb.BasePeople):
                 match_m = (orig_methods == m)
                 match = match_m * match_low_high
                 this_method = self.filter(match)
-                old_method = self.method[match].copy()
+                old_method = this_method.copy()
 
                 matrix = self.pars['methods'][key]
                 choices = matrix[m]
