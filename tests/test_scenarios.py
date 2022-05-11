@@ -38,8 +38,8 @@ def test_update_methods_eff():
     msim = fp.MultiSim(sims=simlist)
     msim.run(serial=serial)
 
-    low_eff_post_sim = msim.sims[0].pars['method_efficacy'][9]
-    high_eff_post_sim = msim.sims[1].pars['method_efficacy'][9]
+    low_eff_post_sim = msim.sims[0]['method_efficacy'][9]
+    high_eff_post_sim = msim.sims[1]['method_efficacy'][9]
 
     msg = f"Method efficacy after updating to about .93 is {high_eff_post_sim} and after updating to about 0.85 is actually {low_eff_post_sim}"
     assert high_eff_post_sim > low_eff_post_sim, msg
@@ -85,10 +85,10 @@ def test_update_methods_probs():
     )
 
     # Make interventions
-    uptake_no_keys_methods = fp.update_methods(int_year, scen_no_keys, matrix='probs_matrix') # Create intervention
-    uptake_keys_methods    = fp.update_methods(int_year, scen_keys,    matrix='probs_matrix') # Create intervention
-    uptake_no_keys_pp      = fp.update_methods(int_year, scen_no_keys, matrix='probs_matrix_1-6') # Create intervention
-    uptake_keys_pp         = fp.update_methods(int_year, scen_keys,    matrix='probs_matrix_1-6') # Create intervention
+    uptake_no_keys_methods = fp.update_methods(int_year, scen_no_keys, matrix='probs') # Create intervention
+    uptake_keys_methods    = fp.update_methods(int_year, scen_keys,    matrix='probs') # Create intervention
+    uptake_no_keys_pp      = fp.update_methods(int_year, scen_no_keys, matrix='probs1to6') # Create intervention
+    uptake_keys_pp         = fp.update_methods(int_year, scen_keys,    matrix='probs1to6') # Create intervention
 
     # Make and runs ims
     simlist = make_sims([uptake_no_keys_methods, uptake_keys_methods, uptake_no_keys_pp, uptake_keys_pp])
@@ -98,21 +98,21 @@ def test_update_methods_probs():
     # Tests
     m0 = msim.sims[0].pars['methods']
     m1 = msim.sims[1].pars['methods']
-    m2 = msim.sims[2].pars['methods_postpartum']
-    m3 = msim.sims[3].pars['methods_postpartum']
+    m2 = msim.sims[2].pars['methods_pp']
+    m3 = msim.sims[3].pars['methods_pp']
     none  = m0['map']['None']
     other = m0['map']['Other modern']
 
-    assert m0['probs_matrix']['21-25'][none][other] != m1['probs_matrix']['21-25'][none][other], "update_methods did not change contraceptive matrix for key 21-25"
-    assert m0['probs_matrix']['21-25'][none][other] == target_prob1, f"update_methods did not change contraceptive matrix 21-25 to spcified {target_prob1}"
-    assert m1['probs_matrix']['<18'][none][other]   == target_prob1, f"update_methods did not change contraceptive matrix <25 to spcified {target_prob1}"
+    assert m0['probs']['21-25'][none][other] != m1['probs']['21-25'][none][other], "update_methods did not change contraceptive matrix for key 21-25"
+    assert m0['probs']['21-25'][none][other] == target_prob1, f"update_methods did not change contraceptive matrix 21-25 to spcified {target_prob1}"
+    assert m1['probs']['<18'][none][other]   == target_prob1, f"update_methods did not change contraceptive matrix <25 to spcified {target_prob1}"
 
-    assert m2['probs_matrix_1-6']['21-25'][none][other] != m3['probs_matrix_1-6']['21-25'][none][other], "update_methods did not change postpartum contraceptive matrix for key 21-25"
-    assert m2['probs_matrix_1-6']['21-25'][none][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for 21-25 to specified {target_prob1}"
-    assert m3['probs_matrix_1-6']['<18'][none][other]   == target_prob1, f"update_methods did not change postpartum contraceptive matrix for <18 to specified {target_prob1}"
+    assert m2['probs1to6']['21-25'][none][other] != m3['probs1to6']['21-25'][none][other], "update_methods did not change postpartum contraceptive matrix for key 21-25"
+    assert m2['probs1to6']['21-25'][none][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for 21-25 to specified {target_prob1}"
+    assert m3['probs1to6']['<18'][none][other]   == target_prob1, f"update_methods did not change postpartum contraceptive matrix for <18 to specified {target_prob1}"
 
-    assert m3['probs_matrix_1-6']['<18'][other][none]   == target_prob2, "After updating method switching postpartum for <18 for None to {target_prob2}, value didn't change"
-    assert m3['probs_matrix_1-6']['21-25'][other][none] != target_prob2, "After updating method postpartum for 21-25, value is still {target_prob2}"
+    assert m3['probs1to6']['<18'][other][none]   == target_prob2, "After updating method switching postpartum for <18 for None to {target_prob2}, value didn't change"
+    assert m3['probs1to6']['21-25'][other][none] != target_prob2, "After updating method postpartum for 21-25, value is still {target_prob2}"
 
     return msim
 

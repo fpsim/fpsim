@@ -243,14 +243,11 @@ class update_methods(fpi.Intervention):
                     {method: efficacy}
                         Where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys).
 
-        matrix (str): One of ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] where:
+        matrix (str): One of ['probs', 'probs1', 'probs1to6'] where:
 
-            probs_matrix:
-                Changes the specified uptake at the corresponding year regardless of state.
-            probs_matrix_1
-                Changes the specified uptake for all individuals in their first month postpartum.
-            probs_matrix_1-6
-                Changes the specified uptake for all individuals that are in the first 6 months postpartum.
+            probs:     Changes the specified uptake at the corresponding year regardless of state.
+            probs1:    Changes the specified uptake for all individuals in their first month postpartum.
+            probs1to6: Changes the specified uptake for all individuals that are in the first 6 months postpartum.
     """
 
     def __init__(self, year, scen, matrix=None, verbose=False):
@@ -260,8 +257,8 @@ class update_methods(fpi.Intervention):
         super().__init__()
         self.year   = year
         self.scen   = scen
-        self.matrix = matrix if matrix else scen.pop('matrix', 'probs_matrix') # Take matrix from scenario if supplied
-        valid_matrices = ['probs_matrix', 'probs_matrix_1', 'probs_matrix_1-6'] # TODO: be less subtle about the difference between normal and postpartum matrices
+        self.matrix = matrix if matrix else scen.pop('matrix', 'probs') # Take matrix from scenario if supplied
+        valid_matrices = ['probs', 'probs1', 'probs1to6'] # TODO: be less subtle about the difference between normal and postpartum matrices
         if self.matrix not in valid_matrices:
             raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{self.matrix}"')
         self.applied = False
@@ -283,8 +280,8 @@ class update_methods(fpi.Intervention):
                 for k,rawval in self.scen['eff'].items():
                     v = getval(rawval)
                     ind = key2ind(sim, k)
-                    orig = sim.pars['method_efficacy'][ind]
-                    sim.pars['method_efficacy'][ind] = v
+                    orig = sim['method_efficacy'][ind]
+                    sim['method_efficacy'][ind] = v
                     if self.verbose:
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
@@ -297,13 +294,13 @@ class update_methods(fpi.Intervention):
                     value  = entry.pop('value', None)
                     keys   = entry.pop('keys', None)
                     if keys in none_all_keys:
-                        keys = sim.pars['methods']['probs_matrix'].keys()
+                        keys = sim.pars['methods']['probs'].keys()
 
                     for k in keys:
-                        if self.matrix == 'probs_matrix':
-                            matrices = sim.pars['methods']
+                        if self.matrix == 'probs':
+                            matrices = sim['methods']
                         else:
-                            matrices = sim.pars['methods_postpartum']
+                            matrices = sim['methods_pp']
                         matrix = matrices[self.matrix][k]
                         orig = matrix[source, dest]
                         if factor is not None:
