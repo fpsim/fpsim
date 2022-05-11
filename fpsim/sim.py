@@ -726,7 +726,7 @@ class Sim(fpb.BaseSim):
     def __init__(self, pars=None, location=None, label=None, mother_ids=False, **kwargs):
         if pars is None:
             pars = fpd.pars(location)
-        super().__init__(pars, **kwargs) # Initialize and set the parameters as attributes
+        super().__init__(pars, location=location, **kwargs) # Initialize and set the parameters as attributes
 
         self.initialized = False
         self.label = label
@@ -853,16 +853,23 @@ class Sim(fpb.BaseSim):
         '''Update all contraceptive matrices to have probabilities that follow a trend closest to the
         year the sim is on based on mCPR in that year'''
 
-        switch_general = {}
-        start_postpartum = {}
+        switch_general    = {}
+        start_postpartum  = {}
         switch_postpartum = {}
 
-        ind = sc.findnearest(self.pars['methods']['mcpr_years'], self.y)  # Find the closest year to the timestep we are on
+        # Compute the trend in MCPR
+        trend_years = self.pars['methods']['mcpr_years']
+        trend_vals = self.pars['methods']['trend']
+        ind = sc.findnearest(trend_years, self.y)
+        nearest_val = trend_vals[ind]
+        year_diff = self.y - trend_years[ind]
+        correction = self['mcpr_trend']**year_diff
+        trend_val = nearest_val*correction
 
         # Update general population switching matrices for current year mCPR - stratified by age
         for key, val in self.pars['methods']['probs_matrix'].items():
             switch_general[key] = sc.dcp(val)
-            switch_general[key][0, 0] *= self.pars['methods']['trend'][ind]  # Takes into account mCPR during year of sim
+            switch_general[key][0, 0] *= trend_val  # Takes into account mCPR during year of sim
             for i in range(len(switch_general[key])):
                 denom = switch_general[key][i,:].sum()
                 if denom > 0:
@@ -872,14 +879,14 @@ class Sim(fpb.BaseSim):
         # Update postpartum initiation matrices for current year mCPR - stratified by age
         for key, val in self.pars['methods_postpartum']['probs_matrix_1'].items():
             start_postpartum[key] = sc.dcp(val)
-            start_postpartum[key][0] *= self.pars['methods_postpartum']['trend'][ind]  # Takes into account mCPR during year of sim
+            start_postpartum[key][0] *= trend_val  # Takes into account mCPR during year of sim
             start_postpartum[key] = start_postpartum[key] / start_postpartum[key].sum()
             self.pars['methods_postpartum'][key] = start_postpartum[key]  # 1d array for probs coming from birth, binned by age
 
         # Update postpartum switching or discontinuation matrices from 1-6 months - stratified by age
         for key, val in self.pars['methods_postpartum']['probs_matrix_1-6'].items():
             switch_postpartum[key] = sc.dcp(val)
-            switch_postpartum[key][0, 0] *= self.pars['methods_postpartum']['trend'][ind]  # Takes into account mCPR during year of sim
+            switch_postpartum[key][0, 0] *= trend_val  # Takes into account mCPR during year of sim
             for i in range(len(switch_postpartum[key])):
                 denom = switch_postpartum[key][i,:].sum()
                 if denom > 0:

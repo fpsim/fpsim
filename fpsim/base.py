@@ -31,7 +31,6 @@ class ParsObj(sc.prettyobj):
     def __setitem__(self, key, value):
         ''' Ditto '''
         self.pars[key] = value
-        self.update_pars()
         return
 
     def update_pars(self, pars=None):
