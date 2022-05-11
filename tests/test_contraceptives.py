@@ -1,5 +1,3 @@
-import os
-import sys
 import pylab as pl
 import numpy as np
 import sciris as sc
@@ -11,7 +9,7 @@ import unittest
 class TestContraceptiveEfficacy(unittest.TestCase):
     @classmethod
     def setUpClass(self):
-        self.pars = fp.pars(n=500)
+        self.pars = fp.pars('test')
         self.contraceptives =  [
             "None",
             "Pill",
@@ -24,9 +22,6 @@ class TestContraceptiveEfficacy(unittest.TestCase):
             "Implants",
             "Other"
         ]
-
-        # suppresses unnecessary print statements to increase runtime
-        sys.stdout = open(os.devnull, 'w')
 
     def all_but(self, method="BTL"):
         """
@@ -62,8 +57,8 @@ class TestContraceptiveEfficacy(unittest.TestCase):
         multi = fp.MultiSim(sims=sims)
         multi.run()
         for sim in multi.sims:
-            self.assertGreater(last_result, sim['results']['pop_size'][-1])
-            last_result = sim['results']['pop_size'][-1]
+            self.assertGreater(last_result, sim.results['pop_size'][-1])
+            last_result = sim.results['pop_size'][-1]
 
         self.pars = base_pars
 
