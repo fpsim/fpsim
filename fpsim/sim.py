@@ -201,19 +201,20 @@ class People(fpb.BasePeople):
         # At 6 months, choice is by previous method and by age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
         # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
-        for m in pp_methods['map'].values():
-            for key,(age_low, age_high) in fpd.method_age_mapping.items():
+        for key,(age_low, age_high) in fpd.method_age_mapping.items():
+            match_low  = (self.age >= age_low)
+            match_high = (self.age <  age_high)
+            match_postpartum_age = self.postpartum * postpartum6 * match_low * match_high
+            for m in pp_methods['map'].values():
                 match_m    = (orig_methods == m)
-                match_low  = (self.age >= age_low)
-                match_high = (self.age <  age_high)
-                match = match_m * self.postpartum * postpartum6 * match_low * match_high
-                this_method = self.filter(match)
-                old_method = this_method.method
+                match = match_m * match_postpartum_age
+                # this_method = self.filter(match)
+                old_method = self.method[match].copy()
 
                 matrix = pp_switch[key]
                 choices = matrix[m]
-                new_methods = fpu.n_multinomial(choices, len(this_method))
-                this_method.method = np.array(new_methods, dtype=np.int64)
+                new_methods = fpu.n_multinomial(choices, match.sum())
+                self.method[match] = new_methods
                 for i in range(len(old_method)):
                     x = old_method[i]
                     y = new_methods[i]

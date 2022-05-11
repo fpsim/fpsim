@@ -7,7 +7,7 @@ import fpsim as fp
 
 # Global settings
 p = sc.objdict() # Custom parameters
-p.n          = 500 # Population size
+p.n          = 5000 # Population size
 p.start_year = 2000 # Start year of sims
 p.end_year   = 2010 # End year of sims
 p.verbose    = 0 # Verbosity to use
