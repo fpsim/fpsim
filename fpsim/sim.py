@@ -511,9 +511,10 @@ class People(fpb.BasePeople):
         #Calculate total births
         self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
+        live_age = live.age
         for key, (age_low, age_high) in fpd.age_bin_mapping.items():
-            this_age_bin = live.filter((live.age >= age_low) * (live.age < age_high))
-            self.step_results['birth_bins'][key] += len(this_age_bin)
+            birth_bins = np.sum((live_age >= age_low) * (live_age < age_high))
+            self.step_results['birth_bins'][key] += birth_bins
 
         # Check mortality
         live.maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
@@ -562,17 +563,17 @@ class People(fpb.BasePeople):
     def update_contraception(self):
         '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
 
-        postpartum = (self.postpartum) * (self.postpartum_dur <= 6)
-        pp = self.filter(postpartum)
-        non_pp = self.filter(~postpartum)
+        if not (self.i % self.pars['method_timestep']): # Allow skipping timesteps
+            postpartum = (self.postpartum) * (self.postpartum_dur <= 6)
+            pp = self.filter(postpartum)
+            non_pp = self.filter(~postpartum)
 
-        pp.get_method_postpartum()
+            pp.get_method_postpartum()
 
-        age_diff = non_pp.ceil_age - non_pp.age
-        whole_years = ((age_diff < (1/fpd.mpy)) * (age_diff > 0))
-        birthdays = non_pp.filter(whole_years)
-        birthdays.get_method()
-        #self.step_results['birthday_fraction'] = len(birthdays)/len(non_pp) # Debugs and tracks fraction of birthday months, remove comment if debugging
+            age_diff = non_pp.ceil_age - non_pp.age
+            whole_years = ((age_diff < (1/fpd.mpy)) * (age_diff > 0))
+            birthdays = non_pp.filter(whole_years)
+            birthdays.get_method()
 
         return
 
@@ -706,7 +707,7 @@ class People(fpb.BasePeople):
         self.check_mcpr()
         self.check_cpr()
         self.check_acpr()
-        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity']))
+        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity'])) # CK: TODO: remove hardcoding
 
         # Age person at end of timestep after tabulating results
         alive_now.age_person()  # Important to keep this here so birth spacing gets recorded accurately
@@ -753,7 +754,7 @@ class Sim(fpb.BaseSim):
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
-        self.results['tfr_years'] = []
+        self.results['tfr_years'] = [] # CK: TODO: refactor into loop with keys
         self.results['tfr_rates'] = []
         self.results['pop_size'] = []
         self.results['mcpr_by_year'] = []
@@ -999,6 +1000,7 @@ class Sim(fpb.BaseSim):
                 self.interventions[i](self)
 
             # Update the people
+            self.people.i = self.i
             self.people.t = self.t
             step_results, step_results_switching = self.people.update()
             r = fpu.dict2obj(step_results)
@@ -1142,10 +1144,10 @@ class Sim(fpb.BaseSim):
         self.results['cum_infant_deaths_by_year']   = np.cumsum(self.results['infant_deaths_over_year'])
         self.results['cum_live_births_by_year']     = np.cumsum(self.results['live_births_over_year'])
 
-        print(f'Final population size: {self.n}.')
-
-        elapsed = T.toc(output=True)
-        print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
+        if verbose:
+            print(f'Final population size: {self.n}.')
+            elapsed = T.toc(output=True)
+            print(f'Run finished for "{self.pars["name"]}" after {elapsed:0.1f} s')
 
         return self.results
 
