@@ -4,64 +4,58 @@ Run tests on individual parameters.
 
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
-import unittest
-import pytest
-import os
-import sys
+
+do_plot = True
+sc.options(backend='agg') # Turn off interactive plots
 
 
-class TestParameters(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.do_plot=False
-        self.n=1000
-        self.verbose=True
-        self.do_run=True
-        
-        # suppresses unnecessary warning statements to increase runtime
-        sys.stdout = open(os.devnull, 'w')
+def test_null(do_plot=do_plot):
+    sc.heading('Testing no births, no deaths...')
 
-    def get_pars(self):
-        return fa.senegal_parameters.make_pars()
+    pars = fp.pars('test') # For default pars
+    pars['age_mortality']['f'] *= 0
+    pars['age_mortality']['m'] *= 0
+    pars['age_mortality']['trend'] *= 0
+    pars['maternal_mortality']['probs'] *= 0
+    pars['infant_mortality']['probs'] *= 0
+    pars['exposure_correction'] = 0
+    pars['high_parity']         = 4
+    pars['high_parity_nonuse_correction']  = 0
 
-    def make(self, pars, **kwargs):
-        '''
-        Define a default simulation for testing the baseline.
-        '''
+    sim = fp.Sim(pars)
+    sim.run()
 
-        pars['n'] = self.n
-        pars['verbose'] = self.verbose
-        pars.update(kwargs)
-        sim = fp.Sim(pars=pars)
+    if do_plot:
+        sim.plot()
 
-        if self.do_run:
-            sim.run()
-
-        return sim
+    return sim
 
 
-    def test_null(self):
-        sc.heading('Testing no births, no deaths...')
+def test_method_timestep():
+    sc.heading('Test sim speed')
 
-        pars = self.get_pars() # For default pars
-        pars['age_mortality']['f'] *= 0
-        pars['age_mortality']['m'] *= 0
-        pars['age_mortality']['trend'] *= 0
-        pars['maternal_mortality']['probs'] *= 0
-        pars['infant_mortality']['probs'] *= 0
-        pars['exposure_correction'] = 0
-        pars['high_parity']         = 4
-        pars['high_parity_nonuse_correction']  = 0
+    pars1 = fp.pars(location='test', method_timestep=1)
+    pars2 = fp.pars(location='test', method_timestep=6)
+    sim1 = fp.Sim(pars1)
+    sim2 = fp.Sim(pars2)
 
-        sim = self.make(pars)
+    T = sc.timer()
 
-        if self.do_plot:
-            sim.plot()
+    sim1.run()
+    t1 = T.tt(output=True)
 
-        return sim
+    sim2.run()
+    t2 = T.tt(output=True)
+
+    assert t2 < t1, 'Expecting runtime to be less with a larger method timestep'
+
+    return [t1, t2]
+
+
 
 if __name__ == '__main__':
 
-    # run test suite
-    unittest.main()
+    sc.options(backend=None) # Turn on interactive plots
+    with sc.timer():
+        null = test_null(do_plot=do_plot)
+        timings = test_method_timestep()

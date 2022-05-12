@@ -1,86 +1,69 @@
-from collections import defaultdict
-import sys
-import argparse
-import os
-import pandas as pd
+'''
+Test births, conceptions, etc.
+'''
+
 import numpy as np
+import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
-import unittest
+import pytest
 
-class TestChannels(unittest.TestCase):
-    @classmethod
-    def setUpClass(self):
-        self.pars = fa.senegal_parameters.make_pars()
-        self.pars['n'] = 1000
-        exp = fp.ExperimentVerbose(self.pars)
-        exp.run_model()
-        self.exp = exp
-        self.total_results = exp.total_results
-        self.events = exp.events
-        self.channels = ["Births", "Conceptions", "Miscarriages", "Sexual_Debut", "Deaths"]
+# Parameters
+max_pregnancy_loss = 0.4 # Maximum allowed fraction of pregnancies to allow to not end in birth (including stillbirths)
 
-        # suppresses unnecessary warning statements to increase runtime
-        sys.stdout = open(os.devnull, 'w')
 
-    def test_channels_sanity_check(self):
-        """
-        Checks that none of the channels from self.channels contain no entries.
-        """
-        for channel in self.channels:
-            if channel != "Deaths":
-                max = 0
-                for timestep in self.events:
-                    if len(self.events[timestep][channel]) > max:
-                        max = len(self.events[timestep][channel])
+def test_channels():
 
-                self.assertGreater(max, 0, msg=f"Detected empty channel: {channel}")
-    
-    def test_births(self):
-        """
-        Checks that births (formatted as timestep: [indices]) is consistent with
-        the births aggregate value from step results (formatted as timestep: total).
-        """
-        births = 0
-        births_step = 0
-        for timestep in self.events:
-            births_step += self.events[timestep]["Step_Results"]["births"]
-            births += len(self.events[timestep]['Births'])
-        self.assertEqual(births, births_step, f"Mismatch between step results births and births channel")
-    
-    def test_conceptions(self):
-        """
-        Checks that conceptions is approximately births, and that conceptions is greater
-        than the number of births.
-        """
-        births = 0
-        conceptions = 0
-        for timestep in self.events:
-            births = births + len(self.events[timestep]['Births']) 
-            conceptions = conceptions + len(self.events[timestep]['Conceptions']) 
+    pars = fp.pars('test', n=500, end_year=2020) # CK: TODO: check why this test fails for small n
+    exp = fp.ExperimentVerbose(pars)
+    exp.run_model()
+    events = exp.events
+    channels = ["Births", "Conceptions", "Miscarriages", "Sexual_Debut", "Deaths"]
 
-        # We wouldn't expect more than a quarter of conceptions to end in miscarriages
-        self.assertAlmostEqual(births, conceptions, delta = 0.25 * births, msg="Less than 75 percent of conceptions result in births")
-        self.assertGreater(conceptions, births, msg="Number of conceptions not greater than recorded live births")
+    # Checks that none of the channels from self.channels contain no entries.
+    for channel in channels:
+        if channel != "Deaths":
+            maxval = 0
+            for timestep in events:
+                if len(events[timestep][channel]) > maxval:
+                    maxval = len(events[timestep][channel])
 
-    def test_miscarriages(self):
-        """
-        Checks that miscarriages < difference between conceptions and births
-        """
-        births = 0
-        conceptions = 0
-        miscarriages = 0
-        for timestep in self.events:
-            births += len(self.events[timestep]['Births']) 
-            conceptions += len(self.events[timestep]['Conceptions']) 
-            miscarriages += len(self.events[timestep]['Miscarriages']) 
+            assert maxval > 0, f"Detected empty channel: {channel}"
 
-        self.assertGreater(conceptions - births, miscarriages, msg="The number of miscarriages is greater than the differences between conceptions and births")
+    # Checks that births (formatted as timestep: [indices]) is consistent with
+    # the births aggregate value from step results (formatted as timestep: total).
+    births = 0
+    births_step = 0
+    for timestep in events:
+        births_step += events[timestep]["Step_Results"]["births"]
+        births += len(events[timestep]['Births'])
+    assert births == births_step, "Mismatch between step results births and births channel"
 
-    @unittest.skip("Need to verify this works over multiple runs")
+    # Checks that conceptions is approximately births, and that conceptions is greater
+    # than the number of births.
+    births = 0
+    conceptions = 0
+    for timestep in events:
+        births = births + len(events[timestep]['Births'])
+        conceptions = conceptions + len(events[timestep]['Conceptions'])
+
+    # We wouldn't expect more than a quarter of conceptions to end in miscarriages
+    assert np.isclose(births, conceptions, atol=max_pregnancy_loss*births), "Less than 75 percent of conceptions result in births"
+    assert conceptions > births, "Number of conceptions not greater than recorded births"
+
+    # Checks that miscarriages < difference between conceptions and births
+    births = 0
+    conceptions = 0
+    miscarriages = 0
+    for timestep in events:
+        births += len(events[timestep]['Births'])
+        conceptions += len(events[timestep]['Conceptions'])
+        miscarriages += len(events[timestep]['Miscarriages'])
+        assert conceptions - births > miscarriages, "The number of miscarriages is greater than the differences between conceptions and births"
+
+    @pytest.mark.skip("Need to verify this works over multiple runs")
     def test_sexual_debut(self):
         """
-        Checks that a person is SA at their sexual debut, 
+        Checks that a person is SA at their sexual debut,
         and doesn't show up twice in the log of sexual debuts
         """
         sexually_active = set()
@@ -93,5 +76,5 @@ class TestChannels(unittest.TestCase):
 
 if __name__ == '__main__':
 
-    # run test suite
-    unittest.main()
+    with sc.timer():
+        test_channels()

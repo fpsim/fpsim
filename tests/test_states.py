@@ -1,15 +1,12 @@
-import json
-from collections import defaultdict
-import unittest
+'''
+Test that people are in valid states
+'''
+
 import os
-import pandas as pd
-import copy
 import numpy as np
 import sciris as sc
+import unittest
 import fpsim as fp
-import fp_analyses as fa
-import sys
-import os
 
 class TestStates(unittest.TestCase):
     @classmethod
@@ -20,15 +17,13 @@ class TestStates(unittest.TestCase):
             self.debug_mode::bool:
                 Prints useful sim run information from crossectional tests
             self.year::float:
-                Limits crossectional tests to only year specified                
+                Limits crossectional tests to only year specified
         """
         if os.path.exists("total_results.json"):
             os.remove("total_results.json")
 
         self.debug_mode = True
-        pars = fa.senegal_parameters.make_pars()
-        pars['n'] = 1000
-
+        pars = fp.pars('test')
 
         self.exp = fp.ExperimentVerbose(pars)
         self.exp.run_model(mother_ids=True)
@@ -36,15 +31,7 @@ class TestStates(unittest.TestCase):
         self.people = self.exp.people
         self.result_dict = self.exp.total_results
         self.year = None # change to make cross sectional tests apply to specific year
-
-        # suppresses unnecessary warning statements to increase runtime
-        sys.stdout = open(os.devnull, 'w')
-    
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
+        return
 
     def save_person_states(self, person_id, filename):
         """
@@ -60,7 +47,7 @@ class TestStates(unittest.TestCase):
         Outputs:
             json file in the debug/ directory
         """
-        person_dict = defaultdict(list)
+        person_dict = sc.ddict(list)
         for timestep, attribute_dict in self.result_dict.items():
             for state in attribute_dict:
                 if state != "dobs" and person_id < len(attribute_dict[state]):
@@ -68,9 +55,7 @@ class TestStates(unittest.TestCase):
 
         if not os.path.exists("debug"):
             os.mkdir("debug")
-        with open(filename, 'w') as output_file:
-            json.dump(person_dict, output_file)
-
+        sc.savejson(filename, person_dict)
         print(f"Saved debug file at {filename}")
 
     def find_indices(self, value_list, value):
@@ -105,7 +90,7 @@ class TestStates(unittest.TestCase):
         postpartum = {}
 
         postpartum_dur = {}
-        
+
         for year, attribute_dict in self.result_dict.items():
             if self.year is None or year == self.year: # Checking for user input of year
                 pregnant = attribute_dict['pregnant']
@@ -134,7 +119,7 @@ class TestStates(unittest.TestCase):
                     if gestation_list[index] > 0:
                         if not preg_value:
                             gest_not_preg = gest_not_preg + 1
-                
+
         if self.debug_mode:
             sum_num = 0
             total_pop = 0
@@ -150,7 +135,7 @@ class TestStates(unittest.TestCase):
                 average_lt6weeks = average_lt6weeks + len(value)
 
             print(f"On average, {average_lt6weeks / total_total_pop} people were affected by post partum birth reduction (as a proportion of the whole)") # Would want to use SA, but can be SA and pregnant
-                
+
             print(f"Total pregnant: {preg_count}")
             print(f"Total breastfeeding and not lactating: {feed_lact}")
             print(f"Total on LAM and not lactating: {lam_lact} out of {lam_total} on lam")
@@ -191,7 +176,7 @@ class TestStates(unittest.TestCase):
                 if prec_breastfeed < breastfeed_dur[person][index] and not alive_recorder[person][index-1]:
                     self.save_person_states(index, "debug/dead_breastfeed_error.json")
                     self.assertTrue(alive_recorder[person][index-1], msg="At [{i}, {index}] a person is breastfeeding while they are dead")
-    
+
     @unittest.skip("Reveals issue where gestation isn't updated")
     def test_states_long_gestation_reset(self):
         """
@@ -201,7 +186,7 @@ class TestStates(unittest.TestCase):
         """
         gestation_dur = {}
         for year, attribute_dict in self.result_dict.items():
-            for index, value in enumerate(attribute_dict["gestation"]): 
+            for index, value in enumerate(attribute_dict["gestation"]):
                 if index not in gestation_dur:
                     gestation_dur[index] = []
                 if attribute_dict["alive"][index]:
@@ -209,12 +194,12 @@ class TestStates(unittest.TestCase):
 
         for person, gest_history in gestation_dur.items():
             last = -5
-            for index, current_dur in enumerate(gest_history):   
+            for index, current_dur in enumerate(gest_history):
                 if last in range(4, 9) and current_dur != last + 1:
                     self.save_person_states(person, "debug/pregnancy_error.json")
                     self.assertEqual(current_dur, last + 1, msg=f"Person at index {person} has gestation history: {gest_history} which is faulty at index {index}")
                     break
-                    
+
                 if last == 9 and current_dur not in [0, 1]:
                     self.save_person_states(person, "debug/end_pregnancy_error.json")
                     self.assertTrue(current_dur in [0, 1], msg=f"Person at index {person} has gestation history: {gest_history} which is faulty at index {index}")
@@ -236,7 +221,7 @@ class TestStates(unittest.TestCase):
                 postpartum = attribute_dict["postpartum"][index]
                 if (gestation > 0 or lactating or postpartum > 0) and not was_pregnant[index]:
                     self.save_person_states(index, "debug/preclude_pregnancy_error.json")
-                    self.assertTrue(was_pregnant[index], msg=f"In year {year} there was a person whose gestation is {gestation} lactation is {lactating} and postpartum is {postpartum} and their was_pregnant status is {was_pregnant[index]}")   
+                    self.assertTrue(was_pregnant[index], msg=f"In year {year} there was a person whose gestation is {gestation} lactation is {lactating} and postpartum is {postpartum} and their was_pregnant status is {was_pregnant[index]}")
 
     @unittest.skip("Mothers needs to be configured on for this to work")
     def test_mothers_indices(self):
@@ -266,7 +251,7 @@ class TestStates(unittest.TestCase):
             for index, last_year_length in enumerate(last_year_lengths):
                 if last_year_length == 0 and this_year_lengths[index] == 1:
                     self.assertAlmostEqual(ages[index], age_first_birth[index], delta=0.1, msg=f"Age at first birth is {ages[index]} but recorded as {age_first_birth[index]}")
-            last_year_lengths = copy.deepcopy(this_year_lengths)
+            last_year_lengths = sc.dcp(this_year_lengths)
 
     def test_sexual_debut(self):
         """
@@ -306,8 +291,8 @@ class TestStates(unittest.TestCase):
                     age_year = int(age)
                     month = (age - age_year)
                     self.assertAlmostEqual(month * 12, round(month * 12), delta=0.5, msg=f"Individual at index: {individual} in year {year} has an age of {age} with a month ({month}) that is not a multiple of 1/12. month * 12 = {month * 12}")
-            
-                    
+
+
 if __name__ == '__main__':
 
     # run test suite

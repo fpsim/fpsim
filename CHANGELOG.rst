@@ -9,6 +9,30 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.10.2 (2022-05-10)
+--------------------------
+- Refactored ``People.get_method()`` to use more efficient looping.
+- Numbafied ``n_multinomial()`` to get a ~20% speed increase.
+- Added a ``method_timestep`` parameter to allow skipping contraceptive matrix updates (saves significant time for small sims).
+- Added ``fp.pars(location='test')`` to use defaults for testing (e.g. small population size).
+- Fixed divide-by-zero bug for small population sizes in total fertility rate.
+- Refactored tests; they should now run locally in ~15 s.
+- *GitHub info*: PR `448 <https://github.com/amath-idm/fp_analyses/pull/448>`__
+
+
+Version 0.10.1 (2022-05-09)
+--------------------------
+- Fix ``Scenarios`` class.
+- *GitHub info*: PR `433 <https://github.com/amath-idm/fp_analyses/pull/433>`__
+
+
+Version 0.10.0 (2022-05-08)
+--------------------------
+- Moved Senegal parameters into FPsim.
+- Added age of sexual debut.
+- *GitHub info*: PR `427 <https://github.com/amath-idm/fp_analyses/pull/427>`__
+
+
 Version 0.9.0 (2022-05-05)
 --------------------------
 - Added a new ``Scenarios`` class.

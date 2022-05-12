@@ -4,10 +4,9 @@ Run efficacy scenarios for the GR
 
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
 
 # Define basic things here
-default_pars = fa.senegal_parameters.make_pars()
+default_pars = fp.pars()
 method_names = default_pars['methods']['names']
 
 
@@ -15,7 +14,7 @@ if __name__ == '__main__':
 
     T = sc.timer()
 
-    debug   = False # Set population size and duration
+    debug   = True # Set population size and duration
     one_sim = False # Just run one sim
 
     #%% Define sim parameters
@@ -148,6 +147,7 @@ if __name__ == '__main__':
     # Plot and print results
     scens.plot_sims()
     scens.plot_scens()
+    scens.plot_cpr()
 
     print(scens.results.df)
     print('Done.')

@@ -19,7 +19,8 @@ class ParsObj(sc.prettyobj):
     A class based around performing operations on a self.pars dict.
     '''
 
-    def __init__(self, pars):
+    def __init__(self, pars, **kwargs):
+        pars = sc.mergedicts(pars, kwargs)
         self.update_pars(pars)
         return
 
@@ -30,7 +31,6 @@ class ParsObj(sc.prettyobj):
     def __setitem__(self, key, value):
         ''' Ditto '''
         self.pars[key] = value
-        self.update_pars()
         return
 
     def update_pars(self, pars=None):
