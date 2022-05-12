@@ -1334,9 +1334,9 @@ class Sim(fpb.BaseSim):
 
         # Plot everything
         to_plot = sc.odict({
-            'mCPR - modern method users \n all women 15-49':               sc.odict({'mcpr': 'Modern contraceptive prevalence rate'}),
-            'CPR - all method users \n all women 15-49': sc.odict({'cpr': 'Contraceptive prevalence rate'}),
-            'ACPR - all method users \n nonpregnant, sexually active women 15-49': sc.odict({'acpr': 'Alternative contraceptive prevalence rate'}),
+            'mCPR - modern method users \n/ all women 15-49':               sc.odict({'mcpr': 'Modern contraceptive prevalence rate'}),
+            'CPR - all method users \n/ all women 15-49': sc.odict({'cpr': 'Contraceptive prevalence rate'}),
+            'ACPR - all method users \n/ nonpregnant, sexually active women 15-49': sc.odict({'acpr': 'Alternative contraceptive prevalence rate'}),
             })
 
         ax = None
