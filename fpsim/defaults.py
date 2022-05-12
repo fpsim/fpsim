@@ -10,7 +10,7 @@ __all__ = ['pars']
 
 def pars(location=None, **kwargs):
     ''' Function for getting default parameters '''
-    from . import data as fpdata # Here to avoid circular import
+    from . import locations as fplocs # Here to avoid circular import
 
     if not location:
         location = 'default'
@@ -25,7 +25,7 @@ def pars(location=None, **kwargs):
 
     # Define valid locations
     if location in ['senegal', 'default']:
-        pars = fpdata.senegal.make_pars()
+        pars = fplocs.senegal.make_pars()
 
     # Else, error
     else:
