@@ -9,6 +9,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+
+Version 0.10.3 (2022-05-12)
+--------------------------
+- Move country-specific parameters from ``fpsim.data`` to ``fpsim.locations``.
+- *GitHub info*: PR `464 <https://github.com/amath-idm/fp_analyses/pull/464>`__
+
+
 Version 0.10.2 (2022-05-10)
 --------------------------
 - Refactored ``People.get_method()`` to use more efficient looping.
