@@ -486,26 +486,6 @@ def barriers():
     return barriers
 
 
-def sexual_debut():
-    '''
-    Returns a linear interpolation of probability that a woman of a certain age has had sexual debut
-    From STAT Compiler DHS https://www.statcompiler.com/en/
-    Using indicator "
-    Data taken from 2019 DHS
-    Onset of sexual debut assumed to be linear from age 10 to first data point at age 15
-    '''
-
-    sexual_debut = np.array([[0, 5, 10,  15,   18,    20,   22,   25,   50],
-                             [0, 0,  0,   9, 35.2,  52.3, 64.7, 77.1, 93.3]])
-
-    sexual_debut[1] /= 100  # Convert from percent to rate per woman
-    debut_ages = sexual_debut[0]
-    debut_interp_model = si.interp1d(x=debut_ages, y=sexual_debut[1])
-    debut_interp = debut_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
-
-    return debut_interp
-
-
 def debut_age():
     '''
     Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
@@ -782,7 +762,6 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['maternal_mortality']         = maternal_mortality()
     pars['infant_mortality']           = infant_mortality()
     pars['stillbirth_rate']            = stillbirth()
-    pars['sexual_debut']               = sexual_debut()
     pars['debut_age']                  = debut_age()
     pars['sexual_activity']            = sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['pref_spacing']               = birth_spacing_preference()
