@@ -1,15 +1,25 @@
-## Type(s) of change
+### Type(s) of change
 - [ ] Bugfix
 - [ ] Refactor
 - [ ] New feature
 - [ ] Other
 
-## Brief description
+### Brief description
 [add description here, including any linked issues]
 
-## Checklist
-- [ ] My code follows the [style guide](https://github.com/amath-idm/styleguide) (or N/A)
-- [ ] I've commented my code (or N/A)
-- [ ] I've incremented the version number (or N/A)
-- [ ] I've updated the changelog (or N/A)
-- [ ] I've added tests and checked code coverage (or N/A)
+### Checklist
+- My code follows the [style guide](https://github.com/amath-idm/styleguide)
+  - [ ] Yes
+  - [ ] N/A
+- I've commented my code
+  - [ ] Yes
+  - [ ] N/A
+- I've incremented the version number
+  - [ ] Yes
+  - [ ] N/A
+- I've updated the changelog
+  - [ ] Yes
+  - [ ] N/A
+- I've added tests and checked code coverage
+  - [ ] Yes
+  - [ ] N/A
