@@ -339,11 +339,9 @@ def methods(age_stratified=True):
             [0.1203931080,   0.0051669358,   0.0023516490,   0.0065718465,   0.0007060277,   0.0002353934,  0.0004707359,  0.0002353934, 0.8636335171, 0.0002353934],
             [0.2027418204,   0.0000000000,   0.0000000000,   0.0032480686,   0.0097152118,   0.0000000000,  0.0032480686,  0.0000000000, 0.0064864638, 0.7745603668]])
 
+    # Data on trend in MCPR in Senegal over time, in % # CK: TODO: find source
     methods['mcpr_years'] = np.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
-
-    # Projected out past 2020 with a 2% assumed growth rate for baseline scenarios
-    mcpr_rates = np.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20, 20.4])
-
+    mcpr_rates            = np.array([0.50,  1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8,   19,   20, 20.4])
     methods['mcpr_trend'] = mcpr_rates[-3] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods
