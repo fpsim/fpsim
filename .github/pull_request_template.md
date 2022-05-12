@@ -1,11 +1,11 @@
+### Brief description
+[add description here, including any linked issues]
+
 ### Type(s) of change
 - [ ] Bugfix
 - [ ] Refactor
 - [ ] New feature
 - [ ] Other
-
-### Brief description
-[add description here, including any linked issues]
 
 ### Checklist
 - My code follows the [style guide](https://github.com/amath-idm/styleguide)
