@@ -1,6 +1,4 @@
-# Type of change
-
-(Select all that apply)
+# Type(s) of change
 
 - [ ] Bugfix
 - [ ] Refactor
@@ -10,9 +8,7 @@
 
 # Brief description
 
-(Mention any linked issues or PRs)
-
-[add description here]
+[add description here, including any linked issues]
 
 
 # Checklist:
