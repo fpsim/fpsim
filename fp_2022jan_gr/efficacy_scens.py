@@ -147,6 +147,7 @@ if __name__ == '__main__':
     # Plot and print results
     scens.plot_sims()
     scens.plot_scens()
+    scens.plot_cpr()
 
     print(scens.results.df)
     print('Done.')
