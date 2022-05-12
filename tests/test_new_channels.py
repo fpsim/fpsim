@@ -7,8 +7,12 @@ import sciris as sc
 import fpsim as fp
 import pytest
 
+# Parameters
+max_pregnancy_loss = 0.4 # Maximum allowed fraction of pregnancies to allow to not end in birth (including stillbirths)
+
 
 def test_channels():
+
     pars = fp.pars('test', n=500, end_year=2020) # CK: TODO: check why this test fails for small n
     exp = fp.ExperimentVerbose(pars)
     exp.run_model()
@@ -43,8 +47,8 @@ def test_channels():
         conceptions = conceptions + len(events[timestep]['Conceptions'])
 
     # We wouldn't expect more than a quarter of conceptions to end in miscarriages
-    assert np.isclose(births, conceptions, atol=0.25*births), "Less than 75 percent of conceptions result in births"
-    assert conceptions > births, "Number of conceptions not greater than recorded live births"
+    assert np.isclose(births, conceptions, atol=max_pregnancy_loss*births), "Less than 75 percent of conceptions result in births"
+    assert conceptions > births, "Number of conceptions not greater than recorded births"
 
     # Checks that miscarriages < difference between conceptions and births
     births = 0
