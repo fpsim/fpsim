@@ -4,11 +4,10 @@ Benchmark the simulation
 
 import sciris as sc
 import fpsim as fp
-from fp_analyses import senegal_parameters as sp
 
 do_profile = 1
-pars = sp.make_pars()
-sim = fp.Sim(pars)
+sim = fp.Sim()
+sim.initialize()
 
 ppl = sim.people
 to_profile = sc.objdict(
@@ -18,12 +17,12 @@ to_profile = sc.objdict(
     contra =      ppl.update_contraception, # 46%
     method_pp =   ppl.get_method_postpartum, # 56%, no obvious performance improvements
     get_method =  ppl.get_method, # 46%, could maybe be merged with previous
-)['get_method']
+    deliv      =  ppl.check_delivery
+)['method_pp']
+
 
 def run():
-    pars = sp.make_pars()
-    pars['n'] = 10000
-    sim = fp.Sim(pars)
+    sim = fp.Sim(n=10e1, verbose=0, method_timestep=1)
     sim.run()
     return sim
 

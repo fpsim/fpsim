@@ -6,11 +6,11 @@ import sciris as sc
 import fpsim as fp
 
 
-def make_sim(n=100, **kwargs):
+def make_sim(**kwargs):
     '''
     Define a default simulation for testing the baseline.
     '''
-    sim = fp.Sim(n=n, verbose=0.1, **kwargs)
+    sim = fp.Sim(location='test', **kwargs)
     return sim
 
 
@@ -39,6 +39,6 @@ def test_analyzers():
 
 
 if __name__ == '__main__':
-
-    isim = test_interventions()
-    asim = test_analyzers()
+    with sc.timer():
+        isim = test_interventions()
+        asim = test_analyzers()

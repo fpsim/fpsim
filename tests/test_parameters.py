@@ -5,30 +5,14 @@ Run tests on individual parameters.
 import sciris as sc
 import fpsim as fp
 
-def get_pars():
-    return fp.pars()
+do_plot = True
+sc.options(backend='agg') # Turn off interactive plots
 
 
-def make(pars, n=100, verbose=0, do_run=True, **kwargs):
-    '''
-    Define a default simulation for testing the baseline.
-    '''
-
-    pars['n'] = n
-    pars['verbose'] = verbose
-    pars.update(kwargs)
-    sim = fp.Sim(pars=pars)
-
-    if do_run:
-        sim.run()
-
-    return sim
-
-
-def test_null(do_plot=False):
+def test_null(do_plot=do_plot):
     sc.heading('Testing no births, no deaths...')
 
-    pars = get_pars() # For default pars
+    pars = fp.pars('test') # For default pars
     pars['age_mortality']['f'] *= 0
     pars['age_mortality']['m'] *= 0
     pars['age_mortality']['trend'] *= 0
@@ -38,7 +22,8 @@ def test_null(do_plot=False):
     pars['high_parity']         = 4
     pars['high_parity_nonuse_correction']  = 0
 
-    sim = make(pars)
+    sim = fp.Sim(pars)
+    sim.run()
 
     if do_plot:
         sim.plot()
@@ -46,14 +31,31 @@ def test_null(do_plot=False):
     return sim
 
 
+def test_method_timestep():
+    sc.heading('Test sim speed')
+
+    pars1 = fp.pars(location='test', method_timestep=1)
+    pars2 = fp.pars(location='test', method_timestep=6)
+    sim1 = fp.Sim(pars1)
+    sim2 = fp.Sim(pars2)
+
+    T = sc.timer()
+
+    sim1.run()
+    t1 = T.tt(output=True)
+
+    sim2.run()
+    t2 = T.tt(output=True)
+
+    assert t2 < t1, 'Expecting runtime to be less with a larger method timestep'
+
+    return [t1, t2]
+
+
+
 if __name__ == '__main__':
 
-    # Start timing and optionally enable interactive plotting
-    T = sc.tic()
-
-    do_plot = True
-    null = test_null(do_plot=do_plot)
-
-    print('\n'*2)
-    sc.toc(T)
-    print('Done.')
+    sc.options(backend=None) # Turn on interactive plots
+    with sc.timer():
+        null = test_null(do_plot=do_plot)
+        timings = test_method_timestep()

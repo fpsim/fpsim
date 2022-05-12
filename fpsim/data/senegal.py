@@ -13,7 +13,8 @@ defaults = {
   'n'                             : 100000,
   'start_year'                    : 1960,
   'end_year'                      : 2019,
-  'timestep'                      : 1,
+  'timestep'                      : 1, # The simulation timestep in months
+  'method_timestep'               : 1, # How many simulation timesteps to go for every method update step
   'verbose'                       : 1,
   'seed'                          : 1,
   'fecundity_variation_low'       : 0.7,

@@ -4,30 +4,25 @@ Run tests on the calibration object.
 
 import sciris as sc
 import fpsim as fp
-import pytest
 
-pytest.skip(allow_module_level=True)
 
 do_plot = 0
 
-def make_calib(n=500):
+def make_calib():
     '''
     Define a default simulation for testing the baseline.
     '''
-    pars = fp.pars()
-    pars['n'] = n
-    pars['verbose'] = 0
+    pars = fp.pars('test', n=200)
     calib = fp.Calibration(pars=pars)
-
     return calib
 
 
-def test_calibration(n_trials=5, do_plot=False):
+def test_calibration(n_trials=3, do_plot=do_plot):
     ''' Compare the current default sim against the saved baseline '''
     sc.heading('Testing calibration...')
 
     calib_pars = dict(
-        exposure_correction = [1.5, 0.7, 1.5],
+        exposure_correction = [1.5, 1.4, 1.6],
     )
 
     # Calculate calibration
@@ -35,7 +30,7 @@ def test_calibration(n_trials=5, do_plot=False):
     calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=2)
     before,after = calib.summarize()
 
-    # assert before > after
+    assert after <= before, 'Expect calibration to not make fit worse'
 
     if do_plot:
         calib.before.plot()

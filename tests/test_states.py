@@ -2,15 +2,11 @@
 Test that people are in valid states
 '''
 
-import json
-import unittest
 import os
-import copy
 import numpy as np
 import sciris as sc
+import unittest
 import fpsim as fp
-import sys
-
 
 class TestStates(unittest.TestCase):
     @classmethod
@@ -27,9 +23,7 @@ class TestStates(unittest.TestCase):
             os.remove("total_results.json")
 
         self.debug_mode = True
-        pars = fp.pars()
-        pars['n'] = 200
-
+        pars = fp.pars('test')
 
         self.exp = fp.ExperimentVerbose(pars)
         self.exp.run_model(mother_ids=True)
@@ -37,15 +31,7 @@ class TestStates(unittest.TestCase):
         self.people = self.exp.people
         self.result_dict = self.exp.total_results
         self.year = None # change to make cross sectional tests apply to specific year
-
-        # suppresses unnecessary warning statements to increase runtime
-        sys.stdout = open(os.devnull, 'w')
-
-    def setUp(self):
-        pass
-
-    def tearDown(self):
-        pass
+        return
 
     def save_person_states(self, person_id, filename):
         """
@@ -69,9 +55,7 @@ class TestStates(unittest.TestCase):
 
         if not os.path.exists("debug"):
             os.mkdir("debug")
-        with open(filename, 'w') as output_file:
-            json.dump(person_dict, output_file)
-
+        sc.savejson(filename, person_dict)
         print(f"Saved debug file at {filename}")
 
     def find_indices(self, value_list, value):
@@ -267,7 +251,7 @@ class TestStates(unittest.TestCase):
             for index, last_year_length in enumerate(last_year_lengths):
                 if last_year_length == 0 and this_year_lengths[index] == 1:
                     self.assertAlmostEqual(ages[index], age_first_birth[index], delta=0.1, msg=f"Age at first birth is {ages[index]} but recorded as {age_first_birth[index]}")
-            last_year_lengths = copy.deepcopy(this_year_lengths)
+            last_year_lengths = sc.dcp(this_year_lengths)
 
     def test_sexual_debut(self):
         """

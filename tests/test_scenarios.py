@@ -6,21 +6,17 @@ import sciris as sc
 import fpsim as fp
 
 # Global settings
-p = sc.objdict() # Custom parameters
-p.n          = 500 # Population size
-p.start_year = 2000 # Start year of sims
-p.end_year   = 2010 # End year of sims
-p.verbose    = 0 # Verbosity to use
 int_year = 2002 # Year to start the interventions
 serial   = False # Whether to run in serial (for debugging)
 do_plot  = True # Whether to do plotting in interactive mode
+sc.options(backend='agg') # Turn off interactive plots
 
 
 def make_sims(interventions):
     ''' Make simulations with paticular interventions '''
     simlist = sc.autolist()
     for intv in interventions:
-        pars = fp.pars(interventions=intv, **p)
+        pars = fp.pars('test', interventions=intv)
         simlist += fp.Sim(pars=pars)
     return simlist
 
@@ -29,10 +25,10 @@ def test_update_methods_eff():
     """
     Checks that fp.update_methods() properly updates sim.pars efficacies
     """
-    low_eff = dict(dist='uniform', par1=0.80, par2=0.90)
+    low_eff  = dict(dist='uniform', par1=0.80, par2=0.90)
     high_eff = dict(dist='uniform', par1=0.91, par2=0.95)
 
-    scen_low_eff = dict(eff={'Other modern':low_eff})
+    scen_low_eff  = dict(eff={'Other modern':low_eff})
     scen_high_eff = dict(eff={'Other modern':high_eff})
 
     low_eff = fp.update_methods(int_year, scen_low_eff)
@@ -163,7 +159,7 @@ def test_scenarios(do_plot=do_plot):
 
 
     #%% Create sims
-    scens = fp.Scenarios(pars=p, repeats=2, scen_year=int_year)
+    scens = fp.Scenarios(location='test', repeats=2, scen_year=int_year)
     scens.add_scen(label='Baseline')
     scens.add_scen(uptake_scen1)
     scens.add_scen(uptake_scen2)
@@ -186,7 +182,7 @@ def test_scenarios(do_plot=do_plot):
 
 if __name__ == '__main__':
 
-    # run test suite
+    sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
         msim1 = test_update_methods_eff()
         msim2 = test_update_methods_probs()

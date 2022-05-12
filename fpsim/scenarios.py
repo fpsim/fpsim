@@ -245,7 +245,7 @@ class update_methods(fpi.Intervention):
                 Changes the specified uptake for all individuals that are in the first 6 months postpartum.
     """
 
-    def __init__(self, year, scen, matrix=None):
+    def __init__(self, year, scen, matrix=None, verbose=False):
         """
         Initializes self.year/scen/matrix from parameters
         """
@@ -257,10 +257,11 @@ class update_methods(fpi.Intervention):
         if self.matrix not in valid_matrices:
             raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{self.matrix}"')
         self.applied = False
+        self.verbose = verbose
         return
 
 
-    def apply(self, sim, verbose=True):
+    def apply(self, sim):
         """
         Applies the efficacy or contraceptive uptake changes if it is the specified year
         based on scenario specifications.
@@ -276,7 +277,7 @@ class update_methods(fpi.Intervention):
                     ind = key2ind(sim, k)
                     orig = sim.pars['method_efficacy'][ind]
                     sim.pars['method_efficacy'][ind] = v
-                    if verbose:
+                    if self.verbose:
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
             # Implement method mix shift
@@ -301,7 +302,7 @@ class update_methods(fpi.Intervention):
                             matrix[source, dest] *= getval(factor)
                         elif value is not None:
                             matrix[source, dest] = getval(value)
-                        if verbose:
+                        if self.verbose:
                             print(f'At time {sim.y:0.1f}, matrix for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
 
 

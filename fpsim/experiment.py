@@ -867,7 +867,7 @@ class Fit(sc.prettyobj):
         return self.mismatch
 
 
-    def reconcile_inputs(self):
+    def reconcile_inputs(self, verbose=False):
         ''' Find matching keys and indices between the model and the data '''
 
         data_cols = set(self.data.keys())
@@ -891,7 +891,7 @@ class Fit(sc.prettyobj):
             count = -1
             for d, datum in enumerate(self.data[key]):
                 count += 1
-                if np.isfinite(datum):
+                if np.isfinite(datum): # TODO: match dates for time series data
                     self.inds.sim[key].append(count)
                     self.inds.data[key].append(count)
             self.inds.sim[key]  = np.array(self.inds.sim[key])
@@ -909,8 +909,9 @@ class Fit(sc.prettyobj):
                 try:
                     self.pair[key].sim[i]  = self.sim_results[key][sim_inds[i]]
                     self.pair[key].data[i] = self.data[key][data_inds[i]]
-                except:
-                    print('WARNING: exception at', key, i, len(sim_inds), len(self.pair[key].sim),  len(self.sim_results[key]))
+                except Exception:
+                    if verbose:
+                        print('WARNING: exception at', key, i, len(sim_inds), len(self.pair[key].sim),  len(self.sim_results[key]))
 
         # Process custom inputs
         self.custom_keys = list(self.custom.keys())

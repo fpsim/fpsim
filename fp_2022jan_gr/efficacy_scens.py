@@ -4,10 +4,9 @@ Run efficacy scenarios for the GR
 
 import sciris as sc
 import fpsim as fp
-import fp_analyses as fa
 
 # Define basic things here
-default_pars = fa.senegal_parameters.make_pars()
+default_pars = fp.pars()
 method_names = default_pars['methods']['names']
 
 
