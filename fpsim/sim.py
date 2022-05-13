@@ -867,8 +867,9 @@ class Sim(fpb.BaseSim):
         ind = sc.findnearest(trend_years, self.y)
         nearest_val = trend_vals[ind]
         year_diff = self.y - trend_years[ind]
-        correction = self['mcpr_growth_rate']**year_diff
-        trend_val = nearest_val*correction
+        correction = self['mcpr_growth_rate']*year_diff
+        trend_val = (nearest_val + correction)/methods['mcpr_norm']
+        print(f'{self.y:0.0f}, {trend_val:0.2f}')
 
         # Update general population switching matrices for current year mCPR - stratified by age
         for key, val in methods['probs'].items():
