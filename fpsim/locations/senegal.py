@@ -262,16 +262,18 @@ def methods(age_stratified=True):
     '''
     methods = {}
 
-    methods['map'] = {'None': 0,
-                      'Pill': 1,
-                      'IUDs': 2,
-                      'Injectables': 3,
-                      'Condoms': 4,
-                      'BTL': 5,
-                      'Withdrawal': 6,
-                      'Implants': 7,
-                      'Other traditional': 8,
-                      'Other modern': 9}
+    methods['map'] = {
+        'None'              : 0,
+        'Pill'              : 1,
+        'IUDs'              : 2,
+        'Injectables'       : 3,
+        'Condoms'           : 4,
+        'BTL'               : 5,
+        'Withdrawal'        : 6,
+        'Implants'          : 7,
+        'Other traditional' : 8,
+        'Other modern'      : 9,
+    }
 
     methods['names'] = list(methods['map'].keys())
 
@@ -337,17 +339,15 @@ def methods(age_stratified=True):
             [0.1203931080,   0.0051669358,   0.0023516490,   0.0065718465,   0.0007060277,   0.0002353934,  0.0004707359,  0.0002353934, 0.8636335171, 0.0002353934],
             [0.2027418204,   0.0000000000,   0.0000000000,   0.0032480686,   0.0097152118,   0.0000000000,  0.0032480686,  0.0000000000, 0.0064864638, 0.7745603668]])
 
+    # Data on trend in MCPR in Senegal over time, in % # CK: TODO: find source
     methods['mcpr_years'] = np.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
-
-    # Projected out past 2020 with a 2% assumed growth rate for baseline scenarios
-    mcpr_rates = np.array([0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20, 20.4])
-
+    mcpr_rates            = np.array([0.50,  1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8,   19,   20, 20.4])
     methods['trend'] = mcpr_rates[-3] / mcpr_rates  # normalize trend around 2018 so "no method to no method" matrix entry will increase or decrease based on mcpr that year, probs from 2018
 
     return methods
 
 
-def methods_postpartum():
+def methods_pp():
     '''
     Function to give probabilities postpartum.
 
@@ -357,9 +357,9 @@ def methods_postpartum():
 
     Data from Senegal DHS contraceptive calendars, 2017 and 2018 combined
     '''
-    methods_postpartum = {}
+    methods_pp = {}
 
-    methods_postpartum['map'] = {'None': 0,
+    methods_pp['map'] = {'None': 0,
                       'Pill': 1,
                       'IUDs': 2,
                       'Injectables': 3,
@@ -370,16 +370,16 @@ def methods_postpartum():
                       'Other traditional' : 8,
                       'Other modern' : 9}
 
-    methods_postpartum['names'] = list(methods_postpartum['map'].keys())
+    methods_pp['names'] = list(methods_pp['map'].keys())
 
-    methods_postpartum['probs_matrix_1'] = {
+    methods_pp['probs_matrix_1'] = {
         '<18': np.array([0.9606501283, 0.0021385800, 0.0004277160, 0.0128314799, 0.0008554320, 0.0000000000, 0.0008554320, 0.0205303678, 0.0017108640, 0.0000000000]),
         '18-20': np.array([0.9524886878, 0.0028280543, 0.0005656109, 0.0214932127, 0.0005656109, 0.0000000000, 0.0005656109, 0.0197963801, 0.0016968326, 0.0000000000]),
         '21-25': np.array([0.9379245283, 0.0083018868, 0.0013207547, 0.0284905660, 0.0009433962, 0.0000000000, 0.0000000000, 0.0177358491, 0.0052830189, 0.0000000000]),
         '>25': np.array([0.9253704535, 0.0102379883, 0.0040413112, 0.0264930400, 0.0007184553, 0.0022451729, 0.0001796138, 0.0267624607, 0.0035922766, 0.0003592277])
     }
 
-    methods_postpartum['probs_matrix_1-6'] = {
+    methods_pp['probs_matrix_1-6'] = {
         '<18': np.array([
             [0.9013605442, 0.0126336249, 0.0004859086, 0.0510204082, 0.0009718173, 0.0000000000, 0.0000000000, 0.0272108844, 0.0063168124, 0.0000000000],
             [0.4000000000, 0.6000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
@@ -426,7 +426,7 @@ def methods_postpartum():
             [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000]])
     }
 
-    return methods_postpartum
+    return methods_pp
 
 
 def efficacy(disable=False):
@@ -499,30 +499,11 @@ def barriers():
     return barriers
 
 
-def sexual_debut():
-    '''
-    Returns a linear interpolation of probability that a woman of a certain age has had sexual debut
-    From STAT Compiler DHS https://www.statcompiler.com/en/
-    Using indicator "
-    Data taken from 2019 DHS
-    Onset of sexual debut assumed to be linear from age 10 to first data point at age 15
-    '''
-
-    sexual_debut = np.array([[0, 5, 10,  15,   18,    20,   22,   25,   50],
-                             [0, 0,  0,   9, 35.2,  52.3, 64.7, 77.1, 93.3]])
-
-    sexual_debut[1] /= 100  # Convert from percent to rate per woman
-    debut_ages = sexual_debut[0]
-    debut_interp_model = si.interp1d(x=debut_ages, y=sexual_debut[1])
-    debut_interp = debut_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
-
-    return debut_interp
-
-
 def debut_age():
     '''
     Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
     Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
+    Use sexual_debut_age_probs.py under fp_analyses/data to output for other DHS countries
     '''
 
     sexual_debut = np.array([
@@ -784,8 +765,8 @@ def make_pars(configuration_file=None, defaults_file=None):
 
     # Complicated parameters
     pars['methods']                    = methods()
-    pars['methods_postpartum']         = methods_postpartum()
-    pars['methods_postpartum_switch']  = {}
+    pars['methods_postpartum']                 = methods_pp()
+    pars['methods_postpartum_switch']          = {}
     pars['age_pyramid']                = age_pyramid()
     pars['age_mortality']              = age_mortality(bound=True)
     pars['age_fecundity']              = female_age_fecundity(bound=True)  # Changed to age_fecundity for now from age_fertility for use with LEMOD
@@ -795,7 +776,6 @@ def make_pars(configuration_file=None, defaults_file=None):
     pars['maternal_mortality']         = maternal_mortality()
     pars['infant_mortality']           = infant_mortality()
     pars['stillbirth_rate']            = stillbirth()
-    pars['sexual_debut']               = sexual_debut()
     pars['debut_age']                  = debut_age()
     pars['sexual_activity']            = sexual_activity() # Returns linear interpolation of annual sexual activity based on age
     pars['pref_spacing']               = birth_spacing_preference()
