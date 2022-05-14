@@ -359,19 +359,6 @@ def methods_pp():
     '''
     methods_pp = {}
 
-    methods_pp['map'] = {'None': 0,
-                      'Pill': 1,
-                      'IUDs': 2,
-                      'Injectables': 3,
-                      'Condoms': 4,
-                      'BTL': 5,
-                      'Withdrawal': 6,
-                      'Implants': 7,
-                      'Other traditional' : 8,
-                      'Other modern' : 9}
-
-    methods_pp['names'] = list(methods_pp['map'].keys())
-
     methods_pp['probs_matrix_1'] = {
         '<18': np.array([0.9606501283, 0.0021385800, 0.0004277160, 0.0128314799, 0.0008554320, 0.0000000000, 0.0008554320, 0.0205303678, 0.0017108640, 0.0000000000]),
         '18-20': np.array([0.9524886878, 0.0028280543, 0.0005656109, 0.0214932127, 0.0005656109, 0.0000000000, 0.0005656109, 0.0197963801, 0.0016968326, 0.0000000000]),

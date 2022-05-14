@@ -153,6 +153,7 @@ class People(fpb.BasePeople):
         # Probability of initiating a postpartum method at 0-3 months postpartum
         # Transitional probabilities are for the first 3 month time period after delivery from DHS data
 
+        methods = self.pars['methods']
         pp_methods = self.pars['methods_postpartum']
         pp_switch  = self.pars['methods_postpartum_switch']
         orig_methods = self.method
@@ -206,7 +207,7 @@ class People(fpb.BasePeople):
             match_low  = (self.age >= age_low)
             match_high = (self.age <  age_high)
             match_postpartum_age = self.postpartum * postpartum6 * match_low * match_high
-            for m in pp_methods['map'].values():
+            for m in methods['map'].values():
                 match_m    = (orig_methods == m)
                 match = match_m * match_postpartum_age
                 this_method = self.filter(match)
