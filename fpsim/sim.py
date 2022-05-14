@@ -54,7 +54,7 @@ class People(fpb.BasePeople):
         self.barrier  = arr(n, d['barrier'])  # Reason for non-use
         self.alive    = arr(n, d['alive'])
         self.pregnant = arr(n, d['pregnant'])
-        self.fertile = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
+        self.fertile  = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
 
         # #Socio-demographic
         # self.wealth   = arr(n, d['wealth'])
@@ -62,29 +62,30 @@ class People(fpb.BasePeople):
         # self.urban    = arr(n, d['urban'])
 
         # Sexual and reproductive history
-        self.sexually_active = arr(n, d['sexually_active'])
-        self.sexual_debut    = arr(n, d['sexual_debut'])
+        self.sexually_active  = arr(n, d['sexually_active'])
+        self.sexual_debut     = arr(n, d['sexual_debut'])
         self.sexual_debut_age = arr(n, np.float64(d['sexual_debut_age'])) # Age at first sexual debut in years, If not debuted, -1
         self.fated_debut      = arr(n, np.float64(d['debut_age']))
         self.first_birth_age  = arr(n, np.float64(d['first_birth_age'])) # Age at first birth.  If no births, -1
-        self.lactating       = arr(n, d['lactating'])
-        self.gestation       = arr(n, d['gestation'])
-        self.preg_dur        = arr(n, d['preg_dur'])
-        self.stillbirth      = arr(n, d['stillbirth']) # Number of stillbirths
-        self.miscarriage     = arr(n, d['miscarriage']) # Number of miscarriages
-        self.abortion        = arr(n, d['abortion']) # Number of abortions
-        self.postpartum      = arr(n, d['postpartum'])
-        self.mothers         = arr(n, d['mothers'])
+        self.lactating        = arr(n, d['lactating'])
+        self.gestation        = arr(n, d['gestation'])
+        self.preg_dur         = arr(n, d['preg_dur'])
+        self.stillbirth       = arr(n, d['stillbirth']) # Number of stillbirths
+        self.miscarriage      = arr(n, d['miscarriage']) # Number of miscarriages
+        self.abortion         = arr(n, d['abortion']) # Number of abortions
+        self.postpartum       = arr(n, d['postpartum'])
+        self.mothers          = arr(n, d['mothers'])
 
-        self.postpartum_dur  = arr(n, d['postpartum_dur']) # Tracks # months postpartum
-        self.lam             = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
-        self.children        = arr(n, []) # Indices of children -- list of lists
-        self.dobs            = arr(n, []) # Dates of births -- list of lists
-        self.still_dates     = arr(n, []) # Dates of stillbirths -- list of lists
-        self.miscarriage_dates = arr(n, []) # Dates of miscarriages -- list of lists
-        self.abortion_dates = arr(n, [])  # Dates of abortions -- list of lists
-        self.breastfeed_dur  = arr(n, d['breastfeed_dur'])
+        self.postpartum_dur       = arr(n, d['postpartum_dur']) # Tracks # months postpartum
+        self.lam                  = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
+        self.breastfeed_dur       = arr(n, d['breastfeed_dur'])
         self.breastfeed_dur_total = arr(n, d['breastfeed_dur_total'])
+
+        self.children          = arr(n, []) # Indices of children -- list of lists
+        self.dobs              = arr(n, []) # Dates of births -- list of lists
+        self.still_dates       = arr(n, []) # Dates of stillbirths -- list of lists
+        self.miscarriage_dates = arr(n, []) # Dates of miscarriages -- list of lists
+        self.abortion_dates    = arr(n, []) # Dates of abortions -- list of lists
 
         # Fecundity variation
         fv = [self.pars['fecundity_variation_low'], self.pars['fecundity_variation_high']]
