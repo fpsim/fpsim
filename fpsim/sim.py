@@ -125,7 +125,7 @@ class People(fpb.BasePeople):
                 this_method = self.filter(match)
                 old_method = this_method.method.copy()
 
-                matrix = self.pars['methods'][key]
+                matrix = methods[key]
                 choices = matrix[m]
                 choices = choices/choices.sum()
                 new_methods = fpu.n_multinomial(choices, match.sum())
