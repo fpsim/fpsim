@@ -10,6 +10,14 @@ All notable changes to the codebase are documented in this file. Changes that ma
 
 
 
+Version 0.10.4 (2022-05-17)
+--------------------------
+- Fixes bugs with the MCPR growth implementation, as well as the wrong matrix being used.
+- Added three new parameters: ``mcpr_growth_rate``, ``mcpr_max``, and ``mcpr_norm_year``, to control how MCPR growth is projected into the future.
+- Updated ``sim.run()`` to return ``self`` rather than ``self.results``.
+- *GitHub info*: PR `480 <https://github.com/amath-idm/fp_analyses/pull/480>`__
+
+
 Version 0.10.3 (2022-05-12)
 --------------------------
 - Move country-specific parameters from ``fpsim.data`` to ``fpsim.locations``.
