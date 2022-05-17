@@ -870,11 +870,12 @@ class Sim(fpb.BaseSim):
         nearest_val = trend_vals[ind]
         norm_val    = trend_vals[norm_ind]
         if self.y > max(trend_years): # We're after the last year of data: extrapolate
+            eps = 1e-3 # Epsilon for lowest allowed MCPR value (to avoid divide by zero errors)
             nearest_year = trend_years[ind]
             year_diff  = self.y - nearest_year
-            correction = (1+self['mcpr_growth_rate'])*year_diff
+            correction = self['mcpr_growth_rate']*year_diff
             extrapolated_val = nearest_val + correction
-            trend_val  = np.clip(extrapolated_val, 0, self['mcpr_max'])
+            trend_val  = np.clip(extrapolated_val, eps, self['mcpr_max'])
         else: # Otherwise, just use the nearest data point
             trend_val = nearest_val
         norm_trend_val  = trend_val/norm_val
@@ -1205,7 +1206,7 @@ class Sim(fpb.BaseSim):
             elapsed = T.toc(output=True)
             print(f'Run finished for "{self.label}" after {elapsed:0.1f} s')
 
-        return self.results
+        return self
 
 
     def store_postpartum(self):
