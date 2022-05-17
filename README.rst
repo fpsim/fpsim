@@ -33,8 +33,9 @@ Please follow the starsim style guide at: https://github.com/amath-idm/styleguid
 * High priority issues are organized from top (most urgent) to bottom (least urgent) and can be labelled with ``urgent`` or ``blocking`` as appropriate. If you are working on something that is urgent or blocks other development, please set a reasonable deadline for review (can be updated, of course!)
 * The Hydra Head Effect: Often when you solve one issue, two more pop up in its place. When this happens, close the original issue and start new issues (linked) to be triaged. 
 * If your issue has more than two distinct tasks associated with it, please include a check list in the text, so that we can track which components of the issue have been resolved and which need to be supported. 
+* If your issue is a bug that was not caught by test, and includes a specific expected value that can be hard-checked, please either include or request a test patch so that a test fails due to the bug
 
-Pull Requests 
+**Pull Requests**
 
 * ALL PRs should be linked to at least one issue. As above, if you're working on a PR and there's no issue associated with it, you can create an issue. However, before doing so, ask yourself if it really needs to be done. 
 * All PRs should have another person assigned for review. If assigned to more than one person, use the comment section to assign an issue owner/main reviewer. Use your best judgement here, as roles shift, but in general: 
@@ -57,5 +58,18 @@ Pull Requests
 * Please create a draft PR on an active branch as soon as you're ready. Be generous in creating draft PRs. It helps with transparency and allows for quicker support if you run into a problem.
 * Make sure tests pass on your PR. If they don't, mark the PR as draft until they do.
 * Even if your work isn't ready for a PR, push it regularly. A guiding principle is to commit every few minutes and push to your branch every 1-2 hours.
+* Every PR that adds a new feature or new functionality which can be hard-checked (so, excluding plotting functionality etc.) should include a corresponding unittest
+
+**Testing**
+
+* Every time a new feature is added, the developer should develop a unittest which checks the basic implementation of the feature
+* A unittest is simply a function starting with "test" that implements a feature as succinctly as possibly, and checks the expected output with an assertion
+* If you're having trouble starting a unittest feel free to look at some examples `here <https://github.com/amath-idm/fp_analyses/blob/master/tests/test_scenarios.py>`_
+* `Some test suites <https://github.com/amath-idm/fp_analyses/blob/master/tests/test_states.py>`_ organize the tests into a class with a configuration function called ``setUp()``. After implementing a unittest in such a class you may want to take advantage of the shared assets defined in ``setUp()`` to minimize the number of lines of code in your test.
+* The new unittest should follow style guidelines laid out in the `starsim style guide <https://github.com/amath-idm/styleguide/tree/testing>`_
+* The new test should contain a docstring that details what is being tested, how it is tested (what it's being checked against), and the expected value
+* The test should display error message information that is sufficient to create a bug report (summary, expected value, and actual value)
+
+
 
 
