@@ -169,8 +169,9 @@ def test_scenarios(do_plot=do_plot):
     scens.run(serial=serial)
 
     # Ensure that everything is unique
-    tfr = scens.results.df.tfr
-    assert len(tfr) == len(tfr.unique()), 'Number of unique TFR values is less than the number of sims, could be unlucky or a bug'
+    df = scens.results.df
+    dfhash = df.births + df.fails + df.popsize + df.tfr # Construct a "hash" by summing column values -- at least one should differ
+    assert len(dfhash) == len(dfhash.unique()), 'Number of unique output values is less than the number of sims, could be unlucky or a bug'
 
     # Plot and print results
     if do_plot:
