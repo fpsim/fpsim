@@ -864,22 +864,22 @@ class Sim(fpb.BaseSim):
         # Compute the trend in MCPR
         trend_years = methods['mcpr_years']
         trend_vals  = methods['mcpr_rates']
-        ind      = sc.findnearest(trend_years, self.y)
-        norm_ind = sc.findnearest(trend_years, self['mcpr_norm_year'])
+        ind      = sc.findnearest(trend_years, self.y) # The year of data closest to the sim year
+        norm_ind = sc.findnearest(trend_years, self['mcpr_norm_year']) # The year we're using to normalize
 
-        nearest_val = trend_vals[ind]
-        norm_val    = trend_vals[norm_ind]
+        nearest_val = trend_vals[ind] # Nearest MCPR value from the data
+        norm_val    = trend_vals[norm_ind] # Normalization value
         if self.y > max(trend_years): # We're after the last year of data: extrapolate
             eps = 1e-3 # Epsilon for lowest allowed MCPR value (to avoid divide by zero errors)
             nearest_year = trend_years[ind]
             year_diff  = self.y - nearest_year
-            correction = self['mcpr_growth_rate']*year_diff
-            extrapolated_val = nearest_val + correction
-            trend_val  = np.clip(extrapolated_val, eps, self['mcpr_max'])
+            correction = self['mcpr_growth_rate']*year_diff # Project the change in MCPR
+            extrapolated_val = nearest_val + correction # Add the projection to the current value
+            trend_val  = np.clip(extrapolated_val, eps, self['mcpr_max']) # Ensure it stays within bounds
         else: # Otherwise, just use the nearest data point
             trend_val = nearest_val
-        norm_trend_val  = trend_val/norm_val
-        # print(f'y={self.y:0.0f}, near={nearest_val:0.2f}, tr={trend_val:0.2f}, norm={norm_trend_val:0.2f}')
+        norm_trend_val  = trend_val/norm_val # Normalize so the correction factor is 1 at the normalization year
+        # print(f'y={self.y:0.0f}, near={nearest_val:0.2f}, tr={trend_val:0.2f}, norm={norm_trend_val:0.2f}') # For debugging -- can be removed
 
         # Update general population switching matrices for current year mCPR - stratified by age
         for key, val in methods['probs'].items():
