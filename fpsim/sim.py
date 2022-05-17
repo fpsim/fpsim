@@ -874,7 +874,7 @@ class Sim(fpb.BaseSim):
             nearest_year = trend_years[ind]
             year_diff  = self.y - nearest_year
             correction = self['mcpr_growth_rate']*year_diff # Project the change in MCPR
-            extrapolated_val = nearest_val + correction # Add the projection to the current value
+            extrapolated_val = nearest_val*(1 + correction) # Multiply the current value by the projection
             trend_val  = np.clip(extrapolated_val, eps, self['mcpr_max']) # Ensure it stays within bounds
         else: # Otherwise, just use the nearest data point
             trend_val = nearest_val
