@@ -989,7 +989,7 @@ class Sim(fpb.BaseSim):
             self.apply_interventions()
 
             # Update method matrices for year of sim to trend over years
-            self.update_methods_matrices()
+            self.update_methods()
 
             # Update mortality probabilities for year of sim
             self.update_mortality_probs()
