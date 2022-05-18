@@ -902,6 +902,7 @@ class Sim(fpb.BaseSim):
             'stillbirth_rate':    'stillbirth',
         }
 
+        self['mortality_probs'] = {}
         for key1,key2 in mapping.items():
             ind = sc.findnearest(self[key1]['years'], self.y)
             val = self[key1]['probs'][ind]
