@@ -144,8 +144,9 @@ class People(fpb.BasePeople):
         return
 
 
-    def get_method_postpartum(self):
-        '''Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by
+    def get_method_pp(self):
+        '''
+        Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by
         3 months postpartum and then initiate, continue, or discontinue a method by 6 months postpartum.
         Next opportunity to switch methods will be on whole calendar years, whenever that falls.
         '''
@@ -564,7 +565,7 @@ class People(fpb.BasePeople):
         return
 
 
-    def update_contraception(self):
+    def update_methods(self):
         '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
 
         if not (self.i % self.pars['method_timestep']): # Allow skipping timesteps
@@ -572,7 +573,7 @@ class People(fpb.BasePeople):
             pp = self.filter(postpartum)
             non_pp = self.filter(~postpartum)
 
-            pp.get_method_postpartum()
+            pp.get_method_pp()
 
             age_diff = non_pp.ceil_age - non_pp.age
             whole_years = ((age_diff < (1/fpd.mpy)) * (age_diff > 0))
@@ -743,7 +744,6 @@ class Sim(fpb.BaseSim):
             fpu.set_seed(self['seed'])
             self.init_results()
             self.init_people()
-            self.interventions = {}  # dictionary for possible interventions to add to the sim
         return
 
 
@@ -844,24 +844,14 @@ class Sim(fpb.BaseSim):
         return
 
 
-    def add_intervention(self, intervention, year):
-        '''Allow adding an intervention at the time point corresponding to the year passed in'''
-        index = self.year2ind(year)
-        self.interventions[index] = intervention
-        return
-
-
     def update_methods_matrices(self):
-        '''Update all contraceptive matrices to have probabilities that follow a trend closest to the
-        year the sim is on based on mCPR in that year'''
+        '''
+        Update all contraceptive matrices to have probabilities that follow a trend closest to the
+        year the sim is on based on mCPR in that year
+        '''
 
         methods = self['methods'] # Shorten methods
-        methods['switch'] = dict(general={}, pp0to1={}, pp1to6={}) # Create new switching matrices
-        raw = sc.dcp(methods['raw']) # Avoids needing to copy this within loops later
-        switch = methods['switch'] # Shorten
-        # general = methods['switch']['general'] # Normalized general switching matrix
-        # pp0to1  = methods['switch']['pp0to1']  # Normalized postpartum initiation matrix (0-1 month)
-        # pp1to6  = methods['switch']['pp1to6']  # Normalized postpartum switching matrix (1-6 months)
+        methods['switch'] = sc.dcp(methods['raw']) # Avoids needing to copy this within loops later
 
         # Compute the trend in MCPR
         trend_years = methods['mcpr_years']
@@ -884,22 +874,17 @@ class Sim(fpb.BaseSim):
 
         # Update general population and postpartum switching matrices for current year mCPR - stratified by age
         for switchkey in ['general', 'pp1to6']:
-            for agekey,matrix in methods['raw'][switchkey].items():
-                switch = methods['switch'][switchkey][agekey]
-                switch = matrix.copy()
-                switch[0, 0] /= norm_trend_val  # Takes into account mCPR during year of sim
+            for matrix in methods['switch'][switchkey].values():
+                matrix[0, 0] /= norm_trend_val  # Takes into account mCPR during year of sim
                 for i in range(len(matrix)):
-                    denom = switch[i,:].sum()
+                    denom = matrix[i,:].sum()
                     if denom > 0:
-                        switch[i] = switch[i, :] / denom  # Normalize so probabilities add to 1
+                        matrix[i] = matrix[i, :] / denom  # Normalize so probabilities add to 1
 
         # Update postpartum initiation matrices for current year mCPR - stratified by age
-        for agekey,matrix in methods_pp['probs1'].items():
-            switch = methods['switch']['pp0to1'][agekey]
-            switch['pp0to1'][agekey] = matrix.copy()
-            start_postpartum[key][0] /= norm_trend_val  # Takes into account mCPR during year of sim
-            start_postpartum[key] = start_postpartum[key] / start_postpartum[key].sum()
-            methods_pp[key] = start_postpartum[key]  # 1d array for probs coming from birth, binned by age
+        for matrix in methods['switch']['probs1'].values():
+            matrix[0] /= norm_trend_val  # Takes into account mCPR during year of sim
+            matrix = matrix / matrix.sum()
 
         return
 
@@ -1011,10 +996,6 @@ class Sim(fpb.BaseSim):
 
             # Update mortality probabilities for year of sim
             self.update_mortality_probs()
-
-            # Call the interventions
-            if i in self.interventions:
-                self.interventions[i](self)
 
             # Update the people
             self.people.i = self.i
