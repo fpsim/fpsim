@@ -4,10 +4,11 @@ Run tests on the Scenarios class.
 
 import sciris as sc
 import fpsim as fp
+import pytest
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-serial   = 0 # Whether to run in serial (for debugging)
+serial   = 1 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
 
@@ -157,7 +158,6 @@ def test_scenarios(do_plot=do_plot):
 
     uptake_scen3 = [uptake_scen1, uptake_scen2]
 
-
     #%% Create sims
     scens = fp.Scenarios(location='test', n=200, repeats=2, scen_year=int_year)
     scens.add_scen(label='Baseline')
@@ -173,6 +173,18 @@ def test_scenarios(do_plot=do_plot):
     dfhash = df.births + df.fails + df.popsize + df.tfr # Construct a "hash" by summing column values -- at least one should differ
     assert len(dfhash) == len(dfhash.unique()), 'Number of unique output values is less than the number of sims, could be unlucky or a bug'
 
+    # Check we can't add invalid scenarios
+    invalid_scen1 = dict(invalid_key='Should fail')
+    invalid_scen2 = dict(probs=dict(invalid_key='Also should fail'))
+    with pytest.raises(ValueError):
+        invalid_scens1 = fp.Scenarios(location='test')
+        invalid_scens1.add_scen(invalid_scen1)
+        invalid_scens1.run()
+    with pytest.raises(ValueError):
+        invalid_scens2 = fp.Scenarios(location='test')
+        invalid_scens2.add_scen(invalid_scen2)
+        invalid_scens2.run()
+
     # Plot and print results
     if do_plot:
         scens.plot_sims()
@@ -186,6 +198,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        msim1 = test_update_methods_eff()
-        msim2 = test_update_methods_probs()
+        # msim1 = test_update_methods_eff()
+        # msim2 = test_update_methods_probs()
         scens = test_scenarios()

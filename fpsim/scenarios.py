@@ -274,8 +274,9 @@ class update_methods(fpi.Intervention):
             self.applied = True # Ensure we don't apply this more than once
 
             # Implement efficacy
-            if 'eff' in self.scen:
-                for k,rawval in self.scen['eff'].items():
+            eff = self.scen.pop('eff', None)
+            if eff is not None:
+                for k,rawval in eff.items():
                     v = getval(rawval)
                     ind = key2ind(sim, k)
                     orig = sim['method_efficacy'][ind]
@@ -284,13 +285,22 @@ class update_methods(fpi.Intervention):
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
             # Implement method mix shift
-            if 'probs' in self.scen:
-                for entry in self.scen['probs']:
-                    source = key2ind(sim, entry['source'])
-                    dest   = key2ind(sim, entry['dest'])
+            probs = self.scen.pop('probs', None)
+            if probs is not None:
+                for entry in probs:
+                    entry = sc.dcp(entry)
+                    source = key2ind(sim, entry.pop('source', None))
+                    dest   = key2ind(sim, entry.pop('dest', None))
                     factor = entry.pop('factor', None)
                     value  = entry.pop('value', None)
                     keys   = entry.pop('keys', None)
+
+                    # Validation
+                    valid_keys = ['source', 'dest', 'factor', 'value', 'keys']
+                    if len(entry) != 0:
+                        errormsg = f'Keys "{sc.strjoin(entry.keys())}" not valid entries: must be among {sc.strjoin(valid_keys())}'
+                        raise ValueError(errormsg)
+
                     if keys in none_all_keys:
                         keys = sim.pars['methods']['probs'].keys()
 
@@ -308,5 +318,8 @@ class update_methods(fpi.Intervention):
                         if self.verbose:
                             print(f'At time {sim.y:0.1f}, matrix for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
 
+            if len(self.scen):
+                errormsg = f'Invalid scenario keys detected: "{sc.strjoin(self.scen.keys())}"; must be "eff" or "probs"'
+                raise ValueError(errormsg)
 
         return
