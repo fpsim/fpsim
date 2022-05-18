@@ -539,8 +539,8 @@ class People(fpb.BasePeople):
             self.step_results['birth_bins'][key] += birth_bins
 
         # Check mortality
-        live.maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
-        i_death = live.infant_mortality()
+        live.check_maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
+        i_death = live.check_infant_mortality()
 
         # TEMP -- update children, need to refactor
         r = fpu.dict2obj(self.step_results)
@@ -558,7 +558,6 @@ class People(fpb.BasePeople):
         for mother,n_children in children_map.items():
             end_ind = start_ind+n_children
             children = list(range(start_ind, end_ind))
-            # print(mother, children)
             all_ppl.children[mother] += children
             start_ind = end_ind
 
