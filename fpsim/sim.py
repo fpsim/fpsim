@@ -125,7 +125,7 @@ class People(fpb.BasePeople):
                 this_method = self.filter(match)
                 old_method = this_method.method.copy()
 
-                matrix = methods['probs'][key]
+                matrix = methods[key]
                 choices = matrix[m]
                 choices = choices/choices.sum()
                 new_methods = fpu.n_multinomial(choices, match.sum())
@@ -863,17 +863,28 @@ class Sim(fpb.BaseSim):
 
         # Compute the trend in MCPR
         trend_years = methods['mcpr_years']
-        trend_vals = methods['mcpr_trend']
-        ind = sc.findnearest(trend_years, self.y)
-        nearest_val = trend_vals[ind]
-        year_diff = self.y - trend_years[ind]
-        correction = self['mcpr_growth_rate']**year_diff
-        trend_val = nearest_val*correction
+        trend_vals  = methods['mcpr_rates']
+        ind      = sc.findnearest(trend_years, self.y) # The year of data closest to the sim year
+        norm_ind = sc.findnearest(trend_years, self['mcpr_norm_year']) # The year we're using to normalize
+
+        nearest_val = trend_vals[ind] # Nearest MCPR value from the data
+        norm_val    = trend_vals[norm_ind] # Normalization value
+        if self.y > max(trend_years): # We're after the last year of data: extrapolate
+            eps = 1e-3 # Epsilon for lowest allowed MCPR value (to avoid divide by zero errors)
+            nearest_year = trend_years[ind]
+            year_diff  = self.y - nearest_year
+            correction = self['mcpr_growth_rate']*year_diff # Project the change in MCPR
+            extrapolated_val = nearest_val*(1 + correction) # Multiply the current value by the projection
+            trend_val  = np.clip(extrapolated_val, eps, self['mcpr_max']) # Ensure it stays within bounds
+        else: # Otherwise, just use the nearest data point
+            trend_val = nearest_val
+        norm_trend_val  = trend_val/norm_val # Normalize so the correction factor is 1 at the normalization year
+        # print(f'y={self.y:0.0f}, near={nearest_val:0.2f}, tr={trend_val:0.2f}, norm={norm_trend_val:0.2f}') # For debugging -- can be removed
 
         # Update general population switching matrices for current year mCPR - stratified by age
         for key, val in methods['probs'].items():
             switch_general[key] = sc.dcp(val)
-            switch_general[key][0, 0] *= trend_val  # Takes into account mCPR during year of sim
+            switch_general[key][0, 0] /= norm_trend_val  # Takes into account mCPR during year of sim
             for i in range(len(switch_general[key])):
                 denom = switch_general[key][i,:].sum()
                 if denom > 0:
@@ -883,14 +894,14 @@ class Sim(fpb.BaseSim):
         # Update postpartum initiation matrices for current year mCPR - stratified by age
         for key, val in methods_pp['probs1'].items():
             start_postpartum[key] = sc.dcp(val)
-            start_postpartum[key][0] *= trend_val  # Takes into account mCPR during year of sim
+            start_postpartum[key][0] /= norm_trend_val  # Takes into account mCPR during year of sim
             start_postpartum[key] = start_postpartum[key] / start_postpartum[key].sum()
             methods_pp[key] = start_postpartum[key]  # 1d array for probs coming from birth, binned by age
 
         # Update postpartum switching or discontinuation matrices from 1-6 months - stratified by age
         for key, val in methods_pp['probs1to6'].items():
             switch_postpartum[key] = sc.dcp(val)
-            switch_postpartum[key][0, 0] *= trend_val  # Takes into account mCPR during year of sim
+            switch_postpartum[key][0, 0] /= norm_trend_val  # Takes into account mCPR during year of sim
             for i in range(len(switch_postpartum[key])):
                 denom = switch_postpartum[key][i,:].sum()
                 if denom > 0:
@@ -1163,7 +1174,7 @@ class Sim(fpb.BaseSim):
             elapsed = T.toc(output=True)
             print(f'Run finished for "{self.label}" after {elapsed:0.1f} s')
 
-        return self.results
+        return self
 
 
     def store_postpartum(self):
