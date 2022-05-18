@@ -10,6 +10,14 @@ All notable changes to the codebase are documented in this file. Changes that ma
 
 
 
+Version 0.10.5 (2022-05-18)
+--------------------------
+- Changes how the matrices are implemented.
+- Removes circular import.
+- *GitHub info*: PR `482 <https://github.com/amath-idm/fp_analyses/pull/482>`__
+
+
+
 Version 0.10.4 (2022-05-17)
 --------------------------
 - Fixes bugs with the MCPR growth implementation, as well as the wrong matrix being used.
