@@ -656,8 +656,8 @@ class People(fpb.BasePeople):
             birthday_fraction = None,
             birth_bins        = {},
             age_bin_totals    = {},
-            switching_general={},
-            switching_postpartum={}
+            switching_annual      = {},
+            switching_postpartum = {}
         )
 
         for key in fpd.age_bin_mapping.keys():
@@ -671,7 +671,7 @@ class People(fpb.BasePeople):
             return np.zeros((m, m), dtype=int)
 
         for key in fpd.method_age_mapping.keys():
-            self.step_results['switching_general'][key]    = mm_zeros()
+            self.step_results['switching_annual'][key]    = mm_zeros()
             self.step_results['switching_postpartum'][key] = mm_zeros()
 
         self.step_results_switching = dict(
@@ -781,7 +781,7 @@ class Sim(fpb.BaseSim):
         self.results['imr'] = []
         self.results['birthday_fraction'] = []
         self.results['asfr'] = {}
-        self.results['switching_events_general'] = {}
+        self.results['switching_events_annual'] = {}
         self.results['switching_events_postpartum'] = {}
         self.results['switching_events_<18'] = {}
         self.results['switching_events_18-20'] = {}
@@ -792,7 +792,7 @@ class Sim(fpb.BaseSim):
         self.results['switching_events_pp_21-25'] = {}
         self.results['switching_events_pp_>25'] = {}
         for p in range(self.npts):
-            self.results['switching_events_general'][p] = np.zeros((m, m), dtype=int)
+            self.results['switching_events_annual'][p] = np.zeros((m, m), dtype=int)
             self.results['switching_events_postpartum'][p] = np.zeros((m, m), dtype=int)
             self.results['switching_events_<18'][p] = np.zeros((m, m), dtype=int)
             self.results['switching_events_18-20'][p] = np.zeros((m, m), dtype=int)
@@ -1074,16 +1074,16 @@ class Sim(fpb.BaseSim):
             self.results['total_women_45-49'][i] = r.age_bin_totals['45-49']
 
             # Store results of number of switching events in each age group
-            self.results['switching_events_<18'][i] = r.switching_general['<18']
-            self.results['switching_events_18-20'][i] = r.switching_general['18-20']
-            self.results['switching_events_21-25'][i] = r.switching_general['21-25']
-            self.results['switching_events_>25'][i] = r.switching_general['>25']
+            self.results['switching_events_<18'][i] = r.switching_annual['<18']
+            self.results['switching_events_18-20'][i] = r.switching_annual['18-20']
+            self.results['switching_events_21-25'][i] = r.switching_annual['21-25']
+            self.results['switching_events_>25'][i] = r.switching_annual['>25']
             self.results['switching_events_pp_<18'][i] = r.switching_postpartum['<18']
             self.results['switching_events_pp_18-20'][i] = r.switching_postpartum['18-20']
             self.results['switching_events_pp_21-25'][i] = r.switching_postpartum['21-25']
             self.results['switching_events_pp_>25'][i] = r.switching_postpartum['>25']
 
-            self.results['switching_events_general'][i] = switch_events['general']
+            self.results['switching_events_annual'][i] = switch_events['annual']
             self.results['switching_events_postpartum'][i] = switch_events['postpartum']
 
             # Calculate metrics over the last year in the model and save whole years and stats to an array
