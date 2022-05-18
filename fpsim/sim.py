@@ -992,7 +992,7 @@ class Sim(fpb.BaseSim):
             self.update_methods()
 
             # Update mortality probabilities for year of sim
-            self.update_mortality_probs()
+            self.update_mortality()
 
             # Update the people
             self.people.i = self.i
