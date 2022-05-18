@@ -100,7 +100,7 @@ def test_update_methods_probs():
     mlist = []
     mmap = msim.sims[0].pars['methods']['map']
     for i in range(4):
-        mlist.append(msim.sims[i].pars['methods']['adjusted'])
+        mlist.append(msim.sims[i].pars['methods']['raw'])
     m0, m1, m2, m3 = mlist
     none  = mmap['None']
     other = mmap['Other modern']
@@ -109,9 +109,9 @@ def test_update_methods_probs():
     assert m0['annual']['21-25'][none][other] == target_prob1, f"update_methods did not change contraceptive matrix 21-25 to specified {target_prob1}"
     assert m1['annual']['<18'][none][other]   == target_prob1, f"update_methods did not change contraceptive matrix <25 to specified {target_prob1}"
 
-    assert m2['pp1to6']['21-25'][none][other] != m3['pp1to6']['21-25'][none][other], "update_methods did not change postpartum contraceptive matrix for key 21-25"
-    assert m2['pp1to6']['21-25'][none][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for 21-25 to specified {target_prob1}"
-    assert m3['pp1to6']['<18'][none][other]   == target_prob1, f"update_methods did not change postpartum contraceptive matrix for <18 to specified {target_prob1}"
+    assert m2['pp0to1']['21-25'][other] != m3['pp0to1']['21-25'][other], "update_methods did not change postpartum contraceptive matrix for key 21-25"
+    assert m2['pp0to1']['21-25'][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for 21-25 to specified {target_prob1}"
+    assert m3['pp1to6']['<18'][none][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for <18 to specified {target_prob1}"
 
     assert m3['pp1to6']['<18'][other][none]   == target_prob2, "After updating method switching postpartum for <18 for None to {target_prob2}, value didn't change"
     assert m3['pp1to6']['21-25'][other][none] != target_prob2, "After updating method postpartum for 21-25, value is still {target_prob2}"

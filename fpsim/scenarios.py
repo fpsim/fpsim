@@ -312,7 +312,11 @@ class update_methods(fpi.Intervention):
                            if factor is not None:
                                matrix[dest] *= getval(factor)
                            elif value is not None:
-                               matrix[dest] = getval(value)
+                               val = getval(value)
+                               matrix[dest] = 0
+                               matrix *= (1-val)/matrix.sum()
+                               matrix[dest] = val
+                               assert matrix.sum() == 1
                            if self.verbose:
                                print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
                         else: # Handle annual switching *matrices*
@@ -320,7 +324,11 @@ class update_methods(fpi.Intervention):
                             if factor is not None:
                                 matrix[source, dest] *= getval(factor)
                             elif value is not None:
-                                matrix[source, dest] = getval(value)
+                                val = getval(value)
+                                matrix[source, dest] = 0
+                                matrix[source, :] *= (1-val)/matrix[source, :].sum()
+                                matrix[source, dest] = val
+                                assert matrix[source, :].sum() == 1
                             if self.verbose:
                                 print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
 
