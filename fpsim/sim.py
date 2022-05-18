@@ -855,11 +855,13 @@ class Sim(fpb.BaseSim):
         '''Update all contraceptive matrices to have probabilities that follow a trend closest to the
         year the sim is on based on mCPR in that year'''
 
-        switch_general    = {}
-        start_postpartum  = {}
-        switch_postpartum = {}
-        methods    = self['methods']
-        methods_pp = self['methods_pp']
+        methods = self['methods'] # Shorten methods
+        methods['switch'] = dict(general={}, pp0to1={}, pp1to6={}) # Create new switching matrices
+        raw = sc.dcp(methods['raw']) # Avoids needing to copy this within loops later
+        switch = methods['switch'] # Shorten
+        # general = methods['switch']['general'] # Normalized general switching matrix
+        # pp0to1  = methods['switch']['pp0to1']  # Normalized postpartum initiation matrix (0-1 month)
+        # pp1to6  = methods['switch']['pp1to6']  # Normalized postpartum switching matrix (1-6 months)
 
         # Compute the trend in MCPR
         trend_years = methods['mcpr_years']
@@ -879,34 +881,25 @@ class Sim(fpb.BaseSim):
         else: # Otherwise, just use the nearest data point
             trend_val = nearest_val
         norm_trend_val  = trend_val/norm_val # Normalize so the correction factor is 1 at the normalization year
-        # print(f'y={self.y:0.0f}, near={nearest_val:0.2f}, tr={trend_val:0.2f}, norm={norm_trend_val:0.2f}') # For debugging -- can be removed
 
-        # Update general population switching matrices for current year mCPR - stratified by age
-        for key, val in methods['probs'].items():
-            switch_general[key] = sc.dcp(val)
-            switch_general[key][0, 0] /= norm_trend_val  # Takes into account mCPR during year of sim
-            for i in range(len(switch_general[key])):
-                denom = switch_general[key][i,:].sum()
-                if denom > 0:
-                    switch_general[key][i] = switch_general[key][i, :] / denom  # Normalize so probabilities add to 1
-            methods[key] = switch_general[key]
+        # Update general population and postpartum switching matrices for current year mCPR - stratified by age
+        for switchkey in ['general', 'pp1to6']:
+            for agekey,matrix in methods['raw'][switchkey].items():
+                switch = methods['switch'][switchkey][agekey]
+                switch = matrix.copy()
+                switch[0, 0] /= norm_trend_val  # Takes into account mCPR during year of sim
+                for i in range(len(matrix)):
+                    denom = switch[i,:].sum()
+                    if denom > 0:
+                        switch[i] = switch[i, :] / denom  # Normalize so probabilities add to 1
 
         # Update postpartum initiation matrices for current year mCPR - stratified by age
-        for key, val in methods_pp['probs1'].items():
-            start_postpartum[key] = sc.dcp(val)
+        for agekey,matrix in methods_pp['probs1'].items():
+            switch = methods['switch']['pp0to1'][agekey]
+            switch['pp0to1'][agekey] = matrix.copy()
             start_postpartum[key][0] /= norm_trend_val  # Takes into account mCPR during year of sim
             start_postpartum[key] = start_postpartum[key] / start_postpartum[key].sum()
             methods_pp[key] = start_postpartum[key]  # 1d array for probs coming from birth, binned by age
-
-        # Update postpartum switching or discontinuation matrices from 1-6 months - stratified by age
-        for key, val in methods_pp['probs1to6'].items():
-            switch_postpartum[key] = sc.dcp(val)
-            switch_postpartum[key][0, 0] /= norm_trend_val  # Takes into account mCPR during year of sim
-            for i in range(len(switch_postpartum[key])):
-                denom = switch_postpartum[key][i,:].sum()
-                if denom > 0:
-                    switch_postpartum[key][i] = switch_postpartum[key][i,:] / denom  # Normalize so probabilities add to 1
-            self['methods_pp_switch'][key] = switch_postpartum[key]  # 10x10 matrix for probs of continuing or discontinuing method by 6 months postpartum
 
         return
 
