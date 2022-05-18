@@ -137,7 +137,7 @@ class People(fpb.BasePeople):
                     switching_events_matrix[x, y] += 1
                     switching_events_matrix_ages[key][x, y] += 1
 
-        self.step_results_switching['general'] += switching_events_matrix
+        self.step_results_switching['general'] += switching_events_matrix # CK: TODO: remove this extra result and combine with step_results
         for key in fpd.method_age_mapping.keys():
             self.step_results['switching_general'][key] += switching_events_matrix_ages[key]
 
@@ -465,7 +465,7 @@ class People(fpb.BasePeople):
         return
 
 
-    def maternal_mortality(self):
+    def check_maternal_mortality(self):
         '''Check for probability of maternal mortality'''
         prob = self.pars['mortality_probs']['maternal'] * self.pars['maternal_mortality_multiplier']
         is_death = self.binomial(prob)
@@ -476,7 +476,7 @@ class People(fpb.BasePeople):
         return death
 
 
-    def infant_mortality(self):
+    def check_infant_mortality(self):
         '''Check for probability of infant mortality (death < 1 year of age)'''
         death_prob = (self.pars['mortality_probs']['infant'])
         if len(self) > 0:
@@ -501,7 +501,6 @@ class People(fpb.BasePeople):
         deliv.postpartum = True # Start postpartum state at time of birth
         deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
         deliv.postpartum_dur = 0
-
 
         # Handle stillbirth
         is_stillborn = deliv.binomial(self.pars['mortality_probs']['stillbirth'])
@@ -566,7 +565,7 @@ class People(fpb.BasePeople):
         return
 
 
-    def age_person(self):
+    def update_age(self):
         '''Advance age in the simulation'''
         self.age += self.pars['timestep'] / fpd.mpy  # Age the person for the next timestep
         self.age = np.minimum(self.age, self.pars['max_age'])
@@ -583,7 +582,7 @@ class People(fpb.BasePeople):
         return
 
 
-    def check_mcpr(self):
+    def track_mcpr(self):
         '''
         Track for purposes of calculating mCPR at the end of the timestep after all people are updated
         Not including LAM users in mCPR as this model counts all women passively using LAM but
@@ -599,7 +598,8 @@ class People(fpb.BasePeople):
         self.step_results['on_methods_mcpr'] += on_method_mcpr
         return
 
-    def check_cpr(self):
+
+    def track_cpr(self):
         '''
         Track for purposes of calculating newer ways to conceptualize contraceptive prevalence
         at the end of the timestep after all people are updated
@@ -614,7 +614,8 @@ class People(fpb.BasePeople):
         self.step_results['on_methods_cpr'] += on_method_cpr
         return
 
-    def check_acpr(self):
+
+    def track_acpr(self):
         '''
         Track for purposes of calculating newer ways to conceptualize contraceptive prevalence
         at the end of the timestep after all people are updated
@@ -628,6 +629,7 @@ class People(fpb.BasePeople):
         self.step_results['no_methods_acpr'] += no_method_cpr
         self.step_results['on_methods_acpr'] += on_method_cpr
         return
+
 
     def init_step_results(self):
         self.step_results = dict(
@@ -709,13 +711,13 @@ class People(fpb.BasePeople):
         #fecund.update_total_fecund_women()  TODO- build method to track all live women 15-49 for TFR, below not working
 
         # Update results
-        self.check_mcpr()
-        self.check_cpr()
-        self.check_acpr()
+        self.track_mcpr()
+        self.track_cpr()
+        self.track_acpr()
         self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity'])) # CK: TODO: remove hardcoding
 
         # Age person at end of timestep after tabulating results
-        alive_now.age_person()  # Important to keep this here so birth spacing gets recorded accurately
+        alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
 
         return self.step_results, self.step_results_switching
 
