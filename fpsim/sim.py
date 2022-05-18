@@ -893,24 +893,17 @@ class Sim(fpb.BaseSim):
         ''' Update infant and maternal mortality for the sim's current year.  Update general mortality trend
         as this uses a spline interpolation instead of an array'''
 
-        ind = sc.findnearest(self['age_mortality']['years'], self.y)
-        gen_mortality_trend = self['age_mortality']['trend'][ind]
-
-        ind = sc.findnearest(self['infant_mortality']['year'], self.y)
-        infant_mort_prob = self['infant_mortality']['probs'][ind]
-
-        ind = sc.findnearest(self['maternal_mortality']['year'], self.y)
-        maternal_death_prob = self['maternal_mortality']['probs'][ind]
-
-        ind = sc.findnearest(self['stillbirth_rate']['year'], self.y)
-        stillbirth_prob = self['stillbirth_rate']['probs'][ind]
-
-        self['mortality_probs'] = {
-            'gen_trend': gen_mortality_trend,
-            'infant': infant_mort_prob,
-            'maternal': maternal_death_prob,
-            'stillbirth': stillbirth_prob
+        mapping = {
+            'age_mortality':      'gen_trend',
+            'infant_mortality':   'infant',
+            'maternal_mortality': 'maternal',
+            'stillbirth_rate':    'stillbirth',
         }
+
+        for key1,key2 in mapping.items():
+            ind = sc.findnearest(self[key1]['years'], self.y)
+            val = self[key1]['probs'][ind]
+            self['mortality_probs'][key2] = val
 
         return
 
