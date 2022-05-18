@@ -109,10 +109,10 @@ class People(fpb.BasePeople):
         methods = self.pars['methods']
         orig_methods = self.method
         m = len(methods['map'])
-        switching_events_matrix = np.zeros((m, m), dtype=int)
-        switching_events_matrix_ages = {}
+        switching_events = np.zeros((m, m), dtype=int)
+        switching_events_ages = {}
         for key in fpd.method_age_mapping.keys():
-            switching_events_matrix_ages[key] = np.zeros((m, m), dtype=int)
+            switching_events_ages[key] = np.zeros((m, m), dtype=int)
 
         # Method switching depends both on agent age and also on their current method, so we need to loop over both
         for key,(age_low, age_high) in fpd.method_age_mapping.items():
@@ -134,12 +134,12 @@ class People(fpb.BasePeople):
                 for i in range(len(old_method)):
                     x = old_method[i]
                     y = new_methods[i]
-                    switching_events_matrix[x, y] += 1
-                    switching_events_matrix_ages[key][x, y] += 1
+                    switching_events[x, y] += 1
+                    switching_events_ages[key][x, y] += 1
 
-        self.step_results_switching['annual'] += switching_events_matrix # CK: TODO: remove this extra result and combine with step_results
+        self.step_results_switching['annual'] += switching_events # CK: TODO: remove this extra result and combine with step_results
         for key in fpd.method_age_mapping.keys():
-            self.step_results['switching_annual'][key] += switching_events_matrix_ages[key]
+            self.step_results['switching_annual'][key] += switching_events_ages[key]
 
         return
 
@@ -155,16 +155,17 @@ class People(fpb.BasePeople):
         # Probability of initiating a postpartum method at 0-3 months postpartum
         # Transitional probabilities are for the first 3 month time period after delivery from DHS data
 
-        methods_pp = self.pars['methods_pp']
-        pp_switch  = self.pars['methods_pp_switch']
+        adjusted = self.pars['methods']['adjusted']
+        pp0to1 = adjusted['pp0to1']
+        pp1to6 = adjusted['pp1to6']
         methods_map = self.pars['methods']['map']
         orig_methods = self.method
 
         m = len(methods_map)
-        switching_events_matrix = np.zeros((m, m), dtype=int)
-        switching_events_matrix_ages = {}
+        switching_events = np.zeros((m, m), dtype=int)
+        switching_events_ages = {}
         for key in fpd.method_age_mapping.keys():
-            switching_events_matrix_ages[key] = np.zeros((m, m), dtype=int)
+            switching_events_ages[key] = np.zeros((m, m), dtype=int)
 
         postpartum1 = (self.postpartum_dur == 0)
         postpartum6 = (self.postpartum_dur == 6)
@@ -174,15 +175,16 @@ class People(fpb.BasePeople):
         for key, (age_low, age_high) in fpd.method_age_mapping.items():
             match_low = (self.age >= age_low)
             match_high = (self.age < age_high)
-            match = (self.postpartum * postpartum1 * match_low * match_high * (self.parity < self.pars['high_parity']))
-            match_high_parity = (self.postpartum * postpartum1 * match_low * match_high * (
-                        self.parity >= self.pars['high_parity']))
+            low_parity = (self.parity < self.pars['high_parity'])
+            high_parity = (self.parity >= self.pars['high_parity'])
+            match = (self.postpartum * postpartum1 * match_low * match_high * low_parity)
+            match_high_parity = (self.postpartum * postpartum1 * match_low * match_high * high_parity)
             this_method = self.filter(match)
             this_method_high_parity = self.filter(match_high_parity)
             old_method = this_method.method.copy()
             old_method_high_parity = sc.dcp(this_method_high_parity.method)
 
-            choices = methods_pp[key]
+            choices = pp1to6[key]
             choices_high_parity = sc.dcp(choices)
             choices_high_parity[0] *= self.pars['high_parity_nonuse_correction']
             choices_high_parity = choices_high_parity / choices_high_parity.sum()
@@ -193,14 +195,14 @@ class People(fpb.BasePeople):
             for i in range(len(old_method)):
                 x = old_method[i]
                 y = new_methods[i]
-                switching_events_matrix[x, y] += 1
-                switching_events_matrix_ages[key][x, y] += 1
+                switching_events[x, y] += 1
+                switching_events_ages[key][x, y] += 1
 
             for i in range(len(old_method_high_parity)):
                 x = old_method_high_parity[i]
                 y = new_methods_high_parity[i]
-                switching_events_matrix[x, y] += 1
-                switching_events_matrix_ages[key][x, y] += 1
+                switching_events[x, y] += 1
+                switching_events_ages[key][x, y] += 1
 
         # At 6 months, choice is by previous method and by age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
@@ -215,19 +217,19 @@ class People(fpb.BasePeople):
                 this_method = self.filter(match)
                 old_method = self.method[match].copy()
 
-                matrix = pp_switch[key]
+                matrix = pp0to1[key]
                 choices = matrix[m]
                 new_methods = fpu.n_multinomial(choices, match.sum())
                 this_method.method = new_methods
                 for i in range(len(old_method)):
                     x = old_method[i]
                     y = new_methods[i]
-                    switching_events_matrix[x, y] += 1
-                    switching_events_matrix_ages[key][x, y] += 1
+                    switching_events[x, y] += 1
+                    switching_events_ages[key][x, y] += 1
 
-        self.step_results_switching['postpartum'] += switching_events_matrix
+        self.step_results_switching['postpartum'] += switching_events
         for key in fpd.method_age_mapping.keys():
-            self.step_results['switching_postpartum'][key] += switching_events_matrix_ages[key]
+            self.step_results['switching_postpartum'][key] += switching_events_ages[key]
 
         return
 
