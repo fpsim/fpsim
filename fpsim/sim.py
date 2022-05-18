@@ -99,7 +99,7 @@ class People(fpb.BasePeople):
         return
 
 
-    def get_method(self):
+    def update_method(self):
         '''
         Uses a switching matrix from DHS data to decide based on a person's original method their probability of changing to a
         new method and assigns them the new method. Currently allows switching on whole calendar years to enter function.
@@ -144,7 +144,7 @@ class People(fpb.BasePeople):
         return
 
 
-    def get_method_pp(self):
+    def update_method_pp(self):
         '''
         Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by
         3 months postpartum and then initiate, continue, or discontinue a method by 6 months postpartum.
@@ -698,7 +698,7 @@ class People(fpb.BasePeople):
         # Update everything else
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
-        methods.update_contraception()
+        methods.update_methods()
         nonpreg.check_lam()
         nonpreg.update_postpartum() # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
