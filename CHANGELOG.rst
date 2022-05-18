@@ -12,8 +12,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
 
 Version 0.10.5 (2022-05-18)
 --------------------------
-- Changes how the matrices are implemented.
-- Removes circular import.
+- Changes how the matrices are implemented. For example, ``sim['methods']['probs']['18-25']`` has been renamed ``sim['methods']['raw']['annual']['18-25']``; ``sim['methods']['probs']['18-25']`` has been renamed ``sim['methods']['adjusted']['annual']['18-25']``; ``sim['methods_postpartum']['probs1to6']['18-25']`` has been renamed ``sim['methods']['adjusted']['pp1to6']['18-25']``; etc.
+- Various other parameters were renamed for consistency (e.g. ``years`` → ``year``).
+- Various other methods were renamed for clarity (e.g. ``maternal_mortality()`` → ``check_maternal_mortality()``; ``check_mcpr()`` → ``track_mcpr()``).
+- Input validation has been added to the ``Scenarios`` class.
+- Fixed ``fp.update_methods()`` so it can no longer produce probabilities >1.
+- Removed a circular import in ``scenarios.py``.
 - *GitHub info*: PR `482 <https://github.com/amath-idm/fp_analyses/pull/482>`__
 
 
