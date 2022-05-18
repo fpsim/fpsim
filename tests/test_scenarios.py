@@ -106,8 +106,8 @@ def test_update_methods_probs():
     other = mmap['Other modern']
 
     assert m0['annual']['21-25'][none][other] != m1['annual']['21-25'][none][other], "update_methods did not change contraceptive matrix for key 21-25"
-    assert m0['annual']['21-25'][none][other] == target_prob1, f"update_methods did not change contraceptive matrix 21-25 to spcified {target_prob1}"
-    assert m1['annual']['<18'][none][other]   == target_prob1, f"update_methods did not change contraceptive matrix <25 to spcified {target_prob1}"
+    assert m0['annual']['21-25'][none][other] == target_prob1, f"update_methods did not change contraceptive matrix 21-25 to specified {target_prob1}"
+    assert m1['annual']['<18'][none][other]   == target_prob1, f"update_methods did not change contraceptive matrix <25 to specified {target_prob1}"
 
     assert m2['pp1to6']['21-25'][none][other] != m3['pp1to6']['21-25'][none][other], "update_methods did not change postpartum contraceptive matrix for key 21-25"
     assert m2['pp1to6']['21-25'][none][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for 21-25 to specified {target_prob1}"

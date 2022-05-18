@@ -993,14 +993,14 @@ class Sim(fpb.BaseSim):
                     if not (self.t % int(1.0/verbose)):
                         sc.progressbar(self.t+1, self.npts, label=string, length=20, newline=True)
 
-            # Apply interventions
-            self.apply_interventions()
-
             # Update method matrices for year of sim to trend over years
             self.update_methods()
 
             # Update mortality probabilities for year of sim
             self.update_mortality()
+
+            # Apply interventions
+            self.apply_interventions()
 
             # Update the people
             self.people.i = self.i

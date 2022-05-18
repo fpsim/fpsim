@@ -286,7 +286,7 @@ class update_methods(fpi.Intervention):
 
             # Implement method mix shift
             probs = self.scen.pop('probs', None)
-            adjusted = sim['methods']['adjusted']
+            raw = sim['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
             if probs is not None:
                 for entry in probs:
                     entry = sc.dcp(entry)
@@ -303,11 +303,11 @@ class update_methods(fpi.Intervention):
                         raise ValueError(errormsg)
 
                     if keys in none_all_keys:
-                        keys = adjusted['annual'].keys()
+                        keys = raw['annual'].keys()
 
                     for k in keys:
-                        matrix = adjusted[self.matrix][k]
-                        if self.matrix == 'pp0to1':
+                        matrix = raw[self.matrix][k]
+                        if self.matrix == 'pp0to1': # Handle the postpartum initialization *vector*
                            orig = matrix[dest]
                            if factor is not None:
                                matrix[dest] *= getval(factor)
@@ -315,7 +315,7 @@ class update_methods(fpi.Intervention):
                                matrix[dest] = getval(value)
                            if self.verbose:
                                print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
-                        else:
+                        else: # Handle annual switching *matrices*
                             orig = matrix[source, dest]
                             if factor is not None:
                                 matrix[source, dest] *= getval(factor)
