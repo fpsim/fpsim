@@ -5,9 +5,9 @@ Class to define and run scenarios
 import numpy as np
 import pandas as pd
 import sciris as sc
-import fpsim as fp
 from . import utils as fpu
 from . import defaults as fpd
+from . import sim as fps
 from . import interventions as fpi
 
 __all__ = ['Scenarios','update_methods']
@@ -54,7 +54,7 @@ class Scenarios(sc.prettyobj):
             pars = sc.mergedicts(fpd.pars(self.pars.get('location')), self.pars, _copy=True)
             pars.update(kwargs)
             pars['seed'] += i
-            sim = fp.Sim(pars=pars)
+            sim = fps.Sim(pars=pars)
             sim.scenlabel = scenlabel # Special label for scenarios objects
             if sim.label is None:
                 sim.label = scenlabel # Include here if no other label
@@ -74,7 +74,7 @@ class Scenarios(sc.prettyobj):
                 if year is None:
                     errormsg = 'Scenario year must be specified in either the scenario entry or the Scenarios object'
                     raise ValueError(errormsg)
-                interventions += fp.update_methods(scen=entry, year=year, matrix=matrix)
+                interventions += update_methods(scen=entry, year=year, matrix=matrix)
             sims = self.make_sims(interventions=interventions, scenlabel=label)
             self.simslist.append(sims)
         return
@@ -93,8 +93,8 @@ class Scenarios(sc.prettyobj):
         # Create msim
         msims = sc.autolist()
         for sims in self.simslist:
-            msims += fp.MultiSim(sims)
-        self.msim = fp.MultiSim.merge(*msims)
+            msims += fps.MultiSim(sims)
+        self.msim = fps.MultiSim.merge(*msims)
 
         # Run
         self.msim.run(**kwargs)
