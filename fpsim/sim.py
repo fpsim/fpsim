@@ -137,9 +137,9 @@ class People(fpb.BasePeople):
                     switching_events_matrix[x, y] += 1
                     switching_events_matrix_ages[key][x, y] += 1
 
-        self.step_results_switching['general'] += switching_events_matrix # CK: TODO: remove this extra result and combine with step_results
+        self.step_results_switching['annual'] += switching_events_matrix # CK: TODO: remove this extra result and combine with step_results
         for key in fpd.method_age_mapping.keys():
-            self.step_results['switching_general'][key] += switching_events_matrix_ages[key]
+            self.step_results['switching_annual'][key] += switching_events_matrix_ages[key]
 
         return
 
@@ -846,14 +846,14 @@ class Sim(fpb.BaseSim):
         return
 
 
-    def update_switching(self):
+    def update_methods(self):
         '''
-        Update all contraceptive matrices to have probabilities that follow a trend closest to the
+        Update all contraceptive method matrices to have probabilities that follow a trend closest to the
         year the sim is on based on mCPR in that year
         '''
 
         methods = self['methods'] # Shorten methods
-        methods['switch'] = sc.dcp(methods['raw']) # Avoids needing to copy this within loops later
+        methods['adjusted'] = sc.dcp(methods['raw']) # Avoids needing to copy this within loops later
 
         # Compute the trend in MCPR
         trend_years = methods['mcpr_years']
@@ -876,7 +876,7 @@ class Sim(fpb.BaseSim):
 
         # Update annual (non-postpartum) population and postpartum switching matrices for current year mCPR - stratified by age
         for switchkey in ['annual', 'pp1to6']:
-            for matrix in methods['switch'][switchkey].values():
+            for matrix in methods['adjusted'][switchkey].values():
                 matrix[0, 0] /= norm_trend_val  # Takes into account mCPR during year of sim
                 for i in range(len(matrix)):
                     denom = matrix[i,:].sum()
@@ -884,7 +884,7 @@ class Sim(fpb.BaseSim):
                         matrix[i] = matrix[i, :] / denom  # Normalize so probabilities add to 1
 
         # Update postpartum initiation matrices for current year mCPR - stratified by age
-        for matrix in methods['switch']['pp0to1'].values():
+        for matrix in methods['adjusted']['pp0to1'].values():
             matrix[0] /= norm_trend_val  # Takes into account mCPR during year of sim
             matrix = matrix / matrix.sum()
 
