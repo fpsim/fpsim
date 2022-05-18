@@ -107,8 +107,10 @@ class People(fpb.BasePeople):
         only for women who have not given birth within the last 6 months.
         '''
         methods = self.pars['methods']
+        method_map = methods['map']
+        annual = methods['adjusted']['annual']
         orig_methods = self.method
-        m = len(methods['map'])
+        m = len(method_map)
         switching_events = np.zeros((m, m), dtype=int)
         switching_events_ages = {}
         for key in fpd.method_age_mapping.keys():
@@ -119,13 +121,13 @@ class People(fpb.BasePeople):
             match_low  = (self.age >= age_low) # CK: TODO: refactor into single method
             match_high = (self.age <  age_high)
             match_low_high = match_low * match_high
-            for m in methods['map'].values():
+            for m in method_map.values():
                 match_m = (orig_methods == m)
                 match = match_m * match_low_high
                 this_method = self.filter(match)
                 old_method = this_method.method.copy()
 
-                matrix = methods[key]
+                matrix = annual[key]
                 choices = matrix[m]
                 choices = choices/choices.sum()
                 new_methods = fpu.n_multinomial(choices, match.sum())
@@ -155,10 +157,10 @@ class People(fpb.BasePeople):
         # Probability of initiating a postpartum method at 0-3 months postpartum
         # Transitional probabilities are for the first 3 month time period after delivery from DHS data
 
-        adjusted = self.pars['methods']['adjusted']
-        pp0to1 = adjusted['pp0to1']
-        pp1to6 = adjusted['pp1to6']
-        methods_map = self.pars['methods']['map']
+        methods = self.pars['methods']
+        pp0to1 = methods['adjusted']['pp0to1']
+        pp1to6 = methods['adjusted']['pp1to6']
+        methods_map = methods['map']
         orig_methods = self.method
 
         m = len(methods_map)
@@ -664,13 +666,17 @@ class People(fpb.BasePeople):
 
         m = len(self.pars['methods']['map'])
 
+        def mm_zeros():
+            ''' Return an array of m x m zeros '''
+            return np.zeros((m, m), dtype=int)
+
         for key in fpd.method_age_mapping.keys():
-            self.step_results['switching_general'][key] = np.zeros((m, m), dtype=int)
-            self.step_results['switching_postpartum'][key] = np.zeros((m, m), dtype=int)
+            self.step_results['switching_general'][key]    = mm_zeros()
+            self.step_results['switching_postpartum'][key] = mm_zeros()
 
         self.step_results_switching = dict(
-            general=np.zeros((m, m), dtype=int),
-            postpartum=np.zeros((m, m), dtype=int)
+            annual     = mm_zeros(),
+            postpartum = mm_zeros(),
         )
 
         return
