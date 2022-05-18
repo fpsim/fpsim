@@ -184,7 +184,7 @@ class People(fpb.BasePeople):
             old_method = this_method.method.copy()
             old_method_high_parity = sc.dcp(this_method_high_parity.method)
 
-            choices = pp1to6[key]
+            choices = pp0to1[key]
             choices_high_parity = sc.dcp(choices)
             choices_high_parity[0] *= self.pars['high_parity_nonuse_correction']
             choices_high_parity = choices_high_parity / choices_high_parity.sum()
@@ -217,7 +217,7 @@ class People(fpb.BasePeople):
                 this_method = self.filter(match)
                 old_method = self.method[match].copy()
 
-                matrix = pp0to1[key]
+                matrix = pp1to6[key]
                 choices = matrix[m]
                 new_methods = fpu.n_multinomial(choices, match.sum())
                 this_method.method = new_methods
