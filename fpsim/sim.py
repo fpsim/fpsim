@@ -888,12 +888,12 @@ class Sim(fpb.BaseSim):
                 for i in range(len(matrix)):
                     denom = matrix[i,:].sum()
                     if denom > 0:
-                        matrix[i] = matrix[i, :] / denom  # Normalize so probabilities add to 1
+                        matrix[i,:] = matrix[i, :] / denom  # Normalize so probabilities add to 1
 
         # Update postpartum initiation matrices for current year mCPR - stratified by age
         for matrix in methods['adjusted']['pp0to1'].values():
             matrix[0] /= norm_trend_val  # Takes into account mCPR during year of sim
-            matrix = matrix / matrix.sum()
+            matrix /= matrix.sum()
 
         return
 
