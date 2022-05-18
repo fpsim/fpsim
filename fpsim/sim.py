@@ -232,6 +232,24 @@ class People(fpb.BasePeople):
         return
 
 
+    def update_methods(self):
+        '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
+
+        if not (self.i % self.pars['method_timestep']): # Allow skipping timesteps
+            postpartum = (self.postpartum) * (self.postpartum_dur <= 6)
+            pp = self.filter(postpartum)
+            non_pp = self.filter(~postpartum)
+
+            pp.update_method_pp() # Update method for
+
+            age_diff = non_pp.ceil_age - non_pp.age
+            whole_years = ((age_diff < (1/fpd.mpy)) * (age_diff > 0))
+            birthdays = non_pp.filter(whole_years)
+            birthdays.update_method()
+
+        return
+
+
     def check_mortality(self):
         '''Decide if person dies at a timestep'''
 
@@ -565,24 +583,6 @@ class People(fpb.BasePeople):
         return
 
 
-    def update_methods(self):
-        '''If eligible (age 15-49 and not pregnant), choose new method or stay with current one'''
-
-        if not (self.i % self.pars['method_timestep']): # Allow skipping timesteps
-            postpartum = (self.postpartum) * (self.postpartum_dur <= 6)
-            pp = self.filter(postpartum)
-            non_pp = self.filter(~postpartum)
-
-            pp.get_method_pp()
-
-            age_diff = non_pp.ceil_age - non_pp.age
-            whole_years = ((age_diff < (1/fpd.mpy)) * (age_diff > 0))
-            birthdays = non_pp.filter(whole_years)
-            birthdays.get_method()
-
-        return
-
-
     def check_mcpr(self):
         '''
         Track for purposes of calculating mCPR at the end of the timestep after all people are updated
@@ -844,7 +844,7 @@ class Sim(fpb.BaseSim):
         return
 
 
-    def update_methods_matrices(self):
+    def update_switching(self):
         '''
         Update all contraceptive matrices to have probabilities that follow a trend closest to the
         year the sim is on based on mCPR in that year
@@ -889,7 +889,7 @@ class Sim(fpb.BaseSim):
         return
 
 
-    def update_mortality_probs(self):
+    def update_mortality(self):
         ''' Update infant and maternal mortality for the sim's current year.  Update general mortality trend
         as this uses a spline interpolation instead of an array'''
 
@@ -905,6 +905,16 @@ class Sim(fpb.BaseSim):
             val = self[key1]['probs'][ind]
             self['mortality_probs'][key2] = val
 
+        return
+
+
+    def update_mothers(self):
+        '''Add link between newly added individuals and their mothers'''
+        all_ppl = self.people.unfilter()
+        for mother_index, postpartum in enumerate(all_ppl.postpartum):
+            if postpartum and all_ppl.postpartum_dur[mother_index] < 2:
+                for child in all_ppl.children[mother_index]:
+                    all_ppl.mothers[child] = mother_index
         return
 
 
@@ -940,14 +950,6 @@ class Sim(fpb.BaseSim):
                     errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object: it is {type(analyzer)}'
                     raise TypeError(errormsg)
         return
-
-    def update_mothers(self):
-        '''Add link between newly added individuals and their mothers'''
-        all_ppl = self.people.unfilter()
-        for mother_index, postpartum in enumerate(all_ppl.postpartum):
-            if postpartum and all_ppl.postpartum_dur[mother_index] < 2:
-                for child in all_ppl.children[mother_index]:
-                    all_ppl.mothers[child] = mother_index
 
 
     def run(self, verbose=None):
