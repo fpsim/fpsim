@@ -198,6 +198,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # msim1 = test_update_methods_eff()
-        # msim2 = test_update_methods_probs()
+        msim1 = test_update_methods_eff()
+        msim2 = test_update_methods_probs()
         scens = test_scenarios()
