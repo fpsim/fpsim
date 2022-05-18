@@ -116,7 +116,7 @@ class People(fpb.BasePeople):
 
         # Method switching depends both on agent age and also on their current method, so we need to loop over both
         for key,(age_low, age_high) in fpd.method_age_mapping.items():
-            match_low  = (self.age >= age_low)
+            match_low  = (self.age >= age_low) # CK: TODO: refactor into single method
             match_high = (self.age <  age_high)
             match_low_high = match_low * match_high
             for m in methods['map'].values():
@@ -874,8 +874,8 @@ class Sim(fpb.BaseSim):
             trend_val = nearest_val
         norm_trend_val  = trend_val/norm_val # Normalize so the correction factor is 1 at the normalization year
 
-        # Update general population and postpartum switching matrices for current year mCPR - stratified by age
-        for switchkey in ['general', 'pp1to6']:
+        # Update annual (non-postpartum) population and postpartum switching matrices for current year mCPR - stratified by age
+        for switchkey in ['annual', 'pp1to6']:
             for matrix in methods['switch'][switchkey].values():
                 matrix[0, 0] /= norm_trend_val  # Takes into account mCPR during year of sim
                 for i in range(len(matrix)):
@@ -884,7 +884,7 @@ class Sim(fpb.BaseSim):
                         matrix[i] = matrix[i, :] / denom  # Normalize so probabilities add to 1
 
         # Update postpartum initiation matrices for current year mCPR - stratified by age
-        for matrix in methods['switch']['probs1'].values():
+        for matrix in methods['switch']['pp0to1'].values():
             matrix[0] /= norm_trend_val  # Takes into account mCPR during year of sim
             matrix = matrix / matrix.sum()
 
