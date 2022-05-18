@@ -255,8 +255,8 @@ class update_methods(fpi.Intervention):
         super().__init__()
         self.year   = year
         self.scen   = scen
-        self.matrix = matrix if matrix else scen.pop('matrix', 'probs') # Take matrix from scenario if supplied
-        valid_matrices = ['probs', 'probs1', 'probs1to6'] # TODO: be less subtle about the difference between normal and postpartum matrices
+        self.matrix = matrix if matrix else scen.pop('matrix', 'annual') # Take matrix from scenario if supplied
+        valid_matrices = ['annual', 'pp0to1', 'pp1to6'] # TODO: be less subtle about the difference between normal and postpartum matrices
         if self.matrix not in valid_matrices:
             raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{self.matrix}"')
         self.applied = False
@@ -286,6 +286,7 @@ class update_methods(fpi.Intervention):
 
             # Implement method mix shift
             probs = self.scen.pop('probs', None)
+            adjusted = sim['methods']['adjusted']
             if probs is not None:
                 for entry in probs:
                     entry = sc.dcp(entry)
@@ -302,21 +303,26 @@ class update_methods(fpi.Intervention):
                         raise ValueError(errormsg)
 
                     if keys in none_all_keys:
-                        keys = sim.pars['methods']['probs'].keys()
+                        keys = adjusted['annual'].keys()
 
                     for k in keys:
-                        if self.matrix == 'probs':
-                            matrices = sim['methods']
+                        matrix = adjusted[self.matrix][k]
+                        if self.matrix == 'pp0to1':
+                           orig = matrix[dest]
+                           if factor is not None:
+                               matrix[dest] *= getval(factor)
+                           elif value is not None:
+                               matrix[dest] = getval(value)
+                           if self.verbose:
+                               print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
                         else:
-                            matrices = sim['methods_pp']
-                        matrix = matrices[self.matrix][k]
-                        orig = matrix[source, dest]
-                        if factor is not None:
-                            matrix[source, dest] *= getval(factor)
-                        elif value is not None:
-                            matrix[source, dest] = getval(value)
-                        if self.verbose:
-                            print(f'At time {sim.y:0.1f}, matrix for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
+                            orig = matrix[source, dest]
+                            if factor is not None:
+                                matrix[source, dest] *= getval(factor)
+                            elif value is not None:
+                                matrix[source, dest] = getval(value)
+                            if self.verbose:
+                                print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
 
             if len(self.scen):
                 errormsg = f'Invalid scenario keys detected: "{sc.strjoin(self.scen.keys())}"; must be "eff" or "probs"'
