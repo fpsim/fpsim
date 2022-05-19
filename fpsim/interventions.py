@@ -200,109 +200,78 @@ class change_par(Intervention):
         ec0 = fp.change_par(par='exposure_correction', vals={2000:0.0, 2010:2.0}) # Equivalent way of writing
         sim = fp.Sim(interventions=ec0).run()
     '''
-    def __init__(self, par, years=None, vals=None):
+    def __init__(self, par, years=None, vals=None, verbose=False):
         super().__init__()
         self.par   = par
-        self.years = sc.dcp(years)
-        self.vals  = sc.dcp(vals)
+        self.verbose = verbose
+        if vals is None:
+            errormsg = 'Values must be supplied'
+            raise ValueError(errormsg)
+        if isinstance(vals, dict):
+            self.changes = vals
+        else:
+            if years is None:
+                errormsg = 'If vals is not supplied as a dict, then year(s) must be supplied'
+                raise ValueError(errormsg)
+            else:
+                years = sc.toarray(sc.dcp(years))
+                if sc.isnumber(self.vals):
+                    vals = sc.tolist(sc.dcp(vals)) # We want to be careful not to take something that might already be an array and interpret different values as years
+                n_years = len(self.years)
+                n_vals = len(self.vals)
+                if n_years != n_vals:
+                    errormsg = f'Number of years ({n_years}) does not match number of values ({n_vals})'
+                    raise ValueError(errormsg)
+                self.changes = sc.odict({k:v for k,v in zip(years, vals)})
+
         return
 
 
     def initialize(self, sim):
 
-        # Get in correct format
-        self.years = sc.toarray(self.years) # Ensure it's an array
-        if sc.isnumber(self.vals):
-            self.vals = sc.tolist(self.vals) # We want to be careful not to take something that might already be an array and interpret different values as years
-        self.applied = np.zeros(len(self.years)) # Keep track of what's been applied
-
         # Validation
-        n_years = len(self.years)
-        n_vals = len(self.vals)
-        min_year = min(self.years)
-        max_year = max(self.years)
-        if n_years != n_vals:
-            errormsg = f'Number of years ({n_years}) does not match number of values ({n_vals})'
-            raise ValueError(errormsg)
+        years = list(self.changes.keys())
+        min_year = min(years)
+        max_year = max(years)
         if min_year < sim['start_year']:
             errormsg = f'Intervention start {min_year} is before the start of the simulation'
             raise ValueError(errormsg)
         if max_year > sim['end_year']:
             errormsg = f'Intervention end {max_year} is after the end of the simulation'
             raise ValueError(errormsg)
+        if years != sorted(years):
+            errormsg = f'Years {years} should be monotonic increasing'
+            raise ValueError(errormsg)
+
+        # Convert intervention years to sim timesteps
+        self.counter = 0
+        self.inds = sc.autolist()
+        for y in years:
+            self.inds += sc.findnearest(sim.tvec, y)
 
         return
 
 
     def apply(self, sim):
-
-        if not self.applied and sim.y >= self.year:
-            self.applied = True # Ensure we don't apply this more than once
-
-            # Implement efficacy
-            eff = self.scen.pop('eff', None)
-            if eff is not None:
-                for k,rawval in eff.items():
-                    v = getval(rawval)
-                    ind = key2ind(sim, k)
-                    orig = sim['method_efficacy'][ind]
-                    sim['method_efficacy'][ind] = v
-                    if self.verbose:
-                        print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
-
-            # Implement method mix shift
-            probs = self.scen.pop('probs', None)
-            raw = sim['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
-            if probs is not None:
-                for entry in probs:
-                    entry = sc.dcp(entry)
-                    source = key2ind(sim, entry.pop('source', None))
-                    dest   = key2ind(sim, entry.pop('dest', None))
-                    factor = entry.pop('factor', None)
-                    value  = entry.pop('value', None)
-                    keys   = entry.pop('keys', None)
-
-                    # Validation
-                    valid_keys = ['source', 'dest', 'factor', 'value', 'keys']
-                    if len(entry) != 0:
-                        errormsg = f'Keys "{sc.strjoin(entry.keys())}" not valid entries: must be among {sc.strjoin(valid_keys())}'
-                        raise ValueError(errormsg)
-
-                    if keys in none_all_keys:
-                        keys = raw['annual'].keys()
-
-                    for k in keys:
-                        matrix = raw[self.matrix][k]
-                        if self.matrix == 'pp0to1': # Handle the postpartum initialization *vector*
-                           orig = matrix[dest]
-                           if factor is not None:
-                               matrix[dest] *= getval(factor)
-                           elif value is not None:
-                               val = getval(value)
-                               matrix[dest] = 0
-                               matrix *= (1-val)/matrix.sum()
-                               matrix[dest] = val
-                               assert matrix.sum() == 1
-                           if self.verbose:
-                               print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
-                        else: # Handle annual switching *matrices*
-                            orig = matrix[source, dest]
-                            if factor is not None:
-                                matrix[source, dest] *= getval(factor)
-                            elif value is not None:
-                                val = getval(value)
-                                matrix[source, dest] = 0
-                                matrix[source, :] *= (1-val)/matrix[source, :].sum()
-                                matrix[source, dest] = val
-                                assert matrix[source, :].sum() == 1
-                            if self.verbose:
-                                print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
-
-            if len(self.scen):
-                errormsg = f'Invalid scenario keys detected: "{sc.strjoin(self.scen.keys())}"; must be "eff" or "probs"'
-                raise ValueError(errormsg)
-
+        ind = self.inds[self.counter] # Find the current index
+        if sim.t == ind: # Check if the current timestep matches
+            curr_val = sc.dcp(sim[self.par])
+            sim[self.par] = self.changes[self.counter] # Update the parameter value -- that's it!
+            self.counter += 1
+            if self.verbose:
+                print(f'On {sim.y}, changed {self.par} from {curr_val} to {sim[self.par]}')
         return
+
+
+    def finalize(self):
+        # Check that all changes were applied
+        n_counter = self.counter + 1
+        n_changes = len(self.changes)
+        if n_counter != n_changes:
+            errormsg = f'Not all changes were applied ({n_changes} ≠ {n_counter})'
+            raise RuntimeError(errormsg)
+        return
+
 
 
 def key2ind(sim, key):
