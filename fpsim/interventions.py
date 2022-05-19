@@ -215,10 +215,11 @@ class change_par(Intervention):
                 raise ValueError(errormsg)
             else:
                 years = sc.toarray(sc.dcp(years))
-                if sc.isnumber(self.vals):
-                    vals = sc.tolist(sc.dcp(vals)) # We want to be careful not to take something that might already be an array and interpret different values as years
-                n_years = len(self.years)
-                n_vals = len(self.vals)
+                vals = sc.dcp(vals)
+                if sc.isnumber(vals):
+                    vals = sc.tolist(vals) # We want to be careful not to take something that might already be an array and interpret different values as years
+                n_years = len(years)
+                n_vals = len(vals)
                 if n_years != n_vals:
                     errormsg = f'Number of years ({n_years}) does not match number of values ({n_vals})'
                     raise ValueError(errormsg)
