@@ -194,6 +194,8 @@ class change_par(Intervention):
         years (float/arr): the year(s) at which to apply the change
         vals  (any): a value or list of values to change to (if a list, must have the same length as years); or a dict of year:value entries
 
+    If any value is ``'reset'``, reset to the original value.
+
     **Example**::
 
         ec0 = fp.change_par(par='exposure_correction', years=[2000, 2010], vals=[0.0, 2.0]) # Reduce exposure correction
@@ -208,7 +210,8 @@ class change_par(Intervention):
             errormsg = 'Values must be supplied'
             raise ValueError(errormsg)
         if isinstance(vals, dict):
-            self.changes = vals
+            years = sc.dcp(list(vals.keys()))
+            vals = sc.dcp(list(vals.values()))
         else:
             if years is None:
                 errormsg = 'If vals is not supplied as a dict, then year(s) must be supplied'
@@ -223,15 +226,23 @@ class change_par(Intervention):
                 if n_years != n_vals:
                     errormsg = f'Number of years ({n_years}) does not match number of values ({n_vals})'
                     raise ValueError(errormsg)
-                self.changes = sc.odict({k:v for k,v in zip(years, vals)})
+
+        self.years = years
+        self.vals = vals
 
         return
 
 
     def initialize(self, sim):
+        super().initialize()
 
-        # Validation
-        years = list(self.changes.keys())
+        # Validate parameter name
+        if self.par not in sim.pars:
+            errormsg = f'Parameter "{self.par}" is not a valid sim parameter'
+            raise ValueError(errormsg)
+
+        # Validate years and values
+        years = self.years
         min_year = min(years)
         max_year = max(years)
         if min_year < sim['start_year']:
@@ -250,26 +261,34 @@ class change_par(Intervention):
         for y in years:
             self.inds += sc.findnearest(sim.tvec, y)
 
+        # Store original value
+        self.orig_val = sc.dcp(sim[self.par])
+
         return
 
 
     def apply(self, sim):
-        ind = self.inds[self.counter] # Find the current index
-        if sim.t == ind: # Check if the current timestep matches
-            curr_val = sc.dcp(sim[self.par])
-            sim[self.par] = self.changes[self.counter] # Update the parameter value -- that's it!
-            self.counter += 1
-            if self.verbose:
-                print(f'On {sim.y}, changed {self.par} from {curr_val} to {sim[self.par]}')
+        if len(self.inds) > self.counter:
+            ind = self.inds[self.counter] # Find the current index
+            if sim.i == ind: # Check if the current timestep matches
+                curr_val = sc.dcp(sim[self.par])
+                val = self.vals[self.counter]
+                if val == 'reset':
+                    val = self.orig_val
+                sim[self.par] = val # Update the parameter value -- that's it!
+                if self.verbose:
+                    label = f'Sim "{sim.label}": ' if sim.label else ''
+                    print(f'{label}On {sim.y}, change {self.counter+1}/{len(self.inds)} applied: "{self.par}" from {curr_val} to {sim[self.par]}')
+                self.counter += 1
         return
 
 
     def finalize(self):
         # Check that all changes were applied
-        n_counter = self.counter + 1
-        n_changes = len(self.changes)
-        if n_counter != n_changes:
-            errormsg = f'Not all changes were applied ({n_changes} ≠ {n_counter})'
+        n_counter = self.counter
+        n_vals = len(self.vals)
+        if n_counter != n_vals:
+            errormsg = f'Not all values were applied ({n_vals} ≠ {n_counter})'
             raise RuntimeError(errormsg)
         return
 

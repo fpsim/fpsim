@@ -753,7 +753,7 @@ class Sim(fpb.BaseSim):
             fpu.set_seed(self['seed'])
             self.init_results()
             self.init_people()
-        return
+        return self
 
 
     def init_results(self):
@@ -1774,7 +1774,7 @@ def multi_run(sims, **kwargs):
     return sims
 
 
-def parallel(*args, **kwargs):
+def parallel(*args, compute_stats=False, **kwargs):
     '''
     A shortcut to ``fp.MultiSim()``, allowing the quick running of multiple simulations
     at once.
@@ -1794,4 +1794,4 @@ def parallel(*args, **kwargs):
         msim = fp.parallel(s1, s2)
     '''
     sims = sc.mergelists(*args)
-    return MultiSim(sims=sims).run(**kwargs)
+    return MultiSim(sims=sims).run(compute_stats=compute_stats, **kwargs)
