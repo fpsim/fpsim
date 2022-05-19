@@ -206,6 +206,8 @@ class change_par(Intervention):
         super().__init__()
         self.par   = par
         self.verbose = verbose
+        if isinstance(years, dict): # Swap if years is supplied as a dict, so can be supplied first
+            vals = years
         if vals is None:
             errormsg = 'Values must be supplied'
             raise ValueError(errormsg)
