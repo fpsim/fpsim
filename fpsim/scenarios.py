@@ -5,9 +5,9 @@ Class to define and run scenarios
 import numpy as np
 import pandas as pd
 import sciris as sc
-import fpsim as fp
 from . import utils as fpu
 from . import defaults as fpd
+from . import sim as fps
 from . import interventions as fpi
 
 __all__ = ['Scenarios','update_methods']
@@ -54,7 +54,7 @@ class Scenarios(sc.prettyobj):
             pars = sc.mergedicts(fpd.pars(self.pars.get('location')), self.pars, _copy=True)
             pars.update(kwargs)
             pars['seed'] += i
-            sim = fp.Sim(pars=pars)
+            sim = fps.Sim(pars=pars)
             sim.scenlabel = scenlabel # Special label for scenarios objects
             if sim.label is None:
                 sim.label = scenlabel # Include here if no other label
@@ -74,7 +74,7 @@ class Scenarios(sc.prettyobj):
                 if year is None:
                     errormsg = 'Scenario year must be specified in either the scenario entry or the Scenarios object'
                     raise ValueError(errormsg)
-                interventions += fp.update_methods(scen=entry, year=year, matrix=matrix)
+                interventions += update_methods(scen=entry, year=year, matrix=matrix)
             sims = self.make_sims(interventions=interventions, scenlabel=label)
             self.simslist.append(sims)
         return
@@ -93,8 +93,8 @@ class Scenarios(sc.prettyobj):
         # Create msim
         msims = sc.autolist()
         for sims in self.simslist:
-            msims += fp.MultiSim(sims)
-        self.msim = fp.MultiSim.merge(*msims)
+            msims += fps.MultiSim(sims)
+        self.msim = fps.MultiSim.merge(*msims)
 
         # Run
         self.msim.run(**kwargs)
@@ -255,8 +255,8 @@ class update_methods(fpi.Intervention):
         super().__init__()
         self.year   = year
         self.scen   = scen
-        self.matrix = matrix if matrix else scen.pop('matrix', 'probs') # Take matrix from scenario if supplied
-        valid_matrices = ['probs', 'probs1', 'probs1to6'] # TODO: be less subtle about the difference between normal and postpartum matrices
+        self.matrix = matrix if matrix else scen.pop('matrix', 'annual') # Take matrix from scenario if supplied
+        valid_matrices = ['annual', 'pp0to1', 'pp1to6'] # TODO: be less subtle about the difference between normal and postpartum matrices
         if self.matrix not in valid_matrices:
             raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{self.matrix}"')
         self.applied = False
@@ -274,8 +274,9 @@ class update_methods(fpi.Intervention):
             self.applied = True # Ensure we don't apply this more than once
 
             # Implement efficacy
-            if 'eff' in self.scen:
-                for k,rawval in self.scen['eff'].items():
+            eff = self.scen.pop('eff', None)
+            if eff is not None:
+                for k,rawval in eff.items():
                     v = getval(rawval)
                     ind = key2ind(sim, k)
                     orig = sim['method_efficacy'][ind]
@@ -284,29 +285,55 @@ class update_methods(fpi.Intervention):
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
             # Implement method mix shift
-            if 'probs' in self.scen:
-                for entry in self.scen['probs']:
-                    source = key2ind(sim, entry['source'])
-                    dest   = key2ind(sim, entry['dest'])
+            probs = self.scen.pop('probs', None)
+            raw = sim['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
+            if probs is not None:
+                for entry in probs:
+                    entry = sc.dcp(entry)
+                    source = key2ind(sim, entry.pop('source', None))
+                    dest   = key2ind(sim, entry.pop('dest', None))
                     factor = entry.pop('factor', None)
                     value  = entry.pop('value', None)
                     keys   = entry.pop('keys', None)
+
+                    # Validation
+                    valid_keys = ['source', 'dest', 'factor', 'value', 'keys']
+                    if len(entry) != 0:
+                        errormsg = f'Keys "{sc.strjoin(entry.keys())}" not valid entries: must be among {sc.strjoin(valid_keys())}'
+                        raise ValueError(errormsg)
+
                     if keys in none_all_keys:
-                        keys = sim.pars['methods']['probs'].keys()
+                        keys = raw['annual'].keys()
 
                     for k in keys:
-                        if self.matrix == 'probs':
-                            matrices = sim['methods']
-                        else:
-                            matrices = sim['methods_pp']
-                        matrix = matrices[self.matrix][k]
-                        orig = matrix[source, dest]
-                        if factor is not None:
-                            matrix[source, dest] *= getval(factor)
-                        elif value is not None:
-                            matrix[source, dest] = getval(value)
-                        if self.verbose:
-                            print(f'At time {sim.y:0.1f}, matrix for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
+                        matrix = raw[self.matrix][k]
+                        if self.matrix == 'pp0to1': # Handle the postpartum initialization *vector*
+                           orig = matrix[dest]
+                           if factor is not None:
+                               matrix[dest] *= getval(factor)
+                           elif value is not None:
+                               val = getval(value)
+                               matrix[dest] = 0
+                               matrix *= (1-val)/matrix.sum()
+                               matrix[dest] = val
+                               assert matrix.sum() == 1
+                           if self.verbose:
+                               print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
+                        else: # Handle annual switching *matrices*
+                            orig = matrix[source, dest]
+                            if factor is not None:
+                                matrix[source, dest] *= getval(factor)
+                            elif value is not None:
+                                val = getval(value)
+                                matrix[source, dest] = 0
+                                matrix[source, :] *= (1-val)/matrix[source, :].sum()
+                                matrix[source, dest] = val
+                                assert matrix[source, :].sum() == 1
+                            if self.verbose:
+                                print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
 
+            if len(self.scen):
+                errormsg = f'Invalid scenario keys detected: "{sc.strjoin(self.scen.keys())}"; must be "eff" or "probs"'
+                raise ValueError(errormsg)
 
         return
