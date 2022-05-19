@@ -9,6 +9,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.10.6 (2022-05-19)
+--------------------------
+- Adds an ``fp.change_par()`` intervention.
+- *GitHub info*: PR `487 <https://github.com/amath-idm/fp_analyses/pull/487>`__
+
 
 Version 0.10.5 (2022-05-18)
 --------------------------
@@ -19,7 +24,6 @@ Version 0.10.5 (2022-05-18)
 - Fixed ``fp.update_methods()`` so it can no longer produce probabilities >1.
 - Removed a circular import in ``scenarios.py``.
 - *GitHub info*: PR `482 <https://github.com/amath-idm/fp_analyses/pull/482>`__
-
 
 
 Version 0.10.4 (2022-05-17)
