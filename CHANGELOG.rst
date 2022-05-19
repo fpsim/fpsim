@@ -11,6 +11,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 
 Version 0.10.6 (2022-05-19)
 --------------------------
+- Adds ``fp.parallel()`` to quickly run multiple sims in parallel and return a ``MultiSim`` object.
 - Adds an ``fp.change_par()`` intervention.
 - *GitHub info*: PR `487 <https://github.com/amath-idm/fp_analyses/pull/487>`__
 

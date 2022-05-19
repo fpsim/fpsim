@@ -14,7 +14,7 @@ from . import base as fpb
 
 
 # Specify all externally visible things this file defines
-__all__ = ['People', 'Sim', 'MultiSim']
+__all__ = ['People', 'Sim', 'MultiSim', 'parallel']
 
 
 #%% Define classes
@@ -1769,3 +1769,26 @@ def multi_run(sims, **kwargs):
     ''' Run multiple sims in parallel; usually used via the MultiSim class, not directly '''
     sims = sc.parallelize(single_run, iterarg=sims, **kwargs)
     return sims
+
+
+def parallel(*args, **kwargs):
+    '''
+    A shortcut to ``fp.MultiSim()``, allowing the quick running of multiple simulations
+    at once.
+
+    Args:
+        args (list): The simulations to run
+        kwargs (dict): passed to multi_run()
+
+    Returns:
+        A run MultiSim object.
+
+    **Examples**::
+
+        s1 = fp.Sim(exposure_correction=0.5, label='Low')
+        s2 = fp.Sim(exposure_correction=2.0, label='High')
+        fp.parallel(s1, s2).plot()
+        msim = fp.parallel(s1, s2)
+    '''
+    sims = sc.mergelists(*args)
+    return MultiSim(sims=sims).run(**kwargs)
