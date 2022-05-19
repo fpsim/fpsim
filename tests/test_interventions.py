@@ -35,7 +35,7 @@ def test_intervention_fn():
 
 
 def test_change_par():
-    ''' Testing change_par() '''
+    ''' Testing that change_par() modifies sim results in expected ways '''
     sc.heading('Testing change_par()...')
 
     # Define exposure test
