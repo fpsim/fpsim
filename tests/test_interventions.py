@@ -105,6 +105,6 @@ def test_analyzers():
 if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # isim   = test_intervention_fn()
+        isim   = test_intervention_fn()
         cpmsim = test_change_par()
-        # asim   = test_analyzers()
+        asim   = test_analyzers()
