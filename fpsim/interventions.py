@@ -3,6 +3,7 @@ Specify the core interventions available in FPsim. Other interventions can be
 defined by the user by inheriting from these classes.
 '''
 
+import numpy as np
 import pylab as pl
 import sciris as sc
 import inspect
@@ -186,9 +187,122 @@ class Intervention:
 
 class change_par(Intervention):
     '''
-    Change a parameter.
+    Change a parameter at a specified point in time.
+
+    Args:
+        par   (str): the parameter to change
+        years (float/arr): the year(s) at which to apply the change
+        vals  (any): a value or list of values to change to (if a list, must have the same length as years); or a dict of year:value entries
+
+    **Example**::
+
+        ec0 = fp.change_par(par='exposure_correction', years=[2000, 2010], vals=[0.0, 2.0]) # Reduce exposure correction
+        ec0 = fp.change_par(par='exposure_correction', vals={2000:0.0, 2010:2.0}) # Equivalent way of writing
+        sim = fp.Sim(interventions=ec0).run()
     '''
-    pass
+    def __init__(self, par, years=None, vals=None):
+        super().__init__()
+        self.par   = par
+        self.years = sc.dcp(years)
+        self.vals  = sc.dcp(vals)
+        return
+
+
+    def initialize(self, sim):
+
+        # Get in correct format
+        self.years = sc.toarray(self.years) # Ensure it's an array
+        if sc.isnumber(self.vals):
+            self.vals = sc.tolist(self.vals) # We want to be careful not to take something that might already be an array and interpret different values as years
+        self.applied = np.zeros(len(self.years)) # Keep track of what's been applied
+
+        # Validation
+        n_years = len(self.years)
+        n_vals = len(self.vals)
+        min_year = min(self.years)
+        max_year = max(self.years)
+        if n_years != n_vals:
+            errormsg = f'Number of years ({n_years}) does not match number of values ({n_vals})'
+            raise ValueError(errormsg)
+        if min_year < sim['start_year']:
+            errormsg = f'Intervention start {min_year} is before the start of the simulation'
+            raise ValueError(errormsg)
+        if max_year > sim['end_year']:
+            errormsg = f'Intervention end {max_year} is after the end of the simulation'
+            raise ValueError(errormsg)
+
+        return
+
+
+    def apply(self, sim):
+
+        if not self.applied and sim.y >= self.year:
+            self.applied = True # Ensure we don't apply this more than once
+
+            # Implement efficacy
+            eff = self.scen.pop('eff', None)
+            if eff is not None:
+                for k,rawval in eff.items():
+                    v = getval(rawval)
+                    ind = key2ind(sim, k)
+                    orig = sim['method_efficacy'][ind]
+                    sim['method_efficacy'][ind] = v
+                    if self.verbose:
+                        print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
+
+            # Implement method mix shift
+            probs = self.scen.pop('probs', None)
+            raw = sim['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
+            if probs is not None:
+                for entry in probs:
+                    entry = sc.dcp(entry)
+                    source = key2ind(sim, entry.pop('source', None))
+                    dest   = key2ind(sim, entry.pop('dest', None))
+                    factor = entry.pop('factor', None)
+                    value  = entry.pop('value', None)
+                    keys   = entry.pop('keys', None)
+
+                    # Validation
+                    valid_keys = ['source', 'dest', 'factor', 'value', 'keys']
+                    if len(entry) != 0:
+                        errormsg = f'Keys "{sc.strjoin(entry.keys())}" not valid entries: must be among {sc.strjoin(valid_keys())}'
+                        raise ValueError(errormsg)
+
+                    if keys in none_all_keys:
+                        keys = raw['annual'].keys()
+
+                    for k in keys:
+                        matrix = raw[self.matrix][k]
+                        if self.matrix == 'pp0to1': # Handle the postpartum initialization *vector*
+                           orig = matrix[dest]
+                           if factor is not None:
+                               matrix[dest] *= getval(factor)
+                           elif value is not None:
+                               val = getval(value)
+                               matrix[dest] = 0
+                               matrix *= (1-val)/matrix.sum()
+                               matrix[dest] = val
+                               assert matrix.sum() == 1
+                           if self.verbose:
+                               print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
+                        else: # Handle annual switching *matrices*
+                            orig = matrix[source, dest]
+                            if factor is not None:
+                                matrix[source, dest] *= getval(factor)
+                            elif value is not None:
+                                val = getval(value)
+                                matrix[source, dest] = 0
+                                matrix[source, :] *= (1-val)/matrix[source, :].sum()
+                                matrix[source, dest] = val
+                                assert matrix[source, :].sum() == 1
+                            if self.verbose:
+                                print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
+
+            if len(self.scen):
+                errormsg = f'Invalid scenario keys detected: "{sc.strjoin(self.scen.keys())}"; must be "eff" or "probs"'
+                raise ValueError(errormsg)
+
+        return
 
 
 def key2ind(sim, key):
@@ -246,9 +360,6 @@ class update_methods(Intervention):
     """
 
     def __init__(self, year, scen, matrix=None, verbose=False):
-        """
-        Initializes self.year/scen/matrix from parameters
-        """
         super().__init__()
         self.year   = year
         self.scen   = scen
