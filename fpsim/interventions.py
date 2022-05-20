@@ -461,6 +461,8 @@ class update_methods(Intervention):
                     # Replace age keys with all ages if so asked
                     if ages in none_all_keys:
                         ages = raw['annual'].keys()
+                    else:
+                        ages = sc.tolist(ages)
 
                     for k in ages:
                         matrix = raw[s_matrix][k]
