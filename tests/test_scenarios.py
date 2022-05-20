@@ -176,10 +176,9 @@ def test_scenarios(do_plot=do_plot):
     # Check we can't add invalid scenarios
     invalid_scen1 = dict(invalid_key='Should fail')
     invalid_scen2 = dict(probs=dict(invalid_key='Also should fail'))
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         invalid_scens1 = fp.Scenarios(location='test')
         invalid_scens1.add_scen(invalid_scen1)
-        invalid_scens1.run()
     with pytest.raises(ValueError):
         invalid_scens2 = fp.Scenarios(location='test')
         invalid_scens2.add_scen(invalid_scen2)

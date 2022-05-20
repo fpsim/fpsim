@@ -102,6 +102,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
 
         # Handle input specification
         self.specs = sc.mergelists(*[Scenario(**spec).specs for spec in sc.mergelists(spec, *args)]) # Sorry
+        self.label = label
 
         # Handle other keyword inputs
         eff_spec   = None
@@ -170,9 +171,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         self.specs.extend(sc.mergelists(eff_spec, prob_spec, par_spec, intv_specs))
 
         # Finally, ensure all have a consistent label if supplied
-        if label is not None:
-            for spec in self.specs:
-                spec['label'] = label
+        self.update_label()
 
         return
 
@@ -188,6 +187,16 @@ class Scenario(sc.prettyobj, sc.dictobj):
         ''' Allows sum() to work correctly '''
         if not scen2: return self
         else:         return self.__add__(scen2)
+
+
+    def update_label(self, label=None):
+        ''' Ensure all specs have the correct label '''
+        if label is None:
+            label = self.label
+        if label is not None:
+            for spec in self.specs:
+                spec['label'] = label
+        return
 
 
 
@@ -219,14 +228,11 @@ class Scenarios(sc.prettyobj):
 
     def add_scen(self, scen=None, label=None):
         ''' Add a scenario or scenarios to the Scenarios object '''
-        self.scens.append(Scenario(scen, label=label))
-        if scen is None: # Handle no scenario
-            scen = {}
-        scens = sc.dcp(sc.tolist(scen)) # To handle the case where multiple interventions are in a single scenario
-        if label:
-            for scen in scens:
-                scen['label'] = label
-        self.scens.append(scens)
+        if isinstance(scen, Scenario):
+            scen.update_label(label)
+            self.scens.append(scen)
+        else:
+            self.scens.append(Scenario(scen, label=label))
         return
 
 
