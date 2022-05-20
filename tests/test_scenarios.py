@@ -8,7 +8,7 @@ import pytest
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-serial   = 0 # Whether to run in serial (for debugging)
+serial   = 1 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
 
@@ -29,14 +29,12 @@ def test_update_methods_eff():
 
     sc.heading('Testing updating method efficacy...')
 
-    low_eff  = dict(dist='uniform', par1=0.80, par2=0.90)
-    high_eff = dict(dist='uniform', par1=0.91, par2=0.95)
+    method = 'Other modern'
+    low_eff  = {method:dict(dist='uniform', par1=0.80, par2=0.90)}
+    high_eff = {method:dict(dist='uniform', par1=0.91, par2=0.95)}
 
-    scen_low_eff  = dict(eff={'Other modern':low_eff})
-    scen_high_eff = dict(eff={'Other modern':high_eff})
-
-    low_eff = fp.update_methods(int_year, scen_low_eff)
-    high_eff = fp.update_methods(int_year, scen_high_eff)
+    low_eff = fp.update_methods(year=int_year, eff=low_eff)
+    high_eff = fp.update_methods(year=int_year, eff=high_eff)
 
     simlist = make_sims([low_eff, high_eff])
     msim = fp.MultiSim(sims=simlist)
@@ -205,7 +203,6 @@ def test_make_scens():
 
     sc.heading('Testing make_scens...')
 
-    serial = 0
     year   = 2002
     method = 'Injectables'
 

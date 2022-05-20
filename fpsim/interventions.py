@@ -349,11 +349,12 @@ class update_methods(Intervention):
                 probs1to6: Changes the specified uptake for all individuals that are in the first 6 months postpartum.
     """
 
-    def __init__(self, year, eff=None, probs=None, verbose=False):
+    def __init__(self, year, eff=None, probs=None, matrix=None, verbose=False):
         super().__init__()
         self.year    = year
         self.eff     = eff
         self.probs   = probs
+        self.matrix  = matrix
         self.verbose = verbose
 
         # Validation
@@ -394,7 +395,7 @@ class update_methods(Intervention):
                 probs = sc.tolist(self.probs)
                 for entry in probs:
                     entry = sc.dcp(entry)
-                    s_matrix = entry.pop('matrix', None) # Switching matrix
+                    s_matrix = entry.pop('matrix', self.matrix) # Switching matrix
                     ages     = entry.pop('ages', None)
                     source   = entry.pop('source', None)
                     dest     = entry.pop('dest', None)
