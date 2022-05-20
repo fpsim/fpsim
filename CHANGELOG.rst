@@ -9,6 +9,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.10.7 (2022-05-19)
+--------------------------
+- Update ``fp.Scenarios()`` API.
+- *GitHub info*: PR `488 <https://github.com/amath-idm/fp_analyses/pull/488>`__
+
+
 Version 0.10.6 (2022-05-19)
 --------------------------
 - Adds ``fp.parallel()`` to quickly run multiple sims in parallel and return a ``MultiSim`` object.
