@@ -88,7 +88,7 @@ class People(fpb.BasePeople):
         self.abortion_dates    = arr(n, []) # Dates of abortions -- list of lists
 
         # Fecundity variation
-        fv = [self.pars['fecundity_variation_low'], self.pars['fecundity_variation_high']]
+        fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
         self.personal_fecundity = arr(n, np.random.random(n)*(fv[1]-fv[0])+fv[0]) # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.remainder_months = arr(n, d['remainder_months'])
 
