@@ -13,19 +13,20 @@ def scalar_pars():
         # Basic parameters
         'n_agents'               : 10_000, # Number of agents
         'scaled_pop'             : None, # Scaled population / total population size
-        'start_year'             : 1960,
-        'end_year'               : 2020,
+        'start_year'             : 1960, # Start year of simulation
+        'end_year'               : 2020, # End year of simulation
         'timestep'               : 1, # The simulation timestep in months
         'method_timestep'        : 1, # How many simulation timesteps to go for every method update step
-        'verbose'                : 1, # How much detail to print during the simulation
         'seed'                   : 1, # Random seed
+        'verbose'                : 1, # How much detail to print during the simulation
+        'track_switching'        : 0, # Whether to track method switching
 
-        # Age limits
+        # Age limits (in years)
         'method_age'             : 15,
         'age_limit_fecundity'    : 50,
         'max_age'                : 99,
 
-        # Durations
+        # Durations (in months)
         'switch_frequency'       : 12, # How frequently to check for changes to contraception
         'end_first_tri'          : 3,
         'preg_dur_low'           : 9,
@@ -46,7 +47,7 @@ def scalar_pars():
         'high_parity'            : 4,
         'high_parity_nonuse'     : 0.6,
         'primary_infertility'    : 0.05,
-        'exposure_factor'        : 1, # Overall exposure correction factor
+        'exposure_factor'        : 1.0, # Overall exposure correction factor
 
         # MCPR
         'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
