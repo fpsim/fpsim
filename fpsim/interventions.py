@@ -403,8 +403,8 @@ class update_methods(Intervention):
                     value    = entry.pop('value', None)
                     i_factor = entry.pop('init_factor', None)
                     d_factor = entry.pop('discont_factor', None)
-                    i_value  = entry.pop('init_factor', None)
-                    d_value  = entry.pop('discont_factor', None)
+                    i_value  = entry.pop('init_value', None)
+                    d_value  = entry.pop('discont_value', None)
 
                     # Validation # CK: TODO: move validation to initialization
                     if len(entry) != 0:
