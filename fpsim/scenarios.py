@@ -18,7 +18,76 @@ class Scenario(sc.dictobj, sc.prettyobj):
     Store the specification for a single scenario (which may consist of multiple interventions).
 
     This function is intended to be as flexible as possible; as a result, it may
-    be somewhat confusing. There are
+    be somewhat confusing. There are five different ways to call it -- method efficacy,
+    method probability, method initiation/discontinuation, parameter, and custom intervention.
+
+    Args (shared):
+        spec   (dict): a pre-made specification of a scenario; see keyword explanations below (optional)
+        args   (list): additional specifications (optional)
+        label  (str): the sim label to use for this scenario
+        year   (float): the year at which to activate efficacy and probability scenarios
+        matrix (str): which set of probabilities to modify for probability scenarios (e.g. annual or postpartum)
+        ages   (str/list): the age groups to modify the probabilities for
+
+    Args (efficacy):
+        year (float): as above
+        eff  (dict): a dictionary of method names and new efficacy values
+
+    Args (probablity):
+        year   (float): as above
+        matrix (str): as above
+        ages   (str): as above
+        source (str): the method to switch from
+        dest   (str): the method to switch to
+        factor (float): if supplied, multiply the [source, dest] probability by this amount
+        value  (float): if supplied, instead of factor, replace the [source, dest] probability by this value
+
+    Args (initiation/discontinuation):
+        year   (float): as above
+        matrix (str): as above
+        ages   (str): as above
+        method (str): the method for initiation/discontinuation
+        init_factor    (float): as with "factor" above, for initiation (None → method)
+        discont_factor (float): as with "factor" above, for discontinuation (method → None)
+        init_value     (float): as with "value" above, for initiation (None → method)
+        discont_value  (float): as with "value" above, for discontinuation (method → None)
+
+    Args (parameter):
+        par (str): the parameter to modify
+        years (float/list): the year(s) at which to apply the modifications
+        vals (float/list): the value(s) of the parameter for each year
+
+    Args (custom):
+        interventions (Intervention/list): any custom intervention(s) to be applied to the scenario
+
+    Congratulations on making it this far.
+
+    **Examples**::
+
+        # Basic efficacy scenario
+        fp.make_scen(eff={'Injectables':0.99}, year=2020)
+
+        # Double rate of injectables initiation
+        fp.make_scen(source='None', dest='Injectables', factor=2)
+
+        # Double rate of injectables initiation -- alternate approach
+        fp.make_scen(method='Injectables', init_factor=2)
+
+        # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
+        fp.make_scen(source='Condoms', dest='Injectables', value=0.5, ages='18-25', matrix='pp1to6')
+
+        # Parameter scenario: halve exposure
+        fp.make_scen(par='exposure_correction', years=2010, vals=0.5)
+
+        # Custom scenario
+        def update_sim(sim): sim.updated = True
+        fp.make_scen(interventions=update_sim)
+
+        # Combining multiple scenarios: increase injectables initiation and reduce exposure correction
+        fp_make_scen(
+            dict(method='Injectables', init_factor=2),
+            dict(par='exposure_correction', years=2010, vals=0.5)
+        )
     '''
     def __init__(self, spec=None, *args, label=None, year=None, matrix=None, ages=None, # Basic settings
                  eff=None, # Option 1
@@ -44,7 +113,6 @@ class Scenario(sc.dictobj, sc.prettyobj):
                 which  = 'eff',
                 eff    = eff,
                 year   = year,
-                matrix = matrix
             )
 
         # It's a method switching probability scenario
@@ -84,7 +152,7 @@ class Scenario(sc.dictobj, sc.prettyobj):
                 ))
 
         # Merge these different scenarios into the list, skipping None entries
-        self.spec.extend(sc.mergelists(eff_spec, prob_spec, par_spec, intv_specs))
+        self.specs.extend(sc.mergelists(eff_spec, prob_spec, par_spec, intv_specs))
 
         # Finally, ensure all have a consistent label if supplied
         if label is not None:
