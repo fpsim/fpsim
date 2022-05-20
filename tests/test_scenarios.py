@@ -209,17 +209,19 @@ def test_make_scens():
 
     sc.heading('Testing make_scen...')
 
-    serial = 0
+    serial = 1
+    year   = 2002
+    method = 'Injectables'
 
     # Create basic scenarios
     s = sc.objdict()
-    s.eff   = fp.make_scen(eff={'Injectables':0.99}, year=2020) # Basic efficacy scenario
-    s.prob1 = fp.make_scen(source='None', dest='Injectables', factor=2) # Double rate of injectables initiation
-    s.prob2 = fp.make_scen(method='Injectables', init_factor=2) # Double rate of injectables initiation -- alternate approach
-    s.par   = fp.make_scen(par='exposure_correction', years=2010, vals=0.5) # Parameter scenario: halve exposure
+    s.eff   = fp.make_scen(year=year, eff={'Injectables':0.99}) # Basic efficacy scenario
+    s.prob1 = fp.make_scen(year=year, source='None', dest='Injectables', factor=2) # Double rate of injectables initiation
+    s.prob2 = fp.make_scen(year=year, method='Injectables', init_factor=2) # Double rate of injectables initiation -- alternate approach
+    s.par   = fp.make_scen(par='exposure_correction', years=2005, vals=0.5) # Parameter scenario: halve exposure
 
     # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
-    s.complex = fp.make_scen(source='Condoms', dest='Injectables', value=0.5, ages='18-25', matrix='pp1to6')
+    s.complex = fp.make_scen(year=year, source='Condoms', dest='Injectables', value=0.5, ages='18-25', matrix='pp1to6')
 
     # Custom scenario
     def update_sim(sim): sim.updated = True
@@ -227,7 +229,7 @@ def test_make_scens():
 
     # Combining multiple scenarios: increase injectables initiation and reduce exposure correction
     s.multi = fp.make_scen(
-        dict(method='Injectables', init_factor=2),
+        dict(year=year, method=method, init_factor=2),
         dict(par='exposure_correction', years=2010, vals=0.5)
     )
 
@@ -235,12 +237,11 @@ def test_make_scens():
     s.sum = s.eff + s.prob1
 
     # More probability matrix options
-    method = 'Injectables'
-    s.inj1 = fp.make_scen(method=method, init_factor=5, matrix='annual', ages=None)
-    s.inj2 = fp.make_scen(method=method, discont_factor=0, matrix='annual', ages=':')
-    s.inj3 = fp.make_scen(method=method, init_value=0.2, matrix='pp1to6', ages=None)
-    s.inj4 = fp.make_scen(method=method, discont_value=0, matrix='pp1to6', ages=':')
-    s.inj5 = fp.make_scen(source='None', dest='Injectables', factor=0.2, ages=['<18', '25'])
+    s.inj1 = fp.make_scen(year=year, method=method, init_factor=5, matrix='annual', ages=None)
+    s.inj2 = fp.make_scen(year=year, method=method, discont_factor=0, matrix='annual', ages=':')
+    s.inj3 = fp.make_scen(year=year, method=method, init_value=0.2, matrix='pp1to6', ages=None)
+    s.inj4 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
+    s.inj5 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '25'])
 
     # Run scenarios
     scens = fp.Scenarios(location='test', n=100, repeats=1, scens=s.values())

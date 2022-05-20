@@ -351,11 +351,21 @@ class update_methods(Intervention):
 
     def __init__(self, year, eff=None, probs=None, verbose=False):
         super().__init__()
-        self.year   = year
-        self.eff    = eff
-        self.probs  = probs
-        self.applied = False
+        self.year    = year
+        self.eff     = eff
+        self.probs   = probs
         self.verbose = verbose
+
+        # Validation
+        if self.year is None:
+            errormsg = 'A year must be supplied'
+            raise ValueError(errormsg)
+        if self.eff is None and self.probs is None:
+            errormsg = 'Either efficacy or probabilities must be supplied'
+            raise ValueError(errormsg)
+
+        self.applied = False
+
         return
 
 

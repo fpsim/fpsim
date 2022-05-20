@@ -101,13 +101,20 @@ class Scenario(sc.prettyobj, sc.dictobj):
                  ):
 
         # Handle input specification
-        self.specs = sc.mergelists(*[Scenario(**spec).specs for spec in sc.mergelists(spec, *args)])
+        self.specs = sc.mergelists(*[Scenario(**spec).specs for spec in sc.mergelists(spec, *args)]) # Sorry
 
         # Handle other keyword inputs
         eff_spec   = None
         prob_spec  = None
         par_spec   = None
         intv_specs = None
+
+        def check_not_none(obj, *args):
+            ''' Check that all needed inputs are supplied '''
+            for key in args:
+                if obj[key] is None:
+                    errormsg = f'Entry "{key}" is not allowed to be None for scenario spec "{obj.which}"'
+                    raise ValueError(errormsg)
 
         # It's an efficacy scenario
         if eff is not None:
@@ -116,6 +123,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                 eff    = eff,
                 year   = year,
             )
+            check_not_none(eff_spec, 'year')
 
         # It's a method switching probability scenario
         prob_args = [factor, value, init_factor, discont_factor, init_value, discont_value]
@@ -137,6 +145,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                     discont_value  = discont_value,
                 )
             )
+            check_not_none(prob_spec, 'year')
 
         # It's a parameter change scenario
         if par is not None:
@@ -146,6 +155,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                 years = years,
                 vals  = vals,
             )
+            check_not_none(par_spec, 'years', 'vals')
 
         # It's a custom scenario(s)
         if interventions is not None:
@@ -257,11 +267,11 @@ class Scenarios(sc.prettyobj):
                 # Handle update_methods
                 if which == 'eff':
                     eff = spec.pop('eff')
-                    year = spec.pop('year', None)
+                    year = spec.pop('year')
                     interventions += fpi.update_methods(eff=eff, year=year)
                 elif which == 'prob':
                     probs = spec.pop('probs')
-                    year = spec.pop('year', None)
+                    year = spec.pop('year')
                     interventions += fpi.update_methods(probs=probs, year=year)
                 elif which == 'par':
                     par = spec.pop('par')
