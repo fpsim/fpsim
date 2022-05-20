@@ -473,8 +473,4 @@ class update_methods(Intervention):
                             if self.verbose:
                                 print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
 
-            if len(self.scen):
-                errormsg = f'Invalid scenario keys detected: "{sc.strjoin(self.scen.keys())}"; must be "eff" or "probs"'
-                raise ValueError(errormsg)
-
         return
