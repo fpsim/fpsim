@@ -8,6 +8,16 @@ import sciris as sc
 __all__ = ['pars']
 
 
+def sim_pars():
+    ''' Additional parameters used in the sim '''
+    sim_pars = dict(
+        mortality_probs = {}, # CK: TODO: rethink implementation
+        interventions   = [],
+        analyzers       = [],
+    )
+    return sim_pars
+
+
 def pars(location=None, **kwargs):
     '''
     Function for getting default parameters.
@@ -41,7 +51,8 @@ def pars(location=None, **kwargs):
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
 
-    # Merge with kwargs and copy
+    # Merge with sim_pars and kwargs and copy
+    pars.update(sim_pars())
     mismatch = set(kwargs.keys()) - set(pars.keys())
     if len(mismatch):
         errormsg = f'The following key(s) are not valid: {sc.strjoin(mismatch)}'

@@ -931,34 +931,32 @@ class Sim(fpb.BaseSim):
     def apply_interventions(self):
         ''' Apply each intervention in the model '''
         from . import interventions as fpi # To avoid circular import
-        if 'interventions' in self.pars:
-            for i,intervention in enumerate(sc.tolist(self['interventions'])):
-                if isinstance(intervention, fpi.Intervention):
-                    if not intervention.initialized: # pragma: no cover
-                        intervention.initialize(self)
-                    intervention.apply(self) # If it's an intervention, call the apply() method
-                elif callable(intervention):
-                    intervention(self) # If it's a function, call it directly
-                else: # pragma: no cover
-                    errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object: it is {type(intervention)}'
-                    raise TypeError(errormsg)
+        for i,intervention in enumerate(sc.tolist(self['interventions'])):
+            if isinstance(intervention, fpi.Intervention):
+                if not intervention.initialized: # pragma: no cover
+                    intervention.initialize(self)
+                intervention.apply(self) # If it's an intervention, call the apply() method
+            elif callable(intervention):
+                intervention(self) # If it's a function, call it directly
+            else: # pragma: no cover
+                errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object: it is {type(intervention)}'
+                raise TypeError(errormsg)
         return
 
 
     def apply_analyzers(self):
         ''' Apply each analyzer in the model '''
         from . import analyzers as fpa # To avoid circular import
-        if 'analyzers' in self.pars:
-            for i,analyzer in enumerate(sc.tolist(self['analyzers'])):
-                if isinstance(analyzer, fpa.Analyzer):
-                    if not analyzer.initialized: # pragma: no cover
-                        analyzer.initialize(self)
-                    analyzer.apply(self) # If it's an intervention, call the apply() method
-                elif callable(analyzer):
-                    analyzer(self) # If it's a function, call it directly
-                else: # pragma: no cover
-                    errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object: it is {type(analyzer)}'
-                    raise TypeError(errormsg)
+        for i,analyzer in enumerate(sc.tolist(self['analyzers'])):
+            if isinstance(analyzer, fpa.Analyzer):
+                if not analyzer.initialized: # pragma: no cover
+                    analyzer.initialize(self)
+                analyzer.apply(self) # If it's an intervention, call the apply() method
+            elif callable(analyzer):
+                analyzer(self) # If it's a function, call it directly
+            else: # pragma: no cover
+                errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object: it is {type(analyzer)}'
+                raise TypeError(errormsg)
         return
 
 
