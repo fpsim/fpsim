@@ -123,7 +123,7 @@ def test_scenarios(do_plot=do_plot):
 
     # Increased uptake high efficacy
     uptake_scen1 = fp.make_scen(
-        label='Increased modern',
+        label = 'Increased modern',
         eff = {'Other modern':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = dict( # Specify by value
             source = 'None', # Source method, 'all' for all methods

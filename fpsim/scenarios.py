@@ -93,7 +93,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         s8 = s1 + s2
     '''
     def __init__(self, spec=None, *args, label=None, year=None, matrix=None, ages=None, # Basic settings
-                 eff=None, # Option 1
+                 eff=None, probs=None, # Option 1
                  source=None, dest=None, factor=None, value=None, # Option 2
                  method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
                  par=None, years=None, vals=None, # Option 4
@@ -126,12 +126,12 @@ class Scenario(sc.prettyobj, sc.dictobj):
             check_not_none(eff_spec, 'year')
 
         # It's a method switching probability scenario
-        prob_args = [factor, value, init_factor, discont_factor, init_value, discont_value]
+        prob_args = [probs, factor, value, init_factor, discont_factor, init_value, discont_value]
         if len(sc.mergelists(*prob_args)): # Check if any are non-None
             prob_spec = sc.objdict(
                 which  = 'prob',
                 year   = year,
-                probs = dict(
+                probs = probs if probs else dict(
                     matrix         = matrix,
                     ages           = ages,
                     source         = source,
