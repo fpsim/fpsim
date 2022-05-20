@@ -1792,8 +1792,8 @@ def parallel(*args, **kwargs):
 
     **Examples**::
 
-        s1 = fp.Sim(exposure_correction=0.5, label='Low')
-        s2 = fp.Sim(exposure_correction=2.0, label='High')
+        s1 = fp.Sim(exposure_factor=0.5, label='Low')
+        s2 = fp.Sim(exposure_factor=2.0, label='High')
         fp.parallel(s1, s2).plot()
         msim = fp.parallel(s1, s2)
     '''

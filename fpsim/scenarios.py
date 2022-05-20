@@ -77,16 +77,16 @@ class Scenario(sc.prettyobj, sc.dictobj):
         s4 = fp.make_scen(source='Condoms', dest='Injectables', value=0.5, ages='18-25', matrix='pp1to6')
 
         # Parameter scenario: halve exposure
-        s5 = fp.make_scen(par='exposure_correction', years=2010, vals=0.5)
+        s5 = fp.make_scen(par='exposure_factor', years=2010, vals=0.5)
 
         # Custom scenario
         def update_sim(sim): sim.updated = True
         s6 = fp.make_scen(interventions=update_sim)
 
-        # Combining multiple scenarios: increase injectables initiation and reduce exposure correction
+        # Combining multiple scenarios: increase injectables initiation and reduce exposure factor
         s7 = fp.make_scen(
             dict(method='Injectables', init_factor=2),
-            dict(par='exposure_correction', years=2010, vals=0.5)
+            dict(par='exposure_factor', years=2010, vals=0.5)
         )
 
         # Scenarios can be combined

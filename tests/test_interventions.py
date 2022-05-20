@@ -43,7 +43,7 @@ def test_change_par():
     verbose = True
     year = 2002
     ec = 0.01
-    cp1 = fp.change_par(par='exposure_correction', years=year, vals=ec, verbose=verbose) # Reduce exposure correction
+    cp1 = fp.change_par(par='exposure_factor', years=year, vals=ec, verbose=verbose) # Reduce exposure correction
     s0 = make_sim(label='Baseline')
     s1 = make_sim(interventions=cp1, label='High exposure')
 
@@ -63,8 +63,8 @@ def test_change_par():
     # Test exposure correction change
     base_births = s0.results['births'].sum()
     cp_births   = s1.results['births'].sum()
-    assert s1['exposure_correction'] == ec, f'change_pars() did not change exposure correction to {ec}'
-    assert cp_births < base_births, f'Reducing exposure correction should reduce births, but {cp_births} is not less than the baseline of {base_births}'
+    assert s1['exposure_factor'] == ec, f'change_pars() did not change exposure factor to {ec}'
+    assert cp_births < base_births, f'Reducing exposure factor should reduce births, but {cp_births} is not less than the baseline of {base_births}'
 
     # Test MCPR growth
     r = s2.results

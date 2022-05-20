@@ -92,15 +92,15 @@ class Calibration(sc.prettyobj):
         either a dict of arrays or lists in order best-low-high, e.g.::
 
             calib_pars = dict(
-                exposure_correction           = [1.0, 0.5,  1.5],
-                maternal_mortality_multiplier = [1,   0.75, 3.0],
+                exposure_factor           = [1.0, 0.5,  1.5],
+                maternal_mortality_factor = [1,   0.75, 3.0],
             )
 
         Or the same thing, as a dict of dicts::
 
             calib_pars = dict(
-                exposure_correction           = dict(best=1.0, low=0.5,  high=1.5),
-                maternal_mortality_multiplier = dict(best=1,   low=0.75, high=3.0),
+                exposure_factor           = dict(best=1.0, low=0.5,  high=1.5),
+                maternal_mortality_factor = dict(best=1,   low=0.75, high=3.0),
             )
         '''
 

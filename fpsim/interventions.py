@@ -198,8 +198,8 @@ class change_par(Intervention):
 
     **Example**::
 
-        ec0 = fp.change_par(par='exposure_correction', years=[2000, 2010], vals=[0.0, 2.0]) # Reduce exposure correction
-        ec0 = fp.change_par(par='exposure_correction', vals={2000:0.0, 2010:2.0}) # Equivalent way of writing
+        ec0 = fp.change_par(par='exposure_factor', years=[2000, 2010], vals=[0.0, 2.0]) # Reduce exposure factor
+        ec0 = fp.change_par(par='exposure_factor', vals={2000:0.0, 2010:2.0}) # Equivalent way of writing
         sim = fp.Sim(interventions=ec0).run()
     '''
     def __init__(self, par, years=None, vals=None, verbose=False):
