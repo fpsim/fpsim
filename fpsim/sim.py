@@ -369,15 +369,24 @@ class People(fpb.BasePeople):
         for i in abort.inds: # Handle adding dates
             all_ppl.abortion_dates[i].append(all_ppl.age[i])
 
-        preg.pregnant = True
-        preg.gestation = 1  # Start the counter at 1
-        pregdur = [self.pars['preg_dur_low'], self.pars['preg_dur_high']]
-        preg.preg_dur = np.random.randint(pregdur[0], pregdur[1]+1, size=len(preg))  # Duration of this pregnancy
-        preg.postpartum = False
-        preg.postpartum_dur = 0
-        preg.reset_breastfeeding() # Stop lactating if becoming pregnant
-        preg.method = 0
+        # Make selected agents pregnant
+        preg.make_pregnant()
 
+        return
+
+
+    def make_pregnant(self):
+        '''
+        Update the selected agents to be pregnant
+        '''
+        pregdur = [self.pars['preg_dur_low'], self.pars['preg_dur_high']]
+        self.pregnant = True
+        self.gestation = 1  # Start the counter at 1
+        self.preg_dur = np.random.randint(pregdur[0], pregdur[1]+1, size=len(self))  # Duration of this pregnancy
+        self.postpartum = False
+        self.postpartum_dur = 0
+        self.reset_breastfeeding() # Stop lactating if becoming pregnant
+        self.method = 0
         return
 
 
