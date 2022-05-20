@@ -10,36 +10,36 @@ from .. import defaults as fpd
 #%% Scalar parameters
 def defaults():
     defaults = {
-      'n'                             : 10_000, # Population size
-      'start_year'                    : 1960,
-      'end_year'                      : 2019,
-      'timestep'                      : 1, # The simulation timestep in months
-      'method_timestep'               : 1, # How many simulation timesteps to go for every method update step
-      'verbose'                       : 1,
-      'seed'                          : 1,
-      'fecundity_var_low'       : 0.7,
-      'fecundity_var_high'      : 1.1,
-      'method_age'                    : 15,
-      'max_age'                       : 99,
-      'preg_dur_low'                  : 9,
-      'preg_dur_high'                 : 9,
-      'switch_frequency'              : 12,
-      'breastfeeding_dur_low'         : 1,
-      'breastfeeding_dur_high'        : 24,
-      'age_limit_fecundity'           : 50,
-      'postpartum_length'             : 35,
-      'end_first_tri'                 : 3,
-      'abortion_prob'                 : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
-      'twins_prob'                    : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-      'LAM_efficacy'                  : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
-      'maternal_mortality' : 1,
-      'high_parity'                   : 4,
-      'high_parity_nonuse' : 0.6,
-      'primary_infertility'           : 0.05,
-      'exposure_correction'           : 1, # Overall exposure correction factor
-      'mcpr_growth_rate'              : 0.02, # The year-on-year change in MCPR after the end of the data
-      'mcpr_max'                      : 0.90, # Do not allow MCPR to increase beyond this
-      'mcpr_norm_year'                : 2018, # Year to normalize MCPR trend to 1
+      'n'                      : 10_000, # Population size
+      'start_year'             : 1960,
+      'end_year'               : 2019,
+      'timestep'               : 1, # The simulation timestep in months
+      'method_timestep'        : 1, # How many simulation timesteps to go for every method update step
+      'verbose'                : 1,
+      'seed'                   : 1,
+      'fecundity_var_low'      : 0.7,
+      'fecundity_var_high'     : 1.1,
+      'method_age'             : 15,
+      'max_age'                : 99,
+      'preg_dur_low'           : 9,
+      'preg_dur_high'          : 9,
+      'switch_frequency'       : 12,
+      'breastfeeding_dur_low'  : 1,
+      'breastfeeding_dur_high' : 24,
+      'age_limit_fecundity'    : 50,
+      'postpartum_length'      : 35,
+      'end_first_tri'          : 3,
+      'abortion_prob'          : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
+      'twins_prob'             : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+      'LAM_efficacy'           : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
+      'maternal_mortality'     : 1,
+      'high_parity'            : 4,
+      'high_parity_nonuse'     : 0.6,
+      'primary_infertility'    : 0.05,
+      'exposure_correction'    : 1, # Overall exposure correction factor
+      'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
+      'mcpr_max'               : 0.90, # Do not allow MCPR to increase beyond this
+      'mcpr_norm_year'         : 2018, # Year to normalize MCPR trend to 1
     }
     return defaults
 
