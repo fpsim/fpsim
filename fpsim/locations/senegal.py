@@ -30,8 +30,8 @@ def scalar_pars():
         'preg_dur_low'           : 9,
         'preg_dur_high'          : 9,
         'postpartum_dur'         : 35,
-        'breastfeeding_dur_low'  : 1,
-        'breastfeeding_dur_high' : 24,
+        'breastfeeding_dur_mu'   : 19.66828, # For a Gumbel distribution, drawn from DHS
+        'breastfeeding_dur_beta' : 7.2585,
 
         # Pregnancy outcomes
         'abortion_prob'             : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
