@@ -91,7 +91,7 @@ class Experiment(sc.prettyobj):
 
         # Extract population size over time
         if self.pars:
-            n = self.pars['n']
+            n = self.pars['n_agents']
         else:
             n = 5000 # Use default if not available
             print(f'Warning: parameters not defined, using default of n={n}')
