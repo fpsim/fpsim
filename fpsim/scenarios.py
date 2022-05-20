@@ -101,7 +101,7 @@ class Scenario(sc.dictobj, sc.prettyobj):
                  ):
 
         # Handle input specification
-        specs = sc.mergelists(spec, args)
+        specs = sc.mergelists(spec, *args)
         self.specs = [Scenario(**spec) for spec in specs]
 
         # Handle other keyword inputs
@@ -119,7 +119,8 @@ class Scenario(sc.dictobj, sc.prettyobj):
             )
 
         # It's a method switching probability scenario
-        if len(sc.mergelists()):
+        prob_args = [factor, value, init_factor, discont_factor, init_value, discont_value]
+        if len(sc.mergelists(*prob_args)): # Check if any are non-None
             prob_spec = sc.objdict(
                 which          = 'prob',
                 year           = year,
