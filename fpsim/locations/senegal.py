@@ -8,40 +8,51 @@ from scipy import interpolate as si
 from .. import defaults as fpd
 
 #%% Scalar parameters
-def defaults():
-    defaults = {
-      'n'                      : 10_000, # Population size
-      'start_year'             : 1960,
-      'end_year'               : 2019,
-      'timestep'               : 1, # The simulation timestep in months
-      'method_timestep'        : 1, # How many simulation timesteps to go for every method update step
-      'verbose'                : 1,
-      'seed'                   : 1,
-      'fecundity_var_low'      : 0.7,
-      'fecundity_var_high'     : 1.1,
-      'method_age'             : 15,
-      'max_age'                : 99,
-      'preg_dur_low'           : 9,
-      'preg_dur_high'          : 9,
-      'switch_frequency'       : 12,
-      'breastfeeding_dur_low'  : 1,
-      'breastfeeding_dur_high' : 24,
-      'age_limit_fecundity'    : 50,
-      'postpartum_length'      : 35,
-      'end_first_tri'          : 3,
-      'abortion_prob'          : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
-      'twins_prob'             : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-      'LAM_efficacy'           : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
-      'maternal_mortality'     : 1,
-      'high_parity'            : 4,
-      'high_parity_nonuse'     : 0.6,
-      'primary_infertility'    : 0.05,
-      'exposure_correction'    : 1, # Overall exposure correction factor
-      'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
-      'mcpr_max'               : 0.90, # Do not allow MCPR to increase beyond this
-      'mcpr_norm_year'         : 2018, # Year to normalize MCPR trend to 1
+def scalar_pars():
+    scalar_pars = {
+        # Basic parameters
+        'n'                      : 10_000, # Population size
+        'start_year'             : 1960,
+        'end_year'               : 2019,
+        'timestep'               : 1, # The simulation timestep in months
+        'method_timestep'        : 1, # How many simulation timesteps to go for every method update step
+        'verbose'                : 1, # How much detail to print during the simulation
+        'seed'                   : 1, # Random seed
+
+        # Age limits
+        'method_age'             : 15,
+        'age_limit_fecundity'    : 50,
+        'max_age'                : 99,
+
+        # Durations
+        'switch_frequency'       : 12, # How frequently to check for changes to contraception
+        'end_first_tri'          : 3,
+        'preg_dur_low'           : 9,
+        'preg_dur_high'          : 9,
+        'postpartum_dur'         : 35,
+        'breastfeeding_dur_low'  : 1,
+        'breastfeeding_dur_high' : 24,
+
+        # Pregnancy outcomes
+        'abortion_prob'          : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
+        'twins_prob'             : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+        'LAM_efficacy'           : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
+        'maternal_mortality'     : 1,
+
+         # Fecundity and exposure
+        'fecundity_var_low'      : 0.7,
+        'fecundity_var_high'     : 1.1,
+        'high_parity'            : 4,
+        'high_parity_nonuse'     : 0.6,
+        'primary_infertility'    : 0.05,
+        'exposure_correction'    : 1, # Overall exposure correction factor
+
+        # MCPR
+        'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
+        'mcpr_max'               : 0.90, # Do not allow MCPR to increase beyond this
+        'mcpr_norm_year'         : 2018, # Year to normalize MCPR trend to 1
     }
-    return defaults
+    return scalar_pars
 
 
 def data2interp(data, ages, normalize=False):
@@ -736,37 +747,37 @@ def barriers():
 
 #%% Make parameters
 
-def make_pars(configuration_file=None, defaults_file=None):
+def make_pars(configuration_file=None, defaults_file=None, bound=True):
     ''' Take all parameters and construct into a dictionary '''
 
     # Scalar parameters
-    pars = defaults()
+    pars = scalar_pars()
 
     # Demographics and pregnancy outcome
-    pars['age_pyramid']                = age_pyramid()
-    pars['age_mortality']              = age_mortality(bound=True)
-    pars['maternal_mortality']         = maternal_mortality()
-    pars['infant_mortality']           = infant_mortality()
-    pars['miscarriage_rates']          = miscarriage()
-    pars['stillbirth_rate']            = stillbirth()
+    pars['age_pyramid']        = age_pyramid()
+    pars['age_mortality']      = age_mortality(bound=bound)
+    pars['maternal_mortality'] = maternal_mortality()
+    pars['infant_mortality']   = infant_mortality()
+    pars['miscarriage_rates']  = miscarriage()
+    pars['stillbirth_rate']    = stillbirth()
 
     # Fecundity
-    pars['age_fecundity']              = female_age_fecundity(bound=True)
-    pars['fecundity_ratio_nullip']     = fecundity_ratio_nullip()
-    pars['lactational_amenorrhea']     = lactational_amenorrhea()
+    pars['age_fecundity']          = female_age_fecundity(bound=bound)
+    pars['fecundity_ratio_nullip'] = fecundity_ratio_nullip()
+    pars['lactational_amenorrhea'] = lactational_amenorrhea()
 
     # Pregnancy exposure
-    pars['sexual_activity']            = sexual_activity()
-    pars['sexual_activity_pp'] = sexual_activity_postpartum()
-    pars['debut_age']                  = debut_age()
-    pars['exposure_age']    = exposure_correction_age()
-    pars['exposure_parity'] = exposure_correction_parity()
-    pars['pref_spacing']               = birth_spacing_preference()
+    pars['sexual_activity']    = sexual_activity()
+    pars['sexual_activity_pp'] = sexual_activity_pp()
+    pars['debut_age']          = debut_age()
+    pars['exposure_age']       = exposure_age()
+    pars['exposure_parity']    = exposure_parity()
+    pars['spacing_pref']       = birth_spacing_pref()
 
     # Contraceptive methods
-    pars['method_efficacy']            = efficacy()
-    pars['method_efficacy25']          = efficacy25()
-    pars['methods']                    = methods()
-    pars['barriers']                   = barriers()
+    pars['method_efficacy']   = efficacy()
+    pars['method_efficacy25'] = efficacy25()
+    pars['methods']           = methods()
+    pars['barriers']          = barriers()
 
     return pars
