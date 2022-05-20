@@ -134,7 +134,7 @@ class People(fpb.BasePeople):
                     switching_events[x, y] += 1
                     switching_events_ages[key][x, y] += 1
 
-        if self['track_switching']:
+        if self.pars['track_switching']:
             self.step_results_switching['annual'] += switching_events # CK: TODO: remove this extra result and combine with step_results
             for key in fpd.method_age_mapping.keys():
                 self.step_results['switching_annual'][key] += switching_events_ages[key]
@@ -225,9 +225,10 @@ class People(fpb.BasePeople):
                     switching_events[x, y] += 1
                     switching_events_ages[key][x, y] += 1
 
-        self.step_results_switching['postpartum'] += switching_events
-        for key in fpd.method_age_mapping.keys():
-            self.step_results['switching_postpartum'][key] += switching_events_ages[key]
+        if self.pars['track_switching']:
+            self.step_results_switching['postpartum'] += switching_events
+            for key in fpd.method_age_mapping.keys():
+                self.step_results['switching_postpartum'][key] += switching_events_ages[key]
 
         return
 
@@ -674,12 +675,12 @@ class People(fpb.BasePeople):
             ''' Return an array of m x m zeros '''
             return np.zeros((m, m), dtype=int)
 
-        if self['track_switching']:
+        if self.pars['track_switching']:
             for key in fpd.method_age_mapping.keys():
                 self.step_results['switching_annual'][key]    = mm_zeros()
                 self.step_results['switching_postpartum'][key] = mm_zeros()
 
-            self.step_results_switching = dict(
+            self.step_results['switching'] = dict(
                 annual     = mm_zeros(),
                 postpartum = mm_zeros(),
             )
@@ -731,7 +732,7 @@ class People(fpb.BasePeople):
         # Age person at end of timestep after tabulating results
         alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
 
-        return self.step_results, self.step_results_switching
+        return self.step_results
 
 
 
@@ -1005,9 +1006,8 @@ class Sim(fpb.BaseSim):
             # Update the people
             self.people.i = self.i
             self.people.t = self.t
-            step_results, step_results_switching = self.people.update()
+            step_results = self.people.update()
             r = fpu.dict2obj(step_results)
-            switch_events = step_results_switching
 
             # Start calculating results
             new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
@@ -1039,11 +1039,11 @@ class Sim(fpb.BaseSim):
             self.results['infant_deaths'][i]   = r.infant_deaths
             self.results['on_methods_mcpr'][i] = r.on_methods_mcpr
             self.results['no_methods_mcpr'][i] = r.no_methods_mcpr
-            self.results['on_methods_cpr'][i] = r.on_methods_cpr
-            self.results['no_methods_cpr'][i] = r.no_methods_cpr
+            self.results['on_methods_cpr'][i]  = r.on_methods_cpr
+            self.results['no_methods_cpr'][i]  = r.no_methods_cpr
             self.results['on_methods_acpr'][i] = r.on_methods_acpr
-            self.results['no_methods_acpr'][i]  = r.no_methods_acpr
-            self.results['mcpr'][i]           = r.on_methods_mcpr/(r.no_methods_mcpr + r.on_methods_mcpr)
+            self.results['no_methods_acpr'][i] = r.no_methods_acpr
+            self.results['mcpr'][i]            = r.on_methods_mcpr/(r.no_methods_mcpr + r.on_methods_mcpr)
             self.results['cpr'][i]             = r.on_methods_cpr/(r.no_methods_cpr + r.on_methods_cpr)
             self.results['acpr'][i]            = r.on_methods_acpr/(r.no_methods_acpr + r.on_methods_acpr)
             self.results['pp0to5'][i]          = percent0to5
@@ -1053,28 +1053,16 @@ class Sim(fpb.BaseSim):
             self.results['total_women_fecund'][i] = r.total_women_fecund
             self.results['unintended_pregs'][i]   = r.unintended_pregs
 
-            # Store results of total births per age bin for ASFR
-            self.results['total_births_10-14'][i]    = r.birth_bins['10-14']
-            self.results['total_births_15-19'][i]    = r.birth_bins['15-19']
-            self.results['total_births_20-24'][i]    = r.birth_bins['20-24']
-            self.results['total_births_25-29'][i]    = r.birth_bins['25-29']
-            self.results['total_births_30-34'][i]    = r.birth_bins['30-34']
-            self.results['total_births_35-39'][i]    = r.birth_bins['35-39']
-            self.results['total_births_40-44'][i]    = r.birth_bins['40-44']
-            self.results['total_births_45-49'][i]    = r.birth_bins['45-49']
-
-            # Store results of total fecund women per age bin for ASFR
-            self.results['total_women_10-14'][i] = r.age_bin_totals['10-14']
-            self.results['total_women_15-19'][i] = r.age_bin_totals['15-19']
-            self.results['total_women_20-24'][i] = r.age_bin_totals['20-24']
-            self.results['total_women_25-29'][i] = r.age_bin_totals['25-29']
-            self.results['total_women_30-34'][i] = r.age_bin_totals['30-34']
-            self.results['total_women_35-39'][i] = r.age_bin_totals['35-39']
-            self.results['total_women_40-44'][i] = r.age_bin_totals['40-44']
-            self.results['total_women_45-49'][i] = r.age_bin_totals['45-49']
+            age_bins = ['10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
+            for agekey in age_bins:
+                births_key = f'total_births_{agekey}'
+                women_key = f'total_women_{agekey}'
+                self.results[births_key][i] = r.birth_bins[agekey] # Store results of total births per age bin for ASFR
+                self.results[women_key][i]  = r.age_bin_totals[agekey] # Store results of total fecund women per age bin for ASFR
 
             # Store results of number of switching events in each age group
             if self['track_switching']:
+                switch_events = step_results.pop('switching')
                 self.results['switching_events_<18'][i] = r.switching_annual['<18']
                 self.results['switching_events_18-20'][i] = r.switching_annual['18-20']
                 self.results['switching_events_21-25'][i] = r.switching_annual['21-25']
@@ -1083,7 +1071,6 @@ class Sim(fpb.BaseSim):
                 self.results['switching_events_pp_18-20'][i] = r.switching_postpartum['18-20']
                 self.results['switching_events_pp_21-25'][i] = r.switching_postpartum['21-25']
                 self.results['switching_events_pp_>25'][i] = r.switching_postpartum['>25']
-
                 self.results['switching_events_annual'][i] = switch_events['annual']
                 self.results['switching_events_postpartum'][i] = switch_events['postpartum']
 
