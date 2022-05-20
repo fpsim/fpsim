@@ -202,7 +202,6 @@ def test_scenarios(do_plot=do_plot):
     return scens
 
 
-
 def test_make_scens():
     '''
     Test that the user-friendly scenarios API works
@@ -210,25 +209,55 @@ def test_make_scens():
 
     sc.heading('Testing make_scen...')
 
+    serial = 0
+
+    # Create basic scenarios
+    s = sc.objdict()
+    s.eff   = fp.make_scen(eff={'Injectables':0.99}, year=2020) # Basic efficacy scenario
+    s.prob1 = fp.make_scen(source='None', dest='Injectables', factor=2) # Double rate of injectables initiation
+    s.prob2 = fp.make_scen(method='Injectables', init_factor=2) # Double rate of injectables initiation -- alternate approach
+    s.par   = fp.make_scen(par='exposure_correction', years=2010, vals=0.5) # Parameter scenario: halve exposure
+
+    # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
+    s.complex = fp.make_scen(source='Condoms', dest='Injectables', value=0.5, ages='18-25', matrix='pp1to6')
+
+    # Custom scenario
+    def update_sim(sim): sim.updated = True
+    s.custom = fp.make_scen(interventions=update_sim)
+
+    # Combining multiple scenarios: increase injectables initiation and reduce exposure correction
+    s.multi = fp.make_scen(
+        dict(method='Injectables', init_factor=2),
+        dict(par='exposure_correction', years=2010, vals=0.5)
+    )
+
+    # Scenario addition
+    s.sum = s.eff + s.prob1
+
+    # More probability matrix options
     method = 'Injectables'
-    scen1 = fp.make_scen(method=method, uptake_factor=5, matrix='annual', ages=None)
-    scen2 = fp.make_scen(method=method, discontinuation_factor=0, matrix='annual', ages=':')
-    scen3 = fp.make_scen(method=method, uptake_value=0.2, matrix='pp1to6', ages=None)
-    scen4 = fp.make_scen(method=method, discontinuation_value=0, matrix='pp1to6', ages=':')
-    scen12 = scen1 + scen2
-    scen34 = scen3 + scen4
-    scen5 = fp.make_scen(source='None', dest='Injectables', factor=0.2, ages=['<18', '25'])
+    s.inj1 = fp.make_scen(method=method, uptake_factor=5, matrix='annual', ages=None)
+    s.inj2 = fp.make_scen(method=method, discontinuation_factor=0, matrix='annual', ages=':')
+    s.inj3 = fp.make_scen(method=method, uptake_value=0.2, matrix='pp1to6', ages=None)
+    s.inj4 = fp.make_scen(method=method, discontinuation_value=0, matrix='pp1to6', ages=':')
+    s.inj5 = fp.make_scen(source='None', dest='Injectables', factor=0.2, ages=['<18', '25'])
 
     # Check validation
     with pytest.raises(ValueError):
         fp.make_scen(ages=['not_an_age'])
 
+    # Run scenarios
+    scens = fp.Scenarios(location='test', n=100, repeats=1, scens=s.values())
+    scens.run(serial=serial)
+
     return scens
+
 
 if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        msim1 = test_update_methods_eff()
-        msim2 = test_update_methods_probs()
-        scens = test_scenarios()
+        # msim1  = test_update_methods_eff()
+        # msim2  = test_update_methods_probs()
+        # scens1 = test_scenarios()
+        scens2 = test_make_scens()

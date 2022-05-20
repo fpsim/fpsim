@@ -65,29 +65,32 @@ class Scenario(sc.dictobj, sc.prettyobj):
     **Examples**::
 
         # Basic efficacy scenario
-        fp.make_scen(eff={'Injectables':0.99}, year=2020)
+        s1 = fp.make_scen(eff={'Injectables':0.99}, year=2020)
 
         # Double rate of injectables initiation
-        fp.make_scen(source='None', dest='Injectables', factor=2)
+        s2 = fp.make_scen(source='None', dest='Injectables', factor=2)
 
         # Double rate of injectables initiation -- alternate approach
-        fp.make_scen(method='Injectables', init_factor=2)
+        s3 = fp.make_scen(method='Injectables', init_factor=2)
 
         # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
-        fp.make_scen(source='Condoms', dest='Injectables', value=0.5, ages='18-25', matrix='pp1to6')
+        s4 = fp.make_scen(source='Condoms', dest='Injectables', value=0.5, ages='18-25', matrix='pp1to6')
 
         # Parameter scenario: halve exposure
-        fp.make_scen(par='exposure_correction', years=2010, vals=0.5)
+        s5 = fp.make_scen(par='exposure_correction', years=2010, vals=0.5)
 
         # Custom scenario
         def update_sim(sim): sim.updated = True
-        fp.make_scen(interventions=update_sim)
+        s6 = fp.make_scen(interventions=update_sim)
 
         # Combining multiple scenarios: increase injectables initiation and reduce exposure correction
-        fp_make_scen(
+        s7 = fp.make_scen(
             dict(method='Injectables', init_factor=2),
             dict(par='exposure_correction', years=2010, vals=0.5)
         )
+
+        # Scenarios can be combined
+        s8 = s1 + s2
     '''
     def __init__(self, spec=None, *args, label=None, year=None, matrix=None, ages=None, # Basic settings
                  eff=None, # Option 1
