@@ -188,7 +188,7 @@ class People(fpb.BasePeople):
 
             choices = pp0to1[key]
             choices_high_parity = sc.dcp(choices)
-            choices_high_parity[0] *= self.pars['high_parity_nonuse_correction']
+            choices_high_parity[0] *= self.pars['high_parity_nonuse']
             choices_high_parity = choices_high_parity / choices_high_parity.sum()
             new_methods = fpu.n_multinomial(choices, len(this_method))
             new_methods_high_parity = fpu.n_multinomial(choices_high_parity, len(this_method_high_parity))
@@ -425,7 +425,7 @@ class People(fpb.BasePeople):
         '''Track duration of extended postpartum period (0-24 months after birth).  Only enter this function if agent is postpartum'''
 
         # Stop postpartum episode if reach max length (set to 24 months)
-        pp_done = self.filter(self.postpartum_dur >= self.pars['postpartum_length'])
+        pp_done = self.filter(self.postpartum_dur >= self.pars['postpartum_dur'])
         pp_done.postpartum = False
         pp_done.postpartum_dur = 0
 
