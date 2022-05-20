@@ -26,6 +26,9 @@ def test_update_methods_eff():
     """
     Checks that fp.update_methods() properly updates sim.pars efficacies
     """
+
+    sc.heading('Testing updating method efficacy...')
+
     low_eff  = dict(dist='uniform', par1=0.80, par2=0.90)
     high_eff = dict(dist='uniform', par1=0.91, par2=0.95)
 
@@ -53,6 +56,8 @@ def test_update_methods_probs():
     both the selected age keys, and the type (methods or postpartum_methods) of
     transition matrix
     """
+
+    sc.heading('Testing updating method probability...')
 
     target_prob1 = 0.2 # Specify the target contraceptive probability
     target_prob2 = 0.8
@@ -121,6 +126,8 @@ def test_update_methods_probs():
 
 def test_scenarios(do_plot=do_plot):
     ''' Test the actual Scenarios object '''
+
+    sc.heading('Testing Scenarios...')
 
     # Increased uptake high efficacy
     uptake_scen1 = sc.objdict(
@@ -194,6 +201,29 @@ def test_scenarios(do_plot=do_plot):
 
     return scens
 
+
+
+def test_make_scens():
+    '''
+    Test that the user-friendly scenarios API works
+    '''
+
+    sc.heading('Testing make_scen...')
+
+    method = 'Injectables'
+    scen1 = fp.make_scen(method=method, uptake_factor=5, matrix='annual', ages=None)
+    scen2 = fp.make_scen(method=method, discontinuation_factor=0, matrix='annual', ages=':')
+    scen3 = fp.make_scen(method=method, uptake_value=0.2, matrix='pp1to6', ages=None)
+    scen4 = fp.make_scen(method=method, discontinuation_value=0, matrix='pp1to6', ages=':')
+    scen12 = scen1 + scen2
+    scen34 = scen3 + scen4
+    scen5 = fp.make_scen(source='None', dest='Injectables', factor=0.2, ages=['<18', '25'])
+
+    # Check validation
+    with pytest.raises(ValueError):
+        fp.make_scen(ages=['not_an_age'])
+
+    return scens
 
 if __name__ == '__main__':
 

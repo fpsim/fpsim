@@ -9,7 +9,24 @@ from . import defaults as fpd
 from . import sim as fps
 from . import interventions as fpi
 
-__all__ = ['Scenarios']
+__all__ = ['make_scen', 'Scenario', 'Scenarios']
+
+
+
+def make_scen(*args, **kwargs):
+    '''
+    Take input parameters or dictionaries and create a Scenarios object.
+
+    Alias for ``fp.Scenario()``.
+    '''
+    return Scenario(*args, **kwargs)
+
+
+
+class Scenario(sc.prettyobj):
+    '''
+    Contain the specification for a single scenario
+    '''
 
 
 class Scenarios(sc.prettyobj):
