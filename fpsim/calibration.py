@@ -187,7 +187,7 @@ class Calibration(sc.prettyobj):
         if os.path.exists(self.g.db_name):
             os.remove(self.g.db_name)
             if self.verbose:
-                print(f'Removed existing calibration {self.run_args.db_name}')
+                print(f'Removed existing calibration {self.g.db_name}')
         return
 
     def make_study(self):
