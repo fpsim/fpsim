@@ -391,7 +391,8 @@ class update_methods(Intervention):
             # Implement method mix shift
             raw = sim['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
             if self.probs is not None:
-                for entry in self.probs:
+                probs = sc.tolist(self.probs)
+                for entry in probs:
                     entry = sc.dcp(entry)
                     s_matrix = entry.pop('matrix', 'annual') # Switching matrix
                     ages     = entry.pop('ages', None)

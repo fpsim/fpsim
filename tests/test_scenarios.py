@@ -63,14 +63,12 @@ def test_update_methods_probs():
     target_prob2 = 0.8
 
     scen_no_keys = sc.objdict(
-        probs = [
-            dict(
-                source = 'None', # Source method, 'all' for all methods
-                dest   = 'Other modern', # Destination
-                factor = None, # Factor by which to multiply existing probability
-                value  = 0.2 # Alternatively, specify the absolute probability of switching to this method
-            ),
-        ]
+        probs = dict(
+            source = 'None', # Source method, 'all' for all methods
+            dest   = 'Other modern', # Destination
+            factor = None, # Factor by which to multiply existing probability
+            value  = 0.2 # Alternatively, specify the absolute probability of switching to this method
+        ),
     )
 
     scen_keys = sc.objdict(
@@ -133,14 +131,12 @@ def test_scenarios(do_plot=do_plot):
     uptake_scen1 = fp.make_scen(
         label='Increased modern',
         eff = {'Other modern':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
-        probs = [ # Specify by value
-            dict(
-                source = 'None', # Source method, 'all' for all methods
-                dest   = 'Other modern', # Destination
-                value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-                ages   = ['>25'], # Which age keys to modify -- if not specified, all
-            ),
-        ]
+        probs = dict( # Specify by value
+            source = 'None', # Source method, 'all' for all methods
+            dest   = 'Other modern', # Destination
+            value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
+            ages   = ['>25'], # Which age keys to modify -- if not specified, all
+        ),
     )
 
     uptake_scen2 = fp.make_scen(
