@@ -327,39 +327,46 @@ class update_methods(Intervention):
 
     Args:
         year (float): The year we want to change the method.
-        scen (dict): Define the scenario to run:
 
-            probs (list): A list of dictionaries where each dictionary has the following keys:
+        eff (dict):
+            An optional key for changing efficacy; its value is a dictionary with the following schema:
 
-                source (str): The source method to be changed.
-                dest (str) The destination method to be changed.
-                factor (float): The factor by which to multiply existing probability; OR
-                value (float): The value to replace the switching probability value.
-                keys (list): A list of strings representing age groups to affect.
+                {method: efficacy}
+                    Where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys).
 
-            eff (dict):
-                An optional key for changing efficacy; its value is a dictionary with the following schema:
 
-                    {method: efficacy}
-                        Where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys).
+        probs (list): A list of dictionaries where each dictionary has the following keys:
 
-        matrix (str): One of ['probs', 'probs1', 'probs1to6'] where:
+            source (str): The source method to be changed.
+            dest (str) The destination method to be changed.
+            factor (float): The factor by which to multiply existing probability; OR
+            value (float): The value to replace the switching probability value.
+            keys (list): A list of strings representing age groups to affect.
+            matrix (str): One of ['probs', 'probs1', 'probs1to6'] where:
 
-            probs:     Changes the specified uptake at the corresponding year regardless of state.
-            probs1:    Changes the specified uptake for all individuals in their first month postpartum.
-            probs1to6: Changes the specified uptake for all individuals that are in the first 6 months postpartum.
+                probs:     Changes the specified uptake at the corresponding year regardless of state.
+                probs1:    Changes the specified uptake for all individuals in their first month postpartum.
+                probs1to6: Changes the specified uptake for all individuals that are in the first 6 months postpartum.
     """
 
-    def __init__(self, year, scen, matrix=None, verbose=False):
+    def __init__(self, year, eff=None, probs=None, matrix=None, verbose=False):
         super().__init__()
-        self.year   = year
-        self.scen   = scen
-        self.matrix = matrix if matrix else scen.pop('matrix', 'annual') # Take matrix from scenario if supplied
-        valid_matrices = ['annual', 'pp0to1', 'pp1to6'] # TODO: be less subtle about the difference between normal and postpartum matrices
-        if self.matrix not in valid_matrices:
-            raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{self.matrix}"')
-        self.applied = False
+        self.year    = year
+        self.eff     = eff
+        self.probs   = probs
+        self.matrix  = matrix
         self.verbose = verbose
+
+        # Validation
+        if self.year is None:
+            errormsg = 'A year must be supplied'
+            raise ValueError(errormsg)
+        if self.eff is None and self.probs is None:
+            errormsg = 'Either efficacy or probabilities must be supplied'
+            raise ValueError(errormsg)
+
+        self.applied = False
+
         return
 
 
@@ -373,9 +380,13 @@ class update_methods(Intervention):
             self.applied = True # Ensure we don't apply this more than once
 
             # Implement efficacy
-            eff = self.scen.pop('eff', None)
-            if eff is not None:
-                for k,rawval in eff.items():
+            if self.eff is not None:
+                for k,rawval in self.eff.items():
+                    try:
+                        key2ind(sim, k)
+                    except:
+                        errormsg = f'Key "{k}" is not a valid method: are you sure this is an efficacy change?'
+                        raise ValueError(errormsg)
                     v = getval(rawval)
                     ind = key2ind(sim, k)
                     orig = sim['method_efficacy'][ind]
@@ -384,29 +395,85 @@ class update_methods(Intervention):
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
             # Implement method mix shift
-            probs = self.scen.pop('probs', None)
             raw = sim['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
-            if probs is not None:
+            if self.probs is not None:
+                probs = sc.tolist(self.probs)
                 for entry in probs:
                     entry = sc.dcp(entry)
-                    source = key2ind(sim, entry.pop('source', None))
-                    dest   = key2ind(sim, entry.pop('dest', None))
-                    factor = entry.pop('factor', None)
-                    value  = entry.pop('value', None)
-                    keys   = entry.pop('keys', None)
+                    s_matrix = entry.pop('matrix', self.matrix) # Switching matrix
+                    ages     = entry.pop('ages', None)
+                    source   = entry.pop('source', None)
+                    dest     = entry.pop('dest', None)
+                    method   = entry.pop('method', None)
+                    factor   = entry.pop('factor', None)
+                    value    = entry.pop('value', None)
+                    i_factor = entry.pop('init_factor', None)
+                    d_factor = entry.pop('discont_factor', None)
+                    i_value  = entry.pop('init_value', None)
+                    d_value  = entry.pop('discont_value', None)
 
-                    # Validation
-                    valid_keys = ['source', 'dest', 'factor', 'value', 'keys']
+                    # Supply default matrix
+                    if s_matrix is None:
+                        s_matrix = 'annual'
+
+                    # Validation # CK: TODO: move validation to initialization
                     if len(entry) != 0:
-                        errormsg = f'Keys "{sc.strjoin(entry.keys())}" not valid entries: must be among {sc.strjoin(valid_keys())}'
+                        errormsg = f'Keys "{sc.strjoin(entry.keys())}" not valid entries; see fp.make_scen() for valid args'
                         raise ValueError(errormsg)
 
-                    if keys in none_all_keys:
-                        keys = raw['annual'].keys()
+                    # Validate method/source/dest
+                    if method is not None:
+                        if (source is not None or dest is not None):
+                            errormsg = 'You can supply "method" as an alternative to "source" and "dest", but not both'
+                            raise ValueError(errormsg)
+                        else:
+                            source = method
+                            dest = method
 
-                    for k in keys:
-                        matrix = raw[self.matrix][k]
-                        if self.matrix == 'pp0to1': # Handle the postpartum initialization *vector*
+                    # Ensure correct number of inputs are given
+                    n_vals = len(sc.mergelists(factor, value, i_factor, d_factor, i_value, d_value))
+                    if n_vals != 1:
+                        errormsg = f'Must supply one and only one of factor, value, or initiation/discontinuation factors/values; you supplied {n_vals}'
+                        raise ValueError(errormsg)
+
+                    # Check nothing strange has happened
+                    is_switch  = len(sc.mergelists(factor, value))
+                    is_init    = len(sc.mergelists(i_value, i_factor))
+                    is_discont = len(sc.mergelists(d_value, d_factor))
+                    if is_switch + is_init + is_discont != 1:
+                        errormsg = f'Could not figure out what to do: switching={is_switch}, initiation={is_init}, discontinuation={is_discont}, but only one should happen'
+                        raise ValueError(errormsg)
+
+                    if is_init: # It's initiation
+                        source = 'None'
+                        dest = method
+                    elif is_discont: # It's discontinuation
+                        source = method
+                        dest = 'None'
+                    elif (source is None) and (dest is None):
+                        errormsg = 'Must supply a source or a destination'
+                        raise ValueError(errormsg)
+
+                    # Convert from strings to indices
+                    source = key2ind(sim, source)
+                    dest = key2ind(sim, dest)
+
+                    # Decide if it's a factor or a value modification
+                    factor = sc.mergelists(factor, i_factor, d_factor)
+                    value  = sc.mergelists(value, i_value, d_value)
+                    factor = factor[0] if factor else None
+                    value  = value[0]  if value  else None
+
+                    # Replace age keys with all ages if so asked
+                    if ages in none_all_keys:
+                        ages = raw['annual'].keys()
+                    else:
+                        ages = sc.tolist(ages)
+
+                    # Actually loop over the matrices and apply the changes
+                    for k in ages:
+                        matrix = raw[s_matrix][k]
+                        if s_matrix == 'pp0to1': # Handle the postpartum initialization *vector*
                            orig = matrix[dest]
                            if factor is not None:
                                matrix[dest] *= getval(factor)
@@ -415,9 +482,9 @@ class update_methods(Intervention):
                                matrix[dest] = 0
                                matrix *= (1-val)/matrix.sum()
                                matrix[dest] = val
-                               assert matrix.sum() == 1
+                               assert np.isclose(matrix.sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {matrix.sum()}'
                            if self.verbose:
-                               print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
+                               print(f'At time {sim.y:0.1f}, matrix {s_matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
                         else: # Handle annual switching *matrices*
                             orig = matrix[source, dest]
                             if factor is not None:
@@ -427,12 +494,8 @@ class update_methods(Intervention):
                                 matrix[source, dest] = 0
                                 matrix[source, :] *= (1-val)/matrix[source, :].sum()
                                 matrix[source, dest] = val
-                                assert matrix[source, :].sum() == 1
+                                assert np.isclose(matrix[source, :].sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {matrix.sum()}'
                             if self.verbose:
                                 print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
-
-            if len(self.scen):
-                errormsg = f'Invalid scenario keys detected: "{sc.strjoin(self.scen.keys())}"; must be "eff" or "probs"'
-                raise ValueError(errormsg)
 
         return
