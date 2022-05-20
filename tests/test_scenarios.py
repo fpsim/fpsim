@@ -236,15 +236,11 @@ def test_make_scens():
 
     # More probability matrix options
     method = 'Injectables'
-    s.inj1 = fp.make_scen(method=method, uptake_factor=5, matrix='annual', ages=None)
-    s.inj2 = fp.make_scen(method=method, discontinuation_factor=0, matrix='annual', ages=':')
-    s.inj3 = fp.make_scen(method=method, uptake_value=0.2, matrix='pp1to6', ages=None)
-    s.inj4 = fp.make_scen(method=method, discontinuation_value=0, matrix='pp1to6', ages=':')
+    s.inj1 = fp.make_scen(method=method, init_factor=5, matrix='annual', ages=None)
+    s.inj2 = fp.make_scen(method=method, discont_factor=0, matrix='annual', ages=':')
+    s.inj3 = fp.make_scen(method=method, init_value=0.2, matrix='pp1to6', ages=None)
+    s.inj4 = fp.make_scen(method=method, discont_value=0, matrix='pp1to6', ages=':')
     s.inj5 = fp.make_scen(source='None', dest='Injectables', factor=0.2, ages=['<18', '25'])
-
-    # Check validation
-    with pytest.raises(ValueError):
-        fp.make_scen(ages=['not_an_age'])
 
     # Run scenarios
     scens = fp.Scenarios(location='test', n=100, repeats=1, scens=s.values())
