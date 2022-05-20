@@ -14,7 +14,7 @@ from . import base as fpb
 
 
 # Specify all externally visible things this file defines
-__all__ = ['People', 'Sim', 'MultiSim']
+__all__ = ['People', 'Sim', 'MultiSim', 'parallel']
 
 
 #%% Define classes
@@ -753,7 +753,7 @@ class Sim(fpb.BaseSim):
             fpu.set_seed(self['seed'])
             self.init_results()
             self.init_people()
-        return
+        return self
 
 
     def init_results(self):
@@ -1148,6 +1148,9 @@ class Sim(fpb.BaseSim):
         self.results['cum_infant_deaths_by_year']   = np.cumsum(self.results['infant_deaths_over_year'])
         self.results['cum_live_births_by_year']     = np.cumsum(self.results['live_births_over_year'])
 
+        # Convert to an objdict for easier access
+        self.results = sc.objdict(self.results)
+
         if verbose:
             print(f'Final population size: {self.n}.')
             elapsed = T.toc(output=True)
@@ -1469,6 +1472,10 @@ class MultiSim(sc.prettyobj):
         raw = sc.objdict()
         results = sc.objdict()
         axis = 1
+        start_end = np.array([sim.tvec[[0, -1]] for sim in self.sims])
+        if len(np.unique(start_end)) != 2:
+            errormsg = f'Cannot compute stats for sims: start and end values do not match:\n{start_end}'
+            raise ValueError(errormsg)
 
         reskeys = list(base_sim.results.keys())
         for key in ['t', 'tfr_years']: # Don't compute high/low for these
@@ -1769,3 +1776,26 @@ def multi_run(sims, **kwargs):
     ''' Run multiple sims in parallel; usually used via the MultiSim class, not directly '''
     sims = sc.parallelize(single_run, iterarg=sims, **kwargs)
     return sims
+
+
+def parallel(*args, **kwargs):
+    '''
+    A shortcut to ``fp.MultiSim()``, allowing the quick running of multiple simulations
+    at once.
+
+    Args:
+        args (list): The simulations to run
+        kwargs (dict): passed to multi_run()
+
+    Returns:
+        A run MultiSim object.
+
+    **Examples**::
+
+        s1 = fp.Sim(exposure_correction=0.5, label='Low')
+        s2 = fp.Sim(exposure_correction=2.0, label='High')
+        fp.parallel(s1, s2).plot()
+        msim = fp.parallel(s1, s2)
+    '''
+    sims = sc.mergelists(*args)
+    return MultiSim(sims=sims).run(**kwargs)
