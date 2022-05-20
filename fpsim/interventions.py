@@ -430,12 +430,6 @@ class update_methods(Intervention):
                         errormsg = f'Must supply one and only one of factor, value, or initiation/discontinuation factors/values; you supplied {n_vals}'
                         raise ValueError(errormsg)
 
-                    # Decide if it's a factor or a value modification
-                    factor = sc.mergelists(factor, i_factor, d_factor)
-                    value = sc.mergelists(value, i_value, d_value)
-                    factor = factor[0] if factor else None
-                    value  = value[0]  if value  else None
-
                     # Check nothing strange has happened
                     is_switch  = len(sc.mergelists(factor, value))
                     is_init    = len(sc.mergelists(i_value, i_factor))
@@ -458,6 +452,13 @@ class update_methods(Intervention):
                     source = key2ind(sim, source)
                     dest = key2ind(sim, dest)
 
+                    # Decide if it's a factor or a value modification
+                    factor = sc.mergelists(factor, i_factor, d_factor)
+                    value  = sc.mergelists(value, i_value, d_value)
+                    factor = factor[0] if factor else None
+                    value  = value[0]  if value  else None
+
+                    # Replace age keys with all ages if so asked
                     if ages in none_all_keys:
                         ages = raw['annual'].keys()
 
