@@ -9,6 +9,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.11.2 (2022-05-20)
+--------------------------
+- Adds a ``people.make_pregnant()`` method.
+- *GitHub info*: PR `494 <https://github.com/amath-idm/fp_analyses/pull/494>`__
+
+
 Version 0.11.1 (2022-05-20)
 --------------------------
 - Replace ``high`` and ``low`` breastfeeding duration parameters with Gumbel distribution parameters ``mu`` and ``beta``.
