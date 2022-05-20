@@ -8,7 +8,7 @@ import pytest
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-serial   = 1 # Whether to run in serial (for debugging)
+serial   = 0 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
 
@@ -244,7 +244,7 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # msim1  = test_update_methods_eff()
-        # msim2  = test_update_methods_probs()
+        msim1  = test_update_methods_eff()
+        msim2  = test_update_methods_probs()
         scens1 = test_scenarios()
         scens2 = test_make_scens()
