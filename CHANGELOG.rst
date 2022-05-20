@@ -9,6 +9,15 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.11.0 (2022-05-20)
+--------------------------
+- Major refactor of ``senegal.py``, organizing parameters into groups and renaming.
+- Parameter names made more consistent, e.g. ``exposure_correction`` → ``exposure_factor``, ``maternal_mortality_multiplier`` → ``maternal_mortality_factor``.
+- Added comprehensive parameter checking.
+- Updates default representation: ``print(sim)`` is now a very brief representation; use ``sim.disp()`` to get the old behavior.
+- *GitHub info*: PR `492 <https://github.com/amath-idm/fp_analyses/pull/492>`__
+
+
 Version 0.10.7 (2022-05-19)
 --------------------------
 - Updated ``fp.Scenarios()`` API.
