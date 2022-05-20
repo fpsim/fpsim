@@ -244,11 +244,34 @@ class Scenarios(sc.prettyobj):
             simlabel = None
             interventions = sc.autolist()
             for spec in sc.tolist(scen):
-                spec  = sc.dcp(spec) # Since we're popping, but this is used multiple times
-                eff    = spec.pop('eff', None)
-                probs  = spec.pop('probs', None)
-                year   = spec.pop('year', self.year)
+
+                # Figure ou what type of spec this is
+                spec = sc.dcp(spec)
+                if 'which' not in spec:
+                    errormsg = f'Invalid scenario spec: key "which" not found among: {sc.strjoin(spec.keys())}'
+                    raise ValueError(errormsg)
+                else:
+                    which = spec.pop('which')
+
+                # Handle update_methods
+                year = spec.pop('year', None)
                 matrix = spec.pop('matrix', None)
+                if which == 'eff':
+                    eff = spec.pop('eff')
+                    interventions += fpi.update_methods(eff=eff, year=year, matrix=matrix)
+                elif which == 'probs':
+                    probs = spec.pop('probs')
+                    interventions += fpi.update_methods(probs=probs, year=year, matrix=matrix)
+                elif which == 'par':
+                    par = spec.pop('par')
+                    years = spec.pop('years')
+                    vals = spec.pop('vals')
+                    interventions += fpi.change_par(par=par, years=years, vals=vals)
+                elif which == 'intv':
+                    intvs = spec.pop('interventions')
+                    interventions += intvs
+
+                # Handle label
                 label  = spec.pop('label', None)
                 assert len(spec)==0, f'Unrecognized scenario key(s) {sc.strjoin(spec.keys())}'
                 if year is None:
@@ -259,7 +282,7 @@ class Scenarios(sc.prettyobj):
                 else:
                     if label != simlabel:
                         print('Warning, new sim label {label} does not match existing sim label {simlabel}')
-                interventions += fpi.update_methods(eff=eff, probs=probs, year=year, matrix=matrix)
+
             sims = self.make_sims(interventions=interventions, scenlabel=label)
             self.simslist.append(sims)
         return
