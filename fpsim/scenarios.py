@@ -243,7 +243,7 @@ class Scenarios(sc.prettyobj):
         for scen in self.scens:
             simlabel = None
             interventions = sc.autolist()
-            for spec in sc.tolist(scen):
+            for spec in sc.tolist(scen.specs):
 
                 # Figure ou what type of spec this is
                 spec = sc.dcp(spec)
