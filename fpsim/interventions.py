@@ -327,38 +327,33 @@ class update_methods(Intervention):
 
     Args:
         year (float): The year we want to change the method.
-        scen (dict): Define the scenario to run:
 
-            probs (list): A list of dictionaries where each dictionary has the following keys:
+        eff (dict):
+            An optional key for changing efficacy; its value is a dictionary with the following schema:
 
-                source (str): The source method to be changed.
-                dest (str) The destination method to be changed.
-                factor (float): The factor by which to multiply existing probability; OR
-                value (float): The value to replace the switching probability value.
-                keys (list): A list of strings representing age groups to affect.
+                {method: efficacy}
+                    Where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys).
 
-            eff (dict):
-                An optional key for changing efficacy; its value is a dictionary with the following schema:
 
-                    {method: efficacy}
-                        Where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys).
+        probs (list): A list of dictionaries where each dictionary has the following keys:
 
-        matrix (str): One of ['probs', 'probs1', 'probs1to6'] where:
+            source (str): The source method to be changed.
+            dest (str) The destination method to be changed.
+            factor (float): The factor by which to multiply existing probability; OR
+            value (float): The value to replace the switching probability value.
+            keys (list): A list of strings representing age groups to affect.
+            matrix (str): One of ['probs', 'probs1', 'probs1to6'] where:
 
-            probs:     Changes the specified uptake at the corresponding year regardless of state.
-            probs1:    Changes the specified uptake for all individuals in their first month postpartum.
-            probs1to6: Changes the specified uptake for all individuals that are in the first 6 months postpartum.
+                probs:     Changes the specified uptake at the corresponding year regardless of state.
+                probs1:    Changes the specified uptake for all individuals in their first month postpartum.
+                probs1to6: Changes the specified uptake for all individuals that are in the first 6 months postpartum.
     """
 
-    def __init__(self, year, eff=None, probs=None, matrix=None, verbose=False):
+    def __init__(self, year, eff=None, probs=None, verbose=False):
         super().__init__()
         self.year   = year
         self.eff    = eff
         self.probs  = probs
-        self.matrix = matrix if matrix else 'annual' # Take matrix from scenario if supplied
-        valid_matrices = ['annual', 'pp0to1', 'pp1to6'] # TODO: be less subtle about the difference between normal and postpartum matrices
-        if self.matrix not in valid_matrices:
-            raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{self.matrix}"')
         self.applied = False
         self.verbose = verbose
         return
@@ -388,10 +383,11 @@ class update_methods(Intervention):
             if self.probs is not None:
                 for entry in self.probs:
                     entry = sc.dcp(entry)
+                    s_matrix = entry.pop('matrix', 'annual') # Switching matrix
+                    ages     = entry.pop('ages', None)
                     source   = entry.pop('source', None)
                     dest     = entry.pop('dest', None)
                     method   = entry.pop('method', None)
-                    ages     = entry.pop('ages', None)
                     factor   = entry.pop('factor', None)
                     value    = entry.pop('value', None)
                     i_factor = entry.pop('init_factor', None)
@@ -441,8 +437,8 @@ class update_methods(Intervention):
                         ages = raw['annual'].keys()
 
                     for k in ages:
-                        matrix = raw[self.matrix][k]
-                        if self.matrix == 'pp0to1': # Handle the postpartum initialization *vector*
+                        matrix = raw[s_matrix][k]
+                        if s_matrix == 'pp0to1': # Handle the postpartum initialization *vector*
                            orig = matrix[dest]
                            if factor is not None:
                                matrix[dest] *= getval(factor)
@@ -453,7 +449,7 @@ class update_methods(Intervention):
                                matrix[dest] = val
                                assert matrix.sum() == 1
                            if self.verbose:
-                               print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
+                               print(f'At time {sim.y:0.1f}, matrix {s_matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
                         else: # Handle annual switching *matrices*
                             orig = matrix[source, dest]
                             if factor is not None:

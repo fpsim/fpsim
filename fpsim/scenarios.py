@@ -124,17 +124,19 @@ class Scenario(sc.dictobj, sc.prettyobj):
             prob_spec = sc.objdict(
                 which          = 'prob',
                 year           = year,
-                matrix         = matrix,
-                ages           = ages,
-                source         = source,
-                dest           = dest,
-                factor         = factor,
-                value          = value,
-                method         = method,
-                init_factor    = init_factor,
-                discont_factor = discont_factor,
-                init_value     = init_value,
-                discont_value  = discont_value,
+                probs = dict(
+                    matrix         = matrix,
+                    ages           = ages,
+                    source         = source,
+                    dest           = dest,
+                    factor         = factor,
+                    value          = value,
+                    method         = method,
+                    init_factor    = init_factor,
+                    discont_factor = discont_factor,
+                    init_value     = init_value,
+                    discont_value  = discont_value,
+                )
             )
 
         # It's a parameter change scenario
@@ -240,7 +242,7 @@ class Scenarios(sc.prettyobj):
 
     def make_scens(self):
         ''' Convert a scenario specification into a list of sims '''
-        for scen in self.scens:
+        for i,scen in enumerate(self.scens):
             simlabel = None
             interventions = sc.autolist()
             for spec in sc.tolist(scen.specs):
@@ -254,36 +256,35 @@ class Scenarios(sc.prettyobj):
                     which = spec.pop('which')
 
                 # Handle update_methods
-                year = spec.pop('year', None)
-                matrix = spec.pop('matrix', None)
                 if which == 'eff':
                     eff = spec.pop('eff')
-                    interventions += fpi.update_methods(eff=eff, year=year, matrix=matrix)
-                elif which == 'probs':
+                    year = spec.pop('year', None)
+                    interventions += fpi.update_methods(eff=eff, year=year)
+                elif which == 'prob':
                     probs = spec.pop('probs')
-                    interventions += fpi.update_methods(probs=probs, year=year, matrix=matrix)
+                    year = spec.pop('year', None)
+                    interventions += fpi.update_methods(probs=probs, year=year)
                 elif which == 'par':
                     par = spec.pop('par')
                     years = spec.pop('years')
                     vals = spec.pop('vals')
                     interventions += fpi.change_par(par=par, years=years, vals=vals)
                 elif which == 'intv':
-                    intvs = spec.pop('interventions')
-                    interventions += intvs
+                    intv = spec.pop('intervention')
+                    interventions += intv
 
                 # Handle label
                 label  = spec.pop('label', None)
                 assert len(spec)==0, f'Unrecognized scenario key(s) {sc.strjoin(spec.keys())}'
-                if year is None:
-                    errormsg = 'Scenario year must be specified in either the scenario entry or the Scenarios object'
-                    raise ValueError(errormsg)
                 if simlabel is None:
                     simlabel = label
                 else:
                     if label != simlabel:
                         print('Warning, new sim label {label} does not match existing sim label {simlabel}')
 
-            sims = self.make_sims(interventions=interventions, scenlabel=label)
+            if simlabel is None:
+                simlabel = f'Scenario {i}'
+            sims = self.make_sims(interventions=interventions, scenlabel=simlabel)
             self.simslist.append(sims)
         return
 
