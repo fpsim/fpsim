@@ -294,7 +294,7 @@ class People(fpb.BasePeople):
         '''
         # Set postpartum probabilities
         match_low  = self.postpartum_dur >= 0
-        match_high = self.postpartum_dur <= self.pars['postpartum_length']
+        match_high = self.postpartum_dur <= self.pars['postpartum_dur']
         pp_match = self.postpartum * match_low * match_high
         non_pp_match = ((self.age >= self.fated_debut) * (~pp_match))
         pp = self.filter(pp_match)
@@ -304,7 +304,7 @@ class People(fpb.BasePeople):
         pref = self.pars['pref_spacing'] # Shorten since used a lot
         spacing_bins = pp.postpartum_dur / pref['interval'] # Main calculation -- divide the duration by the interval
         spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int) # Convert to an integer and bound by longest bin
-        probs_pp = self.pars['sexual_activity_postpartum']['percent_active'][pp.postpartum_dur]
+        probs_pp = self.pars['sexual_activity_pp']['percent_active'][pp.postpartum_dur]
         probs_pp *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
 
         # Set non-postpartum probabilities
