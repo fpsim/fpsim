@@ -431,13 +431,21 @@ class update_methods(Intervention):
                         raise ValueError(errormsg)
 
                     # Actually handle inputs
-                    factor = sc.mergelists(factor, i_factor, d_factor)
-                    value = sc.mergelists(value, i_value, d_value)
+                    factor = sc.mergelists(factor, i_factor, d_factor)[0]
+                    value = sc.mergelists(value, i_value, d_value)[0]
 
-                    if sc.mergelists(i_value, i_factor): # It's initiation
+                    # Check nothing strange has happened
+                    is_switch  = len(sc.mergelists(factor, value))
+                    is_init    = len(sc.mergelists(i_value, i_factor))
+                    is_discont = len(sc.mergelists(d_value, d_factor))
+                    if is_switch + is_init + is_discont != 1:
+                        errormsg = f'Could not figure out what to do: switching={is_switch}, initiation={is_init}, discontinuation={is_discont}, but only one should happen'
+                        raise ValueError(errormsg)
+
+                    if is_init: # It's initiation
                         source = 'None'
                         dest = method
-                    elif sc.mergelists(d_value, d_factor): # It's discontinuation
+                    elif is_discont: # It's discontinuation
                         source = method
                         dest = 'None'
                     elif (source is None) and (dest is None):
