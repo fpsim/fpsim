@@ -350,11 +350,12 @@ class update_methods(Intervention):
             probs1to6: Changes the specified uptake for all individuals that are in the first 6 months postpartum.
     """
 
-    def __init__(self, year, scen, matrix=None, verbose=False):
+    def __init__(self, year, eff=None, probs=None, matrix=None, verbose=False):
         super().__init__()
         self.year   = year
-        self.scen   = scen
-        self.matrix = matrix if matrix else scen.pop('matrix', 'annual') # Take matrix from scenario if supplied
+        self.eff    = eff
+        self.probs  = probs
+        self.matrix = matrix if matrix else 'annual' # Take matrix from scenario if supplied
         valid_matrices = ['annual', 'pp0to1', 'pp1to6'] # TODO: be less subtle about the difference between normal and postpartum matrices
         if self.matrix not in valid_matrices:
             raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{self.matrix}"')
@@ -373,9 +374,8 @@ class update_methods(Intervention):
             self.applied = True # Ensure we don't apply this more than once
 
             # Implement efficacy
-            eff = self.scen.pop('eff', None)
-            if eff is not None:
-                for k,rawval in eff.items():
+            if self.eff is not None:
+                for k,rawval in self.eff.items():
                     v = getval(rawval)
                     ind = key2ind(sim, k)
                     orig = sim['method_efficacy'][ind]
@@ -384,27 +384,27 @@ class update_methods(Intervention):
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
             # Implement method mix shift
-            probs = self.scen.pop('probs', None)
             raw = sim['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
-            if probs is not None:
-                for entry in probs:
+            if self.probs is not None:
+                for entry in self.probs:
                     entry = sc.dcp(entry)
                     source = key2ind(sim, entry.pop('source', None))
                     dest   = key2ind(sim, entry.pop('dest', None))
+                    ages   = entry.pop('ages', None)
                     factor = entry.pop('factor', None)
                     value  = entry.pop('value', None)
-                    keys   = entry.pop('keys', None)
+
 
                     # Validation
-                    valid_keys = ['source', 'dest', 'factor', 'value', 'keys']
+                    valid_keys = ['source', 'dest', 'factor', 'value', 'ages']
                     if len(entry) != 0:
                         errormsg = f'Keys "{sc.strjoin(entry.keys())}" not valid entries: must be among {sc.strjoin(valid_keys())}'
                         raise ValueError(errormsg)
 
-                    if keys in none_all_keys:
-                        keys = raw['annual'].keys()
+                    if ages in none_all_keys:
+                        ages = raw['annual'].keys()
 
-                    for k in keys:
+                    for k in ages:
                         matrix = raw[self.matrix][k]
                         if self.matrix == 'pp0to1': # Handle the postpartum initialization *vector*
                            orig = matrix[dest]

@@ -79,13 +79,13 @@ def test_update_methods_probs():
                 source = 'None', # Source method, 'all' for all methods
                 dest   = 'Other modern', # Destination
                 value  = target_prob1, # Alternatively, specify the absolute probability of switching to this method
-                keys   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
+                ages   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
             ),
             dict(
                 source = 'Other modern', # Source method, 'all' for all methods
                 dest   = 'None', # Destination
                 value  = target_prob2, # Alternatively, specify the absolute probability of switching to this method
-                keys   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
+                ages   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
             )
         ]
     )
@@ -130,7 +130,7 @@ def test_scenarios(do_plot=do_plot):
     sc.heading('Testing Scenarios...')
 
     # Increased uptake high efficacy
-    uptake_scen1 = sc.objdict(
+    uptake_scen1 = fp.make_scen(
         label='Increased modern',
         eff = {'Other modern':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [ # Specify by value
@@ -138,12 +138,12 @@ def test_scenarios(do_plot=do_plot):
                 source = 'None', # Source method, 'all' for all methods
                 dest   = 'Other modern', # Destination
                 value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-                keys   = ['>25'], # Which age keys to modify -- if not specified, all
+                ages   = ['>25'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
 
-    uptake_scen2 = sc.objdict(
+    uptake_scen2 = fp.make_scen(
         label = 'Increased injectables',
         eff = {'Injectables': 0.95},
         probs = [
@@ -152,19 +152,19 @@ def test_scenarios(do_plot=do_plot):
                 source = 'Injectables',  # Source method, 'all' for all methods
                 dest   = 'None',  # Destination
                 factor = 0.0,  # Factor by which to multiply existing probability
-                keys   = ['<18', '18-20'],  # Which age keys to modify -- if not specified, all
+                ages   = ['<18', '18-20'],  # Which age keys to modify -- if not specified, all
             ),
             # Increase switching to injectables
             dict(
                 source = 'None', # Source method, 'all' for all methods
                 dest   = 'Injectables', # Destination
                 factor = 5, # Factor by which to multiply existing probability
-                keys   = ['all'], # Which age keys to modify -- if not specified, all
+                ages   = ['all'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
 
-    uptake_scen3 = [uptake_scen1, uptake_scen2]
+    uptake_scen3 = uptake_scen1 + uptake_scen2
 
     #%% Create sims
     scens = fp.Scenarios(location='test', n=200, repeats=2, scen_year=int_year)

@@ -13,26 +13,51 @@ __all__ = ['make_scen', 'Scenario', 'Scenarios']
 
 
 
+class Scenario(sc.dictobj, sc.prettyobj):
+    '''
+    Store the specification for a single scenario (which may consist of multiple interventions).
+
+    This function is intended to be as flexible as possible; as a result, it may
+    be somewhat confusing.
+    '''
+    def __init__(self, spec=None, *args, label=None, method=None, uptake_factor=None, discontinuation_factor=None,
+                 uptake_value=None, discontinuation_value=None, source=None, dest=None, factor=None, value=None,
+                 matrix=None, ages=None, par=None, years=None, vals=None):
+
+        # Handle input specification
+        specs = sc.mergelists(spec, args)
+        self.specs = [Scenario(**sc.mergedicts(spec, dict(label=label))) for spec in specs]
+
+        # Perform validation on inputs
+
+
+
+        return
+
+
+    def __add__(self, scen2):
+        ''' Combine two scenarios arrays '''
+        newscen = sc.dcp(self)
+        newscen.specs.extend(scen2.specs)
+        return newscen
+
+
+    def __radd__(self, scen2):
+        ''' Allows sum() to work correctly '''
+        if not scen2: return self
+        else:         return self.__add__(scen2)
+
+
+
 def make_scen(*args, **kwargs):
     '''
-    Take input parameters or dictionaries and create a Scenarios object.
-
     Alias for ``fp.Scenario()``.
     '''
     return Scenario(*args, **kwargs)
 
+# Ensure the function ahs the same docstring as the class
+make_scen.__doc__ +=  '\n\n' + Scenario.__doc__
 
-
-class Scenario(sc.dictobj, sc.prettyobj):
-    '''
-    Store the specification for a single scenario (which may consist of multiple interventions)
-    '''
-    def __init__(self, method=None, uptake_factor=None, discontinuation_factor=None,
-                 uptake_value=None, discontinuation_value=None, factor=None, value=None,
-                 matrix=None, ages=None, par=None, years=None, vals=None):
-        pass
-
-    # def __
 
 
 class Scenarios(sc.prettyobj):
@@ -53,6 +78,7 @@ class Scenarios(sc.prettyobj):
 
     def add_scen(self, scen=None, label=None):
         ''' Add a scenario or scenarios to the Scenarios object '''
+        self.scens.append(Scenario(scen, label=label))
         if scen is None: # Handle no scenario
             scen = {}
         scens = sc.dcp(sc.tolist(scen)) # To handle the case where multiple interventions are in a single scenario
