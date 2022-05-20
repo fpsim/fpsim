@@ -18,19 +18,78 @@ class Scenario(sc.dictobj, sc.prettyobj):
     Store the specification for a single scenario (which may consist of multiple interventions).
 
     This function is intended to be as flexible as possible; as a result, it may
-    be somewhat confusing.
+    be somewhat confusing. There are
     '''
-    def __init__(self, spec=None, *args, label=None, method=None, uptake_factor=None, discontinuation_factor=None,
-                 uptake_value=None, discontinuation_value=None, source=None, dest=None, factor=None, value=None,
-                 matrix=None, ages=None, par=None, years=None, vals=None):
+    def __init__(self, spec=None, *args, label=None, year=None, matrix=None, ages=None, # Basic settings
+                 eff=None, # Option 1
+                 source=None, dest=None, factor=None, value=None, # Option 2
+                 method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
+                 par=None, years=None, vals=None, # Option 4
+                 interventions=None, # Option 5
+                 ):
 
         # Handle input specification
         specs = sc.mergelists(spec, args)
-        self.specs = [Scenario(**sc.mergedicts(spec, dict(label=label))) for spec in specs]
+        self.specs = [Scenario(**spec) for spec in specs]
 
-        # Perform validation on inputs
+        # Handle other keyword inputs
+        eff_spec   = None
+        prob_spec  = None
+        par_spec   = None
+        intv_specs = None
 
+        # It's an efficacy scenario
+        if eff is not None:
+            eff_spec = sc.objdict(
+                which  = 'eff',
+                eff    = eff,
+                year   = year,
+                matrix = matrix
+            )
 
+        # It's a method switching probability scenario
+        if len(sc.mergelists()):
+            prob_spec = sc.objdict(
+                which          = 'prob',
+                year           = year,
+                matrix         = matrix,
+                ages           = ages,
+                source         = source,
+                dest           = dest,
+                factor         = factor,
+                value          = value,
+                method         = method,
+                init_factor    = init_factor,
+                discont_factor = discont_factor,
+                init_value     = init_value,
+                discont_value  = discont_value,
+            )
+
+        # It's a parameter change scenario
+        if par is not None:
+            par_spec = sc.objdict(
+                which = 'par',
+                par   = par,
+                years = years,
+                vals  = vals,
+            )
+
+        # It's a custom scenario(s)
+        if interventions is not None:
+            intv_specs = []
+            for intv in sc.tolist(interventions):
+                intv_specs.append(sc.objdict(
+                    which        = 'intv',
+                    intervention = intv,
+                ))
+
+        # Merge these different scenarios into the list, skipping None entries
+        self.spec.extend(sc.mergelists(eff_spec, prob_spec, par_spec, intv_specs))
+
+        # Finally, ensure all have a consistent label if supplied
+        if label is not None:
+            for spec in self.specs:
+                spec['label'] = label
 
         return
 
@@ -112,14 +171,14 @@ class Scenarios(sc.prettyobj):
         for scen in self.scens:
             simlabel = None
             interventions = sc.autolist()
-            for entry in sc.tolist(scen):
-                entry  = sc.dcp(entry) # Since we're popping, but this is used multiple times
-                eff    = entry.pop('eff', None)
-                probs  = entry.pop('probs', None)
-                year   = entry.pop('scen_year', self.scen_year)
-                matrix = entry.pop('matrix', None)
-                label  = entry.pop('label', None)
-                assert len(entry)==0, f'Unrecognized scenario key(s) {sc.strjoin(entry.keys())}'
+            for spec in sc.tolist(scen):
+                spec  = sc.dcp(spec) # Since we're popping, but this is used multiple times
+                eff    = spec.pop('eff', None)
+                probs  = spec.pop('probs', None)
+                year   = spec.pop('year', self.year)
+                matrix = spec.pop('matrix', None)
+                label  = spec.pop('label', None)
+                assert len(spec)==0, f'Unrecognized scenario key(s) {sc.strjoin(spec.keys())}'
                 if year is None:
                     errormsg = 'Scenario year must be specified in either the scenario entry or the Scenarios object'
                     raise ValueError(errormsg)

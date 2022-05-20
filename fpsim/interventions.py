@@ -388,18 +388,54 @@ class update_methods(Intervention):
             if self.probs is not None:
                 for entry in self.probs:
                     entry = sc.dcp(entry)
-                    source = key2ind(sim, entry.pop('source', None))
-                    dest   = key2ind(sim, entry.pop('dest', None))
-                    ages   = entry.pop('ages', None)
-                    factor = entry.pop('factor', None)
-                    value  = entry.pop('value', None)
+                    source   = entry.pop('source', None)
+                    dest     = entry.pop('dest', None)
+                    method   = entry.pop('method', None)
+                    ages     = entry.pop('ages', None)
+                    factor   = entry.pop('factor', None)
+                    value    = entry.pop('value', None)
+                    i_factor = entry.pop('init_factor', None)
+                    d_factor = entry.pop('discont_factor', None)
+                    i_value  = entry.pop('init_factor', None)
+                    d_value  = entry.pop('discont_factor', None)
 
-
-                    # Validation
-                    valid_keys = ['source', 'dest', 'factor', 'value', 'ages']
+                    # Validation # CK: TODO: move validation to initialization
                     if len(entry) != 0:
-                        errormsg = f'Keys "{sc.strjoin(entry.keys())}" not valid entries: must be among {sc.strjoin(valid_keys())}'
+                        errormsg = f'Keys "{sc.strjoin(entry.keys())}" not valid entries; see fp.make_scen() for valid args'
                         raise ValueError(errormsg)
+
+                    # Validate method/source/dest
+                    if method is not None:
+                        if (source is not None or dest is not None):
+                            errormsg = 'You can supply "method" as an alternative to "source" and "dest", but not both'
+                            raise ValueError(errormsg)
+                        else:
+                            source = method
+                            dest = method
+
+                    # Ensure correct number of inputs are given
+                    n_vals = len(sc.mergelists(factor, value, i_factor, d_factor, i_value, d_value))
+                    if n_vals != 1:
+                        errormsg = f'Must supply one and only one of factor, value, or initiation/discontinuation factors/values; you supplied {n_vals}'
+                        raise ValueError(errormsg)
+
+                    # Actually handle inputs
+                    factor = sc.mergelists(factor, i_factor, d_factor)
+                    value = sc.mergelists(value, i_value, d_value)
+
+                    if sc.mergelists(i_value, i_factor): # It's initiation
+                        source = 'None'
+                        dest = method
+                    elif sc.mergelists(d_value, d_factor): # It's discontinuation
+                        source = method
+                        dest = 'None'
+                    elif (source is None) and (dest is None):
+                        errormsg = 'Must supply a source or a destination'
+                        raise ValueError(errormsg)
+
+                    # Convert from strings to indices
+                    source = key2ind(sim, source)
+                    dest = key2ind(sim, dest)
 
                     if ages in none_all_keys:
                         ages = raw['annual'].keys()
