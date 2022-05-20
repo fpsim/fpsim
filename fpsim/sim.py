@@ -352,9 +352,9 @@ class People(fpb.BasePeople):
         preg_probs[nullip.inds] *= self.pars['fecundity_ratio_nullip'][nullip.int_age_clip]
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity - encapsulates background factors - experimental and tunable
-        preg_probs *= self.pars['exposure_correction']
-        preg_probs *= self.pars['exposure_correction_age'][all_ppl.int_age_clip]
-        preg_probs *= self.pars['exposure_correction_parity'][np.minimum(all_ppl.parity, fpd.max_parity)]
+        preg_probs *= self.pars['exposure_factor']
+        preg_probs *= self.pars['exposure_age'][all_ppl.int_age_clip]
+        preg_probs *= self.pars['exposure_parity'][np.minimum(all_ppl.parity, fpd.max_parity)]
 
         # Use a single binomial trial to check for conception successes this month
         conceived = active.binomial(preg_probs[active.inds], as_filter=True)
