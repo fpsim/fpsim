@@ -42,7 +42,7 @@ class People(fpb.BasePeople):
         self.pars = pars # Set parameters
         d = sc.mergedicts(fpd.person_defaults, kwargs) # d = defaults
         if n is None:
-            n = int(self.pars['n'])
+            n = int(self.pars['n_agents'])
 
         # Basic states
         init_states = dir(self)
