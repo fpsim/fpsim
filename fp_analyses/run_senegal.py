@@ -7,11 +7,11 @@ import pylab as pl
 import pandas as pd
 import sciris as sc
 import seaborn as sns
+import plotnine as pn
 import fpsim as fp
 from fpsim import defaults as fpd
 import senegal_parameters as sp
-from plotnine import *
-import pandas as pd
+
 
 # Housekeeping
 sc.tic()
@@ -45,6 +45,20 @@ year_str = '2017'
 def datapath(path):
     ''' Return the path of the parent folder -- TODO: remove duplication with calibration.py'''
     return sc.thisdir(__file__, os.pardir, 'dropbox', path)
+
+def abspath(path, *args):
+    '''
+    Turn a relative path into an absolute path. Accepts a
+    list of arguments and joins them into a path.
+
+    Example:
+
+        import senegal_parameters as sp
+        figpath = sp.abspath('figs', 'myfig.png')
+    '''
+    cwd = os.path.abspath(os.path.dirname(__file__))
+    output = os.path.join(cwd, path, *args)
+    return output
 
 
 pregnancy_parity_file = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file
@@ -82,11 +96,11 @@ if do_run:
 
 
     def serialize(sim):
-        sc.saveobj(sp.abspath('serialized_pop.obj'), sim.people)
+        sc.saveobj(abspath('serialized_pop.obj'), sim.people)
 
 
     def deserialize(sim):
-        sim.people = sc.loadobj(sp.abspath('serialized_pop.obj'))
+        sim.people = sc.loadobj(abspath('serialized_pop.obj'))
 
 
     # sim.add_intervention(intervention=add_long_acting, year=2000)
@@ -102,9 +116,9 @@ if do_run:
 
     # Ensure the figures folder exists
     if do_save:
-        if not os.path.exists(sp.abspath('figs')):
+        if not os.path.exists(abspath('figs')):
             print('No figures folder exists and do_save = True, creating...')
-            os.makedirs(sp.abspath('figs'))
+            os.makedirs(abspath('figs'))
 
     if do_plot_pregnancy_parity:
 
@@ -122,7 +136,7 @@ if do_run:
         # fig.suptitle('FP Sim Model vs DHS data on age, pregnancy, and parity')
         sns.distplot(model['Age'], bins=37, ax=axes[0, 0], color="cornflowerblue").set_title('Age histogram in FPsim')
         sns.distplot(dhs['Age'], bins=35, ax=axes[0, 1], color="black").set_title('Age histogram in Senegal 2018 DHS')
-        
+
         #Only useful to see pregnant (remove non-pregnant)
         model_preg = model[model['Pregnant'] == 1]
         dhs_preg = dhs[dhs['Pregnant'] == 1]
@@ -138,7 +152,7 @@ if do_run:
         pl.tight_layout()
 
         if do_save:
-            pl.savefig(sp.abspath('figs', 'pregnancy_parity.png'))
+            pl.savefig(abspath('figs', 'pregnancy_parity.png'))
 
     if do_print_demographics:
         # Load model results
@@ -196,7 +210,7 @@ if do_run:
             print(f'ASFR (annual) for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
 
         #frame = pd.DataFrame(data = res['birthday_fraction']) # uncomment if needing to debug birthday fraction
-        #frame.to_csv(sp.abspath('model_files/birthday_fraction.csv')) # uncomment if needing to debug birthday fraction
+        #frame.to_csv(abspath('model_files/birthday_fraction.csv')) # uncomment if needing to debug birthday fraction
 
     if do_plot_popsize:
 
@@ -238,7 +252,7 @@ if do_run:
         pl.legend()
 
         if do_save:
-            pl.savefig(sp.abspath('figs', 'senegal_popsize-mcpr.png'))
+            pl.savefig(abspath('figs', 'senegal_popsize-mcpr.png'))
 
         # 350434.0 <--- Factor previously used to adjust population
 
@@ -256,7 +270,7 @@ if do_run:
         pl.legend()
 
         if do_save:
-            pl.savefig(sp.abspath('figs', 'unintended_pregnancies.png'))
+            pl.savefig(abspath('figs', 'unintended_pregnancies.png'))
 
     if do_plot_tfr:
 
@@ -270,14 +284,14 @@ if do_run:
 
         pl.plot(x, y, label='Total fertility rates', c='cornflowerblue')
         pl.scatter(data_tfr_years, data_tfr, c='black')
-        
+
         pl.ylim(bottom=3)
         pl.title('Total Fertility Rate')
         pl.xlabel('Year')
         pl.ylabel('TFR - children per woman')
 
         if do_save:
-            pl.savefig(sp.abspath('figs', 'senegal_tfr.png'))
+            pl.savefig(abspath('figs', 'senegal_tfr.png'))
 
     if do_plot_asfr:  # Plots ASFR for the last year of the sim in comparison to Senegal 2019 ASFR
 
@@ -305,7 +319,7 @@ if do_run:
         pl.show()
 
         if do_save:
-            pl.savefig(sp.abspath('figs', 'ASFR_last_year.png'))
+            pl.savefig(abspath('figs', 'ASFR_last_year.png'))
 
     if do_plot_pyramids:
         fig = pl.figure(figsize=(16, 16))
@@ -342,11 +356,11 @@ if do_run:
     compared_table = pd.DataFrame({"AgeRange": model_table["AgeRange"].append(pop_pyr_year["AgeRange"]),
                                    "Proportion": model_table["Proportion"].append(pop_pyr_year["Proportion"]),
                                    "Status": model_table["Status"].append(pop_pyr_year["Status"])})
-    p = ggplot(compared_table, aes(x="AgeRange", y="Proportion", fill="Status")) + coord_flip() + geom_bar(
-        stat="identity", position=position_dodge())
+    p = pn.ggplot(compared_table, pn.aes(x="AgeRange", y="Proportion", fill="Status")) + pn.coord_flip() + pn.geom_bar(
+        stat="identity", position=pn.position_dodge())
 
     if do_save:
-        p.save(sp.abspath('figs', 'senegal_pyramids.png'))
+        p.save(abspath('figs', 'senegal_pyramids.png'))
 
     if do_plot_skyscrapers:
 
@@ -407,7 +421,7 @@ if do_run:
             pl.gca().view_init(30, 45)
             pl.draw()
             if do_save:
-                pl.savefig(sp.abspath(f'figs/senegal_skyscrapers_{key}.png'))
+                pl.savefig(abspath(f'figs/senegal_skyscrapers_{key}.png'))
 
         # Plot sums
 
@@ -430,7 +444,7 @@ if do_run:
                 pl.title(f'Population by: {labels[i]}', fontweight='bold')
                 pl.legend()
                 if do_save:
-                    pl.savefig(sp.abspath(f'figs/senegal_age_parity_sums.png'))
+                    pl.savefig(abspath(f'figs/senegal_age_parity_sums.png'))
 
         # heatmap
     if do_plot_heatmap:
@@ -473,7 +487,7 @@ if do_run:
         # Adjust layout and show
         sc.figlayout(right=0.8)
         if do_save:
-            pl.savefig(sp.abspath('figs/senegal_heatmap.png'))
+            pl.savefig(abspath('figs/senegal_heatmap.png'))
 
     if do_plot_methods:
         data_method_counts = sc.odict().make(keys=sim.pars['methods']['names'], vals=0.0)
@@ -544,7 +558,7 @@ if do_run:
             else:
                 model_labels[d] = ''
 
-       
+
         # Plot pies
         fig = pl.figure(figsize=(20, 14))
         explode = (0.1, 0, 0, 0, 0, 0, 0, 0, 0, 0)
@@ -591,7 +605,7 @@ if do_run:
         pl.title('Method use among users (model)', fontweight='bold')
 
         if do_save:
-            pl.savefig(sp.abspath(f'figs/senegal_method_mix.png'))
+            pl.savefig(abspath(f'figs/senegal_method_mix.png'))
 
     if do_plot_spacing:
 
@@ -663,7 +677,7 @@ if do_run:
         print(f'Data birth spacing bin percentages: {data_spacing_counts}')
         if do_save_spaces:
             spaces = pd.DataFrame(data=model_spacing)
-            spaces.to_csv(sp.abspath('model_files/model_birth_spaces.csv'))
+            spaces.to_csv(abspath('model_files/model_birth_spaces.csv'))
         #print(f'Mean spacing preference: {pref['preference'][spacing_bins].mean()}')
 
         # Plotting
@@ -701,7 +715,7 @@ if do_run:
         pl.legend()
 
     if do_save:
-        pl.savefig(sp.abspath(f'figs/senegal_birth_spacing.png'))
+        pl.savefig(abspath(f'figs/senegal_birth_spacing.png'))
 
 
 sc.toc()

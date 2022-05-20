@@ -29,9 +29,9 @@ sim.run()
 
 # Ensure the figures folder exists
 if do_save:
-    if not os.path.exists(sp.abspath('figs')):
+    if not os.path.exists('figs'):
         print('No figures folder exists and do_save = True, creating...')
-        os.makedirs(sp.abspath('figs'))
+        os.makedirs('figs')
 
 # Extract people and segment indices by live women in specific age strata
 ppl = sim.people
