@@ -13,14 +13,16 @@ def test_null(do_plot=do_plot):
     sc.heading('Testing no births, no deaths...')
 
     pars = fp.pars('test') # For default pars
-    pars['age_mortality']['f'] *= 0
-    pars['age_mortality']['m'] *= 0
-    pars['age_mortality']['trend'] *= 0
-    pars['maternal_mortality']['probs'] *= 0
-    pars['infant_mortality']['probs'] *= 0
-    pars['exposure_correction'] = 0
-    pars['high_parity']         = 4
-    pars['high_parity_nonuse_correction']  = 0
+
+    # Set things to zero
+    for key in ['exposure_factor', 'high_parity_nonuse']:
+        pars[key] = 0
+
+    for key in ['f', 'm']:
+        pars['age_mortality'][key] *= 0
+
+    for key in ['age_mortality', 'maternal_mortality', 'infant_mortality']:
+        pars[key]['probs'] *= 0
 
     sim = fp.Sim(pars)
     sim.run()

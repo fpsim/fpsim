@@ -14,33 +14,99 @@ obj_set = object.__setattr__
 __all__ = ['ParsObj', 'BasePeople', 'BaseSim']
 
 
-class ParsObj(sc.prettyobj):
+class FlexPretty(sc.prettyobj):
+    '''
+    A class that supports multiple different display options: namely obj.brief()
+    for a one-line description and obj.disp() for a full description.
+    '''
+
+    def __repr__(self):
+        ''' Use brief repr by default '''
+        try:
+            string = self._brief()
+        except Exception as E:
+            string = sc.objectid(self)
+            string += f'Warning, something went wrong printing object:\n{str(E)}'
+        return string
+
+    def _disp(self):
+        ''' Verbose output -- use Sciris' pretty repr by default '''
+        return sc.prepr(self)
+
+    def disp(self, output=False):
+        ''' Print or output verbose representation of the object '''
+        string = self._disp()
+        if not output:
+            print(string)
+        else:
+            return string
+
+    def _brief(self):
+        ''' Brief output -- use a one-line output, a la Python's default '''
+        return sc.objectid(self)
+
+    def brief(self, output=False):
+        ''' Print or output a brief representation of the object '''
+        string = self._brief()
+        if not output:
+            print(string)
+        else:
+            return string
+
+
+
+class ParsObj(FlexPretty):
     '''
     A class based around performing operations on a self.pars dict.
     '''
 
     def __init__(self, pars, **kwargs):
-        pars = sc.mergedicts(pars, kwargs)
-        self.update_pars(pars)
+        self.update_pars(pars, create=True, **kwargs)
         return
+
 
     def __getitem__(self, key):
         ''' Allow sim['par_name'] instead of sim.pars['par_name'] '''
-        return self.pars[key]
+        try:
+            return self.pars[key]
+        except:
+            all_keys = '\n'.join(list(self.pars.keys()))
+            errormsg = f'Key "{key}" not found; available keys:\n{all_keys}'
+            raise sc.KeyNotFoundError(errormsg)
+
 
     def __setitem__(self, key, value):
         ''' Ditto '''
-        self.pars[key] = value
+        if key in self.pars:
+            self.pars[key] = value
+        else:
+            all_keys = '\n'.join(list(self.pars.keys()))
+            errormsg = f'Key "{key}" not found; available keys:\n{all_keys}'
+            raise sc.KeyNotFoundError(errormsg)
         return
 
-    def update_pars(self, pars=None):
-        ''' Update internal dict with new pars '''
-        if not hasattr(self, 'pars'):
-            if pars is None:
-                raise Exception('Must call update_pars either with a pars dict or with existing pars')
-            else:
+
+    def update_pars(self, pars=None, create=False, **kwargs):
+        '''
+        Update internal dict with new pars.
+
+        Args:
+            pars (dict): the parameters to update (if None, do nothing)
+            create (bool): if create is False, then raise a KeyNotFoundError if the key does not already exist
+            kwargs (dict): additional parameters
+        '''
+        pars = sc.mergedicts(pars, kwargs)
+        if pars:
+            if not isinstance(pars, dict):
+                raise TypeError(f'The pars object must be a dict; you supplied a {type(pars)}')
+            if not hasattr(self, 'pars'):
                 self.pars = pars
-        elif pars is not None:
+            if not create:
+                available_keys = list(self.pars.keys())
+                mismatches = [key for key in pars.keys() if key not in available_keys]
+                if len(mismatches):
+                    errormsg = f'Key(s) {mismatches} not found; available keys are {available_keys}'
+                    raise sc.KeyNotFoundError(errormsg)
             self.pars.update(pars)
         return
 

@@ -9,6 +9,58 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.11.3 (2022-05-20)
+--------------------------
+- Tidies ``tests`` folder
+- Removes the calibration database by default (to keep, use ``fp.Calibration(keep_db=True)``.
+- *GitHub info*: PR `495 <https://github.com/amath-idm/fp_analyses/pull/495>`__
+
+
+Version 0.11.2 (2022-05-20)
+--------------------------
+- Adds a ``people.make_pregnant()`` method.
+- *GitHub info*: PR `494 <https://github.com/amath-idm/fp_analyses/pull/494>`__
+
+
+Version 0.11.1 (2022-05-20)
+--------------------------
+- Replace ``high`` and ``low`` breastfeeding duration parameters with Gumbel distribution parameters ``mu`` and ``beta``.
+- *GitHub info*: PR `493 <https://github.com/amath-idm/fp_analyses/pull/493>`__
+
+
+Version 0.11.0 (2022-05-20)
+--------------------------
+- Major refactor of ``senegal.py``, organizing parameters into groups and renaming.
+- Parameter names made more consistent, e.g. ``exposure_correction`` → ``exposure_factor``, ``maternal_mortality_multiplier`` → ``maternal_mortality_factor``.
+- Added comprehensive parameter checking.
+- Updates default representation: ``print(sim)`` is now a very brief representation; use ``sim.disp()`` to get the old behavior.
+- *GitHub info*: PR `492 <https://github.com/amath-idm/fp_analyses/pull/492>`__
+
+
+Version 0.10.7 (2022-05-19)
+--------------------------
+- Updated ``fp.Scenarios()`` API.
+- Added a new ``fp.Scenario()`` class, with a convenience function ``fp.make_scen()`` for creating new scenarios, for later use with ``fp.Scenarios()``.
+- *GitHub info*: PR `488 <https://github.com/amath-idm/fp_analyses/pull/488>`__
+
+
+Version 0.10.6 (2022-05-19)
+--------------------------
+- Adds ``fp.parallel()`` to quickly run multiple sims in parallel and return a ``MultiSim`` object.
+- Adds an ``fp.change_par()`` intervention.
+- *GitHub info*: PR `487 <https://github.com/amath-idm/fp_analyses/pull/487>`__
+
+
+Version 0.10.5 (2022-05-18)
+--------------------------
+- Changes how the matrices are implemented. For example, ``sim['methods']['probs']['18-25']`` has been renamed ``sim['methods']['raw']['annual']['18-25']``; ``sim['methods']['probs']['18-25']`` has been renamed ``sim['methods']['adjusted']['annual']['18-25']``; ``sim['methods_postpartum']['probs1to6']['18-25']`` has been renamed ``sim['methods']['adjusted']['pp1to6']['18-25']``; etc.
+- Various other parameters were renamed for consistency (e.g. ``years`` → ``year``).
+- Various other methods were renamed for clarity (e.g. ``maternal_mortality()`` → ``check_maternal_mortality()``; ``check_mcpr()`` → ``track_mcpr()``).
+- Input validation has been added to the ``Scenarios`` class.
+- Fixed ``fp.update_methods()`` so it can no longer produce probabilities >1.
+- Removed a circular import in ``scenarios.py``.
+- *GitHub info*: PR `482 <https://github.com/amath-idm/fp_analyses/pull/482>`__
+
 
 Version 0.10.4 (2022-05-17)
 --------------------------

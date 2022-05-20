@@ -5,15 +5,210 @@ Class to define and run scenarios
 import numpy as np
 import pandas as pd
 import sciris as sc
-import fpsim as fp
-from . import utils as fpu
 from . import defaults as fpd
+from . import sim as fps
 from . import interventions as fpi
 
-__all__ = ['Scenarios','update_methods']
+__all__ = ['make_scen', 'Scenario', 'Scenarios']
 
-# Define allowable keys to select all (all ages, all methods, etc)
-none_all_keys = [None, 'all', ':', [None], ['all'], [':']]
+
+
+class Scenario(sc.prettyobj, sc.dictobj):
+    '''
+    Store the specification for a single scenario (which may consist of multiple interventions).
+
+    This function is intended to be as flexible as possible; as a result, it may
+    be somewhat confusing. There are five different ways to call it -- method efficacy,
+    method probability, method initiation/discontinuation, parameter, and custom intervention.
+
+    Args (shared):
+        spec   (dict): a pre-made specification of a scenario; see keyword explanations below (optional)
+        args   (list): additional specifications (optional)
+        label  (str): the sim label to use for this scenario
+        year   (float): the year at which to activate efficacy and probability scenarios
+        matrix (str): which set of probabilities to modify for probability scenarios (e.g. annual or postpartum)
+        ages   (str/list): the age groups to modify the probabilities for
+
+    Args (efficacy):
+        year (float): as above
+        eff  (dict): a dictionary of method names and new efficacy values
+
+    Args (probablity):
+        year   (float): as above
+        matrix (str): as above
+        ages   (str): as above
+        source (str): the method to switch from
+        dest   (str): the method to switch to
+        factor (float): if supplied, multiply the [source, dest] probability by this amount
+        value  (float): if supplied, instead of factor, replace the [source, dest] probability by this value
+
+    Args (initiation/discontinuation):
+        year   (float): as above
+        matrix (str): as above
+        ages   (str): as above
+        method (str): the method for initiation/discontinuation
+        init_factor    (float): as with "factor" above, for initiation (None → method)
+        discont_factor (float): as with "factor" above, for discontinuation (method → None)
+        init_value     (float): as with "value" above, for initiation (None → method)
+        discont_value  (float): as with "value" above, for discontinuation (method → None)
+
+    Args (parameter):
+        par (str): the parameter to modify
+        years (float/list): the year(s) at which to apply the modifications
+        vals (float/list): the value(s) of the parameter for each year
+
+    Args (custom):
+        interventions (Intervention/list): any custom intervention(s) to be applied to the scenario
+
+    Congratulations on making it this far.
+
+    **Examples**::
+
+        # Basic efficacy scenario
+        s1 = fp.make_scen(eff={'Injectables':0.99}, year=2020)
+
+        # Double rate of injectables initiation
+        s2 = fp.make_scen(source='None', dest='Injectables', factor=2)
+
+        # Double rate of injectables initiation -- alternate approach
+        s3 = fp.make_scen(method='Injectables', init_factor=2)
+
+        # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
+        s4 = fp.make_scen(source='Condoms', dest='Injectables', value=0.5, ages='18-25', matrix='pp1to6')
+
+        # Parameter scenario: halve exposure
+        s5 = fp.make_scen(par='exposure_factor', years=2010, vals=0.5)
+
+        # Custom scenario
+        def update_sim(sim): sim.updated = True
+        s6 = fp.make_scen(interventions=update_sim)
+
+        # Combining multiple scenarios: increase injectables initiation and reduce exposure factor
+        s7 = fp.make_scen(
+            dict(method='Injectables', init_factor=2),
+            dict(par='exposure_factor', years=2010, vals=0.5)
+        )
+
+        # Scenarios can be combined
+        s8 = s1 + s2
+    '''
+    def __init__(self, spec=None, *args, label=None, year=None, matrix=None, ages=None, # Basic settings
+                 eff=None, probs=None, # Option 1
+                 source=None, dest=None, factor=None, value=None, # Option 2
+                 method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
+                 par=None, years=None, vals=None, # Option 4
+                 interventions=None, # Option 5
+                 ):
+
+        # Handle input specification
+        self.specs = sc.mergelists(*[Scenario(**spec).specs for spec in sc.mergelists(spec, *args)]) # Sorry
+        self.label = label
+
+        # Handle other keyword inputs
+        eff_spec   = None
+        prob_spec  = None
+        par_spec   = None
+        intv_specs = None
+
+        def check_not_none(obj, *args):
+            ''' Check that all needed inputs are supplied '''
+            for key in args:
+                if obj[key] is None:
+                    errormsg = f'Entry "{key}" is not allowed to be None for scenario spec "{obj.which}"'
+                    raise ValueError(errormsg)
+
+        # It's an efficacy scenario
+        if eff is not None:
+            eff_spec = sc.objdict(
+                which  = 'eff',
+                eff    = eff,
+                year   = year,
+            )
+            check_not_none(eff_spec, 'year')
+
+        # It's a method switching probability scenario
+        prob_args = [probs, factor, value, init_factor, discont_factor, init_value, discont_value]
+        if len(sc.mergelists(*prob_args)): # Check if any are non-None
+            prob_spec = sc.objdict(
+                which  = 'prob',
+                year   = year,
+                probs = probs if probs else dict(
+                    matrix         = matrix,
+                    ages           = ages,
+                    source         = source,
+                    dest           = dest,
+                    factor         = factor,
+                    value          = value,
+                    method         = method,
+                    init_factor    = init_factor,
+                    discont_factor = discont_factor,
+                    init_value     = init_value,
+                    discont_value  = discont_value,
+                )
+            )
+            check_not_none(prob_spec, 'year')
+
+        # It's a parameter change scenario
+        if par is not None:
+            par_spec = sc.objdict(
+                which = 'par',
+                par   = par,
+                years = years,
+                vals  = vals,
+            )
+            check_not_none(par_spec, 'years', 'vals')
+
+        # It's a custom scenario(s)
+        if interventions is not None:
+            intv_specs = []
+            for intv in sc.tolist(interventions):
+                intv_specs.append(sc.objdict(
+                    which        = 'intv',
+                    intervention = intv,
+                ))
+
+        # Merge these different scenarios into the list, skipping None entries
+        self.specs.extend(sc.mergelists(eff_spec, prob_spec, par_spec, intv_specs))
+
+        # Finally, ensure all have a consistent label if supplied
+        self.update_label()
+
+        return
+
+
+    def __add__(self, scen2):
+        ''' Combine two scenarios arrays '''
+        newscen = sc.dcp(self)
+        newscen.specs.extend(scen2.specs)
+        return newscen
+
+
+    def __radd__(self, scen2):
+        ''' Allows sum() to work correctly '''
+        if not scen2: return self
+        else:         return self.__add__(scen2)
+
+
+    def update_label(self, label=None):
+        ''' Ensure all specs have the correct label '''
+        if label is None:
+            label = self.label
+        if label is not None:
+            for spec in self.specs:
+                spec['label'] = label
+        return
+
+
+
+def make_scen(*args, **kwargs):
+    '''
+    Alias for ``fp.Scenario()``.
+    '''
+    return Scenario(*args, **kwargs)
+
+# Ensure the function ahs the same docstring as the class
+make_scen.__doc__ +=  '\n\n' + Scenario.__doc__
+
 
 
 class Scenarios(sc.prettyobj):
@@ -21,10 +216,9 @@ class Scenarios(sc.prettyobj):
     Run different intervention scenarios
     '''
 
-    def __init__(self, pars=None, repeats=None, scen_year=None, scens=None, **kwargs):
+    def __init__(self, pars=None, repeats=None, scens=None, **kwargs):
         self.pars = sc.mergedicts(pars, kwargs)
         self.repeats = repeats
-        self.scen_year = scen_year
         self.scens = sc.dcp(sc.tolist(scens))
         self.simslist = []
         self.msim = None
@@ -34,13 +228,11 @@ class Scenarios(sc.prettyobj):
 
     def add_scen(self, scen=None, label=None):
         ''' Add a scenario or scenarios to the Scenarios object '''
-        if scen is None: # Handle no scenario
-            scen = {}
-        scens = sc.dcp(sc.tolist(scen)) # To handle the case where multiple interventions are in a single scenario
-        if label:
-            for scen in scens:
-                scen['label'] = label
-        self.scens.append(scens)
+        if isinstance(scen, Scenario):
+            scen.update_label(label)
+            self.scens.append(scen)
+        else:
+            self.scens.append(Scenario(scen, label=label))
         return
 
 
@@ -54,7 +246,7 @@ class Scenarios(sc.prettyobj):
             pars = sc.mergedicts(fpd.pars(self.pars.get('location')), self.pars, _copy=True)
             pars.update(kwargs)
             pars['seed'] += i
-            sim = fp.Sim(pars=pars)
+            sim = fps.Sim(pars=pars)
             sim.scenlabel = scenlabel # Special label for scenarios objects
             if sim.label is None:
                 sim.label = scenlabel # Include here if no other label
@@ -64,18 +256,49 @@ class Scenarios(sc.prettyobj):
 
     def make_scens(self):
         ''' Convert a scenario specification into a list of sims '''
-        for scen in self.scens:
+        for i,scen in enumerate(self.scens):
+            simlabel = None
             interventions = sc.autolist()
-            for entry in sc.tolist(scen):
-                entry  = sc.dcp(entry) # Since we're popping, but this is used multiple times
-                year   = entry.pop('scen_year', self.scen_year)
-                matrix = entry.pop('matrix', None)
-                label  = entry.pop('label', None)
-                if year is None:
-                    errormsg = 'Scenario year must be specified in either the scenario entry or the Scenarios object'
+            for spec in sc.tolist(scen.specs):
+
+                # Figure ou what type of spec this is
+                spec = sc.dcp(spec)
+                if 'which' not in spec:
+                    errormsg = f'Invalid scenario spec: key "which" not found among: {sc.strjoin(spec.keys())}'
                     raise ValueError(errormsg)
-                interventions += fp.update_methods(scen=entry, year=year, matrix=matrix)
-            sims = self.make_sims(interventions=interventions, scenlabel=label)
+                else:
+                    which = spec.pop('which')
+
+                # Handle update_methods
+                if which == 'eff':
+                    eff = spec.pop('eff')
+                    year = spec.pop('year')
+                    interventions += fpi.update_methods(eff=eff, year=year)
+                elif which == 'prob':
+                    probs = spec.pop('probs')
+                    year = spec.pop('year')
+                    interventions += fpi.update_methods(probs=probs, year=year)
+                elif which == 'par':
+                    par = spec.pop('par')
+                    years = spec.pop('years')
+                    vals = spec.pop('vals')
+                    interventions += fpi.change_par(par=par, years=years, vals=vals)
+                elif which == 'intv':
+                    intv = spec.pop('intervention')
+                    interventions += intv
+
+                # Handle label
+                label  = spec.pop('label', None)
+                assert len(spec)==0, f'Unrecognized scenario key(s) {sc.strjoin(spec.keys())}'
+                if simlabel is None:
+                    simlabel = label
+                else:
+                    if label != simlabel:
+                        print('Warning, new sim label {label} does not match existing sim label {simlabel}')
+
+            if simlabel is None:
+                simlabel = f'Scenario {i}'
+            sims = self.make_sims(interventions=interventions, scenlabel=simlabel)
             self.simslist.append(sims)
         return
 
@@ -93,8 +316,8 @@ class Scenarios(sc.prettyobj):
         # Create msim
         msims = sc.autolist()
         for sims in self.simslist:
-            msims += fp.MultiSim(sims)
-        self.msim = fp.MultiSim.merge(*msims)
+            msims += fps.MultiSim(sims)
+        self.msim = fps.MultiSim.merge(*msims)
 
         # Run
         self.msim.run(**kwargs)
@@ -193,120 +416,5 @@ class Scenarios(sc.prettyobj):
         # Also save as pandas
         results.df = pd.DataFrame(raw)
         self.results = results
-
-        return
-
-
-def key2ind(sim, key):
-    """
-    Take a method key and convert to an int, e.g. 'Condoms' → 7
-    """
-    ind = key
-    if ind in none_all_keys:
-        ind = slice(None) # This is equivalent to ":" in matrix[:,:]
-    elif isinstance(ind, str):
-        ind = sim.pars['methods']['map'][key]
-    return ind
-
-
-def getval(v):
-    ''' Handle different ways of supplying a value -- number, distribution, function '''
-    if sc.isnumber(v):
-        return v
-    elif isinstance(v, dict):
-        return fpu.sample(**v)[0]
-    elif callable(v):
-        return v()
-
-
-class update_methods(fpi.Intervention):
-    """
-    Intervention to modify method efficacy and/or switching matrix.
-
-    Args:
-        year (float): The year we want to change the method.
-        scen (dict): Define the scenario to run:
-
-            probs (list): A list of dictionaries where each dictionary has the following keys:
-
-                source (str): The source method to be changed.
-                dest (str) The destination method to be changed.
-                factor (float): The factor by which to multiply existing probability; OR
-                value (float): The value to replace the switching probability value.
-                keys (list): A list of strings representing age groups to affect.
-
-            eff (dict):
-                An optional key for changing efficacy; its value is a dictionary with the following schema:
-
-                    {method: efficacy}
-                        Where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys).
-
-        matrix (str): One of ['probs', 'probs1', 'probs1to6'] where:
-
-            probs:     Changes the specified uptake at the corresponding year regardless of state.
-            probs1:    Changes the specified uptake for all individuals in their first month postpartum.
-            probs1to6: Changes the specified uptake for all individuals that are in the first 6 months postpartum.
-    """
-
-    def __init__(self, year, scen, matrix=None, verbose=False):
-        """
-        Initializes self.year/scen/matrix from parameters
-        """
-        super().__init__()
-        self.year   = year
-        self.scen   = scen
-        self.matrix = matrix if matrix else scen.pop('matrix', 'probs') # Take matrix from scenario if supplied
-        valid_matrices = ['probs', 'probs1', 'probs1to6'] # TODO: be less subtle about the difference between normal and postpartum matrices
-        if self.matrix not in valid_matrices:
-            raise sc.KeyNotFoundError(f'Matrix must be one of {valid_matrices}, not "{self.matrix}"')
-        self.applied = False
-        self.verbose = verbose
-        return
-
-
-    def apply(self, sim):
-        """
-        Applies the efficacy or contraceptive uptake changes if it is the specified year
-        based on scenario specifications.
-        """
-
-        if not self.applied and sim.y >= self.year:
-            self.applied = True # Ensure we don't apply this more than once
-
-            # Implement efficacy
-            if 'eff' in self.scen:
-                for k,rawval in self.scen['eff'].items():
-                    v = getval(rawval)
-                    ind = key2ind(sim, k)
-                    orig = sim['method_efficacy'][ind]
-                    sim['method_efficacy'][ind] = v
-                    if self.verbose:
-                        print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
-
-            # Implement method mix shift
-            if 'probs' in self.scen:
-                for entry in self.scen['probs']:
-                    source = key2ind(sim, entry['source'])
-                    dest   = key2ind(sim, entry['dest'])
-                    factor = entry.pop('factor', None)
-                    value  = entry.pop('value', None)
-                    keys   = entry.pop('keys', None)
-                    if keys in none_all_keys:
-                        keys = sim.pars['methods']['probs'].keys()
-
-                    for k in keys:
-                        if self.matrix == 'probs':
-                            matrices = sim['methods']
-                        else:
-                            matrices = sim['methods_pp']
-                        matrix = matrices[self.matrix][k]
-                        orig = matrix[source, dest]
-                        if factor is not None:
-                            matrix[source, dest] *= getval(factor)
-                        elif value is not None:
-                            matrix[source, dest] = getval(value)
-                        if self.verbose:
-                            print(f'At time {sim.y:0.1f}, matrix for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
-
 
         return
