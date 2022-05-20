@@ -203,9 +203,9 @@ def test_make_scens():
     Test that the user-friendly scenarios API works
     '''
 
-    sc.heading('Testing make_scen...')
+    sc.heading('Testing make_scens...')
 
-    serial = 1
+    serial = 0
     year   = 2002
     method = 'Injectables'
 
@@ -217,7 +217,7 @@ def test_make_scens():
     s.par   = fp.make_scen(par='exposure_correction', years=2005, vals=0.5) # Parameter scenario: halve exposure
 
     # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
-    s.complex = fp.make_scen(year=year, source='Condoms', dest='Injectables', value=0.5, ages='18-25', matrix='pp1to6')
+    s.complex = fp.make_scen(year=year, source='Condoms', dest='Injectables', value=0.5, ages='18-20', matrix='pp1to6')
 
     # Custom scenario
     def update_sim(sim): sim.updated = True
@@ -237,7 +237,7 @@ def test_make_scens():
     s.inj2 = fp.make_scen(year=year, method=method, discont_factor=0, matrix='annual', ages=':')
     s.inj3 = fp.make_scen(year=year, method=method, init_value=0.2, matrix='pp1to6', ages=None)
     s.inj4 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
-    s.inj5 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '25'])
+    s.inj5 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>25'])
 
     # Run scenarios
     scens = fp.Scenarios(location='test', n=100, repeats=1, scens=s.values())
@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # msim1  = test_update_methods_eff()
-        # msim2  = test_update_methods_probs()
-        # scens1 = test_scenarios()
+        msim1  = test_update_methods_eff()
+        msim2  = test_update_methods_probs()
+        scens1 = test_scenarios()
         scens2 = test_make_scens()
