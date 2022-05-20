@@ -23,10 +23,16 @@ def make_scen(*args, **kwargs):
 
 
 
-class Scenario(sc.prettyobj):
+class Scenario(sc.dictobj, sc.prettyobj):
     '''
-    Contain the specification for a single scenario
+    Store the specification for a single scenario (which may consist of multiple interventions)
     '''
+    def __init__(self, method=None, uptake_factor=None, discontinuation_factor=None,
+                 uptake_value=None, discontinuation_value=None, factor=None, value=None,
+                 matrix=None, ages=None, par=None, years=None, vals=None):
+        pass
+
+    # def __
 
 
 class Scenarios(sc.prettyobj):
@@ -78,16 +84,25 @@ class Scenarios(sc.prettyobj):
     def make_scens(self):
         ''' Convert a scenario specification into a list of sims '''
         for scen in self.scens:
+            simlabel = None
             interventions = sc.autolist()
             for entry in sc.tolist(scen):
                 entry  = sc.dcp(entry) # Since we're popping, but this is used multiple times
+                eff    = entry.pop('eff', None)
+                probs  = entry.pop('probs', None)
                 year   = entry.pop('scen_year', self.scen_year)
                 matrix = entry.pop('matrix', None)
                 label  = entry.pop('label', None)
+                assert len(entry)==0, f'Unrecognized scenario key(s) {sc.strjoin(entry.keys())}'
                 if year is None:
                     errormsg = 'Scenario year must be specified in either the scenario entry or the Scenarios object'
                     raise ValueError(errormsg)
-                interventions += fpi.update_methods(scen=entry, year=year, matrix=matrix)
+                if simlabel is None:
+                    simlabel = label
+                else:
+                    if label != simlabel:
+                        print('Warning, new sim label {label} does not match existing sim label {simlabel}')
+                interventions += fpi.update_methods(eff=eff, probs=probs, year=year, matrix=matrix)
             sims = self.make_sims(interventions=interventions, scenlabel=label)
             self.simslist.append(sims)
         return
