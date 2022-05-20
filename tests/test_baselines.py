@@ -133,7 +133,7 @@ def test_benchmark(do_save=do_save, repeats=1):
                 'total':       round(t_init+t_run+t_post, n_decimals)
                 },
             'parameters': {
-                'n':          exp.pars['n'],
+                'n':          exp.pars['n_agents'],
                 'start_year': exp.pars['start_year'],
                 'end_year':   exp.pars['end_year'],
                 'timestep':   exp.pars['timestep'],
