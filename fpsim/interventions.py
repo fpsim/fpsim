@@ -382,6 +382,11 @@ class update_methods(Intervention):
             # Implement efficacy
             if self.eff is not None:
                 for k,rawval in self.eff.items():
+                    try:
+                        key2ind(sim, k)
+                    except:
+                        errormsg = f'Key "{k}" is not a valid method: are you sure this is an efficacy change?'
+                        raise ValueError(errormsg)
                     v = getval(rawval)
                     ind = key2ind(sim, k)
                     orig = sim['method_efficacy'][ind]

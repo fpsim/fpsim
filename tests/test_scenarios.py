@@ -60,37 +60,33 @@ def test_update_methods_probs():
     target_prob1 = 0.2 # Specify the target contraceptive probability
     target_prob2 = 0.8
 
-    scen_no_keys = sc.objdict(
-        probs = dict(
+    scen_no_keys = dict(
+        source = 'None', # Source method, 'all' for all methods
+        dest   = 'Other modern', # Destination
+        factor = None, # Factor by which to multiply existing probability
+        value  = 0.2 # Alternatively, specify the absolute probability of switching to this method
+    )
+
+    scen_keys = [
+        dict(
             source = 'None', # Source method, 'all' for all methods
             dest   = 'Other modern', # Destination
-            factor = None, # Factor by which to multiply existing probability
-            value  = 0.2 # Alternatively, specify the absolute probability of switching to this method
+            value  = target_prob1, # Alternatively, specify the absolute probability of switching to this method
+            ages   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
         ),
-    )
-
-    scen_keys = sc.objdict(
-        probs = [
-            dict(
-                source = 'None', # Source method, 'all' for all methods
-                dest   = 'Other modern', # Destination
-                value  = target_prob1, # Alternatively, specify the absolute probability of switching to this method
-                ages   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
-            ),
-            dict(
-                source = 'Other modern', # Source method, 'all' for all methods
-                dest   = 'None', # Destination
-                value  = target_prob2, # Alternatively, specify the absolute probability of switching to this method
-                ages   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
-            )
-        ]
-    )
+        dict(
+            source = 'Other modern', # Source method, 'all' for all methods
+            dest   = 'None', # Destination
+            value  = target_prob2, # Alternatively, specify the absolute probability of switching to this method
+            ages   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
+        )
+    ]
 
     # Make interventions
-    uptake_no_keys_methods = fp.update_methods(int_year, scen_no_keys, matrix='annual') # Create intervention
-    uptake_keys_methods    = fp.update_methods(int_year, scen_keys,    matrix='annual') # Create intervention
-    uptake_no_keys_pp      = fp.update_methods(int_year, scen_no_keys, matrix='pp0to1') # Create intervention
-    uptake_keys_pp         = fp.update_methods(int_year, scen_keys,    matrix='pp1to6') # Create intervention
+    uptake_no_keys_methods = fp.update_methods(int_year, probs=scen_no_keys, matrix='annual')
+    uptake_keys_methods    = fp.update_methods(int_year, probs=scen_keys,    matrix='annual')
+    uptake_no_keys_pp      = fp.update_methods(int_year, probs=scen_no_keys, matrix='pp0to1')
+    uptake_keys_pp         = fp.update_methods(int_year, probs=scen_keys,    matrix='pp1to6')
 
     # Make and runs ims
     simlist = make_sims([uptake_no_keys_methods, uptake_keys_methods, uptake_no_keys_pp, uptake_keys_pp])
@@ -123,7 +119,7 @@ def test_update_methods_probs():
 def test_scenarios(do_plot=do_plot):
     ''' Test the actual Scenarios object '''
 
-    sc.heading('Testing Scenarios...')
+    sc.heading('Testing scenarios...')
 
     # Increased uptake high efficacy
     uptake_scen1 = fp.make_scen(
@@ -247,7 +243,7 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        msim1  = test_update_methods_eff()
-        msim2  = test_update_methods_probs()
+        # msim1  = test_update_methods_eff()
+        # msim2  = test_update_methods_probs()
         scens1 = test_scenarios()
         scens2 = test_make_scens()
