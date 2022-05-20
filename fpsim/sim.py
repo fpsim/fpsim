@@ -1472,6 +1472,10 @@ class MultiSim(sc.prettyobj):
         raw = sc.objdict()
         results = sc.objdict()
         axis = 1
+        start_end = np.array([sim.tvec[[0, -1]] for sim in self.sims])
+        if len(np.unique(start_end)) != 2:
+            errormsg = f'Cannot compute stats for sims: start and end values do not match:\n{start_end}'
+            raise ValueError(errormsg)
 
         reskeys = list(base_sim.results.keys())
         for key in ['t', 'tfr_years']: # Don't compute high/low for these
@@ -1774,7 +1778,7 @@ def multi_run(sims, **kwargs):
     return sims
 
 
-def parallel(*args, compute_stats=False, **kwargs):
+def parallel(*args, **kwargs):
     '''
     A shortcut to ``fp.MultiSim()``, allowing the quick running of multiple simulations
     at once.
@@ -1794,4 +1798,4 @@ def parallel(*args, compute_stats=False, **kwargs):
         msim = fp.parallel(s1, s2)
     '''
     sims = sc.mergelists(*args)
-    return MultiSim(sims=sims).run(compute_stats=compute_stats, **kwargs)
+    return MultiSim(sims=sims).run(**kwargs)

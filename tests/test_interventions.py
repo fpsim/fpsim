@@ -57,7 +57,7 @@ def test_change_par():
     s2 = make_sim(interventions=cp2, start_year=sim_start, end_year=sim_end, label='Changing MCPR')
 
     # Run
-    m = fp.parallel(s0, s1, s2, serial=serial)
+    m = fp.parallel(s0, s1, s2, serial=serial, compute_stats=False)
     s0, s1, s2 = m.sims[:] # Replace with run versions
 
     # Test exposure correction change
