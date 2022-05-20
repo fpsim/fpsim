@@ -124,6 +124,7 @@ def test_scenarios(do_plot=do_plot):
     # Increased uptake high efficacy
     uptake_scen1 = fp.make_scen(
         label = 'Increased modern',
+        year = int_year,
         eff = {'Other modern':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = dict( # Specify by value
             source = 'None', # Source method, 'all' for all methods
@@ -135,6 +136,7 @@ def test_scenarios(do_plot=do_plot):
 
     uptake_scen2 = fp.make_scen(
         label = 'Increased injectables',
+        year = int_year,
         eff = {'Injectables': 0.95},
         probs = [
             # Reduce switching from injectables
@@ -157,7 +159,7 @@ def test_scenarios(do_plot=do_plot):
     uptake_scen3 = uptake_scen1 + uptake_scen2
 
     #%% Create sims
-    scens = fp.Scenarios(location='test', n=200, repeats=2, scen_year=int_year)
+    scens = fp.Scenarios(location='test', n=200, repeats=2)
     scens.add_scen(label='Baseline')
     scens.add_scen(uptake_scen1)
     scens.add_scen(uptake_scen2)

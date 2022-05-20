@@ -207,10 +207,9 @@ class Scenarios(sc.prettyobj):
     Run different intervention scenarios
     '''
 
-    def __init__(self, pars=None, repeats=None, scen_year=None, scens=None, **kwargs):
+    def __init__(self, pars=None, repeats=None, scens=None, **kwargs):
         self.pars = sc.mergedicts(pars, kwargs)
         self.repeats = repeats
-        self.scen_year = scen_year
         self.scens = sc.dcp(sc.tolist(scens))
         self.simslist = []
         self.msim = None
