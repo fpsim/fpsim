@@ -11,7 +11,8 @@ All notable changes to the codebase are documented in this file. Changes that ma
 
 Version 0.10.7 (2022-05-19)
 --------------------------
-- Update ``fp.Scenarios()`` API.
+- Updated ``fp.Scenarios()`` API.
+- Added a new ``fp.Scenario()`` class, with a convenience function ``fp.make_scen()`` for creating new scenarios, for later use with ``fp.Scenarios()``.
 - *GitHub info*: PR `488 <https://github.com/amath-idm/fp_analyses/pull/488>`__
 
 
