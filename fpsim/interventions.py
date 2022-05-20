@@ -430,9 +430,11 @@ class update_methods(Intervention):
                         errormsg = f'Must supply one and only one of factor, value, or initiation/discontinuation factors/values; you supplied {n_vals}'
                         raise ValueError(errormsg)
 
-                    # Actually handle inputs
-                    factor = sc.mergelists(factor, i_factor, d_factor)[0]
-                    value = sc.mergelists(value, i_value, d_value)[0]
+                    # Decide if it's a factor or a value modification
+                    factor = sc.mergelists(factor, i_factor, d_factor)
+                    value = sc.mergelists(value, i_value, d_value)
+                    factor = factor[0] if factor else None
+                    value  = value[0]  if value  else None
 
                     # Check nothing strange has happened
                     is_switch  = len(sc.mergelists(factor, value))
