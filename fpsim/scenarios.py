@@ -13,7 +13,7 @@ __all__ = ['make_scen', 'Scenario', 'Scenarios']
 
 
 
-class Scenario(sc.dictobj, sc.prettyobj):
+class Scenario(sc.prettyobj, sc.dictobj):
     '''
     Store the specification for a single scenario (which may consist of multiple interventions).
 
@@ -101,8 +101,7 @@ class Scenario(sc.dictobj, sc.prettyobj):
                  ):
 
         # Handle input specification
-        specs = sc.mergelists(spec, *args)
-        self.specs = [Scenario(**spec) for spec in specs]
+        self.specs = sc.mergelists(*[Scenario(**spec).specs for spec in sc.mergelists(spec, *args)])
 
         # Handle other keyword inputs
         eff_spec   = None
