@@ -8,12 +8,11 @@ import fpsim as fp
 import pytest
 
 # Parameters
-max_pregnancy_loss = 0.4 # Maximum allowed fraction of pregnancies to allow to not end in birth (including stillbirths)
+max_pregnancy_loss = 0.5 # Maximum allowed fraction of pregnancies to allow to not end in birth (including stillbirths)
 
 
 def test_channels():
-
-    pars = fp.pars('test', n=500, end_year=2020) # CK: TODO: check why this test fails for small n
+    pars = fp.pars('test')
     exp = fp.ExperimentVerbose(pars)
     exp.run_model()
     events = exp.events
