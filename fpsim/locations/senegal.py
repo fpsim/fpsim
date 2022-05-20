@@ -11,9 +11,10 @@ from .. import defaults as fpd
 def scalar_pars():
     scalar_pars = {
         # Basic parameters
-        'n'                      : 10_000, # Population size
+        'n_agents'               : 10_000, # Number of agents
+        'scaled_pop'             : None, # Scaled population / total population size
         'start_year'             : 1960,
-        'end_year'               : 2019,
+        'end_year'               : 2020,
         'timestep'               : 1, # The simulation timestep in months
         'method_timestep'        : 1, # How many simulation timesteps to go for every method update step
         'verbose'                : 1, # How much detail to print during the simulation
