@@ -129,8 +129,8 @@ class Scenario(sc.prettyobj, sc.dictobj):
         prob_args = [factor, value, init_factor, discont_factor, init_value, discont_value]
         if len(sc.mergelists(*prob_args)): # Check if any are non-None
             prob_spec = sc.objdict(
-                which          = 'prob',
-                year           = year,
+                which  = 'prob',
+                year   = year,
                 probs = dict(
                     matrix         = matrix,
                     ages           = ages,

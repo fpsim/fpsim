@@ -394,7 +394,7 @@ class update_methods(Intervention):
                 probs = sc.tolist(self.probs)
                 for entry in probs:
                     entry = sc.dcp(entry)
-                    s_matrix = entry.pop('matrix', 'annual') # Switching matrix
+                    s_matrix = entry.pop('matrix', None) # Switching matrix
                     ages     = entry.pop('ages', None)
                     source   = entry.pop('source', None)
                     dest     = entry.pop('dest', None)
@@ -405,6 +405,10 @@ class update_methods(Intervention):
                     d_factor = entry.pop('discont_factor', None)
                     i_value  = entry.pop('init_value', None)
                     d_value  = entry.pop('discont_value', None)
+
+                    # Supply default matrix
+                    if s_matrix is None:
+                        s_matrix = 'annual'
 
                     # Validation # CK: TODO: move validation to initialization
                     if len(entry) != 0:
