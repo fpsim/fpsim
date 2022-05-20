@@ -471,7 +471,7 @@ class People(fpb.BasePeople):
 
     def check_maternal_mortality(self):
         '''Check for probability of maternal mortality'''
-        prob = self.pars['mortality_probs']['maternal'] * self.pars['maternal_mortality_multiplier']
+        prob = self.pars['mortality_probs']['maternal'] * self.pars['maternal_mortality_factor']
         is_death = self.binomial(prob)
         death = self.filter(is_death)
         death.alive = False

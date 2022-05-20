@@ -34,10 +34,10 @@ def scalar_pars():
         'breastfeeding_dur_high' : 24,
 
         # Pregnancy outcomes
-        'abortion_prob'          : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
-        'twins_prob'             : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'LAM_efficacy'           : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
-        'maternal_mortality'     : 1,
+        'abortion_prob'             : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
+        'twins_prob'                : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+        'LAM_efficacy'              : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
+        'maternal_mortality_factor' : 1,
 
          # Fecundity and exposure
         'fecundity_var_low'      : 0.7,
@@ -45,7 +45,7 @@ def scalar_pars():
         'high_parity'            : 4,
         'high_parity_nonuse'     : 0.6,
         'primary_infertility'    : 0.05,
-        'exposure_correction'    : 1, # Overall exposure correction factor
+        'exposure_factor'        : 1, # Overall exposure correction factor
 
         # MCPR
         'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
