@@ -978,10 +978,6 @@ class Sim(fpb.BaseSim):
             self.i = i # Timestep
             self.t = self.ind2year(i)  # t is time elapsed in years given how many timesteps have passed (ie, 25.75 years)
             self.y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
-            # if verbose:
-            #     if (self.t % int(1.0/verbose)) < 0.01:
-            #         string = f'  Running {self.y:0.1f} of {self["end_year"]}...'
-            #         sc.progressbar(i+1, self.npts, label=string, length=20, newline=True)
 
             # Print progress
             elapsed = T.toc(output=True)
@@ -1029,14 +1025,18 @@ class Sim(fpb.BaseSim):
             nonpostpartum = ((r.total_women_fecund - r.pp0to5 - r.pp6to11 - r.pp12to23)/r.total_women_fecund) * 100
 
             # Store results
+            if self['scaled_pop']:
+                scale = self['scaled_pop']/self['n_agents']
+            else:
+                scale = 1
             self.results['t'][i]               = self.tvec[i]
-            self.results['pop_size_months'][i] = self.n
-            self.results['births'][i]          = r.births
-            self.results['deaths'][i]          = r.deaths
-            self.results['stillbirths'][i]     = r.stillbirths
-            self.results['total_births'][i]    = r.total_births
-            self.results['maternal_deaths'][i] = r.maternal_deaths
-            self.results['infant_deaths'][i]   = r.infant_deaths
+            self.results['pop_size_months'][i] = self.n*scale
+            self.results['births'][i]          = r.births*scale
+            self.results['deaths'][i]          = r.deaths*scale
+            self.results['stillbirths'][i]     = r.stillbirths*scale
+            self.results['total_births'][i]    = r.total_births*scale
+            self.results['maternal_deaths'][i] = r.maternal_deaths*scale
+            self.results['infant_deaths'][i]   = r.infant_deaths*scale
             self.results['on_methods_mcpr'][i] = r.on_methods_mcpr
             self.results['no_methods_mcpr'][i] = r.no_methods_mcpr
             self.results['on_methods_cpr'][i]  = r.on_methods_cpr
@@ -1050,41 +1050,41 @@ class Sim(fpb.BaseSim):
             self.results['pp6to11'][i]         = percent6to11
             self.results['pp12to23'][i]           = percent12to23
             self.results['nonpostpartum'][i]      = nonpostpartum
-            self.results['total_women_fecund'][i] = r.total_women_fecund
-            self.results['unintended_pregs'][i]   = r.unintended_pregs
+            self.results['total_women_fecund'][i] = r.total_women_fecund*scale
+            self.results['unintended_pregs'][i]   = r.unintended_pregs*scale
 
             age_bins = ['10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
             for agekey in age_bins:
                 births_key = f'total_births_{agekey}'
                 women_key = f'total_women_{agekey}'
-                self.results[births_key][i] = r.birth_bins[agekey] # Store results of total births per age bin for ASFR
-                self.results[women_key][i]  = r.age_bin_totals[agekey] # Store results of total fecund women per age bin for ASFR
+                self.results[births_key][i] = r.birth_bins[agekey]*scale # Store results of total births per age bin for ASFR
+                self.results[women_key][i]  = r.age_bin_totals[agekey]*scale # Store results of total fecund women per age bin for ASFR
 
             # Store results of number of switching events in each age group
             if self['track_switching']:
                 switch_events = step_results.pop('switching')
-                self.results['switching_events_<18'][i] = r.switching_annual['<18']
-                self.results['switching_events_18-20'][i] = r.switching_annual['18-20']
-                self.results['switching_events_21-25'][i] = r.switching_annual['21-25']
-                self.results['switching_events_>25'][i] = r.switching_annual['>25']
-                self.results['switching_events_pp_<18'][i] = r.switching_postpartum['<18']
-                self.results['switching_events_pp_18-20'][i] = r.switching_postpartum['18-20']
-                self.results['switching_events_pp_21-25'][i] = r.switching_postpartum['21-25']
-                self.results['switching_events_pp_>25'][i] = r.switching_postpartum['>25']
-                self.results['switching_events_annual'][i] = switch_events['annual']
-                self.results['switching_events_postpartum'][i] = switch_events['postpartum']
+                self.results['switching_events_<18'][i]        = scale**scale*r.switching_annual['<18']
+                self.results['switching_events_18-20'][i]      = scale*r.switching_annual['18-20']
+                self.results['switching_events_21-25'][i]      = scale*r.switching_annual['21-25']
+                self.results['switching_events_>25'][i]        = scale*r.switching_annual['>25']
+                self.results['switching_events_pp_<18'][i]     = scale*r.switching_postpartum['<18']
+                self.results['switching_events_pp_18-20'][i]   = scale*r.switching_postpartum['18-20']
+                self.results['switching_events_pp_21-25'][i]   = scale*r.switching_postpartum['21-25']
+                self.results['switching_events_pp_>25'][i]     = scale*r.switching_postpartum['>25']
+                self.results['switching_events_annual'][i]     = scale*switch_events['annual']
+                self.results['switching_events_postpartum'][i] = scale*switch_events['postpartum']
 
             # Calculate metrics over the last year in the model and save whole years and stats to an array
             if i % fpd.mpy == 0:
                 self.results['tfr_years'].append(self.y)
                 start_index = (int(self.t)-1)*fpd.mpy
                 stop_index = int(self.t)*fpd.mpy
-                unintended_pregs_over_year = pl.sum(self.results['unintended_pregs'][start_index:stop_index]) # Grabs sum of unintended pregnancies due to method failures over the last 12 months of calendar year
-                infant_deaths_over_year = pl.sum(self.results['infant_deaths'][start_index:stop_index])
-                total_births_over_year = pl.sum(self.results['total_births'][start_index:stop_index])
-                live_births_over_year = pl.sum(self.results['births'][start_index:stop_index])
-                maternal_deaths_over_year = pl.sum(self.results['maternal_deaths'][start_index:stop_index])
-                self.results['pop_size'].append(self.n)
+                unintended_pregs_over_year = scale*np.sum(self.results['unintended_pregs'][start_index:stop_index]) # Grabs sum of unintended pregnancies due to method failures over the last 12 months of calendar year
+                infant_deaths_over_year    = scale*np.sum(self.results['infant_deaths'][start_index:stop_index])
+                total_births_over_year     = scale*np.sum(self.results['total_births'][start_index:stop_index])
+                live_births_over_year      = scale*np.sum(self.results['births'][start_index:stop_index])
+                maternal_deaths_over_year  = scale*np.sum(self.results['maternal_deaths'][start_index:stop_index])
+                self.results['pop_size'].append(scale*self.n) # CK: TODO: replace with arrays
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['cpr_by_year'].append(self.results['cpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
@@ -1093,7 +1093,7 @@ class Sim(fpb.BaseSim):
                 self.results['live_births_over_year'].append(live_births_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
                 if maternal_deaths_over_year == 0:
-                    self.results['mmr'].append(maternal_deaths_over_year)
+                    self.results['mmr'].append(0)
                 else:
                     maternal_mortality_ratio = maternal_deaths_over_year / live_births_over_year * 100000
                     self.results['mmr'].append(maternal_mortality_ratio)
@@ -1102,11 +1102,10 @@ class Sim(fpb.BaseSim):
                 else:
                     infant_mortality_rate = infant_deaths_over_year / live_births_over_year * 1000
                     self.results['imr'].append(infant_mortality_rate)
-                #self.results['birthday_fraction'].append(r.birthday_fraction)  # This helps track that birthday months are being tracked correctly, remove comment if needing to debug
 
                 tfr = 0
                 for key in fpd.age_bin_mapping.keys():
-                    age_bin_births_year = pl.sum(self.results['total_births_'+key][start_index:stop_index])
+                    age_bin_births_year = np.sum(self.results['total_births_'+key][start_index:stop_index])
                     age_bin_total_women_year = self.results['total_women_'+key][stop_index]
                     age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
                     self.results['asfr'][key].append(age_bin_births_per_woman*1000)
