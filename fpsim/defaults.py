@@ -9,7 +9,16 @@ __all__ = ['pars']
 
 
 def pars(location=None, **kwargs):
-    ''' Function for getting default parameters '''
+    '''
+    Function for getting default parameters.
+
+    Args:
+        location (str): the location to use for the parameters; use 'test' for a simple test set of parameters
+        kwargs (dict): custom parameter values
+
+    **Example**::
+        pars = fp.pars(location='senegal')
+    '''
     from . import locations as fplocs # Here to avoid circular import
 
     if not location:
@@ -33,6 +42,10 @@ def pars(location=None, **kwargs):
         raise NotImplementedError(errormsg)
 
     # Merge with kwargs and copy
+    mismatch = set(kwargs.keys()) - set(pars.keys())
+    if len(mismatch):
+        errormsg = f'The following key(s) are not valid: {sc.strjoin(mismatch)}'
+        raise sc.KeyNotFoundError(errormsg)
     pars = sc.mergedicts(pars, kwargs, _copy=True)
 
     return pars

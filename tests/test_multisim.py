@@ -5,7 +5,8 @@ Run tests on the multisim object.
 import sciris as sc
 import fpsim as fp
 
-do_plot = True
+serial  = 1
+do_plot = 1
 sc.options(backend='agg') # Turn off interactive plots
 
 
@@ -17,12 +18,12 @@ def test_multisim(do_plot=do_plot):
     sims = []
     for i in range(3):
         exposure = 0.5 + 0.5*i # Run a sweep over exposure
-        pars = fp.pars('test', exposure_correction=exposure)
+        pars = fp.pars('test', exposure_factor=exposure)
         sim = fp.Sim(pars=pars, label=f'Exposure {exposure}')
         sims.append(sim)
 
     msim = fp.MultiSim(sims)
-    msim.run() # Run sims in parallel
+    msim.run(serial=serial) # Run sims in parallel
     msim.to_df() # Test to_df
 
     births = msim.results.births
