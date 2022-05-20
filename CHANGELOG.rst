@@ -9,6 +9,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.11.1 (2022-05-20)
+--------------------------
+- Replace ``high`` and ``low`` breastfeeding duration parameters with Gumbel distribution parameters ``mu`` and ``beta``.
+- *GitHub info*: PR `493 <https://github.com/amath-idm/fp_analyses/pull/493>`__
+
+
 Version 0.11.0 (2022-05-20)
 --------------------------
 - Major refactor of ``senegal.py``, organizing parameters into groups and renaming.
