@@ -43,7 +43,7 @@ def test_change_par():
     verbose = True
     year = 2002
     ec = 0.01
-    cp1 = fp.change_par(par='exposure_correction', years=year, vals=ec, verbose=verbose) # Reduce exposure correction
+    cp1 = fp.change_par(par='exposure_factor', years=year, vals=ec, verbose=verbose) # Reduce exposure factor
     s0 = make_sim(label='Baseline')
     s1 = make_sim(interventions=cp1, label='High exposure')
 
@@ -60,11 +60,11 @@ def test_change_par():
     m = fp.parallel(s0, s1, s2, serial=serial, compute_stats=False)
     s0, s1, s2 = m.sims[:] # Replace with run versions
 
-    # Test exposure correction change
+    # Test exposure factor change
     base_births = s0.results['births'].sum()
     cp_births   = s1.results['births'].sum()
-    assert s1['exposure_correction'] == ec, f'change_pars() did not change exposure correction to {ec}'
-    assert cp_births < base_births, f'Reducing exposure correction should reduce births, but {cp_births} is not less than the baseline of {base_births}'
+    assert s1['exposure_factor'] == ec, f'change_pars() did not change exposure factor to {ec}'
+    assert cp_births < base_births, f'Reducing exposure factor should reduce births, but {cp_births} is not less than the baseline of {base_births}'
 
     # Test MCPR growth
     r = s2.results
@@ -82,9 +82,9 @@ def test_change_par():
     with pytest.raises(ValueError): # Check invalid parameter
         make_sim(interventions=fp.change_par('not_a_parameter')).run()
     with pytest.raises(ValueError): # Check too early start year
-        make_sim(interventions=fp.change_par('exposure_correction', years=1920, vals=1)).run()
+        make_sim(interventions=fp.change_par('exposure_factor', years=1920, vals=1)).run()
     with pytest.raises(ValueError): # Check too late end year
-        make_sim(interventions=fp.change_par('exposure_correction', years=2120, vals=1)).run()
+        make_sim(interventions=fp.change_par('exposure_factor', years=2120, vals=1)).run()
 
     if do_plot:
         m.plot()

@@ -26,4 +26,4 @@ if do_run:
      df = pd.DataFrame(data=agents)
 
      if do_save:
-          df.to_csv(sp.abspath('model_files/parity_methods_model.csv'))
+          df.to_csv('model_files/parity_methods_model.csv')

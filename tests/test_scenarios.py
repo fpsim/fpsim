@@ -208,7 +208,7 @@ def test_make_scens():
     s.eff   = fp.make_scen(year=year, eff={'Injectables':0.99}) # Basic efficacy scenario
     s.prob1 = fp.make_scen(year=year, source='None', dest='Injectables', factor=2) # Double rate of injectables initiation
     s.prob2 = fp.make_scen(year=year, method='Injectables', init_factor=2) # Double rate of injectables initiation -- alternate approach
-    s.par   = fp.make_scen(par='exposure_correction', years=2005, vals=0.5) # Parameter scenario: halve exposure
+    s.par   = fp.make_scen(par='exposure_factor', years=2005, vals=0.5) # Parameter scenario: halve exposure
 
     # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
     s.complex = fp.make_scen(year=year, source='Condoms', dest='Injectables', value=0.5, ages='18-20', matrix='pp1to6')
@@ -217,10 +217,10 @@ def test_make_scens():
     def update_sim(sim): sim.updated = True
     s.custom = fp.make_scen(interventions=update_sim)
 
-    # Combining multiple scenarios: increase injectables initiation and reduce exposure correction
+    # Combining multiple scenarios: increase injectables initiation and reduce exposure factor
     s.multi = fp.make_scen(
         dict(year=year, method=method, init_factor=2),
-        dict(par='exposure_correction', years=2010, vals=0.5)
+        dict(par='exposure_factor', years=2010, vals=0.5)
     )
 
     # Scenario addition

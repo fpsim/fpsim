@@ -56,11 +56,6 @@ class People(fpb.BasePeople):
         self.pregnant = arr(n, d['pregnant'])
         self.fertile  = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
 
-        # #Socio-demographic
-        # self.wealth   = arr(n, d['wealth'])
-        # self.cluster  = arr(n, d['cluster'])
-        # self.urban    = arr(n, d['urban'])
-
         # Sexual and reproductive history
         self.sexually_active  = arr(n, d['sexually_active'])
         self.sexual_debut     = arr(n, d['sexual_debut'])
@@ -88,7 +83,7 @@ class People(fpb.BasePeople):
         self.abortion_dates    = arr(n, []) # Dates of abortions -- list of lists
 
         # Fecundity variation
-        fv = [self.pars['fecundity_variation_low'], self.pars['fecundity_variation_high']]
+        fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
         self.personal_fecundity = arr(n, np.random.random(n)*(fv[1]-fv[0])+fv[0]) # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.remainder_months = arr(n, d['remainder_months'])
 
@@ -188,7 +183,7 @@ class People(fpb.BasePeople):
 
             choices = pp0to1[key]
             choices_high_parity = sc.dcp(choices)
-            choices_high_parity[0] *= self.pars['high_parity_nonuse_correction']
+            choices_high_parity[0] *= self.pars['high_parity_nonuse']
             choices_high_parity = choices_high_parity / choices_high_parity.sum()
             new_methods = fpu.n_multinomial(choices, len(this_method))
             new_methods_high_parity = fpu.n_multinomial(choices_high_parity, len(this_method_high_parity))
@@ -294,17 +289,17 @@ class People(fpb.BasePeople):
         '''
         # Set postpartum probabilities
         match_low  = self.postpartum_dur >= 0
-        match_high = self.postpartum_dur <= self.pars['postpartum_length']
+        match_high = self.postpartum_dur <= self.pars['postpartum_dur']
         pp_match = self.postpartum * match_low * match_high
         non_pp_match = ((self.age >= self.fated_debut) * (~pp_match))
         pp = self.filter(pp_match)
         non_pp = self.filter(non_pp_match)
 
         # Adjust for postpartum women's birth spacing preferences
-        pref = self.pars['pref_spacing'] # Shorten since used a lot
+        pref = self.pars['spacing_pref'] # Shorten since used a lot
         spacing_bins = pp.postpartum_dur / pref['interval'] # Main calculation -- divide the duration by the interval
         spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int) # Convert to an integer and bound by longest bin
-        probs_pp = self.pars['sexual_activity_postpartum']['percent_active'][pp.postpartum_dur]
+        probs_pp = self.pars['sexual_activity_pp']['percent_active'][pp.postpartum_dur]
         probs_pp *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
 
         # Set non-postpartum probabilities
@@ -352,9 +347,9 @@ class People(fpb.BasePeople):
         preg_probs[nullip.inds] *= self.pars['fecundity_ratio_nullip'][nullip.int_age_clip]
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity - encapsulates background factors - experimental and tunable
-        preg_probs *= self.pars['exposure_correction']
-        preg_probs *= self.pars['exposure_correction_age'][all_ppl.int_age_clip]
-        preg_probs *= self.pars['exposure_correction_parity'][np.minimum(all_ppl.parity, fpd.max_parity)]
+        preg_probs *= self.pars['exposure_factor']
+        preg_probs *= self.pars['exposure_age'][all_ppl.int_age_clip]
+        preg_probs *= self.pars['exposure_parity'][np.minimum(all_ppl.parity, fpd.max_parity)]
 
         # Use a single binomial trial to check for conception successes this month
         conceived = active.binomial(preg_probs[active.inds], as_filter=True)
@@ -374,15 +369,24 @@ class People(fpb.BasePeople):
         for i in abort.inds: # Handle adding dates
             all_ppl.abortion_dates[i].append(all_ppl.age[i])
 
-        preg.pregnant = True
-        preg.gestation = 1  # Start the counter at 1
-        pregdur = [self.pars['preg_dur_low'], self.pars['preg_dur_high']]
-        preg.preg_dur = np.random.randint(pregdur[0], pregdur[1]+1, size=len(preg))  # Duration of this pregnancy
-        preg.postpartum = False
-        preg.postpartum_dur = 0
-        preg.reset_breastfeeding() # Stop lactating if becoming pregnant
-        preg.method = 0
+        # Make selected agents pregnant
+        preg.make_pregnant()
 
+        return
+
+
+    def make_pregnant(self):
+        '''
+        Update the selected agents to be pregnant
+        '''
+        pregdur = [self.pars['preg_dur_low'], self.pars['preg_dur_high']]
+        self.pregnant = True
+        self.gestation = 1  # Start the counter at 1
+        self.preg_dur = np.random.randint(pregdur[0], pregdur[1]+1, size=len(self))  # Duration of this pregnancy
+        self.postpartum = False
+        self.postpartum_dur = 0
+        self.reset_breastfeeding() # Stop lactating if becoming pregnant
+        self.method = 0
         return
 
 
@@ -409,10 +413,9 @@ class People(fpb.BasePeople):
         Track breastfeeding, and update time of breastfeeding for individual pregnancy.
         Agents are randomly assigned a duration value based on a gumbel distribution drawn from the 2018 DHS variable for breastfeeding months. The mean (mu) and the std dev (beta) are both drawn from that distribution in the DHS data.
         '''
-        bfdur = [self.pars['breastfeeding_dur_low'], self.pars['breastfeeding_dur_high']]
-        bf_mu, bf_beta = 10.66828+9, 7.2585
-        breastfeed_durs = abs(np.random.gumbel(bf_mu, bf_beta, size = len(self)))
-        breastfeed_durs = [np.ceil(number) for number in breastfeed_durs]
+        mu, beta = self.pars['breastfeeding_dur_mu'], self.pars['breastfeeding_dur_beta']
+        breastfeed_durs = abs(np.random.gumbel(mu, beta, size=len(self)))
+        breastfeed_durs = np.ceil(breastfeed_durs)
         breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
         breastfeed_finished = self.filter(breastfeed_finished_inds)
         breastfeed_continue = self.filter(~breastfeed_finished_inds)
@@ -425,7 +428,7 @@ class People(fpb.BasePeople):
         '''Track duration of extended postpartum period (0-24 months after birth).  Only enter this function if agent is postpartum'''
 
         # Stop postpartum episode if reach max length (set to 24 months)
-        pp_done = self.filter(self.postpartum_dur >= self.pars['postpartum_length'])
+        pp_done = self.filter(self.postpartum_dur >= self.pars['postpartum_dur'])
         pp_done.postpartum = False
         pp_done.postpartum_dur = 0
 
@@ -471,7 +474,7 @@ class People(fpb.BasePeople):
 
     def check_maternal_mortality(self):
         '''Check for probability of maternal mortality'''
-        prob = self.pars['mortality_probs']['maternal'] * self.pars['maternal_mortality_multiplier']
+        prob = self.pars['mortality_probs']['maternal'] * self.pars['maternal_mortality_factor']
         is_death = self.binomial(prob)
         death = self.filter(is_death)
         death.alive = False
@@ -931,34 +934,32 @@ class Sim(fpb.BaseSim):
     def apply_interventions(self):
         ''' Apply each intervention in the model '''
         from . import interventions as fpi # To avoid circular import
-        if 'interventions' in self.pars:
-            for i,intervention in enumerate(sc.tolist(self['interventions'])):
-                if isinstance(intervention, fpi.Intervention):
-                    if not intervention.initialized: # pragma: no cover
-                        intervention.initialize(self)
-                    intervention.apply(self) # If it's an intervention, call the apply() method
-                elif callable(intervention):
-                    intervention(self) # If it's a function, call it directly
-                else: # pragma: no cover
-                    errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object: it is {type(intervention)}'
-                    raise TypeError(errormsg)
+        for i,intervention in enumerate(sc.tolist(self['interventions'])):
+            if isinstance(intervention, fpi.Intervention):
+                if not intervention.initialized: # pragma: no cover
+                    intervention.initialize(self)
+                intervention.apply(self) # If it's an intervention, call the apply() method
+            elif callable(intervention):
+                intervention(self) # If it's a function, call it directly
+            else: # pragma: no cover
+                errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object: it is {type(intervention)}'
+                raise TypeError(errormsg)
         return
 
 
     def apply_analyzers(self):
         ''' Apply each analyzer in the model '''
         from . import analyzers as fpa # To avoid circular import
-        if 'analyzers' in self.pars:
-            for i,analyzer in enumerate(sc.tolist(self['analyzers'])):
-                if isinstance(analyzer, fpa.Analyzer):
-                    if not analyzer.initialized: # pragma: no cover
-                        analyzer.initialize(self)
-                    analyzer.apply(self) # If it's an intervention, call the apply() method
-                elif callable(analyzer):
-                    analyzer(self) # If it's a function, call it directly
-                else: # pragma: no cover
-                    errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object: it is {type(analyzer)}'
-                    raise TypeError(errormsg)
+        for i,analyzer in enumerate(sc.tolist(self['analyzers'])):
+            if isinstance(analyzer, fpa.Analyzer):
+                if not analyzer.initialized: # pragma: no cover
+                    analyzer.initialize(self)
+                analyzer.apply(self) # If it's an intervention, call the apply() method
+            elif callable(analyzer):
+                analyzer(self) # If it's a function, call it directly
+            else: # pragma: no cover
+                errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object: it is {type(analyzer)}'
+                raise TypeError(errormsg)
         return
 
 
@@ -1792,8 +1793,8 @@ def parallel(*args, **kwargs):
 
     **Examples**::
 
-        s1 = fp.Sim(exposure_correction=0.5, label='Low')
-        s2 = fp.Sim(exposure_correction=2.0, label='High')
+        s1 = fp.Sim(exposure_factor=0.5, label='Low')
+        s2 = fp.Sim(exposure_factor=2.0, label='High')
         fp.parallel(s1, s2).plot()
         msim = fp.parallel(s1, s2)
     '''

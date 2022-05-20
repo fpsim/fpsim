@@ -35,6 +35,7 @@ class Calibration(sc.prettyobj):
         total_trials (int)  : if n_trials is not supplied, calculate by dividing this number by n_workers
         name         (str)  : the name of the database (default: 'fpsim_calibration')
         db_name      (str)  : the name of the database file (default: 'fpsim_calibration.db')
+        keep_db      (bool) : whether to keep the database after calibration (default: false)
         storage      (str)  : the location of the database (default: sqlite)
         label        (str)  : a label for this calibration object
         verbose      (bool) : whether to print details of the calibration
@@ -44,11 +45,12 @@ class Calibration(sc.prettyobj):
         A Calibration object
     '''
 
-    def __init__(self, pars, calib_pars=None, weights=None, verbose=True, **kwargs):
+    def __init__(self, pars, calib_pars=None, weights=None, verbose=True, keep_db=False, **kwargs):
         self.pars       = pars
         self.calib_pars = calib_pars
         self.weights    = weights
         self.verbose    = verbose
+        self.keep_db    = keep_db
 
         # Configure Optuna
         self.set_optuna_defaults()
@@ -92,15 +94,15 @@ class Calibration(sc.prettyobj):
         either a dict of arrays or lists in order best-low-high, e.g.::
 
             calib_pars = dict(
-                exposure_correction           = [1.0, 0.5,  1.5],
-                maternal_mortality_multiplier = [1,   0.75, 3.0],
+                exposure_factor           = [1.0, 0.5,  1.5],
+                maternal_mortality_factor = [1,   0.75, 3.0],
             )
 
         Or the same thing, as a dict of dicts::
 
             calib_pars = dict(
-                exposure_correction           = dict(best=1.0, low=0.5,  high=1.5),
-                maternal_mortality_multiplier = dict(best=1,   low=0.75, high=3.0),
+                exposure_factor           = dict(best=1.0, low=0.5,  high=1.5),
+                maternal_mortality_factor = dict(best=1,   low=0.75, high=3.0),
             )
         '''
 
@@ -178,11 +180,20 @@ class Calibration(sc.prettyobj):
         return output
 
 
-    def make_study(self):
-        ''' Make a study, deleting one if it already exists '''
+    def remove_db(self):
+        '''
+        Remove the database file if keep_db is false and the path exists.
+        '''
         if os.path.exists(self.g.db_name):
             os.remove(self.g.db_name)
-            print(f'Removed existing calibration {self.g.db_name}')
+            if self.verbose:
+                print(f'Removed existing calibration {self.g.db_name}')
+        return
+
+    def make_study(self):
+        ''' Make a study, deleting one if it already exists '''
+        if not self.keep_db:
+            self.remove_db()
         output = op.create_study(storage=self.g.storage, study_name=self.g.name)
         return output
 
@@ -219,6 +230,13 @@ class Calibration(sc.prettyobj):
         self.before = self.run_exp(pars=self.initial_pars, label='Before calibration', return_exp=True)
         self.after  = self.run_exp(pars=self.best_pars,    label='After calibration',  return_exp=True)
         self.parse_study()
+
+        # Tidy up
+        if not self.keep_db:
+            self.remove_db()
+        if verbose:
+            self.summarize()
+
         return
 
 

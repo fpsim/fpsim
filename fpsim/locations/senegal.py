@@ -7,63 +7,87 @@ import sciris as sc
 from scipy import interpolate as si
 from .. import defaults as fpd
 
-# Define default user-tunable parameters and values
-defaults = {
-  'n'                             : 10_000, # Population size
-  'start_year'                    : 1960,
-  'end_year'                      : 2019,
-  'timestep'                      : 1, # The simulation timestep in months
-  'method_timestep'               : 1, # How many simulation timesteps to go for every method update step
-  'verbose'                       : 1,
-  'seed'                          : 1,
-  'fecundity_variation_low'       : 0.7,
-  'fecundity_variation_high'      : 1.1,
-  'method_age'                    : 15,
-  'max_age'                       : 99,
-  'preg_dur_low'                  : 9,
-  'preg_dur_high'                 : 9,
-  'switch_frequency'              : 12,
-  'breastfeeding_dur_low'         : 1,
-  'breastfeeding_dur_high'        : 24,
-  'age_limit_fecundity'           : 50,
-  'postpartum_length'             : 35,
-  'end_first_tri'                 : 3,
-  'abortion_prob'                 : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
-  'twins_prob'                    : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-  'LAM_efficacy'                  : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
-  'maternal_mortality_multiplier' : 1,
-  'high_parity'                   : 4,
-  'high_parity_nonuse_correction' : 0.6,
-  'primary_infertility'           : 0.05,
-  'exposure_correction'           : 1, # Overall exposure correction factor
-  'mcpr_growth_rate'              : 0.02, # The year-on-year change in MCPR after the end of the data
-  'mcpr_max'                      : 0.90, # Do not allow MCPR to increase beyond this
-  'mcpr_norm_year'                : 2018, # Year to normalize MCPR trend to 1
-}
+#%% Scalar parameters
+def scalar_pars():
+    scalar_pars = {
+        # Basic parameters
+        'n'                      : 10_000, # Population size
+        'start_year'             : 1960,
+        'end_year'               : 2019,
+        'timestep'               : 1, # The simulation timestep in months
+        'method_timestep'        : 1, # How many simulation timesteps to go for every method update step
+        'verbose'                : 1, # How much detail to print during the simulation
+        'seed'                   : 1, # Random seed
+
+        # Age limits
+        'method_age'             : 15,
+        'age_limit_fecundity'    : 50,
+        'max_age'                : 99,
+
+        # Durations
+        'switch_frequency'       : 12, # How frequently to check for changes to contraception
+        'end_first_tri'          : 3,
+        'preg_dur_low'           : 9,
+        'preg_dur_high'          : 9,
+        'postpartum_dur'         : 35,
+        'breastfeeding_dur_mu'   : 19.66828, # For a Gumbel distribution, drawn from DHS
+        'breastfeeding_dur_beta' : 7.2585,
+
+        # Pregnancy outcomes
+        'abortion_prob'             : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
+        'twins_prob'                : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+        'LAM_efficacy'              : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
+        'maternal_mortality_factor' : 1,
+
+         # Fecundity and exposure
+        'fecundity_var_low'      : 0.7,
+        'fecundity_var_high'     : 1.1,
+        'high_parity'            : 4,
+        'high_parity_nonuse'     : 0.6,
+        'primary_infertility'    : 0.05,
+        'exposure_factor'        : 1, # Overall exposure correction factor
+
+        # MCPR
+        'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
+        'mcpr_max'               : 0.90, # Do not allow MCPR to increase beyond this
+        'mcpr_norm_year'         : 2018, # Year to normalize MCPR trend to 1
+    }
+    return scalar_pars
 
 
-# %% Set parameters for the simulation
+def data2interp(data, ages, normalize=False):
+    ''' Convert unevenly spaced data into an even spline interpolation '''
+    model = si.interp1d(data[0], data[1])
+    interp = model(ages)
+    if normalize:
+        interp = np.minimum(1, np.maximum(0, interp))
+    return interp
+
+
+
+#%% Demographics and pregnancy outcome
 
 def age_pyramid():
     ''' Starting age bin, male population, female population '''
-    pyramid = np.array([ [0,  318225,  314011], # Senegal 1962
-                         [5,  249054,  244271],
-                        [10,  191209,  190998],
-                        [15,  157800,  159536],
-                        [20,  141480,  141717],
-                        [25,  125002,  124293],
-                        [30,  109339,  107802],
-                        [35,  93359,   92119],
-                        [40,  77605,   78231],
-                        [45,  63650,   66117],
-                        [50,  51038,   54934],
-                        [55,  39715,   44202],
-                        [60,  29401,   33497],
-                        [65,  19522,   23019],
-                        [70,  11686,   14167],
-                        [75,  5985,    7390],
-                        [80,  2875,    3554],
-                    ], dtype=float)
+    pyramid = np.array([
+         [0,  318225,  314011], # Senegal 1962
+         [5,  249054,  244271],
+        [10,  191209,  190998],
+        [15,  157800,  159536],
+        [20,  141480,  141717],
+        [25,  125002,  124293],
+        [30,  109339,  107802],
+        [35,  93359,   92119],
+        [40,  77605,   78231],
+        [45,  63650,   66117],
+        [50,  51038,   54934],
+        [55,  39715,   44202],
+        [60,  29401,   33497],
+        [65,  19522,   23019],
+        [70,  11686,   14167],
+        [75,  5985,    7390],
+        [80,  2875,    3554],
+    ], dtype=float)
 
     return pyramid
 
@@ -95,25 +119,6 @@ def age_mortality(bound):
     mortality['f_spline'] = f_mortality_spline
 
     return mortality
-
-
-def female_age_fecundity(bound):
-    '''
-    Use fecundity rates from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
-    Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
-    45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds, based on fertility rates from Senegal
-    '''
-    fecundity = {
-        'bins': np.array([0., 5, 10, 15, 20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
-        'f': np.array([0.,    0,  0, 65, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
-    fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
-
-    fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
-    fecundity_interp = fecundity_interp_model(fpd.spline_preg_ages)
-    if bound:
-        fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp))
-
-    return fecundity_interp
 
 
 def maternal_mortality():
@@ -237,6 +242,19 @@ def infant_mortality():
     return infant_mortality
 
 
+def miscarriage():
+    '''
+    Returns a linear interpolation of the likelihood of a miscarriage
+    by age, taken from data from Magnus et al BMJ 2019: https://pubmed.ncbi.nlm.nih.gov/30894356/
+    Data to be fed into likelihood of continuing a pregnancy once initialized in model
+    Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
+    '''
+    miscarriage_rates = np.array([[0, 5,    10,     15,     20,    25,    30,    35,    40,    45,    50],
+                                  [1, 1, 0.569,  0.167,  0.112, 0.097, 0.108, 0.167, 0.332, 0.569, 0.569]])
+    miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
+    return miscarriage_interp
+
+
 def stillbirth():
     '''
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
@@ -255,6 +273,265 @@ def stillbirth():
 
     return stillbirth_rate
 
+
+
+#%% Fecundity
+
+def female_age_fecundity(bound):
+    '''
+    Use fecundity rates from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+    Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
+    45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds, based on fertility rates from Senegal
+    '''
+    fecundity = {
+        'bins': np.array([0., 5, 10, 15, 20,     25,   28,  31,   34,   37,  40,   45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
+        'f': np.array([0.,    0,  0, 65, 70.8, 79.3,  77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+    fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
+
+    fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
+    fecundity_interp = fecundity_interp_model(fpd.spline_preg_ages)
+    if bound:
+        fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp))
+
+    return fecundity_interp
+
+
+def fecundity_ratio_nullip():
+    '''
+    Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
+    from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+    Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
+    '''
+    fecundity_ratio_nullip = np.array([[ 0,  5, 10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
+                                        [1,  1,  1,    1,   1,   1,   1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
+    fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
+
+    return fecundity_nullip_interp
+
+
+def lactational_amenorrhea():
+    '''
+    Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
+    Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
+    as those women continue to be postpartum insusceptible.
+    From DHS Senegal calendar data
+    '''
+    data = np.array([
+        [0, 0.903125],
+        [1, 0.868794326],
+        [2, 0.746478873],
+        [3, 0.648854962],
+        [4, 0.563573883],
+        [5, 0.457564576],
+        [6, 0.254966887],
+        [7, 0.2],
+        [8, 0.146341463],
+        [9, 0.10982659],
+        [10, 0.10982659],
+        [11, 0.101796407],
+    ])
+
+    lactational_amenorrhea = {}
+    lactational_amenorrhea['month'] = data[:, 0]
+    lactational_amenorrhea['rate'] = data[:, 1]
+
+    return lactational_amenorrhea
+
+
+
+#%% Pregnancy exposure
+
+def sexual_activity():
+    '''
+    Returns a linear interpolation of rates of female sexual activity, defined as
+    percentage women who have had sex within the last four weeks.
+    From STAT Compiler DHS https://www.statcompiler.com/en/
+    Using indicator "Timing of sexual intercourse"
+    Includes women who have had sex "within the last four weeks"
+    Excludes women who answer "never had sex", probabilities are only applied to agents who have sexually debuted
+    Data taken from 2018 DHS, no trend over years for now
+    Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
+    '''
+
+    sexually_active = np.array([[0, 5, 10,    15,   20,   25,   30,   35,   40,   45,   50],
+                                [0, 0,  0,  50.4, 55.9, 57.3, 60.8, 66.4, 67.5, 68.2, 68.2]])
+
+    sexually_active[1] /= 100 # Convert from percent to rate per woman
+    activity_ages = sexually_active[0]
+    activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
+    activity_interp = activity_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
+
+    return activity_interp
+
+
+def sexual_activity_pp():
+    '''
+    Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
+    Uses DHS Senegal 2018 individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
+    Limited to 35 months postpartum (can use any limit you want 0-35 max)
+    Postpartum month 0 refers to the first month after delivery
+    '''
+
+    postpartum_sex = np.array([
+        [0,  0.104166667],
+        [1,  0.300000000],
+        [2,  0.383177570],
+        [3,  0.461538462],
+        [4,  0.476635514],
+        [5,  0.500000000],
+        [6,  0.565217391],
+        [7,  0.541666667],
+        [8,  0.547368421],
+        [9,  0.617391304],
+        [10, 0.578947368],
+        [11, 0.637254902],
+        [12, 0.608247423],
+        [13, 0.582278481],
+        [14, 0.542553191],
+        [15, 0.678260870],
+        [16, 0.600000000],
+        [17, 0.605042017],
+        [18, 0.562500000],
+        [19, 0.529411765],
+        [20, 0.674698795],
+        [21, 0.548780488],
+        [22, 0.616161616],
+        [23, 0.709401709],
+        [24, 0.651376147],
+        [25, 0.780219780],
+        [26, 0.717647059],
+        [27, 0.716417910],
+        [28, 0.683544304],
+        [29, 0.716417910],
+        [30, 0.640625000],
+        [31, 0.650000000],
+        [32, 0.676470588],
+        [33, 0.645161290],
+        [34, 0.606557377],
+        [35, 0.644736842],
+    ])
+
+    postpartum_activity = {}
+    postpartum_activity['month'] = postpartum_sex[:, 0]
+    postpartum_activity['percent_active'] = postpartum_sex[:, 1]
+
+    return postpartum_activity
+
+
+def debut_age():
+    '''
+    Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
+    Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
+    Use sexual_debut_age_probs.py under fp_analyses/data to output for other DHS countries
+    '''
+
+    sexual_debut = np.array([
+        [10, 0.004362494588533180],
+        [11, 0.005887267309386780],
+        [12, 0.016249279181639800],
+        [13, 0.0299019826473517],
+        [14, 0.055785658051997],
+        [15, 0.09813952463469960],
+        [16, 0.112872333807184],
+        [17, 0.11953800217275100],
+        [18, 0.10881048442282400],
+        [19, 0.08688267743864320],
+        [20, 0.0781062086093285],
+        [21, 0.055562127900473800],
+        [22, 0.047649966917757800],
+        [23, 0.03670233295320280],
+        [24, 0.02962171655627400],
+        [25, 0.03071900157389080],
+        [26, 0.020088166028125700],
+        [27, 0.012959307423989900],
+        [28, 0.009789125590573670],
+        [29, 0.010992698492904500],
+        [30, 0.0064009386756690000],
+        [31, 0.00531499008144595],
+        [32, 0.004500210075413140],
+        [33, 0.004643541107103950],
+        [34, 0.0015287248836055500],
+        [35, 0.0012933308143284600],
+        [36, 0.0008169702220519970],
+        [37, 0.0005138447212362420],
+        [38, 0.0030994890039629400],
+        [39, 0.0007583698086919300],
+        [40, 0.0001470674087999730],
+        [42, 0.00018238823303343100],
+        [43, 0.0000620676775406016],
+        [45, 0.0001177109855848480]])
+
+    debut_age = {}
+    debut_age['ages'] = sexual_debut[:, 0]
+    debut_age['probs'] = sexual_debut[:, 1]
+
+    return debut_age
+
+
+def exposure_age():
+    '''
+    Returns an array of experimental factors to be applied to account for
+    residual exposure to either pregnancy or live birth by age.  Exposure to pregnancy will
+    increase factor number and residual likelihood of avoiding live birth (mostly abortion,
+    also miscarriage), will decrease factor number
+    '''
+    exposure_correction_age = np.array([[0, 5, 10, 12.5,  15,  18,  20,  25,  30,  35,  40,  45,  50],
+                                        [1, 1,  1,    1,   1,   1,   1,   1,   1, 1, 1, 1, 1]])
+    exposure_age_interp = data2interp(exposure_correction_age, fpd.spline_preg_ages)
+
+    return exposure_age_interp
+
+
+def exposure_parity():
+    '''
+    Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
+    or live birth by parity.
+    '''
+    exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6,   7,   8,   9,   10,   11,    12,  20],
+                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10,  0.05, 0.01]])
+    exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
+
+    return exposure_parity_interp
+
+
+def birth_spacing_pref():
+    '''
+    Returns an array of birth spacing preferences by closest postpartum month.
+    Applied to postpartum pregnancy likelihoods.
+
+    NOTE: spacing bins must be uniform!
+    '''
+    postpartum_spacing = np.array([
+        [0,  0.5],
+        [3,  0.5],
+        [6,  0.5],
+        [9,  0.5],
+        [12, 0.8],
+        [15, 1.2],
+        [18, 5.0],
+        [21, 5.0],
+        [24, 9.0],
+        [27, 9.0],
+        [30, 9.0],
+        [33, 9.0],
+        [36, 5.0],
+    ])
+
+    # Calculate the intervals and check they're all the same
+    intervals = np.diff(postpartum_spacing[:, 0])
+    interval = intervals[0]
+    assert np.all(intervals == interval), f'In order to be computed in an array, birth spacing preference bins must be equal width, not {intervals}'
+    pref_spacing = {}
+    pref_spacing['interval'] = interval # Store the interval (which we've just checked is always the same)
+    pref_spacing['n_bins'] = len(intervals) # Actually n_bins - 1, but we're counting 0 so it's OK
+    pref_spacing['months'] = postpartum_spacing[:,0]
+    pref_spacing['preference'] = postpartum_spacing[:, 1] # Store the actual birth spacing data
+
+    return pref_spacing
+
+
+
+#%% Contraceptive methods
 
 def methods():
     '''
@@ -467,289 +744,40 @@ def barriers():
     return barriers
 
 
-def debut_age():
-    '''
-    Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
-    Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
-    Use sexual_debut_age_probs.py under fp_analyses/data to output for other DHS countries
-    '''
 
-    sexual_debut = np.array([
-        [10, 0.004362494588533180],
-        [11, 0.005887267309386780],
-        [12, 0.016249279181639800],
-        [13, 0.0299019826473517],
-        [14, 0.055785658051997],
-        [15, 0.09813952463469960],
-        [16, 0.112872333807184],
-        [17, 0.11953800217275100],
-        [18, 0.10881048442282400],
-        [19, 0.08688267743864320],
-        [20, 0.0781062086093285],
-        [21, 0.055562127900473800],
-        [22, 0.047649966917757800],
-        [23, 0.03670233295320280],
-        [24, 0.02962171655627400],
-        [25, 0.03071900157389080],
-        [26, 0.020088166028125700],
-        [27, 0.012959307423989900],
-        [28, 0.009789125590573670],
-        [29, 0.010992698492904500],
-        [30, 0.0064009386756690000],
-        [31, 0.00531499008144595],
-        [32, 0.004500210075413140],
-        [33, 0.004643541107103950],
-        [34, 0.0015287248836055500],
-        [35, 0.0012933308143284600],
-        [36, 0.0008169702220519970],
-        [37, 0.0005138447212362420],
-        [38, 0.0030994890039629400],
-        [39, 0.0007583698086919300],
-        [40, 0.0001470674087999730],
-        [42, 0.00018238823303343100],
-        [43, 0.0000620676775406016],
-        [45, 0.0001177109855848480]])
+#%% Make parameters
 
-    debut_age = {}
-    debut_age['ages'] = sexual_debut[:, 0]
-    debut_age['probs'] = sexual_debut[:, 1]
-
-    return debut_age
-
-
-def sexual_activity():
-    '''
-    Returns a linear interpolation of rates of female sexual activity, defined as
-    percentage women who have had sex within the last four weeks.
-    From STAT Compiler DHS https://www.statcompiler.com/en/
-    Using indicator "Timing of sexual intercourse"
-    Includes women who have had sex "within the last four weeks"
-    Excludes women who answer "never had sex", probabilities are only applied to agents who have sexually debuted
-    Data taken from 2018 DHS, no trend over years for now
-    Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
-    '''
-
-    sexually_active = np.array([[0, 5, 10,    15,   20,   25,   30,   35,   40,   45,   50],
-                                [0, 0,  0,  50.4, 55.9, 57.3, 60.8, 66.4, 67.5, 68.2, 68.2]])
-
-    sexually_active[1] /= 100 # Convert from percent to rate per woman
-    activity_ages = sexually_active[0]
-    activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
-    activity_interp = activity_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
-
-    return activity_interp
-
-
-def birth_spacing_preference():
-    '''
-    Returns an array of birth spacing preferences by closest postpartum month.
-    Applied to postpartum pregnancy likelihoods.
-
-    NOTE: spacing bins must be uniform!
-    '''
-    postpartum_spacing = np.array([
-        [0,  0.5],
-        [3,  0.5],
-        [6,  0.5],
-        [9,  0.5],
-        [12, 0.8],
-        [15, 1.2],
-        [18, 5.0],
-        [21, 5.0],
-        [24, 9.0],
-        [27, 9.0],
-        [30, 9.0],
-        [33, 9.0],
-        [36, 5.0],
-    ])
-
-    # Calculate the intervals and check they're all the same
-    intervals = np.diff(postpartum_spacing[:, 0])
-    interval = intervals[0]
-    assert np.all(intervals == interval), f'In order to be computed in an array, birth spacing preference bins must be equal width, not {intervals}'
-    pref_spacing = {}
-    pref_spacing['interval'] = interval # Store the interval (which we've just checked is always the same)
-    pref_spacing['n_bins'] = len(intervals) # Actually n_bins - 1, but we're counting 0 so it's OK
-    pref_spacing['months'] = postpartum_spacing[:,0]
-    pref_spacing['preference'] = postpartum_spacing[:, 1] # Store the actual birth spacing data
-
-    return pref_spacing
-
-
-def sexual_activity_postpartum():
-    '''
-    Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
-    Uses DHS Senegal 2018 individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
-    Limited to 35 months postpartum (can use any limit you want 0-35 max)
-    Postpartum month 0 refers to the first month after delivery
-    '''
-
-    postpartum_sex = np.array([
-        [0,  0.104166667],
-        [1,  0.300000000],
-        [2,  0.383177570],
-        [3,  0.461538462],
-        [4,  0.476635514],
-        [5,  0.500000000],
-        [6,  0.565217391],
-        [7,  0.541666667],
-        [8,  0.547368421],
-        [9,  0.617391304],
-        [10, 0.578947368],
-        [11, 0.637254902],
-        [12, 0.608247423],
-        [13, 0.582278481],
-        [14, 0.542553191],
-        [15, 0.678260870],
-        [16, 0.600000000],
-        [17, 0.605042017],
-        [18, 0.562500000],
-        [19, 0.529411765],
-        [20, 0.674698795],
-        [21, 0.548780488],
-        [22, 0.616161616],
-        [23, 0.709401709],
-        [24, 0.651376147],
-        [25, 0.780219780],
-        [26, 0.717647059],
-        [27, 0.716417910],
-        [28, 0.683544304],
-        [29, 0.716417910],
-        [30, 0.640625000],
-        [31, 0.650000000],
-        [32, 0.676470588],
-        [33, 0.645161290],
-        [34, 0.606557377],
-        [35, 0.644736842],
-    ])
-
-    postpartum_activity = {}
-    postpartum_activity['month'] = postpartum_sex[:, 0]
-    postpartum_activity['percent_active'] = postpartum_sex[:, 1]
-
-    return postpartum_activity
-
-
-def lactational_amenorrhea():
-    '''
-    Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
-    Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
-    as those women continue to be postpartum insusceptible.
-    From DHS Senegal calendar data
-    '''
-
-    data = np.array([
-        [0, 0.903125],
-        [1, 0.868794326],
-        [2, 0.746478873],
-        [3, 0.648854962],
-        [4, 0.563573883],
-        [5, 0.457564576],
-        [6, 0.254966887],
-        [7, 0.2],
-        [8, 0.146341463],
-        [9, 0.10982659],
-        [10, 0.10982659],
-        [11, 0.101796407],
-    ])
-
-    lactational_amenorrhea = {}
-    lactational_amenorrhea['month'] = data[:, 0]
-    lactational_amenorrhea['rate'] = data[:, 1]
-
-    return lactational_amenorrhea
-
-
-def data2interp(data, ages, normalize=False):
-    ''' Convert unevenly spaced data into an even spline interpolation '''
-    model = si.interp1d(data[0], data[1])
-    interp = model(ages)
-    if normalize:
-        interp = np.minimum(1, np.maximum(0, interp))
-    return interp
-
-
-def miscarriage_rates():
-    '''
-    Returns a linear interpolation of the likelihood of a miscarriage
-    by age, taken from data from Magnus et al BMJ 2019: https://pubmed.ncbi.nlm.nih.gov/30894356/
-    Data to be fed into likelihood of continuing a pregnancy once initialized in model
-    Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
-    '''
-    miscarriage_rates = np.array([[0, 5,    10,     15,     20,    25,    30,    35,    40,    45,    50],
-                                  [1, 1, 0.569,  0.167,  0.112, 0.097, 0.108, 0.167, 0.332, 0.569, 0.569]])
-    miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
-    return miscarriage_interp
-
-
-def fecundity_ratio_nullip():
-    '''
-    Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
-    from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
-    Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
-    '''
-
-    fecundity_ratio_nullip = np.array([[ 0,  5, 10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
-                                        [1,  1,  1,    1,   1,   1,   1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
-    fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
-
-    return fecundity_nullip_interp
-
-
-def exposure_correction_age():
-    '''
-    Returns an array of experimental factors to be applied to account for
-    residual exposure to either pregnancy or live birth by age.  Exposure to pregnancy will
-    increase factor number and residual likelihood of avoiding live birth (mostly abortion,
-    also miscarriage), will decrease factor number
-    '''
-
-    exposure_correction_age = np.array([[0, 5, 10, 12.5,  15,  18,  20,  25,  30,  35,  40,  45,  50],
-                                        [1, 1,  1,    1,   1,   1,   1,   1,   1, 1, 1, 1, 1]])
-    exposure_age_interp = data2interp(exposure_correction_age, fpd.spline_preg_ages)
-
-    return exposure_age_interp
-
-
-def exposure_correction_parity():
-    '''
-    Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
-    or live birth by parity.
-
-    Michelle note: Thinking about this in terms of child preferences/ideal number of children
-    '''
-    exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6,   7,   8,   9,   10,   11,    12,  20],
-                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10,  0.05, 0.01]])
-    exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
-
-    return exposure_parity_interp
-
-
-def make_pars(configuration_file=None, defaults_file=None):
+def make_pars(configuration_file=None, defaults_file=None, bound=True):
     ''' Take all parameters and construct into a dictionary '''
 
-    # Simple parameters
-    pars = sc.dcp(defaults)
+    # Scalar parameters
+    pars = scalar_pars()
 
-    # Complicated parameters
-    pars['methods']                    = methods()
-    pars['age_pyramid']                = age_pyramid()
-    pars['age_mortality']              = age_mortality(bound=True)
-    pars['age_fecundity']              = female_age_fecundity(bound=True)  # Changed to age_fecundity for now from age_fertility for use with LEMOD
-    pars['method_efficacy']            = efficacy()
-    pars['method_efficacy25']          = efficacy25()
-    pars['barriers']                   = barriers()
-    pars['maternal_mortality']         = maternal_mortality()
-    pars['infant_mortality']           = infant_mortality()
-    pars['stillbirth_rate']            = stillbirth()
-    pars['debut_age']                  = debut_age()
-    pars['sexual_activity']            = sexual_activity() # Returns linear interpolation of annual sexual activity based on age
-    pars['pref_spacing']               = birth_spacing_preference()
-    pars['sexual_activity_postpartum'] = sexual_activity_postpartum() # Returns array of likelihood of resuming sex per postpartum month
-    pars['lactational_amenorrhea']     = lactational_amenorrhea()
-    pars['miscarriage_rates']          = miscarriage_rates()
-    pars['fecundity_ratio_nullip']     = fecundity_ratio_nullip()
-    pars['exposure_correction_age']    = exposure_correction_age()
-    pars['exposure_correction_parity'] = exposure_correction_parity()
+    # Demographics and pregnancy outcome
+    pars['age_pyramid']        = age_pyramid()
+    pars['age_mortality']      = age_mortality(bound=bound)
+    pars['maternal_mortality'] = maternal_mortality()
+    pars['infant_mortality']   = infant_mortality()
+    pars['miscarriage_rates']  = miscarriage()
+    pars['stillbirth_rate']    = stillbirth()
+
+    # Fecundity
+    pars['age_fecundity']          = female_age_fecundity(bound=bound)
+    pars['fecundity_ratio_nullip'] = fecundity_ratio_nullip()
+    pars['lactational_amenorrhea'] = lactational_amenorrhea()
+
+    # Pregnancy exposure
+    pars['sexual_activity']    = sexual_activity()
+    pars['sexual_activity_pp'] = sexual_activity_pp()
+    pars['debut_age']          = debut_age()
+    pars['exposure_age']       = exposure_age()
+    pars['exposure_parity']    = exposure_parity()
+    pars['spacing_pref']       = birth_spacing_pref()
+
+    # Contraceptive methods
+    pars['method_efficacy']   = efficacy()
+    pars['method_efficacy25'] = efficacy25()
+    pars['methods']           = methods()
+    pars['barriers']          = barriers()
 
     return pars
