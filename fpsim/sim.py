@@ -406,7 +406,7 @@ class People(fpb.BasePeople):
         '''
         mu, beta = self.pars['breastfeeding_dur_mu'], self.pars['breastfeeding_dur_beta']
         breastfeed_durs = abs(np.random.gumbel(mu, beta, size=len(self)))
-        breastfeed_durs = [np.ceil(number) for number in breastfeed_durs]
+        breastfeed_durs = np.ceil(breastfeed_durs)
         breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
         breastfeed_finished = self.filter(breastfeed_finished_inds)
         breastfeed_continue = self.filter(~breastfeed_finished_inds)
