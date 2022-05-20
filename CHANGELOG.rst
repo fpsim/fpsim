@@ -11,7 +11,9 @@ All notable changes to the codebase are documented in this file. Changes that ma
 
 Version 0.11.4 (2022-05-20)
 --------------------------
-- Renames parameter ``n`` to ``n_agents``, and adds parameter ``scaled_pop``
+- Renamed parameter ``n`` to ``n_agents``, and adds parameter ``scaled_pop``.
+- Tracking of switch events is disabled by default; set ``pars['track_switching'] = True`` to re-enable.
+- Update default end year from 2019 to 2020.
 - *GitHub info*: PR `496 <https://github.com/amath-idm/fp_analyses/pull/496>`__
 
 
