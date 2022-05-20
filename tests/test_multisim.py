@@ -5,7 +5,7 @@ Run tests on the multisim object.
 import sciris as sc
 import fpsim as fp
 
-serial  = 1
+serial  = 0
 do_plot = 1
 sc.options(backend='agg') # Turn off interactive plots
 
