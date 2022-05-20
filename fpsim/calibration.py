@@ -184,8 +184,8 @@ class Calibration(sc.prettyobj):
         '''
         Remove the database file if keep_db is false and the path exists.
         '''
-        if os.path.exists(self.run_args.db_name):
-            os.remove(self.run_args.db_name)
+        if os.path.exists(self.g.db_name):
+            os.remove(self.g.db_name)
             if self.verbose:
                 print(f'Removed existing calibration {self.run_args.db_name}')
         return
