@@ -81,7 +81,7 @@ class Pars(dict):
             for k in list(method_age_map.keys()): method_age_map.pop(k) # Remove all items
             for k,v in new_method_map.items():
                 method_map[k] = v
-            for k,v in method_age_map.items():
+            for k,v in new_method_age_map.items():
                 method_age_map[k] = v
 
         return

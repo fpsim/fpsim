@@ -9,9 +9,10 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-Version 0.11.6 (2022-05-21)
+Version 0.12.0 (2022-05-21)
 --------------------------
-- Added ability to add/remove contraceptive methods via ``sim.add_method()`` and ``sim.remove_method()``.
+- Changed parameters from a dictionary to a class. This class has additional validation, the ability to import from/export to JSON, etc.
+- Added ability to add/remove contraceptive methods via ``pars.add_method()`` and ``pars.remove_method()``.
 - *GitHub info*: PR `503 <https://github.com/amath-idm/fp_analyses/pull/502>`__
 
 
