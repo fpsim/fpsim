@@ -790,34 +790,6 @@ def make_pars(configuration_file=None, defaults_file=None, bound=True):
     pars['barriers']          = barriers()
 
     # Perform validation
-    validate_pars(pars)
+    fpd.validate_pars(pars)
 
     return pars
-
-
-def validate_pars(pars):
-    ''' Perform internal validation checks and other housekeeping '''
-
-    # Validate method matrices
-    method_map = pars['methods']['map']
-    method_age_map = pars['methods']['age_map']
-    n = len(method_map)
-    raw = pars['methods']['raw']
-    age_keys = set(method_age_map.keys())
-    for mkey in ['annual', 'pp0to1', 'pp1to6']:
-        m_age_keys = set(raw[mkey].keys())
-        assert age_keys == m_age_keys, f'Matrix "{mkey}" has inconsistent keys: "{sc.strjoin(age_keys)}" ≠ "{sc.strjoin(m_age_keys)}"'
-    for k in age_keys:
-        shape = raw['pp0to1'][k].shape
-        assert shape == (n,), f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'
-        for mkey in ['annual', 'pp1to6']:
-            shape = raw[mkey][k].shape
-            assert shape == (n,n), f'Method matrix {mkey} for ages {k} has unexpected shape: should be ({n},{n}), not {shape}'
-
-    # Copy to defaults, preserving original object ID
-    for k,v in method_map.items():
-        fpd.method_map[k] = v
-    for k,v in method_age_map.items():
-        fpd.method_age_map[k] = v
-
-    return

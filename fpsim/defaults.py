@@ -62,6 +62,36 @@ def pars(location=None, **kwargs):
     return pars
 
 
+def validate_pars(pars):
+    ''' Perform internal validation checks and other housekeeping '''
+
+    # Validate method matrices
+    new_method_map = pars['methods']['map']
+    new_method_age_map = pars['methods']['age_map']
+    n = len(new_method_map)
+    raw = pars['methods']['raw']
+    age_keys = set(new_method_age_map.keys())
+    for mkey in ['annual', 'pp0to1', 'pp1to6']:
+        m_age_keys = set(raw[mkey].keys())
+        assert age_keys == m_age_keys, f'Matrix "{mkey}" has inconsistent keys: "{sc.strjoin(age_keys)}" ≠ "{sc.strjoin(m_age_keys)}"'
+    for k in age_keys:
+        shape = raw['pp0to1'][k].shape
+        assert shape == (n,), f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'
+        for mkey in ['annual', 'pp1to6']:
+            shape = raw[mkey][k].shape
+            assert shape == (n,n), f'Method matrix {mkey} for ages {k} has unexpected shape: should be ({n},{n}), not {shape}'
+
+    # Copy to defaults, making use of mutable objects to preserve original object ID
+    for k in method_map.keys():     method_map.pop(k) # Remove all items
+    for k in method_age_map.keys(): method_age_map.pop(k) # Remove all items
+    for k,v in new_method_map.items():
+        method_map[k] = v
+    for k,v in method_age_map.items():
+        method_age_map[k] = v
+
+    return
+
+
 #%% Global defaults
 useSI          = True
 mpy            = 12   # Months per year, to avoid magic numbers
