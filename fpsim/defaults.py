@@ -99,22 +99,23 @@ person_defaults = dict(
     mothers              = -1,
 )
 
-#%% Age bins for different method switching matrices
-method_age_mapping = {
+# Age bins for different method switching matrices
+method_age_map = {
     '<18':   [ 0, 18],
     '18-20': [18, 20],
     '21-25': [20, 25],
     '>25':   [25, max_age+1], # +1 since we're using < rather than <=
 }
 
-postpartum_mapping = {
+# Postpartum keys to months
+postpartum_map = {
     'pp0to5':   [ 0, 6],
     'pp6to11':  [6, 12],
     'pp12to23': [12, 24]
 }
 
 ## Age bins for tracking age-specific fertility rate
-age_bin_mapping = {
+age_bin_map = {
     '10-14':   [10, 15],
     '15-19':   [15, 20],
     '20-24':   [20, 25],
@@ -125,12 +126,13 @@ age_bin_mapping = {
     '45-49':   [45, 50]
 }
 
+# Age and parity splines
 spline_ages      = np.arange(max_age + 1)
 spline_preg_ages = np.arange(max_age_preg + 1)
 spline_parities  = np.arange(max_parity + 1)
-debug_states = ["alive", "breastfeed_dur", "gestation", "lactating", "lam", "postpartum", "pregnant", "sexually_active", "postpartum_dur", \
-                "parity", "method", "age", "first_birth_age", "dobs", "age", "sexual_debut", "sexual_debut_age"]
-method_list = ["None", "Pill", "IUDs", "Injectable", "Condoms", "BTL", "Rhythm", "Withdrawal", "Implants", "Other"]
+
+# Definition of contraceptive methods and corresponding numbers -- populated by the location parameters
+method_map = {}
 
 # Define allowable keys to select all (all ages, all methods, etc)
 none_all_keys = [None, 'all', ':', [None], ['all'], [':']]

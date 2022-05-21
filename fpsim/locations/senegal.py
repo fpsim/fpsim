@@ -794,8 +794,10 @@ def validate_pars(pars):
     # Validate method matrices
     n = len(pars['methods']['map'])
     raw = pars['methods']['raw']
-    age_keys = set(raw['annual'].keys())
-    assert age_keys == set(raw['pp0to1'].keys()) == set(raw['pp1to6'].keys()), f'Switching matrices have inconsistent keys: not all {sc.strjoin(age_keys)}'
+    age_keys = set(fpd.method_age_mapping.keys())
+    for mkey in ['annual', 'pp0to1', 'pp1to6']:
+        m_age_keys = set(raw[mkey].keys())
+        assert age_keys == m_age_keys, f'Matrix "{mkey}" has inconsistent keys: "{sc.strjoin(age_keys)}" ≠ "{sc.strjoin(m_age_keys)}"'
     for k in age_keys:
         shape = raw['pp0to1'][k].shape
         assert shape == (n,), f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'

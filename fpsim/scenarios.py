@@ -25,13 +25,19 @@ def check_not_none(obj, *args):
 
 def check_ages(ages):
     ''' Check that age keys are all valid '''
-    valid_keys = list(fpd.method_age_mapping.keys()) + fpd.none_all_keys
+    valid_keys = list(fpd.method_age_map.keys()) + fpd.none_all_keys
     ages = sc.tolist(ages, keepnone=True)
     for age in ages:
         if age not in valid_keys:
             errormsg = f'Age "{age}" is not valid; choices are:\n{sc.newlinejoin(valid_keys)}'
             raise sc.KeyNotFoundError(errormsg)
     return
+
+
+def check_method(method):
+    ''' Check that method is valid '''
+    # valid_methods =
+    pass
 
 
 #%% Scenario classes

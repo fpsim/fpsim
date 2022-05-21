@@ -108,11 +108,11 @@ class People(fpb.BasePeople):
         m = len(method_map)
         switching_events = np.zeros((m, m), dtype=int)
         switching_events_ages = {}
-        for key in fpd.method_age_mapping.keys():
+        for key in fpd.method_age_map.keys():
             switching_events_ages[key] = np.zeros((m, m), dtype=int)
 
         # Method switching depends both on agent age and also on their current method, so we need to loop over both
-        for key,(age_low, age_high) in fpd.method_age_mapping.items():
+        for key,(age_low, age_high) in fpd.method_age_map.items():
             match_low  = (self.age >= age_low) # CK: TODO: refactor into single method
             match_high = (self.age <  age_high)
             match_low_high = match_low * match_high
@@ -136,7 +136,7 @@ class People(fpb.BasePeople):
 
         if self.pars['track_switching']:
             self.step_results_switching['annual'] += switching_events # CK: TODO: remove this extra result and combine with step_results
-            for key in fpd.method_age_mapping.keys():
+            for key in fpd.method_age_map.keys():
                 self.step_results['switching_annual'][key] += switching_events_ages[key]
 
         return
@@ -162,7 +162,7 @@ class People(fpb.BasePeople):
         m = len(methods_map)
         switching_events = np.zeros((m, m), dtype=int)
         switching_events_ages = {}
-        for key in fpd.method_age_mapping.keys():
+        for key in fpd.method_age_map.keys():
             switching_events_ages[key] = np.zeros((m, m), dtype=int)
 
         postpartum1 = (self.postpartum_dur == 0)
@@ -170,7 +170,7 @@ class People(fpb.BasePeople):
 
         # In first time step after delivery, choice is by age but not previous method (since just gave birth)
         # All women are coming from birth and on no method to start, either will stay on no method or initiate a method
-        for key, (age_low, age_high) in fpd.method_age_mapping.items():
+        for key, (age_low, age_high) in fpd.method_age_map.items():
             match_low = (self.age >= age_low)
             match_high = (self.age < age_high)
             low_parity = (self.parity < self.pars['high_parity'])
@@ -205,7 +205,7 @@ class People(fpb.BasePeople):
         # At 6 months, choice is by previous method and by age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
         # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
-        for key,(age_low, age_high) in fpd.method_age_mapping.items():
+        for key,(age_low, age_high) in fpd.method_age_map.items():
             match_low  = (self.age >= age_low)
             match_high = (self.age <  age_high)
             match_postpartum_age = self.postpartum * postpartum6 * match_low * match_high
@@ -227,7 +227,7 @@ class People(fpb.BasePeople):
 
         if self.pars['track_switching']:
             self.step_results_switching['postpartum'] += switching_events
-            for key in fpd.method_age_mapping.keys():
+            for key in fpd.method_age_map.keys():
                 self.step_results['switching_postpartum'][key] += switching_events_ages[key]
 
         return
@@ -436,7 +436,7 @@ class People(fpb.BasePeople):
 
         # Count the state of the agent for postpartum -- # TOOD: refactor, what is this loop doing?
         pp = self.filter(self.postpartum)
-        for key,(pp_low, pp_high) in fpd.postpartum_mapping.items():
+        for key,(pp_low, pp_high) in fpd.postpartum_map.items():
             this_pp_bin = pp.filter((pp.postpartum_dur >= pp_low) * (pp.postpartum_dur <  pp_high))
             self.step_results[key] += len(this_pp_bin)
         pp.postpartum_dur += self.pars['timestep']
@@ -543,7 +543,7 @@ class People(fpb.BasePeople):
         self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
         live_age = live.age
-        for key, (age_low, age_high) in fpd.age_bin_mapping.items():
+        for key, (age_low, age_high) in fpd.age_bin_map.items():
             birth_bins = np.sum((live_age >= age_low) * (live_age < age_high))
             self.step_results['birth_bins'][key] += birth_bins
 
@@ -584,7 +584,7 @@ class People(fpb.BasePeople):
         '''
         Count how many total live women in each 5-year age bin 10-50, for tabulating ASFR
         '''
-        for key, (age_low, age_high) in fpd.age_bin_mapping.items():
+        for key, (age_low, age_high) in fpd.age_bin_map.items():
             this_age_bin = self.filter((self.age >= age_low) * (self.age < age_high))
             self.step_results['age_bin_totals'][key] += len(this_age_bin)
         return
@@ -665,7 +665,7 @@ class People(fpb.BasePeople):
             switching_postpartum = {}
         )
 
-        for key in fpd.age_bin_mapping.keys():
+        for key in fpd.age_bin_map.keys():
             self.step_results['birth_bins'][key] = 0
             self.step_results['age_bin_totals'][key] = 0
 
@@ -676,7 +676,7 @@ class People(fpb.BasePeople):
             return np.zeros((m, m), dtype=int)
 
         if self.pars['track_switching']:
-            for key in fpd.method_age_mapping.keys():
+            for key in fpd.method_age_map.keys():
                 self.step_results['switching_annual'][key]    = mm_zeros()
                 self.step_results['switching_postpartum'][key] = mm_zeros()
 
@@ -787,7 +787,7 @@ class Sim(fpb.BaseSim):
         self.results['birthday_fraction'] = []
         self.results['asfr'] = {}
 
-        for key in fpd.age_bin_mapping.keys():
+        for key in fpd.age_bin_map.keys():
             self.results['asfr'][key] = []
 
         if self['track_switching']:
@@ -1053,7 +1053,7 @@ class Sim(fpb.BaseSim):
             self.results['total_women_fecund'][i] = r.total_women_fecund*scale
             self.results['unintended_pregs'][i]   = r.unintended_pregs*scale
 
-            for agekey in fpd.age_bin_mapping.keys():
+            for agekey in fpd.age_bin_map.keys():
                 births_key = f'total_births_{agekey}'
                 women_key = f'total_women_{agekey}'
                 self.results[births_key][i] = r.birth_bins[agekey]*scale # Store results of total births per age bin for ASFR
@@ -1103,7 +1103,7 @@ class Sim(fpb.BaseSim):
                     self.results['imr'].append(infant_mortality_rate)
 
                 tfr = 0
-                for key in fpd.age_bin_mapping.keys():
+                for key in fpd.age_bin_map.keys():
                     age_bin_births_year = np.sum(self.results['total_births_'+key][start_index:stop_index])
                     age_bin_total_women_year = self.results['total_women_'+key][stop_index]
                     age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
