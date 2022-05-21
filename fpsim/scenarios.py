@@ -367,11 +367,11 @@ class Scenarios(sc.prettyobj):
 
         # Run
         self.msim.run(**kwargs)
+        self.already_run = True
 
         # Process
         self.msim_merged =self.msim.remerge()
         self.analyze_sims()
-        self.already_run = True
         return
 
     def check_run(self):
