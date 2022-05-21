@@ -133,14 +133,16 @@ def sim_pars():
     return sim_pars
 
 
-def pars(location=None, validate=True, **kwargs):
+def pars(location=None, validate=True, die=True, update=True, **kwargs):
     '''
     Function for getting default parameters.
 
     Args:
         location (str): the location to use for the parameters; use 'test' for a simple test set of parameters
         validate (bool): whether to perform validation on the parameters
-        kwargs (dict): custom parameter values
+        die      (bool): whether to raise an exception if validation fails
+        update   (bool): whether to update values during validation
+        kwargs   (dict): custom parameter values
 
     **Example**::
         pars = fp.pars(location='senegal')
@@ -176,17 +178,10 @@ def pars(location=None, validate=True, **kwargs):
 
     # Perform validation
     if validate:
-        pars.validate()
+        pars.validate(die=die, update=update)
 
     return pars
 
-
-def validate_pars(pars):
-    ''' Perform internal validation checks and other housekeeping '''
-
-
-
-    return
 
 
 #%% Global defaults
