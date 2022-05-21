@@ -113,6 +113,12 @@ def test_validation():
     with pytest.raises(ValueError):
         fp.pars(not_a_par=4)
 
+    # Equivalent implementation
+    with pytest.raises(ValueError):
+        p = sc.dcp(pars)
+        p['not_a_par'] = 4
+        p.validate()
+
     # Missing value not allowed
     with pytest.raises(ValueError):
         p = sc.dcp(pars)
