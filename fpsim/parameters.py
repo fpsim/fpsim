@@ -26,6 +26,41 @@ class Pars(dict):
         return sc.odict.__repr__(self, quote='', numsep='.', classname='fp.Parameters()', *args, **kwargs)
 
 
+    def to_dict(self):
+        ''' Return parameters as a new dictionary '''
+        return {k:v for k,v in self.items()}
+
+
+    def to_json(self, filename, **kwargs):
+        '''
+        Export parameters to a JSON file.
+
+        Args:
+            filename (str): filename to save to
+            kwargs (dict): passed to ``sc.savejson``
+
+        **Example**::
+            sim.pars.to_json('my_pars.json')
+        '''
+        return sc.savejson(filename=filename, obj=self.to_dict(), **kwargs)
+
+
+    def from_json(self, filename, **kwargs):
+        '''
+        Import parameters from a JSON file.
+
+        Args:
+            filename (str): filename to load from
+            kwargs (dict): passed to ``sc.loadjson``
+
+        **Example**::
+            sim.pars.from_json('my_pars.json')
+        '''
+        pars = sc.loadjson(filename=filename, **kwargs)
+        self.update(pars)
+        return self
+
+
     def validate(self, die=True, update=True):
         '''
         Perform validation on the parameters
@@ -86,40 +121,6 @@ class Pars(dict):
 
         return
 
-
-    def to_dict(self):
-        ''' Return parameters as a new dictionary '''
-        return {k:v for k,v in self.items()}
-
-
-    def to_json(self, filename, **kwargs):
-        '''
-        Export parameters to a JSON file.
-
-        Args:
-            filename (str): filename to save to
-            kwargs (dict): passed to ``sc.savejson``
-
-        **Example**::
-            sim.pars.to_json('my_pars.json')
-        '''
-        return sc.savejson(filename=filename, obj=self.to_dict(), **kwargs)
-
-
-    def from_json(self, filename, **kwargs):
-        '''
-        Import parameters from a JSON file.
-
-        Args:
-            filename (str): filename to load from
-            kwargs (dict): passed to ``sc.loadjson``
-
-        **Example**::
-            sim.pars.from_json('my_pars.json')
-        '''
-        pars = sc.loadjson(filename=filename, **kwargs)
-        self.update(pars)
-        return self
 
 
 

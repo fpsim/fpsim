@@ -5,6 +5,7 @@ Run tests on individual parameters.
 import numpy as np
 import sciris as sc
 import fpsim as fp
+import pytest
 
 do_plot = True
 sc.options(backend='agg') # Turn off interactive plots
@@ -103,6 +104,37 @@ def test_scale():
     return [s1, s2]
 
 
+def test_validation():
+    sc.heading('Test parameter validation')
+
+    pars = fp.pars()
+
+    # Extra value not allowed
+    with pytest.raises(ValueError):
+        fp.pars(not_a_par=4)
+
+    # Missing value not allowed
+    with pytest.raises(ValueError):
+        p = sc.dcp(pars)
+        p.pop('exposure_factor')
+        p.validate()
+
+    # Wrong matrix keys
+    with pytest.raises(ValueError):
+        p = sc.dcp(pars)
+        p['methods']['raw']['annual'].pop('<18')
+        p.validate()
+
+    # Wrong matrix shape
+    with pytest.raises(ValueError):
+        p = sc.dcp(pars)
+        matrix = p['methods']['raw']['annual']['<18']
+        np.insert(matrix, (0,0), matrix[:,0])
+        p.validate()
+
+    return pars
+
+
 if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
@@ -111,3 +143,4 @@ if __name__ == '__main__':
         timings = test_method_timestep()
         mcpr    = test_mcpr_growth()
         scale   = test_scale()
+        pars    = test_validation()
