@@ -8,7 +8,7 @@ import pylab as pl
 import sciris as sc
 import inspect
 from . import utils as fpu
-from . import defaults as fpd
+from . import parameters as fpp
 
 
 #%% Generic intervention classes
@@ -300,7 +300,7 @@ def key2ind(sim, key):
     Take a method key and convert to an int, e.g. 'Condoms' → 7
     """
     ind = key
-    if ind in fpd.none_all_keys:
+    if ind in fpp.none_all_keys:
         ind = slice(None) # This is equivalent to ":" in matrix[:,:]
     elif isinstance(ind, str):
         ind = sim.pars['methods']['map'][key]
@@ -461,7 +461,7 @@ class update_methods(Intervention):
                     value  = value[0]  if value  else None
 
                     # Replace age keys with all ages if so asked
-                    if ages in fpd.none_all_keys:
+                    if ages in fpp.none_all_keys:
                         ages = raw['annual'].keys()
                     else:
                         ages = sc.tolist(ages)

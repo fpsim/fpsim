@@ -5,7 +5,7 @@ Class to define and run scenarios
 import numpy as np
 import pandas as pd
 import sciris as sc
-from . import defaults as fpd
+from . import parameters as fpp
 from . import sim as fps
 from . import interventions as fpi
 
@@ -25,7 +25,7 @@ def check_not_none(obj, *args):
 
 def check_ages(ages):
     ''' Check that age keys are all valid '''
-    valid_keys = list(fpd.method_age_map.keys()) + fpd.none_all_keys
+    valid_keys = list(fpp.method_age_map.keys()) + fpp.none_all_keys
     ages = sc.tolist(ages, keepnone=True)
     for age in ages:
         if age not in valid_keys:
@@ -36,7 +36,7 @@ def check_ages(ages):
 
 def check_method(methods):
     ''' Check that methods are valid '''
-    valid_methods = list(fpd.method_map.keys()) + [None]
+    valid_methods = list(fpp.method_map.keys()) + [None]
     for method in methods:
         if method not in valid_methods:
             errormsg = f'Method "{method}" is not valid; choices are:\n{sc.newlinejoin(valid_methods)}'
@@ -289,7 +289,7 @@ class Scenarios(sc.prettyobj):
             raise ValueError(errormsg)
         sims = sc.autolist()
         for i in range(self.repeats):
-            pars = sc.mergedicts(fpd.pars(self.pars.get('location')), self.pars, _copy=True)
+            pars = sc.mergedicts(fpp.pars(self.pars.get('location')), self.pars, _copy=True)
             pars.update(kwargs)
             pars['seed'] += i
             sim = fps.Sim(pars=pars)

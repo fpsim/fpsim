@@ -5,7 +5,7 @@ Base classes for loading parameters and for running simulations with FP model
 import numpy as np
 import sciris as sc
 import pylab as pl
-from . import defaults as fpd
+from . import parameters as fpp
 from . import utils as fpu
 obj_get = object.__getattribute__ # Alias the default getattribute method
 obj_set = object.__setattr__
@@ -252,7 +252,7 @@ class BasePeople(sc.prettyobj):
     @property
     def int_age_clip(self):
         ''' Return ages as integers, clipped to maximum allowable age for pregnancy '''
-        return np.minimum(self.int_age, fpd.max_age_preg)
+        return np.minimum(self.int_age, fpp.max_age_preg)
 
     @property
     def n(self):
@@ -384,11 +384,11 @@ class BaseSim(ParsObj):
     '''
 
     def year2ind(self, year):
-        index = int((year - self.pars['start_year']) * fpd.mpy / self.pars['timestep'])
+        index = int((year - self.pars['start_year']) * fpp.mpy / self.pars['timestep'])
         return index
 
     def ind2year(self, ind):
-        year = ind * self.pars['timestep'] / fpd.mpy  # Months
+        year = ind * self.pars['timestep'] / fpp.mpy  # Months
         return year
 
     def ind2calendar(self, ind):
@@ -399,7 +399,7 @@ class BaseSim(ParsObj):
     def npts(self):
         ''' Count the number of points in timesteps between the starting year and the ending year.'''
         try:
-            return int(fpd.mpy * (self.pars['end_year'] - self.pars['start_year']) / self.pars['timestep'] + 1)
+            return int(fpp.mpy * (self.pars['end_year'] - self.pars['start_year']) / self.pars['timestep'] + 1)
         except:
             return 0
 
@@ -407,7 +407,7 @@ class BaseSim(ParsObj):
     def tvec(self):
         ''' Create a time vector array at intervals of the timestep in years '''
         try:
-            return self.pars['start_year'] + np.arange(self.npts) * self.pars['timestep'] / fpd.mpy
+            return self.pars['start_year'] + np.arange(self.npts) * self.pars['timestep'] / fpp.mpy
         except:
             return np.array([])
 
