@@ -753,9 +753,10 @@ class Sim(fpb.BaseSim):
         super().__init__(pars, location=location, **kwargs) # Initialize and set the parameters as attributes
 
         self.initialized = False
-        self.label = label
-        self.test_mode = False
-        self.mother_ids = mother_ids
+        self.already_run = False
+        self.test_mode   = False
+        self.label       = label
+        self.mother_ids  = mother_ids
         fpu.set_metadata(self) # Set version, date, and git info
         return
 
@@ -977,6 +978,9 @@ class Sim(fpb.BaseSim):
         if verbose is None:
             verbose = self['verbose']
         self.initialize()
+        if self.already_run:
+            errormsg = 'Cannot re-run an already run sim; please recreate or copy prior to a run'
+            raise RuntimeError(errormsg)
 
         # Main simulation loop
 
@@ -1147,6 +1151,8 @@ class Sim(fpb.BaseSim):
             print(f'Final population size: {self.n}.')
             elapsed = T.toc(output=True)
             print(f'Run finished for "{self.label}" after {elapsed:0.1f} s')
+
+        self.already_run = True
 
         return self
 
@@ -1425,6 +1431,7 @@ class MultiSim(sc.prettyobj):
         self.run_args  = sc.mergedicts(kwargs)
         self.results   = None
         self.which     = None # Whether the multisim is to be reduced, combined, etc.
+        self.already_run = False
         fpu.set_metadata(self) # Set version, date, and git info
 
         return
@@ -1441,6 +1448,7 @@ class MultiSim(sc.prettyobj):
         self.sims = multi_run(self.sims, **kwargs)
         if compute_stats:
             self.compute_stats()
+        self.already_run = True
         return self
 
 
