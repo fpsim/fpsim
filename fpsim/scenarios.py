@@ -74,6 +74,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         dest   (str): the method to switch to
         factor (float): if supplied, multiply the [source, dest] probability by this amount
         value  (float): if supplied, instead of factor, replace the [source, dest] probability by this value
+        create (bool): if method does not exist, create it (default False)
 
     Args (initiation/discontinuation):
         year   (float): as above
@@ -84,6 +85,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         discont_factor (float): as with "factor" above, for discontinuation (method → None)
         init_value     (float): as with "value" above, for initiation (None → method)
         discont_value  (float): as with "value" above, for discontinuation (method → None)
+        create (bool): as above
 
     Args (parameter):
         par (str): the parameter to modify
@@ -116,9 +118,9 @@ class Scenario(sc.prettyobj, sc.dictobj):
         def update_sim(sim): sim.updated = True
         s6 = fp.make_scen(interventions=update_sim)
 
-        # Combining multiple scenarios: increase injectables initiation and reduce exposure factor
+        # Combining multiple scenarios: create a new method and reduce exposure factor
         s7 = fp.make_scen(
-            dict(method='Injectables', init_factor=2),
+            dict(method='Male pill', init_value=0.1, discont_value=0.02, create=True),
             dict(par='exposure_factor', years=2010, vals=0.5)
         )
 
@@ -127,7 +129,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
     '''
     def __init__(self, spec=None, *args, label=None, year=None, matrix=None, ages=None, # Basic settings
                  eff=None, probs=None, # Option 1
-                 source=None, dest=None, factor=None, value=None, # Option 2
+                 source=None, dest=None, factor=None, value=None, create=None, # Option 2
                  method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
                  par=None, years=None, vals=None, # Option 4
                  interventions=None, # Option 5
@@ -170,6 +172,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                     discont_factor = discont_factor,
                     init_value     = init_value,
                     discont_value  = discont_value,
+                    create         = create,
                 )
             )
             check_not_none(prob_spec, 'year')
@@ -226,6 +229,21 @@ class Scenario(sc.prettyobj, sc.dictobj):
                 spec['label'] = label
         self.label = label
         return
+
+
+    def run(self, run_args=None, **kwargs):
+        '''
+        Shortcut for creating and running a Scenarios object based on the current scenario.
+
+        Args:
+            run_args (dict): passed to scens.run()
+            kwargs (dict): passed to Scenarios()
+
+        '''
+        scens = Scenarios(**kwargs)
+        scens.add_scen(self)
+        scens.run(sc.mergedicts(run_args))
+        return scens
 
 
 
