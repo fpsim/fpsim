@@ -207,7 +207,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
     def __add__(self, scen2):
         ''' Combine two scenarios arrays '''
         newscen = sc.dcp(self)
-        newscen.specs.extend(scen2.specs)
+        newscen.specs.extend(sc.dcp(scen2.specs))
         return newscen
 
 
@@ -224,6 +224,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         if label is not None:
             for spec in self.specs:
                 spec['label'] = label
+        self.label = label
         return
 
 
