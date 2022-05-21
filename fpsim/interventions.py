@@ -461,7 +461,7 @@ class update_methods(Intervention):
                     value  = value[0]  if value  else None
 
                     # Replace age keys with all ages if so asked
-                    if ages in none_all_keys:
+                    if ages in fpd.none_all_keys:
                         ages = raw['annual'].keys()
                     else:
                         ages = sc.tolist(ages)

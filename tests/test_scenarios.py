@@ -240,7 +240,7 @@ def test_make_scens():
         fp.make_scen(year=year, source='None', dest='None', factor=0.0, ages='Invalid ages')
 
     # Run scenarios
-    scens = fp.Scenarios(location='test', n=100, repeats=1, scens=s.values())
+    scens = fp.Scenarios(location='test', repeats=1, scens=s.values())
     scens.run(serial=serial)
 
     return scens
@@ -250,7 +250,7 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # msim1  = test_update_methods_eff()
-        # msim2  = test_update_methods_probs()
-        # scens1 = test_scenarios()
+        msim1  = test_update_methods_eff()
+        msim2  = test_update_methods_probs()
+        scens1 = test_scenarios()
         scens2 = test_make_scens()

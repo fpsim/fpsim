@@ -34,10 +34,14 @@ def check_ages(ages):
     return
 
 
-def check_method(method):
-    ''' Check that method is valid '''
-    # valid_methods =
-    pass
+def check_method(methods):
+    ''' Check that methods are valid '''
+    valid_methods = list(fpd.method_map.keys()) + [None]
+    for method in methods:
+        if method not in valid_methods:
+            errormsg = f'Method "{method}" is not valid; choices are:\n{sc.newlinejoin(valid_methods)}'
+            raise sc.KeyNotFoundError(errormsg)
+    return
 
 
 #%% Scenario classes
@@ -170,6 +174,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
             )
             check_not_none(prob_spec, 'year')
             check_ages(ages)
+            check_method([source, dest, method])
 
         # It's a parameter change scenario
         if par is not None:

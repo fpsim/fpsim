@@ -61,6 +61,10 @@ def pars(location=None, **kwargs):
 
     return pars
 
+# Create default parameters to use for accessing keys etc
+default_pars = pars()
+par_keys = default_pars.keys()
+
 
 #%% Global defaults
 useSI          = True
@@ -99,14 +103,6 @@ person_defaults = dict(
     mothers              = -1,
 )
 
-# Age bins for different method switching matrices
-method_age_map = {
-    '<18':   [ 0, 18],
-    '18-20': [18, 20],
-    '21-25': [20, 25],
-    '>25':   [25, max_age+1], # +1 since we're using < rather than <=
-}
-
 # Postpartum keys to months
 postpartum_map = {
     'pp0to5':   [ 0, 6],
@@ -131,8 +127,27 @@ spline_ages      = np.arange(max_age + 1)
 spline_preg_ages = np.arange(max_age_preg + 1)
 spline_parities  = np.arange(max_parity + 1)
 
-# Definition of contraceptive methods and corresponding numbers -- populated by the location parameters
-method_map = {}
+# Definition of contraceptive methods and corresponding numbers -- can be overwritten by locations
+method_map = {
+    'None'              : 0,
+    'Pill'              : 1,
+    'IUDs'              : 2,
+    'Injectables'       : 3,
+    'Condoms'           : 4,
+    'BTL'               : 5,
+    'Withdrawal'        : 6,
+    'Implants'          : 7,
+    'Other traditional' : 8,
+    'Other modern'      : 9,
+}
+
+# Age bins for different method switching matrices -- can be overwritten by locations
+method_age_map = {
+    '<18':   [ 0, 18],
+    '18-20': [18, 20],
+    '21-25': [20, 25],
+    '>25':   [25, max_age+1], # +1 since we're using < rather than <=
+}
 
 # Define allowable keys to select all (all ages, all methods, etc)
 none_all_keys = [None, 'all', ':', [None], ['all'], [':']]

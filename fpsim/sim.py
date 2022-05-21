@@ -744,6 +744,12 @@ class Sim(fpb.BaseSim):
     def __init__(self, pars=None, location=None, label=None, mother_ids=False, **kwargs):
         if pars is None:
             pars = fpd.pars(location)
+
+        # Check parameters
+        mismatches = [key for key in kwargs.keys() if key not in fpd.par_keys]
+        if len(mismatches):
+            errormsg = f'Key(s) {mismatches} not found; available keys are {fpd.par_keys}'
+            raise sc.KeyNotFoundError(errormsg)
         super().__init__(pars, location=location, **kwargs) # Initialize and set the parameters as attributes
 
         self.initialized = False
