@@ -747,7 +747,7 @@ def barriers():
 
 
 
-#%% Make parameters
+#%% Make and validate parameters
 
 def make_pars(configuration_file=None, defaults_file=None, bound=True):
     ''' Take all parameters and construct into a dictionary '''
@@ -782,4 +782,25 @@ def make_pars(configuration_file=None, defaults_file=None, bound=True):
     pars['methods']           = methods()
     pars['barriers']          = barriers()
 
+    # Perform validation
+    validate_pars(pars)
+
     return pars
+
+
+def validate_pars(pars):
+    ''' Perform internal validation checks '''
+
+    # Validate method matrices
+    n = len(pars['methods']['map'])
+    raw = pars['methods']['raw']
+    age_keys = set(raw['annual'].keys())
+    assert age_keys == set(raw['pp0to1'].keys()) == set(raw['pp1to6'].keys()), f'Switching matrices have inconsistent keys: not all {sc.strjoin(age_keys)}'
+    for k in age_keys:
+        shape = raw['pp0to1'][k].shape
+        assert shape == (n,), f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'
+        for mkey in ['annual', 'pp1to6']:
+            shape = raw[mkey][k].shape
+            assert shape == (n,n), f'Method matrix {mkey} for ages {k} has unexpected shape: should be ({n},{n}), not {shape}'
+
+    return

@@ -1053,8 +1053,7 @@ class Sim(fpb.BaseSim):
             self.results['total_women_fecund'][i] = r.total_women_fecund*scale
             self.results['unintended_pregs'][i]   = r.unintended_pregs*scale
 
-            age_bins = ['10-14', '15-19', '20-24', '25-29', '30-34', '35-39', '40-44', '45-49']
-            for agekey in age_bins:
+            for agekey in fpd.age_bin_mapping.keys():
                 births_key = f'total_births_{agekey}'
                 women_key = f'total_women_{agekey}'
                 self.results[births_key][i] = r.birth_bins[agekey]*scale # Store results of total births per age bin for ASFR

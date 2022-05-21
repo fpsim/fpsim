@@ -12,6 +12,29 @@ from . import interventions as fpi
 __all__ = ['make_scen', 'Scenario', 'Scenarios']
 
 
+#%% Validation functions -- for internal use only
+
+def check_not_none(obj, *args):
+    ''' Check that all needed inputs are supplied '''
+    for key in args:
+        if obj[key] is None:
+            errormsg = f'Entry "{key}" is not allowed to be None for scenario spec "{obj.which}"'
+            raise ValueError(errormsg)
+    return
+
+
+def check_ages(ages):
+    ''' Check that age keys are all valid '''
+    valid_keys = list(fpd.method_age_mapping.keys()) + fpd.none_all_keys
+    ages = sc.tolist(ages, keepnone=True)
+    for age in ages:
+        if age not in valid_keys:
+            errormsg = f'Age "{age}" is not valid; choices are:\n{sc.newlinejoin(valid_keys)}'
+            raise sc.KeyNotFoundError(errormsg)
+    return
+
+
+#%% Scenario classes
 
 class Scenario(sc.prettyobj, sc.dictobj):
     '''
@@ -110,13 +133,6 @@ class Scenario(sc.prettyobj, sc.dictobj):
         par_spec   = None
         intv_specs = None
 
-        def check_not_none(obj, *args):
-            ''' Check that all needed inputs are supplied '''
-            for key in args:
-                if obj[key] is None:
-                    errormsg = f'Entry "{key}" is not allowed to be None for scenario spec "{obj.which}"'
-                    raise ValueError(errormsg)
-
         # It's an efficacy scenario
         if eff is not None:
             eff_spec = sc.objdict(
@@ -147,6 +163,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                 )
             )
             check_not_none(prob_spec, 'year')
+            check_ages(ages)
 
         # It's a parameter change scenario
         if par is not None:

@@ -8,7 +8,7 @@ import pytest
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-serial   = 0 # Whether to run in serial (for debugging)
+serial   = 1 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
 
@@ -233,6 +233,12 @@ def test_make_scens():
     s.inj4 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
     s.inj5 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>25'])
 
+    # Test invalid options
+    with pytest.raises(sc.KeyNotFoundError):
+        fp.make_scen(year=year, source='Invalid source', dest='None', factor=0.0)
+    with pytest.raises(sc.KeyNotFoundError):
+        fp.make_scen(year=year, source='None', dest='None', factor=0.0, ages='Invalid ages')
+
     # Run scenarios
     scens = fp.Scenarios(location='test', n=100, repeats=1, scens=s.values())
     scens.run(serial=serial)
@@ -244,7 +250,7 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        msim1  = test_update_methods_eff()
-        msim2  = test_update_methods_probs()
-        scens1 = test_scenarios()
+        # msim1  = test_update_methods_eff()
+        # msim2  = test_update_methods_probs()
+        # scens1 = test_scenarios()
         scens2 = test_make_scens()

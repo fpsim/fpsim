@@ -114,7 +114,6 @@ postpartum_mapping = {
 }
 
 ## Age bins for tracking age-specific fertility rate
-
 age_bin_mapping = {
     '10-14':   [10, 15],
     '15-19':   [15, 20],
@@ -132,3 +131,6 @@ spline_parities  = np.arange(max_parity + 1)
 debug_states = ["alive", "breastfeed_dur", "gestation", "lactating", "lam", "postpartum", "pregnant", "sexually_active", "postpartum_dur", \
                 "parity", "method", "age", "first_birth_age", "dobs", "age", "sexual_debut", "sexual_debut_age"]
 method_list = ["None", "Pill", "IUDs", "Injectable", "Condoms", "BTL", "Rhythm", "Withdrawal", "Implants", "Other"]
+
+# Define allowable keys to select all (all ages, all methods, etc)
+none_all_keys = [None, 'all', ':', [None], ['all'], [':']]
