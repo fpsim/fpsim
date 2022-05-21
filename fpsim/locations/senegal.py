@@ -789,7 +789,4 @@ def make_pars(configuration_file=None, defaults_file=None, bound=True):
     pars['methods']           = methods()
     pars['barriers']          = barriers()
 
-    # Perform validation
-    fpd.validate_pars(pars)
-
     return pars

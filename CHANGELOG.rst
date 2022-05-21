@@ -9,6 +9,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.11.6 (2022-05-21)
+--------------------------
+- Added ability to add/remove contraceptive methods via ``sim.add_method()`` and ``sim.remove_method()``.
+- *GitHub info*: PR `503 <https://github.com/amath-idm/fp_analyses/pull/502>`__
+
+
 Version 0.11.5 (2022-05-21)
 --------------------------
 - Improvements to the scenarios, including more helpful docstrings and error messages.

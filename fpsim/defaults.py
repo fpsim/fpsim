@@ -8,6 +8,121 @@ import sciris as sc
 __all__ = ['pars']
 
 
+class Pars(dict):
+    '''
+    Lightweight class to hold a dictionary of parameters.
+
+    Args:
+        pars (dict): dictionary of parameters
+    '''
+    def __init__(self, pars, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.update(pars)
+        return
+
+
+    def __repr__(self, *args, **kwargs):
+        ''' Use odict repr, but with a custom class name and no quotes '''
+        return sc.odict.__repr__(self, quote='', numsep='.', classname='fp.Parameters()', *args, **kwargs)
+
+
+    def validate(self, die=True, update=True):
+        '''
+        Perform validation on the parameters
+
+        Args:
+            die (bool): whether to raise an exception if an error is encountered
+            update (bool): whether to update the method and age maps
+        '''
+        # Check that keys are correct
+        valid_keys = set(default_pars.keys())
+        keys = set(self.keys())
+        if keys != valid_keys:
+            diff1 = valid_keys - keys
+            diff2 = keys - valid_keys
+            errormsg = ''
+            if diff1:
+                errormsg += 'The parameter set is not valid since the following keys are missing:\n'
+                errormsg += f'{sc.strjoin(diff1)}\n'
+            if diff2:
+                errormsg += 'The parameter set is not valid since the following keys are not recognized:\n'
+                errormsg += f'{sc.strjoin(diff2)}\n'
+            if die: raise ValueError(errormsg)
+            else:   print(errormsg)
+
+        # Validate method matrices
+        new_method_map = self['methods']['map']
+        new_method_age_map = self['methods']['age_map']
+        n = len(new_method_map)
+        raw = self['methods']['raw']
+        age_keys = set(new_method_age_map.keys())
+        for mkey in ['annual', 'pp0to1', 'pp1to6']:
+            m_age_keys = set(raw[mkey].keys())
+            if age_keys != m_age_keys:
+                errormsg = f'Matrix "{mkey}" has inconsistent keys: "{sc.strjoin(age_keys)}" ≠ "{sc.strjoin(m_age_keys)}"'
+                if die: raise ValueError(errormsg)
+                else:   print(errormsg)
+        for k in age_keys:
+            shape = raw['pp0to1'][k].shape
+            if shape != (n,):
+                errormsg = f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'
+                if die: raise ValueError(errormsg)
+                else:   print(errormsg)
+            for mkey in ['annual', 'pp1to6']:
+                shape = raw[mkey][k].shape
+                if shape != (n,n):
+                    errormsg = f'Method matrix {mkey} for ages {k} has unexpected shape: should be ({n},{n}), not {shape}'
+                    if die: raise ValueError(errormsg)
+                    else:   print(errormsg)
+
+        # Copy to defaults, making use of mutable objects to preserve original object ID
+        if update:
+            for k in list(method_map.keys()):     method_map.pop(k) # Remove all items
+            for k in list(method_age_map.keys()): method_age_map.pop(k) # Remove all items
+            for k,v in new_method_map.items():
+                method_map[k] = v
+            for k,v in method_age_map.items():
+                method_age_map[k] = v
+
+        return
+
+
+    def to_dict(self):
+        ''' Return parameters as a new dictionary '''
+        return {k:v for k,v in self.items()}
+
+
+    def to_json(self, filename, **kwargs):
+        '''
+        Export parameters to a JSON file.
+
+        Args:
+            filename (str): filename to save to
+            kwargs (dict): passed to ``sc.savejson``
+
+        **Example**::
+            sim.pars.to_json('my_pars.json')
+        '''
+        return sc.savejson(filename=filename, obj=self.to_dict(), **kwargs)
+
+
+    def from_json(self, filename, **kwargs):
+        '''
+        Import parameters from a JSON file.
+
+        Args:
+            filename (str): filename to load from
+            kwargs (dict): passed to ``sc.loadjson``
+
+        **Example**::
+            sim.pars.from_json('my_pars.json')
+        '''
+        pars = sc.loadjson(filename=filename, **kwargs)
+        self.update(pars)
+        return self
+
+
+
 def sim_pars():
     ''' Additional parameters used in the sim '''
     sim_pars = dict(
@@ -18,12 +133,13 @@ def sim_pars():
     return sim_pars
 
 
-def pars(location=None, **kwargs):
+def pars(location=None, validate=True, **kwargs):
     '''
     Function for getting default parameters.
 
     Args:
         location (str): the location to use for the parameters; use 'test' for a simple test set of parameters
+        validate (bool): whether to perform validation on the parameters
         kwargs (dict): custom parameter values
 
     **Example**::
@@ -53,11 +169,14 @@ def pars(location=None, **kwargs):
 
     # Merge with sim_pars and kwargs and copy
     pars.update(sim_pars())
-    mismatch = set(kwargs.keys()) - set(pars.keys())
-    if len(mismatch):
-        errormsg = f'The following key(s) are not valid: {sc.strjoin(mismatch)}'
-        raise sc.KeyNotFoundError(errormsg)
     pars = sc.mergedicts(pars, kwargs, _copy=True)
+
+    # Convert to the class
+    pars = Pars(pars)
+
+    # Perform validation
+    if validate:
+        pars.validate()
 
     return pars
 
@@ -65,29 +184,7 @@ def pars(location=None, **kwargs):
 def validate_pars(pars):
     ''' Perform internal validation checks and other housekeeping '''
 
-    # Validate method matrices
-    new_method_map = pars['methods']['map']
-    new_method_age_map = pars['methods']['age_map']
-    n = len(new_method_map)
-    raw = pars['methods']['raw']
-    age_keys = set(new_method_age_map.keys())
-    for mkey in ['annual', 'pp0to1', 'pp1to6']:
-        m_age_keys = set(raw[mkey].keys())
-        assert age_keys == m_age_keys, f'Matrix "{mkey}" has inconsistent keys: "{sc.strjoin(age_keys)}" ≠ "{sc.strjoin(m_age_keys)}"'
-    for k in age_keys:
-        shape = raw['pp0to1'][k].shape
-        assert shape == (n,), f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'
-        for mkey in ['annual', 'pp1to6']:
-            shape = raw[mkey][k].shape
-            assert shape == (n,n), f'Method matrix {mkey} for ages {k} has unexpected shape: should be ({n},{n}), not {shape}'
 
-    # Copy to defaults, making use of mutable objects to preserve original object ID
-    for k in method_map.keys():     method_map.pop(k) # Remove all items
-    for k in method_age_map.keys(): method_age_map.pop(k) # Remove all items
-    for k,v in new_method_map.items():
-        method_map[k] = v
-    for k,v in method_age_map.items():
-        method_age_map[k] = v
 
     return
 
@@ -179,5 +276,5 @@ method_age_map = {
 }
 
 # Finally, create default parameters to use for accessing keys etc
-default_pars = pars()
+default_pars = pars(validate=False) # Do not validate since default parameters are used for validation
 par_keys = default_pars.keys()
