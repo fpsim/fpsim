@@ -11,7 +11,8 @@ All notable changes to the codebase are documented in this file. Changes that ma
 
 Version 0.11.5 (2022-05-21)
 --------------------------
-- Improvements to the scenarios API.
+- Improvements to the scenarios, including more helpful docstrings and error messages.
+- Improved error checking of sims.
 - *GitHub info*: PR `502 <https://github.com/amath-idm/fp_analyses/pull/502>`__
 
 
