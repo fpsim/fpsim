@@ -2,6 +2,7 @@
 Run tests on individual parameters.
 """
 
+import numpy as np
 import sciris as sc
 import fpsim as fp
 
@@ -81,11 +82,32 @@ def test_mcpr_growth():
     return [s1, s2]
 
 
+def test_scale():
+    sc.heading('Test scale factor')
+
+    # Test settings
+    orig_pop = 100
+    scale = 2
+
+    # Make and run sims
+    pars = fp.pars('test')
+    s1 = fp.Sim(pars, scaled_pop=orig_pop)
+    s2 = fp.Sim(pars, scaled_pop=scale*orig_pop)
+    msim = fp.parallel(s1, s2)
+    s1, s2 = msim.sims
+
+    # Tests
+    assert np.array_equal(s1.results.mcpr, s2.results.mcpr), 'Scale factor should not change MCPR'
+    assert scale*s1.results.total_births.sum() == s2.results.total_births.sum(), 'Total births should scale exactly with scale factor'
+
+    return [s1, s2]
+
 
 if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        null = test_null(do_plot=do_plot)
+        null    = test_null(do_plot=do_plot)
         timings = test_method_timestep()
-        sims = test_mcpr_growth()
+        mcpr    = test_mcpr_growth()
+        scale   = test_scale()

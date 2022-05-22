@@ -37,7 +37,7 @@ def pars(location=None, **kwargs):
     # Set test parameters
     if location == 'test':
         location = 'default'
-        kwargs.setdefault('n', 100)
+        kwargs.setdefault('n_agents', 100)
         kwargs.setdefault('verbose', 0)
         kwargs.setdefault('start_year', 2000)
         kwargs.setdefault('end_year', 2010)

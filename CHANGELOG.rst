@@ -9,22 +9,30 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.11.4 (2022-05-20)
+--------------------------
+- Renamed parameter ``n`` to ``n_agents``, and adds parameter ``scaled_pop``.
+- Tracking of switch events is disabled by default; set ``pars['track_switching'] = True`` to re-enable.
+- Update default end year from 2019 to 2020.
+- *GitHub info*: PR `496 <https://github.com/amath-idm/fp_analyses/pull/496>`__
+
+
 Version 0.11.3 (2022-05-20)
 --------------------------
-- Tidies ``tests`` folder
-- Removes the calibration database by default (to keep, use ``fp.Calibration(keep_db=True)``.
+- Tidied ``tests`` folder.
+- Removed the calibration database by default (to keep, use ``fp.Calibration(keep_db=True)``.
 - *GitHub info*: PR `495 <https://github.com/amath-idm/fp_analyses/pull/495>`__
 
 
 Version 0.11.2 (2022-05-20)
 --------------------------
-- Adds a ``people.make_pregnant()`` method.
+- Added a ``people.make_pregnant()`` method.
 - *GitHub info*: PR `494 <https://github.com/amath-idm/fp_analyses/pull/494>`__
 
 
 Version 0.11.1 (2022-05-20)
 --------------------------
-- Replace ``high`` and ``low`` breastfeeding duration parameters with Gumbel distribution parameters ``mu`` and ``beta``.
+- Replaced ``high`` and ``low`` breastfeeding duration parameters with Gumbel distribution parameters ``mu`` and ``beta``.
 - *GitHub info*: PR `493 <https://github.com/amath-idm/fp_analyses/pull/493>`__
 
 
@@ -33,7 +41,7 @@ Version 0.11.0 (2022-05-20)
 - Major refactor of ``senegal.py``, organizing parameters into groups and renaming.
 - Parameter names made more consistent, e.g. ``exposure_correction`` → ``exposure_factor``, ``maternal_mortality_multiplier`` → ``maternal_mortality_factor``.
 - Added comprehensive parameter checking.
-- Updates default representation: ``print(sim)`` is now a very brief representation; use ``sim.disp()`` to get the old behavior.
+- Updates to the default representation: ``print(sim)`` is now a very brief representation; use ``sim.disp()`` to get the old behavior.
 - *GitHub info*: PR `492 <https://github.com/amath-idm/fp_analyses/pull/492>`__
 
 

@@ -304,10 +304,11 @@ class SimVerbose(fps.Sim):
 
         self.total_results = sc.ddict(lambda: {})
 
-        self.last_year_births = [0] * pars['n']
-        self.last_year_gestations = [0] * pars['n']
-        self.last_year_sexactive = [0] * pars['n']
-        self.last_year_deaths = [0] * pars['n']
+        n = pars['n_agents']
+        self.last_year_births = [0] * n
+        self.last_year_gestations = [0] * n
+        self.last_year_sexactive = [0] * n
+        self.last_year_deaths = [0] * n
         self.dead_moms = set()
         self.is_sexactive = set()
         self.events = sc.ddict(dict)

@@ -13,11 +13,11 @@ do_save = 0
 baseline_filename  = sc.thisdir(__file__, 'baseline.json')
 benchmark_filename = sc.thisdir(__file__, 'benchmark.json')
 
-def make_exp(n=1000, do_run=False, do_plot=False):
+def make_exp(n_agents=1000, do_run=False, do_plot=False):
     '''
     Define a default simulation for testing the baseline.
     '''
-    pars = fp.pars(n=n, verbose=0)
+    pars = fp.pars(n_agents=n_agents, verbose=0)
     exp = fp.Experiment(pars=pars)
 
     if do_run or do_plot:
@@ -133,7 +133,7 @@ def test_benchmark(do_save=do_save, repeats=1):
                 'total':       round(t_init+t_run+t_post, n_decimals)
                 },
             'parameters': {
-                'n':          exp.pars['n'],
+                'n':          exp.pars['n_agents'],
                 'start_year': exp.pars['start_year'],
                 'end_year':   exp.pars['end_year'],
                 'timestep':   exp.pars['timestep'],
