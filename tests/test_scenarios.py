@@ -233,8 +233,14 @@ def test_make_scens():
     s.inj4 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
     s.inj5 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>25'])
 
+    # Test invalid options
+    with pytest.raises(sc.KeyNotFoundError):
+        fp.make_scen(year=year, source='Invalid source', dest='None', factor=0.0)
+    with pytest.raises(sc.KeyNotFoundError):
+        fp.make_scen(year=year, source='None', dest='None', factor=0.0, ages='Invalid ages')
+
     # Run scenarios
-    scens = fp.Scenarios(location='test', n=100, repeats=1, scens=s.values())
+    scens = fp.Scenarios(location='test', repeats=1, scens=s.values())
     scens.run(serial=serial)
 
     return scens

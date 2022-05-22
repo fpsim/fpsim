@@ -550,6 +550,7 @@ def methods():
     '''
     methods = {}
 
+    # Names and indices of contraceptive methods -- see also defaults.py
     methods['map'] = {
         'None'              : 0,
         'Pill'              : 1,
@@ -563,7 +564,13 @@ def methods():
         'Other modern'      : 9,
     }
 
-    methods['names'] = list(methods['map'].keys())
+    # Age bins for different method switching matrices -- duplicated in defaults.py
+    methods['age_map'] = {
+        '<18':   [ 0, 18],
+        '18-20': [18, 20],
+        '21-25': [20, 25],
+        '>25':   [25, fpd.max_age+1], # +1 since we're using < rather than <=
+    }
 
     methods['raw'] = {}
     methods['raw']['annual'] = {
@@ -747,7 +754,7 @@ def barriers():
 
 
 
-#%% Make parameters
+#%% Make and validate parameters
 
 def make_pars(configuration_file=None, defaults_file=None, bound=True):
     ''' Take all parameters and construct into a dictionary '''
@@ -782,4 +789,35 @@ def make_pars(configuration_file=None, defaults_file=None, bound=True):
     pars['methods']           = methods()
     pars['barriers']          = barriers()
 
+    # Perform validation
+    validate_pars(pars)
+
     return pars
+
+
+def validate_pars(pars):
+    ''' Perform internal validation checks and other housekeeping '''
+
+    # Validate method matrices
+    method_map = pars['methods']['map']
+    method_age_map = pars['methods']['age_map']
+    n = len(method_map)
+    raw = pars['methods']['raw']
+    age_keys = set(method_age_map.keys())
+    for mkey in ['annual', 'pp0to1', 'pp1to6']:
+        m_age_keys = set(raw[mkey].keys())
+        assert age_keys == m_age_keys, f'Matrix "{mkey}" has inconsistent keys: "{sc.strjoin(age_keys)}" ≠ "{sc.strjoin(m_age_keys)}"'
+    for k in age_keys:
+        shape = raw['pp0to1'][k].shape
+        assert shape == (n,), f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'
+        for mkey in ['annual', 'pp1to6']:
+            shape = raw[mkey][k].shape
+            assert shape == (n,n), f'Method matrix {mkey} for ages {k} has unexpected shape: should be ({n},{n}), not {shape}'
+
+    # Copy to defaults, preserving original object ID
+    for k,v in method_map.items():
+        fpd.method_map[k] = v
+    for k,v in method_age_map.items():
+        fpd.method_age_map[k] = v
+
+    return
