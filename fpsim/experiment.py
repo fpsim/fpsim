@@ -3,7 +3,6 @@ Define classes and functions for the Experiment class (running sims and comparin
 '''
 
 
-import os
 import yaml
 import numpy as np
 import pylab as pl
@@ -214,20 +213,16 @@ class Experiment(sc.prettyobj):
 
 
     def model_crude_death_rate(self):
-
         total_deaths = pl.sum(self.model_results['deaths'][-mpy:]) + \
                        pl.sum(self.model_results['infant_deaths'][-mpy:]) + \
                        pl.sum(self.model_results['maternal_deaths'][-mpy:])
         self.model_to_calib['crude_death_rate'] = (total_deaths / self.model_results['pop_size'][-1]) * 1000
-
         return
 
 
     def model_crude_birth_rate(self):
-
         births_last_year = pl.sum(self.model_results['births'][-mpy:])
         self.model_to_calib['crude_birth_rate'] = (births_last_year / self.model_results['pop_size'][-1]) * 1000
-
         return
 
 
@@ -240,6 +235,7 @@ class Experiment(sc.prettyobj):
 
         self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
         self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
+        return
 
 
     def extract_skyscrapers(self):
@@ -290,6 +286,7 @@ class Experiment(sc.prettyobj):
         self.parity_bins = parity_bins
 
         return
+
 
     def extract_birth_spacing(self):
 
