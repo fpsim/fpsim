@@ -4,6 +4,7 @@ Define classes and functions for the Experiment class (running sims and comparin
 
 
 import os
+import yaml
 import numpy as np
 import pylab as pl
 import pandas as pd
@@ -43,8 +44,6 @@ default_flags = sc.objdict(
 )
 
 
-
-
 class Experiment(sc.prettyobj):
     '''
     Class for running calibration to data. Effectively, it runs a single sim and
@@ -68,14 +67,30 @@ class Experiment(sc.prettyobj):
         return
 
 
+    def load_data(self, key, **kwargs):
+        ''' Load data from various formats '''
+        files = self.pars['filenames']
+        path = files['base'] / files[key]
+        if path.endswith('obj'):
+            data = sc.load(path, **kwargs)
+        elif path.endswith('csv'):
+            data = pd.read_csv(path, **kwargs)
+        # elif path.endswith('yaml'):
+        #     with open(path) as f:
+        #         data = yaml.load(f, **kwargs)
+        else:
+            errormsg = f'Unrecognized file format for: {path}'
+            raise ValueError(errormsg)
+        return data
+
 
     def extract_dhs_data(self):
 
-        json = sc.load(basic_dhs_file)
+        json = self.load_data('basic_dhs')
 
         self.dhs_data.update(json)
 
-        self.dhs_data['pregnancy_parity'] = sc.load(pregnancy_parity_file)
+        self.dhs_data['pregnancy_parity'] = self.load_data('pregnancy_parity')
 
         # Extract population size over time
         if self.pars:
@@ -83,7 +98,7 @@ class Experiment(sc.prettyobj):
         else:
             n = 1000 # Use default if not available
             print(f'Warning: parameters not defined, using default of n={n}')
-        pop_size = pd.read_csv(popsize_file, header=None)  # From World Bank
+        pop_size = self.load_data('popsize', header=None)  # From World Bank
         self.dhs_data['pop_years'] = pop_size.iloc[0,:].to_numpy()
         self.dhs_data['pop_size'] = pop_size.iloc[1,:].to_numpy() / (pop_size.iloc[1,0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
 
@@ -92,7 +107,7 @@ class Experiment(sc.prettyobj):
         self.dhs_data['pop_growth_rate'] = data_growth_rate
 
         # Extract mcpr over time
-        mcpr = pd.read_csv(mcpr_file, header = None)
+        mcpr = self.load_data('mcpr', header=None)
         self.dhs_data['mcpr_years'] = mcpr.iloc[:,0].to_numpy()
         self.dhs_data['mcpr'] = mcpr.iloc[:,1].to_numpy()
 
@@ -225,7 +240,7 @@ class Experiment(sc.prettyobj):
     def model_data_tfr(self):
 
         # Extract tfr over time in data - keep here to ignore dhs data if not using tfr for calibration
-        tfr = pd.read_csv(tfr_file, header=None)  # From DHS
+        tfr = self.load_data('tfr_file, header=None)  # From DHS
         self.dhs_data['tfr_years'] = tfr.iloc[:, 0].to_numpy()
         self.dhs_data['total_fertility_rate'] = tfr.iloc[:, 1].to_numpy()
 
@@ -247,7 +262,7 @@ class Experiment(sc.prettyobj):
 
         # Load data
         data_parity_bins = pl.arange(0, 18)
-        sky_raw_data = pd.read_csv(skyscrapers_file, header=None)
+        sky_raw_data = self.load_data('skyscrapers_file, header=None)
         sky_raw_data = sky_raw_data[sky_raw_data[0] == year_str]
         # sky_parity = sky_raw_data[2].to_numpy() # Not used currently
         sky_props = sky_raw_data[3].to_numpy()

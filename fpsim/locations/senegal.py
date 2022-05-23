@@ -72,16 +72,16 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'senegal'
-    files['basic_dhs_file']        = 'senegal-basic-dhs.json'
-    files['pregnancy_parity_file'] = 'SNIR80FL.obj'
-    files['pop_pyr_year_file']     = 'Population_Pyramid_-_All.csv'
-    files['skyscrapers_file']      = 'Skyscrapers-All-DHS.csv'
-    files['methods_file']          = 'Method_v312.csv'
-    files['spacing_file']          = 'BirthSpacing.obj'
-    files['popsize_file']          = 'senegal-popsize.csv'
-    files['barriers_file']         = 'DHSIndividualBarriers.csv'
-    files['tfr_file']              = 'senegal-tfr.csv'
-    files['mcpr_file']             = 'mcpr_senegal.csv'
+    files['basic_dhs']        = 'senegal-basic-dhs.json'
+    files['pregnancy_parity'] = 'SNIR80FL.obj'
+    files['pop_pyr_year']     = 'Population_Pyramid_-_All.csv'
+    files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
+    files['methods']          = 'Method_v312.csv'
+    files['spacing']          = 'BirthSpacing.obj'
+    files['popsize']          = 'senegal-popsize.csv'
+    files['barriers']         = 'DHSIndividualBarriers.csv'
+    files['tfr']              = 'senegal-tfr.csv'
+    files['mcpr']             = 'mcpr_senegal.csv'
     return files
 
 
