@@ -8,7 +8,7 @@ import pytest
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-serial   = 0 # Whether to run in serial (for debugging)
+serial   = 1 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
 
