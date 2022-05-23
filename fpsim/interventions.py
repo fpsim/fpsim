@@ -423,6 +423,7 @@ class update_methods(Intervention):
                     value  = value[0]  if value  else None
 
                     # Actually update the values and check the matrix is valid
-                    sim.pars.update_methods(source=source, dest=dest, factor=factor, value=value, ages=ages, matrix=matrix)
+                    kw = dict(source=source, dest=dest, factor=factor, value=value, ages=ages, matrix=matrix)
+                    sim.pars.update_method_prob(**kw)
 
         return

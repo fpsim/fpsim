@@ -151,13 +151,13 @@ class Pars(dict):
         return ind
 
 
-    def update_method_eff(self, method, value=None, verbose=False):
+    def update_method_eff(self, method, eff=None, verbose=False):
         '''
         Update efficacy of one or more contraceptive methods.
 
         Args:
             method (str/dict): method to update, or dict of method:value pairs
-            value (float): new value of contraceptive efficacy (not required if method is a dict)
+            eff (float): new value of contraceptive efficacy (not required if method is a dict)
 
         **Examples**::
             pars.update_method_eff('Injectables', 0.99)
@@ -166,11 +166,11 @@ class Pars(dict):
 
         # Validation
         if not isinstance(method, dict):
-            if value is None:
+            if eff is None:
                 errormsg = 'Must supply a value to update the contraceptive efficacy to'
                 raise ValueError(errormsg)
             else:
-                method = {method:value}
+                method = {method:eff}
 
         # Perform updates
         for k,rawval in method.items():
