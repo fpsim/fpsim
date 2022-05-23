@@ -334,24 +334,25 @@ class People(fpb.BasePeople):
         preg_probs = np.zeros(len(all_ppl)) # Use full array
 
         # Find monthly probability of pregnancy based on fecundity and any use of contraception including LAM - from data
-        preg_eval_lam    = self.pars['age_fecundity'][lam.int_age_clip] * lam.personal_fecundity
-        preg_eval_nonlam = self.pars['age_fecundity'][nonlam.int_age_clip] * nonlam.personal_fecundity
-        method_eff       = self.pars['method']['eff'][nonlam.method]
-        lam_eff          = self.pars['LAM_efficacy']
+        pars = self.pars # Shorten
+        preg_eval_lam    = pars['age_fecundity'][lam.int_age_clip] * lam.personal_fecundity
+        preg_eval_nonlam = pars['age_fecundity'][nonlam.int_age_clip] * nonlam.personal_fecundity
+        method_eff       = np.array(list(pars['methods']['eff'].values()))[nonlam.method]
+        lam_eff          = pars['LAM_efficacy']
 
-        lam_probs    = fpu.annprob2ts((1-lam_eff)*preg_eval_lam,       self.pars['timestep'])
-        nonlam_probs = fpu.annprob2ts((1-method_eff)*preg_eval_nonlam, self.pars['timestep'])
+        lam_probs    = fpu.annprob2ts((1-lam_eff)    * preg_eval_lam,    pars['timestep'])
+        nonlam_probs = fpu.annprob2ts((1-method_eff) * preg_eval_nonlam, pars['timestep'])
         preg_probs[lam.inds]    = lam_probs
         preg_probs[nonlam.inds] = nonlam_probs
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from PRESTO data
         nullip = active.filter(active.parity == 0) # Nulliparous
-        preg_probs[nullip.inds] *= self.pars['fecundity_ratio_nullip'][nullip.int_age_clip]
+        preg_probs[nullip.inds] *= pars['fecundity_ratio_nullip'][nullip.int_age_clip]
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity - encapsulates background factors - experimental and tunable
-        preg_probs *= self.pars['exposure_factor']
-        preg_probs *= self.pars['exposure_age'][all_ppl.int_age_clip]
-        preg_probs *= self.pars['exposure_parity'][np.minimum(all_ppl.parity, fpp.max_parity)]
+        preg_probs *= pars['exposure_factor']
+        preg_probs *= pars['exposure_age'][all_ppl.int_age_clip]
+        preg_probs *= pars['exposure_parity'][np.minimum(all_ppl.parity, fpp.max_parity)]
 
         # Use a single binomial trial to check for conception successes this month
         conceived = active.binomial(preg_probs[active.inds], as_filter=True)
@@ -359,7 +360,7 @@ class People(fpb.BasePeople):
         self.step_results['unintended_pregs'] += len(unintended)
 
         # Check for abortion
-        is_abort = conceived.binomial(self.pars['abortion_prob'])
+        is_abort = conceived.binomial(pars['abortion_prob'])
         abort = conceived.filter(is_abort)
         preg = conceived.filter(~is_abort)
 
@@ -597,9 +598,10 @@ class People(fpb.BasePeople):
         DHS data records only women who self-report LAM which is much lower.
         Follows the DHS definition of mCPR
         '''
-        modern_methods = sc.findinds(self.pars['methods']['modern'].values())
-        denominator = (self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * \
-                      (self.sex == 0) * (self.alive)
+        modern_methods = sc.findinds(list(self.pars['methods']['modern'].values()))
+        method_age = (self.pars['method_age'] <= self.age)
+        fecund_age = self.age < self.pars['age_limit_fecundity']
+        denominator = method_age * fecund_age * self.is_female * (self.alive)
         no_method_mcpr = np.sum((self.method == 0) * denominator)
         on_method_mcpr = np.sum((np.isin(self.method, modern_methods)) * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
