@@ -7,10 +7,12 @@ import sciris as sc
 from scipy import interpolate as si
 from .. import parameters as fpp
 
-#%% Scalar parameters
+#%% Housekeeping
+
 def scalar_pars():
     scalar_pars = {
         # Basic parameters
+        'location'               : 'senegal',
         'n_agents'               : 10_000, # Number of agents
         'scaled_pop'             : None, # Scaled population / total population size
         'start_year'             : 1960, # Start year of simulation
@@ -66,6 +68,20 @@ def data2interp(data, ages, normalize=False):
     return interp
 
 
+def filenames():
+    ''' Data files for use with calibration, etc -- not needed for running a sim '''
+    files = {}
+    files['base'] = sc.thisdir(aspath=True) / 'senegal'
+    files['basic_dhs']        = 'senegal-basic-dhs.yaml'
+    files['pregnancy_parity'] = 'SNIR80FL.obj'
+    files['popsize']          = 'senegal-popsize.csv'
+    files['mcpr']             = 'mcpr_senegal.csv'
+    files['tfr']              = 'senegal-tfr.csv'
+    files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
+    files['spacing']          = 'BirthSpacing.obj'
+    files['methods']          = 'Method_v312.csv'
+    return files
+
 
 #%% Demographics and pregnancy outcome
 
@@ -94,7 +110,7 @@ def age_pyramid():
     return pyramid
 
 
-def age_mortality(bound):
+def age_mortality():
     '''
     Age-dependent mortality rates, Senegal specific from 1990-1995 -- see age_dependent_mortality.py in the fp_analyses repository
     Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
@@ -113,9 +129,8 @@ def age_mortality(bound):
     f_mortality_spline_model = si.splrep(x=mortality['bins'], y=mortality['f'])
     m_mortality_spline = si.splev(fpp.spline_ages, m_mortality_spline_model)  # Evaluate the spline along the range of ages in the model with resolution
     f_mortality_spline = si.splev(fpp.spline_ages, f_mortality_spline_model)
-    if bound:
-        m_mortality_spline = np.minimum(1, np.maximum(0, m_mortality_spline))
-        f_mortality_spline = np.minimum(1, np.maximum(0, f_mortality_spline))
+    m_mortality_spline = np.minimum(1, np.maximum(0, m_mortality_spline)) # Normalize
+    f_mortality_spline = np.minimum(1, np.maximum(0, f_mortality_spline))
 
     mortality['m_spline'] = m_mortality_spline
     mortality['f_spline'] = f_mortality_spline
@@ -279,7 +294,7 @@ def stillbirth():
 
 #%% Fecundity
 
-def female_age_fecundity(bound):
+def female_age_fecundity():
     '''
     Use fecundity rates from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
     Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
@@ -292,8 +307,7 @@ def female_age_fecundity(bound):
 
     fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
     fecundity_interp = fecundity_interp_model(fpp.spline_preg_ages)
-    if bound:
-        fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp))
+    fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp)) # Normalize to avoid negative or >1 values
 
     return fecundity_interp
 
@@ -756,22 +770,25 @@ def barriers():
 
 #%% Make and validate parameters
 
-def make_pars(configuration_file=None, defaults_file=None, bound=True):
-    ''' Take all parameters and construct into a dictionary '''
+def make_pars():
+    '''
+    Take all parameters and construct into a dictionary
+    '''
 
-    # Scalar parameters
+    # Scalar parameters and filenames
     pars = scalar_pars()
+    pars['filenames'] = filenames()
 
     # Demographics and pregnancy outcome
     pars['age_pyramid']        = age_pyramid()
-    pars['age_mortality']      = age_mortality(bound=bound)
+    pars['age_mortality']      = age_mortality()
     pars['maternal_mortality'] = maternal_mortality()
     pars['infant_mortality']   = infant_mortality()
     pars['miscarriage_rates']  = miscarriage()
     pars['stillbirth_rate']    = stillbirth()
 
     # Fecundity
-    pars['age_fecundity']          = female_age_fecundity(bound=bound)
+    pars['age_fecundity']          = female_age_fecundity()
     pars['fecundity_ratio_nullip'] = fecundity_ratio_nullip()
     pars['lactational_amenorrhea'] = lactational_amenorrhea()
 
