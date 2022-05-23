@@ -21,9 +21,9 @@ CLASSIFIERS = [
 setup(
     name="fpsim",
     version=version,
-    author="Annie Valente, Marita Zimmermann, Cliff Kerr, Daniel Klein",
-    author_email="ckerr@idmod.org",
-    description="FPsim and applications",
+    author="Michelle O'Brien, Annie Valente, Cliff Kerr, Sam Buxton, Daniel Klein, Marita Zimmermann",
+    author_email="info@fpsim.org",
+    description="FPsim",
     keywords=["Family planning", "agent-based model", "simulation"],
     platforms=["OS Independent"],
     classifiers=CLASSIFIERS,
@@ -39,6 +39,7 @@ setup(
         'seaborn>=0.9',
         'optuna',
         'plotnine',
-        'pyarrow'
+        'pyarrow',
+        'pyyaml',
     ],
 )
