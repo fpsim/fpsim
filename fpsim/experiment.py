@@ -56,7 +56,7 @@ class Experiment(sc.prettyobj):
         self.model_to_calib = sc.objdict()
         self.dhs_data = sc.objdict()
         self.method_keys = None
-        self.data_ready = False
+        self.initialized = False
         self.label = label
         return
 
@@ -108,7 +108,7 @@ class Experiment(sc.prettyobj):
         self.dhs_data['mcpr_years'] = mcpr.iloc[:,0].to_numpy()
         self.dhs_data['mcpr'] = mcpr.iloc[:,1].to_numpy()
 
-        self.data_ready = True
+        self.initialized = True
 
         return
 
@@ -127,7 +127,7 @@ class Experiment(sc.prettyobj):
     def run_model(self, pars=None, mother_ids=False):
         ''' Create the sim and run the model '''
 
-        if not self.data_ready:
+        if not self.initialized:
             self.extract_data()
 
         if pars is None:
