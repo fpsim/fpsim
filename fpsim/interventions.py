@@ -362,7 +362,7 @@ class update_methods(Intervention):
                 probs = sc.tolist(self.probs)
                 for entry in probs:
                     entry = sc.dcp(entry)
-                    s_matrix = entry.pop('matrix', self.matrix) # Switching matrix
+                    matrix = entry.pop('matrix', self.matrix) # Switching matrix
                     ages     = entry.pop('ages', None)
                     source   = entry.pop('source', None)
                     dest     = entry.pop('dest', None)
@@ -375,8 +375,8 @@ class update_methods(Intervention):
                     d_value  = entry.pop('discont_value', None)
 
                     # Supply default matrix
-                    if s_matrix is None:
-                        s_matrix = 'annual'
+                    if matrix is None:
+                        matrix = 'annual'
 
                     # Validation # CK: TODO: move validation to initialization
                     if len(entry) != 0:
@@ -416,10 +416,6 @@ class update_methods(Intervention):
                         errormsg = 'Must supply a source or a destination'
                         raise ValueError(errormsg)
 
-                    # Convert from strings to indices
-                    source = key2ind(sim, source)
-                    dest = key2ind(sim, dest)
-
                     # Decide if it's a factor or a value modification
                     factor = sc.mergelists(factor, i_factor, d_factor)
                     value  = sc.mergelists(value, i_value, d_value)
@@ -427,6 +423,6 @@ class update_methods(Intervention):
                     value  = value[0]  if value  else None
 
                     # Actually update the values and check the matrix is valid
-                    sim.pars.update_methods()
+                    sim.pars.update_methods(source=source, dest=dest, factor=factor, value=value, ages=ages, matrix=matrix)
 
         return

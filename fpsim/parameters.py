@@ -134,11 +134,14 @@ class Pars(dict):
         return
 
 
-    def key2ind(self, key):
+    def key2ind(self, key, allow_none=True):
         """
         Take a method key and convert to an int, e.g. 'Condoms' → 7
         """
         ind = key
+        if key is None and not allow_none:
+            errormsg = "No key supplied; did you mean 'None' instead of None?"
+            raise ValueError(errormsg)
         if ind in none_all_keys:
             ind = slice(None) # This is equivalent to ":" in matrix[:,:]
         elif isinstance(ind, str):
@@ -200,11 +203,20 @@ class Pars(dict):
 
         raw = self['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
 
+        # Convert from strings to indices
+        source = self.key2ind(source, allow_none=False)
+        dest   = self.key2ind(dest, allow_none=False)
+
         # Replace age keys with all ages if so asked
         if ages in none_all_keys:
             ages = raw['annual'].keys()
         else:
             ages = sc.tolist(ages)
+
+        # Check matrix is valid
+        if matrix not in raw:
+            errormsg = f'Invalid matrix "{matrix}"; valid choices are: {sc.strjoin(raw.keys())}'
+            raise sc.KeyNotFoundError(errormsg)
 
         # Actually loop over the matrices and apply the changes
         for k in ages:
