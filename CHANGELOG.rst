@@ -12,7 +12,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 Version 0.12.0 (2022-05-22)
 --------------------------
 - Split FPsim repository from analyses scripts.
-- *GitHub info*: PR `502 <https://github.com/amath-idm/fp_analyses/pull/502>`__
+- *GitHub info*: PR `504 <https://github.com/amath-idm/fp_analyses/pull/504>`__
 
 
 Version 0.11.5 (2022-05-21)
