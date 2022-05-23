@@ -11,20 +11,22 @@ from .. import defaults as fpd
 def scalar_pars():
     scalar_pars = {
         # Basic parameters
-        'n'                      : 10_000, # Population size
-        'start_year'             : 1960,
-        'end_year'               : 2019,
+        'n_agents'               : 10_000, # Number of agents
+        'scaled_pop'             : None, # Scaled population / total population size
+        'start_year'             : 1960, # Start year of simulation
+        'end_year'               : 2020, # End year of simulation
         'timestep'               : 1, # The simulation timestep in months
         'method_timestep'        : 1, # How many simulation timesteps to go for every method update step
-        'verbose'                : 1, # How much detail to print during the simulation
         'seed'                   : 1, # Random seed
+        'verbose'                : 1, # How much detail to print during the simulation
+        'track_switching'        : 0, # Whether to track method switching
 
-        # Age limits
+        # Age limits (in years)
         'method_age'             : 15,
         'age_limit_fecundity'    : 50,
         'max_age'                : 99,
 
-        # Durations
+        # Durations (in months)
         'switch_frequency'       : 12, # How frequently to check for changes to contraception
         'end_first_tri'          : 3,
         'preg_dur_low'           : 9,
@@ -45,7 +47,7 @@ def scalar_pars():
         'high_parity'            : 4,
         'high_parity_nonuse'     : 0.6,
         'primary_infertility'    : 0.05,
-        'exposure_factor'        : 1, # Overall exposure correction factor
+        'exposure_factor'        : 1.0, # Overall exposure correction factor
 
         # MCPR
         'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
@@ -548,6 +550,7 @@ def methods():
     '''
     methods = {}
 
+    # Names and indices of contraceptive methods -- see also defaults.py
     methods['map'] = {
         'None'              : 0,
         'Pill'              : 1,
@@ -561,7 +564,13 @@ def methods():
         'Other modern'      : 9,
     }
 
-    methods['names'] = list(methods['map'].keys())
+    # Age bins for different method switching matrices -- duplicated in defaults.py
+    methods['age_map'] = {
+        '<18':   [ 0, 18],
+        '18-20': [18, 20],
+        '21-25': [20, 25],
+        '>25':   [25, fpd.max_age+1], # +1 since we're using < rather than <=
+    }
 
     methods['raw'] = {}
     methods['raw']['annual'] = {
@@ -745,7 +754,7 @@ def barriers():
 
 
 
-#%% Make parameters
+#%% Make and validate parameters
 
 def make_pars(configuration_file=None, defaults_file=None, bound=True):
     ''' Take all parameters and construct into a dictionary '''
@@ -780,4 +789,35 @@ def make_pars(configuration_file=None, defaults_file=None, bound=True):
     pars['methods']           = methods()
     pars['barriers']          = barriers()
 
+    # Perform validation
+    validate_pars(pars)
+
     return pars
+
+
+def validate_pars(pars):
+    ''' Perform internal validation checks and other housekeeping '''
+
+    # Validate method matrices
+    method_map = pars['methods']['map']
+    method_age_map = pars['methods']['age_map']
+    n = len(method_map)
+    raw = pars['methods']['raw']
+    age_keys = set(method_age_map.keys())
+    for mkey in ['annual', 'pp0to1', 'pp1to6']:
+        m_age_keys = set(raw[mkey].keys())
+        assert age_keys == m_age_keys, f'Matrix "{mkey}" has inconsistent keys: "{sc.strjoin(age_keys)}" ≠ "{sc.strjoin(m_age_keys)}"'
+    for k in age_keys:
+        shape = raw['pp0to1'][k].shape
+        assert shape == (n,), f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'
+        for mkey in ['annual', 'pp1to6']:
+            shape = raw[mkey][k].shape
+            assert shape == (n,n), f'Method matrix {mkey} for ages {k} has unexpected shape: should be ({n},{n}), not {shape}'
+
+    # Copy to defaults, preserving original object ID
+    for k,v in method_map.items():
+        fpd.method_map[k] = v
+    for k,v in method_age_map.items():
+        fpd.method_age_map[k] = v
+
+    return

@@ -6,16 +6,15 @@ import sciris as sc
 import fpsim as fp
 
 # Define basic things here
-default_pars = fp.pars()
-method_names = default_pars['methods']['names']
+method_names = fp.pars()['methods']['names']
 
 
 if __name__ == '__main__':
 
     T = sc.timer()
 
-    debug   = True # Set population size and duration
-    one_sim = False # Just run one sim
+    debug   = 0 # Set population size and duration
+    one_sim = 0 # Just run one sim
 
     #%% Define sim parameters
     scen_year = 2020 # Year to start the different scenarios
@@ -43,7 +42,8 @@ if __name__ == '__main__':
 
     # Increased uptake high efficacy
     uptake_scen = sc.objdict(
-        label='Increased efficacy, high eff',
+        label = 'Increased efficacy, high eff',
+        year = scen_year,
         eff = {'Other modern':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
@@ -51,7 +51,7 @@ if __name__ == '__main__':
                 dest   = 'Other modern', # Destination
                 factor = None, # Factor by which to multiply existing probability
                 value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-                keys   = ['>25'], # Which age keys to modify -- if not specified, all
+                ages   = ['>25'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
@@ -59,6 +59,7 @@ if __name__ == '__main__':
     # Increased uptake moderate efficacy
     uptake_scen_mod = sc.objdict(
         label='Increased uptake, mod eff',
+        year = scen_year,
         eff = {'Other modern':0.93}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
@@ -66,7 +67,7 @@ if __name__ == '__main__':
                 dest   = 'Other modern', # Destination
                 factor = None, # Factor by which to multiply existing probability
                 value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-                keys   = ['>25'], # Which age keys to modify -- if not specified, all
+                ages   = ['>25'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
@@ -77,6 +78,7 @@ if __name__ == '__main__':
     # Increased uptake low efficacy
     uptake_scen_low = sc.objdict(
         label='Increased uptake, low eff',
+        year = scen_year,
         eff = {'Other modern':low_eff}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
@@ -84,7 +86,7 @@ if __name__ == '__main__':
                 dest   = 'Other modern', # Destination
                 factor = None, # Factor by which to multiply existing probability
                 value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-                keys   = ['>25'], # Which age keys to modify -- if not specified, all
+                ages   = ['>25'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
@@ -92,6 +94,7 @@ if __name__ == '__main__':
     # Increased uptake low efficacy
     uptake_2x_25 = sc.objdict(
         label='Inj 2x uptake >25 annually',
+        year = scen_year,
         eff = {'Injectables': 0.983}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
@@ -99,7 +102,7 @@ if __name__ == '__main__':
                 dest   = 'Injectables', # Destination
                 factor = 2, # Factor by which to multiply existing probability
                 value  = None, # Alternatively, specify the absolute probability of switching to this method
-                keys   = ['>25'], # Which age keys to modify -- if not specified, all
+                ages   = ['>25'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
@@ -107,6 +110,7 @@ if __name__ == '__main__':
     # Increased uptake low efficacy
     uptake_pp_20 = sc.objdict(
         label='Inj 75% prob uptake pp < 21',
+        year = scen_year,
         eff = {'Injectables': 0.983}, # Co-opt an unused method and simulate a medium-efficacy method
         probs = [
             dict(
@@ -114,28 +118,29 @@ if __name__ == '__main__':
                 dest   = 'Injectables', # Destination
                 factor = None, # Factor by which to multiply existing probability
                 value  = 0.75, # Alternatively, specify the absolute probability of switching to this method
-                keys   = ['<18', '18-20'], # Which age keys to modify -- if not specified, all
+                ages   = ['<18', '18-20'], # Which age keys to modify -- if not specified, all
             ),
         ]
     )
 
     uptake_scen_20 = sc.objdict(
         label='Half disc prob inj < 21',
+        year = scen_year,
         eff={'Injectables': 0.983},  # Co-opt an unused method and simulate a medium-efficacy method
         probs=[
             dict(
-                source='Injectables',  # Source method, 'all' for all methods
-                dest='None',  # Destination
-                factor=0.5,  # Factor by which to multiply existing probability
-                value=None,  # Alternatively, specify the absolute probability of switching to this method
-                keys=['<18', '18-20'],  # Which age keys to modify -- if not specified, all
+                source = 'Injectables',  # Source method, 'all' for all methods
+                dest   = 'None',  # Destination
+                factor = 0.5,  # Factor by which to multiply existing probability
+                value  = None,  # Alternatively, specify the absolute probability of switching to this method
+                ages   = ['<18', '18-20'],  # Which age keys to modify -- if not specified, all
             ),
         ]
     )
 
 
     #%% Create sims
-    scens = fp.Scenarios(pars=pars, repeats=repeats, scen_year=2020)
+    scens = fp.Scenarios(pars=pars, repeats=repeats)
     scens.add_scen(label='Baseline')
     scens.add_scen(uptake_2x_25)
     scens.add_scen(uptake_pp_20)

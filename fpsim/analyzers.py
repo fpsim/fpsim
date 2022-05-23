@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 import pylab as pl
-from . import defaults as fpd
 from . import sim as fps
 from . import experiment as fpe
 
@@ -282,6 +281,9 @@ class age_pyramids(Analyzer):
         return fig
 
 
+debug_states = ["alive", "breastfeed_dur", "gestation", "lactating", "lam", "postpartum", "pregnant", "sexually_active", "postpartum_dur", \
+                "parity", "method", "age", "first_birth_age", "dobs", "age", "sexual_debut", "sexual_debut_age"]
+
 class SimVerbose(fps.Sim):
     def __init__(self, pars=None, mother_ids=False):
         """
@@ -304,10 +306,11 @@ class SimVerbose(fps.Sim):
 
         self.total_results = sc.ddict(lambda: {})
 
-        self.last_year_births = [0] * pars['n']
-        self.last_year_gestations = [0] * pars['n']
-        self.last_year_sexactive = [0] * pars['n']
-        self.last_year_deaths = [0] * pars['n']
+        n = pars['n_agents']
+        self.last_year_births = [0] * n
+        self.last_year_gestations = [0] * n
+        self.last_year_sexactive = [0] * n
+        self.last_year_deaths = [0] * n
         self.dead_moms = set()
         self.is_sexactive = set()
         self.events = sc.ddict(dict)
@@ -324,7 +327,7 @@ class SimVerbose(fps.Sim):
             self.events::dict
                 Dictionary of events correponding to self.channels formatted as {timestep: channel: [indices]}.
         """
-        for state in fpd.debug_states:
+        for state in debug_states:
             self.total_results[self.y][state] = sc.dcp(getattr(self.people, state))
 
         # Getting births gestation and sexual_activity
@@ -385,7 +388,7 @@ class SimVerbose(fps.Sim):
                 sc.savejson(filename="sim_output/total_results.json", obj=self.total_results)
             else:
                 if self.custom_csv_tables is None:
-                    states = fpd.debug_states
+                    states = debug_states
                 else:
                     states = self.custom_csv_tables
                 for state in states:
@@ -434,7 +437,8 @@ class SimVerbose(fps.Sim):
         #                          "is postpartum", "pregnant": "is pregnant", "sexually_active": "is sexually active", "parity": "", "method"}
         # Want to display events, start of breastfeeding, end of breastfeeding, start of lactating, end of lactating, start of LAM, end of LAM, start of pregnancy,
         # When pregnant display the cardinality of the birth, end of sexual activity.
-        last_method = fpd.method_list[self.total_results[min(self.total_results.keys())]['method'][index]]
+        method_list = list(self['methods']['map'].keys())
+        last_method = method_list[self.total_results[min(self.total_results.keys())]['method'][index]]
         for timestep in self.events:
             if timestep >= year_born:
                 for new_channel in event_response_dict:
@@ -443,7 +447,7 @@ class SimVerbose(fps.Sim):
                             print(f"{format_timestep(timestep)} individual {index} gives birth to child number {self.total_results[timestep]['parity'][index]}")
                         else:
                             print(f"{format_timestep(timestep)} individual {index} {event_response_dict[new_channel]}")
-            new_method = fpd.method_list[self.total_results[timestep]['method'][index]]
+            new_method = method_list[self.total_results[timestep]['method'][index]]
             if new_method != last_method:
                 print(f"{format_timestep(timestep)} individual {index} switched from {last_method} to {new_method}")
             last_method = new_method

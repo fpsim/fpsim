@@ -159,7 +159,7 @@ def test_scenarios(do_plot=do_plot):
     uptake_scen3 = uptake_scen1 + uptake_scen2
 
     #%% Create sims
-    scens = fp.Scenarios(location='test', n=200, repeats=2)
+    scens = fp.Scenarios(location='test', n_agents=200, repeats=2)
     scens.add_scen(label='Baseline')
     scens.add_scen(uptake_scen1)
     scens.add_scen(uptake_scen2)
@@ -233,8 +233,14 @@ def test_make_scens():
     s.inj4 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
     s.inj5 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>25'])
 
+    # Test invalid options
+    with pytest.raises(sc.KeyNotFoundError):
+        fp.make_scen(year=year, source='Invalid source', dest='None', factor=0.0)
+    with pytest.raises(sc.KeyNotFoundError):
+        fp.make_scen(year=year, source='None', dest='None', factor=0.0, ages='Invalid ages')
+
     # Run scenarios
-    scens = fp.Scenarios(location='test', n=100, repeats=1, scens=s.values())
+    scens = fp.Scenarios(location='test', repeats=1, scens=s.values())
     scens.run(serial=serial)
 
     return scens

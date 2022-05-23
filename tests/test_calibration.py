@@ -12,7 +12,7 @@ def make_calib():
     '''
     Define a default simulation for testing the baseline.
     '''
-    pars = fp.pars('test', n=200)
+    pars = fp.pars('test', n_agents=200)
     calib = fp.Calibration(pars=pars)
     return calib
 

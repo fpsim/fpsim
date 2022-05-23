@@ -12,6 +12,39 @@ from . import interventions as fpi
 __all__ = ['make_scen', 'Scenario', 'Scenarios']
 
 
+#%% Validation functions -- for internal use only
+
+def check_not_none(obj, *args):
+    ''' Check that all needed inputs are supplied '''
+    for key in args:
+        if obj[key] is None:
+            errormsg = f'Entry "{key}" is not allowed to be None for scenario spec "{obj.which}"'
+            raise ValueError(errormsg)
+    return
+
+
+def check_ages(ages):
+    ''' Check that age keys are all valid '''
+    valid_keys = list(fpd.method_age_map.keys()) + fpd.none_all_keys
+    ages = sc.tolist(ages, keepnone=True)
+    for age in ages:
+        if age not in valid_keys:
+            errormsg = f'Age "{age}" is not valid; choices are:\n{sc.newlinejoin(valid_keys)}'
+            raise sc.KeyNotFoundError(errormsg)
+    return
+
+
+def check_method(methods):
+    ''' Check that methods are valid '''
+    valid_methods = list(fpd.method_map.keys()) + [None]
+    for method in methods:
+        if method not in valid_methods:
+            errormsg = f'Method "{method}" is not valid; choices are:\n{sc.newlinejoin(valid_methods)}'
+            raise sc.KeyNotFoundError(errormsg)
+    return
+
+
+#%% Scenario classes
 
 class Scenario(sc.prettyobj, sc.dictobj):
     '''
@@ -110,13 +143,6 @@ class Scenario(sc.prettyobj, sc.dictobj):
         par_spec   = None
         intv_specs = None
 
-        def check_not_none(obj, *args):
-            ''' Check that all needed inputs are supplied '''
-            for key in args:
-                if obj[key] is None:
-                    errormsg = f'Entry "{key}" is not allowed to be None for scenario spec "{obj.which}"'
-                    raise ValueError(errormsg)
-
         # It's an efficacy scenario
         if eff is not None:
             eff_spec = sc.objdict(
@@ -147,6 +173,8 @@ class Scenario(sc.prettyobj, sc.dictobj):
                 )
             )
             check_not_none(prob_spec, 'year')
+            check_ages(ages)
+            check_method([source, dest, method])
 
         # It's a parameter change scenario
         if par is not None:
@@ -177,10 +205,10 @@ class Scenario(sc.prettyobj, sc.dictobj):
 
 
     def __add__(self, scen2):
-        ''' Combine two scenarios arrays '''
-        newscen = sc.dcp(self)
-        newscen.specs.extend(scen2.specs)
-        return newscen
+        ''' Combine two scenario spec lists '''
+        scen3 = sc.dcp(self)
+        scen3.specs.extend(sc.dcp(scen2.specs))
+        return scen3
 
 
     def __radd__(self, scen2):
@@ -196,14 +224,13 @@ class Scenario(sc.prettyobj, sc.dictobj):
         if label is not None:
             for spec in self.specs:
                 spec['label'] = label
+        self.label = label
         return
 
 
 
 def make_scen(*args, **kwargs):
-    '''
-    Alias for ``fp.Scenario()``.
-    '''
+    ''' Alias for ``fp.Scenario()``. '''
     return Scenario(*args, **kwargs)
 
 # Ensure the function ahs the same docstring as the class
@@ -213,16 +240,35 @@ make_scen.__doc__ +=  '\n\n' + Scenario.__doc__
 
 class Scenarios(sc.prettyobj):
     '''
-    Run different intervention scenarios
+    Run different intervention scenarios.
+
+    A "scenario" can be thought of as a list of sims, all with the same parameters
+    except for the random seed. Usually, scenarios differ from each other only
+    in terms of the interventions run (to compare other differences between sims,
+    it's preferable to use a MultiSim object).
+
+    Args:
+        pars    (dict): parameters to pass to the sim
+        repeats (int):  how many repeats of each scenario to run (default: 1)
+        scens   (list): the list of scenarios to run; see also ``fp.make_scen()`` and ``Scenarios.add_scen()``
+        kwargs  (dict): optional additional parameters to pass to the sim
+
+    **Example**::
+
+        scen1 = fp.make_scen(label='Baseline')
+        scen2 = fp.make_scen(year=2002, eff={'Injectables':0.99}) # Basic efficacy scenario
+        scens = fp.Scenarios(location='test', repeats=2, scens=[scen1, scen2])
+        scens.run()
     '''
 
     def __init__(self, pars=None, repeats=None, scens=None, **kwargs):
         self.pars = sc.mergedicts(pars, kwargs)
-        self.repeats = repeats
+        self.repeats = repeats if repeats is not None else 1
         self.scens = sc.dcp(sc.tolist(scens))
         self.simslist = []
-        self.msim = None
         self.msims = []
+        self.msim = None
+        self.already_run = False
         return
 
 
@@ -321,30 +367,42 @@ class Scenarios(sc.prettyobj):
 
         # Run
         self.msim.run(**kwargs)
+        self.already_run = True
 
         # Process
         self.msim_merged =self.msim.remerge()
         self.analyze_sims()
         return
 
+    def check_run(self):
+        ''' Give a meaningful error message if the scenarios haven't been run '''
+        if not self.already_run:
+            errormsg = 'Scenarios have not yet been run; please run first via scens.run()'
+            raise RuntimeError(errormsg)
+        return
+
 
     def plot_sims(self, **kwargs):
         ''' Plot each sim as a separate line across all senarios '''
+        self.check_run()
         return self.msim.plot(plot_sims=True, **kwargs)
 
 
     def plot_scens(self, **kwargs):
         ''' Plot the scenarios with bands '''
+        self.check_run()
         return self.msim_merged.plot(plot_sims=True, **kwargs)
 
 
     def plot_cpr(self, **kwargs):
         ''' Plot the CPR with bands '''
+        self.check_run()
         return self.msim_merged.plot_cpr(**kwargs)
 
 
     def analyze_sims(self, start=None, end=None):
         ''' Take a list of sims that have different labels and count the births in each '''
+        self.check_run()
 
         # Pull out first sim and parameters
         sim0 = self.msim.sims[0]

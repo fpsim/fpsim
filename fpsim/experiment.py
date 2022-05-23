@@ -91,7 +91,7 @@ class Experiment(sc.prettyobj):
 
         # Extract population size over time
         if self.pars:
-            n = self.pars['n']
+            n = self.pars['n_agents']
         else:
             n = 5000 # Use default if not available
             print(f'Warning: parameters not defined, using default of n={n}')
@@ -136,7 +136,7 @@ class Experiment(sc.prettyobj):
         model_pregnancy_parity = self.sim.store_postpartum()
         model_pregnancy_parity = model_pregnancy_parity.drop(['PP0to5', 'PP6to11', 'PP12to23', 'NonPP'], axis=1)
         self.model_to_calib['pregnancy_parity'] = model_pregnancy_parity
-        self.method_keys = self.sim.pars['methods']['names']
+        self.method_keys = list(self.sim['methods']['map'].keys())
         return
 
 
