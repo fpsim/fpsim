@@ -26,17 +26,17 @@ def datapath(path):
     ''' Return the path of the parent folder '''
     return sc.thisdir(__file__, os.pardir, 'dropbox', path)
 
-pregnancy_parity_file = datapath('SNIR80FL.obj')  # DHS Senegal 2018 file -- preprocessed
+pregnancy_parity_file     = datapath('SNIR80FL.obj')  # DHS Senegal 2018 file -- preprocessed
 pregnancy_parity_file_raw = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file -- raw
-pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
-skyscrapers_file = datapath('Skyscrapers-All-DHS.csv')
-methods_file = datapath('Method_v312.csv')
-spacing_file = datapath('BirthSpacing.obj')
-spacing_file_raw = datapath('BirthSpacing.csv')
-popsize_file = datapath('senegal-popsize.csv')
-barriers_file = datapath('DHSIndividualBarriers.csv')
-tfr_file = datapath('senegal-tfr.csv')
-mcpr_file = datapath('mcpr_senegal.csv')
+pop_pyr_year_file         = datapath('Population_Pyramid_-_All.csv')
+skyscrapers_file          = datapath('Skyscrapers-All-DHS.csv')
+methods_file              = datapath('Method_v312.csv')
+spacing_file              = datapath('BirthSpacing.obj')
+spacing_file_raw          = datapath('BirthSpacing.csv')
+popsize_file              = datapath('senegal-popsize.csv')
+barriers_file             = datapath('DHSIndividualBarriers.csv')
+tfr_file                  = datapath('senegal-tfr.csv')
+mcpr_file                 = datapath('mcpr_senegal.csv')
 
 default_flags = sc.objdict(
     popsize = 1,  # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
