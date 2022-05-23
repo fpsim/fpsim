@@ -8,6 +8,7 @@ import numpy as np
 import pylab as pl
 import pandas as pd
 import sciris as sc
+from . import parameters as fpp
 from . import sim as fps
 
 
@@ -25,18 +26,6 @@ mpy = 12
 def datapath(path):
     ''' Return the path of the parent folder '''
     return sc.thisdir(__file__, os.pardir, 'dropbox', path)
-
-pregnancy_parity_file     = datapath('SNIR80FL.obj')  # DHS Senegal 2018 file -- preprocessed
-pregnancy_parity_file_raw = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file -- raw
-pop_pyr_year_file         = datapath('Population_Pyramid_-_All.csv')
-skyscrapers_file          = datapath('Skyscrapers-All-DHS.csv')
-methods_file              = datapath('Method_v312.csv')
-spacing_file              = datapath('BirthSpacing.obj')
-spacing_file_raw          = datapath('BirthSpacing.csv')
-popsize_file              = datapath('senegal-popsize.csv')
-barriers_file             = datapath('DHSIndividualBarriers.csv')
-tfr_file                  = datapath('senegal-tfr.csv')
-mcpr_file                 = datapath('mcpr_senegal.csv')
 
 default_flags = sc.objdict(
     popsize = 1,  # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
@@ -58,12 +47,19 @@ default_flags = sc.objdict(
 
 class Experiment(sc.prettyobj):
     '''
-    Class for running calibration to data
+    Class for running calibration to data. Effectively, it runs a single sim and
+    compares it to data.
+
+    Args:
+        pars (dict): dictionary of parameters
+        flags (dict): which analyses to run; see ``fp.experiment.default_flags`` for options
+        label (str): label of experiment
+        kwargs (dict): passed into pars
     '''
 
-    def __init__(self, pars=None, flags=None, label=None):
+    def __init__(self, pars=None, flags=None, label=None, **kwargs):
         self.flags = flags if flags else sc.dcp(default_flags) # Set flags for what gets run
-        self.pars = pars
+        self.pars = pars if pars else fpp.pars(**kwargs)
         self.model_to_calib = sc.objdict()
         self.dhs_data = sc.objdict()
         self.method_keys = None
@@ -71,21 +67,13 @@ class Experiment(sc.prettyobj):
         self.label = label
         return
 
-    def init_dhs_data(self):
-        '''
-        Assign data points of interest in DHS dictionary for Senegal data.  All data 2018 unless otherwise indicated
-        Adjust data for a different year or country
-        '''
 
-        self.dhs_data[
-            'maternal_mortality_ratio'] = 315.0  # Per 100,000 live births, (2017) From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=SN
-        self.dhs_data['infant_mortality_rate'] = 33.6  # Per 1,000 live births, From World Bank
-        self.dhs_data['crude_death_rate'] = 5.7  # Per 1,000 inhabitants, From World Bank
-        self.dhs_data['crude_birth_rate'] = 34.5  # Per 1,000 inhabitants, From World Bank
-
-        return
 
     def extract_dhs_data(self):
+
+        json = sc.load(basic_dhs_file)
+
+        self.dhs_data.update(json)
 
         self.dhs_data['pregnancy_parity'] = sc.load(pregnancy_parity_file)
 
@@ -93,7 +81,7 @@ class Experiment(sc.prettyobj):
         if self.pars:
             n = self.pars['n_agents']
         else:
-            n = 5000 # Use default if not available
+            n = 1000 # Use default if not available
             print(f'Warning: parameters not defined, using default of n={n}')
         pop_size = pd.read_csv(popsize_file, header=None)  # From World Bank
         self.dhs_data['pop_years'] = pop_size.iloc[0,:].to_numpy()
