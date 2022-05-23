@@ -589,21 +589,18 @@ def method_eff(disable=False):
     BTL failure rate from general published data
     Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
     '''
-    method_eff = sc.odict({ # Must be an odict to allow division operation below
-        'None'              :  0.0,
-        'Pill'              : 94.5,
-        'IUDs'              : 98.6,
-        'Injectable'        : 98.3,
-        'Condoms'           : 94.6,
-        'BTL'               : 99.5,
-        'Withdrawal'        : 86.6,
-        'Implants'          : 99.4,
-        'Other traditional' : 86.1, # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-        'Other modern'      : 88.0, # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
-    })
-
-    method_eff = method_eff[:]/100
-
+    method_eff = {
+        'None'              : 0.000,
+        'Pill'              : 0.945,
+        'IUDs'              : 0.986,
+        'Injectable'        : 0.983,
+        'Condoms'           : 0.946,
+        'BTL'               : 0.995,
+        'Withdrawal'        : 0.866,
+        'Implants'          : 0.994,
+        'Other traditional' : 0.861, # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+        'Other modern'      : 0.880, # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
+    }
     return method_eff
 
 

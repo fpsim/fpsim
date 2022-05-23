@@ -289,6 +289,32 @@ class Pars(dict):
             pars.rm_method('Other modern')
         '''
 
+        # Get index of method to remove
+        ind = self.key2ind(name, allow_none=False)
+
+        # Remove from mapping and efficacy
+        methods = self['methods']
+        key = list(methods['map'].keys())[ind]
+        methods['map'].pop(key)
+        methods['eff'].pop(key)
+
+        # Modify method matrices
+        raw = methods['raw']
+        age_keys = methods['age_map'].keys()
+        for k in age_keys:
+            # Handle the initiation matrix
+            pp0to1 = raw['pp0to1']
+            pp0to1[k] = np.delete(pp0to1, ind)
+
+            # Handle the other matrices
+            for mkey in ['annual', 'pp1to6']:
+                matrix = raw[mkey]
+                for axis in [0,1]:
+                    matrix[k] = np.delete(matrix[k], ind, axis=axis)
+
+        # Validate
+        self.validate()
+
         return
 
 
@@ -306,6 +332,37 @@ class Pars(dict):
             pars.reorder_methods([2, 6, 4, 7, 0, 8, 5, 1, 3])
         '''
 
+        # Reorder mapping and efficacy
+        methods = self['methods']
+        orig_keys = list(methods['map'].keys())
+        order_set = sorted(set(order))
+        orig_set = sorted(set(np.arange(len(orig_keys))))
+
+        # Validation
+        if order_set != orig_set:
+            errormsg = f'Reordering "{order}" does not match indices of methods "{orig_set}"'
+            raise ValueError(errormsg)
+
+        # Reorder map and efficacy
+        new_keys = [orig_keys[k] for k in order]
+        for parkey in ['map', 'eff']:
+            methods[parkey] = {k:methods[parkey][k] for k in new_keys}
+
+        # Modify method matrices
+        raw = methods['raw']
+        age_keys = methods['age_map'].keys()
+        for k in age_keys:
+            # Handle the initiation matrix
+            pp0to1 = raw['pp0to1']
+            pp0to1[k] = pp0to1[k][order]
+
+            # Handle the other matrices
+            for mkey in ['annual', 'pp1to6']:
+                matrix = raw[mkey]
+                matrix[k] = matrix[k][:,order][order]
+
+        # Validate
+        self.validate()
 
         return
 
