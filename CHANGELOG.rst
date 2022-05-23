@@ -12,6 +12,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 Version 0.12.0 (2022-05-22)
 --------------------------
 - Split FPsim repository from analyses scripts.
+- Refactors ``experiment.py`` to load files for a specific location rather than being hard-coded.
 - *GitHub info*: PR `504 <https://github.com/amath-idm/fp_analyses/pull/504>`__
 
 
