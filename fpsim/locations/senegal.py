@@ -549,19 +549,9 @@ def birth_spacing_pref():
 
 #%% Contraceptive methods
 
-def method_probs():
-    '''
-    Matrices to give transitional probabilities from 2018 DHS Senegal contraceptive calendar data
-    Probabilities in this function are annual probabilities of initiating, discontinuing, continuing
-    or switching methods.
+def methods():
+    ''' Basic method properties '''
 
-    Probabilities at postpartum month 1 are 1 month transitional probabilities for starting a method after delivery.
-
-    Probabilities at postpartum month 6 are 5 month transitional probabilities for starting or changing methods over
-    the first 6 months postpartum.
-
-    Data from Senegal DHS contraceptive calendars, 2017 and 2018 combined
-    '''
     methods = {}
 
     # Names and indices of contraceptive methods -- see also defaults.py
@@ -586,8 +576,56 @@ def method_probs():
         '>25':   [25, fpp.max_age+1], # +1 since we're using < rather than <=
     }
 
-    methods['raw'] = {}
-    methods['raw']['annual'] = {
+    # Data on trend in MCPR in Senegal over time, in % # CK: TODO: find source
+    methods['mcpr_years'] = np.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
+    methods['mcpr_rates'] = np.array([0.50,  1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8,   19,   20, 20.4])/100
+
+    return methods
+
+
+def method_eff(disable=False):
+    '''
+    From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
+    BTL failure rate from general published data
+    Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
+    '''
+    method_eff = sc.odict({ # Must be an odict to allow division operation below
+        'None'              :  0.0,
+        'Pill'              : 94.5,
+        'IUDs'              : 98.6,
+        'Injectable'        : 98.3,
+        'Condoms'           : 94.6,
+        'BTL'               : 99.5,
+        'Withdrawal'        : 86.6,
+        'Implants'          : 99.4,
+        'Other traditional' : 86.1, # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+        'Other modern'      : 88.0, # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
+    })
+
+    method_eff = method_eff[:]/100
+
+    return method_eff
+
+
+def method_probs():
+    '''
+    Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
+    from 2018 DHS Senegal contraceptive calendar data.
+
+    Probabilities in this function are annual probabilities of initiating, discontinuing,
+    continuing, or switching methods.
+
+    Probabilities at postpartum month 1 are 1 month transitional probabilities
+    for starting a method after delivery.
+
+    Probabilities at postpartum month 6 are 5 month transitional probabilities
+    for starting or changing methods over the first 6 months postpartum.
+
+    Data from Senegal DHS contraceptive calendars, 2017 and 2018 combined
+    '''
+
+    raw = {}
+    raw['annual'] = {
         '<18': np.array([
             [0.9953132643, 0.0001774295, 0.0000506971, 0.0016717604, 0.0011907588, 0.0000000000, 0.0000000000, 0.0013933117, 0.0001774295, 0.0000253488],
             [0.5357744265, 0.3956817610, 0.0000000000, 0.0685438124, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
@@ -635,7 +673,7 @@ def method_probs():
     }
 
     # Postpartum probabilities, 0-1 month
-    methods['raw']['pp0to1'] = {
+    raw['pp0to1'] = {
         '<18':   np.array([0.9606501283, 0.0021385800, 0.0004277160, 0.0128314799, 0.0008554320, 0.0000000000, 0.0008554320, 0.0205303678, 0.0017108640, 0.0000000000]),
         '18-20': np.array([0.9524886878, 0.0028280543, 0.0005656109, 0.0214932127, 0.0005656109, 0.0000000000, 0.0005656109, 0.0197963801, 0.0016968326, 0.0000000000]),
         '21-25': np.array([0.9379245283, 0.0083018868, 0.0013207547, 0.0284905660, 0.0009433962, 0.0000000000, 0.0000000000, 0.0177358491, 0.0052830189, 0.0000000000]),
@@ -643,7 +681,7 @@ def method_probs():
     }
 
     # Postpartum probabilities, 1-6 months
-    methods['raw']['pp1to6'] = {
+    raw['pp1to6'] = {
         '<18': np.array([
             [0.9013605442, 0.0126336249, 0.0004859086, 0.0510204082, 0.0009718173, 0.0000000000, 0.0000000000, 0.0272108844, 0.0063168124, 0.0000000000],
             [0.4000000000, 0.6000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000],
@@ -690,66 +728,7 @@ def method_probs():
             [0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 0.0000000000, 1.0000000000]])
     }
 
-    # Data on trend in MCPR in Senegal over time, in % # CK: TODO: find source
-    methods['mcpr_years'] = np.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
-    methods['mcpr_rates'] = np.array([0.50,  1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8,   19,   20, 20.4])/100
-
-    return methods
-
-
-def method_eff(disable=False):
-    '''
-    From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
-    BTL failure rate from general published data
-    Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
-    '''
-    method_efficacy = sc.odict({ # Must be an odict to allow division operation below
-        'None'              :  0.0,
-        'Pill'              : 94.5,
-        'IUDs'              : 98.6,
-        'Injectable'        : 98.3,
-        'Condoms'           : 94.6,
-        'BTL'               : 99.5,
-        'Withdrawal'        : 86.6,
-        'Implants'          : 99.4,
-        'Other traditional' : 86.1, # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-        'Other modern'      : 88.0, # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
-    })
-
-    if disable:
-        method_efficacy[:] = 100 # To disable contraception
-
-    method_efficacy = method_efficacy[:]/100
-
-    return method_efficacy
-
-
-def method_eff25(disable=False):
-    '''
-    From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
-    BTL failure rate from general published data
-    Pooled efficacy rates for women ages 25+
-    '''
-
-    method_efficacy25 = sc.odict({
-        'None'       :  0.0,
-        'Pill'       : 91.7,
-        'IUDs'       : 96.8,
-        'Injectable' : 96.5,
-        'Condoms'    : 91.1,
-        'BTL'        : 99.5,
-        'Rhythm'     : 75.4,
-        'Withdrawal' : 77.3,
-        'Implants'   : 99.4,
-        'Other'      : 94.5,
-    })
-
-    if disable:
-        method_efficacy25[:] = 100 # To disable contraception
-
-    method_efficacy25 = method_efficacy25[:]/100
-
-    return method_efficacy25
+    return raw
 
 
 def barriers():
@@ -801,9 +780,9 @@ def make_pars():
     pars['spacing_pref']       = birth_spacing_pref()
 
     # Contraceptive methods
-    pars['methods']          = method_probs()
+    pars['methods']          = methods()
+    pars['methods']['raw']   = method_probs()
     pars['methods']['eff']   = method_eff()
-    pars['methods']['eff25'] = method_eff25()
     pars['barriers']         = barriers()
 
     return pars
