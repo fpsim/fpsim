@@ -9,12 +9,19 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-Version 0.12.0 (2022-05-21)
+Version 0.13.0 (2022-05-22)
 --------------------------
 - Changed parameters from a dictionary to a class. This class has additional validation, the ability to import from/export to JSON, etc.
 - Added ability to add/remove contraceptive methods via ``pars.add_method()`` and ``pars.remove_method()``.
 - Renamed ``defaults.py`` to ``parameters.py``.
-- *GitHub info*: PR `503 <https://github.com/amath-idm/fp_analyses/pull/502>`__
+- *GitHub info*: PR `503 <https://github.com/amath-idm/fp_analyses/pull/503>`__
+
+
+Version 0.12.0 (2022-05-22)
+--------------------------
+- Split FPsim repository from analyses scripts.
+- Refactors ``experiment.py`` to load files for a specific location rather than being hard-coded.
+- *GitHub info*: PR `504 <https://github.com/amath-idm/fp_analyses/pull/504>`__
 
 
 Version 0.11.5 (2022-05-21)
