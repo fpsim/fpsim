@@ -146,64 +146,10 @@ class Pars(dict):
         return
 
 
-    def _safe_get(self, val, return_ind=True, allow_none=True):
-        '''
-        Take a key or index for methods and perform validation on it, returning
-        either a sanitized key or index.
-        '''
-
-        keys = list(self['methods']['map'].keys())
-        key = val
-        ind = val
-
-        # Validation
-        if val is None and not allow_none:
-            errormsg = "No key supplied; did you mean 'None' instead of None?"
-            raise ValueError(errormsg)
-
-        # Handle options
-        if val in none_all_keys:
-            out = slice(None) # This is equivalent to ":" in matrix[:,:]
-
-        elif isinstance(val, str): # It's a string
-            key = val # It's a string, do nothing
-            try:
-                out = keys[key]
-            except KeyError as E:
-                errormsg = f'Key "{key}" is not a valid method'
-                raise sc.KeyNotFoundError(errormsg) from E
-
-        elif isinstance(key, int): # An int:Already an int, do nothing
-            ind = key
-            if ind < len(keys):
-                key = keys[ind]
-            else:
-                errormsg = f'Method index {ind} is out of bounds for methods {sc.strjoin(keys)}'
-                raise IndexError(errormsg)
-
-        else:
-            errormsg = f'Could not process input of type {type(val)}: must be str or int'
-            raise TypeError(errormsg)
-        return ind
-
-        return out
-
-
     def key2ind(self, key, allow_none=True):
         '''
         Take a method key and convert to an int, e.g. 'Condoms' → 7
         '''
-        return self._safe_get(val=key, as_ind=True, allow_none=allow_none)
-
-
-    def ind2key(self, ind):
-        '''
-        Convert ind to key, e.g. 7 → 'Condoms'.
-        '''
-        return self._safe_get(val=key, as_ind=False, allow_none=False)
-
-
-    def key2ind(self, key, allow_none=True):
 
         keys = list(self['methods']['map'].keys())
 
