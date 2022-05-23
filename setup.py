@@ -15,7 +15,7 @@ CLASSIFIERS = [
     "Programming Language :: Python",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Development Status :: 1",
-    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.9",
 ]
 
 setup(
@@ -23,8 +23,8 @@ setup(
     version=version,
     author="Michelle O'Brien, Annie Valente, Cliff Kerr, Sam Buxton, Daniel Klein, Marita Zimmermann",
     author_email="info@fpsim.org",
-    description="FPsim",
-    keywords=["Family planning", "agent-based model", "simulation"],
+    description="FPsim: Family Planning Simulator",
+    keywords=["family planning", "women's health", "agent-based model", "simulation"],
     platforms=["OS Independent"],
     classifiers=CLASSIFIERS,
     packages=find_packages(),
