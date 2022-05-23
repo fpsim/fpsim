@@ -550,59 +550,39 @@ def birth_spacing_pref():
 #%% Contraceptive methods
 
 def methods():
-    ''' Basic method properties '''
+    '''
+    Names, indices, modern/traditional flag, and efficacies of contraceptive methods -- see also parameters.py
+    Efficacy from Guttmacher, fp_prerelease/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
+    BTL failure rate from general published data
+    Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
+    '''
 
+    # Define method data
+    data = {                # Index, modern, efficacy
+        'None'              : [0, False, 0.000],
+        'Pill'              : [1, True,  0.945],
+        'IUDs'              : [2, True,  0.986],
+        'Injectables'       : [3, True,  0.983],
+        'Condoms'           : [4, True,  0.946],
+        'BTL'               : [5, True,  0.995],
+        'Withdrawal'        : [6, False, 0.866],
+        'Implants'          : [7, True,  0.994],
+        'Other traditional' : [8, False, 0.861], # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+        'Other modern'      : [9, True,  0.880], # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
+    }
+
+    keys = data.keys()
     methods = {}
-
-    # Names and indices of contraceptive methods -- see also parameters.py
-    methods['map'] = {
-        'None'              : 0,
-        'Pill'              : 1,
-        'IUDs'              : 2,
-        'Injectables'       : 3,
-        'Condoms'           : 4,
-        'BTL'               : 5,
-        'Withdrawal'        : 6,
-        'Implants'          : 7,
-        'Other traditional' : 8,
-        'Other modern'      : 9,
-    }
-
-    methods['modern'] = {
-        'None'              : False,
-        'Pill'              : True,
-        'IUDs'              : True,
-        'Injectables'       : True,
-        'Condoms'           : True,
-        'BTL'               : True,
-        'Withdrawal'        : False,
-        'Implants'          : True,
-        'Other traditional' : False,
-        'Other modern'      : True,
-    }
-
-    # From Guttmacher, fp_prerelease/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
-    # BTL failure rate from general published data
-    # Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
-    methods['eff'] = {
-        'None'              : 0.000,
-        'Pill'              : 0.945,
-        'IUDs'              : 0.986,
-        'Injectable'        : 0.983,
-        'Condoms'           : 0.946,
-        'BTL'               : 0.995,
-        'Withdrawal'        : 0.866,
-        'Implants'          : 0.994,
-        'Other traditional' : 0.861, # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-        'Other modern'      : 0.880, # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
-    }
+    methods['map']    = {k:data[k][0] for k in keys}
+    methods['modern'] = {k:data[k][1] for k in keys}
+    methods['eff']    = {k:data[k][2] for k in keys}
 
     # Age bins for different method switching matrices -- duplicated in defaults.py
     methods['age_map'] = {
-        '<18':   [ 0, 18],
-        '18-20': [18, 20],
-        '21-25': [20, 25],
-        '>25':   [25, fpp.max_age+1], # +1 since we're using < rather than <=
+        '<18'   : [ 0, 18],
+        '18-20' : [18, 20],
+        '21-25' : [20, 25],
+        '>25'   : [25, fpp.max_age+1], # +1 since we're using < rather than <=
     }
 
     # Data on trend in MCPR in Senegal over time, in % # CK: TODO: find source
