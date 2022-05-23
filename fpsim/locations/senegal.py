@@ -72,7 +72,7 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'senegal'
-    files['basic_dhs']        = 'senegal-basic-dhs.json'
+    files['basic_dhs']        = 'senegal-basic-dhs.yaml'
     files['pregnancy_parity'] = 'SNIR80FL.obj'
     files['pop_pyr_year']     = 'Population_Pyramid_-_All.csv'
     files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
