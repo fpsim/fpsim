@@ -554,7 +554,7 @@ def methods():
 
     methods = {}
 
-    # Names and indices of contraceptive methods -- see also defaults.py
+    # Names and indices of contraceptive methods -- see also parameters.py
     methods['map'] = {
         'None'              : 0,
         'Pill'              : 1,
@@ -566,6 +566,35 @@ def methods():
         'Implants'          : 7,
         'Other traditional' : 8,
         'Other modern'      : 9,
+    }
+
+    methods['modern'] = {
+        'None'              : False,
+        'Pill'              : True,
+        'IUDs'              : True,
+        'Injectables'       : True,
+        'Condoms'           : True,
+        'BTL'               : True,
+        'Withdrawal'        : False,
+        'Implants'          : True,
+        'Other traditional' : False,
+        'Other modern'      : True,
+    }
+
+    # From Guttmacher, fp_prerelease/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
+    # BTL failure rate from general published data
+    # Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
+    methods['eff'] = {
+        'None'              : 0.000,
+        'Pill'              : 0.945,
+        'IUDs'              : 0.986,
+        'Injectable'        : 0.983,
+        'Condoms'           : 0.946,
+        'BTL'               : 0.995,
+        'Withdrawal'        : 0.866,
+        'Implants'          : 0.994,
+        'Other traditional' : 0.861, # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+        'Other modern'      : 0.880, # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
     }
 
     # Age bins for different method switching matrices -- duplicated in defaults.py
@@ -581,27 +610,6 @@ def methods():
     methods['mcpr_rates'] = np.array([0.50,  1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8,   19,   20, 20.4])/100
 
     return methods
-
-
-def method_eff(disable=False):
-    '''
-    From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
-    BTL failure rate from general published data
-    Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
-    '''
-    method_eff = {
-        'None'              : 0.000,
-        'Pill'              : 0.945,
-        'IUDs'              : 0.986,
-        'Injectable'        : 0.983,
-        'Condoms'           : 0.946,
-        'BTL'               : 0.995,
-        'Withdrawal'        : 0.866,
-        'Implants'          : 0.994,
-        'Other traditional' : 0.861, # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-        'Other modern'      : 0.880, # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
-    }
-    return method_eff
 
 
 def method_probs():
@@ -777,9 +785,8 @@ def make_pars():
     pars['spacing_pref']       = birth_spacing_pref()
 
     # Contraceptive methods
-    pars['methods']          = methods()
-    pars['methods']['raw']   = method_probs()
-    pars['methods']['eff']   = method_eff()
-    pars['barriers']         = barriers()
+    pars['methods']        = methods()
+    pars['methods']['raw'] = method_probs()
+    pars['barriers']       = barriers()
 
     return pars

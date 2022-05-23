@@ -597,7 +597,7 @@ class People(fpb.BasePeople):
         DHS data records only women who self-report LAM which is much lower.
         Follows the DHS definition of mCPR
         '''
-        modern_methods = [1, 2, 3, 4, 5, 7, 9]
+        modern_methods = sc.findinds(self.pars['methods']['modern'].values())
         denominator = (self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * \
                       (self.sex == 0) * (self.alive)
         no_method_mcpr = np.sum((self.method == 0) * denominator)
