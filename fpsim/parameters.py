@@ -27,7 +27,9 @@ class Pars(dict):
     Args:
         pars (dict): dictionary of parameters
     '''
-    def __init__(self, pars, *args, **kwargs):
+    def __init__(self, pars=None, *args, **kwargs):
+        if pars is None:
+            pars = {}
         super().__init__(*args, **kwargs)
         self.update(pars)
         return

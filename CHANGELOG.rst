@@ -9,7 +9,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-Version 0.13.0 (2022-05-22)
+Version 0.13.0 (2022-05-23)
 --------------------------
 - Changed parameters from a dictionary to a class. This class has additional validation, the ability to import from/export to JSON, etc.
 - Added ability to add/remove contraceptive methods via ``pars.add_method()`` and ``pars.remove_method()``.

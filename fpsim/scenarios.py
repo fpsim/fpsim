@@ -58,6 +58,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         spec   (dict): a pre-made specification of a scenario; see keyword explanations below (optional)
         args   (list): additional specifications (optional)
         label  (str): the sim label to use for this scenario
+        pars   (dict): optionally supply additional sim parameters to use with this scenario (that take effect at the beginning of the sim, not at the point of intervention)
         year   (float): the year at which to activate efficacy and probability scenarios
         matrix (str): which set of probabilities to modify for probability scenarios (e.g. annual or postpartum)
         ages   (str/list): the age groups to modify the probabilities for
@@ -74,7 +75,6 @@ class Scenario(sc.prettyobj, sc.dictobj):
         dest   (str): the method to switch to
         factor (float): if supplied, multiply the [source, dest] probability by this amount
         value  (float): if supplied, instead of factor, replace the [source, dest] probability by this value
-        create (bool): if method does not exist, create it (default False)
 
     Args (initiation/discontinuation):
         year   (float): as above
@@ -85,7 +85,6 @@ class Scenario(sc.prettyobj, sc.dictobj):
         discont_factor (float): as with "factor" above, for discontinuation (method → None)
         init_value     (float): as with "value" above, for initiation (None → method)
         discont_value  (float): as with "value" above, for discontinuation (method → None)
-        create (bool): as above
 
     Args (parameter):
         par (str): the parameter to modify
@@ -118,16 +117,16 @@ class Scenario(sc.prettyobj, sc.dictobj):
         def update_sim(sim): sim.updated = True
         s6 = fp.make_scen(interventions=update_sim)
 
-        # Combining multiple scenarios: create a new method and reduce exposure factor
+        # Combining multiple scenarios: change probabilities and reduce exposure factor
         s7 = fp.make_scen(
-            dict(method='Male pill', init_value=0.1, discont_value=0.02, create=True),
+            dict(method='Injectables', init_value=0.1, discont_value=0.02, create=True),
             dict(par='exposure_factor', years=2010, vals=0.5)
         )
 
         # Scenarios can be combined
         s8 = s1 + s2
     '''
-    def __init__(self, spec=None, *args, label=None, year=None, matrix=None, ages=None, # Basic settings
+    def __init__(self, spec=None, *args, label=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
                  eff=None, probs=None, # Option 1
                  source=None, dest=None, factor=None, value=None, create=None, # Option 2
                  method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
@@ -138,6 +137,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         # Handle input specification
         self.specs = sc.mergelists(*[Scenario(**spec).specs for spec in sc.mergelists(spec, *args)]) # Sorry
         self.label = label
+        self.pars  = sc.mergedicts(pars)
 
         # Handle other keyword inputs
         eff_spec   = None
@@ -362,7 +362,7 @@ class Scenarios(sc.prettyobj):
 
             if simlabel is None:
                 simlabel = f'Scenario {i}'
-            sims = self.make_sims(interventions=interventions, scenlabel=simlabel)
+            sims = self.make_sims(scenlabel=simlabel, interventions=interventions, **scen.pars)
             self.simslist.append(sims)
         return
 
