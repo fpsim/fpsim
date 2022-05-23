@@ -40,6 +40,11 @@ class Pars(dict):
         return sc.odict.__repr__(self, quote='', numsep='.', classname='fp.Parameters()', *args, **kwargs)
 
 
+    def copy(self):
+        ''' Shortcut for deep copying '''
+        return sc.dcp(self)
+
+
     def to_dict(self):
         ''' Return parameters as a new dictionary '''
         return {k:v for k,v in self.items()}
@@ -339,7 +344,7 @@ class Pars(dict):
         for k in age_keys:
             # Handle the initiation matrix
             pp0to1 = raw['pp0to1']
-            pp0to1[k] = np.append(pp0to1, 0) # Append a zero to the end
+            pp0to1[k] = np.append(pp0to1[k], 0) # Append a zero to the end
 
             # Handle the other matrices
             for mkey in ['annual', 'pp1to6']:
@@ -348,7 +353,7 @@ class Pars(dict):
                 zeros_col = np.zeros((n+1,1))
                 matrix[k] = np.append(matrix[k], zeros_row, axis=0) # Append row to bottom
                 matrix[k] = np.append(matrix[k], zeros_col, axis=1) # Append column to right
-                matrix[n,n] = 1.0 # Set everything to zero except continuation
+                matrix[k][n,n] = 1.0 # Set everything to zero except continuation
 
         # Handle non-None position
         if pos is not None:

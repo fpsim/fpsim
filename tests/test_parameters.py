@@ -111,10 +111,29 @@ def test_scale():
     return [s1, s2]
 
 
+def test_matrix_methods():
+    sc.heading('Test matrix methods')
+
+    pars = fp.pars('test')
+    n = len(pars['methods']['map'])
+
+    # Test add method
+    p1 = pars.copy()
+    p1.add_method(name='New method', eff=1.0)
+    s1 = fp.Sim(pars=p1)
+    s1.run()
+
+
+
+
+
+    return
+
+
 def test_validation():
     sc.heading('Test parameter validation')
 
-    pars = fp.pars()
+    pars = fp.pars('test') # Don't really need "test" since not running
 
     # Extra value not allowed
     with pytest.raises(ValueError):
@@ -152,8 +171,9 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        null    = test_null(do_plot=do_plot)
-        timings = test_method_timestep()
-        mcpr    = test_mcpr_growth()
-        scale   = test_scale()
-        pars    = test_validation()
+        # null    = test_null(do_plot=do_plot)
+        # timings = test_method_timestep()
+        # mcpr    = test_mcpr_growth()
+        # scale   = test_scale()
+        mats    = test_matrix_methods()
+        # pars    = test_validation()
