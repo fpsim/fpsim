@@ -172,7 +172,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                     discont_factor = discont_factor,
                     init_value     = init_value,
                     discont_value  = discont_value,
-                    create         = create,
+                    # create         = create,
                 )
             )
             check_not_none(prob_spec, 'year')

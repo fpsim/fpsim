@@ -29,6 +29,11 @@ def test_null(do_plot=do_plot):
     sim = fp.Sim(pars)
     sim.run()
 
+    # Tests
+    for key in ['births', 'deaths']:
+        n = sim.results[key].sum()
+        assert n == 0, f'Expecting {key} to be 0, not {n}'
+
     if do_plot:
         sim.plot()
 
@@ -51,7 +56,8 @@ def test_method_timestep():
     sim2.run()
     t2 = T.tt(output=True)
 
-    assert t2 < t1, 'Expecting runtime to be less with a larger method timestep'
+    assert t2 < t1, f'Expecting runtime to be less with a larger method timestep, but {t2:0.3f} > {t1:0.3f}'
+    print(f'Larger method timestep reduced runtime from {t1:0.3f} s to {t2:0.3f} s')
 
     return [t1, t2]
 
@@ -77,8 +83,9 @@ def test_mcpr_growth():
     decreasing = s1.results['mcpr'][-1]
     increasing = s2.results['mcpr'][-1]
 
-    assert mcpr_last > decreasing, f'Negative MCPR growth did not reduce MCPR ({decreasing} ≥ {mcpr_last})'
-    assert mcpr_last < increasing, f'Positive MCPR growth did not increase MCPR ({increasing} ≤ {mcpr_last})'
+    assert mcpr_last > decreasing, f'Negative MCPR growth did not reduce MCPR ({decreasing:0.3f} ≥ {mcpr_last:0.3f})'
+    assert mcpr_last < increasing, f'Positive MCPR growth did not increase MCPR ({increasing:0.3f} ≤ {mcpr_last:0.3f})'
+    print(f'MCPR changed as expected: {decreasing:0.3f} < {mcpr_last:0.3f} < {increasing:0.3f}')
 
     return [s1, s2]
 
