@@ -251,7 +251,7 @@ class Pars(dict):
         return
 
 
-    def add_method(self, name, pos=None):
+    def add_method(self, name, eff, pos=None):
         '''
         Add a new contraceptive method to the switching matrices.
 
@@ -264,6 +264,7 @@ class Pars(dict):
 
         Args:
             name (str): the name of the new method
+            eff (float): the efficacy of the new method
             pos (int): where in the matrix to insert the new method (default: end)
 
         **Examples**::
