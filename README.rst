@@ -1,20 +1,29 @@
 Family planning model and analyses
 ==================================
 
-This repository contains the code for both the family planning model, FPsim.
+This repository contains the code for IDM's family planning model, FPsim. 
 
-* FPsim, in the folder ``fpsim``, is a standalone Python library for performing family planning analyses.
-* FPsim tests are in the ``tests`` folder.
+**FPsim is currently under development**.
+
+The structure is as follows:
+
+- FPsim, in the folder ``fpsim``, is a standalone Python library for performing family planning analyses.
+- Docs are in the ``docs`` folder.
+- Examples are in the ``examples`` folder.
+- Tests are in the ``tests`` folder.
+
 
 Installation
 ------------
 
-Run ``pip install -e .`` to install these packages and their required dependencies. This will make both ``fpsim`` and ``fp_analyses`` available on the Python path.
+Run ``pip install -e .`` to install ``fpsim`` and its dependencies. This will make ``fpsim`` available on the Python path.
+
 
 Documentation
 -------------
 
 Documentation is available at https://docs.idmod.org/projects/fpsim/en/latest/.
+
 
 Contributing
 ------------
