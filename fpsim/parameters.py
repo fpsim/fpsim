@@ -146,9 +146,11 @@ class Pars(dict):
         return
 
 
-    def key2ind(self, key, allow_none=True):
+    def _as_ind(self, key, allow_none=True):
         '''
-        Take a method key and convert to an int, e.g. 'Condoms' → 7
+        Take a method key and convert to an int, e.g. 'Condoms' → 7.
+
+        If already an int, do validation.
         '''
 
         keys = list(self['methods']['map'].keys())
@@ -180,10 +182,11 @@ class Pars(dict):
         return ind
 
 
-    def ind2key(self, ind):
+    def _as_key(self, ind):
         '''
-        Convert ind to key, e.g. 7 → 'Condoms'. Also handles a key input, in which
-        case it does validation.
+        Convert ind to key, e.g. 7 → 'Condoms'.
+
+        If already a key, do validation.
         '''
         keys = list(self['methods']['map'].keys())
         if isinstance(ind, int): # Normal case, convert to string
@@ -226,16 +229,11 @@ class Pars(dict):
 
         # Perform updates
         for k,rawval in method.items():
-            try:
-                self.key2ind(k)
-            except Exception as E:
-                errormsg = f'Key "{k}" is not a valid method: are you sure this is an efficacy change?'
-                raise ValueError(errormsg) from E
+            k = self._as_key(k)
             v = getval(rawval)
-            key = self.key2ind(k)
             effs = self['methods']['eff']
-            orig = self['method_efficacy'][ind]
-            self['method_efficacy'][ind] = v
+            orig = effs[k]
+            effs[k] = v
             if verbose:
                 print(f'Efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
@@ -259,8 +257,8 @@ class Pars(dict):
         raw = self['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
 
         # Convert from strings to indices
-        source = self.key2ind(source, allow_none=False)
-        dest   = self.key2ind(dest, allow_none=False)
+        source = self._as_ind(source, allow_none=False)
+        dest   = self._as_ind(dest, allow_none=False)
 
         # Replace age keys with all ages if so asked
         if ages in none_all_keys:
@@ -344,11 +342,11 @@ class Pars(dict):
         '''
 
         # Get index of method to remove
-        ind = self.key2ind(name, allow_none=False)
+        ind = self._as_ind(name, allow_none=False)
+        key = self._as_key(name)
 
         # Remove from mapping and efficacy
         methods = self['methods']
-        key = list(methods['map'].keys())[ind]
         methods['map'].pop(key)
         methods['eff'].pop(key)
 
