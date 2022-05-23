@@ -251,9 +251,11 @@ class Pars(dict):
         return
 
 
-    def add_method(self, name, init=None, discont=None, pos=None):
+    def add_method(self, name, pos=None):
         '''
         Add a new contraceptive method to the switching matrices.
+
+        Methods must be added before the sim is run.
 
         Note: the matrices are stored in ``pars['methods']['raw']``; this method
         is a helper function for modifying those. For more flexibility, modify
@@ -262,15 +264,50 @@ class Pars(dict):
 
         Args:
             name (str): the name of the new method
-            init (float): the rate of initiation from no method (default: 0)
-            discont (float): the rate of discontinuation to no method (default: 0)
             pos (int): where in the matrix to insert the new method (default: end)
 
         **Examples**::
             pars = fp.pars()
-            pars.add_method(name='New method') # Create a new method with no initiation/discontinuation
-            pars.add_method('Male pill', init=0.1, discont=0.02, pos=5)
+            pars.add_method('New method') # Create a new method with no initiation/discontinuation
+            pars.add_method(name='Male pill', pos=5)
         '''
+
+        return
+
+
+    def rm_method(self, name):
+        '''
+       Removes a contraceptive method from the switching matrices.
+
+        Methods must be removed before the sim is run.
+
+        Args:
+            name (str/ind): the name or index of the method to remove
+
+        **Example**::
+            pars = fp.pars()
+            pars.rm_method('Other modern')
+        '''
+
+        return
+
+
+    def reorder_methods(self, order):
+        '''
+       Reorder the contraceptive method matrices.
+
+        Methods must be reordered before the sim is run.
+
+        Args:
+            order (arr): the new order of methods
+
+        **Example**::
+            pars = fp.pars()
+            pars.reorder_methods([2, 6, 4, 7, 0, 8, 5, 1, 3])
+        '''
+
+
+        return
 
 
 

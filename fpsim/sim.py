@@ -336,7 +336,7 @@ class People(fpb.BasePeople):
         # Find monthly probability of pregnancy based on fecundity and any use of contraception including LAM - from data
         preg_eval_lam    = self.pars['age_fecundity'][lam.int_age_clip] * lam.personal_fecundity
         preg_eval_nonlam = self.pars['age_fecundity'][nonlam.int_age_clip] * nonlam.personal_fecundity
-        method_eff       = self.pars['method_efficacy'][nonlam.method]
+        method_eff       = self.pars['method']['eff'][nonlam.method]
         lam_eff          = self.pars['LAM_efficacy']
 
         lam_probs    = fpu.annprob2ts((1-lam_eff)*preg_eval_lam,       self.pars['timestep'])

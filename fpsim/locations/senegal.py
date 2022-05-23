@@ -549,7 +549,7 @@ def birth_spacing_pref():
 
 #%% Contraceptive methods
 
-def methods():
+def method_probs():
     '''
     Matrices to give transitional probabilities from 2018 DHS Senegal contraceptive calendar data
     Probabilities in this function are annual probabilities of initiating, discontinuing, continuing
@@ -697,13 +697,13 @@ def methods():
     return methods
 
 
-def efficacy(disable=False):
+def method_eff(disable=False):
     '''
     From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
     BTL failure rate from general published data
     Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
     '''
-    method_efficacy = sc.odict({
+    method_efficacy = sc.odict({ # Must be an odict to allow division operation below
         'None'              :  0.0,
         'Pill'              : 94.5,
         'IUDs'              : 98.6,
@@ -724,7 +724,7 @@ def efficacy(disable=False):
     return method_efficacy
 
 
-def efficacy25(disable=False):
+def method_eff25(disable=False):
     '''
     From Guttmacher, fp/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
     BTL failure rate from general published data
@@ -801,9 +801,9 @@ def make_pars():
     pars['spacing_pref']       = birth_spacing_pref()
 
     # Contraceptive methods
-    pars['method_efficacy']   = efficacy()
-    pars['method_efficacy25'] = efficacy25()
-    pars['methods']           = methods()
-    pars['barriers']          = barriers()
+    pars['methods']          = method_probs()
+    pars['methods']['eff']   = method_eff()
+    pars['methods']['eff25'] = method_eff25()
+    pars['barriers']         = barriers()
 
     return pars
