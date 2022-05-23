@@ -119,15 +119,20 @@ def test_matrix_methods():
 
     # Test add method
     p1 = pars.copy()
-    p1.add_method(name='New method', eff=1.0)
+    name = 'New method'
+    p1.add_method(name=name, eff=1.0)
     s1 = fp.Sim(pars=p1)
     s1.run()
+    assert s1.pars['methods']['map'][name] == n, 'Last entry does not have expected shape'
 
+    # Test remove method
+    p2 = pars.copy()
+    p2.rm_method(name='Injectables')
+    s2 = fp.Sim(pars=p2)
+    s2.run()
+    assert len(s2.pars['methods']['map']) == n-1, 'Methods do not have expected shape'
 
-
-
-
-    return
+    return [s1, s2]
 
 
 def test_validation():
@@ -175,5 +180,5 @@ if __name__ == '__main__':
         # timings = test_method_timestep()
         # mcpr    = test_mcpr_growth()
         # scale   = test_scale()
-        mats    = test_matrix_methods()
+        meths    = test_matrix_methods()
         # pars    = test_validation()

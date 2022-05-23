@@ -385,8 +385,8 @@ class Pars(dict):
 
         # Remove from mapping and efficacy
         methods = self['methods']
-        methods['map'].pop(key)
-        methods['eff'].pop(key)
+        for parkey in ['map', 'modern', 'eff']:
+            methods[parkey].pop(key)
 
         # Modify method matrices
         raw = methods['raw']
@@ -394,7 +394,7 @@ class Pars(dict):
         for k in age_keys:
             # Handle the initiation matrix
             pp0to1 = raw['pp0to1']
-            pp0to1[k] = np.delete(pp0to1, ind)
+            pp0to1[k] = np.delete(pp0to1[k], ind)
 
             # Handle the other matrices
             for mkey in ['annual', 'pp1to6']:
