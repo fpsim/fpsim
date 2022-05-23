@@ -2,6 +2,7 @@
 Run tests on the Scenarios class.
 """
 
+import numpy as np
 import sciris as sc
 import fpsim as fp
 import pytest
@@ -30,20 +31,22 @@ def test_update_methods_eff():
     sc.heading('Testing updating method efficacy...')
 
     method = 'Other modern'
-    low_eff  = {method:dict(dist='uniform', par1=0.80, par2=0.90)}
-    high_eff = {method:dict(dist='uniform', par1=0.91, par2=0.95)}
+    l = [0.80, 0.90]
+    h = [0.90, 1.00]
+    low_eff  = {method:dict(dist='uniform', par1=l[0], par2=l[1])}
+    high_eff = {method:dict(dist='uniform', par1=h[0], par2=h[1])}
 
-    low_eff = fp.update_methods(year=int_year, eff=low_eff)
+    low_eff  = fp.update_methods(year=int_year, eff=low_eff)
     high_eff = fp.update_methods(year=int_year, eff=high_eff)
 
     simlist = make_sims([low_eff, high_eff])
     msim = fp.MultiSim(sims=simlist)
     msim.run(serial=serial)
 
-    low_eff_post_sim = msim.sims[0]['method_efficacy'][9]
-    high_eff_post_sim = msim.sims[1]['method_efficacy'][9]
+    low_eff_post_sim = msim.sims[0]['methods']['eff'][method]
+    high_eff_post_sim = msim.sims[1]['methods']['eff'][method]
 
-    msg = f"Method efficacy after updating to about .93 is {high_eff_post_sim} and after updating to about 0.85 is actually {low_eff_post_sim}"
+    msg = f"Expected efficacy {np.mean(h)} and got {high_eff_post_sim}, which is lower than expected {np.mean(l)} and got {low_eff_post_sim}"
     assert high_eff_post_sim > low_eff_post_sim, msg
     return msim
 

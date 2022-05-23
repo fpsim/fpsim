@@ -153,7 +153,8 @@ class Pars(dict):
         If already an int, do validation.
         '''
 
-        keys = list(self['methods']['map'].keys())
+        mapping = self['methods']['map']
+        keys = list(mapping.keys())
 
         # Validation
         if key is None and not allow_none:
@@ -165,7 +166,7 @@ class Pars(dict):
             ind = slice(None) # This is equivalent to ":" in matrix[:,:]
         elif isinstance(key, str): # Normal case, convert from key to index
             try:
-                ind = keys[key]
+                ind = mapping[key]
             except KeyError as E:
                 errormsg = f'Key "{key}" is not a valid method'
                 raise sc.KeyNotFoundError(errormsg) from E
@@ -240,7 +241,7 @@ class Pars(dict):
         return
 
 
-    def update_method_prob(self, source=None, dest=None, factor=None, value=None, ages=None, matrix=None):
+    def update_method_prob(self, source=None, dest=None, factor=None, value=None, ages=None, matrix=None, verbose=False):
         '''
         Updates the probability matrices with a new value. Usually used via the
         intervention ``fp.update_methods()``.
@@ -252,6 +253,7 @@ class Pars(dict):
             value (float):    if supplied, change the probability to this value
             ages (str/list):  the ages to modify (default: all)
             matrix (str):     which switching matrix to modify (default: annual)
+            verbose (bool):   how much detail to print
         '''
 
         raw = self['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
@@ -284,7 +286,7 @@ class Pars(dict):
                    arr *= (1-val)/arr.sum()
                    arr[dest] = val
                    assert np.isclose(arr.sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {arr.sum()}'
-               if self.verbose:
+               if verbose:
                    print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[dest]}')
             else: # Handle annual switching *matrices*
                 orig = arr[source, dest]
@@ -296,7 +298,7 @@ class Pars(dict):
                     arr[source, :] *= (1-val)/arr[source, :].sum()
                     arr[source, dest] = val
                     assert np.isclose(arr[source, :].sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {arr.sum()}'
-                if self.verbose:
+                if verbose:
                     print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[source, dest]}')
 
         return
