@@ -397,7 +397,7 @@ class Pars(dict):
             errormsg = f'Reordering "{order}" does not match indices of methods "{orig_set}"'
             raise ValueError(errormsg)
 
-        # Reorder map and efficacy
+        # Reorder map and efficacy -- TODO: think about how to implement rename as well
         new_keys = [orig_keys[k] for k in order]
         for parkey in ['map', 'eff']:
             methods[parkey] = {k:methods[parkey][k] for k in new_keys}
@@ -419,7 +419,6 @@ class Pars(dict):
         self.validate()
 
         return
-
 
 
 
