@@ -304,7 +304,7 @@ class Pars(dict):
         return
 
 
-    def add_method(self, name, eff, pos=None):
+    def add_method(self, name, eff, modern=True, pos=None):
         '''
         Add a new contraceptive method to the switching matrices.
 
@@ -318,6 +318,7 @@ class Pars(dict):
         Args:
             name (str): the name of the new method
             eff (float): the efficacy of the new method
+            modern (bool): whether it's a modern method
             pos (int): where in the matrix to insert the new method (default: end)
 
         **Examples**::
@@ -325,6 +326,36 @@ class Pars(dict):
             pars.add_method('New method') # Create a new method with no initiation/discontinuation
             pars.add_method(name='Male pill', pos=5)
         '''
+        # Remove from mapping and efficacy
+        methods = self['methods']
+        n = len(methods['map'])
+        methods['map'][name]    = n
+        methods['modern'][name] = modern
+        methods['eff'][name]    = eff
+
+        # Modify method matrices
+        raw = methods['raw']
+        age_keys = methods['age_map'].keys()
+        for k in age_keys:
+            # Handle the initiation matrix
+            pp0to1 = raw['pp0to1']
+            pp0to1[k] = np.append(pp0to1, 0) # Append a zero to the end
+
+            # Handle the other matrices
+            for mkey in ['annual', 'pp1to6']:
+                matrix = raw[mkey]
+                zeros_row = np.zeros((1,n))
+                zeros_col = np.zeros((n+1,1))
+                matrix[k] = np.append(matrix[k], zeros_row, axis=0) # Append row to bottom
+                matrix[k] = np.append(matrix[k], zeros_col, axis=1) # Append column to right
+                matrix[n,n] = 1.0 # Set everything to zero except continuation
+
+        # Handle non-None position
+        if pos is not None:
+            raise NotImplementedError('Non-default position is not yet supported; use pars.reorder_methods()')
+
+        # Validate
+        self.validate()
 
         return
 
