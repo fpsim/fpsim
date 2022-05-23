@@ -4,8 +4,20 @@ Define defaults for use throughout FPsim
 
 import numpy as np
 import sciris as sc
+from . import utils as fpu
 
 __all__ = ['pars']
+
+
+
+def getval(v):
+    ''' Handle different ways of supplying a value -- number, distribution, function '''
+    if sc.isnumber(v):
+        return v
+    elif isinstance(v, dict):
+        return fpu.sample(**v)[0] # [0] since returns an array
+    elif callable(v):
+        return v()
 
 
 class Pars(dict):
@@ -120,6 +132,131 @@ class Pars(dict):
                 method_age_map[k] = v
 
         return
+
+
+    def key2ind(self, key):
+        """
+        Take a method key and convert to an int, e.g. 'Condoms' → 7
+        """
+        ind = key
+        if ind in none_all_keys:
+            ind = slice(None) # This is equivalent to ":" in matrix[:,:]
+        elif isinstance(ind, str):
+            ind = self['methods']['map'][key]
+        return ind
+
+
+    def update_method_eff(self, method, value=None, verbose=False):
+        '''
+        Update efficacy of one or more contraceptive methods.
+
+        Args:
+            method (str/dict): method to update, or dict of method:value pairs
+            value (float): new value of contraceptive efficacy (not required if method is a dict)
+
+        **Examples**::
+            pars.update_method_eff('Injectables', 0.99)
+            pars.update_method_eff({'Injectables':0.99, 'Condoms':0.50})
+        '''
+
+        # Validation
+        if not isinstance(method, dict):
+            if value is None:
+                errormsg = 'Must supply a value to update the contraceptive efficacy to'
+                raise ValueError(errormsg)
+            else:
+                method = {method:value}
+
+        # Perform updates
+        for k,rawval in method.items():
+            try:
+                self.key2ind(k)
+            except:
+                errormsg = f'Key "{k}" is not a valid method: are you sure this is an efficacy change?'
+                raise ValueError(errormsg)
+            v = getval(rawval)
+            ind = self.key2ind(k)
+            orig = self['method_efficacy'][ind]
+            self['method_efficacy'][ind] = v
+            if verbose:
+                print(f'Efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
+
+        return
+
+
+    def update_method_prob(self, source=None, dest=None, factor=None, value=None, ages=None, matrix=None):
+        '''
+        Updates the probability matrices with a new value. Usually used via the
+        intervention ``fp.update_methods()``.
+
+        Args:
+            source (str/int): the method to switch from
+            dest   (str/int): the method to switch to
+            factor (float):   if supplied, multiply the probability by this factor
+            value (float):    if supplied, change the probability to this value
+            ages (str/list):  the ages to modify (default: all)
+            matrix (str):     which switching matrix to modify (default: annual)
+        '''
+
+        raw = self['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
+
+        # Replace age keys with all ages if so asked
+        if ages in none_all_keys:
+            ages = raw['annual'].keys()
+        else:
+            ages = sc.tolist(ages)
+
+        # Actually loop over the matrices and apply the changes
+        for k in ages:
+            arr = raw[matrix][k]
+            if matrix == 'pp0to1': # Handle the postpartum initialization *vector*
+               orig = arr[dest]
+               if factor is not None:
+                   arr[dest] *= getval(factor)
+               elif value is not None:
+                   val = getval(value)
+                   arr[dest] = 0
+                   arr *= (1-val)/arr.sum()
+                   arr[dest] = val
+                   assert np.isclose(arr.sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {arr.sum()}'
+               if self.verbose:
+                   print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[dest]}')
+            else: # Handle annual switching *matrices*
+                orig = arr[source, dest]
+                if factor is not None:
+                    arr[source, dest] *= getval(factor)
+                elif value is not None:
+                    val = getval(value)
+                    arr[source, dest] = 0
+                    arr[source, :] *= (1-val)/arr[source, :].sum()
+                    arr[source, dest] = val
+                    assert np.isclose(arr[source, :].sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {arr.sum()}'
+                if self.verbose:
+                    print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[source, dest]}')
+
+        return
+
+
+    def add_method(self, name, init=None, discont=None, pos=None):
+        '''
+        Add a new contraceptive method to the switching matrices.
+
+        Note: the matrices are stored in ``pars['methods']['raw']``; this method
+        is a helper function for modifying those. For more flexibility, modify
+        them directly. The ``fp.update_methods()`` intervention can be used to
+        modify the switching probabilities later.
+
+        Args:
+            name (str): the name of the new method
+            init (float): the rate of initiation from no method (default: 0)
+            discont (float): the rate of discontinuation to no method (default: 0)
+            pos (int): where in the matrix to insert the new method (default: end)
+
+        **Examples**::
+            pars = fp.pars()
+            pars.add_method(name='New method') # Create a new method with no initiation/discontinuation
+            pars.add_method('Male pill', init=0.1, discont=0.02, pos=5)
+        '''
 
 
 

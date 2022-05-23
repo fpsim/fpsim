@@ -3,7 +3,6 @@ Specify the core interventions available in FPsim. Other interventions can be
 defined by the user by inheriting from these classes.
 '''
 
-import numpy as np
 import pylab as pl
 import sciris as sc
 import inspect
@@ -295,28 +294,6 @@ class change_par(Intervention):
         return
 
 
-def key2ind(sim, key):
-    """
-    Take a method key and convert to an int, e.g. 'Condoms' → 7
-    """
-    ind = key
-    if ind in fpp.none_all_keys:
-        ind = slice(None) # This is equivalent to ":" in matrix[:,:]
-    elif isinstance(ind, str):
-        ind = sim.pars['methods']['map'][key]
-    return ind
-
-
-def getval(v):
-    ''' Handle different ways of supplying a value -- number, distribution, function '''
-    if sc.isnumber(v):
-        return v
-    elif isinstance(v, dict):
-        return fpu.sample(**v)[0]
-    elif callable(v):
-        return v()
-
-
 class update_methods(Intervention):
     """
     Intervention to modify method efficacy and/or switching matrix.
@@ -333,12 +310,12 @@ class update_methods(Intervention):
 
         probs (list): A list of dictionaries where each dictionary has the following keys:
 
-            source (str): The source method to be changed.
-            dest (str) The destination method to be changed.
-            factor (float): The factor by which to multiply existing probability; OR
-            value (float): The value to replace the switching probability value.
-            keys (list): A list of strings representing age groups to affect.
-            matrix (str): One of ['probs', 'probs1', 'probs1to6'] where:
+            source (str): the source method to be changed.
+            dest   (str): the destination method to be changed.
+            factor (float): the factor by which to multiply existing probability; OR
+            value  (float): the value to replace the switching probability value.
+            keys   (list): a list of strings representing age groups to affect.
+            matrix (str): one of ['probs', 'probs1', 'probs1to6'] where:
 
                 probs:     Changes the specified uptake at the corresponding year regardless of state.
                 probs1:    Changes the specified uptake for all individuals in their first month postpartum.
@@ -378,17 +355,7 @@ class update_methods(Intervention):
             # Implement efficacy
             if self.eff is not None:
                 for k,rawval in self.eff.items():
-                    try:
-                        key2ind(sim, k)
-                    except:
-                        errormsg = f'Key "{k}" is not a valid method: are you sure this is an efficacy change?'
-                        raise ValueError(errormsg)
-                    v = getval(rawval)
-                    ind = key2ind(sim, k)
-                    orig = sim['method_efficacy'][ind]
-                    sim['method_efficacy'][ind] = v
-                    if self.verbose:
-                        print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
+                    sim.pars.update_method_eff(method=k, eff=rawval)
 
             # Implement method mix shift
             if self.probs is not None:
