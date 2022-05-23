@@ -196,8 +196,8 @@ class Experiment(sc.prettyobj):
         Calculate maternal mortality in model over most recent 3 years
         '''
 
-        maternal_deaths = pl.sum(self.model_results['maternal_deaths'][-mpy * 3:])
-        births_last_3_years = pl.sum(self.model_results['births'][-mpy * 3:])
+        maternal_deaths = np.sum(self.model_results['maternal_deaths'][-mpy * 3:])
+        births_last_3_years = np.sum(self.model_results['births'][-mpy * 3:])
         self.model_to_calib['maternal_mortality_ratio'] = (maternal_deaths / births_last_3_years) * 100000
 
         return
@@ -205,23 +205,23 @@ class Experiment(sc.prettyobj):
 
     def model_infant_mortality_rate(self):
 
-        infant_deaths = pl.sum(self.model_results['infant_deaths'][-mpy:])
-        births_last_year = pl.sum(self.model_results['births'][-mpy:])
+        infant_deaths = np.sum(self.model_results['infant_deaths'][-mpy:])
+        births_last_year = np.sum(self.model_results['births'][-mpy:])
         self.model_to_calib['infant_mortality_rate'] = (infant_deaths / births_last_year) * 1000
 
         return
 
 
     def model_crude_death_rate(self):
-        total_deaths = pl.sum(self.model_results['deaths'][-mpy:]) + \
-                       pl.sum(self.model_results['infant_deaths'][-mpy:]) + \
-                       pl.sum(self.model_results['maternal_deaths'][-mpy:])
+        total_deaths = np.sum(self.model_results['deaths'][-mpy:]) + \
+                       np.sum(self.model_results['infant_deaths'][-mpy:]) + \
+                       np.sum(self.model_results['maternal_deaths'][-mpy:])
         self.model_to_calib['crude_death_rate'] = (total_deaths / self.model_results['pop_size'][-1]) * 1000
         return
 
 
     def model_crude_birth_rate(self):
-        births_last_year = pl.sum(self.model_results['births'][-mpy:])
+        births_last_year = np.sum(self.model_results['births'][-mpy:])
         self.model_to_calib['crude_birth_rate'] = (births_last_year / self.model_results['pop_size'][-1]) * 1000
         return
 
