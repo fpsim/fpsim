@@ -391,7 +391,6 @@ class update_methods(Intervention):
                         print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
             # Implement method mix shift
-            raw = sim['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
             if self.probs is not None:
                 probs = sc.tolist(self.probs)
                 for entry in probs:
@@ -460,38 +459,7 @@ class update_methods(Intervention):
                     factor = factor[0] if factor else None
                     value  = value[0]  if value  else None
 
-                    # Replace age keys with all ages if so asked
-                    if ages in fpp.none_all_keys:
-                        ages = raw['annual'].keys()
-                    else:
-                        ages = sc.tolist(ages)
-
-                    # Actually loop over the matrices and apply the changes
-                    for k in ages:
-                        matrix = raw[s_matrix][k]
-                        if s_matrix == 'pp0to1': # Handle the postpartum initialization *vector*
-                           orig = matrix[dest]
-                           if factor is not None:
-                               matrix[dest] *= getval(factor)
-                           elif value is not None:
-                               val = getval(value)
-                               matrix[dest] = 0
-                               matrix *= (1-val)/matrix.sum()
-                               matrix[dest] = val
-                               assert np.isclose(matrix.sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {matrix.sum()}'
-                           if self.verbose:
-                               print(f'At time {sim.y:0.1f}, matrix {s_matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
-                        else: # Handle annual switching *matrices*
-                            orig = matrix[source, dest]
-                            if factor is not None:
-                                matrix[source, dest] *= getval(factor)
-                            elif value is not None:
-                                val = getval(value)
-                                matrix[source, dest] = 0
-                                matrix[source, :] *= (1-val)/matrix[source, :].sum()
-                                matrix[source, dest] = val
-                                assert np.isclose(matrix[source, :].sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {matrix.sum()}'
-                            if self.verbose:
-                                print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
+                    # Actually update the values and check the matrix is valid
+                    sim.pars.update_methods()
 
         return
