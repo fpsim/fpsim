@@ -1395,46 +1395,6 @@ class Sim(fpb.BaseSim):
             print(f"Saved age at first birth plot at {output_file}")
             pl.savefig(output_file)
 
-    def plot_method_mix(self, do_show=True, do_save=False, filepath="method_mix.png"):
-        """
-        Plots method mix for a single sim run
-
-        Args:
-            do_show (bool): Whether or not the user wants to show the output plot.
-            do_save (bool): Whether or not the user wants to save the plot to filepath.
-            filepath (str): The name of the path to output the plot.
-        """
-        method_table = {"proportion": [], "method": []}
-
-        # Run each sim n_sims times, get save proportion and let barplot calculate averages
-        people = self.people
-        unique, counts = np.unique(people.method, return_counts=True)
-        count_dict = dict(zip(unique, counts))
-
-        for method in count_dict:
-            if method != fpd.method_map["None"]:
-                method_table["proportion"].append(count_dict[method] / len(people.method))
-                method_table["method"].append(method)
-
-        # Plotting
-        df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
-
-        # We want names for the methods
-        methods_map = self.sims[0].pars['methods']['map']
-        inv_methods_map = {value: key for key, value in methods_map.items()}
-        df['method'] = df['method'].map(inv_methods_map)
-        df.sort_values(by=['proportion'])
-
-        # plotting and saving
-        sns.barplot(data=df, x="proportion", y="method", hue="method", order=np.unique(df['method']))
-        pl.title(f"Mean method mix")
-
-        if do_save:
-            pl.savefig(filepath)
-        if do_show:
-            pl.show()
-
-
     def plot_people(self):
         ''' Use imshow() to show all individuals as rows, with time as columns, one pixel per timestep per person '''
         # The test_mode might help with this
@@ -1766,7 +1726,7 @@ class MultiSim(sc.prettyobj):
         methods_map = self.sims[0].pars['methods']['map']
         inv_methods_map = {value: key for key, value in methods_map.items()}
         df['method'] = df['method'].map(inv_methods_map)
-        df.sort_values(by=['proportion'])
+        df.sort_values(by=['proportion'], inplace=True)
 
         # plotting and saving
         sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=np.unique(df['method']))

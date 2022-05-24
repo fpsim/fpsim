@@ -192,6 +192,7 @@ def test_scenarios(do_plot=do_plot):
         scens.plot_sims()
         scens.plot_scens()
         scens.plot_cpr()
+        scens.plot_method_mix()
 
     return scens
 
