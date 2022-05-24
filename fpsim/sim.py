@@ -1727,10 +1727,10 @@ class MultiSim(sc.prettyobj):
         methods_map = self.sims[0].pars['methods']['map']
         inv_methods_map = {value: key for key, value in methods_map.items()}
         df['method'] = df['method'].map(inv_methods_map)
+        df.sort_values(by=['proportion']) # 
 
         # plotting and saving
-        sns.set(rc={'figure.figsize':(12,8.27)})
-        sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=['Implants', 'Injectables', 'Pill', 'IUDs', 'Other traditional', 'Condoms', "BTL", 'Other modern', 'Withdrawal'])
+        sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=np.unique(df['method']))
         pl.title(f"Mean method mix")
 
         if do_save:
