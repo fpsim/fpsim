@@ -1696,12 +1696,14 @@ class MultiSim(sc.prettyobj):
         Plots the average method mix for n_sims runs
 
         Args:
-            n_sims   (int): The number of sims you want to run to calculate average mix and standard deviation.
             do_show (bool): Whether or not the user wants to show the output plot.
             do_save (bool): Whether or not the user wants to save the plot to filepath.
             filepath (str): The name of the path to output the plot.
+
+        Assumptions:
+            All sims in the msim are labeled appropriately (each grouping has a different label)
         """
-        method_table = {"sim" : [], "sim_index": [], "proportion": [], "method": []}
+        method_table = {"sim" : [], "seed": [], "proportion": [], "method": []}
 
         # Run each sim n_sims times, get save proportion and let barplot calculate averages
         for sim in self.sims:
