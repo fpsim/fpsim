@@ -1714,7 +1714,7 @@ class MultiSim(sc.prettyobj):
             count_dict = dict(zip(unique, counts))
 
             for method in count_dict:
-                if method != 0:
+                if method != fpd.method_map["None"]:
                     method_table["proportion"].append(count_dict[method] / len(people.method))
                     method_table["seed"].append(sim.pars['seed'])
                     method_table["method"].append(method)
