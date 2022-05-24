@@ -148,7 +148,7 @@ class Pars(dict):
             for k,v in new_method_age_map.items():
                 method_age_map[k] = v
 
-        return
+        return self
 
 
     def _as_ind(self, key, allow_none=True):
@@ -243,7 +243,7 @@ class Pars(dict):
             if verbose:
                 print(f'Efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
-        return
+        return self
 
 
     def update_method_prob(self, source=None, dest=None, factor=None, value=None, ages=None, matrix=None, verbose=False):
@@ -306,21 +306,21 @@ class Pars(dict):
                 if verbose:
                     print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[source, dest]}')
 
-        return
+        return self
 
 
     def reset_methods_map(self):
         ''' Refresh the methods map to be self-consistent '''
         methods = self['methods']
         methods['map'] = {k:i for i,k in enumerate(methods['map'].keys())} # Reset numbering
-        return
+        return self
 
 
-    def add_method(self, name, eff, modern=True, pos=None):
+    def add_method(self, name, eff, modern=True):
         '''
         Add a new contraceptive method to the switching matrices.
 
-        Methods must be added before the sim is run.
+        A new method should be added before the sim is run.
 
         Note: the matrices are stored in ``pars['methods']['raw']``; this method
         is a helper function for modifying those. For more flexibility, modify
@@ -330,13 +330,12 @@ class Pars(dict):
         Args:
             name (str): the name of the new method
             eff (float): the efficacy of the new method
-            modern (bool): whether it's a modern method
-            pos (int): where in the matrix to insert the new method (default: end)
+            modern (bool): whether it's a modern method (default: yes)
 
         **Examples**::
             pars = fp.pars()
-            pars.add_method('New method') # Create a new method with no initiation/discontinuation
-            pars.add_method(name='Male pill', pos=5)
+            pars.add_method('New method', 0.90)
+            pars.add_method(name='Male pill', eff=0.98, modern=True)
         '''
         # Remove from mapping and efficacy
         methods = self['methods']
@@ -362,14 +361,10 @@ class Pars(dict):
                 matrix[k] = np.append(matrix[k], zeros_col, axis=1) # Append column to right
                 matrix[k][n,n] = 1.0 # Set everything to zero except continuation
 
-        # Handle non-None position
-        if pos is not None:
-            raise NotImplementedError('Non-default position is not yet supported; use pars.reorder_methods()')
-
         # Validate
         self.validate()
 
-        return
+        return self
 
 
     def rm_method(self, name):
@@ -413,26 +408,29 @@ class Pars(dict):
         # Validate
         self.validate()
 
-        return
+        return self
 
 
     def reorder_methods(self, order):
         '''
-       Reorder the contraceptive method matrices.
+        Reorder the contraceptive method matrices.
 
-        Methods must be reordered before the sim is run.
+        Method reordering should be done before the sim is created (or at least before it's run).
 
         Args:
             order (arr): the new order of methods, either ints or strings
+            sim (Sim): if supplied, also reorder
 
-        **Example**::
+        **Exampls**::
             pars = fp.pars()
             pars.reorder_methods([2, 6, 4, 7, 0, 8, 5, 1, 3])
         '''
 
         # Reorder mapping and efficacy
         methods = self['methods']
-        orig_keys = list(methods['map'].keys())
+        orig = sc.dcp(methods['map'])
+        orig_keys = list(orig.keys())
+        methods['orig_map'] = orig # Store a copy for debugging
         if isinstance(order[0], str): # If strings are supplied, convert to ints
             order = [orig_keys.index(k) for k in order]
         order_set = sorted(set(order))
@@ -465,7 +463,7 @@ class Pars(dict):
         # Validate
         self.validate()
 
-        return
+        return self
 
 
 
