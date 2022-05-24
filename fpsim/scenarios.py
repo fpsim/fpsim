@@ -6,6 +6,7 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 from . import defaults as fpd
+from . import parameters as fpp
 from . import sim as fps
 from . import interventions as fpi
 
@@ -58,6 +59,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         spec   (dict): a pre-made specification of a scenario; see keyword explanations below (optional)
         args   (list): additional specifications (optional)
         label  (str): the sim label to use for this scenario
+        pars   (dict): optionally supply additional sim parameters to use with this scenario (that take effect at the beginning of the sim, not at the point of intervention)
         year   (float): the year at which to activate efficacy and probability scenarios
         matrix (str): which set of probabilities to modify for probability scenarios (e.g. annual or postpartum)
         ages   (str/list): the age groups to modify the probabilities for
@@ -116,18 +118,18 @@ class Scenario(sc.prettyobj, sc.dictobj):
         def update_sim(sim): sim.updated = True
         s6 = fp.make_scen(interventions=update_sim)
 
-        # Combining multiple scenarios: increase injectables initiation and reduce exposure factor
+        # Combining multiple scenarios: change probabilities and reduce exposure factor
         s7 = fp.make_scen(
-            dict(method='Injectables', init_factor=2),
+            dict(method='Injectables', init_value=0.1, discont_value=0.02, create=True),
             dict(par='exposure_factor', years=2010, vals=0.5)
         )
 
         # Scenarios can be combined
         s8 = s1 + s2
     '''
-    def __init__(self, spec=None, *args, label=None, year=None, matrix=None, ages=None, # Basic settings
+    def __init__(self, spec=None, *args, label=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
                  eff=None, probs=None, # Option 1
-                 source=None, dest=None, factor=None, value=None, # Option 2
+                 source=None, dest=None, factor=None, value=None, create=None, # Option 2
                  method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
                  par=None, years=None, vals=None, # Option 4
                  interventions=None, # Option 5
@@ -136,6 +138,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         # Handle input specification
         self.specs = sc.mergelists(*[Scenario(**spec).specs for spec in sc.mergelists(spec, *args)]) # Sorry
         self.label = label
+        self.pars  = sc.mergedicts(pars)
 
         # Handle other keyword inputs
         eff_spec   = None
@@ -170,6 +173,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                     discont_factor = discont_factor,
                     init_value     = init_value,
                     discont_value  = discont_value,
+                    # create         = create,
                 )
             )
             check_not_none(prob_spec, 'year')
@@ -226,6 +230,21 @@ class Scenario(sc.prettyobj, sc.dictobj):
                 spec['label'] = label
         self.label = label
         return
+
+
+    def run(self, run_args=None, **kwargs):
+        '''
+        Shortcut for creating and running a Scenarios object based on the current scenario.
+
+        Args:
+            run_args (dict): passed to scens.run()
+            kwargs (dict): passed to Scenarios()
+
+        '''
+        scens = Scenarios(**kwargs)
+        scens.add_scen(self)
+        scens.run(sc.mergedicts(run_args))
+        return scens
 
 
 
@@ -289,7 +308,7 @@ class Scenarios(sc.prettyobj):
             raise ValueError(errormsg)
         sims = sc.autolist()
         for i in range(self.repeats):
-            pars = sc.mergedicts(fpd.pars(self.pars.get('location')), self.pars, _copy=True)
+            pars = sc.mergedicts(fpp.pars(self.pars.get('location')), self.pars, _copy=True)
             pars.update(kwargs)
             pars['seed'] += i
             sim = fps.Sim(pars=pars)
@@ -344,7 +363,7 @@ class Scenarios(sc.prettyobj):
 
             if simlabel is None:
                 simlabel = f'Scenario {i}'
-            sims = self.make_sims(interventions=interventions, scenlabel=simlabel)
+            sims = self.make_sims(scenlabel=simlabel, interventions=interventions, **scen.pars)
             self.simslist.append(sims)
         return
 

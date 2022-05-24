@@ -3,12 +3,11 @@ Specify the core interventions available in FPsim. Other interventions can be
 defined by the user by inheriting from these classes.
 '''
 
-import numpy as np
 import pylab as pl
 import sciris as sc
 import inspect
 from . import utils as fpu
-from . import defaults as fpd
+from . import parameters as fpp
 
 
 #%% Generic intervention classes
@@ -295,28 +294,6 @@ class change_par(Intervention):
         return
 
 
-def key2ind(sim, key):
-    """
-    Take a method key and convert to an int, e.g. 'Condoms' → 7
-    """
-    ind = key
-    if ind in fpd.none_all_keys:
-        ind = slice(None) # This is equivalent to ":" in matrix[:,:]
-    elif isinstance(ind, str):
-        ind = sim.pars['methods']['map'][key]
-    return ind
-
-
-def getval(v):
-    ''' Handle different ways of supplying a value -- number, distribution, function '''
-    if sc.isnumber(v):
-        return v
-    elif isinstance(v, dict):
-        return fpu.sample(**v)[0]
-    elif callable(v):
-        return v()
-
-
 class update_methods(Intervention):
     """
     Intervention to modify method efficacy and/or switching matrix.
@@ -333,12 +310,12 @@ class update_methods(Intervention):
 
         probs (list): A list of dictionaries where each dictionary has the following keys:
 
-            source (str): The source method to be changed.
-            dest (str) The destination method to be changed.
-            factor (float): The factor by which to multiply existing probability; OR
-            value (float): The value to replace the switching probability value.
-            keys (list): A list of strings representing age groups to affect.
-            matrix (str): One of ['probs', 'probs1', 'probs1to6'] where:
+            source (str): the source method to be changed.
+            dest   (str): the destination method to be changed.
+            factor (float): the factor by which to multiply existing probability; OR
+            value  (float): the value to replace the switching probability value.
+            keys   (list): a list of strings representing age groups to affect.
+            matrix (str): one of ['probs', 'probs1', 'probs1to6'] where:
 
                 probs:     Changes the specified uptake at the corresponding year regardless of state.
                 probs1:    Changes the specified uptake for all individuals in their first month postpartum.
@@ -378,25 +355,14 @@ class update_methods(Intervention):
             # Implement efficacy
             if self.eff is not None:
                 for k,rawval in self.eff.items():
-                    try:
-                        key2ind(sim, k)
-                    except:
-                        errormsg = f'Key "{k}" is not a valid method: are you sure this is an efficacy change?'
-                        raise ValueError(errormsg)
-                    v = getval(rawval)
-                    ind = key2ind(sim, k)
-                    orig = sim['method_efficacy'][ind]
-                    sim['method_efficacy'][ind] = v
-                    if self.verbose:
-                        print(f'At time {sim.y:0.1f}, efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
+                    sim.pars.update_method_eff(method=k, eff=rawval)
 
             # Implement method mix shift
-            raw = sim['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
             if self.probs is not None:
                 probs = sc.tolist(self.probs)
                 for entry in probs:
                     entry = sc.dcp(entry)
-                    s_matrix = entry.pop('matrix', self.matrix) # Switching matrix
+                    matrix = entry.pop('matrix', self.matrix) # Switching matrix
                     ages     = entry.pop('ages', None)
                     source   = entry.pop('source', None)
                     dest     = entry.pop('dest', None)
@@ -409,8 +375,8 @@ class update_methods(Intervention):
                     d_value  = entry.pop('discont_value', None)
 
                     # Supply default matrix
-                    if s_matrix is None:
-                        s_matrix = 'annual'
+                    if matrix is None:
+                        matrix = 'annual'
 
                     # Validation # CK: TODO: move validation to initialization
                     if len(entry) != 0:
@@ -450,48 +416,14 @@ class update_methods(Intervention):
                         errormsg = 'Must supply a source or a destination'
                         raise ValueError(errormsg)
 
-                    # Convert from strings to indices
-                    source = key2ind(sim, source)
-                    dest = key2ind(sim, dest)
-
                     # Decide if it's a factor or a value modification
                     factor = sc.mergelists(factor, i_factor, d_factor)
                     value  = sc.mergelists(value, i_value, d_value)
                     factor = factor[0] if factor else None
                     value  = value[0]  if value  else None
 
-                    # Replace age keys with all ages if so asked
-                    if ages in fpd.none_all_keys:
-                        ages = raw['annual'].keys()
-                    else:
-                        ages = sc.tolist(ages)
-
-                    # Actually loop over the matrices and apply the changes
-                    for k in ages:
-                        matrix = raw[s_matrix][k]
-                        if s_matrix == 'pp0to1': # Handle the postpartum initialization *vector*
-                           orig = matrix[dest]
-                           if factor is not None:
-                               matrix[dest] *= getval(factor)
-                           elif value is not None:
-                               val = getval(value)
-                               matrix[dest] = 0
-                               matrix *= (1-val)/matrix.sum()
-                               matrix[dest] = val
-                               assert np.isclose(matrix.sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {matrix.sum()}'
-                           if self.verbose:
-                               print(f'At time {sim.y:0.1f}, matrix {s_matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[dest]}')
-                        else: # Handle annual switching *matrices*
-                            orig = matrix[source, dest]
-                            if factor is not None:
-                                matrix[source, dest] *= getval(factor)
-                            elif value is not None:
-                                val = getval(value)
-                                matrix[source, dest] = 0
-                                matrix[source, :] *= (1-val)/matrix[source, :].sum()
-                                matrix[source, dest] = val
-                                assert np.isclose(matrix[source, :].sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {matrix.sum()}'
-                            if self.verbose:
-                                print(f'At time {sim.y:0.1f}, matrix {self.matrix} for age group {k} was changed from:\n{orig}\nto\n{matrix[source, dest]}')
+                    # Actually update the values and check the matrix is valid
+                    kw = dict(source=source, dest=dest, factor=factor, value=value, ages=ages, matrix=matrix)
+                    sim.pars.update_method_prob(**kw)
 
         return

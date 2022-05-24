@@ -3,67 +3,56 @@ Define classes and functions for the Experiment class (running sims and comparin
 '''
 
 
-import os
+import yaml
 import numpy as np
 import pylab as pl
 import pandas as pd
 import sciris as sc
+from . import parameters as fpp
 from . import sim as fps
 
 
-__all__ = ['Experiment', 'Fit', 'compute_gof', 'datapath', 'diff_summaries']
+__all__ = ['Experiment', 'Fit', 'compute_gof', 'diff_summaries']
 
 # ...more settings
 min_age = 15
 max_age = 50
 bin_size = 5
 year_str = '2017'
-mpy = 12
+mpy = 12 # Months per year
 
-
-# Files
-def datapath(path):
-    ''' Return the path of the parent folder '''
-    return sc.thisdir(__file__, os.pardir, 'dropbox', path)
-
-pregnancy_parity_file = datapath('SNIR80FL.obj')  # DHS Senegal 2018 file -- preprocessed
-pregnancy_parity_file_raw = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file -- raw
-pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
-skyscrapers_file = datapath('Skyscrapers-All-DHS.csv')
-methods_file = datapath('Method_v312.csv')
-spacing_file = datapath('BirthSpacing.obj')
-spacing_file_raw = datapath('BirthSpacing.csv')
-popsize_file = datapath('senegal-popsize.csv')
-barriers_file = datapath('DHSIndividualBarriers.csv')
-tfr_file = datapath('senegal-tfr.csv')
-mcpr_file = datapath('mcpr_senegal.csv')
-
+# Flags for what to run
 default_flags = sc.objdict(
-    popsize = 1,  # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
-    skyscrapers = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
-    first_birth = 1,  # Age at first birth mean with standard deviation; 'age_first_birth'
-    birth_space = 1,  # Birth spacing both in bins and mean with standard deviation; 'spacing'
+    popsize       = 1, # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
+    skyscrapers   = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
+    first_birth   = 1, # Age at first birth mean with standard deviation; 'age_first_birth'
+    birth_space   = 1, # Birth spacing both in bins and mean with standard deviation; 'spacing'
     age_pregnancy = 1, # Summary stats (mean, std, 25, 50, 75%) ages of those currently pregnant; 'age_pregnant_stats',
-    mcpr = 1,  # Modern contraceptive prevalence; 'mcpr'
-    methods = 1, # Overall percentage of method use and method use among users; 'methods'
-    mmr = 1,  # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'
-    infant_m = 1,  # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
-    cdr = 1,  # Crude death rate at end of sim in model vs data; 'crude_death_rate'
-    cbr = 1,  # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
-    tfr = 1,  # Total fertility rate
+    mcpr          = 1, # Modern contraceptive prevalence; 'mcpr'
+    methods       = 1, # Overall percentage of method use and method use among users; 'methods'
+    mmr           = 1, # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'
+    infant_m      = 1, # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
+    cdr           = 1, # Crude death rate at end of sim in model vs data; 'crude_death_rate'
+    cbr           = 1, # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
+    tfr           = 1, # Total fertility rate
 )
-
-
 
 
 class Experiment(sc.prettyobj):
     '''
-    Class for running calibration to data
+    Class for running calibration to data. Effectively, it runs a single sim and
+    compares it to data.
+
+    Args:
+        pars (dict): dictionary of parameters
+        flags (dict): which analyses to run; see ``fp.experiment.default_flags`` for options
+        label (str): label of experiment
+        kwargs (dict): passed into pars
     '''
 
-    def __init__(self, pars=None, flags=None, label=None):
-        self.flags = flags if flags else sc.dcp(default_flags) # Set flags for what gets run
-        self.pars = pars
+    def __init__(self, pars=None, flags=None, label=None, **kwargs):
+        self.flags = sc.mergedicts(default_flags, flags, _copy=True) # Set flags for what gets run
+        self.pars = pars if pars else fpp.pars(**kwargs)
         self.model_to_calib = sc.objdict()
         self.dhs_data = sc.objdict()
         self.method_keys = None
@@ -71,31 +60,42 @@ class Experiment(sc.prettyobj):
         self.label = label
         return
 
-    def init_dhs_data(self):
-        '''
-        Assign data points of interest in DHS dictionary for Senegal data.  All data 2018 unless otherwise indicated
-        Adjust data for a different year or country
-        '''
 
-        self.dhs_data[
-            'maternal_mortality_ratio'] = 315.0  # Per 100,000 live births, (2017) From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=SN
-        self.dhs_data['infant_mortality_rate'] = 33.6  # Per 1,000 live births, From World Bank
-        self.dhs_data['crude_death_rate'] = 5.7  # Per 1,000 inhabitants, From World Bank
-        self.dhs_data['crude_birth_rate'] = 34.5  # Per 1,000 inhabitants, From World Bank
+    def load_data(self, key, **kwargs):
+        ''' Load data from various formats '''
+        files = self.pars['filenames']
+        path = files['base'] / files[key]
+        if path.suffix == '.obj':
+            data = sc.load(path, **kwargs)
+        elif path.suffix == '.json':
+            data = sc.loadjson(path, **kwargs)
+        elif path.suffix == '.csv':
+            data = pd.read_csv(path, **kwargs)
+        elif path.suffix == '.yaml':
+            with open(path) as f:
+                data = yaml.safe_load(f, **kwargs)
+        else:
+            errormsg = f'Unrecognized file format for: {path}'
+            raise ValueError(errormsg)
+        return data
 
-        return
 
-    def extract_dhs_data(self):
+    def extract_data(self):
+        ''' Load data '''
 
-        self.dhs_data['pregnancy_parity'] = sc.load(pregnancy_parity_file)
+        json = self.load_data('basic_dhs')
+
+        self.dhs_data.update(json)
+
+        self.dhs_data['pregnancy_parity'] = self.load_data('pregnancy_parity')
 
         # Extract population size over time
         if self.pars:
             n = self.pars['n_agents']
         else:
-            n = 5000 # Use default if not available
+            n = 1000 # Use default if not available
             print(f'Warning: parameters not defined, using default of n={n}')
-        pop_size = pd.read_csv(popsize_file, header=None)  # From World Bank
+        pop_size = self.load_data('popsize', header=None)  # From World Bank
         self.dhs_data['pop_years'] = pop_size.iloc[0,:].to_numpy()
         self.dhs_data['pop_size'] = pop_size.iloc[1,:].to_numpy() / (pop_size.iloc[1,0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
 
@@ -104,11 +104,14 @@ class Experiment(sc.prettyobj):
         self.dhs_data['pop_growth_rate'] = data_growth_rate
 
         # Extract mcpr over time
-        mcpr = pd.read_csv(mcpr_file, header = None)
+        mcpr = self.load_data('mcpr', header=None)
         self.dhs_data['mcpr_years'] = mcpr.iloc[:,0].to_numpy()
         self.dhs_data['mcpr'] = mcpr.iloc[:,1].to_numpy()
 
+        self.initialized = True
+
         return
+
 
     def pop_growth_rate(self, years, population):
         growth_rate = np.zeros(len(years) - 1)
@@ -121,10 +124,19 @@ class Experiment(sc.prettyobj):
         return growth_rate
 
 
-    def initialize(self):
-        self.init_dhs_data()
-        self.extract_dhs_data()
-        self.initialized = True
+    def run_model(self, pars=None, mother_ids=False):
+        ''' Create the sim and run the model '''
+
+        if not self.initialized:
+            self.extract_data()
+
+        if pars is None:
+            pars = self.pars
+
+        self.sim = fps.Sim(pars=pars, mother_ids=mother_ids)
+        self.sim.run()
+        self.post_process_sim()
+
         return
 
 
@@ -137,22 +149,6 @@ class Experiment(sc.prettyobj):
         model_pregnancy_parity = model_pregnancy_parity.drop(['PP0to5', 'PP6to11', 'PP12to23', 'NonPP'], axis=1)
         self.model_to_calib['pregnancy_parity'] = model_pregnancy_parity
         self.method_keys = list(self.sim['methods']['map'].keys())
-        return
-
-
-    def run_model(self, pars=None, mother_ids=False):
-        ''' Create the sim and run the model '''
-
-        if not self.initialized:
-            self.initialize()
-
-        if pars is None:
-            pars = self.pars
-
-        self.sim = fps.Sim(pars=pars, mother_ids=mother_ids)
-        self.sim.run()
-        self.post_process_sim()
-
         return
 
 
@@ -200,8 +196,8 @@ class Experiment(sc.prettyobj):
         Calculate maternal mortality in model over most recent 3 years
         '''
 
-        maternal_deaths = pl.sum(self.model_results['maternal_deaths'][-mpy * 3:])
-        births_last_3_years = pl.sum(self.model_results['births'][-mpy * 3:])
+        maternal_deaths = np.sum(self.model_results['maternal_deaths'][-mpy * 3:])
+        births_last_3_years = np.sum(self.model_results['births'][-mpy * 3:])
         self.model_to_calib['maternal_mortality_ratio'] = (maternal_deaths / births_last_3_years) * 100000
 
         return
@@ -209,40 +205,37 @@ class Experiment(sc.prettyobj):
 
     def model_infant_mortality_rate(self):
 
-        infant_deaths = pl.sum(self.model_results['infant_deaths'][-mpy:])
-        births_last_year = pl.sum(self.model_results['births'][-mpy:])
+        infant_deaths = np.sum(self.model_results['infant_deaths'][-mpy:])
+        births_last_year = np.sum(self.model_results['births'][-mpy:])
         self.model_to_calib['infant_mortality_rate'] = (infant_deaths / births_last_year) * 1000
 
         return
 
 
     def model_crude_death_rate(self):
-
-        total_deaths = pl.sum(self.model_results['deaths'][-mpy:]) + \
-                       pl.sum(self.model_results['infant_deaths'][-mpy:]) + \
-                       pl.sum(self.model_results['maternal_deaths'][-mpy:])
+        total_deaths = np.sum(self.model_results['deaths'][-mpy:]) + \
+                       np.sum(self.model_results['infant_deaths'][-mpy:]) + \
+                       np.sum(self.model_results['maternal_deaths'][-mpy:])
         self.model_to_calib['crude_death_rate'] = (total_deaths / self.model_results['pop_size'][-1]) * 1000
-
         return
 
 
     def model_crude_birth_rate(self):
-
-        births_last_year = pl.sum(self.model_results['births'][-mpy:])
+        births_last_year = np.sum(self.model_results['births'][-mpy:])
         self.model_to_calib['crude_birth_rate'] = (births_last_year / self.model_results['pop_size'][-1]) * 1000
-
         return
 
 
     def model_data_tfr(self):
 
         # Extract tfr over time in data - keep here to ignore dhs data if not using tfr for calibration
-        tfr = pd.read_csv(tfr_file, header=None)  # From DHS
+        tfr = self.load_data('tfr', header=None)  # From DHS
         self.dhs_data['tfr_years'] = tfr.iloc[:, 0].to_numpy()
         self.dhs_data['total_fertility_rate'] = tfr.iloc[:, 1].to_numpy()
 
         self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
         self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
+        return
 
 
     def extract_skyscrapers(self):
@@ -259,7 +252,7 @@ class Experiment(sc.prettyobj):
 
         # Load data
         data_parity_bins = pl.arange(0, 18)
-        sky_raw_data = pd.read_csv(skyscrapers_file, header=None)
+        sky_raw_data = self.load_data('skyscrapers', header=None)
         sky_raw_data = sky_raw_data[sky_raw_data[0] == year_str]
         # sky_parity = sky_raw_data[2].to_numpy() # Not used currently
         sky_props = sky_raw_data[3].to_numpy()
@@ -294,12 +287,13 @@ class Experiment(sc.prettyobj):
 
         return
 
+
     def extract_birth_spacing(self):
 
         spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
 
         # From data
-        data = sc.loadobj(spacing_file)
+        data = self.load_data('spacing')
         spacing, first = data['spacing'], data['first']
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
 

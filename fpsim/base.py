@@ -5,8 +5,9 @@ Base classes for loading parameters and for running simulations with FP model
 import numpy as np
 import sciris as sc
 import pylab as pl
-from . import defaults as fpd
 from . import utils as fpu
+from . import defaults as fpd
+
 obj_get = object.__getattribute__ # Alias the default getattribute method
 obj_set = object.__setattr__
 

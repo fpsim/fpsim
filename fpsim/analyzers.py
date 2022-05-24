@@ -462,7 +462,7 @@ class ExperimentVerbose(fpe.Experiment):
         """
 
         if not self.initialized:
-            self.initialize()
+            self.extract_data()
 
         if pars is None:
             pars = self.pars

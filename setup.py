@@ -7,24 +7,31 @@ cwd = os.path.abspath(os.path.dirname(__file__))
 versionpath = os.path.join(cwd, 'fpsim', 'version.py')
 version = runpy.run_path(versionpath)['__version__']
 
+# Get the documentation
+with open(os.path.join(cwd, 'README.rst'), "r") as f:
+    long_description = f.read()
+
 CLASSIFIERS = [
     "Environment :: Console",
     "Intended Audience :: Science/Research",
-    "License :: OSI Approved :: GPLv3",
+    "License :: Other/Proprietary License",
     "Operating System :: OS Independent",
     "Programming Language :: Python",
     "Topic :: Software Development :: Libraries :: Python Modules",
-    "Development Status :: 1",
-    "Programming Language :: Python :: 3.7",
+    "Development Status :: 5 - Production/Stable",
+    "Programming Language :: Python :: 3.9",
 ]
 
 setup(
     name="fpsim",
     version=version,
-    author="Annie Valente, Marita Zimmermann, Cliff Kerr, Daniel Klein",
-    author_email="ckerr@idmod.org",
-    description="FPsim and applications",
-    keywords=["Family planning", "agent-based model", "simulation"],
+    author="Michelle O'Brien, Annie Valente, Cliff Kerr, Sam Buxton, Daniel Klein, Marita Zimmermann",
+    author_email="info@fpsim.org",
+    description="FPsim: Family Planning Simulator",
+    long_description=long_description,
+    long_description_content_type="text/x-rst",
+    url='http://fpsim.org',
+    keywords=["family planning", "women's health", "agent-based model", "simulation"],
     platforms=["OS Independent"],
     classifiers=CLASSIFIERS,
     packages=find_packages(),
@@ -39,6 +46,7 @@ setup(
         'seaborn>=0.9',
         'optuna',
         'plotnine',
-        'pyarrow'
+        'pyarrow',
+        'pyyaml',
     ],
 )
