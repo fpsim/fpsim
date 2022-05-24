@@ -1691,7 +1691,7 @@ class MultiSim(sc.prettyobj):
         return self.plot(*args, **kwargs, plot_cpr=True)
 
 
-    def plot_method_mix(self, n_sims=10, do_show=False, do_save=True, filepath="method_mix.png"):
+    def plot_method_mix(self, do_show=False, do_save=True, filepath="method_mix.png"):
         """
         Plots the average method mix for n_sims runs
 
@@ -1705,27 +1705,16 @@ class MultiSim(sc.prettyobj):
 
         # Run each sim n_sims times, get save proportion and let barplot calculate averages
         for sim in self.sims:
-            print(f"Processing sim: {sim.label}")
-            sim_run_list = [0] * n_sims
-            for sim_index in range(n_sims):
-                new_sim = sc.dcp(sim) # CK: TODO: should not need to be copied
-                new_sim.pars['seed'] = sim_index
-                sim_run_list[sim_index] = new_sim
+            people = sim.people
+            unique, counts = np.unique(people.method, return_counts=True)
+            count_dict = dict(zip(unique, counts))
 
-            multi = MultiSim(sims=sim_run_list)
-            multi.run() # CK: TODO: should not need to be run
-
-            for sim_index in range(n_sims):
-                people = multi.sims[sim_index].people
-                unique, counts = np.unique(people.method, return_counts=True)
-                count_dict = dict(zip(unique, counts))
-
-                for method in count_dict:
-                    if method != 0:
-                        method_table["proportion"].append(count_dict[method] / len(people.method))
-                        method_table["sim_index"].append(sim_index)
-                        method_table["method"].append(method)
-                        method_table["sim"].append(sim.label)
+            for method in count_dict:
+                if method != 0:
+                    method_table["proportion"].append(count_dict[method] / len(people.method))
+                    method_table["seed"].append(sim.pars['seed'])
+                    method_table["method"].append(method)
+                    method_table["sim"].append(sim.label)
 
         # Plotting
         df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
@@ -1738,7 +1727,7 @@ class MultiSim(sc.prettyobj):
         # plotting and saving
         sns.set(rc={'figure.figsize':(12,8.27)})
         sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=['Implants', 'Injectables', 'Pill', 'IUDs', 'Other traditional', 'Condoms', "BTL", 'Other modern', 'Withdrawal'])
-        pl.title(f"Mean method mix over {n_sims} sims")
+        pl.title(f"Mean method mix")
 
         if do_save:
             pl.savefig(filepath)
