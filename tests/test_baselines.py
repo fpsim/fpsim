@@ -166,7 +166,7 @@ if __name__ == '__main__':
     # Start timing and optionally enable interactive plotting
     T = sc.tic()
 
-    # json = test_benchmark(do_save=do_save, repeats=1) # Run this first so benchmarking is available even if results are different
+    json = test_benchmark(do_save=do_save, repeats=1) # Run this first so benchmarking is available even if results are different
     new  = test_baseline()
     exp = make_exp(do_plot=True)
 
