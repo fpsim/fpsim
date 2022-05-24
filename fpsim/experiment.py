@@ -8,7 +8,7 @@ import numpy as np
 import pylab as pl
 import pandas as pd
 import sciris as sc
-from . import parameters as fpp # CK: TODO: FIX
+from . import parameters as fpp
 from . import sim as fps
 
 
