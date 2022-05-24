@@ -14,7 +14,7 @@ baseline_filename  = sc.thisdir(__file__, 'baseline.json')
 benchmark_filename = sc.thisdir(__file__, 'benchmark.json')
 
 
-def make_exp(n_agents=1000, seed=4, do_run=False, do_plot=False):
+def make_exp(n_agents=1000, seed=1, do_run=False, do_plot=False):
     '''
     Define a default simulation for testing the baseline.
     '''

@@ -560,14 +560,14 @@ def methods():
     # Define method data
     data = {                # Index, modern, efficacy
         'None'              : [0, False, 0.000],
-        'Pill'              : [1, True,  0.945],
-        'IUDs'              : [2, True,  0.986],
-        'Injectables'       : [3, True,  0.983],
-        'Condoms'           : [4, True,  0.946],
-        'BTL'               : [5, True,  0.995],
-        'Withdrawal'        : [6, False, 0.866],
-        'Implants'          : [7, True,  0.994],
-        'Other traditional' : [8, False, 0.861], # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+        'Withdrawal'        : [1, False, 0.866],
+        'Other traditional' : [2, False, 0.861], # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+        'Condoms'           : [3, True,  0.946],
+        'Pill'              : [4, True,  0.945],
+        'Injectables'       : [5, True,  0.983],
+        'Implants'          : [6, True,  0.994],
+        'IUDs'              : [7, True,  0.986],
+        'BTL'               : [8, True,  0.995],
         'Other modern'      : [9, True,  0.880], # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
     }
 
@@ -597,8 +597,8 @@ def method_probs():
     Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
     from 2018 DHS Senegal contraceptive calendar data.
 
-    Probabilities in this function are annual probabilities of initiating, discontinuing,
-    continuing, or switching methods.
+    Probabilities in this function are annual probabilities of initiating (top row), discontinuing (first column),
+    continuing (diagonal), or switching methods (all other entries).
 
     Probabilities at postpartum month 1 are 1 month transitional probabilities
     for starting a method after delivery.
