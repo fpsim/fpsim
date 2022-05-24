@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.14.0 (2022-05-24)
+--------------------------
+- Changed MultiSim.plot_method_mix() to be able to work with Scenarios
+- *GitHub info*: PR `503 <https://github.com/amath-idm/fp_analyses/pull/503>`__
+
 
 Version 0.13.0 (2022-05-23)
 --------------------------
