@@ -1727,7 +1727,7 @@ class MultiSim(sc.prettyobj):
         methods_map = self.sims[0].pars['methods']['map']
         inv_methods_map = {value: key for key, value in methods_map.items()}
         df['method'] = df['method'].map(inv_methods_map)
-        df.sort_values(by=['proportion']) # 
+        df.sort_values(by=['proportion'])
 
         # plotting and saving
         sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=np.unique(df['method']))
