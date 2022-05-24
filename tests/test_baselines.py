@@ -13,11 +13,12 @@ do_save = 0
 baseline_filename  = sc.thisdir(__file__, 'baseline.json')
 benchmark_filename = sc.thisdir(__file__, 'benchmark.json')
 
-def make_exp(n_agents=1000, do_run=False, do_plot=False):
+
+def make_exp(n_agents=1000, seed=4, do_run=False, do_plot=False):
     '''
     Define a default simulation for testing the baseline.
     '''
-    pars = fp.pars(n_agents=n_agents, verbose=0)
+    pars = fp.pars(n_agents=n_agents, seed=seed, verbose=0)
     exp = fp.Experiment(pars=pars)
 
     if do_run or do_plot:
@@ -165,7 +166,7 @@ if __name__ == '__main__':
     # Start timing and optionally enable interactive plotting
     T = sc.tic()
 
-    json = test_benchmark(do_save=do_save, repeats=1) # Run this first so benchmarking is available even if results are different
+    # json = test_benchmark(do_save=do_save, repeats=1) # Run this first so benchmarking is available even if results are different
     new  = test_baseline()
     exp = make_exp(do_plot=True)
 
