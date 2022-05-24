@@ -132,7 +132,14 @@ def test_matrix_methods():
     s2.run()
     assert len(s2.pars['methods']['map']) == n-1, 'Methods do not have expected shape'
 
-    return [s1, s2]
+    # Test reorder methods
+    p3 = pars.copy()
+    reverse = list(p3['methods']['map'].values())[::-1]
+    p3.reorder_methods(reverse)
+    s3 = fp.Sim(pars=p3)
+    s3.run()
+
+    return [s1, s2, s3]
 
 
 def test_validation():
@@ -176,9 +183,9 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # null    = test_null(do_plot=do_plot)
-        # timings = test_method_timestep()
-        # mcpr    = test_mcpr_growth()
-        # scale   = test_scale()
+        null    = test_null(do_plot=do_plot)
+        timings = test_method_timestep()
+        mcpr    = test_mcpr_growth()
+        scale   = test_scale()
         meths    = test_matrix_methods()
-        # pars    = test_validation()
+        pars    = test_validation()

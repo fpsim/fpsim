@@ -113,7 +113,7 @@ class Pars(dict):
         modern_keys = list(methods['modern'].keys())
         eff_keys = list(methods['eff'].keys())
         if not (method_keys == eff_keys == modern_keys):
-            errormsg = f'Mismatch between method mapping keys "{method_keys}", modern keys "{modern_keys}", and efficacy keys "{eff_keys}"'
+            errormsg = f'Mismatch between method mapping keys:\n{method_keys}",\nmodern keys\n"{modern_keys}", and efficacy keys\n"{eff_keys}"'
             if die: raise ValueError(errormsg)
             else:   print(errormsg)
 
@@ -387,6 +387,7 @@ class Pars(dict):
         methods = self['methods']
         for parkey in ['map', 'modern', 'eff']:
             methods[parkey].pop(key)
+        methods['map'] = {k:i for i,k in enumerate(methods['map'].keys())} # Reset numbering
 
         # Modify method matrices
         raw = methods['raw']
@@ -426,7 +427,7 @@ class Pars(dict):
         methods = self['methods']
         orig_keys = list(methods['map'].keys())
         order_set = sorted(set(order))
-        orig_set = sorted(set(np.arange(len(orig_keys))))
+        orig_set  = sorted(set(np.arange(len(orig_keys))))
 
         # Validation
         if order_set != orig_set:
@@ -435,7 +436,7 @@ class Pars(dict):
 
         # Reorder map and efficacy -- TODO: think about how to implement rename as well
         new_keys = [orig_keys[k] for k in order]
-        for parkey in ['map', 'eff']:
+        for parkey in ['map', 'modern', 'eff']:
             methods[parkey] = {k:methods[parkey][k] for k in new_keys}
 
         # Modify method matrices
