@@ -7,7 +7,7 @@ import numpy as np # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
 import numba as nb
-from . import parameters as fpp
+from . import defaults as fpd
 from . import version as fpv
 
 
@@ -126,7 +126,7 @@ def binomial_arr(prob_arr): # No speed gain from Numba
 
 def annprob2ts(prob_annual, timestep=1):
     ''' Convert an annual probability into a timestep probability '''
-    prob_timestep = 1 - ((1-np.minimum(1,prob_annual))**(timestep/fpp.mpy))
+    prob_timestep = 1 - ((1-np.minimum(1,prob_annual))**(timestep/fpd.mpy))
     return prob_timestep
 
 

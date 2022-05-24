@@ -1,14 +1,16 @@
 '''
-Define defaults for use throughout FPsim
+Handle sim parameters
 '''
 
 import numpy as np
 import sciris as sc
 from . import utils as fpu
+from . import defaults as fpd
 
-__all__ = ['pars']
+__all__ = ['Pars', 'pars']
 
 
+#%% Pars (parameters) class
 
 def getval(v):
     ''' Handle different ways of supplying a value -- number, distribution, function '''
@@ -22,7 +24,9 @@ def getval(v):
 
 class Pars(dict):
     '''
-    Lightweight class to hold a dictionary of parameters.
+    Class to hold a dictionary of parameters, and associated methods.
+
+    Usually not called by the user directly -- use ``fp.pars()`` instead.
 
     Args:
         pars (dict): dictionary of parameters
@@ -141,12 +145,12 @@ class Pars(dict):
 
         # Copy to defaults, making use of mutable objects to preserve original object ID
         if update:
-            for k in list(method_map.keys()):     method_map.pop(k) # Remove all items
-            for k in list(method_age_map.keys()): method_age_map.pop(k) # Remove all items
+            for k in list(fpd.method_map.keys()):     fpd.method_map.pop(k) # Remove all items
+            for k in list(fpd.method_age_map.keys()): fpd.method_age_map.pop(k) # Remove all items
             for k,v in new_method_map.items():
-                method_map[k] = v
+                fpd.method_map[k] = v
             for k,v in new_method_age_map.items():
-                method_age_map[k] = v
+                fpd.method_age_map[k] = v
 
         return self
 
@@ -167,7 +171,7 @@ class Pars(dict):
             raise ValueError(errormsg)
 
         # Handle options
-        if key in none_all_keys:
+        if key in fpd.none_all_keys:
             ind = slice(None) # This is equivalent to ":" in matrix[:,:]
         elif isinstance(key, str): # Normal case, convert from key to index
             try:
@@ -268,7 +272,7 @@ class Pars(dict):
         dest   = self._as_ind(dest, allow_none=False)
 
         # Replace age keys with all ages if so asked
-        if ages in none_all_keys:
+        if ages in fpd.none_all_keys:
             ages = raw['annual'].keys()
         else:
             ages = sc.tolist(ages)
@@ -534,93 +538,6 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
 
     return pars
 
-
-
-#%% Global defaults
-useSI          = True
-mpy            = 12   # Months per year, to avoid magic numbers
-eps            = 1e-9 # To avoid divide-by-zero
-max_age        = 99   # Maximum age
-max_age_preg   = 50   # Maximum age to become pregnant
-max_parity     = 20   # Maximum number of children
-
-#%% Defaults when creating a new person
-person_defaults = dict(
-    uid                  = -1,
-    age                  = 0,
-    sex                  = 0,
-    parity               = 0,
-    method               = 0,
-    barrier              = 0,
-    postpartum_dur       = 0,
-    gestation            = 0,
-    preg_dur             = 0,
-    stillbirth           = 0,
-    miscarriage          = 0,
-    abortion             = 0,
-    remainder_months     = 0,
-    breastfeed_dur       = 0,
-    breastfeed_dur_total = 0,
-    alive                = True,
-    pregnant             = False,
-    sexually_active      = False,
-    sexual_debut         = False,
-    sexual_debut_age     = -1,
-    first_birth_age      = -1,
-    lactating            = False,
-    postpartum           = False,
-    lam                  = False,
-    mothers              = -1,
-)
-
-# Postpartum keys to months
-postpartum_map = {
-    'pp0to5':   [ 0, 6],
-    'pp6to11':  [6, 12],
-    'pp12to23': [12, 24]
-}
-
-## Age bins for tracking age-specific fertility rate
-age_bin_map = {
-    '10-14':   [10, 15],
-    '15-19':   [15, 20],
-    '20-24':   [20, 25],
-    '25-29':   [25, 30],
-    '30-34':   [30, 35],
-    '35-39':   [35, 40],
-    '40-44':   [40, 45],
-    '45-49':   [45, 50]
-}
-
-# Age and parity splines
-spline_ages      = np.arange(max_age + 1)
-spline_preg_ages = np.arange(max_age_preg + 1)
-spline_parities  = np.arange(max_parity + 1)
-
-# Define allowable keys to select all (all ages, all methods, etc)
-none_all_keys = [None, 'all', ':', [None], ['all'], [':']]
-
-# Definition of contraceptive methods and corresponding numbers -- can be overwritten by locations
-method_map = {
-    'None'              : 0,
-    'Pill'              : 1,
-    'IUDs'              : 2,
-    'Injectables'       : 3,
-    'Condoms'           : 4,
-    'BTL'               : 5,
-    'Withdrawal'        : 6,
-    'Implants'          : 7,
-    'Other traditional' : 8,
-    'Other modern'      : 9,
-}
-
-# Age bins for different method switching matrices -- can be overwritten by locations
-method_age_map = {
-    '<18':   [ 0, 18],
-    '18-20': [18, 20],
-    '21-25': [20, 25],
-    '>25':   [25, max_age+1], # +1 since we're using < rather than <=
-}
 
 # Finally, create default parameters to use for accessing keys etc
 default_pars = pars(validate=False) # Do not validate since default parameters are used for validation

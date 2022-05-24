@@ -5,7 +5,7 @@ Set the parameters for FPsim, specifically for Senegal.
 import numpy as np
 import sciris as sc
 from scipy import interpolate as si
-from .. import parameters as fpp
+from .. import defaults as fpd
 
 #%% Housekeeping
 
@@ -127,8 +127,8 @@ def age_mortality():
 
     m_mortality_spline_model = si.splrep(x=mortality['bins'], y=mortality['m'])  # Create a spline of mortality along known age bins
     f_mortality_spline_model = si.splrep(x=mortality['bins'], y=mortality['f'])
-    m_mortality_spline = si.splev(fpp.spline_ages, m_mortality_spline_model)  # Evaluate the spline along the range of ages in the model with resolution
-    f_mortality_spline = si.splev(fpp.spline_ages, f_mortality_spline_model)
+    m_mortality_spline = si.splev(fpd.spline_ages, m_mortality_spline_model)  # Evaluate the spline along the range of ages in the model with resolution
+    f_mortality_spline = si.splev(fpd.spline_ages, f_mortality_spline_model)
     m_mortality_spline = np.minimum(1, np.maximum(0, m_mortality_spline)) # Normalize
     f_mortality_spline = np.minimum(1, np.maximum(0, f_mortality_spline))
 
@@ -268,7 +268,7 @@ def miscarriage():
     '''
     miscarriage_rates = np.array([[0, 5,    10,     15,     20,    25,    30,    35,    40,    45,    50],
                                   [1, 1, 0.569,  0.167,  0.112, 0.097, 0.108, 0.167, 0.332, 0.569, 0.569]])
-    miscarriage_interp = data2interp(miscarriage_rates, fpp.spline_preg_ages)
+    miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
     return miscarriage_interp
 
 
@@ -306,7 +306,7 @@ def female_age_fecundity():
     fecundity['f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
 
     fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
-    fecundity_interp = fecundity_interp_model(fpp.spline_preg_ages)
+    fecundity_interp = fecundity_interp_model(fpd.spline_preg_ages)
     fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp)) # Normalize to avoid negative or >1 values
 
     return fecundity_interp
@@ -320,7 +320,7 @@ def fecundity_ratio_nullip():
     '''
     fecundity_ratio_nullip = np.array([[ 0,  5, 10, 12.5,  15,  18,  20,   25,   30,   34,   37,   40,   45,   50],
                                         [1,  1,  1,    1,   1,   1,   1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
-    fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpp.spline_preg_ages)
+    fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
 
     return fecundity_nullip_interp
 
@@ -375,7 +375,7 @@ def sexual_activity():
     sexually_active[1] /= 100 # Convert from percent to rate per woman
     activity_ages = sexually_active[0]
     activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active[1])
-    activity_interp = activity_interp_model(fpp.spline_preg_ages)  # Evaluate interpolation along resolution of ages
+    activity_interp = activity_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
 
     return activity_interp
 
@@ -493,7 +493,7 @@ def exposure_age():
     '''
     exposure_correction_age = np.array([[0, 5, 10, 12.5,  15,  18,  20,  25,  30,  35,  40,  45,  50],
                                         [1, 1,  1,    1,   1,   1,   1,   1,   1, 1, 1, 1, 1]])
-    exposure_age_interp = data2interp(exposure_correction_age, fpp.spline_preg_ages)
+    exposure_age_interp = data2interp(exposure_correction_age, fpd.spline_preg_ages)
 
     return exposure_age_interp
 
@@ -505,7 +505,7 @@ def exposure_parity():
     '''
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6,   7,   8,   9,   10,   11,    12,  20],
                                            [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10,  0.05, 0.01]])
-    exposure_parity_interp = data2interp(exposure_correction_parity, fpp.spline_parities)
+    exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
 
@@ -582,7 +582,7 @@ def methods():
         '<18'   : [ 0, 18],
         '18-20' : [18, 20],
         '21-25' : [20, 25],
-        '>25'   : [25, fpp.max_age+1], # +1 since we're using < rather than <=
+        '>25'   : [25, fpd.max_age+1], # +1 since we're using < rather than <=
     }
 
     # Data on trend in MCPR in Senegal over time, in % # CK: TODO: find source

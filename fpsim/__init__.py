@@ -1,5 +1,6 @@
 from .version import __version__, __versiondate__
 from .utils import *
+from .defaults import *
 from .parameters import *
 from .sim import *
 from .interventions import *
