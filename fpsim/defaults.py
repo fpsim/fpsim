@@ -3,63 +3,6 @@ Define defaults for use throughout FPsim
 '''
 
 import numpy as np
-import sciris as sc
-
-__all__ = ['pars']
-
-
-def sim_pars():
-    ''' Additional parameters used in the sim '''
-    sim_pars = dict(
-        mortality_probs = {}, # CK: TODO: rethink implementation
-        interventions   = [],
-        analyzers       = [],
-    )
-    return sim_pars
-
-
-def pars(location=None, **kwargs):
-    '''
-    Function for getting default parameters.
-
-    Args:
-        location (str): the location to use for the parameters; use 'test' for a simple test set of parameters
-        kwargs (dict): custom parameter values
-
-    **Example**::
-        pars = fp.pars(location='senegal')
-    '''
-    from . import locations as fplocs # Here to avoid circular import
-
-    if not location:
-        location = 'default'
-
-    # Set test parameters
-    if location == 'test':
-        location = 'default'
-        kwargs.setdefault('n_agents', 100)
-        kwargs.setdefault('verbose', 0)
-        kwargs.setdefault('start_year', 2000)
-        kwargs.setdefault('end_year', 2010)
-
-    # Define valid locations
-    if location in ['senegal', 'default']:
-        pars = fplocs.senegal.make_pars()
-
-    # Else, error
-    else:
-        errormsg = f'Location "{location}" is not currently supported'
-        raise NotImplementedError(errormsg)
-
-    # Merge with sim_pars and kwargs and copy
-    pars.update(sim_pars())
-    mismatch = set(kwargs.keys()) - set(pars.keys())
-    if len(mismatch):
-        errormsg = f'The following key(s) are not valid: {sc.strjoin(mismatch)}'
-        raise sc.KeyNotFoundError(errormsg)
-    pars = sc.mergedicts(pars, kwargs, _copy=True)
-
-    return pars
 
 
 #%% Global defaults
@@ -147,7 +90,3 @@ method_age_map = {
     '21-25': [20, 25],
     '>25':   [25, max_age+1], # +1 since we're using < rather than <=
 }
-
-# Finally, create default parameters to use for accessing keys etc
-default_pars = pars()
-par_keys = default_pars.keys()
