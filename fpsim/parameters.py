@@ -320,7 +320,7 @@ class Pars(dict):
         '''
         Add a new contraceptive method to the switching matrices.
 
-        A new method should be added before the sim is run.
+        A new method should only be added before the sim is run, not during.
 
         Note: the matrices are stored in ``pars['methods']['raw']``; this method
         is a helper function for modifying those. For more flexibility, modify
@@ -369,9 +369,11 @@ class Pars(dict):
 
     def rm_method(self, name):
         '''
-       Removes a contraceptive method from the switching matrices.
+        Removes a contraceptive method from the switching matrices.
 
-        Methods must be removed before the sim is run.
+        A method should only be removed before the sim is run, not during, since
+        the method associated with each person in the sim will point to the wrong
+        index.
 
         Args:
             name (str/ind): the name or index of the method to remove
@@ -385,8 +387,11 @@ class Pars(dict):
         ind = self._as_ind(name, allow_none=False)
         key = self._as_key(name)
 
-        # Remove from mapping and efficacy
+        # Store a copy for debugging
         methods = self['methods']
+        methods['map_orig'] = sc.dcp(methods['map'])
+
+        # Remove from mapping and efficacy
         for parkey in ['map', 'modern', 'eff']:
             methods[parkey].pop(key)
         self.reset_methods_map()
@@ -426,11 +431,13 @@ class Pars(dict):
             pars.reorder_methods([2, 6, 4, 7, 0, 8, 5, 1, 3])
         '''
 
-        # Reorder mapping and efficacy
+        # Store a copy for debugging
         methods = self['methods']
         orig = sc.dcp(methods['map'])
         orig_keys = list(orig.keys())
-        methods['orig_map'] = orig # Store a copy for debugging
+        methods['map_orig'] = orig
+
+        # Reorder mapping and efficacy
         if isinstance(order[0], str): # If strings are supplied, convert to ints
             order = [orig_keys.index(k) for k in order]
         order_set = sorted(set(order))
@@ -466,6 +473,7 @@ class Pars(dict):
         return self
 
 
+#%% Parameter creation functions
 
 def sim_pars():
     ''' Additional parameters used in the sim '''
