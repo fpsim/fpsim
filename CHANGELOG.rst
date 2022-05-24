@@ -8,17 +8,18 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 0.13.1 (2022-05-24)
---------------------------
-- Changed MultiSim.plot_method_mix() to be able to work with Scenarios
-- *GitHub info*: PR `503 <https://github.com/amath-idm/fp_analyses/pull/503>`__
 
-
-Version 0.13.1 (2022-05-24)
+Version 0.13.2 (2022-05-24)
 --------------------------
 - Adds more control to plots, including ``start_year`` and ``end_year``.
 - Combines ``year`` and ``years`` inputs in scenarios and allows more inputs to be dynamic.
-- *GitHub info*: PR `515 <https://github.com/amath-idm/fp_analyses/pull/15>`__
+- *GitHub info*: PR `516 <https://github.com/amath-idm/fp_analyses/pull/516>`__
+
+
+Version 0.13.1 (2022-05-24)
+--------------------------
+- Changed ``MultiSim.plot_method_mix()`` to be able to work with ``Scenarios``
+- *GitHub info*: PR `513 <https://github.com/amath-idm/fp_analyses/pull/513>`__
 
 
 Version 0.13.0 (2022-05-23)
