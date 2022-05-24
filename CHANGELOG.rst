@@ -9,6 +9,16 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.13.0 (2022-05-23)
+--------------------------
+- Changed parameters from a dictionary to a class and added ``parameters.py``. This class has additional validation, the ability to import from/export to JSON, etc.
+- Restructured methods, including renaming ``pars['method_efficacy']`` to ``pars['methods']['eff']``, plus a new entry, ``pars['methods']['modern']``, to specify which are modern methods used for calculating MCPR.
+- Methods have been reordered, grouping traditional and modern methods and sorting modern methods by longevity (e.g. condoms → pill → implants → IUDs).
+- Added ability to add/remove contraceptive methods via ``pars.add_method()`` and ``pars.rm_method()``.
+- Added a method to run a single scenario.
+- *GitHub info*: PR `503 <https://github.com/amath-idm/fp_analyses/pull/503>`__
+
+
 Version 0.12.0 (2022-05-22)
 --------------------------
 - Split FPsim repository from analyses scripts.
