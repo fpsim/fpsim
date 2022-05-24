@@ -1693,8 +1693,7 @@ class MultiSim(sc.prettyobj):
         ''' Plot the contraceptive prevalence rate '''
         return self.plot(*args, **kwargs, plot_cpr=True)
 
-
-    def plot_method_mix(self, do_show=False, do_save=True, filepath="method_mix.png"):
+    def plot_method_mix(self, do_show=True, do_save=False, filepath="method_mix.png"):
         """
         Plots the average method mix for n_sims runs
 
