@@ -309,6 +309,13 @@ class Pars(dict):
         return
 
 
+    def reset_methods_map(self):
+        ''' Refresh the methods map to be self-consistent '''
+        methods = self['methods']
+        methods['map'] = {k:i for i,k in enumerate(methods['map'].keys())} # Reset numbering
+        return
+
+
     def add_method(self, name, eff, modern=True, pos=None):
         '''
         Add a new contraceptive method to the switching matrices.
@@ -334,7 +341,7 @@ class Pars(dict):
         # Remove from mapping and efficacy
         methods = self['methods']
         n = len(methods['map'])
-        methods['map'][name]    = n
+        methods['map'][name]    = n # Can't use reset_methods_map since need to define the new entry
         methods['modern'][name] = modern
         methods['eff'][name]    = eff
 
@@ -387,7 +394,7 @@ class Pars(dict):
         methods = self['methods']
         for parkey in ['map', 'modern', 'eff']:
             methods[parkey].pop(key)
-        methods['map'] = {k:i for i,k in enumerate(methods['map'].keys())} # Reset numbering
+        self.reset_methods_map()
 
         # Modify method matrices
         raw = methods['raw']
@@ -416,7 +423,7 @@ class Pars(dict):
         Methods must be reordered before the sim is run.
 
         Args:
-            order (arr): the new order of methods
+            order (arr): the new order of methods, either ints or strings
 
         **Example**::
             pars = fp.pars()
@@ -426,6 +433,8 @@ class Pars(dict):
         # Reorder mapping and efficacy
         methods = self['methods']
         orig_keys = list(methods['map'].keys())
+        if isinstance(order[0], str): # If strings are supplied, convert to ints
+            order = [orig_keys.index(k) for k in order]
         order_set = sorted(set(order))
         orig_set  = sorted(set(np.arange(len(orig_keys))))
 
@@ -438,6 +447,7 @@ class Pars(dict):
         new_keys = [orig_keys[k] for k in order]
         for parkey in ['map', 'modern', 'eff']:
             methods[parkey] = {k:methods[parkey][k] for k in new_keys}
+        self.reset_methods_map() # Restore ordering
 
         # Modify method matrices
         raw = methods['raw']
