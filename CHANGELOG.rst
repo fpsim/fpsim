@@ -9,6 +9,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.13.1 (2022-05-24)
+--------------------------
+- Adds more control to plots, including ``start_year`` and ``end_year``.
+- Combines ``year`` and ``years`` inputs in scenarios and allows more inputs to be dynamic.
+- *GitHub info*: PR `515 <https://github.com/amath-idm/fp_analyses/pull/15>`__
+
+
 Version 0.13.0 (2022-05-23)
 --------------------------
 - Changed parameters from a dictionary to a class and added ``parameters.py``. This class has additional validation, the ability to import from/export to JSON, etc.
