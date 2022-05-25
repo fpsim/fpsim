@@ -572,14 +572,15 @@ class Experiment(sc.prettyobj):
 
         # Compare the two
         for key in keys:
-            dv = data[key] # dv = "Data value"
-            mv = model[key] # mv = "Model value"
-            if sc.isnumber(mv) and sc.isnumber(dv):
-                summary.data[key] = dv
-                summary.model[key] = mv
-            else:
-                summary.data[key+'_mean'] = np.mean(dv)
-                summary.model[key+'_mean'] = np.mean(mv)
+            if not (key.endswith('_years') or key.endswith('_bins')):
+                dv = data[key] # dv = "Data value"
+                mv = model[key] # mv = "Model value"
+                if sc.isnumber(mv) and sc.isnumber(dv):
+                    summary.data[key] = dv
+                    summary.model[key] = mv
+                else:
+                    summary.data[key+'_mean'] = np.mean(dv)
+                    summary.model[key+'_mean'] = np.mean(mv)
 
         self.summary = summary
         self.summary_df = pd.DataFrame(summary)
