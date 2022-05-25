@@ -97,9 +97,9 @@ class Experiment(sc.prettyobj):
         else:
             n = 1000 # Use default if not available
             print(f'Warning: parameters not defined, using default of n={n}')
-        pop_size = self.load_data('popsize')  # From World Bank
-        self.dhs_data['pop_years'] = pop_size.iloc[:,0].to_numpy()
-        self.dhs_data['pop_size']  = pop_size.iloc[:,1].to_numpy() / (pop_size.iloc[1,0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
+        pop_size = self.load_data('popsize')
+        self.dhs_data['pop_years'] = pop_size.year.to_numpy()
+        self.dhs_data['pop_size']  = pop_size.popsize.to_numpy() / (pop_size.popsize[0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
 
         # Extract population growth rate
         data_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
@@ -162,7 +162,7 @@ class Experiment(sc.prettyobj):
         if self.flags.cdr:      self.model_crude_death_rate()
         if self.flags.cbr:      self.model_crude_birth_rate()
         if self.flags.tfr:      self.model_data_tfr()
-        # if self.flags.asfr:     self.model_data_asfr()
+        if self.flags.asfr:     self.model_data_asfr()
         return
 
 
@@ -572,7 +572,7 @@ class Experiment(sc.prettyobj):
 
         # Compare the two
         for key in keys:
-            if 1:#not (key.endswith('_years') or key.endswith('_bins')):
+            if not (key.endswith('_years') or key.endswith('_bins')):
                 dv = data[key] # dv = "Data value"
                 mv = model[key] # mv = "Model value"
                 if sc.isnumber(mv) and sc.isnumber(dv):
@@ -636,7 +636,7 @@ class Experiment(sc.prettyobj):
             if key in keys:
                 keys.remove(key)
         nkeys = len(keys)
-        expected = 12
+        expected = 13
         if nkeys != expected:
             errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys}'
             raise ValueError(errormsg)
