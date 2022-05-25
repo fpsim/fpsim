@@ -1409,6 +1409,9 @@ class Sim(fpb.BaseSim):
         people = self.people
         unique, counts = np.unique(people.method, return_counts=True)
         count_dict = dict(zip(unique, counts))
+        # assert self.pars['n'] > 200
+        assert len(count_dict.keys()) > 1, f"There are no methods other than None in this Sim"
+            
 
         for method in count_dict:
             if method != fpd.method_map["None"]:
@@ -1432,9 +1435,9 @@ class Sim(fpb.BaseSim):
         method_table = {"sim" : [], "seed": [], "proportion": [], "method": []}
 
         # append all columns of function output to method_table
-        sim_method_table = self.compute_method_table(self)
+        sim_method_table = self.compute_method_table()
         for key in method_table:
-            method_table[key]+=sim_method_table[key]
+            method_table[key] = method_table[key] + sim_method_table[key]
 
         # Plotting
         df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
@@ -1446,7 +1449,7 @@ class Sim(fpb.BaseSim):
         df.sort_values(by=['proportion'], inplace=True)
 
         # plotting and saving
-        sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=np.unique(df['method']))
+        sns.barplot(data=df, x="proportion", y="method", order=np.unique(df['method']))
         pl.title(f"Mean method mix")
         if do_save:
             pl.savefig(filepath)
