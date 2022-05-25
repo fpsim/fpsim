@@ -1409,16 +1409,19 @@ class Sim(fpb.BaseSim):
         people = self.people
         unique, counts = np.unique(people.method, return_counts=True)
         count_dict = dict(zip(unique, counts))
-        # assert self.pars['n'] > 200
         assert len(count_dict.keys()) > 1, f"There are no methods other than None in this Sim"
             
 
         for method in count_dict:
             if method != fpd.method_map["None"]:
+                seed = self.pars['seed']
                 method_table["proportion"].append(count_dict[method] / len(people.method))
-                method_table["seed"].append(self.pars['seed'])
+                method_table["seed"].append(seed)
                 method_table["method"].append(method)
-                method_table["sim"].append(self.label)
+                if self.label is not None:
+                    method_table["sim"].append(self.label)
+                else:
+                    method_table["sim"].append("sim"+ str(seed))
 
         return method_table
 
@@ -1777,12 +1780,15 @@ class MultiSim(sc.prettyobj):
         # Plotting
         df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
 
+        # check that sim and seed combinations don't have matching entries
+        sim_seed_combos = list(zip(df['sim'], df['seed'], df['method'])) # need to set to list first since it's an iterator
+        assert len(sim_seed_combos) == len(set(sim_seed_combos)), "Multiple entries with same label, seed, and method"
         # We want names for the methods
         methods_map = self.sims[0].pars['methods']['map']
         inv_methods_map = {value: key for key, value in methods_map.items()}
         df['method'] = df['method'].map(inv_methods_map)
         df.sort_values(by=['proportion'], inplace=True)
-
+    
         # plotting and saving
         sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=np.unique(df['method']))
         pl.title(f"Mean method mix")
