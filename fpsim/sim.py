@@ -1405,12 +1405,12 @@ class Sim(fpb.BaseSim):
         Output:
             (dict): Dictionary representing proportions of methods by sim
         """
-        method_table = {"sim" : [], "seed": [], "proportion": [], "method": []} 
+        method_table = {"sim" : [], "seed": [], "proportion": [], "method": []}
         people = self.people
         unique, counts = np.unique(people.method, return_counts=True)
         count_dict = dict(zip(unique, counts))
         assert len(count_dict.keys()) > 1, f"There are no methods other than None in this Sim"
-            
+
 
         for method in count_dict:
             if method != fpd.method_map["None"]:
@@ -1504,14 +1504,27 @@ class MultiSim(sc.prettyobj):
 
 
     def __len__(self):
-        try:
+        if isinstance(self.sims, list):
             return len(self.sims)
-        except:
+        elif isinstance(self.sims, Sim):
+            return 1
+        else:
             return 0
 
 
     def run(self, compute_stats=True, **kwargs):
+        ''' Run all simulations in the MultiSim '''
+        # Handle missing labels
+        for s,sim in enumerate(sc.tolist(self.sims)):
+            if sim.label is None:
+                sim.label = f'Sim {s}'
+        # Run
+        if self.already_run:
+            errormsg = 'Cannot re-run an already run MultiSim'
+            raise RuntimeError(errormsg)
         self.sims = multi_run(self.sims, **kwargs)
+
+        # Recompute stats
         if compute_stats:
             self.compute_stats()
         self.already_run = True
@@ -1788,7 +1801,7 @@ class MultiSim(sc.prettyobj):
         inv_methods_map = {value: key for key, value in methods_map.items()}
         df['method'] = df['method'].map(inv_methods_map)
         df.sort_values(by=['proportion'], inplace=True)
-    
+
         # plotting and saving
         sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=np.unique(df['method']))
         pl.title(f"Mean method mix")
