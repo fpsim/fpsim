@@ -1767,7 +1767,7 @@ class MultiSim(sc.prettyobj):
 
         for sim in self.sims:
             # append all columns of function output to method_table
-            sim_method_table = sim.compute_method_table(sim)
+            sim_method_table = sim.compute_method_table()
             for key in method_table:
                 method_table[key]+=sim_method_table[key]
 
