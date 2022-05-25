@@ -241,7 +241,7 @@ class Experiment(sc.prettyobj):
         return
 
 
-    def model_data_asfr(self):
+    def model_data_asfr(self, ind=-1):
 
         # Extract ASFR for different age bins
         asfr = self.load_data('asfr')  # From DHS
@@ -251,7 +251,10 @@ class Experiment(sc.prettyobj):
         # Model extraction
         age_bins = list(fpd.age_bin_map.keys())
         self.model_to_calib['asfr_bins'] = age_bins
-        self.model_to_calib['asfr']      = self.model_results['asfr']
+        self.model_to_calib['asfr'] = []
+        for ab in age_bins:
+            val = self.model_results['asfr'][ab][ind] # Only use one index (default: last) CK: TODO: match year automatically
+            self.model_to_calib['asfr'].append(val)
 
         # Check
         assert self.dhs_data['asfr_bins'] == self.model_to_calib['asfr_bins'], f'ASFR data age bins do not match sim: {sc.strjoin(age_bins)}'
@@ -638,6 +641,7 @@ class Experiment(sc.prettyobj):
             raise ValueError(errormsg)
 
         fig, axs = pl.subplots(nrows=4, ncols=3)
+        pl.subplots_adjust(**sc.mergedicts(dict(bottom=0.05, top=0.97, left=0.05, right=0.97, wspace=0.3, hspace=0.3), axes_args)) # CK: TODO: remove hardcoding
 
 
         #%% Do the plotting!
@@ -769,8 +773,10 @@ class Experiment(sc.prettyobj):
 
         height = 0.4
         y = np.arange(len(data.method_counts))
-        ax.barh(y=y+height/2, width=data.method_counts, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim.method_counts,  height=height, align='center', label='Sim')
+        y1 = y + height/2
+        y2 = y - height/2
+        ax.barh(y=y1, width=data.method_counts, height=height, align='center', label='Data')
+        ax.barh(y=y2, width=sim.method_counts,  height=height, align='center', label='Sim')
         ax.set_yticks(y, self.method_keys)
         ax.set_title('Method counts')
         ax.set_ylabel('Contraceptive method')
@@ -778,13 +784,19 @@ class Experiment(sc.prettyobj):
         ax.legend()
 
         # ASFR
-
         ax = axs[3,2]
-
-
+        y = np.arange(len(data.asfr))
+        y1 = y + height/2
+        y2 = y - height/2
+        ax.barh(y=y1, width=data.asfr, height=height, align='center', label='Data')
+        ax.barh(y=y2, width=sim.asfr,  height=height, align='center', label='Sim')
+        ax.set_yticks(y, sim.asfr_bins)
+        ax.set_title('Age-specific fertility rate')
+        ax.set_ylabel('Age bin')
+        ax.set_xlabel('Fertility rate')
+        ax.legend()
 
         # Tidy up
-        sc.figlayout() # Adjust margins so everything fits
         if do_maximize:
             sc.maximize(fig=fig)
 
