@@ -412,6 +412,10 @@ class Scenarios(sc.prettyobj):
         self.check_run()
         return self.msim_merged.plot(plot_sims=True, **kwargs)
 
+    def plot_method_mix(self, **kwargs):
+        ''' Plots the method mix '''
+        self.check_run()
+        return self.msim.plot_method_mix()
 
     def plot_cpr(self, **kwargs):
         ''' Plot the CPR with bands '''
