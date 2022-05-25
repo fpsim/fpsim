@@ -162,7 +162,7 @@ class Experiment(sc.prettyobj):
         if self.flags.cdr:      self.model_crude_death_rate()
         if self.flags.cbr:      self.model_crude_birth_rate()
         if self.flags.tfr:      self.model_data_tfr()
-        if self.flags.asfr:     self.model_data_asfr()
+        # if self.flags.asfr:     self.model_data_asfr()
         return
 
 
@@ -572,7 +572,7 @@ class Experiment(sc.prettyobj):
 
         # Compare the two
         for key in keys:
-            if not (key.endswith('_years') or key.endswith('_bins')):
+            if 1:#not (key.endswith('_years') or key.endswith('_bins')):
                 dv = data[key] # dv = "Data value"
                 mv = model[key] # mv = "Model value"
                 if sc.isnumber(mv) and sc.isnumber(dv):
@@ -636,7 +636,7 @@ class Experiment(sc.prettyobj):
             if key in keys:
                 keys.remove(key)
         nkeys = len(keys)
-        expected = 13
+        expected = 12
         if nkeys != expected:
             errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys}'
             raise ValueError(errormsg)
