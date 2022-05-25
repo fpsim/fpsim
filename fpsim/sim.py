@@ -1395,6 +1395,64 @@ class Sim(fpb.BaseSim):
             print(f"Saved age at first birth plot at {output_file}")
             pl.savefig(output_file)
 
+    def compute_method_table(self):
+        """
+        Computes method mix proportions from a sim object
+
+        Args:
+            sim (fp.Sim): Sim object to extract method proportions from
+
+        Output:
+            (dict): Dictionary representing proportions of methods by sim
+        """
+        method_table = {"sim" : [], "seed": [], "proportion": [], "method": []} 
+        people = self.people
+        unique, counts = np.unique(people.method, return_counts=True)
+        count_dict = dict(zip(unique, counts))
+
+        for method in count_dict:
+            if method != fpd.method_map["None"]:
+                method_table["proportion"].append(count_dict[method] / len(people.method))
+                method_table["seed"].append(self.pars['seed'])
+                method_table["method"].append(method)
+                method_table["sim"].append(self.label)
+
+        return method_table
+
+    def plot_method_mix(self, do_show=True, do_save=False, filepath="method_mix.png"):
+        """
+        Plots the average method mix for n_sims runs
+
+        Args:
+            do_show (bool): Whether or not the user wants to show the output plot.
+            do_save (bool): Whether or not the user wants to save the plot to filepath.
+            filepath (str): The name of the path to output the plot.
+
+        """
+        method_table = {"sim" : [], "seed": [], "proportion": [], "method": []}
+
+        # append all columns of function output to method_table
+        sim_method_table = self.compute_method_table(self)
+        for key in method_table:
+            method_table[key]+=sim_method_table[key]
+
+        # Plotting
+        df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
+
+        # We want names for the methods
+        methods_map = self.pars['methods']['map']
+        inv_methods_map = {value: key for key, value in methods_map.items()}
+        df['method'] = df['method'].map(inv_methods_map)
+        df.sort_values(by=['proportion'], inplace=True)
+
+        # plotting and saving
+        sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=np.unique(df['method']))
+        pl.title(f"Mean method mix")
+        if do_save:
+            pl.savefig(filepath)
+        if do_show:
+            pl.show()
+
     def plot_people(self):
         ''' Use imshow() to show all individuals as rows, with time as columns, one pixel per timestep per person '''
         # The test_mode might help with this
@@ -1692,6 +1750,7 @@ class MultiSim(sc.prettyobj):
         ''' Plot the contraceptive prevalence rate '''
         return self.plot(*args, **kwargs, plot_cpr=True)
 
+
     def plot_method_mix(self, do_show=True, do_save=False, filepath="method_mix.png"):
         """
         Plots the average method mix for n_sims runs
@@ -1706,18 +1765,11 @@ class MultiSim(sc.prettyobj):
         """
         method_table = {"sim" : [], "seed": [], "proportion": [], "method": []}
 
-        # Run each sim n_sims times, get save proportion and let barplot calculate averages
         for sim in self.sims:
-            people = sim.people
-            unique, counts = np.unique(people.method, return_counts=True)
-            count_dict = dict(zip(unique, counts))
-
-            for method in count_dict:
-                if method != fpd.method_map["None"]:
-                    method_table["proportion"].append(count_dict[method] / len(people.method))
-                    method_table["seed"].append(sim.pars['seed'])
-                    method_table["method"].append(method)
-                    method_table["sim"].append(sim.label)
+            # append all columns of function output to method_table
+            sim_method_table = sim.compute_method_table(sim)
+            for key in method_table:
+                method_table[key]+=sim_method_table[key]
 
         # Plotting
         df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
@@ -1731,7 +1783,6 @@ class MultiSim(sc.prettyobj):
         # plotting and saving
         sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=np.unique(df['method']))
         pl.title(f"Mean method mix")
-
         if do_save:
             pl.savefig(filepath)
         if do_show:
