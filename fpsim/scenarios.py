@@ -402,16 +402,16 @@ class Scenarios(sc.prettyobj):
         return
 
 
-    def plot_sims(self, **kwargs):
+    def plot_sims(self, to_plot=None, plot_sims=True, **kwargs):
         ''' Plot each sim as a separate line across all senarios -- see ``sim.plot()`` for args '''
         self.check_run()
-        return self.msim.plot(plot_sims=True, **kwargs)
+        return self.msim.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
 
 
-    def plot_scens(self, **kwargs):
+    def plot_scens(self, to_plot=None, plot_sims=True, **kwargs):
         ''' Plot the scenarios with bands -- see ``sim.plot()`` for args '''
         self.check_run()
-        return self.msim_merged.plot(plot_sims=True, **kwargs)
+        return self.msim_merged.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
 
 
     def plot_method_mix(self, *args, **kwargs):

@@ -1696,7 +1696,7 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, plot_sims=True, do_show=None, do_save=None, filename='fp_multisim.png',
+    def plot(self, to_plot=None, plot_sims=True, do_show=None, do_save=None, filename='fp_multisim.png',
              fig_args=None, plot_args=None, **kwargs):
         '''
         Plot the MultiSim
@@ -1730,10 +1730,10 @@ class MultiSim(sc.prettyobj):
                 alpha = max(0.2, 1/np.sqrt(n_unique))
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
                 kw = dict(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
-                sim.plot(**kw, **kwargs)
+                sim.plot(to_plot=to_plot, **kw, **kwargs)
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
-            return self.base_sim.plot(do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
+            return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
 
     def plot_method_mix(self, do_show=True, do_save=False, filename="method_mix.png"):
