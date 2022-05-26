@@ -1409,18 +1409,18 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot_method_mix(self, fig_args=None, do_show=None, do_save=None, filename="method_mix.png", data=None):
+    def plot_method_mix(self, do_show=None, do_save=None, filename="method_mix.png", fig_args=None, data=None):
         """
         Plots the average method mix for n_sims runs
 
         Args:
-            fig_args (dict): arguments to pass to ``pl.figure()``
             do_show (bool): whether or not the user wants to show the output plot (default: true)
             do_save (bool): whether or not the user wants to save the plot to filepath (default: false)
             filename (str): the name of the path to output the plot.
+            fig_args (dict): arguments to pass to ``pl.figure()``
             data (dataframe): if supplied, plot these data (used by MultiSim)
         """
-        # Compute
+        # Compute or use existing data
         if data is None:
             df = self.compute_method_table()
         else:
@@ -1690,10 +1690,10 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, do_show=None, do_save=None, filename='fp_multisim.png',
+    def plot(self, to_plot=None, do_show=None, do_save=None, filename='fp_multisim.png',
              plot_sims=True, fig_args=None, plot_args=None, plot_cpr=False, **kwargs):
         '''
-        Plot the MultiSim
+        Plot the MultiSim; see sim.plot() for args
         '''
         fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
 
@@ -1718,31 +1718,21 @@ class MultiSim(sc.prettyobj):
                 color = colors[sim.label]
                 alpha = max(0.2, 1/np.sqrt(n_unique))
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
-                kw = dict(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
-                if plot_cpr:
-                    sim.plot_cpr(**kw, **kwargs)
-                else:
-                    sim.plot(**kw, **kwargs)
-            if do_show:
-                pl.show()
+                kw = dict(to_plot=to_plot, new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
+                sim.plot(**kw, **kwargs)
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
             return self.base_sim.plot(do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
 
-    def plot_cpr(self, *args, **kwargs):
-        ''' Plot the contraceptive prevalence rate '''
-        return self.plot(*args, **kwargs, plot_cpr=True)
-
-
-    def plot_method_mix(self, do_show=True, do_save=False, filepath="method_mix.png"):
+    def plot_method_mix(self, do_show=True, do_save=False, filename="method_mix.png"):
         """
         Plots the average method mix for n_sims runs
 
         Args:
             do_show (bool): Whether or not the user wants to show the output plot.
             do_save (bool): Whether or not the user wants to save the plot to filepath.
-            filepath (str): The name of the path to output the plot.
+            filename (str): The name of the path to output the plot.
         """
 
         # Append all columns of function output to method_table
@@ -1759,7 +1749,7 @@ class MultiSim(sc.prettyobj):
         assert len(sim_seed_combos) == len(set(sim_seed_combos)), "Multiple entries with same label, seed, and method"
 
         # Plot
-        fig = self.base_sim.plot_method_mix(do_show=do_show, do_save=do_save, filepath=filepath, data=df)
+        fig = self.base_sim.plot_method_mix(do_show=do_show, do_save=do_save, filename=filename, data=df)
         return fig
 
 
