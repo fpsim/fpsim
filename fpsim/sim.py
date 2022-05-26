@@ -399,7 +399,7 @@ class People(fpb.BasePeople):
         '''
         Check to see if postpartum agent meets criteria for LAM in this time step
         '''
-        max_lam_dur = 5 # TODO: remove hard-coding, make a parameter
+        max_lam_dur = self.pars['max_lam_dur']
         lam_candidates = self.filter((self.postpartum) * (self.postpartum_dur <= max_lam_dur))
         probs = self.pars['lactational_amenorrhea']['rate'][lam_candidates.postpartum_dur]
         lam_candidates.lam = lam_candidates.binomial(probs)
@@ -717,9 +717,9 @@ class People(fpb.BasePeople):
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
         methods.update_methods()
-        nonpreg.check_lam()
         nonpreg.update_postpartum() # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
+        nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
         # Update results
