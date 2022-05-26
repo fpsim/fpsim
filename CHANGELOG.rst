@@ -9,13 +9,21 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+
+Version 0.13.3 (2022-05-26)
+--------------------------
+- Adds more control to plots, including ``start_year`` and ``end_year``.
+- Combines ``year`` and ``years`` inputs in scenarios and allows more inputs to be dynamic.
+- *GitHub info*: PR `522 <https://github.com/amath-idm/fp_analyses/pull/522>`__
+
+
 Version 0.13.2 (2022-05-25)
 --------------------------
-- Adds ASFR as an output of Experiments.
+- Added ASFR as an output of Experiments.
 - ``MultiSim.run()`` now automatically labels un-labeled sims; this fixes bugs in MultiSim plotting functions.
 - MultiSims also have additional error checking (e.g., they cannot be rerun).
-- Refactors data files to be in "tall" instead of "wide" format.
-- Removes years and age bins from summary statistics.
+- Refactored data files to be in "tall" instead of "wide" format.
+- Removed years and age bins from summary statistics.
 - *GitHub info*: PR `517 <https://github.com/amath-idm/fp_analyses/pull/517>`__
 
 
