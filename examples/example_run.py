@@ -6,7 +6,6 @@ import pylab as pl
 import sciris as sc
 import fpsim as fp
 from fpsim import defaults as fpd
-from fp_analyses import senegal_parameters as sp
 import pandas as pd
 
 # Housekeeping
@@ -14,8 +13,8 @@ sc.tic()
 pl.rcParams['font.size'] = 10
 
 # import data files
-popsize_file = 'data/senegal-popsize.csv'
-skyscrapers_file = 'data/Skyscrapers-All-DHS.csv'
+popsize_file = '../fpsim/locations/senegal/senegal-popsize.csv'
+skyscrapers_file = '../fpsim/locations/senegal/Skyscrapers-All-DHS.csv'
 
 do_run = 1
 do_plot_popsize = 1
@@ -28,7 +27,7 @@ if do_run:
     '''
     Run the sim using sample parameters calibrated to Senegal
     '''
-    pars = sp.make_pars()
+    pars = fp.pars()
     sim = fp.Sim(pars=pars)
 
     sim.run()
@@ -42,12 +41,11 @@ if do_plot_popsize:
     '''
 
     # Load data
-    popsize = pd.read_csv(popsize_file, header=None)
+    popsize = pd.read_csv(popsize_file)
 
     # Handle population size and mcpr from data
-    pop_years_data = popsize.iloc[0, :].to_numpy()
-    popsize_data = popsize.iloc[1, :].to_numpy() / (popsize.iloc[
-                                                            1, 0] / sim.pars['n'])
+    pop_years_data = popsize.year.to_numpy()
+    popsize_data = popsize.popsize.to_numpy() / (popsize.popsize[0] / sim.pars['n_agents'])
 
     # Handle population size and mcpr from model
     pop_years_model = res['tfr_years']
@@ -77,7 +75,7 @@ if do_plot_asfr:
     x_labels = []
     asfr_model = []
 
-    for key in fpd.age_bin_mapping.keys():
+    for key in fpd.age_bin_map.keys():
         x_labels.append(key)
         asfr_model.append(res['asfr'][key][-1])
 
@@ -117,10 +115,10 @@ if do_plot_age_parity_heatmap:
 
     # Load data
     data_parity_bins = pl.arange(0, 18)
-    sky_raw_data = pd.read_csv(skyscrapers_file, header=None)
-    sky_raw_data = sky_raw_data[sky_raw_data[0] == year_str]
-    sky_parity = sky_raw_data[2].to_numpy()
-    sky_props = sky_raw_data[3].to_numpy()
+    sky_raw_data = pd.read_csv(skyscrapers_file)
+    sky_raw_data = sky_raw_data[sky_raw_data.year == year_str]
+    sky_parity = sky_raw_data.parity.to_numpy()
+    sky_props = sky_raw_data.percentage.to_numpy()
     sky_arr = sc.odict()
 
     sky_arr['Data'] = pl.zeros((len(age_bins), len(parity_bins)))
