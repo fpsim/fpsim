@@ -119,7 +119,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         def update_sim(sim): sim.updated = True
         s6 = fp.make_scen(interventions=update_sim)
 
-        # Combining multiple scenarios: change probabilities and reduce exposure factor
+        # Combining multiple scenarios: change probabilities and exposure factor
         s7 = fp.make_scen(
             dict(method='Injectables', init_value=0.1, discont_value=0.02, create=True),
             dict(par='exposure_factor', years=2010, vals=0.5)
