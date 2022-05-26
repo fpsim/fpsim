@@ -724,14 +724,12 @@ class People(fpb.BasePeople):
 
         # Update results
         fecund.update_age_bin_totals()
-        #fecund.check_mcpr() TODO - build method to check mcpr at end of step, will be simpler than below
-        #fecund.update_total_fecund_women()  TODO- build method to track all live women 15-49 for TFR, below not working
-
-        # Update results
         self.track_mcpr()
         self.track_cpr()
         self.track_acpr()
-        self.step_results['total_women_fecund'] = np.sum((self.sex == 0) * (15 <= self.age) * (self.age < self.pars['age_limit_fecundity'])) # CK: TODO: remove hardcoding
+        age_min = self.age >= 15  # CK: TODO: remove hardcoding
+        age_max = self.age < self.pars['age_limit_fecundity']
+        self.step_results['total_women_fecund'] = np.sum(self.is_female * age_min * age_max)
 
         # Age person at end of timestep after tabulating results
         alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
