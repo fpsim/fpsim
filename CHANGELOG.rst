@@ -15,7 +15,8 @@ Version 0.14.0 (2022-05-26)
 - Adds an options module, allowing things like DPI to be set via ``fp.options(dpi=150)``.
 - Updates plotting options and allows more control over style.
 - Adds more control to plots, including ``start_year`` and ``end_year``.
-- Combines ``year`` and ``years`` inputs in scenarios and allows more inputs to be dynamic.
+- Adds a ``copy_from`` keyword to method probability update scenarios.
+- Renames ``years`` to ``par_years`` in scenarios.
 - *GitHub info*: PR `522 <https://github.com/amath-idm/fp_analyses/pull/522>`__
 
 
