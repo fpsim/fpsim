@@ -1248,13 +1248,15 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot(self, to_plot=None, do_save=None, do_show=True, filename='fpsim.png', style=None, fig_args=None,
+    def plot(self, to_plot=None, xlims=None, ylims=None, do_save=None, do_show=True, filename='fpsim.png', style=None, fig_args=None,
              plot_args=None, axis_args=None, fill_args=None, label=None, new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
         Args:
             to_plot   (str/dict): What to plot (e.g. 'default' or 'cpr'), or a dictionary of result:label pairs
+            xlims     (list/dict): passed to pl.xlim() (use ``[None, None]`` for default)
+            ylims     (list/dict): passed to pl.ylim()
             do_save   (bool): Whether or not to save the figure. If a string, save to that filename.
             do_show   (bool): Whether to show the plots at the end
             filename  (str):  If a figure is saved, use this filename
@@ -1356,6 +1358,10 @@ class Sim(fpb.BaseSim):
                     pl.ylabel('Count')
                 pl.xlabel('Year')
                 pl.title(reslabel, fontweight='bold')
+                if xlims is not None:
+                    pl.xlim(xlims)
+                if ylims is not None:
+                    pl.ylim(ylims)
 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
@@ -1690,10 +1696,15 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, to_plot=None, do_show=None, do_save=None, filename='fp_multisim.png',
-             plot_sims=True, fig_args=None, plot_args=None, plot_cpr=False, **kwargs):
+    def plot(self, plot_sims=True, do_show=None, do_save=None, filename='fp_multisim.png',
+             fig_args=None, plot_args=None, **kwargs):
         '''
-        Plot the MultiSim; see sim.plot() for args
+        Plot the MultiSim
+
+        Args:
+            plot_sims (bool): whether to plot individual sims (else, plot with uncertainty bands)
+
+        See ``sim.plot()`` for additional args.
         '''
         fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
 
@@ -1718,7 +1729,7 @@ class MultiSim(sc.prettyobj):
                 color = colors[sim.label]
                 alpha = max(0.2, 1/np.sqrt(n_unique))
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
-                kw = dict(to_plot=to_plot, new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
+                kw = dict(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
                 sim.plot(**kw, **kwargs)
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
