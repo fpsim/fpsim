@@ -555,7 +555,7 @@ class People(fpb.BasePeople):
         i_death = live.check_infant_mortality()
 
         # TEMP -- update children, need to refactor
-        r = fpu.dict2obj(self.step_results)
+        r = sc.dictobj(self.step_results)
         new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
         children_map = sc.ddict(int)
         for i in live.inds:
@@ -740,6 +740,17 @@ class People(fpb.BasePeople):
 
 
 #%% Plotting helper functions
+
+def fixaxis(useSI=True, set_lim=True, legend=True):
+    ''' Format the axis using SI units and limits '''
+    if legend:
+        pl.legend()  # Add legend
+    if set_lim:
+        sc.setylim()
+    if useSI:
+        sc.SIticks()
+    return
+
 
 def tidy_up(fig, do_show=None, do_save=None, filename=None):
     ''' Helper function to handle the slightly complex logic of showing, saving, returing -- not for users '''
@@ -1050,7 +1061,7 @@ class Sim(fpb.BaseSim):
             self.people.i = self.i
             self.people.t = self.t
             step_results = self.people.update()
-            r = fpu.dict2obj(step_results)
+            r = sc.dictobj(step_results)
 
             # Start calculating results
             new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
