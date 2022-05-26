@@ -76,6 +76,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         dest   (str): the method to switch to
         factor (float): if supplied, multiply the [source, dest] probability by this amount
         value  (float): if supplied, instead of factor, replace the [source, dest] probability by this value
+        copy_from (str): if supplied, copy probabilities from a different method
 
     Args (initiation/discontinuation):
         year   (float): as above
@@ -89,8 +90,8 @@ class Scenario(sc.prettyobj, sc.dictobj):
 
     Args (parameter):
         par (str): the parameter to modify
-        years (float/list): the year(s) at which to apply the modifications
-        vals (float/list): the value(s) of the parameter for each year
+        par_years (float/list): the year(s) at which to apply the modifications
+        par_vals (float/list): the value(s) of the parameter for each year
 
     Args (custom):
         interventions (Intervention/list): any custom intervention(s) to be applied to the scenario
@@ -129,9 +130,9 @@ class Scenario(sc.prettyobj, sc.dictobj):
     '''
     def __init__(self, spec=None, *args, label=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
                  eff=None, probs=None, # Option 1
-                 source=None, dest=None, factor=None, value=None, create=None, # Option 2
+                 source=None, dest=None, factor=None, value=None, copy_from=None, # Option 2
                  method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
-                 par=None, years=None, vals=None, # Option 4
+                 par=None, par_years=None, par_vals=None, # Option 4
                  interventions=None, # Option 5
                  ):
 
@@ -173,7 +174,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                     discont_factor = discont_factor,
                     init_value     = init_value,
                     discont_value  = discont_value,
-                    # create         = create,
+                    copy_from      = copy_from,
                 )
             )
             check_not_none(prob_spec, 'year')
@@ -185,10 +186,10 @@ class Scenario(sc.prettyobj, sc.dictobj):
             par_spec = sc.objdict(
                 which = 'par',
                 par   = par,
-                years = years,
-                vals  = vals,
+                years = par_years,
+                vals  = par_vals,
             )
-            check_not_none(par_spec, 'years', 'vals')
+            check_not_none(par_spec, 'par_years', 'par_vals')
 
         # It's a custom scenario(s)
         if interventions is not None:

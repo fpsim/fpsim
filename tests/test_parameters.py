@@ -5,6 +5,7 @@ Run tests on individual parameters.
 import numpy as np
 import sciris as sc
 import fpsim as fp
+import pylab as pl
 import pytest
 
 do_plot = True
@@ -139,7 +140,15 @@ def test_matrix_methods():
     s3 = fp.Sim(pars=p3)
     s3.run()
 
-    return [s1, s2, s3]
+    # Test copy method
+    p4 = pars.copy()
+    name = 'New method'
+    p4.add_method(name=name, eff=1.0)
+    p4.update_method_prob(source=name, dest=name, copy_from='Injectables', matrix='annual')
+    if do_plot:
+        pl.pcolor(p4['methods']['raw']['annual']['>25'])
+
+    return [s1, s2, s3, p4]
 
 
 def test_validation():
@@ -183,9 +192,9 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        null    = test_null(do_plot=do_plot)
-        timings = test_method_timestep()
-        mcpr    = test_mcpr_growth()
-        scale   = test_scale()
-        meths    = test_matrix_methods()
+        # null    = test_null(do_plot=do_plot)
+        # timings = test_method_timestep()
+        # mcpr    = test_mcpr_growth()
+        # scale   = test_scale()
+        meths   = test_matrix_methods()
         pars    = test_validation()
