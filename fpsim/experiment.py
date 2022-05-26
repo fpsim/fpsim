@@ -8,6 +8,7 @@ import numpy as np
 import pylab as pl
 import pandas as pd
 import sciris as sc
+from .settings import options as fpo
 from . import defaults as fpd
 from . import parameters as fpp
 from . import sim as fps
@@ -620,31 +621,7 @@ class Experiment(sc.prettyobj):
         return output
 
 
-    def _get_ax(ax=None):
-        if ax is None:
-            fig,ax = pl.subplots()
-        return ax
-
-
-    def plot_rates(self, ax=None):
-        ''' Plot scalar rates '''
-        self._get_ax(ax)
-        height = 0.4
-        n_rates = len(rate_keys)
-        y = np.arange(n_rates)
-        data_rates = np.array([data[k] for k in rate_keys])
-        sim_rates  = np.array([sim[k] for k in rate_keys])
-        ax.barh(y=y+height/2, width=data_rates, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim_rates,  height=height, align='center', label='Sim')
-        ax.set_title('Rates')
-        ax.set_xlabel('Rate')
-        ax.set_yticks(range(n_rates))
-        ax.set_yticklabels(rate_keys)
-        ax.legend()
-
-
-
-    def plot(self, axes_args=None, do_maximize=True, do_show=True):
+    def plot(self, do_show=None, do_save=None, filename='fp_experiment.png', axis_args=None, do_maximize=True):
         ''' Plot the model against the data '''
         data = self.dhs_data
         sim = self.model_to_calib
@@ -665,159 +642,169 @@ class Experiment(sc.prettyobj):
             errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys}'
             raise ValueError(errormsg)
 
-        fig, axs = pl.subplots(nrows=4, ncols=3)
-        pl.subplots_adjust(**sc.mergedicts(dict(bottom=0.05, top=0.97, left=0.05, right=0.97, wspace=0.3, hspace=0.3), axes_args)) # CK: TODO: remove hardcoding
+        with fpo.with_style():
+
+            fig, axs = pl.subplots(nrows=4, ncols=3)
+            pl.subplots_adjust(**sc.mergedicts(dict(bottom=0.05, top=0.97, left=0.05, right=0.97, wspace=0.3, hspace=0.3), axis_args))
 
 
-        #%% Do the plotting!
+            #%% Do the plotting!
 
-        # Rates
-        self.plot_rates(axs[0,0])
+            # Rates
+            ax = axs[0,0]
+            height = 0.4
+            n_rates = len(rate_keys)
+            y = np.arange(n_rates)
+            data_rates = np.array([data[k] for k in rate_keys])
+            sim_rates  = np.array([sim[k] for k in rate_keys])
+            ax.barh(y=y+height/2, width=data_rates, height=height, align='center', label='Data')
+            ax.barh(y=y-height/2, width=sim_rates,  height=height, align='center', label='Sim')
+            ax.set_title('Rates')
+            ax.set_xlabel('Rate')
+            ax.set_yticks(range(n_rates))
+            ax.set_yticklabels(rate_keys)
+            ax.legend()
 
+            # Population size
+            ax = axs[1,0]
+            ax.plot(data.pop_years, data.pop_size, 'o', label='Data')
+            ax.plot(sim.pop_years,  sim.pop_size,  '-', label='Sim')
+            ax.set_title('Population size')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Population size')
+            ax.legend()
 
-        # Population size
-        ax = axs[1,0]
-        ax.plot(data.pop_years, data.pop_size, 'o', label='Data')
-        ax.plot(sim.pop_years,  sim.pop_size,  '-', label='Sim')
-        ax.set_title('Population size')
-        ax.set_xlabel('Year')
-        ax.set_ylabel('Population size')
-        ax.legend()
+            # Population growth rate
+            ax = axs[2,0]
+            ax.plot(data.pop_years[:-1], data.pop_growth_rate, 'o', label='Data')
+            ax.plot(sim.pop_years[:-1],  sim.pop_growth_rate,  '-', label='Sim')
+            ax.set_title('Population growth rate')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Population growth rate')
+            ax.legend()
 
-        # Population growth rate
-        ax = axs[2,0]
-        ax.plot(data.pop_years[:-1], data.pop_growth_rate, 'o', label='Data')
-        ax.plot(sim.pop_years[:-1],  sim.pop_growth_rate,  '-', label='Sim')
-        ax.set_title('Population growth rate')
-        ax.set_xlabel('Year')
-        ax.set_ylabel('Population growth rate')
-        ax.legend()
+            # MCPR
+            ax = axs[3,0]
+            ax.plot(data.mcpr_years, data.mcpr, 'o', label='Data')
+            ax.plot(sim.mcpr_years,  sim.mcpr,  '-', label='Sim') # TODO: remove scale factor
+            ax.set_title('MCPR')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Modern contraceptive prevalence rate')
+            ax.legend()
 
-        # MCPR
-        ax = axs[3,0]
-        ax.plot(data.mcpr_years, data.mcpr, 'o', label='Data')
-        ax.plot(sim.mcpr_years,  sim.mcpr,  '-', label='Sim') # TODO: remove scale factor
-        ax.set_title('MCPR')
-        ax.set_xlabel('Year')
-        ax.set_ylabel('Modern contraceptive prevalence rate')
-        ax.legend()
+            # Data skyscraper
+            ax = axs[0,1]
+            ax.pcolormesh(self.age_bins, self.parity_bins, data.skyscrapers.transpose(), shading='nearest', cmap='turbo')
+            ax.set_aspect(1./ax.get_data_ratio()) # Make square
+            ax.set_title('Age-parity plot: data')
+            ax.set_xlabel('Age')
+            ax.set_ylabel('Parity')
 
-        # Data skyscraper
-        ax = axs[0,1]
-        ax.pcolormesh(self.age_bins, self.parity_bins, data.skyscrapers.transpose(), shading='nearest', cmap='turbo')
-        ax.set_aspect(1./ax.get_data_ratio()) # Make square
-        ax.set_title('Age-parity plot: data')
-        ax.set_xlabel('Age')
-        ax.set_ylabel('Parity')
+            # Sim skyscraper
+            ax = axs[1,1]
+            ax.pcolormesh(self.age_bins, self.parity_bins, sim.skyscrapers.transpose(), shading='nearest', cmap='turbo')
+            ax.set_aspect(1./ax.get_data_ratio())
+            ax.set_title('Age-parity plot: sim')
+            ax.set_xlabel('Age')
+            ax.set_ylabel('Parity')
 
-        # Sim skyscraper
-        ax = axs[1,1]
-        ax.pcolormesh(self.age_bins, self.parity_bins, sim.skyscrapers.transpose(), shading='nearest', cmap='turbo')
-        ax.set_aspect(1./ax.get_data_ratio())
-        ax.set_title('Age-parity plot: sim')
-        ax.set_xlabel('Age')
-        ax.set_ylabel('Parity')
+            # Spacing bins
+            ax = axs[2, 1]
+            height = 0.4
 
-        # Spacing bins
-        ax = axs[2, 1]
-        height = 0.4
+            spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
+            n_bins = len(spacing_bins.keys())
 
-        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
-        n_bins = len(spacing_bins.keys())
+            y = np.arange(len(data.spacing_bins))
+            ax.barh(y=y+height/2, width=data.spacing_bins, height=height, align='center', label='Data')
+            ax.barh(y=y-height/2, width=sim.spacing_bins,  height=height, align='center', label='Sim')
+            ax.set_title('Birth spacing bins')
+            ax.set_xlabel('Percent of births in each bin')
+            ax.set_yticks(range(n_bins))
+            ax.set_yticklabels(spacing_bins.keys())
+            ax.set_ylabel('Birth space in months')
+            ax.legend()
 
-        y = np.arange(len(data.spacing_bins))
-        ax.barh(y=y+height/2, width=data.spacing_bins, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim.spacing_bins,  height=height, align='center', label='Sim')
-        ax.set_title('Birth spacing bins')
-        ax.set_xlabel('Percent of births in each bin')
-        ax.set_yticks(range(n_bins))
-        ax.set_yticklabels(spacing_bins.keys())
-        ax.set_ylabel('Birth space in months')
-        ax.legend()
+            # Age first stats
+            quartile_keys = ['25th %',
+                         'Median',
+                         '75th %']
+            n_quartiles = len(quartile_keys)
 
-        # Age first stats
-        quartile_keys = ['25th %',
-                     'Median',
-                     '75th %']
-        n_quartiles = len(quartile_keys)
+            ax = axs[3,1]
+            height = 0.4
+            y = np.arange(len(data.age_first_stats))
+            ax.barh(y=y+height/2, width=data.age_first_stats, height=height, align='center', label='Data')
+            ax.barh(y=y-height/2, width=sim.age_first_stats,  height=height, align='center', label='Sim')
+            ax.set_title('Age at first birth')
+            ax.set_xlabel('Age')
+            ax.set_yticks(range(n_quartiles))
+            ax.set_yticklabels(quartile_keys)
+            ax.legend()
 
-        ax = axs[3,1]
-        height = 0.4
-        y = np.arange(len(data.age_first_stats))
-        ax.barh(y=y+height/2, width=data.age_first_stats, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim.age_first_stats,  height=height, align='center', label='Sim')
-        ax.set_title('Age at first birth')
-        ax.set_xlabel('Age')
-        ax.set_yticks(range(n_quartiles))
-        ax.set_yticklabels(quartile_keys)
-        ax.legend()
+            # Age pregnant stats
+            ax = axs[0,2]
+            height = 0.4
+            y = np.arange(len(data.age_pregnant_stats))
+            ax.barh(y=y+height/2, width=data.age_pregnant_stats, height=height, align='center', label='Data')
+            ax.barh(y=y-height/2, width=sim.age_pregnant_stats,  height=height, align='center', label='Sim')
+            ax.set_title('Age of women currently pregnant')
+            ax.set_xlabel('Age')
+            ax.set_yticks(range(n_quartiles))
+            ax.set_yticklabels(quartile_keys)
+            ax.legend()
 
-        # Age pregnant stats
-        ax = axs[0,2]
-        height = 0.4
-        y = np.arange(len(data.age_pregnant_stats))
-        ax.barh(y=y+height/2, width=data.age_pregnant_stats, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim.age_pregnant_stats,  height=height, align='center', label='Sim')
-        ax.set_title('Age of women currently pregnant')
-        ax.set_xlabel('Age')
-        ax.set_yticks(range(n_quartiles))
-        ax.set_yticklabels(quartile_keys)
-        ax.legend()
+            # Age parity stats
+            ax = axs[1,2]
+            cols = sc.gridcolors(3)
+            for i,yvals in enumerate([data.age_parity_stats, sim.age_parity_stats]):
+                for j in range(3):
+                    vals = yvals[:,j]
+                    if i==0:
+                        marker = 'o'
+                        label = 'Data'
+                    else:
+                        marker = '-'
+                        label = 'Sim'
+                    ax.plot(vals, marker, c=cols[j], label=label)
+            ax.set_title('Age parity stats - quartiles')
+            ax.set_xlabel('Parity')
+            ax.set_ylabel('Age')
+            ax.legend()
 
-        # Age parity stats
-        ax = axs[1,2]
-        cols = sc.gridcolors(3)
-        for i,yvals in enumerate([data.age_parity_stats, sim.age_parity_stats]):
-            for j in range(3):
-                vals = yvals[:,j]
-                if i==0:
-                    marker = 'o'
-                    label = 'Data'
-                else:
-                    marker = '-'
-                    label = 'Sim'
-                ax.plot(vals, marker, c=cols[j], label=label)
-        ax.set_title('Age parity stats - quartiles')
-        ax.set_xlabel('Parity')
-        ax.set_ylabel('Age')
-        ax.legend()
+            # Method counts
+            ax = axs[2,2]
 
-        # Method counts
-        ax = axs[2,2]
+            height = 0.4
+            y = np.arange(len(data.method_counts))
+            y1 = y + height/2
+            y2 = y - height/2
+            ax.barh(y=y1, width=data.method_counts, height=height, align='center', label='Data')
+            ax.barh(y=y2, width=sim.method_counts,  height=height, align='center', label='Sim')
+            ax.set_yticks(y, self.method_keys)
+            ax.set_title('Method counts')
+            ax.set_ylabel('Contraceptive method')
+            ax.set_xlabel('Rate of use')
+            ax.legend()
 
-        height = 0.4
-        y = np.arange(len(data.method_counts))
-        y1 = y + height/2
-        y2 = y - height/2
-        ax.barh(y=y1, width=data.method_counts, height=height, align='center', label='Data')
-        ax.barh(y=y2, width=sim.method_counts,  height=height, align='center', label='Sim')
-        ax.set_yticks(y, self.method_keys)
-        ax.set_title('Method counts')
-        ax.set_ylabel('Contraceptive method')
-        ax.set_xlabel('Rate of use')
-        ax.legend()
-
-        # ASFR
-        ax = axs[3,2]
-        y = np.arange(len(data.asfr))
-        y1 = y + height/2
-        y2 = y - height/2
-        ax.barh(y=y1, width=data.asfr, height=height, align='center', label='Data')
-        ax.barh(y=y2, width=sim.asfr,  height=height, align='center', label='Sim')
-        ax.set_yticks(y, sim.asfr_bins)
-        ax.set_title('Age-specific fertility rate')
-        ax.set_ylabel('Age bin')
-        ax.set_xlabel('Fertility rate')
-        ax.legend()
+            # ASFR
+            ax = axs[3,2]
+            y = np.arange(len(data.asfr))
+            y1 = y + height/2
+            y2 = y - height/2
+            ax.barh(y=y1, width=data.asfr, height=height, align='center', label='Data')
+            ax.barh(y=y2, width=sim.asfr,  height=height, align='center', label='Sim')
+            ax.set_yticks(y, sim.asfr_bins)
+            ax.set_title('Age-specific fertility rate')
+            ax.set_ylabel('Age bin')
+            ax.set_xlabel('Fertility rate')
+            ax.legend()
 
         # Tidy up
         if do_maximize:
             sc.maximize(fig=fig)
 
-        if do_show:
-            pl.show()
-
-        pass
+        return fps.tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
 
 

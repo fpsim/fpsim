@@ -8,7 +8,7 @@ import pylab as pl
 import seaborn as sns
 import sciris as sc
 import pandas as pd
-from . import options as fpo
+from .settings import options as fpo
 from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
