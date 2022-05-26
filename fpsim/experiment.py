@@ -620,6 +620,30 @@ class Experiment(sc.prettyobj):
         return output
 
 
+    def _get_ax(ax=None):
+        if ax is None:
+            fig,ax = pl.subplots()
+        return ax
+
+
+    def plot_rates(self, ax=None):
+        ''' Plot scalar rates '''
+        self._get_ax(ax)
+        height = 0.4
+        n_rates = len(rate_keys)
+        y = np.arange(n_rates)
+        data_rates = np.array([data[k] for k in rate_keys])
+        sim_rates  = np.array([sim[k] for k in rate_keys])
+        ax.barh(y=y+height/2, width=data_rates, height=height, align='center', label='Data')
+        ax.barh(y=y-height/2, width=sim_rates,  height=height, align='center', label='Sim')
+        ax.set_title('Rates')
+        ax.set_xlabel('Rate')
+        ax.set_yticks(range(n_rates))
+        ax.set_yticklabels(rate_keys)
+        ax.legend()
+
+
+
     def plot(self, axes_args=None, do_maximize=True, do_show=True):
         ''' Plot the model against the data '''
         data = self.dhs_data
@@ -648,19 +672,8 @@ class Experiment(sc.prettyobj):
         #%% Do the plotting!
 
         # Rates
-        ax = axs[0,0]
-        height = 0.4
-        n_rates = len(rate_keys)
-        y = np.arange(n_rates)
-        data_rates = np.array([data[k] for k in rate_keys])
-        sim_rates  = np.array([sim[k] for k in rate_keys])
-        ax.barh(y=y+height/2, width=data_rates, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim_rates,  height=height, align='center', label='Sim')
-        ax.set_title('Rates')
-        ax.set_xlabel('Rate')
-        ax.set_yticks(range(n_rates))
-        ax.set_yticklabels(rate_keys)
-        ax.legend()
+        self.plot_rates(axs[0,0])
+
 
         # Population size
         ax = axs[1,0]

@@ -393,6 +393,7 @@ class Scenarios(sc.prettyobj):
         self.analyze_sims()
         return
 
+
     def check_run(self):
         ''' Give a meaningful error message if the scenarios haven't been run '''
         if not self.already_run:
@@ -402,25 +403,21 @@ class Scenarios(sc.prettyobj):
 
 
     def plot_sims(self, **kwargs):
-        ''' Plot each sim as a separate line across all senarios '''
+        ''' Plot each sim as a separate line across all senarios -- see ``sim.plot()`` for args '''
         self.check_run()
         return self.msim.plot(plot_sims=True, **kwargs)
 
 
     def plot_scens(self, **kwargs):
-        ''' Plot the scenarios with bands '''
+        ''' Plot the scenarios with bands -- see ``sim.plot()`` for args '''
         self.check_run()
         return self.msim_merged.plot(plot_sims=True, **kwargs)
 
-    def plot_method_mix(self, **kwargs):
-        ''' Plots the method mix '''
-        self.check_run()
-        return self.msim.plot_method_mix()
 
-    def plot_cpr(self, **kwargs):
-        ''' Plot the CPR with bands '''
+    def plot_method_mix(self, *args, **kwargs):
+        ''' Plots the method mix -- see ``sim.plot_method_mix()`` for args '''
         self.check_run()
-        return self.msim_merged.plot_cpr(**kwargs)
+        return self.msim.plot_method_mix(*args, **kwargs)
 
 
     def analyze_sims(self, start=None, end=None):
