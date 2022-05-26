@@ -1035,7 +1035,7 @@ class Sim(fpb.BaseSim):
                     sc.heading(string)
                 elif verbose>0:
                     if not (self.t % int(1.0/verbose)):
-                        sc.progressbar(self.t+1, self.npts, label=string, length=20, newline=True)
+                        sc.progressbar(self.i+1, self.npts, label=string, length=20, newline=True)
 
             # Update method matrices for year of sim to trend over years
             self.update_methods()
