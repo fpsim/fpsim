@@ -15,7 +15,7 @@ is used to refer to the choices made (e.g., DPI=150).
 import os
 import pylab as pl
 import sciris as sc
-import matplotlib.font_manager as fm
+
 
 # Only the class instance is public
 __all__ = ['options']
@@ -30,7 +30,6 @@ rc_simple = {
     'axes.spines.right': False,
     'axes.spines.top':   False,
     'figure.facecolor':  'white',
-    'font.family':       'sans-serif', # Replaced with Mulish in load_fonts() if import succeeds
     'legend.frameon':    False,
 }
 
@@ -79,9 +78,6 @@ class Options(sc.objdict):
         fp.options(interactive=False) # Turn off interactive plots
         fp.options(jupyter=True) # Defaults for Jupyter
         fp.options('defaults') # Reset to default options
-
-    | New in version 3.1.1: Jupyter defaults
-    | New in version 3.1.2: Updated plotting styles; refactored options as a class
     '''
 
     def __init__(self):
@@ -271,9 +267,6 @@ class Options(sc.objdict):
                 if value in [None, 'default']:
                     value = self.orig_options[key]
                 self[key] = value
-                numba_keys = ['precision', 'numba_parallel', 'numba_cache'] # Specify which keys require a reload
-                if key in numba_keys:
-                    reload_required = True
                 if key in 'backend':
                     pl.switch_backend(value)
 
@@ -301,8 +294,6 @@ class Options(sc.objdict):
             # Use with_style(), not context(), for plotting options
             with fp.options.with_style(dpi=50):
                 fp.Sim().run().plot()
-
-        New in version 3.1.2.
         '''
 
         # Store current settings
@@ -421,19 +412,22 @@ class Options(sc.objdict):
     def _handle_style(self, style=None, reset=False, copy=True):
         ''' Helper function to handle logic for different styles '''
         rc = self.rc # By default, use current
-        if isinstance(style, dict): # If an rc-like object is supplied directly
+        if style is None:
+            style = 'default'
+        elif isinstance(style, dict): # If an rc-like object is supplied directly
             rc = sc.dcp(style)
-        elif style is not None: # Usual use case
-            stylestr = str(style).lower()
-            if stylestr in ['default', 'fpsim', 'house']:
-                rc = sc.dcp(rc_fpsim)
-            elif stylestr in ['simple', 'fpsim_simple', 'plain', 'clean']:
-                rc = sc.dcp(rc_simple)
-            elif style in pl.style.library:
-                rc = sc.dcp(pl.style.library[style])
-            else:
-                errormsg = f'Style "{style}"; not found; options are "fpsim" (default), "simple", plus:\n{sc.newlinejoin(pl.style.available)}'
-                raise ValueError(errormsg)
+
+        stylestr = str(style).lower()
+        if stylestr in ['default', 'fpsim', 'house']:
+            rc = sc.dcp(rc_fpsim)
+        elif stylestr in ['simple', 'fpsim_simple', 'plain', 'clean']:
+            rc = sc.dcp(rc_simple)
+        elif style in pl.style.library:
+            rc = sc.dcp(pl.style.library[style])
+        else:
+            errormsg = f'Style "{style}"; not found; options are "fpsim" (default), "simple", plus:\n{sc.newlinejoin(pl.style.available)}'
+            raise ValueError(errormsg)
+
         if reset:
             self.rc = rc
         if copy:
