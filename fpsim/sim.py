@@ -555,7 +555,7 @@ class People(fpb.BasePeople):
         i_death = live.check_infant_mortality()
 
         # TEMP -- update children, need to refactor
-        r = sc.dictobj(self.step_results)
+        r = sc.dictobj(**self.step_results)
         new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
         children_map = sc.ddict(int)
         for i in live.inds:
@@ -1061,7 +1061,7 @@ class Sim(fpb.BaseSim):
             self.people.i = self.i
             self.people.t = self.t
             step_results = self.people.update()
-            r = sc.dictobj(step_results)
+            r = sc.dictobj(**step_results)
 
             # Start calculating results
             new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
@@ -1248,16 +1248,18 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot(self, do_save=None, do_show=True, style=None, fig_args=None,
+    def plot(self, to_plot=None, do_save=None, do_show=True, filename='fpsim.png', style=None, fig_args=None,
              plot_args=None, axis_args=None, fill_args=None, label=None, new_fig=True):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
         Args:
+            to_plot   (str/dict): What to plot (e.g. 'default' or 'cpr'), or a dictionary of result:label pairs
             do_save   (bool): Whether or not to save the figure. If a string, save to that filename.
             do_show   (bool): Whether to show the plots at the end
+            filename  (str):  If a figure is saved, use this filename
             style     (bool): Custom style arguments
-            fig_args  (dict): Passed to pl.figure()
+            fig_args  (dict): Passed to pl.figure() (plus ``nrows`` and ``ncols`` for overriding defaults)
             plot_args (dict): Passed to pl.plot()
             axis_args (dict): Passed to pl.subplots_adjust()
             fill_args (dict): Passed to pl.fill_between())
@@ -1265,119 +1267,41 @@ class Sim(fpb.BaseSim):
             new_fig   (bool): Whether to create a new figure (true unless part of a multisim)
         '''
 
-        fig_args  = sc.mergedicts(dict(figsize=(16,10)), fig_args)
+        if to_plot is None: to_plot = 'default'
+        fig_args  = sc.mergedicts(dict(figsize=(16,10), nrows=None, ncols=None), fig_args)
         plot_args = sc.mergedicts(dict(lw=2, alpha=0.7), plot_args)
         axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.25), axis_args)
         fill_args = sc.mergedicts(dict(alpha=0.2), fill_args)
 
         with fpo.with_style(style):
 
+            nrows,ncols = fig_args.pop('nrows'), fig_args.pop('ncols')
             fig = pl.figure(**fig_args) if new_fig else pl.gcf()
             pl.subplots_adjust(**axis_args)
 
             res = self.results # Shorten since heavily used
 
-            x = res['tfr_years'] # Likewise
-
             # Plot everything
-            to_plot = sc.odict({
-                'mCPR':               sc.odict({'mcpr_by_year': 'Modern contraceptive prevalence rate (%)'}),
-                'Maternal mortality ratio': sc.odict({'mmr': 'Maternal mortality ratio'}),
-                'Infant mortality rate': sc.odict({'imr': 'Infant mortality rate'}),
-                'Cumulative live births': sc.odict({'cum_live_births_by_year': 'Live births'}),
-                'Cumulative maternal deaths': sc.odict({'cum_maternal_deaths_by_year': 'Maternal deaths'}),
-                'Cumulative infant deaths': sc.odict({'cum_infant_deaths_by_year':  'Infant deaths'}),
-                })
-            for p,title,keylabels in to_plot.enumitems():
-                ax = pl.subplot(2,3,p+1)
-                for i,key,reslabel in keylabels.enumitems():
-                    this_res = res[key]
-                    is_dist = hasattr(this_res, 'best')
-                    if is_dist:
-                        y, low, high = this_res.best, this_res.low, this_res.high
-                    else:
-                        y, low, high = this_res, None, None
+            if to_plot == 'default':
+                to_plot = {
+                    'mcpr_by_year':                'Modern contraceptive prevalence rate (%)',
+                    'cum_live_births_by_year':     'Live births',
+                    'cum_maternal_deaths_by_year': 'Maternal deaths',
+                    'cum_infant_deaths_by_year':   'Infant deaths',
+                    'mmr':                         'Maternal mortality ratio',
+                    'imr':                         'Infant mortality rate',
+                }
+            elif to_plot == 'cpr':
+                to_plot = {
+                    'mcpr': 'MCPR (modern contraceptive prevalence rate)',
+                    'cpr':  'CPR (contraceptive prevalence rate)',
+                    'acpr': 'ACPR (alternative contraceptive prevalence rate',
+                }
+            rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
 
-                    if key == 'mcpr_by_year':
-                        y *= 100
-                        if is_dist:
-                            low *= 100
-                            high *= 100
+            for p,key,reslabel in sc.odict(to_plot).enumitems():
+                ax = pl.subplot(rows, cols, p+1)
 
-                    # Handle label
-                    if label is not None:
-                        plotlabel = label
-                    else:
-                        if new_fig: # It's a new figure, use the result label
-                            plotlabel = reslabel
-                        else: # Replace with sim label to avoid duplicate labels
-                            plotlabel = self.label
-
-                    # Actually plot
-                    ax.plot(x, y, label=plotlabel, **plot_args)
-                    if is_dist:
-                        if 'c' in plot_args:
-                            fill_args['facecolor'] = plot_args['c']
-                        ax.fill_between(x, low, high, **fill_args)
-
-                # Handle annotations
-                fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
-                if key == 'mcpr_by_year':
-                    pl.ylabel('Percentage')
-                elif key == 'mmr':
-                    pl.ylabel('Deaths per 100,000 live births')
-                elif key == 'imr':
-                    pl.ylabel('Deaths per 1,000 live births')
-                else:
-                    pl.ylabel('Count')
-                pl.xlabel('Year')
-                pl.title(title, fontweight='bold')
-
-        # Ensure the figure actually renders or saves
-        out = tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename='fpsim.png')
-
-        return out
-
-
-    def plot_cpr(self, do_save=None, do_show=True, fig_args=None, plot_args=None, axis_args=None, fill_args=None,
-             label=None, new_fig=True):
-        '''
-        Plot the results -- can supply arguments for both the figure and the plots.
-
-        Args:
-            dosave    (bool): Whether or not to save the figure. If a string, save to that filename.
-            doshow    (bool): Whether to show the plots at the end
-            figargs   (dict): Passed to pl.figure()
-            plot_args (dict): Passed to pl.plot()
-            axis_args (dict): Passed to pl.subplots_adjust()
-            fill_args (dict): Passed to pl.fill_between())
-            label     (str):  Label to override default
-            new_fig   (bool): whether to create a new figure (true unless part of a multisim)
-        '''
-
-        fig_args  = sc.mergedicts(dict(figsize=(20,8)), fig_args)
-        plot_args = sc.mergedicts(dict(lw=2, alpha=0.7), plot_args)
-        axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.25), axis_args)
-        fill_args = sc.mergedicts(dict(alpha=0.2), fill_args)
-
-        fig = pl.figure(**fig_args) if new_fig else pl.gcf()
-        pl.subplots_adjust(**axis_args)
-
-        res = self.results # Shorten since heavily used
-
-        x = res['t'] # Likewise
-
-        # Plot everything
-        to_plot = sc.odict({
-            'mCPR \n (modern method users \namong all women 15-49)':               sc.odict({'mcpr': 'Modern contraceptive prevalence rate'}),
-            'CPR \n (all method users \namong all women 15-49)': sc.odict({'cpr': 'Contraceptive prevalence rate'}),
-            'ACPR \n (all method users \namong nonpregnant, sexually active women 15-49)': sc.odict({'acpr': 'Alternative contraceptive prevalence rate'}),
-            })
-
-        ax = None
-        for p,title,keylabels in to_plot.enumitems():
-            ax = pl.subplot(1, 3, p+1, sharey=ax)
-            for i,key,reslabel in keylabels.enumitems():
                 this_res = res[key]
                 is_dist = hasattr(this_res, 'best')
                 if is_dist:
@@ -1385,10 +1309,24 @@ class Sim(fpb.BaseSim):
                 else:
                     y, low, high = this_res, None, None
 
-                y *= 100
-                if is_dist:
-                    low *= 100
-                    high *= 100
+                # Figure out x axis
+                years = res['tfr_years']
+                timepoints = res['t'] # Likewise
+                x = None
+                for x_opt in [years, timepoints]:
+                    if len(y) == len(x_opt):
+                        x = x_opt
+                        break
+                if x is None:
+                    errormsg = f'Could not figure out how to plot {key}: result of length {len(y)} does not match a known x-axis'
+                    raise RuntimeError(errormsg)
+
+                percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr']
+                if key in percent_keys:
+                    y *= 100
+                    if is_dist:
+                        low *= 100
+                        high *= 100
 
                 # Handle label
                 if label is not None:
@@ -1399,43 +1337,46 @@ class Sim(fpb.BaseSim):
                     else: # Replace with sim label to avoid duplicate labels
                         plotlabel = self.label
 
+                # Actually plot
                 ax.plot(x, y, label=plotlabel, **plot_args)
                 if is_dist:
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
                     ax.fill_between(x, low, high, **fill_args)
 
-            pl.ylabel('Percentage')
-            pl.xlabel('Year')
-            pl.title(title, fontweight='bold')
-            fpu.fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
+                # Handle annotations
+                fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
+                if key in percent_keys:
+                    pl.ylabel('Percentage')
+                elif key == 'mmr':
+                    pl.ylabel('Deaths per 100,000 live births')
+                elif key == 'imr':
+                    pl.ylabel('Deaths per 1,000 live births')
+                else:
+                    pl.ylabel('Count')
+                pl.xlabel('Year')
+                pl.title(reslabel, fontweight='bold')
 
-        # Ensure the figure actually renders or saves
-        sc.figlayout()
-        if do_save:
-            if isinstance(do_save, str):
-                filename = do_save # It's a string, assume it's a filename
-            else:
-                filename = 'fpsim.png' # Just give it a default name
-            pl.savefig(filename)
-        if do_show:
-            pl.show() # Only show if we're not saving
-
-        return fig
+        return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
 
-    def plot_age_first_birth(self, do_show=False, do_save=True, output_file="first_birth_age.png"):
-        to_plot = [age for age in self.people.first_birth_age if age is not None]
+    def plot_age_first_birth(self, do_show=None, do_save=None, fig_args=None, filename="first_birth_age.png"):
+        '''
+        Plot age at first birth
 
-        sns.set(rc={'figure.figsize':(7,5)})
+        Args:
+            fig_args (dict): arguments to pass to ``pl.figure()``
+            do_show (bool): whether or not the user wants to show the output plot (default: true)
+            do_save (bool): whether or not the user wants to save the plot to filepath (default: false)
+            filename (str): the name of the path to output the plot
+        '''
+        birth_age = self.people.first_birth_age
+        data = birth_age[birth_age>0]
+        fig = pl.figure(**sc.mergedicts(dict(figsize=(7,5)), fig_args))
         pl.title("Age at first birth")
-        sns.boxplot(x=to_plot, orient='v', notch=True)
-        if do_show:
-            pl.show()
-        if do_save:
-            print(f"Saved age at first birth plot at {output_file}")
-            pl.savefig(output_file)
-        return
+        sns.boxplot(x=data, orient='v', notch=True)
+        pl.xlabel('Age (years')
+        return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
 
     def compute_method_table(self):
@@ -1468,15 +1409,15 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot_method_mix(self, fig_args=None, do_show=True, do_save=False, filepath="method_mix.png", data=None):
+    def plot_method_mix(self, fig_args=None, do_show=None, do_save=None, filename="method_mix.png", data=None):
         """
         Plots the average method mix for n_sims runs
 
         Args:
             fig_args (dict): arguments to pass to ``pl.figure()``
-            do_show (bool): whether or not the user wants to show the output plot.
-            do_save (bool): whether or not the user wants to save the plot to filepath.
-            filepath (str): the name of the path to output the plot.
+            do_show (bool): whether or not the user wants to show the output plot (default: true)
+            do_save (bool): whether or not the user wants to save the plot to filepath (default: false)
+            filename (str): the name of the path to output the plot.
             data (dataframe): if supplied, plot these data (used by MultiSim)
         """
         # Compute
@@ -1489,12 +1430,8 @@ class Sim(fpb.BaseSim):
         fig = pl.figure(**sc.mergedicts(fig_args)) # Since Seaborn doesn't open a new figure
         sns.barplot(data=df, x="Proportion", y="Method", order=np.unique(df['Method']))
         pl.title("Mean method mix")
-        if do_save:
-            pl.savefig(filepath)
-        if do_show:
-            pl.show()
 
-        return fig
+        return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
 
 #%% Multisim and running
@@ -1753,7 +1690,8 @@ class MultiSim(sc.prettyobj):
         return df
 
 
-    def plot(self, do_show=True, plot_sims=True, fig_args=None, plot_args=None, plot_cpr=False, **kwargs):
+    def plot(self, do_show=None, do_save=None, filename='fp_multisim.png',
+             plot_sims=True, fig_args=None, plot_args=None, plot_cpr=False, **kwargs):
         '''
         Plot the MultiSim
         '''
@@ -1787,7 +1725,7 @@ class MultiSim(sc.prettyobj):
                     sim.plot(**kw, **kwargs)
             if do_show:
                 pl.show()
-            return fig
+            return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
             return self.base_sim.plot(do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
