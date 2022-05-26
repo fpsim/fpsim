@@ -66,6 +66,7 @@ class Options(sc.objdict):
         - interactive:    convenience method to set show, close, and backend
         - jupyter:        defaults for Jupyter (change backend and figure close/return)
         - show:           whether to show figures
+        - save:           whether to save the figures
         - close:          whether to close the figures
         - backend:        which Matplotlib backend to use
         - warnings:       how to handle warnings (e.g. print, raise as errors, ignore)
@@ -152,7 +153,7 @@ class Options(sc.objdict):
         options = sc.objdict() # The options
 
         optdesc.verbose = 'Set default level of verbosity (i.e. logging detail): e.g., 0.1 is an update every 10 simulated days'
-        options.verbose = float(os.getenv('FPSIM_VERBOSE', 0.1))
+        options.verbose = float(os.getenv('FPSIM_VERBOSE', 1))
 
         optdesc.style = 'Set the default plotting style -- options are "fpsim" and "simple" plus those in pl.style.available; see also options.rc'
         options.style = os.getenv('FPSIM_STYLE', 'fpsim')
@@ -174,6 +175,9 @@ class Options(sc.objdict):
 
         optdesc.show = 'Set whether or not to show figures (i.e. call pl.show() automatically)'
         options.show = int(os.getenv('FPSIM_SHOW', True))
+
+        optdesc.save = 'Set whether or not to save figures (i.e. call pl.savefig() automatically)'
+        options.save = int(os.getenv('FPSIM_SAVE', False))
 
         optdesc.close = 'Set whether or not to close figures (i.e. call pl.close() automatically)'
         options.close = int(os.getenv('FPSIM_CLOSE', False))
