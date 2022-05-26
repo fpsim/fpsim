@@ -738,6 +738,29 @@ class People(fpb.BasePeople):
         return self.step_results
 
 
+def handle_save_show(fig, do_show=None, do_save=None, filename=None):
+    ''' Helper function to handle the slightly complex logic of showing and saving -- not for users '''
+
+    # Handle
+    if do_show is None: do_show = True
+    if do_save is None: do_save = False
+    backend = pl.get_backend()
+
+    # Handle show
+    if backend == 'agg': # Cannot show plots for a non-interactive backend
+        do_show = False
+    if do_show: # Now check whether to show, and atually do it
+        pl.show()
+
+    # Handle saving
+    if do_save:
+        if isinstance(do_save, str): # No figpath provided - see whether do_save is a figpath
+            filename = sc.makefilepath(filename) # Ensure it's valid, including creating the folder
+        sc.savefig(fig=fig, filename=filename) # Save the figure
+
+    return
+
+
 
 class Sim(fpb.BaseSim):
     '''
