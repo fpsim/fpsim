@@ -8,6 +8,7 @@ import pylab as pl
 import seaborn as sns
 import sciris as sc
 import pandas as pd
+from . import options as fpo
 from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
@@ -738,12 +739,14 @@ class People(fpb.BasePeople):
         return self.step_results
 
 
-def handle_save_show(fig, do_show=None, do_save=None, filename=None):
-    ''' Helper function to handle the slightly complex logic of showing and saving -- not for users '''
+#%% Plotting helper functions
 
-    # Handle
-    if do_show is None: do_show = True
-    if do_save is None: do_save = False
+def tidy_up(fig, do_show=None, do_save=None, filename=None):
+    ''' Helper function to handle the slightly complex logic of showing, saving, returing -- not for users '''
+
+    # Handle inputs
+    if do_show is None: do_show = fpo.options.do_show
+    if do_save is None: do_save = fpo.options.do_save
     backend = pl.get_backend()
 
     # Handle show
@@ -758,9 +761,17 @@ def handle_save_show(fig, do_show=None, do_save=None, filename=None):
             filename = sc.makefilepath(filename) # Ensure it's valid, including creating the folder
         sc.savefig(fig=fig, filename=filename) # Save the figure
 
-    return
+    # Handle close
+    if fpo.close and not do_show:
+        pl.close(fig)
 
+    # Return the figure or figures unless we're in Jupyter
+    if not fpo.returnfig:
+        return
+    else:
+        return fig
 
+#%% Sim class
 
 class Sim(fpb.BaseSim):
     '''
