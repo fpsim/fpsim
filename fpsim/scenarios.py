@@ -189,7 +189,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                 years = par_years,
                 vals  = par_vals,
             )
-            check_not_none(par_spec, 'par_years', 'par_vals')
+            check_not_none(par_spec, 'years', 'vals')
 
         # It's a custom scenario(s)
         if interventions is not None:
@@ -335,7 +335,7 @@ class Scenarios(sc.prettyobj):
                 else:
                     which = spec.pop('which')
 
-                # Handle update_methods
+                # Handle interventions
                 if which == 'eff':
                     eff = spec.pop('eff')
                     year = spec.pop('year')
@@ -352,6 +352,9 @@ class Scenarios(sc.prettyobj):
                 elif which == 'intv':
                     intv = spec.pop('intervention')
                     interventions += intv
+                else:
+                    errormsg = f'Could not understand intervention type "{which}"'
+                    raise ValueError(errormsg)
 
                 # Handle label
                 label  = spec.pop('label', None)
