@@ -401,7 +401,8 @@ class update_methods(Intervention):
                     is_switch  = len(sc.mergelists(factor, value))
                     is_init    = len(sc.mergelists(i_value, i_factor))
                     is_discont = len(sc.mergelists(d_value, d_factor))
-                    if is_switch + is_init + is_discont != 1:
+                    is_copy    = (copy_from is not None)
+                    if is_switch + is_init + is_discont + is_copy != 1:
                         errormsg = f'Could not figure out what to do: switching={is_switch}, initiation={is_init}, discontinuation={is_discont}, but only one should happen'
                         raise ValueError(errormsg)
 
@@ -411,7 +412,7 @@ class update_methods(Intervention):
                     elif is_discont: # It's discontinuation
                         source = method
                         dest = 'None'
-                    elif (source is None) and (dest is None):
+                    elif not is_copy and (source is None) and (dest is None):
                         errormsg = 'Must supply a source or a destination'
                         raise ValueError(errormsg)
 
