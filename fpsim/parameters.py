@@ -270,11 +270,12 @@ class Pars(dict):
         raw = self['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
 
         # Convert from strings to indices
-        source = self._as_ind(source, allow_none=False)
-        dest   = self._as_ind(dest, allow_none=False)
         if copy_from:
             copy_from = self._as_ind(copy_from, allow_none=False)
-
+            if source is None: # We need a source, but it's not always used
+                source = copy_from
+        source = self._as_ind(source, allow_none=False)
+        dest   = self._as_ind(dest, allow_none=False)
 
         # Replace age keys with all ages if so asked
         if ages in fpd.none_all_keys:
@@ -291,7 +292,7 @@ class Pars(dict):
         for k in ages:
             arr = raw[matrix][k]
             if matrix == 'pp0to1': # Handle the postpartum initialization *vector*
-                orig = arr[dest]
+                orig = arr[dest] # Pull out before being overwritten
 
                 # Handle copy from
                 if copy_from is not None:
@@ -310,7 +311,7 @@ class Pars(dict):
                     print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[dest]}')
 
             else: # Handle annual switching *matrices*
-                orig = arr[source, dest]
+                orig = sc.dcp(arr[source, dest])
 
                 # Handle copy from
                 if copy_from is not None:

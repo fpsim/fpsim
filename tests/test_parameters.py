@@ -142,11 +142,26 @@ def test_matrix_methods():
 
     # Test copy method
     p4 = pars.copy()
-    name = 'New method'
-    p4.add_method(name=name, eff=1.0)
-    p4.update_method_prob(source=name, dest=name, copy_from='Injectables', matrix='annual')
+    new_name = 'New method'
+    orig_name = 'Injectables'
+    p4.add_method(name=new_name, eff=1.0)
+    p4.update_method_prob(dest=new_name, copy_from=orig_name, matrix='annual')
+
+    # Do tests
+    new_ind = fp.defaults.method_map[new_name]
+    orig_ind = fp.defaults.method_map[orig_name]
+    nestkeys = ['methods', 'raw', 'annual', '>25']
+    pars_arr = sc.getnested(pars, nestkeys)
+    p4_arr = sc.getnested(p4, nestkeys)
+    assert p4_arr[0, new_ind] == pars_arr[0, orig_ind], 'Copied method has different initiation rate'
     if do_plot:
+        pl.figure()
+        pl.subplot(2,1,1)
+        pl.pcolor(pars['methods']['raw']['annual']['>25'])
+        pl.title('Original')
+        pl.subplot(2,1,2)
         pl.pcolor(p4['methods']['raw']['annual']['>25'])
+        pl.title('With new method')
 
     return [s1, s2, s3, p4]
 
