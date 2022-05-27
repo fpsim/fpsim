@@ -9,13 +9,25 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.14.0 (2022-05-27)
+--------------------------
+- Adds an options module, allowing things like DPI to be set via ``fp.options(dpi=150)``.
+- Updates plotting options and allows more control over style.
+- Adds more control to plots, including ``start_year`` and ``end_year``.
+- Adds a ``copy_from`` keyword to method probability update scenarios.
+- Renames ``years`` to ``par_years`` in scenarios.
+- Changes the logic of the ``People`` update step so that lactational amenorrhea is calculated after breastfeeding is updated.
+- Changes the ``Sim`` representation to e.g. ``Sim("My sim"; n=10,000; 1960-2020; results: b=69,541 ☠=11,920 pop=62,630)``
+- *GitHub info*: PR `522 <https://github.com/amath-idm/fp_analyses/pull/522>`__
+
+
 Version 0.13.2 (2022-05-25)
 --------------------------
-- Adds ASFR as an output of Experiments.
+- Added ASFR as an output of Experiments.
 - ``MultiSim.run()`` now automatically labels un-labeled sims; this fixes bugs in MultiSim plotting functions.
 - MultiSims also have additional error checking (e.g., they cannot be rerun).
-- Refactors data files to be in "tall" instead of "wide" format.
-- Removes years and age bins from summary statistics.
+- Refactored data files to be in "tall" instead of "wide" format.
+- Removed years and age bins from summary statistics.
 - *GitHub info*: PR `517 <https://github.com/amath-idm/fp_analyses/pull/517>`__
 
 

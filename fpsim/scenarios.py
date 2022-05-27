@@ -76,6 +76,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         dest   (str): the method to switch to
         factor (float): if supplied, multiply the [source, dest] probability by this amount
         value  (float): if supplied, instead of factor, replace the [source, dest] probability by this value
+        copy_from (str): if supplied, copy probabilities from a different method
 
     Args (initiation/discontinuation):
         year   (float): as above
@@ -89,8 +90,8 @@ class Scenario(sc.prettyobj, sc.dictobj):
 
     Args (parameter):
         par (str): the parameter to modify
-        years (float/list): the year(s) at which to apply the modifications
-        vals (float/list): the value(s) of the parameter for each year
+        par_years (float/list): the year(s) at which to apply the modifications
+        par_vals (float/list): the value(s) of the parameter for each year
 
     Args (custom):
         interventions (Intervention/list): any custom intervention(s) to be applied to the scenario
@@ -118,7 +119,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         def update_sim(sim): sim.updated = True
         s6 = fp.make_scen(interventions=update_sim)
 
-        # Combining multiple scenarios: change probabilities and reduce exposure factor
+        # Combining multiple scenarios: change probabilities and exposure factor
         s7 = fp.make_scen(
             dict(method='Injectables', init_value=0.1, discont_value=0.02, create=True),
             dict(par='exposure_factor', years=2010, vals=0.5)
@@ -127,18 +128,23 @@ class Scenario(sc.prettyobj, sc.dictobj):
         # Scenarios can be combined
         s8 = s1 + s2
     '''
-    def __init__(self, spec=None, *args, label=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
+    def __init__(self, spec=None, label=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
                  eff=None, probs=None, # Option 1
-                 source=None, dest=None, factor=None, value=None, create=None, # Option 2
+                 source=None, dest=None, factor=None, value=None, copy_from=None, # Option 2
                  method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
-                 par=None, years=None, vals=None, # Option 4
+                 par=None, par_years=None, par_vals=None, # Option 4
                  interventions=None, # Option 5
                  ):
 
         # Handle input specification
-        self.specs = sc.mergelists(*[Scenario(**spec).specs for spec in sc.mergelists(spec, *args)]) # Sorry
+        if isinstance(spec, str) and not isinstance(label, str): # Swap order if types don't match
+            label,spec = spec,label
+        self.specs = sc.mergelists(*[Scenario(**s).specs for s in sc.tolist(spec)]) # Sorry
         self.label = label
         self.pars  = sc.mergedicts(pars)
+        if not isinstance(label, (str, type(None))):
+            errormsg = f'Unexpected label type {type(label)}'
+            raise TypeError(errormsg)
 
         # Handle other keyword inputs
         eff_spec   = None
@@ -173,7 +179,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                     discont_factor = discont_factor,
                     init_value     = init_value,
                     discont_value  = discont_value,
-                    # create         = create,
+                    copy_from      = copy_from,
                 )
             )
             check_not_none(prob_spec, 'year')
@@ -185,10 +191,10 @@ class Scenario(sc.prettyobj, sc.dictobj):
             par_spec = sc.objdict(
                 which = 'par',
                 par   = par,
-                years = years,
-                vals  = vals,
+                par_years = par_years,
+                par_vals  = par_vals,
             )
-            check_not_none(par_spec, 'years', 'vals')
+            check_not_none(par_spec, 'par_years', 'par_vals')
 
         # It's a custom scenario(s)
         if interventions is not None:
@@ -223,11 +229,19 @@ class Scenario(sc.prettyobj, sc.dictobj):
 
     def update_label(self, label=None):
         ''' Ensure all specs have the correct label '''
+
+        # Option 1: update the label based on the spec
         if label is None:
             label = self.label
-        if label is not None:
+            for spec in self.specs:
+                if 'label' in spec and spec['label'] is not None:
+                    label = spec['label']
+
+        # Option 2: update the spec based on the label
+        else:
             for spec in self.specs:
                 spec['label'] = label
+
         self.label = label
         return
 
@@ -297,7 +311,7 @@ class Scenarios(sc.prettyobj):
             scen.update_label(label)
             self.scens.append(scen)
         else:
-            self.scens.append(Scenario(scen, label=label))
+            self.scens.append(Scenario(label=label, spec=scen))
         return
 
 
@@ -322,7 +336,7 @@ class Scenarios(sc.prettyobj):
     def make_scens(self):
         ''' Convert a scenario specification into a list of sims '''
         for i,scen in enumerate(self.scens):
-            simlabel = None
+            simlabel = scen.label
             interventions = sc.autolist()
             for spec in sc.tolist(scen.specs):
 
@@ -334,26 +348,29 @@ class Scenarios(sc.prettyobj):
                 else:
                     which = spec.pop('which')
 
-                # Handle update_methods
+                # Handle interventions
                 if which == 'eff':
-                    eff = spec.pop('eff')
+                    eff  = spec.pop('eff')
                     year = spec.pop('year')
                     interventions += fpi.update_methods(eff=eff, year=year)
                 elif which == 'prob':
                     probs = spec.pop('probs')
-                    year = spec.pop('year')
+                    year  = spec.pop('year')
                     interventions += fpi.update_methods(probs=probs, year=year)
                 elif which == 'par':
                     par = spec.pop('par')
-                    years = spec.pop('years')
-                    vals = spec.pop('vals')
+                    years = spec.pop('par_years')
+                    vals  = spec.pop('par_vals')
                     interventions += fpi.change_par(par=par, years=years, vals=vals)
                 elif which == 'intv':
                     intv = spec.pop('intervention')
                     interventions += intv
+                else:
+                    errormsg = f'Could not understand intervention type "{which}"'
+                    raise ValueError(errormsg)
 
                 # Handle label
-                label  = spec.pop('label', None)
+                label  = spec.pop('label', scen.label)
                 assert len(spec)==0, f'Unrecognized scenario key(s) {sc.strjoin(spec.keys())}'
                 if simlabel is None:
                     simlabel = label
@@ -393,6 +410,7 @@ class Scenarios(sc.prettyobj):
         self.analyze_sims()
         return
 
+
     def check_run(self):
         ''' Give a meaningful error message if the scenarios haven't been run '''
         if not self.already_run:
@@ -401,26 +419,22 @@ class Scenarios(sc.prettyobj):
         return
 
 
-    def plot_sims(self, **kwargs):
-        ''' Plot each sim as a separate line across all senarios '''
+    def plot(self, to_plot=None, plot_sims=True, **kwargs):
+        ''' Plot the scenarios with bands -- see ``sim.plot()`` for args '''
         self.check_run()
-        return self.msim.plot(plot_sims=True, **kwargs)
+        return self.msim_merged.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
 
 
-    def plot_scens(self, **kwargs):
-        ''' Plot the scenarios with bands '''
+    def plot_sims(self, to_plot=None, plot_sims=True, **kwargs):
+        ''' Plot each sim as a separate line across all senarios -- see ``sim.plot()`` for args '''
         self.check_run()
-        return self.msim_merged.plot(plot_sims=True, **kwargs)
+        return self.msim.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
 
-    def plot_method_mix(self, **kwargs):
-        ''' Plots the method mix '''
-        self.check_run()
-        return self.msim.plot_method_mix()
 
-    def plot_cpr(self, **kwargs):
-        ''' Plot the CPR with bands '''
+    def plot_method_mix(self, *args, **kwargs):
+        ''' Plots the method mix -- see ``sim.plot_method_mix()`` for args '''
         self.check_run()
-        return self.msim_merged.plot_cpr(**kwargs)
+        return self.msim.plot_method_mix(*args, **kwargs)
 
 
     def analyze_sims(self, start=None, end=None):

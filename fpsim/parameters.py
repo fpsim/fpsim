@@ -250,24 +250,30 @@ class Pars(dict):
         return self
 
 
-    def update_method_prob(self, source=None, dest=None, factor=None, value=None, ages=None, matrix=None, verbose=False):
+    def update_method_prob(self, source=None, dest=None, factor=None, value=None,
+                           ages=None, matrix=None, copy_from=None, verbose=False):
         '''
         Updates the probability matrices with a new value. Usually used via the
         intervention ``fp.update_methods()``.
 
         Args:
-            source (str/int): the method to switch from
-            dest   (str/int): the method to switch to
-            factor (float):   if supplied, multiply the probability by this factor
-            value (float):    if supplied, change the probability to this value
-            ages (str/list):  the ages to modify (default: all)
-            matrix (str):     which switching matrix to modify (default: annual)
-            verbose (bool):   how much detail to print
+            source    (str/int):  the method to switch from
+            dest      (str/int):  the method to switch to
+            factor    (float):    if supplied, multiply the probability by this factor
+            value     (float):    if supplied, change the probability to this value
+            ages      (str/list): the ages to modify (default: all)
+            matrix    (str):      which switching matrix to modify (default: annual)
+            copy_from (str):      the existing method to copy the probability vectors from (optional)
+            verbose   (bool):     how much detail to print
         '''
 
         raw = self['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
 
         # Convert from strings to indices
+        if copy_from:
+            copy_from = self._as_ind(copy_from, allow_none=False)
+            if source is None: # We need a source, but it's not always used
+                source = copy_from
         source = self._as_ind(source, allow_none=False)
         dest   = self._as_ind(dest, allow_none=False)
 
@@ -286,19 +292,38 @@ class Pars(dict):
         for k in ages:
             arr = raw[matrix][k]
             if matrix == 'pp0to1': # Handle the postpartum initialization *vector*
-               orig = arr[dest]
-               if factor is not None:
-                   arr[dest] *= getval(factor)
-               elif value is not None:
-                   val = getval(value)
-                   arr[dest] = 0
-                   arr *= (1-val)/arr.sum()
-                   arr[dest] = val
-                   assert np.isclose(arr.sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {arr.sum()}'
-               if verbose:
-                   print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[dest]}')
+                orig = arr[dest] # Pull out before being overwritten
+
+                # Handle copy from
+                if copy_from is not None:
+                    arr[dest] = arr[copy_from]
+
+                # Handle everything else
+                if factor is not None:
+                    arr[dest] *= getval(factor)
+                elif value is not None:
+                    val = getval(value)
+                    arr[dest] = 0
+                    arr *= (1-val)/arr.sum()
+                    arr[dest] = val
+                    assert np.isclose(arr.sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {arr.sum()}'
+                if verbose:
+                    print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[dest]}')
+
             else: # Handle annual switching *matrices*
-                orig = arr[source, dest]
+                orig = sc.dcp(arr[source, dest])
+
+                # Handle copy from
+                if copy_from is not None:
+                    arr[:,dest] = arr[:, copy_from]
+                    arr[dest,:] = arr[copy_from, :]
+                    median_init = np.median(arr[:, copy_from])
+                    median_discont = np.median(arr[copy_from, :])
+                    arr[dest,dest] = arr[copy_from, copy_from] # Replace diagonal element with correct version
+                    arr[copy_from, dest] = median_init
+                    arr[dest,copy_from] = median_discont
+
+                # Handle modifications
                 if factor is not None:
                     arr[source, dest] *= getval(factor)
                 elif value is not None:

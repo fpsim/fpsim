@@ -6,8 +6,6 @@ defined by the user by inheriting from these classes.
 import pylab as pl
 import sciris as sc
 import inspect
-from . import utils as fpu
-from . import parameters as fpp
 
 
 #%% Generic intervention classes
@@ -362,17 +360,18 @@ class update_methods(Intervention):
                 probs = sc.tolist(self.probs)
                 for entry in probs:
                     entry = sc.dcp(entry)
-                    matrix = entry.pop('matrix', self.matrix) # Switching matrix
-                    ages     = entry.pop('ages', None)
-                    source   = entry.pop('source', None)
-                    dest     = entry.pop('dest', None)
-                    method   = entry.pop('method', None)
-                    factor   = entry.pop('factor', None)
-                    value    = entry.pop('value', None)
-                    i_factor = entry.pop('init_factor', None)
-                    d_factor = entry.pop('discont_factor', None)
-                    i_value  = entry.pop('init_value', None)
-                    d_value  = entry.pop('discont_value', None)
+                    matrix    = entry.pop('matrix', self.matrix) # Switching matrix
+                    ages      = entry.pop('ages', None)
+                    source    = entry.pop('source', None)
+                    dest      = entry.pop('dest', None)
+                    method    = entry.pop('method', None)
+                    factor    = entry.pop('factor', None)
+                    value     = entry.pop('value', None)
+                    i_factor  = entry.pop('init_factor', None)
+                    d_factor  = entry.pop('discont_factor', None)
+                    i_value   = entry.pop('init_value', None)
+                    d_value   = entry.pop('discont_value', None)
+                    copy_from = entry.pop('copy_from', None)
 
                     # Supply default matrix
                     if matrix is None:
@@ -423,7 +422,7 @@ class update_methods(Intervention):
                     value  = value[0]  if value  else None
 
                     # Actually update the values and check the matrix is valid
-                    kw = dict(source=source, dest=dest, factor=factor, value=value, ages=ages, matrix=matrix)
+                    kw = dict(source=source, dest=dest, factor=factor, value=value, ages=ages, matrix=matrix, copy_from=copy_from)
                     sim.pars.update_method_prob(**kw)
 
         return

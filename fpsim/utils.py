@@ -2,9 +2,7 @@
 File for storing utilities and probability calculators needed to run FP model
 '''
 
-
-import numpy as np # Needed for a few things not provided by pl
-import pylab as pl
+import numpy as np
 import sciris as sc
 import numba as nb
 from . import defaults as fpd
@@ -12,26 +10,13 @@ from . import version as fpv
 
 
 # Specify all externally visible things this file defines
-__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'fixaxis', 'dict2obj', 'sample']
+__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample']
 
-usenumba  = True
-
-if usenumba:
-    func_decorator = nb.njit
-
-else:
-    def func_decorator(*args, **kwargs):
-        def wrap(func): return func
-        return wrap
-def class_decorator(*args, **kwargs):
-    ''' Was class_decorator = nb.jitclass, but not used currently and removed from Numba '''
-    def wrap(cls): return cls
-    return wrap
 
 def set_seed(seed=None):
     ''' Reset the random seed -- complicated because of Numba '''
 
-    @func_decorator
+    @nb.njit
     def set_seed_numba(seed):
         return np.random.seed(seed)
 
@@ -44,31 +29,31 @@ def set_seed(seed=None):
     return
 
 
-@func_decorator((nb.float64,), cache=True)  # These types can also be declared as a dict, but performance is much slower...?
+@nb.njit((nb.float64,), cache=True)  # These types can also be declared as a dict, but performance is much slower...?
 def bt(prob):
     ''' A simple Bernoulli (binomial) trial '''
     return np.random.random() < prob  # Or rnd.random() < prob, np.random.binomial(1, prob), which seems slower
 
 
-@func_decorator((nb.float64, nb.int64), cache=True)
+@nb.njit((nb.float64, nb.int64), cache=True)
 def bc(prob, repeats):
     ''' A binomial count '''
     return np.random.binomial(repeats, prob)  # Or (np.random.rand(repeats) < prob).sum()
 
 
-@func_decorator((nb.float64, nb.int64), cache=True)
+@nb.njit((nb.float64, nb.int64), cache=True)
 def rbt(prob, repeats):
     ''' A repeated Bernoulli (binomial) trial '''
     return np.random.binomial(repeats, prob) > 0  # Or (np.random.rand(repeats) < prob).any()
 
 
-@func_decorator((nb.float64[:],), cache=True)
+@nb.njit((nb.float64[:],), cache=True)
 def mt(probs):
     ''' A multinomial trial '''
     return np.searchsorted(np.cumsum(probs), np.random.random())
 
 
-@func_decorator((nb.float64[:], nb.int64), cache=True)
+@nb.njit((nb.float64[:], nb.int64), cache=True)
 def n_multinomial(probs, n):
     '''
     An array of multinomial trials.
@@ -131,30 +116,11 @@ def annprob2ts(prob_annual, timestep=1):
 
 
 
-@func_decorator((nb.float64[:], nb.float64, nb.float64), cache=True)
+@nb.njit((nb.float64[:], nb.float64, nb.float64), cache=True)
 def numba_miscarriage_prob(miscarriage_rates, age, resolution):
     '''Run interpolation eval to check for probability of miscarriage here'''
     miscarriage_prob = miscarriage_rates[int(round(age*resolution))]
     return miscarriage_prob
-
-
-def fixaxis(useSI=True, set_lim=True, legend=True):
-    ''' Fix the plotting '''
-    if legend:
-        pl.legend()  # Add legend
-    if set_lim:
-        sc.setylim()
-    if useSI:
-        sc.SIticks()
-    return
-
-
-def dict2obj(d):
-    ''' Convert a dictionary to an object -- REFACTOR to use sc.dictobj() '''
-    o = sc.prettyobj()
-    for k,v in d.items():
-        setattr(o, k, v)
-    return o
 
 
 def set_metadata(obj):

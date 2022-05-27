@@ -36,6 +36,7 @@ def scalar_pars():
         'postpartum_dur'         : 35,
         'breastfeeding_dur_mu'   : 19.66828, # For a Gumbel distribution, drawn from DHS
         'breastfeeding_dur_beta' : 7.2585,
+        'max_lam_dur'            : 5, # Duration of lactational amenorrhea
 
         # Pregnancy outcomes
         'abortion_prob'             : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/

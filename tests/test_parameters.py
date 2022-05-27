@@ -5,6 +5,7 @@ Run tests on individual parameters.
 import numpy as np
 import sciris as sc
 import fpsim as fp
+import pylab as pl
 import pytest
 
 do_plot = True
@@ -66,12 +67,13 @@ def test_mcpr_growth():
     sc.heading('Test MCPR growth assumptions')
 
     pars = dict(
+        n_agents = 500,
         start_year = 2010,
         end_year   = 2030, # Should be after last MCPR data year
     )
 
-    pars1 = fp.pars(location='test', mcpr_growth_rate=-0.05, **pars)
-    pars2 = fp.pars(location='test', mcpr_growth_rate=0.05, **pars)
+    pars1 = fp.pars(location='test', mcpr_growth_rate=-0.10, **pars)
+    pars2 = fp.pars(location='test', mcpr_growth_rate=0.10, **pars)
     sim1 = fp.Sim(pars1)
     sim2 = fp.Sim(pars2)
 
@@ -105,8 +107,12 @@ def test_scale():
     s1, s2 = msim.sims
 
     # Tests
+    orig = s1.results.total_births.sum()
+    expected = scale*orig
+    actual = s2.results.total_births.sum()
+    assert expected == actual, 'Total births should scale exactly with scale factor'
     assert np.array_equal(s1.results.mcpr, s2.results.mcpr), 'Scale factor should not change MCPR'
-    assert scale*s1.results.total_births.sum() == s2.results.total_births.sum(), 'Total births should scale exactly with scale factor'
+    print(f'{actual} births = {scale}*{orig} as expected')
 
     return [s1, s2]
 
@@ -139,7 +145,32 @@ def test_matrix_methods():
     s3 = fp.Sim(pars=p3)
     s3.run()
 
-    return [s1, s2, s3]
+    # Test copy method
+    p4 = pars.copy()
+    new_name = 'New method'
+    orig_name = 'Injectables'
+    p4.add_method(name=new_name, eff=1.0)
+    p4.update_method_prob(dest=new_name, copy_from=orig_name, matrix='annual')
+
+    # Do tests
+    new_ind = fp.defaults.method_map[new_name]
+    orig_ind = fp.defaults.method_map[orig_name]
+    nestkeys = ['methods', 'raw', 'annual', '>25']
+    pars_arr = sc.getnested(pars, nestkeys)
+    p4_arr = sc.getnested(p4, nestkeys)
+    new_rate = p4_arr[0, new_ind]
+    assert new_rate == pars_arr[0, orig_ind], 'Copied method has different initiation rate'
+    print(f'New method initiation rate is {new_rate:0.4f} as expected')
+    if do_plot:
+        pl.figure()
+        pl.subplot(2,1,1)
+        pl.pcolor(pars['methods']['raw']['annual']['>25'])
+        pl.title('Original')
+        pl.subplot(2,1,2)
+        pl.pcolor(p4['methods']['raw']['annual']['>25'])
+        pl.title('With new method')
+
+    return [s1, s2, s3, p4]
 
 
 def test_validation():
@@ -187,5 +218,5 @@ if __name__ == '__main__':
         timings = test_method_timestep()
         mcpr    = test_mcpr_growth()
         scale   = test_scale()
-        meths    = test_matrix_methods()
+        meths   = test_matrix_methods()
         pars    = test_validation()
