@@ -142,6 +142,9 @@ class Scenario(sc.prettyobj, sc.dictobj):
         self.specs = sc.mergelists(*[Scenario(**s).specs for s in sc.tolist(spec)]) # Sorry
         self.label = label
         self.pars  = sc.mergedicts(pars)
+        if not isinstance(label, (str, type(None))):
+            errormsg = f'Unexpected label type {type(label)}'
+            raise TypeError(errormsg)
 
         # Handle other keyword inputs
         eff_spec   = None

@@ -221,10 +221,10 @@ def test_make_scens():
     s.custom = fp.make_scen(interventions=update_sim)
 
     # Combining multiple scenarios: increase injectables initiation and reduce exposure factor
-    s.multi = fp.make_scen(
+    s.multi = fp.make_scen([
         dict(year=year, method=method, init_factor=2),
         dict(par='exposure_factor', par_years=2010, par_vals=0.5)
-    )
+    ])
 
     # Scenario addition
     s.sum = s.eff + s.prob1
