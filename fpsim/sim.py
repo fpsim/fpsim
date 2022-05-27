@@ -1394,82 +1394,67 @@ class Sim(fpb.BaseSim):
         if do_save:
             print(f"Saved age at first birth plot at {output_file}")
             pl.savefig(output_file)
+        return
+
 
     def compute_method_table(self):
-        """
-        Computes method mix proportions from a sim object
-
-        Args:
-            sim (fp.Sim): Sim object to extract method proportions from
-
-        Output:
-            (dict): Dictionary representing proportions of methods by sim
-        """
-        method_table = {"sim" : [], "seed": [], "proportion": [], "method": []} 
+        """ Computes method mix proportions from a sim object """
+        method_table = sc.ddict(list)
         people = self.people
         unique, counts = np.unique(people.method, return_counts=True)
         count_dict = dict(zip(unique, counts))
-        assert len(count_dict.keys()) > 1, f"There are no methods other than None in this Sim"
-            
+        assert len(count_dict.keys()) > 1, 'There are no methods other than None in this Sim'
 
+        # Collect data
+        seed = self.pars['seed']
         for method in count_dict:
-            if method != fpd.method_map["None"]:
-                seed = self.pars['seed']
-                method_table["proportion"].append(count_dict[method] / len(people.method))
-                method_table["seed"].append(seed)
-                method_table["method"].append(method)
-                if self.label is not None:
-                    method_table["sim"].append(self.label)
-                else:
-                    method_table["sim"].append("sim"+ str(seed))
+            if method != fpd.method_map['None']:
+                method_table['Proportion'].append(count_dict[method] / len(people.method))
+                method_table['Seed'].append(seed)
+                method_table['Method'].append(method)
+                method_table['Sim'].append(self.label if self.label else f"Sim (seed={seed})")
 
-        return method_table
-
-    def plot_method_mix(self, do_show=True, do_save=False, filepath="method_mix.png"):
-        """
-        Plots the average method mix for n_sims runs
-
-        Args:
-            do_show (bool): Whether or not the user wants to show the output plot.
-            do_save (bool): Whether or not the user wants to save the plot to filepath.
-            filepath (str): The name of the path to output the plot.
-
-        """
-        method_table = {"sim" : [], "seed": [], "proportion": [], "method": []}
-
-        # append all columns of function output to method_table
-        sim_method_table = self.compute_method_table()
-        for key in method_table:
-            method_table[key] = method_table[key] + sim_method_table[key]
-
-        # Plotting
+        # Convert to dataframe
         df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
+        # df['Method'] *= 100 # Convert to percentage
 
         # We want names for the methods
         methods_map = self.pars['methods']['map']
         inv_methods_map = {value: key for key, value in methods_map.items()}
-        df['method'] = df['method'].map(inv_methods_map)
-        df.sort_values(by=['proportion'], inplace=True)
+        df['Method'] = df['Method'].map(inv_methods_map)
+        df.sort_values(by='Proportion', inplace=True)
 
-        # plotting and saving
-        sns.barplot(data=df, x="proportion", y="method", order=np.unique(df['method']))
-        pl.title(f"Mean method mix")
+        return df
+
+
+    def plot_method_mix(self, fig_args=None, do_show=True, do_save=False, filepath="method_mix.png", data=None):
+        """
+        Plots the average method mix for n_sims runs
+
+        Args:
+            fig_args (dict): arguments to pass to ``pl.figure()``
+            do_show (bool): whether or not the user wants to show the output plot.
+            do_save (bool): whether or not the user wants to save the plot to filepath.
+            filepath (str): the name of the path to output the plot.
+            data (dataframe): if supplied, plot these data (used by MultiSim)
+        """
+        # Compute
+        if data is None:
+            df = self.compute_method_table()
+        else:
+            df = data
+
+        # Plotting and saving
+        fig = pl.figure(**sc.mergedicts(fig_args)) # Since Seaborn doesn't open a new figure
+        sns.barplot(data=df, x="Proportion", y="Method", order=np.unique(df['Method']))
+        pl.title("Mean method mix")
         if do_save:
             pl.savefig(filepath)
         if do_show:
             pl.show()
 
-    def plot_people(self):
-        ''' Use imshow() to show all individuals as rows, with time as columns, one pixel per timestep per person '''
-        # The test_mode might help with this
-        raise NotImplementedError
+        return fig
 
-    # Used in verbose model
-    def log_daily_totals(self):
-        pass
-
-    def save_daily_totals(self):
-        pass
 
 
 class MultiSim(sc.prettyobj):
@@ -1504,14 +1489,27 @@ class MultiSim(sc.prettyobj):
 
 
     def __len__(self):
-        try:
+        if isinstance(self.sims, list):
             return len(self.sims)
-        except:
+        elif isinstance(self.sims, Sim):
+            return 1
+        else:
             return 0
 
 
     def run(self, compute_stats=True, **kwargs):
+        ''' Run all simulations in the MultiSim '''
+        # Handle missing labels
+        for s,sim in enumerate(sc.tolist(self.sims)):
+            if sim.label is None:
+                sim.label = f'Sim {s}'
+        # Run
+        if self.already_run:
+            errormsg = 'Cannot re-run an already run MultiSim'
+            raise RuntimeError(errormsg)
         self.sims = multi_run(self.sims, **kwargs)
+
+        # Recompute stats
         if compute_stats:
             self.compute_stats()
         self.already_run = True
@@ -1765,37 +1763,25 @@ class MultiSim(sc.prettyobj):
             do_show (bool): Whether or not the user wants to show the output plot.
             do_save (bool): Whether or not the user wants to save the plot to filepath.
             filepath (str): The name of the path to output the plot.
-
-        Assumptions:
-            All sims in the msim are labeled appropriately (each grouping has a different label)
         """
-        method_table = {"sim" : [], "seed": [], "proportion": [], "method": []}
 
+        # Append all columns of function output to method_table
+        df = pd.DataFrame()
         for sim in self.sims:
-            # append all columns of function output to method_table
-            sim_method_table = sim.compute_method_table()
-            for key in method_table:
-                method_table[key]+=sim_method_table[key]
+            sim_df = sim.compute_method_table()
+            df = pd.concat([df, sim_df])
 
-        # Plotting
-        df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
+        # Re-sort
+        df.sort_values(by=['Proportion'], inplace=True)
 
-        # check that sim and seed combinations don't have matching entries
-        sim_seed_combos = list(zip(df['sim'], df['seed'], df['method'])) # need to set to list first since it's an iterator
+        # Check that sim and seed combinations don't have matching entries
+        sim_seed_combos = list(zip(df['Sim'], df['Seed'], df['Method'])) # need to set to list first since it's an iterator
         assert len(sim_seed_combos) == len(set(sim_seed_combos)), "Multiple entries with same label, seed, and method"
-        # We want names for the methods
-        methods_map = self.sims[0].pars['methods']['map']
-        inv_methods_map = {value: key for key, value in methods_map.items()}
-        df['method'] = df['method'].map(inv_methods_map)
-        df.sort_values(by=['proportion'], inplace=True)
-    
-        # plotting and saving
-        sns.barplot(data=df, x="proportion", y="method", estimator=np.mean, hue="sim", ci="sd", order=np.unique(df['method']))
-        pl.title(f"Mean method mix")
-        if do_save:
-            pl.savefig(filepath)
-        if do_show:
-            pl.show()
+
+        # Plot
+        fig = self.base_sim.plot_method_mix(do_show=do_show, do_save=do_save, filepath=filepath, data=df)
+        return fig
+
 
     def plot_age_first_birth(self, do_show=False, do_save=True, output_file='age_first_birth_multi.png'):
         length = sum([len([num for num in sim.people.first_birth_age if num is not None]) for sim in self.sims])

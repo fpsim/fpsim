@@ -73,11 +73,12 @@ def filenames():
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'senegal'
     files['basic_dhs']        = 'senegal-basic-dhs.yaml'
-    files['pregnancy_parity'] = 'SNIR80FL.obj'
     files['popsize']          = 'senegal-popsize.csv'
-    files['mcpr']             = 'mcpr_senegal.csv'
+    files['mcpr']             = 'senegal-mcpr.csv'
     files['tfr']              = 'senegal-tfr.csv'
+    files['asfr']             = 'senegal-asfr.csv'
     files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
+    files['pregnancy_parity'] = 'SNIR80FL.obj'
     files['spacing']          = 'BirthSpacing.obj'
     files['methods']          = 'Method_v312.csv'
     return files
