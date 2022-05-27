@@ -214,8 +214,8 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # null    = test_null(do_plot=do_plot)
-        # timings = test_method_timestep()
+        null    = test_null(do_plot=do_plot)
+        timings = test_method_timestep()
         mcpr    = test_mcpr_growth()
         scale   = test_scale()
         meths   = test_matrix_methods()

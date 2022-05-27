@@ -257,14 +257,14 @@ class Pars(dict):
         intervention ``fp.update_methods()``.
 
         Args:
-            source (str/int):  the method to switch from
-            dest   (str/int):  the method to switch to
-            factor (float):    if supplied, multiply the probability by this factor
-            value  (float):    if supplied, change the probability to this value
-            ages   (str/list): the ages to modify (default: all)
-            matrix (str):      which switching matrix to modify (default: annual)
-            copy_from (str):   the method to copy from (optional)
-            verbose (bool):    how much detail to print
+            source    (str/int):  the method to switch from
+            dest      (str/int):  the method to switch to
+            factor    (float):    if supplied, multiply the probability by this factor
+            value     (float):    if supplied, change the probability to this value
+            ages      (str/list): the ages to modify (default: all)
+            matrix    (str):      which switching matrix to modify (default: annual)
+            copy_from (str):      the existing method to copy the probability vectors from (optional)
+            verbose   (bool):     how much detail to print
         '''
 
         raw = self['methods']['raw'] # We adjust the raw matrices, so the effects are persistent

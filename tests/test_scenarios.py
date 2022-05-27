@@ -191,7 +191,6 @@ def test_scenarios(do_plot=do_plot):
     if do_plot:
         scens.plot_sims()
         scens.plot_scens()
-        scens.plot_cpr()
         scens.plot_method_mix()
 
     return scens
@@ -212,7 +211,7 @@ def test_make_scens():
     s.eff   = fp.make_scen(year=year, eff={'Injectables':0.99}) # Basic efficacy scenario
     s.prob1 = fp.make_scen(year=year, source='None', dest='Injectables', factor=2) # Double rate of injectables initiation
     s.prob2 = fp.make_scen(year=year, method='Injectables', init_factor=2) # Double rate of injectables initiation -- alternate approach
-    s.par   = fp.make_scen(par='exposure_factor', years=2005, vals=0.5) # Parameter scenario: halve exposure
+    s.par   = fp.make_scen(par='exposure_factor', par_years=2005, par_vals=0.5) # Parameter scenario: halve exposure
 
     # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
     s.complex = fp.make_scen(year=year, source='Condoms', dest='Injectables', value=0.5, ages='18-20', matrix='pp1to6')
