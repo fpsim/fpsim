@@ -128,7 +128,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         # Scenarios can be combined
         s8 = s1 + s2
     '''
-    def __init__(self, label=None, spec=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
+    def __init__(self, spec=None, label=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
                  eff=None, probs=None, # Option 1
                  source=None, dest=None, factor=None, value=None, copy_from=None, # Option 2
                  method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
@@ -137,6 +137,8 @@ class Scenario(sc.prettyobj, sc.dictobj):
                  ):
 
         # Handle input specification
+        if isinstance(spec, str) and not isinstance(label, str): # Swap order if types don't match
+            label,spec = spec,label
         self.specs = sc.mergelists(*[Scenario(**s).specs for s in sc.tolist(spec)]) # Sorry
         self.label = label
         self.pars  = sc.mergedicts(pars)
