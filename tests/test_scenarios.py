@@ -9,7 +9,7 @@ import pytest
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-serial   = 1 # Whether to run in serial (for debugging)
+serial   = 0 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
 
@@ -189,8 +189,8 @@ def test_scenarios(do_plot=do_plot):
 
     # Plot and print results
     if do_plot:
+        scens.plot()
         scens.plot_sims()
-        scens.plot_scens()
         scens.plot_method_mix()
 
     return scens
@@ -223,7 +223,7 @@ def test_make_scens():
     # Combining multiple scenarios: increase injectables initiation and reduce exposure factor
     s.multi = fp.make_scen(
         dict(year=year, method=method, init_factor=2),
-        dict(par='exposure_factor', years=2010, vals=0.5)
+        dict(par='exposure_factor', par_years=2010, par_vals=0.5)
     )
 
     # Scenario addition
@@ -231,10 +231,8 @@ def test_make_scens():
 
     # More probability matrix options
     s.inj1 = fp.make_scen(year=year, method=method, init_factor=5, matrix='annual', ages=None)
-    s.inj2 = fp.make_scen(year=year, method=method, discont_factor=0, matrix='annual', ages=':')
-    s.inj3 = fp.make_scen(year=year, method=method, init_value=0.2, matrix='pp1to6', ages=None)
-    s.inj4 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
-    s.inj5 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>25'])
+    s.inj2 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
+    s.inj3 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>25'])
 
     # Test invalid options
     with pytest.raises(sc.KeyNotFoundError):

@@ -17,6 +17,7 @@ Version 0.14.0 (2022-05-27)
 - Adds a ``copy_from`` keyword to method probability update scenarios.
 - Renames ``years`` to ``par_years`` in scenarios.
 - Changes the logic of the ``People`` update step so that lactational amenorrhea is calculated after breastfeeding is updated.
+- Changes the ``Sim`` representation to e.g. ``Sim("My sim"; n=10,000; 1960-2020; results: b=69,541 ☠=11,920 pop=62,630)``
 - *GitHub info*: PR `522 <https://github.com/amath-idm/fp_analyses/pull/522>`__
 
 

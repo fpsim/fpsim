@@ -1402,7 +1402,6 @@ class Sim(fpb.BaseSim):
 
         # Convert to dataframe
         df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
-        # df['Method'] *= 100 # Convert to percentage
 
         # We want names for the methods
         methods_map = self.pars['methods']['map']
@@ -1429,11 +1428,12 @@ class Sim(fpb.BaseSim):
             df = self.compute_method_table()
         else:
             df = data
+        df['Percentage'] = df['Proportion']*100
 
         # Plotting and saving
         fig = pl.figure(**sc.mergedicts(fig_args)) # Since Seaborn doesn't open a new figure
-        sns.barplot(data=df, x="Proportion", y="Method", order=np.unique(df['Method']))
-        pl.title("Mean method mix")
+        sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', order=np.unique(df['Method']))
+        pl.title('Contraceptive method usage')
 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
@@ -1734,7 +1734,7 @@ class MultiSim(sc.prettyobj):
             return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
 
-    def plot_method_mix(self, do_show=True, do_save=False, filename="method_mix.png"):
+    def plot_method_mix(self, do_show=True, do_save=False, filename='method_mix.png'):
         """
         Plots the average method mix for n_sims runs
 

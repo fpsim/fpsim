@@ -128,7 +128,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         # Scenarios can be combined
         s8 = s1 + s2
     '''
-    def __init__(self, spec=None, *args, label=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
+    def __init__(self, label=None, spec=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
                  eff=None, probs=None, # Option 1
                  source=None, dest=None, factor=None, value=None, copy_from=None, # Option 2
                  method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
@@ -137,7 +137,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
                  ):
 
         # Handle input specification
-        self.specs = sc.mergelists(*[Scenario(**spec).specs for spec in sc.mergelists(spec, *args)]) # Sorry
+        self.specs = sc.mergelists(*[Scenario(**s).specs for s in sc.tolist(spec)]) # Sorry
         self.label = label
         self.pars  = sc.mergedicts(pars)
 
@@ -186,10 +186,10 @@ class Scenario(sc.prettyobj, sc.dictobj):
             par_spec = sc.objdict(
                 which = 'par',
                 par   = par,
-                years = par_years,
-                vals  = par_vals,
+                par_years = par_years,
+                par_vals  = par_vals,
             )
-            check_not_none(par_spec, 'years', 'vals')
+            check_not_none(par_spec, 'par_years', 'par_vals')
 
         # It's a custom scenario(s)
         if interventions is not None:
@@ -224,11 +224,19 @@ class Scenario(sc.prettyobj, sc.dictobj):
 
     def update_label(self, label=None):
         ''' Ensure all specs have the correct label '''
+
+        # Option 1: update the label based on the spec
         if label is None:
             label = self.label
-        if label is not None:
+            for spec in self.specs:
+                if 'label' in spec and spec['label'] is not None:
+                    label = spec['label']
+
+        # Option 2: update the spec based on the label
+        else:
             for spec in self.specs:
                 spec['label'] = label
+
         self.label = label
         return
 
@@ -298,7 +306,7 @@ class Scenarios(sc.prettyobj):
             scen.update_label(label)
             self.scens.append(scen)
         else:
-            self.scens.append(Scenario(scen, label=label))
+            self.scens.append(Scenario(label=label, spec=scen))
         return
 
 
@@ -323,7 +331,7 @@ class Scenarios(sc.prettyobj):
     def make_scens(self):
         ''' Convert a scenario specification into a list of sims '''
         for i,scen in enumerate(self.scens):
-            simlabel = None
+            simlabel = scen.label
             interventions = sc.autolist()
             for spec in sc.tolist(scen.specs):
 
@@ -337,17 +345,17 @@ class Scenarios(sc.prettyobj):
 
                 # Handle interventions
                 if which == 'eff':
-                    eff = spec.pop('eff')
+                    eff  = spec.pop('eff')
                     year = spec.pop('year')
                     interventions += fpi.update_methods(eff=eff, year=year)
                 elif which == 'prob':
                     probs = spec.pop('probs')
-                    year = spec.pop('year')
+                    year  = spec.pop('year')
                     interventions += fpi.update_methods(probs=probs, year=year)
                 elif which == 'par':
                     par = spec.pop('par')
-                    years = spec.pop('years')
-                    vals = spec.pop('vals')
+                    years = spec.pop('par_years')
+                    vals  = spec.pop('par_vals')
                     interventions += fpi.change_par(par=par, years=years, vals=vals)
                 elif which == 'intv':
                     intv = spec.pop('intervention')
@@ -357,7 +365,7 @@ class Scenarios(sc.prettyobj):
                     raise ValueError(errormsg)
 
                 # Handle label
-                label  = spec.pop('label', None)
+                label  = spec.pop('label', scen.label)
                 assert len(spec)==0, f'Unrecognized scenario key(s) {sc.strjoin(spec.keys())}'
                 if simlabel is None:
                     simlabel = label
@@ -406,16 +414,16 @@ class Scenarios(sc.prettyobj):
         return
 
 
+    def plot(self, to_plot=None, plot_sims=True, **kwargs):
+        ''' Plot the scenarios with bands -- see ``sim.plot()`` for args '''
+        self.check_run()
+        return self.msim_merged.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
+
+
     def plot_sims(self, to_plot=None, plot_sims=True, **kwargs):
         ''' Plot each sim as a separate line across all senarios -- see ``sim.plot()`` for args '''
         self.check_run()
         return self.msim.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
-
-
-    def plot_scens(self, to_plot=None, plot_sims=True, **kwargs):
-        ''' Plot the scenarios with bands -- see ``sim.plot()`` for args '''
-        self.check_run()
-        return self.msim_merged.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
 
 
     def plot_method_mix(self, *args, **kwargs):
