@@ -392,9 +392,9 @@ class update_methods(Intervention):
                             dest = method
 
                     # Ensure correct number of inputs are given
-                    n_vals = len(sc.mergelists(factor, value, i_factor, d_factor, i_value, d_value))
+                    n_vals = len(sc.mergelists(copy_from, factor, value, i_factor, d_factor, i_value, d_value))
                     if n_vals != 1:
-                        errormsg = f'Must supply one and only one of factor, value, or initiation/discontinuation factors/values; you supplied {n_vals}'
+                        errormsg = f'Must supply one and only one of copy_from, factor, value, or initiation/discontinuation factors/values; you supplied {n_vals}'
                         raise ValueError(errormsg)
 
                     # Check nothing strange has happened
