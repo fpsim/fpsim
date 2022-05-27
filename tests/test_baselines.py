@@ -14,9 +14,15 @@ baseline_filename  = sc.thisdir(__file__, 'baseline.json')
 benchmark_filename = sc.thisdir(__file__, 'benchmark.json')
 
 
-def make_exp(n_agents=1000, seed=1, do_run=False, do_plot=False):
+def make_exp(n_agents=1000, seed=3, do_run=False, do_plot=False):
     '''
     Define a default simulation for testing the baseline.
+
+    Note: due to these being rare events, some sims will have zero maternal or
+    infant mortality. If this happens it's OK to change the default seed. Run with
+    a larger population size (e.g. 10k) to see what the "expected" value is, then
+    find a seed for a small pop (e.g. 1k) which produces results closest to the
+    large-pop values.
     '''
     pars = fp.pars(n_agents=n_agents, seed=seed, verbose=0)
     exp = fp.Experiment(pars=pars)
