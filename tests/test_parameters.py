@@ -67,12 +67,13 @@ def test_mcpr_growth():
     sc.heading('Test MCPR growth assumptions')
 
     pars = dict(
+        n_agents = 500,
         start_year = 2010,
         end_year   = 2030, # Should be after last MCPR data year
     )
 
-    pars1 = fp.pars(location='test', mcpr_growth_rate=-0.05, **pars)
-    pars2 = fp.pars(location='test', mcpr_growth_rate=0.05, **pars)
+    pars1 = fp.pars(location='test', mcpr_growth_rate=-0.10, **pars)
+    pars2 = fp.pars(location='test', mcpr_growth_rate=0.10, **pars)
     sim1 = fp.Sim(pars1)
     sim2 = fp.Sim(pars2)
 
@@ -106,8 +107,12 @@ def test_scale():
     s1, s2 = msim.sims
 
     # Tests
+    orig = s1.results.total_births.sum()
+    expected = scale*orig
+    actual = s2.results.total_births.sum()
+    assert expected == actual, 'Total births should scale exactly with scale factor'
     assert np.array_equal(s1.results.mcpr, s2.results.mcpr), 'Scale factor should not change MCPR'
-    assert scale*s1.results.total_births.sum() == s2.results.total_births.sum(), 'Total births should scale exactly with scale factor'
+    print(f'{actual} births = {scale}*{orig} as expected')
 
     return [s1, s2]
 
@@ -153,7 +158,9 @@ def test_matrix_methods():
     nestkeys = ['methods', 'raw', 'annual', '>25']
     pars_arr = sc.getnested(pars, nestkeys)
     p4_arr = sc.getnested(p4, nestkeys)
-    assert p4_arr[0, new_ind] == pars_arr[0, orig_ind], 'Copied method has different initiation rate'
+    new_rate = p4_arr[0, new_ind]
+    assert new_rate == pars_arr[0, orig_ind], 'Copied method has different initiation rate'
+    print(f'New method initiation rate is {new_rate:0.4f} as expected')
     if do_plot:
         pl.figure()
         pl.subplot(2,1,1)
@@ -209,7 +216,7 @@ if __name__ == '__main__':
     with sc.timer():
         # null    = test_null(do_plot=do_plot)
         # timings = test_method_timestep()
-        # mcpr    = test_mcpr_growth()
-        # scale   = test_scale()
+        mcpr    = test_mcpr_growth()
+        scale   = test_scale()
         meths   = test_matrix_methods()
         pars    = test_validation()
