@@ -9,7 +9,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-Version 0.14.0 (2022-05-27)
+Version 0.14.1 (2022-05-27)
+--------------------------
+- Fixed bugs in how ``copy_from`` is implemented in scenarios.
+- *GitHub info*: PR `526 <https://github.com/amath-idm/fp_analyses/pull/526>`__
+
+
+Version 0.14.0 (2022-05-26)
 --------------------------
 - Adds an options module, allowing things like DPI to be set via ``fp.options(dpi=150)``.
 - Updates plotting options and allows more control over style.
