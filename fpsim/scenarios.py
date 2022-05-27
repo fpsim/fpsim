@@ -257,7 +257,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         '''
         scens = Scenarios(**kwargs)
         scens.add_scen(self)
-        scens.run(sc.mergedicts(run_args))
+        scens.run(**sc.mergedicts(run_args))
         return scens
 
 
