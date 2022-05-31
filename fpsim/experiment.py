@@ -3,67 +3,59 @@ Define classes and functions for the Experiment class (running sims and comparin
 '''
 
 
-import os
+import yaml
 import numpy as np
 import pylab as pl
 import pandas as pd
 import sciris as sc
+from .settings import options as fpo
+from . import defaults as fpd
+from . import parameters as fpp
 from . import sim as fps
 
 
-__all__ = ['Experiment', 'Fit', 'compute_gof', 'datapath', 'diff_summaries']
+__all__ = ['Experiment', 'Fit', 'compute_gof', 'diff_summaries']
 
 # ...more settings
 min_age = 15
 max_age = 50
 bin_size = 5
 year_str = '2017'
-mpy = 12
+mpy = 12 # Months per year
 
-
-# Files
-def datapath(path):
-    ''' Return the path of the parent folder '''
-    return sc.thisdir(__file__, os.pardir, 'dropbox', path)
-
-pregnancy_parity_file = datapath('SNIR80FL.obj')  # DHS Senegal 2018 file -- preprocessed
-pregnancy_parity_file_raw = datapath('SNIR80FL.DTA')  # DHS Senegal 2018 file -- raw
-pop_pyr_year_file = datapath('Population_Pyramid_-_All.csv')
-skyscrapers_file = datapath('Skyscrapers-All-DHS.csv')
-methods_file = datapath('Method_v312.csv')
-spacing_file = datapath('BirthSpacing.obj')
-spacing_file_raw = datapath('BirthSpacing.csv')
-popsize_file = datapath('senegal-popsize.csv')
-barriers_file = datapath('DHSIndividualBarriers.csv')
-tfr_file = datapath('senegal-tfr.csv')
-mcpr_file = datapath('mcpr_senegal.csv')
-
+# Flags for what to run
 default_flags = sc.objdict(
-    popsize = 1,  # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
-    skyscrapers = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
-    first_birth = 1,  # Age at first birth mean with standard deviation; 'age_first_birth'
-    birth_space = 1,  # Birth spacing both in bins and mean with standard deviation; 'spacing'
+    popsize       = 1, # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
+    skyscrapers   = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
+    first_birth   = 1, # Age at first birth mean with standard deviation; 'age_first_birth'
+    birth_space   = 1, # Birth spacing both in bins and mean with standard deviation; 'spacing'
     age_pregnancy = 1, # Summary stats (mean, std, 25, 50, 75%) ages of those currently pregnant; 'age_pregnant_stats',
-    mcpr = 1,  # Modern contraceptive prevalence; 'mcpr'
-    methods = 1, # Overall percentage of method use and method use among users; 'methods'
-    mmr = 1,  # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'
-    infant_m = 1,  # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
-    cdr = 1,  # Crude death rate at end of sim in model vs data; 'crude_death_rate'
-    cbr = 1,  # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
-    tfr = 1,  # Total fertility rate
+    mcpr          = 1, # Modern contraceptive prevalence; 'mcpr'
+    methods       = 1, # Overall percentage of method use and method use among users; 'methods'
+    mmr           = 1, # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'
+    infant_m      = 1, # Infant mortality rate at end of sim in model vs data; 'infant_mortality_rate'
+    cdr           = 1, # Crude death rate at end of sim in model vs data; 'crude_death_rate'
+    cbr           = 1, # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
+    tfr           = 1, # Total fertility rate
+    asfr          = 1, # Age-specific fertility rate
 )
-
-
 
 
 class Experiment(sc.prettyobj):
     '''
-    Class for running calibration to data
+    Class for running calibration to data. Effectively, it runs a single sim and
+    compares it to data.
+
+    Args:
+        pars (dict): dictionary of parameters
+        flags (dict): which analyses to run; see ``fp.experiment.default_flags`` for options
+        label (str): label of experiment
+        kwargs (dict): passed into pars
     '''
 
-    def __init__(self, pars=None, flags=None, label=None):
-        self.flags = flags if flags else sc.dcp(default_flags) # Set flags for what gets run
-        self.pars = pars
+    def __init__(self, pars=None, flags=None, label=None, **kwargs):
+        self.flags = sc.mergedicts(default_flags, flags, _copy=True) # Set flags for what gets run
+        self.pars = pars if pars else fpp.pars(**kwargs)
         self.model_to_calib = sc.objdict()
         self.dhs_data = sc.objdict()
         self.method_keys = None
@@ -71,44 +63,58 @@ class Experiment(sc.prettyobj):
         self.label = label
         return
 
-    def init_dhs_data(self):
-        '''
-        Assign data points of interest in DHS dictionary for Senegal data.  All data 2018 unless otherwise indicated
-        Adjust data for a different year or country
-        '''
 
-        self.dhs_data[
-            'maternal_mortality_ratio'] = 315.0  # Per 100,000 live births, (2017) From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=SN
-        self.dhs_data['infant_mortality_rate'] = 33.6  # Per 1,000 live births, From World Bank
-        self.dhs_data['crude_death_rate'] = 5.7  # Per 1,000 inhabitants, From World Bank
-        self.dhs_data['crude_birth_rate'] = 34.5  # Per 1,000 inhabitants, From World Bank
+    def load_data(self, key, **kwargs):
+        ''' Load data from various formats '''
+        files = self.pars['filenames']
+        path = files['base'] / files[key]
+        if path.suffix == '.obj':
+            data = sc.load(path, **kwargs)
+        elif path.suffix == '.json':
+            data = sc.loadjson(path, **kwargs)
+        elif path.suffix == '.csv':
+            data = pd.read_csv(path, **kwargs)
+        elif path.suffix == '.yaml':
+            with open(path) as f:
+                data = yaml.safe_load(f, **kwargs)
+        else:
+            errormsg = f'Unrecognized file format for: {path}'
+            raise ValueError(errormsg)
+        return data
 
-        return
 
-    def extract_dhs_data(self):
+    def extract_data(self):
+        ''' Load data '''
 
-        self.dhs_data['pregnancy_parity'] = sc.load(pregnancy_parity_file)
+        json = self.load_data('basic_dhs')
+
+        self.dhs_data.update(json)
+
+        self.dhs_data['pregnancy_parity'] = self.load_data('pregnancy_parity')
 
         # Extract population size over time
         if self.pars:
             n = self.pars['n_agents']
         else:
-            n = 5000 # Use default if not available
+            n = 1000 # Use default if not available
             print(f'Warning: parameters not defined, using default of n={n}')
-        pop_size = pd.read_csv(popsize_file, header=None)  # From World Bank
-        self.dhs_data['pop_years'] = pop_size.iloc[0,:].to_numpy()
-        self.dhs_data['pop_size'] = pop_size.iloc[1,:].to_numpy() / (pop_size.iloc[1,0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
+        pop_size = self.load_data('popsize')
+        self.dhs_data['pop_years'] = pop_size.year.to_numpy()
+        self.dhs_data['pop_size']  = pop_size.popsize.to_numpy() / (pop_size.popsize[0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
 
         # Extract population growth rate
         data_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
         self.dhs_data['pop_growth_rate'] = data_growth_rate
 
         # Extract mcpr over time
-        mcpr = pd.read_csv(mcpr_file, header = None)
+        mcpr = self.load_data('mcpr')
         self.dhs_data['mcpr_years'] = mcpr.iloc[:,0].to_numpy()
         self.dhs_data['mcpr'] = mcpr.iloc[:,1].to_numpy()
 
+        self.initialized = True
+
         return
+
 
     def pop_growth_rate(self, years, population):
         growth_rate = np.zeros(len(years) - 1)
@@ -121,10 +127,19 @@ class Experiment(sc.prettyobj):
         return growth_rate
 
 
-    def initialize(self):
-        self.init_dhs_data()
-        self.extract_dhs_data()
-        self.initialized = True
+    def run_model(self, pars=None, mother_ids=False):
+        ''' Create the sim and run the model '''
+
+        if not self.initialized:
+            self.extract_data()
+
+        if pars is None:
+            pars = self.pars
+
+        self.sim = fps.Sim(pars=pars, mother_ids=mother_ids)
+        self.sim.run()
+        self.post_process_sim()
+
         return
 
 
@@ -140,22 +155,6 @@ class Experiment(sc.prettyobj):
         return
 
 
-    def run_model(self, pars=None, mother_ids=False):
-        ''' Create the sim and run the model '''
-
-        if not self.initialized:
-            self.initialize()
-
-        if pars is None:
-            pars = self.pars
-
-        self.sim = fps.Sim(pars=pars, mother_ids=mother_ids)
-        self.sim.run()
-        self.post_process_sim()
-
-        return
-
-
     def extract_model(self):
         if self.flags.popsize:  self.model_pop_size()
         if self.flags.mcpr:     self.model_mcpr()
@@ -164,6 +163,7 @@ class Experiment(sc.prettyobj):
         if self.flags.cdr:      self.model_crude_death_rate()
         if self.flags.cbr:      self.model_crude_birth_rate()
         if self.flags.tfr:      self.model_data_tfr()
+        if self.flags.asfr:     self.model_data_asfr()
         return
 
 
@@ -200,8 +200,8 @@ class Experiment(sc.prettyobj):
         Calculate maternal mortality in model over most recent 3 years
         '''
 
-        maternal_deaths = pl.sum(self.model_results['maternal_deaths'][-mpy * 3:])
-        births_last_3_years = pl.sum(self.model_results['births'][-mpy * 3:])
+        maternal_deaths = np.sum(self.model_results['maternal_deaths'][-mpy * 3:])
+        births_last_3_years = np.sum(self.model_results['births'][-mpy * 3:])
         self.model_to_calib['maternal_mortality_ratio'] = (maternal_deaths / births_last_3_years) * 100000
 
         return
@@ -209,46 +209,64 @@ class Experiment(sc.prettyobj):
 
     def model_infant_mortality_rate(self):
 
-        infant_deaths = pl.sum(self.model_results['infant_deaths'][-mpy:])
-        births_last_year = pl.sum(self.model_results['births'][-mpy:])
+        infant_deaths = np.sum(self.model_results['infant_deaths'][-mpy:])
+        births_last_year = np.sum(self.model_results['births'][-mpy:])
         self.model_to_calib['infant_mortality_rate'] = (infant_deaths / births_last_year) * 1000
 
         return
 
 
     def model_crude_death_rate(self):
-
-        total_deaths = pl.sum(self.model_results['deaths'][-mpy:]) + \
-                       pl.sum(self.model_results['infant_deaths'][-mpy:]) + \
-                       pl.sum(self.model_results['maternal_deaths'][-mpy:])
+        total_deaths = np.sum(self.model_results['deaths'][-mpy:]) + \
+                       np.sum(self.model_results['infant_deaths'][-mpy:]) + \
+                       np.sum(self.model_results['maternal_deaths'][-mpy:])
         self.model_to_calib['crude_death_rate'] = (total_deaths / self.model_results['pop_size'][-1]) * 1000
-
         return
 
 
     def model_crude_birth_rate(self):
-
-        births_last_year = pl.sum(self.model_results['births'][-mpy:])
+        births_last_year = np.sum(self.model_results['births'][-mpy:])
         self.model_to_calib['crude_birth_rate'] = (births_last_year / self.model_results['pop_size'][-1]) * 1000
-
         return
 
 
     def model_data_tfr(self):
 
         # Extract tfr over time in data - keep here to ignore dhs data if not using tfr for calibration
-        tfr = pd.read_csv(tfr_file, header=None)  # From DHS
+        tfr = self.load_data('tfr')  # From DHS
         self.dhs_data['tfr_years'] = tfr.iloc[:, 0].to_numpy()
         self.dhs_data['total_fertility_rate'] = tfr.iloc[:, 1].to_numpy()
 
         self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
         self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
+        return
+
+
+    def model_data_asfr(self, ind=-1):
+
+        # Extract ASFR for different age bins
+        asfr = self.load_data('asfr')  # From DHS
+        self.dhs_data['asfr_bins'] = list(asfr.iloc[:, 0])
+        self.dhs_data['asfr']      = asfr.iloc[:, 1].to_numpy()
+
+        # Model extraction
+        age_bins = list(fpd.age_bin_map.keys())
+        self.model_to_calib['asfr_bins'] = age_bins
+        self.model_to_calib['asfr'] = []
+        for ab in age_bins:
+            val = self.model_results['asfr'][ab][ind] # Only use one index (default: last) CK: TODO: match year automatically
+            self.model_to_calib['asfr'].append(val)
+
+        # Check
+        assert self.dhs_data['asfr_bins'] == self.model_to_calib['asfr_bins'], f'ASFR data age bins do not match sim: {sc.strjoin(age_bins)}'
+
+        return
 
 
     def extract_skyscrapers(self):
 
         # Set up
-        min_age = 15
+        min_age = 15 # CK: TODO: remove hardcoding
         max_age = 50
         bin_size = 5
         age_bins = pl.arange(min_age, max_age, bin_size)
@@ -258,11 +276,11 @@ class Experiment(sc.prettyobj):
         x_age = pl.arange(n_age)
 
         # Load data
-        data_parity_bins = pl.arange(0, 18)
-        sky_raw_data = pd.read_csv(skyscrapers_file, header=None)
-        sky_raw_data = sky_raw_data[sky_raw_data[0] == year_str]
+        data_parity_bins = pl.arange(0, 18) # CK: TODO: refactor
+        sky_raw_data = self.load_data('skyscrapers')
+        sky_raw_data = sky_raw_data[sky_raw_data.year == year_str]
         # sky_parity = sky_raw_data[2].to_numpy() # Not used currently
-        sky_props = sky_raw_data[3].to_numpy()
+        sky_props = sky_raw_data.percentage.to_numpy()
         sky_arr = sc.odict()
 
         sky_arr['Data'] = pl.zeros((len(age_bins), len(parity_bins)))
@@ -294,12 +312,13 @@ class Experiment(sc.prettyobj):
 
         return
 
+
     def extract_birth_spacing(self):
 
         spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
 
         # From data
-        data = sc.loadobj(spacing_file)
+        data = self.load_data('spacing')
         spacing, first = data['spacing'], data['first']
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
 
@@ -554,14 +573,15 @@ class Experiment(sc.prettyobj):
 
         # Compare the two
         for key in keys:
-            dv = data[key] # dv = "Data value"
-            mv = model[key] # mv = "Model value"
-            if sc.isnumber(mv) and sc.isnumber(dv):
-                summary.data[key] = dv
-                summary.model[key] = mv
-            else:
-                summary.data[key+'_mean'] = np.mean(dv)
-                summary.model[key+'_mean'] = np.mean(mv)
+            if not (key.endswith('_years') or key.endswith('_bins')):
+                dv = data[key] # dv = "Data value"
+                mv = model[key] # mv = "Model value"
+                if sc.isnumber(mv) and sc.isnumber(dv):
+                    summary.data[key] = dv
+                    summary.model[key] = mv
+                else:
+                    summary.data[key+'_mean'] = np.mean(dv)
+                    summary.model[key+'_mean'] = np.mean(mv)
 
         self.summary = summary
         self.summary_df = pd.DataFrame(summary)
@@ -589,8 +609,8 @@ class Experiment(sc.prettyobj):
 
         **Examples**::
 
-            json = calib.to_json()
-            calib.to_json('results.json')
+            json = exp.to_json()
+            exp.to_json('results.json')
         '''
         d = self.summarize()
         if filename is None:
@@ -601,7 +621,7 @@ class Experiment(sc.prettyobj):
         return output
 
 
-    def plot(self, axes_args=None, do_maximize=True, do_show=True):
+    def plot(self, do_show=None, do_save=None, filename='fp_experiment.png', axis_args=None, do_maximize=True):
         ''' Plot the model against the data '''
         data = self.dhs_data
         sim = self.model_to_calib
@@ -612,183 +632,179 @@ class Experiment(sc.prettyobj):
                      'infant_mortality_rate',
                      'crude_death_rate',
                      'crude_birth_rate']
-        non_calibrated_keys = ['pop_years', 'mcpr_years', 'tfr_years']
+        non_calibrated_keys = ['pop_years', 'mcpr_years', 'tfr_years', 'asfr_bins']
         for key in rate_keys + non_calibrated_keys:
-            keys.remove(key)
+            if key in keys:
+                keys.remove(key)
         nkeys = len(keys)
-        expected = 12
+        expected = 13
         if nkeys != expected:
             errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys}'
             raise ValueError(errormsg)
 
-        fig, axs = pl.subplots(nrows=4, ncols=3)
-        pl.subplots_adjust(**sc.mergedicts(dict(bottom=0.05, top=0.97, left=0.05, right=0.97, wspace=0.3, hspace=0.3), axes_args))
+        with fpo.with_style():
 
-        #%% Do the plotting!
+            fig, axs = pl.subplots(nrows=4, ncols=3)
+            pl.subplots_adjust(**sc.mergedicts(dict(bottom=0.05, top=0.97, left=0.05, right=0.97, wspace=0.3, hspace=0.3), axis_args))
 
-        # Rates
-        ax = axs[0,0]
-        height = 0.4
-        n_rates = len(rate_keys)
-        y = np.arange(n_rates)
-        data_rates = np.array([data[k] for k in rate_keys])
-        sim_rates  = np.array([sim[k] for k in rate_keys])
-        ax.barh(y=y+height/2, width=data_rates, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim_rates,  height=height, align='center', label='Sim')
-        ax.set_title('Rates')
-        ax.set_xlabel('Rate')
-        ax.set_yticks(range(n_rates))
-        ax.set_yticklabels(rate_keys)
-        ax.legend()
 
-        # Population size
-        ax = axs[1,0]
-        ax.plot(data.pop_years, data.pop_size, 'o', label='Data')
-        ax.plot(sim.pop_years,  sim.pop_size,  '-', label='Sim')
-        ax.set_title('Population size')
-        ax.set_xlabel('Year')
-        ax.set_ylabel('Population size')
-        ax.legend()
+            #%% Do the plotting!
 
-        # Population growth rate
-        ax = axs[2,0]
-        ax.plot(data.pop_years[:-1], data.pop_growth_rate, 'o', label='Data')
-        ax.plot(sim.pop_years[:-1],  sim.pop_growth_rate,  '-', label='Sim')
-        ax.set_title('Population growth rate')
-        ax.set_xlabel('Year')
-        ax.set_ylabel('Population growth rate')
-        ax.legend()
+            # Rates
+            ax = axs[0,0]
+            height = 0.4
+            n_rates = len(rate_keys)
+            y = np.arange(n_rates)
+            data_rates = np.array([data[k] for k in rate_keys])
+            sim_rates  = np.array([sim[k] for k in rate_keys])
+            ax.barh(y=y+height/2, width=data_rates, height=height, align='center', label='Data')
+            ax.barh(y=y-height/2, width=sim_rates,  height=height, align='center', label='Sim')
+            ax.set_title('Rates')
+            ax.set_xlabel('Rate')
+            ax.set_yticks(range(n_rates))
+            ax.set_yticklabels(rate_keys)
+            ax.legend()
 
-        # MCPR
-        ax = axs[3,0]
-        ax.plot(data.mcpr_years, data.mcpr, 'o', label='Data')
-        ax.plot(sim.mcpr_years,  sim.mcpr,  '-', label='Sim') # TODO: remove scale factor
-        ax.set_title('MCPR')
-        ax.set_xlabel('Year')
-        ax.set_ylabel('Modern contraceptive prevalence rate')
-        ax.legend()
+            # Population size
+            ax = axs[1,0]
+            ax.plot(data.pop_years, data.pop_size, 'o', label='Data')
+            ax.plot(sim.pop_years,  sim.pop_size,  '-', label='Sim')
+            ax.set_title('Population size')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Population size')
+            ax.legend()
 
-        # Data skyscraper
-        ax = axs[0,1]
-        ax.pcolormesh(self.age_bins, self.parity_bins, data.skyscrapers.transpose(), shading='nearest', cmap='turbo')
-        ax.set_aspect(1./ax.get_data_ratio()) # Make square
-        ax.set_title('Age-parity plot: data')
-        ax.set_xlabel('Age')
-        ax.set_ylabel('Parity')
+            # Population growth rate
+            ax = axs[2,0]
+            ax.plot(data.pop_years[:-1], data.pop_growth_rate, 'o', label='Data')
+            ax.plot(sim.pop_years[:-1],  sim.pop_growth_rate,  '-', label='Sim')
+            ax.set_title('Population growth rate')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Population growth rate')
+            ax.legend()
 
-        # Sim skyscraper
-        ax = axs[1,1]
-        ax.pcolormesh(self.age_bins, self.parity_bins, sim.skyscrapers.transpose(), shading='nearest', cmap='turbo')
-        ax.set_aspect(1./ax.get_data_ratio())
-        ax.set_title('Age-parity plot: sim')
-        ax.set_xlabel('Age')
-        ax.set_ylabel('Parity')
+            # MCPR
+            ax = axs[3,0]
+            ax.plot(data.mcpr_years, data.mcpr, 'o', label='Data')
+            ax.plot(sim.mcpr_years,  sim.mcpr,  '-', label='Sim') # TODO: remove scale factor
+            ax.set_title('MCPR')
+            ax.set_xlabel('Year')
+            ax.set_ylabel('Modern contraceptive prevalence rate')
+            ax.legend()
 
-        # Spacing bins
+            # Data skyscraper
+            ax = axs[0,1]
+            ax.pcolormesh(self.age_bins, self.parity_bins, data.skyscrapers.transpose(), shading='nearest', cmap='turbo')
+            ax.set_aspect(1./ax.get_data_ratio()) # Make square
+            ax.set_title('Age-parity plot: data')
+            ax.set_xlabel('Age')
+            ax.set_ylabel('Parity')
 
-        ax = axs[2, 1]
-        height = 0.4
+            # Sim skyscraper
+            ax = axs[1,1]
+            ax.pcolormesh(self.age_bins, self.parity_bins, sim.skyscrapers.transpose(), shading='nearest', cmap='turbo')
+            ax.set_aspect(1./ax.get_data_ratio())
+            ax.set_title('Age-parity plot: sim')
+            ax.set_xlabel('Age')
+            ax.set_ylabel('Parity')
 
-        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
-        n_bins = len(spacing_bins.keys())
+            # Spacing bins
+            ax = axs[2, 1]
+            height = 0.4
 
-        y = np.arange(len(data.spacing_bins))
-        ax.barh(y=y+height/2, width=data.spacing_bins, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim.spacing_bins,  height=height, align='center', label='Sim')
-        ax.set_title('Birth spacing bins')
-        ax.set_xlabel('Percent of births in each bin')
-        ax.set_yticks(range(n_bins))
-        ax.set_yticklabels(spacing_bins.keys())
-        ax.set_ylabel('Birth space in months')
-        ax.legend()
+            spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
+            n_bins = len(spacing_bins.keys())
 
-        # Age first stats
+            y = np.arange(len(data.spacing_bins))
+            ax.barh(y=y+height/2, width=data.spacing_bins, height=height, align='center', label='Data')
+            ax.barh(y=y-height/2, width=sim.spacing_bins,  height=height, align='center', label='Sim')
+            ax.set_title('Birth spacing bins')
+            ax.set_xlabel('Percent of births in each bin')
+            ax.set_yticks(range(n_bins))
+            ax.set_yticklabels(spacing_bins.keys())
+            ax.set_ylabel('Birth space in months')
+            ax.legend()
 
-        quartile_keys = ['25th %',
-                     'Median',
-                     '75th %']
-        n_quartiles = len(quartile_keys)
+            # Age first stats
+            quartile_keys = ['25th %',
+                         'Median',
+                         '75th %']
+            n_quartiles = len(quartile_keys)
 
-        ax = axs[3,1]
-        height = 0.4
-        y = np.arange(len(data.age_first_stats))
-        ax.barh(y=y+height/2, width=data.age_first_stats, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim.age_first_stats,  height=height, align='center', label='Sim')
-        ax.set_title('Age at first birth')
-        ax.set_xlabel('Age')
-        ax.set_yticks(range(n_quartiles))
-        ax.set_yticklabels(quartile_keys)
-        ax.legend()
+            ax = axs[3,1]
+            height = 0.4
+            y = np.arange(len(data.age_first_stats))
+            ax.barh(y=y+height/2, width=data.age_first_stats, height=height, align='center', label='Data')
+            ax.barh(y=y-height/2, width=sim.age_first_stats,  height=height, align='center', label='Sim')
+            ax.set_title('Age at first birth')
+            ax.set_xlabel('Age')
+            ax.set_yticks(range(n_quartiles))
+            ax.set_yticklabels(quartile_keys)
+            ax.legend()
 
-        # Age pregnant stats
-        ax = axs[0,2]
-        height = 0.4
-        y = np.arange(len(data.age_pregnant_stats))
-        ax.barh(y=y+height/2, width=data.age_pregnant_stats, height=height, align='center', label='Data')
-        ax.barh(y=y-height/2, width=sim.age_pregnant_stats,  height=height, align='center', label='Sim')
-        ax.set_title('Age of women currently pregnant')
-        ax.set_xlabel('Age')
-        ax.set_yticks(range(n_quartiles))
-        ax.set_yticklabels(quartile_keys)
-        ax.legend()
+            # Age pregnant stats
+            ax = axs[0,2]
+            height = 0.4
+            y = np.arange(len(data.age_pregnant_stats))
+            ax.barh(y=y+height/2, width=data.age_pregnant_stats, height=height, align='center', label='Data')
+            ax.barh(y=y-height/2, width=sim.age_pregnant_stats,  height=height, align='center', label='Sim')
+            ax.set_title('Age of women currently pregnant')
+            ax.set_xlabel('Age')
+            ax.set_yticks(range(n_quartiles))
+            ax.set_yticklabels(quartile_keys)
+            ax.legend()
 
-        # Age parity stats
-        ax = axs[1,2]
-        cols = sc.gridcolors(3)
-        for i,yvals in enumerate([data.age_parity_stats, sim.age_parity_stats]):
-            for j in range(3):
-                vals = yvals[:,j]
-                if i==0:
-                    marker = 'o'
-                    label = 'Data'
-                else:
-                    marker = '-'
-                    label = 'Sim'
-                ax.plot(vals, marker, c=cols[j], label=label)
-        ax.set_title('Age parity stats - quartiles')
-        ax.set_xlabel('Parity')
-        ax.set_ylabel('Age')
-        ax.legend()
+            # Age parity stats
+            ax = axs[1,2]
+            cols = sc.gridcolors(3)
+            for i,yvals in enumerate([data.age_parity_stats, sim.age_parity_stats]):
+                for j in range(3):
+                    vals = yvals[:,j]
+                    if i==0:
+                        marker = 'o'
+                        label = 'Data'
+                    else:
+                        marker = '-'
+                        label = 'Sim'
+                    ax.plot(vals, marker, c=cols[j], label=label)
+            ax.set_title('Age parity stats - quartiles')
+            ax.set_xlabel('Parity')
+            ax.set_ylabel('Age')
+            ax.legend()
 
-        # Method counts
-        ax = axs[2,2]
+            # Method counts
+            ax = axs[2,2]
 
-        method_labels = ['None',
-                    'Pill',
-                    'IUDs',
-                    'Injectables',
-                    'Condoms',
-                    'BTL',
-                    'Rhythm',
-                    'Withdrawal',
-                    'Implants',
-                    'Other']
+            height = 0.4
+            y = np.arange(len(data.method_counts))
+            y1 = y + height/2
+            y2 = y - height/2
+            ax.barh(y=y1, width=data.method_counts, height=height, align='center', label='Data')
+            ax.barh(y=y2, width=sim.method_counts,  height=height, align='center', label='Sim')
+            ax.set_yticks(y, self.method_keys)
+            ax.set_title('Method counts')
+            ax.set_ylabel('Contraceptive method')
+            ax.set_xlabel('Rate of use')
+            ax.legend()
 
-        ax.pie(data.method_counts[:], labels=method_labels)
-        ax.set_title('Method use in data')
-
-        #width = 0.4
-        #x = np.arange(len(data.method_counts))
-        #ax.bar(x=x+width/2, height=data.method_counts, width=width, align='center', label='Data')
-        #ax.bar(x=x-width/2, height=sim.method_counts,  width=width, align='center', label='Sim')
-        #ax.set_title('Method counts')
-        #ax.set_xlabel('Contraceptive method')
-        #ax.set_ylabel('Rate of use')
-        #ax.legend()
-
-        ax = axs[3,2]
-
-        ax.pie(sim.method_counts[:], labels=method_labels)
-        ax.set_title('Method use in model')
+            # ASFR
+            ax = axs[3,2]
+            y = np.arange(len(data.asfr))
+            y1 = y + height/2
+            y2 = y - height/2
+            ax.barh(y=y1, width=data.asfr, height=height, align='center', label='Data')
+            ax.barh(y=y2, width=sim.asfr,  height=height, align='center', label='Sim')
+            ax.set_yticks(y, sim.asfr_bins)
+            ax.set_title('Age-specific fertility rate')
+            ax.set_ylabel('Age bin')
+            ax.set_xlabel('Fertility rate')
+            ax.legend()
 
         # Tidy up
         if do_maximize:
             sc.maximize(fig=fig)
 
-        if do_show:
-            pl.show()
-
-        pass
+        return fps.tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
 
 
@@ -835,10 +851,10 @@ class Fit(sc.prettyobj):
 
         # Remove keys that aren't for fitting
         for key in self.data.keys():
-            if key.endswith('_years'):
+            if key.endswith('_years') or key.endswith('_bins'):
                 self.data.pop(key)
                 self.sim_results.pop(key)
-        self.keys       = data.keys()
+        self.keys = data.keys()
 
         # These are populated during initialization
         self.inds         = sc.objdict() # To store matching indices between the data and the simulation

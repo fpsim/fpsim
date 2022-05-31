@@ -2,6 +2,7 @@
 Run tests on the Scenarios class.
 """
 
+import numpy as np
 import sciris as sc
 import fpsim as fp
 import pytest
@@ -30,20 +31,22 @@ def test_update_methods_eff():
     sc.heading('Testing updating method efficacy...')
 
     method = 'Other modern'
-    low_eff  = {method:dict(dist='uniform', par1=0.80, par2=0.90)}
-    high_eff = {method:dict(dist='uniform', par1=0.91, par2=0.95)}
+    l = [0.80, 0.90]
+    h = [0.90, 1.00]
+    low_eff  = {method:dict(dist='uniform', par1=l[0], par2=l[1])}
+    high_eff = {method:dict(dist='uniform', par1=h[0], par2=h[1])}
 
-    low_eff = fp.update_methods(year=int_year, eff=low_eff)
+    low_eff  = fp.update_methods(year=int_year, eff=low_eff)
     high_eff = fp.update_methods(year=int_year, eff=high_eff)
 
     simlist = make_sims([low_eff, high_eff])
     msim = fp.MultiSim(sims=simlist)
     msim.run(serial=serial)
 
-    low_eff_post_sim = msim.sims[0]['method_efficacy'][9]
-    high_eff_post_sim = msim.sims[1]['method_efficacy'][9]
+    low_eff_post_sim = msim.sims[0]['methods']['eff'][method]
+    high_eff_post_sim = msim.sims[1]['methods']['eff'][method]
 
-    msg = f"Method efficacy after updating to about .93 is {high_eff_post_sim} and after updating to about 0.85 is actually {low_eff_post_sim}"
+    msg = f"Expected efficacy {np.mean(h)} and got {high_eff_post_sim}, which is lower than expected {np.mean(l)} and got {low_eff_post_sim}"
     assert high_eff_post_sim > low_eff_post_sim, msg
     return msim
 
@@ -186,9 +189,9 @@ def test_scenarios(do_plot=do_plot):
 
     # Plot and print results
     if do_plot:
+        scens.plot()
         scens.plot_sims()
-        scens.plot_scens()
-        scens.plot_cpr()
+        scens.plot_method_mix()
 
     return scens
 
@@ -208,7 +211,7 @@ def test_make_scens():
     s.eff   = fp.make_scen(year=year, eff={'Injectables':0.99}) # Basic efficacy scenario
     s.prob1 = fp.make_scen(year=year, source='None', dest='Injectables', factor=2) # Double rate of injectables initiation
     s.prob2 = fp.make_scen(year=year, method='Injectables', init_factor=2) # Double rate of injectables initiation -- alternate approach
-    s.par   = fp.make_scen(par='exposure_factor', years=2005, vals=0.5) # Parameter scenario: halve exposure
+    s.par   = fp.make_scen(par='exposure_factor', par_years=2005, par_vals=0.5) # Parameter scenario: halve exposure
 
     # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
     s.complex = fp.make_scen(year=year, source='Condoms', dest='Injectables', value=0.5, ages='18-20', matrix='pp1to6')
@@ -218,20 +221,18 @@ def test_make_scens():
     s.custom = fp.make_scen(interventions=update_sim)
 
     # Combining multiple scenarios: increase injectables initiation and reduce exposure factor
-    s.multi = fp.make_scen(
+    s.multi = fp.make_scen([
         dict(year=year, method=method, init_factor=2),
-        dict(par='exposure_factor', years=2010, vals=0.5)
-    )
+        dict(par='exposure_factor', par_years=2010, par_vals=0.5)
+    ])
 
     # Scenario addition
     s.sum = s.eff + s.prob1
 
     # More probability matrix options
     s.inj1 = fp.make_scen(year=year, method=method, init_factor=5, matrix='annual', ages=None)
-    s.inj2 = fp.make_scen(year=year, method=method, discont_factor=0, matrix='annual', ages=':')
-    s.inj3 = fp.make_scen(year=year, method=method, init_value=0.2, matrix='pp1to6', ages=None)
-    s.inj4 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
-    s.inj5 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>25'])
+    s.inj2 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
+    s.inj3 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>25'])
 
     # Test invalid options
     with pytest.raises(sc.KeyNotFoundError):

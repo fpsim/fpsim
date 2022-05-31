@@ -9,6 +9,57 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.14.1 (2022-05-27)
+--------------------------
+- Fixed bugs in how ``copy_from`` is implemented in scenarios.
+- *GitHub info*: PR `526 <https://github.com/amath-idm/fp_analyses/pull/526>`__
+
+
+Version 0.14.0 (2022-05-26)
+--------------------------
+- Adds an options module, allowing things like DPI to be set via ``fp.options(dpi=150)``.
+- Updates plotting options and allows more control over style.
+- Adds more control to plots, including ``start_year`` and ``end_year``.
+- Adds a ``copy_from`` keyword to method probability update scenarios.
+- Renames ``years`` to ``par_years`` in scenarios.
+- Changes the logic of the ``People`` update step so that lactational amenorrhea is calculated after breastfeeding is updated.
+- Changes the ``Sim`` representation to e.g. ``Sim("My sim"; n=10,000; 1960-2020; results: b=69,541 ☠=11,920 pop=62,630)``
+- *GitHub info*: PR `522 <https://github.com/amath-idm/fp_analyses/pull/522>`__
+
+
+Version 0.13.2 (2022-05-25)
+--------------------------
+- Added ASFR as an output of Experiments.
+- ``MultiSim.run()`` now automatically labels un-labeled sims; this fixes bugs in MultiSim plotting functions.
+- MultiSims also have additional error checking (e.g., they cannot be rerun).
+- Refactored data files to be in "tall" instead of "wide" format.
+- Removed years and age bins from summary statistics.
+- *GitHub info*: PR `517 <https://github.com/amath-idm/fp_analyses/pull/517>`__
+
+
+Version 0.13.1 (2022-05-25)
+--------------------------
+- Changed ``MultiSim.plot_method_mix()`` to be able to work with ``Scenarios``
+- *GitHub info*: PR `513 <https://github.com/amath-idm/fp_analyses/pull/513>`__
+
+
+Version 0.13.0 (2022-05-23)
+--------------------------
+- Changed parameters from a dictionary to a class and added ``parameters.py``. This class has additional validation, the ability to import from/export to JSON, etc.
+- Restructured methods, including renaming ``pars['method_efficacy']`` to ``pars['methods']['eff']``, plus a new entry, ``pars['methods']['modern']``, to specify which are modern methods used for calculating MCPR.
+- Methods have been reordered, grouping traditional and modern methods and sorting modern methods by longevity (e.g. condoms → pill → implants → IUDs).
+- Added ability to add/remove contraceptive methods via ``pars.add_method()`` and ``pars.rm_method()``.
+- Added a method to run a single scenario.
+- *GitHub info*: PR `503 <https://github.com/amath-idm/fp_analyses/pull/503>`__
+
+
+Version 0.12.0 (2022-05-22)
+--------------------------
+- Split FPsim repository from analyses scripts.
+- Refactors ``experiment.py`` to load files for a specific location rather than being hard-coded.
+- *GitHub info*: PR `504 <https://github.com/amath-idm/fp_analyses/pull/504>`__
+
+
 Version 0.11.5 (2022-05-21)
 --------------------------
 - Improvements to the scenarios, including more helpful docstrings and error messages.

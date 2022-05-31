@@ -5,8 +5,9 @@ Base classes for loading parameters and for running simulations with FP model
 import numpy as np
 import sciris as sc
 import pylab as pl
-from . import defaults as fpd
 from . import utils as fpu
+from . import defaults as fpd
+
 obj_get = object.__getattribute__ # Alias the default getattribute method
 obj_set = object.__setattr__
 
@@ -416,8 +417,35 @@ class BaseSim(ParsObj):
         return self.people.alive.sum()
 
 
+    def _brief(self):
+        '''
+        Return a one-line description of a sim -- used internally and by repr();
+        see sim.brief() for the user version.
+        '''
+        # Try to get a detailed description of the sim...
+        try:
+            if self.already_run:
+                births = np.sum(self.results['births'])
+                deaths = np.sum(self.results['deaths'])
+                final = self.results['pop_size'][-1]
+                results = f'b={births:n} ☠={deaths:n} pop={final:n}'
+            else:
+                results = 'not run'
 
+            # Set label string
+            labelstr = f'"{self.label}"' if self.label else '<no label>'
 
+            start = self['start_year']
+            end = self['end_year']
+            n_agents = self['n_agents']
+            string   = f'Sim({labelstr}; n={n_agents:n}; {start}-{end}; results: {results})'
+
+        # ...but if anything goes wrong, return the default with a warning
+        except Exception as E: # pragma: no cover
+            string = sc.objectid(self)
+            string += f'Warning, sim appears to be malformed; use sim.disp() for details:\n{str(E)}'
+
+        return string
 
 
 
