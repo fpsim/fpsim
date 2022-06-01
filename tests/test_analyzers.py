@@ -17,7 +17,7 @@ def ok(string):
 
 def make_analyzer(analyzer):
     ''' Create a sim with a single analyzer '''
-    sim = fp.Sim(location='test', analyzers=analyzer()).run()
+    sim = fp.Sim(location='test', analyzers=analyzer).run()
     an = sim.get_analyzer()
     return an
 
@@ -46,10 +46,27 @@ def test_calibration(n_trials=3):
     return calib
 
 
+def test_snapshot():
+    ''' Test snapshot analyzer '''
+    sc.heading('Testing snapshot analyzer...')
+
+    timesteps = [50, 100]
+    snap = make_analyzer(fp.snapshot(timesteps=timesteps))
+    shots = snap.snapshots
+    assert len(shots) == len(timesteps), 'Wrong number of snapshots'
+    ok(f'Took {len(timesteps)} snapshots')
+    pop0 = len(shots[0])
+    pop1 = len(shots[1])
+    assert pop1 > pop0, 'Expected population to grow'
+    ok(f'Population grew ({pop1} > {pop0})')
+
+    return snap
+
+
 def test_timeseries_recorder():
     sc.heading('Testing timeseries recorder...')
 
-    tsr = make_analyzer(fp.timeseries_recorder)
+    tsr = make_analyzer(fp.timeseries_recorder())
 
     if do_plot:
         tsr.plot()
@@ -60,7 +77,7 @@ def test_timeseries_recorder():
 def test_age_pyramids():
     sc.heading('Testing age pyramids...')
 
-    ap = make_analyzer(fp.age_pyramids)
+    ap = make_analyzer(fp.age_pyramids())
 
     if do_plot:
         ap.plot()
@@ -73,5 +90,6 @@ if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
         calib = test_calibration()
+        snap  = test_snapshot()
         tsr   = test_timeseries_recorder()
         ap    = test_age_pyramids()

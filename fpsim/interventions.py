@@ -34,7 +34,7 @@ class Intervention:
         self.show_label = show_label # Do not show the label by default
         self.do_plot = do_plot if do_plot is not None else True # Plot the intervention, including if None
         self.line_args = sc.mergedicts(dict(linestyle='--', c='#aaa', lw=1.0), line_args) # Do not set alpha by default due to the issue of overlapping interventions
-        self.days = [] # The start and end days of the intervention
+        self.years = [] # The start and end years of the intervention
         self.initialized = False # Whether or not it has been initialized
         self.finalized = False # Whether or not it has been initialized
         return
@@ -143,20 +143,24 @@ class Intervention:
         if self.do_plot or self.do_plot is None:
             if ax is None:
                 ax = pl.gca()
-            if hasattr(self, 'plot_days'):
-                days = self.plot_days
+
+            if hasattr(self, 'plot_years'):
+                years = self.plot_years
+            elif not self.years and hasattr(self, 'year'):
+                years = sc.toarray(self.year)
             else:
-                days = self.days
-            if sc.isiterable(days):
+                years = self.years
+
+            if sc.isiterable(years):
                 label_shown = False # Don't show the label more than once
-                for day in days:
-                    if sc.isnumber(day):
+                for y in years:
+                    if sc.isnumber(y):
                         if self.show_label and not label_shown: # Choose whether to include the label in the legend
                             label = self.label
                             label_shown = True
                         else:
                             label = None
-                        ax.axvline(day, label=label, **line_args)
+                        ax.axvline(y, label=label, **line_args)
         return
 
 

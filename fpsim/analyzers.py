@@ -139,8 +139,10 @@ class snapshot(Analyzer):
         Apply snapshot at each timestep listed in timesteps and
         save result at snapshot[str(timestep)]
         """
-        if sim.i in self.timesteps:
-            self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
+        for t in self.timesteps:
+            if np.isclose(sim.i, t):
+                self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
+        return
 
 
 class timeseries_recorder(Analyzer):
