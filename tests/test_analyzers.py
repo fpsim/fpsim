@@ -1,5 +1,5 @@
 """
-Run tests on the calibration object.
+Run tests on the analyzers, including calibration.
 """
 
 import sciris as sc
