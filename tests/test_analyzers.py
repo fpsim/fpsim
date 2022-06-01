@@ -15,13 +15,11 @@ def ok(string):
     return sc.printgreen(f'✓ {string}\n')
 
 
-def make_calib():
-    '''
-    Define a default simulation for testing the baseline.
-    '''
-    pars = fp.pars('test', n_agents=200)
-    calib = fp.Calibration(pars=pars)
-    return calib
+def make_analyzer(analyzer):
+    ''' Create a sim with a single analyzer '''
+    sim = fp.Sim(location='test', analyzers=analyzer()).run()
+    an = sim.get_analyzer()
+    return an
 
 
 def test_calibration(n_trials=3):
@@ -33,7 +31,8 @@ def test_calibration(n_trials=3):
     )
 
     # Calculate calibration
-    calib = make_calib()
+    pars = fp.pars('test', n_agents=200)
+    calib = fp.Calibration(pars=pars)
     calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=2)
     before,after = calib.summarize()
 
@@ -47,8 +46,32 @@ def test_calibration(n_trials=3):
     return calib
 
 
+def test_timeseries_recorder():
+    sc.heading('Testing timeseries recorder...')
+
+    tsr = make_analyzer(fp.timeseries_recorder)
+
+    if do_plot:
+        tsr.plot()
+
+    return tsr
+
+
+def test_age_pyramids():
+    sc.heading('Testing age pyramids...')
+
+    ap = make_analyzer(fp.age_pyramids)
+
+    if do_plot:
+        ap.plot()
+
+    return ap
+
+
 if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
         calib = test_calibration()
+        tsr   = test_timeseries_recorder()
+        ap    = test_age_pyramids()

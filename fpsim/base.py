@@ -3,6 +3,7 @@ Base classes for loading parameters and for running simulations with FP model
 '''
 
 import numpy as np
+import pandas as pd
 import sciris as sc
 import pylab as pl
 from . import utils as fpu
@@ -448,7 +449,110 @@ class BaseSim(ParsObj):
         return string
 
 
+    def _get_ia(self, which, label=None, partial=False, as_list=False, as_inds=False, die=True, first=False):
+        ''' Helper method for get_interventions() and get_analyzers(); see get_interventions() docstring '''
+
+        # Handle inputs
+        if which not in ['interventions', 'analyzers']: # pragma: no cover
+            errormsg = f'This method is only defined for interventions and analyzers, not "{which}"'
+            raise ValueError(errormsg)
+
+        ia_list = sc.tolist(self.pars[which]) # List of interventions or analyzers
+        n_ia = len(ia_list) # Number of interventions/analyzers
+
+        if label == 'summary': # Print a summary of the interventions
+            df = pd.DataFrame(columns=['ind', 'label', 'type'])
+            for ind,ia_obj in enumerate(ia_list):
+                df = df.append(dict(ind=ind, label=str(ia_obj.label), type=type(ia_obj)), ignore_index=True)
+            print(f'Summary of {which}:')
+            print(df)
+            return
+
+        else: # Standard usage case
+            position = 0 if first else -1 # Choose either the first or last element
+            if label is None: # Get all interventions if no label is supplied, e.g. sim.get_interventions()
+                label = np.arange(n_ia)
+            if isinstance(label, np.ndarray): # Allow arrays to be provided
+                label = label.tolist()
+            labels = sc.promotetolist(label)
+
+            # Calculate the matches
+            matches = []
+            match_inds = []
+            for label in labels:
+                if sc.isnumber(label):
+                    matches.append(ia_list[label]) # This will raise an exception if an invalid index is given
+                    label = n_ia + label if label<0 else label # Convert to a positive number
+                    match_inds.append(label)
+                elif sc.isstring(label) or isinstance(label, type):
+                    for ind,ia_obj in enumerate(ia_list):
+                        if sc.isstring(label) and ia_obj.label == label or (partial and (label in str(ia_obj.label))):
+                            matches.append(ia_obj)
+                            match_inds.append(ind)
+                        elif isinstance(label, type) and isinstance(ia_obj, label):
+                            matches.append(ia_obj)
+                            match_inds.append(ind)
+                else: # pragma: no cover
+                    errormsg = f'Could not interpret label type "{type(label)}": should be str, int, list, or {which} class'
+                    raise TypeError(errormsg)
+
+            # Parse the output options
+            if as_inds:
+                output = match_inds
+            elif as_list: # Used by get_interventions()
+                output = matches
+            else:
+                if len(matches) == 0: # pragma: no cover
+                    if die:
+                        errormsg = f'No {which} matching "{label}" were found'
+                        raise ValueError(errormsg)
+                    else:
+                        output = None
+                else:
+                    output = matches[position] # Return either the first or last match (usually), used by get_intervention()
+
+            return output
 
 
+    def get_interventions(self, label=None, partial=False, as_inds=False):
+        '''
+        Find the matching intervention(s) by label, index, or type. If None, return
+        all interventions. If the label provided is "summary", then print a summary
+        of the interventions (index, label, type).
 
+        Args:
+            label (str, int, Intervention, list): the label, index, or type of intervention to get; if a list, iterate over one of those types
+            partial (bool): if true, return partial matches (e.g. 'beta' will match all beta interventions)
+            as_inds (bool): if true, return matching indices instead of the actual interventions
+        '''
+        return self._get_ia('interventions', label=label, partial=partial, as_inds=as_inds, as_list=True)
+
+
+    def get_intervention(self, label=None, partial=False, first=False, die=True):
+        '''
+        Like get_interventions(), find the matching intervention(s) by label,
+        index, or type. If more than one intervention matches, return the last
+        by default. If no label is provided, return the last intervention in the list.
+
+        Args:
+            label (str, int, Intervention, list): the label, index, or type of intervention to get; if a list, iterate over one of those types
+            partial (bool): if true, return partial matches (e.g. 'beta' will match all beta interventions)
+            first (bool): if true, return first matching intervention (otherwise, return last)
+            die (bool): whether to raise an exception if no intervention is found
+        '''
+        return self._get_ia('interventions', label=label, partial=partial, first=first, die=die, as_inds=False, as_list=False)
+
+
+    def get_analyzers(self, label=None, partial=False, as_inds=False):
+        '''
+        Same as get_interventions(), but for analyzers.
+        '''
+        return self._get_ia('analyzers', label=label, partial=partial, as_list=True, as_inds=as_inds)
+
+
+    def get_analyzer(self, label=None, partial=False, first=False, die=True):
+        '''
+        Same as get_intervention(), but for analyzers.
+        '''
+        return self._get_ia('analyzers', label=label, partial=partial, first=first, die=die, as_inds=False, as_list=False)
 

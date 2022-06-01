@@ -90,10 +90,14 @@ def test_channels():
 def test_other():
     ''' Test other Experiment methods '''
     sc.heading('Testing other Experiment methods...')
-    exp = fp.Experiment(location='test').run()
+    exp = fp.ExperimentVerbose(location='test').run()
 
     exp.to_json()
-    ok('to_json() succeeded')
+    ok('Experiment.to_json() succeeded')
+
+    exp.sim.story(1)
+    ok('SimVerbose.story() succeeded')
+
     return exp
 
 
@@ -115,7 +119,7 @@ if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
 
     with sc.timer():
-        exp1 = test_channels()
+        # exp1 = test_channels()
         exp2 = test_other()
-        exp3 = test_plot()
+        # exp3 = test_plot()
 

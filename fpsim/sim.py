@@ -1019,7 +1019,7 @@ class Sim(fpb.BaseSim):
     def finalize_interventions(self):
         ''' Make any final updates to interventions (e.g. to shrink) '''
         from . import interventions as fpi # To avoid circular import
-        for intervention in self['interventions']:
+        for intervention in sc.tolist(self['interventions']):
             if isinstance(intervention, fpi.Intervention):
                 intervention.finalize(self)
 
@@ -1027,7 +1027,7 @@ class Sim(fpb.BaseSim):
     def finalize_analyzers(self):
         ''' Make any final updates to analyzers (e.g. to shrink) '''
         from . import analyzers as fpa # To avoid circular import
-        for analyzer in self['analyzers']:
+        for analyzer in sc.tolist(self['analyzers']):
             if isinstance(analyzer, fpa.Analyzer):
                 analyzer.finalize(self)
 
