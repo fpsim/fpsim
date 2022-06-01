@@ -36,8 +36,24 @@ def test_options():
     return sc.dcp(fp.options)
 
 
+def test_to_df():
+    sc.heading('Testing other sim methods...')
+
+    sim = fp.Sim(location='test').run()
+    df = sim.to_df()
+    births = df.births.sum()
+    last = df.t.values[-1]
+    assert last == sim['end_year'], 'Last years do not match'
+    assert births > 0, 'Expected births'
+    ok(f'to_df() worked to capture {births} births and final year {last}')
+    return df
+
+
 # Run all tests
 if __name__ == '__main__':
+
     sc.options(backend=None) # Turn on interactive plots
+
     with sc.timer():
         opts = test_options()
+        df   = test_to_df()
