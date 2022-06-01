@@ -2,6 +2,7 @@
 Run tests on individual parameters.
 """
 
+import os
 import numpy as np
 import sciris as sc
 import fpsim as fp
@@ -10,6 +11,10 @@ import pytest
 
 do_plot = True
 sc.options(backend='agg') # Turn off interactive plots
+
+def ok(string):
+    ''' Print out a successful test nicely '''
+    return sc.printgreen(f'✓ {string}\n')
 
 
 def test_null(do_plot=do_plot):
@@ -34,6 +39,7 @@ def test_null(do_plot=do_plot):
     for key in ['births', 'deaths']:
         n = sim.results[key].sum()
         assert n == 0, f'Expecting {key} to be 0, not {n}'
+        ok(f'{key} was 0, as expected')
 
     if do_plot:
         sim.plot()
@@ -58,7 +64,7 @@ def test_method_timestep():
     t2 = T.tt(output=True)
 
     assert t2 < t1, f'Expecting runtime to be less with a larger method timestep, but {t2:0.3f} > {t1:0.3f}'
-    print(f'Larger method timestep reduced runtime from {t1:0.3f} s to {t2:0.3f} s')
+    ok(f'Larger method timestep reduced runtime from {t1:0.3f} s to {t2:0.3f} s')
 
     return [t1, t2]
 
@@ -87,7 +93,7 @@ def test_mcpr_growth():
 
     assert mcpr_last > decreasing, f'Negative MCPR growth did not reduce MCPR ({decreasing:0.3f} ≥ {mcpr_last:0.3f})'
     assert mcpr_last < increasing, f'Positive MCPR growth did not increase MCPR ({increasing:0.3f} ≤ {mcpr_last:0.3f})'
-    print(f'MCPR changed as expected: {decreasing:0.3f} < {mcpr_last:0.3f} < {increasing:0.3f}')
+    ok(f'MCPR changed as expected: {decreasing:0.3f} < {mcpr_last:0.3f} < {increasing:0.3f}')
 
     return [s1, s2]
 
@@ -112,7 +118,7 @@ def test_scale():
     actual = s2.results.total_births.sum()
     assert expected == actual, 'Total births should scale exactly with scale factor'
     assert np.array_equal(s1.results.mcpr, s2.results.mcpr), 'Scale factor should not change MCPR'
-    print(f'{actual} births = {scale}*{orig} as expected')
+    ok(f'{actual} births = {scale}*{orig} as expected')
 
     return [s1, s2]
 
@@ -130,6 +136,7 @@ def test_matrix_methods():
     s1 = fp.Sim(pars=p1)
     s1.run()
     assert s1.pars['methods']['map'][name] == n, 'Last entry does not have expected shape'
+    ok(f'Matrix had expected shape after addition ({n})')
 
     # Test remove method
     p2 = pars.copy()
@@ -137,6 +144,7 @@ def test_matrix_methods():
     s2 = fp.Sim(pars=p2)
     s2.run()
     assert len(s2.pars['methods']['map']) == n-1, 'Methods do not have expected shape'
+    ok(f'Methods have expected shape after removal ({n-1})')
 
     # Test reorder methods
     p3 = pars.copy()
@@ -160,7 +168,8 @@ def test_matrix_methods():
     p4_arr = sc.getnested(p4, nestkeys)
     new_rate = p4_arr[0, new_ind]
     assert new_rate == pars_arr[0, orig_ind], 'Copied method has different initiation rate'
-    print(f'New method initiation rate is {new_rate:0.4f} as expected')
+    ok(f'New method initiation rate is {new_rate:0.4f} as expected')
+
     if do_plot:
         pl.figure()
         pl.subplot(2,1,1)
@@ -181,24 +190,28 @@ def test_validation():
     # Extra value not allowed
     with pytest.raises(ValueError):
         fp.pars(not_a_par=4)
+    ok('Invalid parameter name was caught')
 
     # Equivalent implementation
     with pytest.raises(ValueError):
         p = sc.dcp(pars)
         p['not_a_par'] = 4
         p.validate()
+    ok('Invalid name was caught by validation')
 
     # Missing value not allowed
     with pytest.raises(ValueError):
         p = sc.dcp(pars)
         p.pop('exposure_factor')
         p.validate()
+    ok('Missing parameter was caught by validation')
 
     # Wrong matrix keys
     with pytest.raises(ValueError):
         p = sc.dcp(pars)
         p['methods']['raw']['annual'].pop('<18')
         p.validate()
+    ok('Missing matrix was caught by validation')
 
     # Wrong matrix shape
     with pytest.raises(ValueError):
@@ -206,6 +219,22 @@ def test_validation():
         matrix = p['methods']['raw']['annual']['<18']
         np.insert(matrix, (0,0), matrix[:,0])
         p.validate()
+    ok('Wrong matrix shape was caught by validation')
+
+    return pars
+
+
+
+def test_save_load():
+    sc.heading('Testing saving and loading...')
+    filename = 'tmp_pars.json'
+
+    pars = fp.pars()
+    pars.to_json(filename)
+    assert os.path.exists(filename), 'Did not write file to disk'
+    pars.from_json(filename)
+    os.remove(filename)
+    ok('pars.from_json() and pars.to_json() work')
 
     return pars
 
@@ -220,3 +249,4 @@ if __name__ == '__main__':
         scale   = test_scale()
         meths   = test_matrix_methods()
         pars    = test_validation()
+        p2      = test_save_load()
