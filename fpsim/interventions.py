@@ -282,7 +282,7 @@ class change_par(Intervention):
         return
 
 
-    def finalize(self):
+    def finalize(self, sim=None):
         # Check that all changes were applied
         n_counter = self.counter
         n_vals = len(self.vals)
