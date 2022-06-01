@@ -56,8 +56,8 @@ class Experiment(sc.prettyobj):
     def __init__(self, pars=None, flags=None, label=None, **kwargs):
         self.flags = sc.mergedicts(default_flags, flags, _copy=True) # Set flags for what gets run
         self.pars = pars if pars else fpp.pars(**kwargs)
-        self.model_to_calib = sc.objdict()
-        self.dhs_data = sc.objdict()
+        self.model = sc.objdict()
+        self.data = sc.objdict()
         self.method_keys = None
         self.initialized = False
         self.label = label
@@ -88,9 +88,9 @@ class Experiment(sc.prettyobj):
 
         json = self.load_data('basic_dhs')
 
-        self.dhs_data.update(json)
+        self.data.update(json)
 
-        self.dhs_data['pregnancy_parity'] = self.load_data('pregnancy_parity')
+        self.data['pregnancy_parity'] = self.load_data('pregnancy_parity')
 
         # Extract population size over time
         if self.pars:
@@ -99,17 +99,17 @@ class Experiment(sc.prettyobj):
             n = 1000 # Use default if not available
             print(f'Warning: parameters not defined, using default of n={n}')
         pop_size = self.load_data('popsize')
-        self.dhs_data['pop_years'] = pop_size.year.to_numpy()
-        self.dhs_data['pop_size']  = pop_size.popsize.to_numpy() / (pop_size.popsize[0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
+        self.data['pop_years'] = pop_size.year.to_numpy()
+        self.data['pop_size']  = pop_size.popsize.to_numpy() / (pop_size.popsize[0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
 
         # Extract population growth rate
-        data_growth_rate = self.pop_growth_rate(self.dhs_data['pop_years'], self.dhs_data['pop_size'])
-        self.dhs_data['pop_growth_rate'] = data_growth_rate
+        data_growth_rate = self.pop_growth_rate(self.data['pop_years'], self.data['pop_size'])
+        self.data['pop_growth_rate'] = data_growth_rate
 
         # Extract mcpr over time
         mcpr = self.load_data('mcpr')
-        self.dhs_data['mcpr_years'] = mcpr.iloc[:,0].to_numpy()
-        self.dhs_data['mcpr'] = mcpr.iloc[:,1].to_numpy()
+        self.data['mcpr_years'] = mcpr.iloc[:,0].to_numpy()
+        self.data['mcpr'] = mcpr.iloc[:,1].to_numpy()
 
         self.initialized = True
 
@@ -150,7 +150,7 @@ class Experiment(sc.prettyobj):
         # Store dataframe of agent's age, pregnancy status, and parity
         model_pregnancy_parity = self.sim.store_postpartum()
         model_pregnancy_parity = model_pregnancy_parity.drop(['PP0to5', 'PP6to11', 'PP12to23', 'NonPP'], axis=1)
-        self.model_to_calib['pregnancy_parity'] = model_pregnancy_parity
+        self.model['pregnancy_parity'] = model_pregnancy_parity
         self.method_keys = list(self.sim['methods']['map'].keys())
         return
 
@@ -169,11 +169,11 @@ class Experiment(sc.prettyobj):
 
     def model_pop_size(self):
 
-        self.model_to_calib['pop_size'] = self.model_results['pop_size']
-        self.model_to_calib['pop_years'] = self.model_results['tfr_years']
+        self.model['pop_size'] = self.model_results['pop_size']
+        self.model['pop_years'] = self.model_results['tfr_years']
 
-        model_growth_rate = self.pop_growth_rate(self.model_to_calib['pop_years'], self.model_to_calib['pop_size'])
-        self.model_to_calib['pop_growth_rate'] = model_growth_rate
+        model_growth_rate = self.pop_growth_rate(self.model['pop_years'], self.model['pop_size'])
+        self.model['pop_growth_rate'] = model_growth_rate
 
         return
 
@@ -183,14 +183,16 @@ class Experiment(sc.prettyobj):
         model = {'years': self.model_results['t'], 'mcpr': self.model_results['mcpr']}
         model_frame = pd.DataFrame(model)
 
-        data_years = self.dhs_data['mcpr_years'].tolist()
-
+        # Filter to matching years
+        data_years = self.data['mcpr_years'].tolist()
         filtered_model = model_frame.loc[model_frame.years.isin(data_years)]
-
         model_mcpr = filtered_model['mcpr'].to_numpy()
+        mcpr_years = filtered_model['years'].to_numpy()
 
-        self.model_to_calib['mcpr'] = model_mcpr*100 # Since data is in 100
-        self.model_to_calib['mcpr_years'] = self.dhs_data['mcpr_years']
+        self.model['mcpr'] = model_mcpr*100 # Since data is in 100
+        self.model['mcpr_years'] = mcpr_years
+
+        import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
 
         return
 
@@ -202,7 +204,7 @@ class Experiment(sc.prettyobj):
 
         maternal_deaths = np.sum(self.model_results['maternal_deaths'][-mpy * 3:])
         births_last_3_years = np.sum(self.model_results['births'][-mpy * 3:])
-        self.model_to_calib['maternal_mortality_ratio'] = (maternal_deaths / births_last_3_years) * 100000
+        self.model['maternal_mortality_ratio'] = (maternal_deaths / births_last_3_years) * 100000
 
         return
 
@@ -211,7 +213,7 @@ class Experiment(sc.prettyobj):
 
         infant_deaths = np.sum(self.model_results['infant_deaths'][-mpy:])
         births_last_year = np.sum(self.model_results['births'][-mpy:])
-        self.model_to_calib['infant_mortality_rate'] = (infant_deaths / births_last_year) * 1000
+        self.model['infant_mortality_rate'] = (infant_deaths / births_last_year) * 1000
 
         return
 
@@ -220,13 +222,13 @@ class Experiment(sc.prettyobj):
         total_deaths = np.sum(self.model_results['deaths'][-mpy:]) + \
                        np.sum(self.model_results['infant_deaths'][-mpy:]) + \
                        np.sum(self.model_results['maternal_deaths'][-mpy:])
-        self.model_to_calib['crude_death_rate'] = (total_deaths / self.model_results['pop_size'][-1]) * 1000
+        self.model['crude_death_rate'] = (total_deaths / self.model_results['pop_size'][-1]) * 1000
         return
 
 
     def model_crude_birth_rate(self):
         births_last_year = np.sum(self.model_results['births'][-mpy:])
-        self.model_to_calib['crude_birth_rate'] = (births_last_year / self.model_results['pop_size'][-1]) * 1000
+        self.model['crude_birth_rate'] = (births_last_year / self.model_results['pop_size'][-1]) * 1000
         return
 
 
@@ -234,11 +236,11 @@ class Experiment(sc.prettyobj):
 
         # Extract tfr over time in data - keep here to ignore dhs data if not using tfr for calibration
         tfr = self.load_data('tfr')  # From DHS
-        self.dhs_data['tfr_years'] = tfr.iloc[:, 0].to_numpy()
-        self.dhs_data['total_fertility_rate'] = tfr.iloc[:, 1].to_numpy()
+        self.data['tfr_years'] = tfr.iloc[:, 0].to_numpy()
+        self.data['total_fertility_rate'] = tfr.iloc[:, 1].to_numpy()
 
-        self.model_to_calib['tfr_years'] = self.model_results['tfr_years']
-        self.model_to_calib['total_fertility_rate'] = self.model_results['tfr_rates']
+        self.model['tfr_years'] = self.model_results['tfr_years']
+        self.model['total_fertility_rate'] = self.model_results['tfr_rates']
         return
 
 
@@ -246,19 +248,19 @@ class Experiment(sc.prettyobj):
 
         # Extract ASFR for different age bins
         asfr = self.load_data('asfr')  # From DHS
-        self.dhs_data['asfr_bins'] = list(asfr.iloc[:, 0])
-        self.dhs_data['asfr']      = asfr.iloc[:, 1].to_numpy()
+        self.data['asfr_bins'] = list(asfr.iloc[:, 0])
+        self.data['asfr']      = asfr.iloc[:, 1].to_numpy()
 
         # Model extraction
         age_bins = list(fpd.age_bin_map.keys())
-        self.model_to_calib['asfr_bins'] = age_bins
-        self.model_to_calib['asfr'] = []
+        self.model['asfr_bins'] = age_bins
+        self.model['asfr'] = []
         for ab in age_bins:
             val = self.model_results['asfr'][ab][ind] # Only use one index (default: last) CK: TODO: match year automatically
-            self.model_to_calib['asfr'].append(val)
+            self.model['asfr'].append(val)
 
         # Check
-        assert self.dhs_data['asfr_bins'] == self.model_to_calib['asfr_bins'], f'ASFR data age bins do not match sim: {sc.strjoin(age_bins)}'
+        assert self.data['asfr_bins'] == self.model['asfr_bins'], f'ASFR data age bins do not match sim: {sc.strjoin(age_bins)}'
 
         return
 
@@ -305,8 +307,8 @@ class Experiment(sc.prettyobj):
         for key in ['Data', 'Model']:
             sky_arr[key] /= sky_arr[key].sum() / 100
 
-        self.dhs_data['skyscrapers'] = sky_arr['Data']
-        self.model_to_calib['skyscrapers'] = sky_arr['Model']
+        self.data['skyscrapers'] = sky_arr['Data']
+        self.model['skyscrapers'] = sky_arr['Model']
         self.age_bins = age_bins
         self.parity_bins = parity_bins
 
@@ -340,9 +342,9 @@ class Experiment(sc.prettyobj):
                                           pl.percentile(first, 75)])
 
         # Save to dictionary
-        self.dhs_data['spacing_bins'] = np.array(data_spacing_counts.values())
-        self.dhs_data['spacing_stats'] = data_spacing_stats
-        self.dhs_data['age_first_stats'] = data_age_first_stats
+        self.data['spacing_bins'] = np.array(data_spacing_counts.values())
+        self.data['spacing_stats'] = data_spacing_stats
+        self.data['age_first_stats'] = data_age_first_stats
 
         # From model
         model_age_first = []
@@ -377,9 +379,9 @@ class Experiment(sc.prettyobj):
             model_age_first_stats = np.zeros(data_age_first_stats.shape)
 
         # Save arrays to dictionary
-        self.model_to_calib['spacing_bins'] = np.array(model_spacing_counts.values())
-        self.model_to_calib['spacing_stats'] = model_spacing_stats
-        self.model_to_calib['age_first_stats'] = model_age_first_stats
+        self.model['spacing_bins'] = np.array(model_spacing_counts.values())
+        self.model['spacing_stats'] = model_spacing_stats
+        self.model['age_first_stats'] = model_age_first_stats
 
         return
 
@@ -436,8 +438,8 @@ class Experiment(sc.prettyobj):
             else:
                 model_labels[d] = ''
 
-        self.dhs_data['method_counts'] = np.array(data_method_counts.values())
-        self.model_to_calib['method_counts'] = np.array(model_method_counts.values())
+        self.data['method_counts'] = np.array(data_method_counts.values())
+        self.model['method_counts'] = np.array(model_method_counts.values())
 
         return
 
@@ -446,21 +448,21 @@ class Experiment(sc.prettyobj):
         index = [0, 1, 2, 3, 7] #indices of count, min, and max to drop from descriptive stats
         # Keep mean [1], 25% [4], 50%[5], 75% [6]
 
-        data = self.dhs_data['pregnancy_parity'] # Copy DataFrame for mainupation
+        data = self.data['pregnancy_parity'] # Copy DataFrame for mainupation
         preg = data[data['Pregnant'] == 1]
         stat = preg['Age'].describe()
         data_stats_all = stat.to_numpy()
         data_stats = np.delete(data_stats_all, index)
 
-        self.dhs_data['age_pregnant_stats'] = data_stats  # Array of mean, std, 25%, 50%, 75% of ages of agents currently pregnant
+        self.data['age_pregnant_stats'] = data_stats  # Array of mean, std, 25%, 50%, 75% of ages of agents currently pregnant
 
-        model = self.model_to_calib['pregnancy_parity']  # Copy DataFrame for manipulation
+        model = self.model['pregnancy_parity']  # Copy DataFrame for manipulation
         pregnant = model[model['Pregnant'] == 1]
         stats = pregnant['Age'].describe()
         model_stats_all = stats.to_numpy()
         model_stats = np.delete(model_stats_all, index)
 
-        self.model_to_calib['age_pregnant_stats'] = model_stats
+        self.model['age_pregnant_stats'] = model_stats
 
         parity_data = data.groupby('Parity')['Age'].describe()
         parity_data = parity_data.head(11) # Include only parities 0-10 to exclude outliers
@@ -468,7 +470,7 @@ class Experiment(sc.prettyobj):
         parity_data.fillna(0)
         parity_data_stats = parity_data.to_numpy()
 
-        self.dhs_data['age_parity_stats'] = parity_data_stats
+        self.data['age_parity_stats'] = parity_data_stats
 
         parity_model = model.groupby('Parity')['Age'].describe()
         parity_model = parity_model.head(11)
@@ -476,13 +478,13 @@ class Experiment(sc.prettyobj):
         parity_model.fillna(0)
         parity_model_stats = parity_model.to_numpy()
 
-        self.model_to_calib['age_parity_stats'] = parity_model_stats
+        self.model['age_parity_stats'] = parity_model_stats
 
 
     def compute_fit(self, *args, **kwargs):
         ''' Compute how good the fit is '''
-        data = sc.dcp(self.dhs_data)
-        sim = sc.dcp(self.model_to_calib)
+        data = sc.dcp(self.data)
+        sim = sc.dcp(self.model)
         for k in data.keys():
             data[k] = sc.promotetoarray(data[k])
             data[k] = data[k].flatten()
@@ -505,8 +507,8 @@ class Experiment(sc.prettyobj):
             del self.people
 
         # Remove raw dataframes of pregnancy / parity data from dictionary
-        del self.dhs_data['pregnancy_parity']
-        del self.model_to_calib['pregnancy_parity']
+        del self.data['pregnancy_parity']
+        del self.model['pregnancy_parity']
 
         # Compute comparison
         self.df = self.compare()
@@ -528,15 +530,15 @@ class Experiment(sc.prettyobj):
     def compare(self):
         ''' Create and print a comparison between model and data '''
         # Check that keys match
-        data_keys = self.dhs_data.keys()
-        model_keys = self.model_to_calib.keys()
+        data_keys = self.data.keys()
+        model_keys = self.model.keys()
         assert set(data_keys) == set(model_keys), 'Data and model keys do not match'
 
         # Compare the two
         comparison = []
         for key in data_keys:
-            dv = self.dhs_data[key] # dv = "Data value"
-            mv = self.model_to_calib[key] # mv = "Model value"
+            dv = self.data[key] # dv = "Data value"
+            mv = self.model[key] # mv = "Model value"
             cmp = sc.objdict(key=key,
                              d_type=type(dv),
                              m_type=type(mv),
@@ -567,8 +569,8 @@ class Experiment(sc.prettyobj):
         summary.model = sc.objdict()
         summary.data = sc.objdict()
 
-        data = self.dhs_data
-        model = self.model_to_calib
+        data = self.data
+        model = self.model
         keys = model.keys()
 
         # Compare the two
@@ -623,8 +625,8 @@ class Experiment(sc.prettyobj):
 
     def plot(self, do_show=None, do_save=None, filename='fp_experiment.png', axis_args=None, do_maximize=True):
         ''' Plot the model against the data '''
-        data = self.dhs_data
-        sim = self.model_to_calib
+        data = self.data
+        sim = self.model
 
         # Set up keys structure and remove non-plotted keys
         keys = ['rates'] + list(data.keys())
@@ -686,7 +688,7 @@ class Experiment(sc.prettyobj):
             # MCPR
             ax = axs[3,0]
             ax.plot(data.mcpr_years, data.mcpr, 'o', label='Data')
-            ax.plot(sim.mcpr_years,  sim.mcpr,  '-', label='Sim') # TODO: remove scale factor
+            ax.plot(sim.mcpr_years,  sim.mcpr,  '-', label='Sim')
             ax.set_title('MCPR')
             ax.set_xlabel('Year')
             ax.set_ylabel('Modern contraceptive prevalence rate')
