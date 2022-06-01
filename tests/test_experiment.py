@@ -119,7 +119,7 @@ if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
 
     with sc.timer():
-        # exp1 = test_channels()
+        exp1 = test_channels()
         exp2 = test_other()
-        # exp3 = test_plot()
+        exp3 = test_plot()
 
