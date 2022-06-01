@@ -192,8 +192,6 @@ class Experiment(sc.prettyobj):
         self.model['mcpr'] = model_mcpr*100 # Since data is in 100
         self.model['mcpr_years'] = mcpr_years
 
-        import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
-
         return
 
 
