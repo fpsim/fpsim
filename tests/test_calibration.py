@@ -9,6 +9,12 @@ import fpsim as fp
 do_plot = 1
 sc.options(backend='agg') # Turn off interactive plots
 
+
+def ok(string):
+    ''' Print out a successful test nicely '''
+    return sc.printgreen(f'✓ {string}\n')
+
+
 def make_calib():
     '''
     Define a default simulation for testing the baseline.
@@ -32,7 +38,7 @@ def test_calibration(n_trials=3):
     before,after = calib.summarize()
 
     assert after <= before, 'Expect calibration to not make fit worse'
-    print(f'Calibration improved fit ({after} < {before})')
+    ok(f'Calibration improved fit ({after:n} < {before:n})')
 
     if do_plot:
         calib.after.plot()

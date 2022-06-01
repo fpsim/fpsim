@@ -1120,7 +1120,7 @@ def compute_gof(actual, predicted, normalize=True, use_frac=False, use_squared=F
     predicted = np.array(sc.dcp(predicted), dtype=float)
 
     # Custom estimator is supplied: use that
-    if skestimator is not None:
+    if skestimator is not None: # pragma: nocover
         try:
             import sklearn.metrics as sm
             sklearn_gof = getattr(sm, skestimator) # Shortcut to e.g. sklearn.metrics.max_error
@@ -1216,7 +1216,7 @@ def diff_summaries(sim1, sim2, skip_key_diffs=False, output=False, die=False):
             if sim1_val != sim2_val and not both_nan:
                 mismatches[key] = {'sim1': sim1_val, 'sim2': sim2_val}
 
-    if len(mismatches):
+    if len(mismatches): # pragma: nocover
         valmatchmsg = '\nThe following values differ between the two simulations:\n'
         df = pd.DataFrame.from_dict(mismatches).transpose()
         diff   = []

@@ -1,0 +1,43 @@
+"""
+Test other things not covered in other tests.
+"""
+
+import os
+import sciris as sc
+import fpsim as fp
+
+
+def ok(string):
+    ''' Print out a successful test nicely '''
+    return sc.printgreen(f'✓ {string}\n')
+
+
+def test_options():
+    sc.heading('Testing options...')
+
+    d = fp.options.to_dict()
+    assert isinstance(d, dict), 'Expected a dict'
+    ok('Options to_dict() works')
+
+    with fp.options.context(jupyter=True):
+        assert fp.options.returnfig == False, 'Jupyter should disable returnfig'
+        ok('Options as context works (note: may raise warning)')
+
+    fp.options.disp()
+    ok('Options disp() works')
+
+    filename = 'tmp_settings.json'
+    fp.options.save(filename)
+    assert os.path.exists(filename), 'Did not write file to disk'
+    fp.options.load(filename)
+    os.remove(filename)
+    ok('Options load() and save() work')
+
+    return sc.dcp(fp.options)
+
+
+# Run all tests
+if __name__ == '__main__':
+    sc.options(backend=None) # Turn on interactive plots
+    with sc.timer():
+        opts = test_options()

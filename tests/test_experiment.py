@@ -13,6 +13,11 @@ do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
 
 
+def ok(string):
+    ''' Print out a successful test nicely '''
+    return sc.printgreen(f'✓ {string}\n')
+
+
 def test_channels():
     ''' Test Experiment channels '''
     sc.heading('Testing Experiment channels...')
@@ -31,7 +36,7 @@ def test_channels():
                     maxval = len(events[timestep][channel])
 
             assert maxval > 0, f"Detected empty channel: {channel}"
-    print('✓ No empty channels')
+    ok('No empty channels')
 
     # Checks that births (formatted as timestep: [indices]) is consistent with
     # the births aggregate value from step results (formatted as timestep: total).
@@ -41,7 +46,7 @@ def test_channels():
         births_step += events[timestep]["Step_Results"]["births"]
         births += len(events[timestep]['Births'])
     assert births == births_step, "Mismatch between step results births and births channel"
-    print(f'✓ No mismatch for births ({births} == {births_step})')
+    ok(f'No mismatch for births ({births} == {births_step})')
 
     # Checks that conceptions is approximately births, and that conceptions is greater
     # than the number of births.
@@ -64,7 +69,7 @@ def test_channels():
         conceptions += len(events[timestep]['Conceptions'])
         miscarriages += len(events[timestep]['Miscarriages'])
         assert conceptions - births > miscarriages, "The number of miscarriages is greater than the differences between conceptions and births"
-    print(f'✓ No mismatch for conceptions - births > miscarriages ({conceptions} - {births} > {miscarriages})')
+    ok(f'No mismatch for conceptions - births > miscarriages ({conceptions} - {births} > {miscarriages})')
 
 
     @pytest.mark.skip("Need to verify this works over multiple runs")
@@ -82,6 +87,16 @@ def test_channels():
                 sexually_active.update(self.events[timestep]['Sexual_Debut'])
 
 
+def test_other():
+    ''' Test other Experiment methods '''
+    sc.heading('Testing other Experiment methods...')
+    exp = fp.Experiment(location='test').run()
+
+    exp.to_json()
+    ok('to_json() succeeded')
+    return exp
+
+
 def test_plot():
     ''' Test Experiment plotting '''
     sc.heading('Testing Experiment plotting...')
@@ -90,19 +105,9 @@ def test_plot():
         exp = fp.Experiment(pars)
         exp.run()
         exp.plot()
-        print('✓ Plotting succeeded')
+        ok('Plotting succeeded')
     return exp
 
-
-def test_other():
-    ''' Test other Experiment methods '''
-    sc.heading('Testing other Experiment methods...')
-    exp = fp.Experiment(location='test').run()
-
-    # Test to_json
-    exp.to_json()
-    print('✓ to_json() succeeded')
-    return exp
 
 
 if __name__ == '__main__':
@@ -110,6 +115,7 @@ if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
 
     with sc.timer():
-        # exp1 = test_channels()
-        # exp2 = test_plot()
-        exp3 = test_other()
+        exp1 = test_channels()
+        exp2 = test_other()
+        exp3 = test_plot()
+

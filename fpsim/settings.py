@@ -253,15 +253,6 @@ class Options(sc.objdict):
         # Reset options
         for key,value in kwargs.items():
 
-            # Handle deprecations
-            rename = {'font_size': 'fontsize', 'font_family':'font'}
-            if key in rename.keys():
-                from . import misc as cvm # Here to avoid circular import
-                oldkey = key
-                key = rename[oldkey]
-                warnmsg = f'Key "{oldkey}" is deprecated, please use "{key}" instead'
-                cvm.warn(warnmsg, FutureWarning)
-
             if key not in self:
                 keylist = self.orig_options.keys()
                 keys = '\n'.join(keylist)
