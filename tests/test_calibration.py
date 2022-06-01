@@ -6,7 +6,8 @@ import sciris as sc
 import fpsim as fp
 
 
-do_plot = 0
+do_plot = 1
+sc.options(backend='agg') # Turn off interactive plots
 
 def make_calib():
     '''
@@ -17,7 +18,7 @@ def make_calib():
     return calib
 
 
-def test_calibration(n_trials=3, do_plot=do_plot):
+def test_calibration(n_trials=3):
     ''' Compare the current default sim against the saved baseline '''
     sc.heading('Testing calibration...')
 
@@ -31,11 +32,10 @@ def test_calibration(n_trials=3, do_plot=do_plot):
     before,after = calib.summarize()
 
     assert after <= before, 'Expect calibration to not make fit worse'
+    print(f'Calibration improved fit ({after} < {before})')
 
     if do_plot:
-        calib.before.plot()
         calib.after.plot()
-        calib.before.fit.plot()
         calib.after.fit.plot()
 
     return calib
@@ -43,11 +43,6 @@ def test_calibration(n_trials=3, do_plot=do_plot):
 
 if __name__ == '__main__':
 
-    # Start timing and optionally enable interactive plotting
-    T = sc.tic()
-
-    calib = test_calibration(do_plot=do_plot)
-
-    print('\n'*2)
-    sc.toc(T)
-    print('Done.')
+    sc.options(backend=None) # Turn on interactive plots
+    with sc.timer():
+        calib = test_calibration()

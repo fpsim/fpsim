@@ -522,7 +522,7 @@ class Experiment(sc.prettyobj):
         ''' Run the model and post-process the results '''
         self.run_model(pars=pars)
         self.post_process_results(keep_people=keep_people, compute_fit=compute_fit, **kwargs)
-        return
+        return self
 
 
     def compare(self):
@@ -888,7 +888,7 @@ class Fit(sc.prettyobj):
 
         data_cols = set(self.data.keys())
 
-        if self.keys is None:
+        if self.keys is None: # pragma: nocover
             sim_keys = self.sim_results.keys()
             intersection = list(set(sim_keys).intersection(data_cols)) # Find keys in both the sim and data
             self.keys = [key for key in sim_keys if key in intersection and key.startswith('cum_')] # Only keep cumulative keys
@@ -896,7 +896,7 @@ class Fit(sc.prettyobj):
                 errormsg = f'No matches found between simulation result keys ({sim_keys}) and data columns ({data_cols})'
                 raise sc.KeyNotFoundError(errormsg)
         mismatches = [key for key in self.keys if key not in data_cols]
-        if len(mismatches):
+        if len(mismatches): # pragma: nocover
             mismatchstr = ', '.join(mismatches)
             errormsg = f'The following requested key(s) were not found in the data: {mismatchstr}'
             raise sc.KeyNotFoundError(errormsg)
@@ -931,7 +931,7 @@ class Fit(sc.prettyobj):
 
         # Process custom inputs
         self.custom_keys = list(self.custom.keys())
-        for key in self.custom.keys():
+        for key in self.custom.keys(): # pragma: nocover
 
             # Initialize and do error checking
             custom = self.custom[key]

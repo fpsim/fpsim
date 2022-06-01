@@ -94,10 +94,22 @@ def test_plot():
     return exp
 
 
+def test_other():
+    ''' Test other Experiment methods '''
+    sc.heading('Testing other Experiment methods...')
+    exp = fp.Experiment(location='test').run()
+
+    # Test to_json
+    exp.to_json()
+    print('✓ to_json() succeeded')
+    return exp
+
+
 if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
 
     with sc.timer():
-        exp1 = test_channels()
-        exp2 = test_plot()
+        # exp1 = test_channels()
+        # exp2 = test_plot()
+        exp3 = test_other()
