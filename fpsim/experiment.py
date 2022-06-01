@@ -370,7 +370,7 @@ class Experiment(sc.prettyobj):
             model_age_first_stats = np.array([np.percentile(model_age_first, 25),
                                             np.percentile(model_age_first, 50),
                                             np.percentile(model_age_first, 75)])
-        except Exception as E:
+        except Exception as E: # pragma: nocover
             print(f'Could not calculate birth spacing, returning zeros: {E}')
             model_spacing_counts = {k:0 for k in spacing_bins.keys()}
             model_spacing_stats = np.zeros(data_spacing_stats.shape)
