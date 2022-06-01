@@ -3,16 +3,18 @@ Test other things not covered in other tests.
 """
 
 import os
+import numpy as np
 import sciris as sc
 import fpsim as fp
+import pytest
 
 
 do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
 
-def ok(string):
+def ok(string, newline=True):
     ''' Print out a successful test nicely '''
-    return sc.printgreen(f'✓ {string}\n')
+    return sc.printgreen(f'✓ {string}' + '\n'*newline)
 
 
 def test_options():
@@ -67,6 +69,81 @@ def test_plot_people():
     return sim.people
 
 
+def test_samples(do_plot=False, verbose=True):
+    sc.heading('Samples distribution')
+
+    n = 200_000
+
+    # Warning, must match utils.py!
+    choices = [
+        'uniform',
+        'normal',
+        'lognormal',
+        'normal_pos',
+        'normal_int',
+        'lognormal_int',
+    ]
+
+    # Run the samples
+    nchoices = len(choices)
+    nsqr, _ = sc.get_rows_cols(nchoices)
+    results = sc.objdict()
+    mean = 11
+    std = 7
+    low = 3
+    high = 9
+    normal_dists = ['normal', 'normal_pos', 'normal_int', 'lognormal', 'lognormal_int']
+    for c,choice in enumerate(choices):
+        kw = {}
+        if choice in normal_dists:
+            par1 = mean
+            par2 = std
+        elif choice == 'neg_binomial':
+            par1 = mean
+            par2 = 1.2
+            kw['step'] = 0.1
+        elif choice == 'poisson':
+            par1 = mean
+            par2 = 0
+        elif choice == 'uniform':
+            par1 = low
+            par2 = high
+        else:
+            errormsg = f'Choice "{choice}" not implemented'
+            raise NotImplementedError(errormsg)
+
+        # Compute
+        results[choice] = fp.sample(dist=choice, par1=par1, par2=par2, size=n, **kw)
+
+    with pytest.raises(NotImplementedError):
+        fp.sample(dist='not_found')
+
+    # Do statistical tests
+    tol = 1/np.sqrt(n/50/len(choices)) # Define acceptable tolerance -- broad to avoid false positives
+
+    def isclose(choice, tol=tol, **kwargs):
+        key = list(kwargs.keys())[0]
+        ref = list(kwargs.values())[0]
+        npfunc = getattr(np, key)
+        value = npfunc(results[choice])
+        msg = f'Test for {choice:14s}: expecting {key:4s} = {ref:5.2f} ± {tol*ref:4.2f} and got {value:5.2f}'
+        if verbose:
+            ok(msg, newline=False)
+        assert np.isclose(value, ref, rtol=tol), msg
+        return True
+
+    # Normal
+    for choice in normal_dists:
+        isclose(choice, mean=mean)
+        if all([k not in choice for k in ['_pos', '_int']]): # These change the variance
+            isclose(choice, std=std)
+
+    # Uniform
+    isclose('uniform', mean=(low+high)/2)
+
+    return results
+
+
 # Run all tests
 if __name__ == '__main__':
 
@@ -76,3 +153,4 @@ if __name__ == '__main__':
         opts = test_options()
         df   = test_to_df()
         ppl  = test_plot_people()
+        res  = test_samples()
