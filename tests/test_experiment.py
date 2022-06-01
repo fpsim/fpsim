@@ -87,8 +87,8 @@ def test_plot():
     sc.heading('Testing Experiment plotting...')
     if do_plot:
         pars = fp.pars('test')
-        exp = fp.ExperimentVerbose(pars)
-        exp.run_model()
+        exp = fp.Experiment(pars)
+        exp.run()
         exp.plot()
         print('✓ Plotting succeeded')
     return exp

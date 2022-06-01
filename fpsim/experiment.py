@@ -639,7 +639,7 @@ class Experiment(sc.prettyobj):
         nkeys = len(keys)
         expected = 13
         if nkeys != expected:
-            errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys}'
+            errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys} -- did you use run_model() instead of run()?'
             raise ValueError(errormsg)
 
         with fpo.with_style():
