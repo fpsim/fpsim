@@ -489,8 +489,10 @@ class Scenarios(sc.prettyobj):
             return output
 
         def final_mcpr(sim):
+            year = sim.results['tfr_years']
             mcpr = sim.results['mcpr']
-            return mcpr[end]         
+            ind = sc.findinds(year == end)
+            return mcpr[ind]         
 
         # Split the sims up by scenario
         results = sc.objdict()
