@@ -1407,7 +1407,6 @@ class Sim(fpb.BaseSim):
         methods_map = self.pars['methods']['map']
         inv_methods_map = {value: key for key, value in methods_map.items()}
         df['Method'] = df['Method'].map(inv_methods_map)
-        df.sort_values(by='Proportion', inplace=True)
 
         return df
 
@@ -1429,10 +1428,12 @@ class Sim(fpb.BaseSim):
         else:
             df = data
         df['Percentage'] = df['Proportion']*100
-
+        
         # Plotting and saving
         fig = pl.figure(**sc.mergedicts(fig_args)) # Since Seaborn doesn't open a new figure
-        sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', order=np.unique(df['Method']))
+
+        palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Method'])), ashex=True))
+        sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', order=np.sort(np.unique(df['Method'])), palette=palette)
         pl.title('Contraceptive method usage')
 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
@@ -1750,9 +1751,6 @@ class MultiSim(sc.prettyobj):
             sim_df = sim.compute_method_table()
             df = pd.concat([df, sim_df])
 
-        # Re-sort
-        df.sort_values(by=['Proportion'], inplace=True)
-
         # Check that sim and seed combinations don't have matching entries
         sim_seed_combos = list(zip(df['Sim'], df['Seed'], df['Method'])) # need to set to list first since it's an iterator
         assert len(sim_seed_combos) == len(set(sim_seed_combos)), "Multiple entries with same label, seed, and method"
@@ -1760,7 +1758,6 @@ class MultiSim(sc.prettyobj):
         # Plot
         fig = self.base_sim.plot_method_mix(do_show=do_show, do_save=do_save, filename=filename, data=df)
         return fig
-
 
     def plot_age_first_birth(self, do_show=False, do_save=True, output_file='age_first_birth_multi.png'):
         length = sum([len([num for num in sim.people.first_birth_age if num is not None]) for sim in self.sims])
