@@ -449,50 +449,50 @@ class Scenarios(sc.prettyobj):
         def count_births(sim):
             year = sim.results['t']
             births = sim.results['births']
-            inds = sc.findinds((year >= start), year < end)
+            inds = sc.findinds((year >= start), year <= end)
             output = births[inds].sum()
             return output
 
         def method_failure(sim):
             year = sim.results['tfr_years']
             meth_fail = sim.results['method_failures_over_year']
-            inds = sc.findinds((year >= start), year < end)
+            inds = sc.findinds((year >= start), year <= end)
             output = meth_fail[inds].sum()
             return output
 
         def count_pop(sim):
             year = sim.results['tfr_years']
             popsize = sim.results['pop_size']
-            inds = sc.findinds((year >= start), year < end)
+            inds = sc.findinds((year >= start), year <= end)
             output = popsize[inds].sum()
             return output
 
         def mean_tfr(sim):
             year = sim.results['tfr_years']
             rates = sim.results['tfr_rates']
-            inds = sc.findinds((year >= start), year < end)
+            inds = sc.findinds((year >= start), year <= end)
             output = rates[inds].mean()
             return output
 
         def count_infant_deaths(sim):
             year = sim.results['tfr_years']
             infant_deaths = sim.results['infant_deaths_over_year']
-            inds = sc.findinds((year >= start), year < end)
+            inds = sc.findinds((year >= start), year <= end)
             output = infant_deaths[inds].sum()
             return output
 
         def count_maternal_deaths(sim):
             year = sim.results['tfr_years']
             maternal_deaths = sim.results['maternal_deaths_over_year']
-            inds = sc.findinds((year >= start), year < end)
+            inds = sc.findinds((year >= start), year <= end)
             output = maternal_deaths[inds].sum()
             return output
 
-        def mcpr(sim):
+        def mean_mcpr(sim):
             year = sim.results['tfr_years']
             mcpr = sim.results['mcpr']
-            inds = sc.findinds((year >= start), year < end)
-            output = mcpr[inds].sum()
+            inds = sc.findinds((year >= start), year <= end)
+            output = mcpr[inds].mean()
             return output       
 
         # Split the sims up by scenario
@@ -513,7 +513,7 @@ class Scenarios(sc.prettyobj):
             for sim in sims:
                 n_infant_deaths = count_infant_deaths(sim)
                 n_maternal_deaths = count_maternal_deaths(sim)
-                n_mcpr = mcpr(sim)
+                mcpr = mean_mcpr(sim)
                 n_births = count_births(sim)
                 n_fails  = method_failure(sim)
                 n_pop = count_pop(sim)
@@ -525,7 +525,7 @@ class Scenarios(sc.prettyobj):
                 raw['tfr']      += [n_tfr]    # Append mean tfr rates
                 raw['infant_deaths'] += [n_infant_deaths]
                 raw['maternal_deaths'] += [n_maternal_deaths]
-                raw['mcpr'] += [n_mcpr]
+                raw['mcpr'] += [mcpr]
 
         # Calculate basic stats
         results.stats = sc.objdict()
