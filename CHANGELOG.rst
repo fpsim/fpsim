@@ -8,6 +8,9 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.14.2 (2022-06-06)
+--------------------------
+- Adding 3 new columns to the results dataframe in Scenarios
 
 Version 0.14.1 (2022-05-27)
 --------------------------
