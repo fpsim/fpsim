@@ -525,7 +525,7 @@ class Scenarios(sc.prettyobj):
                 raw['tfr']      += [n_tfr]    # Append mean tfr rates
                 raw['infant_deaths'] += [n_infant_deaths]
                 raw['maternal_deaths'] += [n_maternal_deaths]
-                raw['mcpr'] += [n_mcpr]
+                raw['mcpr'] += [mcpr]
 
         # Calculate basic stats
         results.stats = sc.objdict()
