@@ -1387,7 +1387,13 @@ class Sim(fpb.BaseSim):
         """ Computes method mix proportions from a sim object """
         method_table = sc.ddict(list)
         people = self.people
-        unique, counts = np.unique(people.method, return_counts=True)
+        final_year = self.results['t'][-1:-12]
+        min_age = 15
+        max_age = self['age_limit_fecundity']
+        
+        for i in range(len(people)):
+            if people.alive[i] and people.sex[i] == 0 and min_age <= people.age[i] < max_age:
+                unique, counts = np.unique(people.method, return_counts=True)
         count_dict = dict(zip(unique, counts))
         assert len(count_dict.keys()) > 1, 'There are no methods other than None in this Sim'
 
@@ -1395,6 +1401,7 @@ class Sim(fpb.BaseSim):
         seed = self.pars['seed']
         for method in count_dict:
             if method != fpd.method_map['None']:
+                method_table['Year'].append(final_year)
                 method_table['Proportion'].append(count_dict[method] / len(people.method))
                 method_table['Seed'].append(seed)
                 method_table['Method'].append(method)
@@ -1435,7 +1442,7 @@ class Sim(fpb.BaseSim):
 
         with fpo.with_style(style):
             palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Sim'])), ashex=True))
-            sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', order=np.sort(np.unique(df['Method'])), palette=palette)
+            sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', palette=palette)
             pl.title('Method mix')
 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
