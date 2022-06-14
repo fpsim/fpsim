@@ -19,7 +19,7 @@ def check_not_none(obj, *args):
     ''' Check that all needed inputs are supplied '''
     for key in args:
         if obj[key] is None:
-            errormsg = f'Entry "{key}" is not allowed to be None for scenario spec "{obj.which}"'
+            errormsg = f'Entry "{key}" is not allowed to be None for the following scenario spec:\n{obj}'
             raise ValueError(errormsg)
     return
 

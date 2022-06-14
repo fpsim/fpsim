@@ -139,8 +139,10 @@ class snapshot(Analyzer):
         Apply snapshot at each timestep listed in timesteps and
         save result at snapshot[str(timestep)]
         """
-        if sim.i in self.timesteps:
-            self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
+        for t in self.timesteps:
+            if np.isclose(sim.i, t):
+                self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
+        return
 
 
 class timeseries_recorder(Analyzer):
@@ -164,7 +166,7 @@ class timeseries_recorder(Analyzer):
         self.i = []
         self.t = []
         self.y = []
-        self.data = sc.objdict(defaultdict=list)
+        self.data = sc.objdict()
         return
 
     def initialize(self, sim):
@@ -174,6 +176,8 @@ class timeseries_recorder(Analyzer):
         super().initialize()
         self.keys = sim.people.keys()
         self.keys.remove('dobs')
+        for key in self.keys:
+            self.data[key] = []
         return
 
 
@@ -401,56 +405,71 @@ class SimVerbose(fps.Sim):
 
                     state_frame.to_csv(f"sim_output/{state}_state.csv")
 
-    def story(self, index):
+    def story(self, index, output=False, debug=False):
         """
         Prints a story of all major events in an individual's life based on calculated SimVerbose channels,
         base Sim channels, and statistics calculated within the function such as year of birth of individual.
 
-        Inputs:
-            index::int:
-                index of the individual, must be less than population
+        Args:
+            index (int): index of the individual, must be less than population
+            output (bool): return as output string rather than print
+            debug (bool): print additional information
+
         Outputs:
             printed display of each major event in the individual's life
         """
-        print(self.events.keys())
+        string = ''
 
-        def format_timestep(timestep):
-            year = int(timestep)
-            print(timestep)
-            month_index = round(((timestep) - year) * 12)
-            month = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'][month_index]
-            return f"{month}, {year}"
+        if debug:
+            print(self.events.keys())
+
+        def to_date(t):
+            year = int(t)
+            if debug:
+                print(t)
+            mo = round(((t) - year) * 12)
+            month = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'][mo]
+            return f'{year}-{month}'
 
         if len(self.events) == 0:
-            print("Story function can only be used after sim is run. Try Experiment.run_model() first")
-            return
+            errormsg = 'Story function can only be used after sim is run. Try Experiment.run_model() first'
+            raise RuntimeError(errormsg)
+
         ages = self.people['age'] # Progresses even if dead
         last_year = max(self.total_results.keys())
         year_born = last_year - ages[index]
-        print(last_year)
-        print(year_born)
-        print(ages[index])
-        print(f"This is the story of individual {index} who was born in {format_timestep(year_born)}")
+        if debug:
+            print(last_year)
+            print(year_born)
+            print(ages[index])
+        string += f'This is the story of Person {index} who was born {to_date(year_born)}:\n'
 
-        event_response_dict = {"Births": "gives birth", "Conceptions": "conceives", "Miscarriages": "has a miscarriage", "Sexual_Debut": "has her sexual debut", "Deaths": "dies"}
-        # result_response_dict = {"breastfeed_dur": "begins breastfeeding", "begins lactating": "is lactating", "lam": "is on LAM", "postpartum":
-        #                          "is postpartum", "pregnant": "is pregnant", "sexually_active": "is sexually active", "parity": "", "method"}
-        # Want to display events, start of breastfeeding, end of breastfeeding, start of lactating, end of lactating, start of LAM, end of LAM, start of pregnancy,
-        # When pregnant display the cardinality of the birth, end of sexual activity.
+        event_response_dict = {
+            "Births": "gives birth",
+            "Conceptions": "conceives",
+            "Miscarriages": "has a miscarriage",
+            "Sexual_Debut": "has her sexual debut",
+            "Deaths": "dies"
+        }
         method_list = list(self['methods']['map'].keys())
         last_method = method_list[self.total_results[min(self.total_results.keys())]['method'][index]]
-        for timestep in self.events:
-            if timestep >= year_born:
+        for t in self.events:
+            if t >= year_born:
                 for new_channel in event_response_dict:
-                    if index in self.events[timestep][new_channel]:
+                    if index in self.events[t][new_channel]:
                         if new_channel == "Births":
-                            print(f"{format_timestep(timestep)} individual {index} gives birth to child number {self.total_results[timestep]['parity'][index]}")
+                            string += f"{to_date(t)}: Person {index} gives birth to child number {self.total_results[t]['parity'][index]}\n"
                         else:
-                            print(f"{format_timestep(timestep)} individual {index} {event_response_dict[new_channel]}")
-            new_method = method_list[self.total_results[timestep]['method'][index]]
+                            string += f"{to_date(t)}: Person {index} {event_response_dict[new_channel]}\n"
+            new_method = method_list[self.total_results[t]['method'][index]]
             if new_method != last_method:
-                print(f"{format_timestep(timestep)} individual {index} switched from {last_method} to {new_method}")
+                string += f"{to_date(t)}: Person {index} switched from {last_method} to {new_method}\n"
             last_method = new_method
+
+        if not output:
+            print(string)
+        else:
+            return string
 
 
 

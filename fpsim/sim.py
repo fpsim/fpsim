@@ -1016,6 +1016,22 @@ class Sim(fpb.BaseSim):
         return
 
 
+    def finalize_interventions(self):
+        ''' Make any final updates to interventions (e.g. to shrink) '''
+        from . import interventions as fpi # To avoid circular import
+        for intervention in sc.tolist(self['interventions']):
+            if isinstance(intervention, fpi.Intervention):
+                intervention.finalize(self)
+
+
+    def finalize_analyzers(self):
+        ''' Make any final updates to analyzers (e.g. to shrink) '''
+        from . import analyzers as fpa # To avoid circular import
+        for analyzer in sc.tolist(self['analyzers']):
+            if isinstance(analyzer, fpa.Analyzer):
+                analyzer.finalize(self)
+
+
     def run(self, verbose=None):
         ''' Run the simulation '''
 
@@ -1052,8 +1068,9 @@ class Sim(fpb.BaseSim):
             # Update mortality probabilities for year of sim
             self.update_mortality()
 
-            # Apply interventions
+            # Apply interventions and analyzers
             self.apply_interventions()
+            self.apply_analyzers()
 
             # Update the people
             self.people.i = self.i
@@ -1177,9 +1194,6 @@ class Sim(fpb.BaseSim):
         if not self.mother_ids:
             delattr(self.people, "mothers")
 
-        # Apply analyzers
-        self.apply_analyzers()
-
         # Convert all results to Numpy arrays
         for key,arr in self.results.items():
             if isinstance(arr, list):
@@ -1192,6 +1206,10 @@ class Sim(fpb.BaseSim):
 
         # Convert to an objdict for easier access
         self.results = sc.objdict(self.results)
+
+        # Finalize interventions and analyzers
+        self.finalize_interventions()
+        self.finalize_analyzers()
 
         if verbose:
             print(f'Final population size: {self.n}.')
@@ -1343,6 +1361,11 @@ class Sim(fpb.BaseSim):
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
                     ax.fill_between(x, low, high, **fill_args)
+
+                # Plot interventions, if present
+                for intv in sc.tolist(self['interventions']):
+                    if hasattr(intv, 'plot_intervention'): # Don't plot e.g. functions
+                        intv.plot_intervention(self, ax)
 
                 # Handle annotations
                 fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim

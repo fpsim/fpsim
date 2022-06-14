@@ -12,6 +12,21 @@ Version 0.14.2 (2022-06-06)
 --------------------------
 - Adding 3 new columns to the results dataframe in Scenarios
 
+Version 0.14.2 (2022-05-31)
+--------------------------
+- Fixed bug in ``fp.snapshot()`` missing non-exact timesteps.
+- Fixed bug with ``fp.timeseries_recorder()`` not being capable of being added as a kwarg.
+- Tidied output of ``SimVerbose.story()``.
+- Added ``sim.get_analyzer()`` and ``sim.get_intervention()`` methods (along with the plural versions).
+- Renamed ``Experiment.dhs_data`` to ``Experiment.data``; likewise for ``model_to_calib`` → ``model``.
+- Fixed bug with MCPR year plotting in ``Experiment``.
+- Fixed bug with analyzers being applied only at the end of the sim instead of at every timestep.
+- Fixed bug with interventions not plotting with simulations.
+- Fixed bug with ``finalize()`` not being called for interventions.
+- Increased code coverage of tests from 67% to 80%.
+- *GitHub info*: PR `533 <https://github.com/amath-idm/fp_analyses/pull/533>`__
+
+
 Version 0.14.1 (2022-05-27)
 --------------------------
 - Fixed bugs in how ``copy_from`` is implemented in scenarios.
