@@ -1386,14 +1386,14 @@ class Sim(fpb.BaseSim):
     def compute_method_table(self):
         """ Computes method mix proportions from a sim object """
         method_table = sc.ddict(list)
-        people = self.people
+        ppl = self.people
         final_year = self.results['t'][-1:-12]
         min_age = 15
         max_age = self['age_limit_fecundity']
         
-        for i in range(len(people)):
-            if people.alive[i] and people.sex[i] == 0 and min_age <= people.age[i] < max_age:
-                unique, counts = np.unique(people.method, return_counts=True)
+        for i in range(len(ppl)):
+            if ppl.alive[i] and ppl.sex[i] == 0 and min_age <= ppl.age[i] < max_age:
+                unique, counts = np.unique(ppl.method, return_counts=True)
         count_dict = dict(zip(unique, counts))
         assert len(count_dict.keys()) > 1, 'There are no methods other than None in this Sim'
 
@@ -1402,7 +1402,7 @@ class Sim(fpb.BaseSim):
         for method in count_dict:
             if method != fpd.method_map['None']:
                 method_table['Year'].append(final_year)
-                method_table['Proportion'].append(count_dict[method] / len(people.method))
+                method_table['Proportion'].append(count_dict[method] / len(ppl.method))
                 method_table['Seed'].append(seed)
                 method_table['Method'].append(method)
                 method_table['Sim'].append(self.label if self.label else f"Sim (seed={seed})")
