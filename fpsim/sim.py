@@ -1413,7 +1413,7 @@ class Sim(fpb.BaseSim):
 
     def plot_method_mix(self, do_show=None, do_save=None, filename="method_mix.png", fig_args=None, data=None, style=None):
         """
-        Plots the average method mix for n_sims runs
+        Plots the mean method mix (with uncertainty) for the final year of a set of sims.
 
         Args:
             do_show (bool): whether or not the user wants to show the output plot (default: true)
