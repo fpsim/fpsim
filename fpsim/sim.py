@@ -1435,8 +1435,8 @@ class Sim(fpb.BaseSim):
 
         with fpo.with_style(style):
             palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Sim'])), ashex=True))
-            sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', order=np.sort(np.unique(df['Sim'])), palette=palette)
-            pl.title('Contraceptive Method Usage')
+            sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', order=np.sort(np.unique(df['Method'])), palette=palette)
+            pl.title('Method mix')
 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
