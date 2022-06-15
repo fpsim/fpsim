@@ -1338,6 +1338,13 @@ class Sim(fpb.BaseSim):
                     'cum_infant_deaths_by_year':   'Infant deaths',
                     'imr':                         'Infant mortality rate',
                     }
+            elif to_plot == 'apo': #adverse pregnancy outcomes
+                to_plot = {                    
+                    'cum_live_births_by_year':     'Live births',
+                    'cum_stillbirths_by_year':     'Stillbirths',
+                    'cum_miscarriages_by_year':    'Miscarriages',
+                    'cum_abortions_by_year':       'Abortions',
+                    }                
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
 
             for p,key,reslabel in sc.odict(to_plot).enumitems():
