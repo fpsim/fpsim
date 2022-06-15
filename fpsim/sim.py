@@ -1418,7 +1418,9 @@ class Sim(fpb.BaseSim):
 
     def plot_method_mix(self, do_show=None, do_save=None, filename="method_mix.png", fig_args=None, data=None, style=None):
         """
-        Plots the mean method mix (with uncertainty) for the final year of a set of sims.
+        Ideally: Plots the method mix for the final year of a set of sims.
+        Note: Currently this plot only captures method counts of alive women ages 15-49 and not in the final year. 
+        WARNING: To be discontinued in the future. Do not use in current form.
 
         Args:
             do_show (bool): whether or not the user wants to show the output plot (default: true)
