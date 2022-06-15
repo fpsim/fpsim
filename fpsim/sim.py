@@ -373,7 +373,7 @@ class People(fpb.BasePeople):
         abort.postpartum_dur = 0
         for i in abort.inds: # Handle adding dates
             all_ppl.abortion_dates[i].append(all_ppl.age[i])
-
+        self.step_results['abortions'] = len(abort)
         # Make selected agents pregnant
         preg.make_pregnant()
 
@@ -466,6 +466,7 @@ class People(fpb.BasePeople):
         miscarriage.gestation  = 0  # Reset gestation counter
         for i in miscarriage.inds: # Handle adding dates
             all_ppl.miscarriage_dates[i].append(all_ppl.age[i])
+        self.step_results['miscarriages'] = len(miscarriage)
         return
 
 
