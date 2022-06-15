@@ -833,7 +833,8 @@ class Sim(fpb.BaseSim):
         self.results['method_failures_over_year'] = []
         self.results['infant_deaths_over_year'] = []
         self.results['total_births_over_year'] = []
-        self.results['live_births_over_year'] = []
+        self.results['live_births_over_year'] = []        
+        self.results['stillbirths_over_year'] = []
         self.results['maternal_deaths_over_year'] = []
         self.results['mmr'] = []
         self.results['imr'] = []
@@ -1155,7 +1156,7 @@ class Sim(fpb.BaseSim):
                 infant_deaths_over_year    = scale*np.sum(self.results['infant_deaths'][start_index:stop_index])
                 total_births_over_year     = scale*np.sum(self.results['total_births'][start_index:stop_index])
                 live_births_over_year      = scale*np.sum(self.results['births'][start_index:stop_index])
-                stillbirths_over_year  = scale*np.sum(self.results['stillbirths'][start_index:stop_index])
+                stillbirths_over_year      = scale*np.sum(self.results['stillbirths'][start_index:stop_index])
                 maternal_deaths_over_year  = scale*np.sum(self.results['maternal_deaths'][start_index:stop_index])
                 self.results['pop_size'].append(scale*self.n) # CK: TODO: replace with arrays
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
@@ -1311,6 +1312,7 @@ class Sim(fpb.BaseSim):
                     'cum_infant_deaths_by_year':   'Infant deaths',
                     'mmr':                         'Maternal mortality ratio',
                     'imr':                         'Infant mortality rate',
+                    'cum_stillbirths_by_year':     'Stillbirths',
                 }
             elif to_plot == 'cpr':
                 to_plot = {
