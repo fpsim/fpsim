@@ -1394,9 +1394,9 @@ class Sim(fpb.BaseSim):
                     ax.fill_between(x, low, high, **fill_args)
 
                 # Plot interventions, if present
-                for intv in sc.tolist(self['interventions']):
-                    if hasattr(intv, 'plot_intervention'): # Don't plot e.g. functions
-                        intv.plot_intervention(self, ax)
+                # for intv in sc.tolist(self['interventions']):
+                #     if hasattr(intv, 'plot_intervention'): # Don't plot e.g. functions
+                #         intv.plot_intervention(self, ax)
 
                 # Handle annotations
                 fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
