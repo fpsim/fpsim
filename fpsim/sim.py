@@ -1111,6 +1111,8 @@ class Sim(fpb.BaseSim):
             self.results['births'][i]          = r.births*scale
             self.results['deaths'][i]          = r.deaths*scale
             self.results['stillbirths'][i]     = r.stillbirths*scale
+            self.results['miscarriage'][i]     = r.miscarriage*scale
+            self.results['abortion'][i]        = r.abortion*scale
             self.results['total_births'][i]    = r.total_births*scale
             self.results['maternal_deaths'][i] = r.maternal_deaths*scale
             self.results['infant_deaths'][i]   = r.infant_deaths*scale
