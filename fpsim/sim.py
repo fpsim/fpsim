@@ -1387,7 +1387,6 @@ class Sim(fpb.BaseSim):
         """ Computes method mix proportions from a sim object """
         method_table = sc.ddict(list)
         ppl = self.people
-        final_year = self.results['t'][-1:-12]
         min_age = 15
         max_age = self['age_limit_fecundity']
         
@@ -1401,7 +1400,6 @@ class Sim(fpb.BaseSim):
         seed = self.pars['seed']
         for method in count_dict:
             if method != fpd.method_map['None']:
-                method_table['Year'].append(final_year)
                 method_table['Proportion'].append(count_dict[method] / len(ppl.method))
                 method_table['Seed'].append(seed)
                 method_table['Method'].append(method)
@@ -1443,7 +1441,7 @@ class Sim(fpb.BaseSim):
         with fpo.with_style(style):
             palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Sim'])), ashex=True))
             sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', palette=palette)
-            pl.title('Method mix')
+            pl.title('Method mix in final year')
 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
