@@ -1409,8 +1409,13 @@ class Sim(fpb.BaseSim):
     def compute_method_table(self):
         """ Computes method mix proportions from a sim object """
         method_table = sc.ddict(list)
-        people = self.people
-        unique, counts = np.unique(people.method, return_counts=True)
+        ppl = self.people
+        min_age = 15
+        max_age = self['age_limit_fecundity']
+        
+        for i in range(len(ppl)):
+            if ppl.alive[i] and ppl.sex[i] == 0 and min_age <= ppl.age[i] < max_age:
+                unique, counts = np.unique(ppl.method, return_counts=True)
         count_dict = dict(zip(unique, counts))
         assert len(count_dict.keys()) > 1, 'There are no methods other than None in this Sim'
 
@@ -1418,7 +1423,7 @@ class Sim(fpb.BaseSim):
         seed = self.pars['seed']
         for method in count_dict:
             if method != fpd.method_map['None']:
-                method_table['Proportion'].append(count_dict[method] / len(people.method))
+                method_table['Proportion'].append(count_dict[method] / len(ppl.method))
                 method_table['Seed'].append(seed)
                 method_table['Method'].append(method)
                 method_table['Sim'].append(self.label if self.label else f"Sim (seed={seed})")
@@ -1434,9 +1439,11 @@ class Sim(fpb.BaseSim):
         return df
 
 
-    def plot_method_mix(self, do_show=None, do_save=None, filename="method_mix.png", fig_args=None, data=None):
+    def plot_method_mix(self, do_show=None, do_save=None, filename="method_mix.png", fig_args=None, data=None, style=None):
         """
-        Plots the average method mix for n_sims runs
+        Ideally: Plots the method mix for the final year of a set of sims.
+        Note: Currently this plot only captures method counts of alive women ages 15-49 and not in the final year. 
+        WARNING: To be discontinued in the future. Do not use in current form.
 
         Args:
             do_show (bool): whether or not the user wants to show the output plot (default: true)
@@ -1444,6 +1451,7 @@ class Sim(fpb.BaseSim):
             filename (str): the name of the path to output the plot.
             fig_args (dict): arguments to pass to ``pl.figure()``
             data (dataframe): if supplied, plot these data (used by MultiSim)
+            style (str): if supplied, uses the specified style when plotting
         """
         # Compute or use existing data
         if data is None:
@@ -1455,9 +1463,11 @@ class Sim(fpb.BaseSim):
         # Plotting and saving
         fig = pl.figure(**sc.mergedicts(fig_args)) # Since Seaborn doesn't open a new figure
 
-        palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Method'])), ashex=True))
-        sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', order=np.sort(np.unique(df['Method'])), palette=palette)
-        pl.title('Contraceptive method usage')
+        with fpo.with_style(style):
+            palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Sim'])), ashex=True))
+            sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', palette=palette)
+            pl.title('Method mix')
+            pl.legend(loc='best', title='')
 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
