@@ -1308,11 +1308,10 @@ class Sim(fpb.BaseSim):
                 to_plot = {
                     'mcpr_by_year':                'Modern contraceptive prevalence rate (%)',
                     'cum_live_births_by_year':     'Live births',
+                    'cum_stillbirths_by_year':     'Stillbirths',
                     'cum_maternal_deaths_by_year': 'Maternal deaths',
                     'cum_infant_deaths_by_year':   'Infant deaths',
-                    'mmr':                         'Maternal mortality ratio',
-                    'imr':                         'Infant mortality rate',
-                    'cum_stillbirths_by_year':     'Stillbirths',
+                    'imr':                         'Infant mortality rate',   
                 }
             elif to_plot == 'cpr':
                 to_plot = {
@@ -1320,6 +1319,13 @@ class Sim(fpb.BaseSim):
                     'cpr':  'CPR (contraceptive prevalence rate)',
                     'acpr': 'ACPR (alternative contraceptive prevalence rate',
                 }
+            elif to_plot == 'mortality':
+                to_plot = {                    
+                    'mmr':                         'Maternal mortality ratio',
+                    'cum_maternal_deaths_by_year': 'Maternal deaths',
+                    'cum_infant_deaths_by_year':   'Infant deaths',
+                    'imr':                         'Infant mortality rate',
+                    }
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
 
             for p,key,reslabel in sc.odict(to_plot).enumitems():
