@@ -1442,6 +1442,7 @@ class Sim(fpb.BaseSim):
             palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Sim'])), ashex=True))
             sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', palette=palette)
             pl.title('Method mix')
+            pl.legend(loc='best', title='')
 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
