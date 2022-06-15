@@ -1163,8 +1163,8 @@ class Sim(fpb.BaseSim):
                 total_births_over_year     = scale*np.sum(self.results['total_births'][start_index:stop_index])
                 live_births_over_year      = scale*np.sum(self.results['births'][start_index:stop_index])
                 stillbirths_over_year      = scale*np.sum(self.results['stillbirths'][start_index:stop_index])
-                miscarriages_over_year     = scale.np.sum(self.results['miscarriages'][start_index:stop_index])
-                abortions_over_year        = scale.np.sum(self.results['abortions'][start_index:stop_index])
+                miscarriages_over_year     = scale*np.sum(self.results['miscarriages'][start_index:stop_index])
+                abortions_over_year        = scale*np.sum(self.results['abortions'][start_index:stop_index])
                 maternal_deaths_over_year  = scale*np.sum(self.results['maternal_deaths'][start_index:stop_index])
                 self.results['pop_size'].append(scale*self.n) # CK: TODO: replace with arrays
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
