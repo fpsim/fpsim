@@ -8,6 +8,17 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+
+Version 0.15.0 (2022-06-13)
+--------------------------
+- Added new plotting functionality ``Scenarios.plot('mortality')``
+- Added new plotting functionality ``Scenarios.plot('apo')`` for adverse pregnancy outcomes
+- Added ``stillbirths_over_year`` to keys, tracking, and plotting
+- Added tracking of miscarriage, abortion, corresponding keys and plotting
+- Temporarily commented out plot_interventions in ``sim.py`` to fix x-axis and vline issues in plotting
+- *GitHub info*: PR ``549 <https://github.com/amath-idm/fpsim/pull/549>``
+
+
 Version 0.14.2 (2022-06-06)
 --------------------------
 - Adding 3 new columns to the results dataframe in Scenarios
