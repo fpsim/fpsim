@@ -856,11 +856,13 @@ class Sim(fpb.BaseSim):
                 'switching_events_<18',
                 'switching_events_18-20',
                 'switching_events_21-25',
-                'switching_events_>25',
+                'switching_events_26-35',
+                'switching_events_>35',
                 'switching_events_pp_<18',
                 'switching_events_pp_18-20',
                 'switching_events_pp_21-25',
-                'switching_events_pp_>25',
+                'switching_events_pp_26-35',
+                'switching_events_pp_>35',
             ]
             for key in keys:
                 self.results[key] = {} # CK: TODO: refactor
