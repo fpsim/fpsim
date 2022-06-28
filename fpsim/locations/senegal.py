@@ -584,7 +584,8 @@ def methods():
         '<18'   : [ 0, 18],
         '18-20' : [18, 20],
         '21-25' : [20, 25],
-        '>25'   : [25, fpd.max_age+1], # +1 since we're using < rather than <=
+        '26-35' : [25, 35],
+        '>35'   : [35, fpd.max_age+1], # +1 since we're using < rather than <=
     }
 
     # Data on trend in MCPR in Senegal over time, in % # CK: TODO: find source
