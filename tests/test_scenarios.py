@@ -232,7 +232,7 @@ def test_make_scens():
     # More probability matrix options
     s.inj1 = fp.make_scen(year=year, method=method, init_factor=5, matrix='annual', ages=None)
     s.inj2 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
-    s.inj3 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>25'])
+    s.inj3 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>35'])
 
     # Test invalid options
     with pytest.raises(sc.KeyNotFoundError):
