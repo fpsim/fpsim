@@ -133,7 +133,7 @@ def test_scenarios(do_plot=do_plot):
             source = 'None', # Source method, 'all' for all methods
             dest   = 'Other modern', # Destination
             value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-            ages   = ['>25'], # Which age keys to modify -- if not specified, all
+            ages   = ['>35'], # Which age keys to modify -- if not specified, all
         ),
     )
 
