@@ -837,7 +837,8 @@ class Sim(fpb.BaseSim):
         self.results['live_births_over_year'] = []        
         self.results['stillbirths_over_year'] = []
         self.results['miscarriages_over_year'] = []
-        self.results['abortions_over_year'] = []
+        self.results['abortions_over_year'] = []        
+        self.results['pregnancies_over_year'] = []
         self.results['risky_pregs_over_year'] = []
         self.results['maternal_deaths_over_year'] = []
         self.results['mmr'] = []
@@ -1219,7 +1220,7 @@ class Sim(fpb.BaseSim):
         self.results['cum_stillbirths_by_year']     = np.cumsum(self.results['stillbirths_over_year'])              
         self.results['cum_miscarriages_by_year']     = np.cumsum(self.results['miscarriages_over_year'])      
         self.results['cum_abortions_by_year']     = np.cumsum(self.results['abortions_over_year'])
-        
+        self.results['cum_pregnancies_by_year']     = np.cumsum(self.results['pregnancies_over_year'])
 
         # Convert to an objdict for easier access
         self.results = sc.objdict(self.results)
