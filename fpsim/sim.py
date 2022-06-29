@@ -1346,7 +1346,7 @@ class Sim(fpb.BaseSim):
                     }
             elif to_plot == 'apo': #adverse pregnancy outcomes
                 to_plot = {                    
-                    'cum_live_births_by_year':     'Live births',
+                    'cum_pregnancies_by_year':     'Pregnancies',
                     'cum_stillbirths_by_year':     'Stillbirths',
                     'cum_miscarriages_by_year':    'Miscarriages',
                     'cum_abortions_by_year':       'Abortions',
