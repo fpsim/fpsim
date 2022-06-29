@@ -1494,6 +1494,8 @@ class Sim(fpb.BaseSim):
         # Plotting and saving
         fig = pl.figure(**sc.mergedicts(fig_args)) # Since Seaborn doesn't open a new figure
 
+        # TODO add way to visualize method changes over time
+        # For the over time viz, make sure methods are distibguished by linetype and color
         with fpo.with_style(style):
             palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Sim'])), ashex=True))
             sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', palette=palette)
