@@ -358,8 +358,9 @@ class People(fpb.BasePeople):
 
         # Use a single binomial trial to check for conception successes this month
         conceived = active.binomial(preg_probs[active.inds], as_filter=True)
+        self.step_results['pregnancies'] += len(conceived) #track all pregnancies
         unintended = conceived.filter(conceived.method != 0)
-        self.step_results['unintended_pregs'] += len(unintended)
+        self.step_results['unintended_pregs'] += len(unintended) #track pregnancies due to method failure
 
         # Check for abortion
         is_abort = conceived.binomial(pars['abortion_prob'])
