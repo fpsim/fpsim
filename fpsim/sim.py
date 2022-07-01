@@ -1132,6 +1132,7 @@ class Sim(fpb.BaseSim):
             self.results['nonpostpartum'][i]      = nonpostpartum
             self.results['total_women_fecund'][i] = r.total_women_fecund*scale
             self.results['unintended_pregs'][i]   = r.unintended_pregs*scale
+            self.results['method_usage'][i]       = self.compute_method_usage()
 
             for agekey in fpd.age_bin_map.keys():
                 births_key = f'total_births_{agekey}'
@@ -1436,10 +1437,9 @@ class Sim(fpb.BaseSim):
         pl.xlabel('Age (years')
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
-
-    def compute_method_table(self):
+    # TODO make it so compute_method_table is used to store values in results by year
+    def compute_method_usage(self):
         """ Computes method mix proportions from a sim object """
-        method_table = sc.ddict(list)
         ppl = self.people
         min_age = 15
         max_age = self['age_limit_fecundity']
@@ -1451,25 +1451,24 @@ class Sim(fpb.BaseSim):
         assert len(count_dict.keys()) > 1, 'There are no methods other than None in this Sim'
 
         # Collect data
-        seed = self.pars['seed']
+        result = [0] * len(fpd.method_map)
         for method in count_dict:
             if method != fpd.method_map['None']:
-                method_table['Proportion'].append(count_dict[method] / len(ppl.method))
-                method_table['Seed'].append(seed)
-                method_table['Method'].append(method)
-                method_table['Sim'].append(self.label if self.label else f"Sim (seed={seed})")
-
+                # method_table['Proportion'].append(count_dict[method] / len(ppl.method))
+                # method_table['Method'].append(method)
+                # method_table['Sim'].append(self.label if self.label else f"Sim (seed={seed})")
+                result[method] = count_dict[method] / len(ppl.method)
         # Convert to dataframe
-        df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
+        # df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
 
-        # We want names for the methods
-        methods_map = self.pars['methods']['map']
-        inv_methods_map = {value: key for key, value in methods_map.items()}
-        df['Method'] = df['Method'].map(inv_methods_map)
+        # We want names for the methods (we should do this in the plotting function)
+        # methods_map = self.pars['methods']['map']
+        # inv_methods_map = {value: key for key, value in methods_map.items()}
+        # df['Method'] = df['Method'].map(inv_methods_map)
 
-        return df
+        return result
 
-
+    # TODO change to make this access results
     def plot_method_mix(self, do_show=None, do_save=None, filename="method_mix.png", fig_args=None, data=None, style=None):
         """
         Ideally: Plots the method mix for the final year of a set of sims.
@@ -1800,7 +1799,7 @@ class MultiSim(sc.prettyobj):
         else:
             return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
-
+    # TODO Extract proportions from sim.results and label each sim and seed
     def plot_method_mix(self, do_show=True, do_save=False, filename='method_mix.png'):
         """
         Plots the average method mix for n_sims runs
