@@ -289,6 +289,8 @@ def stillbirth():
     stillbirth_rate = {}
     stillbirth_rate['year'] = data[:,0]
     stillbirth_rate['probs'] = data[:,1]/1000    # Rate per 1000 total births
+    stillbirth_rate['ages'] = np.array([16, 17,   19, 22,   25, 50])
+    stillbirth_rate['age_probs'] = np.array([])
 
     return stillbirth_rate
 
