@@ -844,6 +844,7 @@ class Sim(fpb.BaseSim):
         self.results['imr'] = []
         self.results['birthday_fraction'] = []
         self.results['asfr'] = {}
+        self.results['method_usage'] = []
 
         for key in fpd.age_bin_map.keys():
             self.results['asfr'][key] = []
@@ -1132,7 +1133,6 @@ class Sim(fpb.BaseSim):
             self.results['nonpostpartum'][i]      = nonpostpartum
             self.results['total_women_fecund'][i] = r.total_women_fecund*scale
             self.results['unintended_pregs'][i]   = r.unintended_pregs*scale
-            self.results['method_usage'][i]       = self.compute_method_usage()
 
             for agekey in fpd.age_bin_map.keys():
                 births_key = f'total_births_{agekey}'
@@ -1178,6 +1178,7 @@ class Sim(fpb.BaseSim):
                 self.results['miscarriages_over_year'].append(miscarriages_over_year)
                 self.results['abortions_over_year'].append(abortions_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
+                self.results['method_usage'].append(self.compute_method_usage()) # only want this per year
                 if maternal_deaths_over_year == 0:
                     self.results['mmr'].append(0)
                 else:
@@ -1443,21 +1444,23 @@ class Sim(fpb.BaseSim):
         ppl = self.people
         min_age = 15
         max_age = self['age_limit_fecundity']
-        
+        print(f"Methods: {ppl.method}")
+        print(f"Is all 0s: {[n for n in ppl.method if n != 0]}")
         for i in range(len(ppl)):
             if ppl.alive[i] and ppl.sex[i] == 0 and min_age <= ppl.age[i] < max_age:
                 unique, counts = np.unique(ppl.method, return_counts=True)
         count_dict = dict(zip(unique, counts))
-        assert len(count_dict.keys()) > 1, 'There are no methods other than None in this Sim'
+        # assert len(count_dict.keys()) > 1, 'There are no methods other than None in this Sim'
 
         # Collect data
-        result = [0] * len(fpd.method_map)
+        result = [-1] * len(fpd.method_map)
         for method in count_dict:
-            if method != fpd.method_map['None']:
-                # method_table['Proportion'].append(count_dict[method] / len(ppl.method))
-                # method_table['Method'].append(method)
-                # method_table['Sim'].append(self.label if self.label else f"Sim (seed={seed})")
-                result[method] = count_dict[method] / len(ppl.method)
+            # method_table['Proportion'].append(count_dict[method] / len(ppl.method))
+            # method_table['Method'].append(method)
+            # method_table['Sim'].append(self.label if self.label else f"Sim (seed={seed})")
+            result[method] = count_dict[method] / len(ppl.method)
+
+        print(result)
         # Convert to dataframe
         # df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
 
@@ -1468,8 +1471,21 @@ class Sim(fpb.BaseSim):
 
         return result
 
+    def format_method_df(self, method_list):
+        '''Takes in a list of method proportions and outputs a dataframe'''
+        inv_method_map = {index: name for name, index in fpd.method_map.items()}
+        df_dict = {"Percentage": [], "Method": [], "Sim": [], "Seed": []}
+        for method_index, prop in enumerate(method_list):
+            if method_index != fpd.method_map['None']:
+                df_dict["Percentage"].append(100*prop)
+                df_dict['Method'].append(inv_method_map[method_index])
+                df_dict['Sim'].append(self.label)
+                df_dict['Seed'].append(self.pars['seed'])
+
+        return pd.DataFrame(df_dict)
+
     # TODO change to make this access results
-    def plot_method_mix(self, do_show=None, do_save=None, filename="method_mix.png", fig_args=None, data=None, style=None):
+    def plot_method_mix(self, do_show=None, do_save=None, filename="method_mix.png", fig_args=None, data=None, style=None, timeseries=False):
         """
         Ideally: Plots the method mix for the final year of a set of sims.
         Note: Currently this plot only captures method counts of alive women ages 15-49 and not in the final year. 
@@ -1483,12 +1499,22 @@ class Sim(fpb.BaseSim):
             data (dataframe): if supplied, plot these data (used by MultiSim)
             style (str): if supplied, uses the specified style when plotting
         """
+        # If Multisim, df=data
+        # If Sim, with no timeseries, df
         # Compute or use existing data
+        initial_year = self.pars['start_year']
         if data is None:
-            df = self.compute_method_table()
+            if timeseries:
+                total_df = pd.DataFrame()
+                for year_offset, method_list in enumerate(self.results['method_usage']):
+                    year_df = self.format_method_df(method_list)
+                    year_df['Year'] = [initial_year+year_offset] * len(year_df)
+                    df = pd.concat([total_df, year_df])
+                    
+            else:
+                df = self.format_method_df(self.results['method_usage'][-1]) # only sum the last year
         else:
             df = data
-        df['Percentage'] = df['Proportion']*100
         
         # Plotting and saving
         fig = pl.figure(**sc.mergedicts(fig_args)) # Since Seaborn doesn't open a new figure
@@ -1496,8 +1522,11 @@ class Sim(fpb.BaseSim):
         # TODO add way to visualize method changes over time
         # For the over time viz, make sure methods are distibguished by linetype and color
         with fpo.with_style(style):
-            palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Sim'])), ashex=True))
-            sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', palette=palette)
+            palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Method'])), ashex=True))
+            if timeseries:
+                pass
+            else:
+                sns.barplot(data=df, x='Percentage', y='Method', palette=palette)
             pl.title('Method mix')
             pl.legend(loc='best', title='')
 
