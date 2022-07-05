@@ -70,6 +70,7 @@ class People(fpb.BasePeople):
         self.stillbirth       = arr(n, d['stillbirth']) # Number of stillbirths
         self.miscarriage      = arr(n, d['miscarriage']) # Number of miscarriages
         self.abortion         = arr(n, d['abortion']) # Number of abortions
+        self.pregnancies      = arr(n, d['pregnancies']) #Number of conceptions (before abortion)
         self.postpartum       = arr(n, d['postpartum'])
         self.mothers          = arr(n, d['mothers'])
 
@@ -358,8 +359,9 @@ class People(fpb.BasePeople):
 
         # Use a single binomial trial to check for conception successes this month
         conceived = active.binomial(preg_probs[active.inds], as_filter=True)
+        self.step_results['pregnancies'] += len(conceived) #track all pregnancies
         unintended = conceived.filter(conceived.method != 0)
-        self.step_results['unintended_pregs'] += len(unintended)
+        self.step_results['unintended_pregs'] += len(unintended) #track pregnancies due to method failure
 
         # Check for abortion
         is_abort = conceived.binomial(pars['abortion_prob'])
@@ -662,6 +664,7 @@ class People(fpb.BasePeople):
             pp6to11         = 0,
             pp12to23        = 0,
             total_women_fecund = 0,
+            pregnancies     = 0,
             unintended_pregs = 0,
             birthday_fraction = None,
             birth_bins        = {},
@@ -817,7 +820,7 @@ class Sim(fpb.BaseSim):
 
 
     def init_results(self):
-        resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'miscarriages','abortions', 'total_births', 'maternal_deaths', 'infant_deaths',
+        resultscols = ['t', 'pop_size_months', 'pregnancies', 'births', 'deaths', 'stillbirths', 'miscarriages','abortions', 'total_births', 'maternal_deaths', 'infant_deaths',
                        'cum_maternal_deaths', 'cum_infant_deaths', 'on_methods_mcpr', 'no_methods_mcpr', 'on_methods_cpr', 'no_methods_cpr', 'on_methods_acpr',
                        'no_methods_acpr', 'mcpr', 'cpr', 'acpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
@@ -837,7 +840,8 @@ class Sim(fpb.BaseSim):
         self.results['live_births_over_year'] = []        
         self.results['stillbirths_over_year'] = []
         self.results['miscarriages_over_year'] = []
-        self.results['abortions_over_year'] = []
+        self.results['abortions_over_year'] = []        
+        self.results['pregnancies_over_year'] = []
         self.results['risky_pregs_over_year'] = []
         self.results['maternal_deaths_over_year'] = []
         self.results['mmr'] = []
@@ -857,11 +861,13 @@ class Sim(fpb.BaseSim):
                 'switching_events_<18',
                 'switching_events_18-20',
                 'switching_events_21-25',
-                'switching_events_>25',
+                'switching_events_26-35',
+                'switching_events_>35',
                 'switching_events_pp_<18',
                 'switching_events_pp_18-20',
                 'switching_events_pp_21-25',
-                'switching_events_pp_>25',
+                'switching_events_pp_26-35',
+                'switching_events_pp_>35',
             ]
             for key in keys:
                 self.results[key] = {} # CK: TODO: refactor
@@ -1115,6 +1121,7 @@ class Sim(fpb.BaseSim):
             self.results['stillbirths'][i]     = r.stillbirths*scale
             self.results['miscarriages'][i]     = r.miscarriages*scale
             self.results['abortions'][i]        = r.abortions*scale
+            self.results['pregnancies'][i]     = r.pregnancies*scale
             self.results['total_births'][i]    = r.total_births*scale
             self.results['maternal_deaths'][i] = r.maternal_deaths*scale
             self.results['infant_deaths'][i]   = r.infant_deaths*scale
@@ -1146,11 +1153,13 @@ class Sim(fpb.BaseSim):
                 self.results['switching_events_<18'][i]        = scale**scale*r.switching_annual['<18']
                 self.results['switching_events_18-20'][i]      = scale*r.switching_annual['18-20']
                 self.results['switching_events_21-25'][i]      = scale*r.switching_annual['21-25']
-                self.results['switching_events_>25'][i]        = scale*r.switching_annual['>25']
+                self.results['switching_events_26-35'][i]        = scale*r.switching_annual['26-35']
+                self.results['switching_events_>35'][i]        = scale*r.switching_annual['>35']
                 self.results['switching_events_pp_<18'][i]     = scale*r.switching_postpartum['<18']
                 self.results['switching_events_pp_18-20'][i]   = scale*r.switching_postpartum['18-20']
                 self.results['switching_events_pp_21-25'][i]   = scale*r.switching_postpartum['21-25']
-                self.results['switching_events_pp_>25'][i]     = scale*r.switching_postpartum['>25']
+                self.results['switching_events_pp_26-35'][i]   = scale*r.switching_postpartum['26-35']
+                self.results['switching_events_pp_>35'][i]     = scale*r.switching_postpartum['>35']
                 self.results['switching_events_annual'][i]     = scale*switch_events['annual']
                 self.results['switching_events_postpartum'][i] = scale*switch_events['postpartum']
 
@@ -1167,6 +1176,7 @@ class Sim(fpb.BaseSim):
                 miscarriages_over_year     = scale*np.sum(self.results['miscarriages'][start_index:stop_index])
                 abortions_over_year        = scale*np.sum(self.results['abortions'][start_index:stop_index])
                 maternal_deaths_over_year  = scale*np.sum(self.results['maternal_deaths'][start_index:stop_index])
+                pregnancies_over_year  = scale*np.sum(self.results['pregnancies'][start_index:stop_index])
                 self.results['pop_size'].append(scale*self.n) # CK: TODO: replace with arrays
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['cpr_by_year'].append(self.results['cpr'][i])
@@ -1179,6 +1189,7 @@ class Sim(fpb.BaseSim):
                 self.results['abortions_over_year'].append(abortions_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
                 self.results['method_usage'].append(self.compute_method_usage()) # only want this per year
+                self.results['pregnancies_over_year'].append(pregnancies_over_year)
                 if maternal_deaths_over_year == 0:
                     self.results['mmr'].append(0)
                 else:
@@ -1221,7 +1232,7 @@ class Sim(fpb.BaseSim):
         self.results['cum_stillbirths_by_year']     = np.cumsum(self.results['stillbirths_over_year'])              
         self.results['cum_miscarriages_by_year']     = np.cumsum(self.results['miscarriages_over_year'])      
         self.results['cum_abortions_by_year']     = np.cumsum(self.results['abortions_over_year'])
-        
+        self.results['cum_pregnancies_by_year']     = np.cumsum(self.results['pregnancies_over_year'])
 
         # Convert to an objdict for easier access
         self.results = sc.objdict(self.results)
@@ -1343,7 +1354,7 @@ class Sim(fpb.BaseSim):
                     }
             elif to_plot == 'apo': #adverse pregnancy outcomes
                 to_plot = {                    
-                    'cum_live_births_by_year':     'Live births',
+                    'cum_pregnancies_by_year':     'Pregnancies',
                     'cum_stillbirths_by_year':     'Stillbirths',
                     'cum_miscarriages_by_year':    'Miscarriages',
                     'cum_abortions_by_year':       'Abortions',

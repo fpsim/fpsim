@@ -163,7 +163,7 @@ def test_matrix_methods():
     # Do tests
     new_ind = fp.defaults.method_map[new_name]
     orig_ind = fp.defaults.method_map[orig_name]
-    nestkeys = ['methods', 'raw', 'annual', '>25']
+    nestkeys = ['methods', 'raw', 'annual', '>35']
     pars_arr = sc.getnested(pars, nestkeys)
     p4_arr = sc.getnested(p4, nestkeys)
     new_rate = p4_arr[0, new_ind]
@@ -173,10 +173,10 @@ def test_matrix_methods():
     if do_plot:
         pl.figure()
         pl.subplot(2,1,1)
-        pl.pcolor(pars['methods']['raw']['annual']['>25'])
+        pl.pcolor(pars['methods']['raw']['annual']['>35'])
         pl.title('Original')
         pl.subplot(2,1,2)
-        pl.pcolor(p4['methods']['raw']['annual']['>25'])
+        pl.pcolor(p4['methods']['raw']['annual']['>35'])
         pl.title('With new method')
 
     return [s1, s2, s3, p4]

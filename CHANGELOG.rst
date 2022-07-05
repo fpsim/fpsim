@@ -8,6 +8,17 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.16.1 (2022-06-30)
+--------------------------
+- Add tracking of pregnancies
+- Add cumulative sum of pregnancies to plotting functionality (see plot('apo'))
+- *GitHub info*: ``555 https://github.com/amath-idm/fpsim/pull/555``
+
+Version 0.16.0 (2022-06-28)
+--------------------------
+- Split matrix age category >25 into 26-35 and >35 
+- Baseline contraceptive behavior remains the same, but interventions can differentiate now
+- *GitHub info*: ``551 https://github.com/amath-idm/fpsim/pull/551``
 
 Version 0.15.0 (2022-06-13)
 --------------------------

@@ -27,6 +27,7 @@ person_defaults = dict(
     stillbirth           = 0,
     miscarriage          = 0,
     abortion             = 0,
+    pregnancies          = 0,
     remainder_months     = 0,
     breastfeed_dur       = 0,
     breastfeed_dur_total = 0,
@@ -88,5 +89,6 @@ method_age_map = {
     '<18':   [ 0, 18],
     '18-20': [18, 20],
     '21-25': [20, 25],
-    '>25':   [25, max_age+1], # +1 since we're using < rather than <=
+    '26-35': [25, 35],
+    '>35':   [35, max_age+1], # +1 since we're using < rather than <=
 }
