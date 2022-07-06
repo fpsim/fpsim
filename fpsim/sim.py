@@ -1399,18 +1399,19 @@ class Sim(fpb.BaseSim):
 
                 # Actually plot
                 if "method_usage" in to_plot:
-                    inv_methods_map = {value: key for key, value in fpd.method_map.items()}
-                    years = []
-                    y = []
-                    methods = []
-                    for year_index, year in enumerate(x):
-                        for method_index, proportion in enumerate(this_res[year_index]):
-                            if method_index != 0:
-                                years.append(year)
-                                y.append(proportion)
-                                methods.append(inv_methods_map[method_index])
-                    
-                    data = pd.DataFrame({"Method": methods, "Year": years, "Percentage": y})
+                    # inv_methods_map = {value: key for key, value in fpd.method_map.items()}
+                    # years = []
+                    # y = []
+                    # methods = []
+                    # for year_index, year in enumerate(x):
+                    #     for method_index, proportion in enumerate(this_res[year_index]):
+                    #         if method_index != 0:
+                    #             years.append(year)
+                    #             y.append(proportion)
+                    #             methods.append(inv_methods_map[method_index])
+                    data = self.format_method_df(timeseries=True)
+                    print(data.head())
+                    data.to_csv("method_test.csv")
                     sns.lineplot(ax=ax, y=data["Percentage"], x=data["Year"], hue=data["Method"], data=data)
 
                 else:
@@ -1495,18 +1496,31 @@ class Sim(fpb.BaseSim):
 
         return result
 
-    def format_method_df(self, method_list):
+    def format_method_df(self, method_list=None, timeseries=False):
         '''Takes in a list of method proportions and outputs a dataframe'''
         inv_method_map = {index: name for name, index in fpd.method_map.items()}
-        df_dict = {"Percentage": [], "Method": [], "Sim": [], "Seed": []}
-        for method_index, prop in enumerate(method_list):
-            if method_index != fpd.method_map['None']:
-                df_dict["Percentage"].append(100*prop)
-                df_dict['Method'].append(inv_method_map[method_index])
-                df_dict['Sim'].append(self.label)
-                df_dict['Seed'].append(self.pars['seed'])
+        def get_df_from_result(method_list):
+            df_dict = {"Percentage": [], "Method": [], "Sim": [], "Seed": []}
+            for method_index, prop in enumerate(method_list):
+                if method_index != fpd.method_map['None']:
+                    df_dict["Percentage"].append(100*prop)
+                    df_dict['Method'].append(inv_method_map[method_index])
+                    df_dict['Sim'].append(self.label)
+                    df_dict['Seed'].append(self.pars['seed'])
 
-        return pd.DataFrame(df_dict)
+            return pd.DataFrame(df_dict)
+
+        if not timeseries:
+            return get_df_from_result(method_list)
+
+        else:
+            initial_year = self.pars['start_year']
+            total_df = pd.DataFrame()
+            for year_offset, method_list in enumerate(self.results['method_usage']):
+                year_df = self.format_method_df(method_list)
+                year_df['Year'] = [initial_year+year_offset] * len(year_df)
+                total_df = pd.concat([total_df, year_df], ignore_index=True)
+            return total_df
 
     # TODO change to make this access results
     def plot_method_mix(self, do_show=None, do_save=None, filename="method_mix.png", fig_args=None, data=None, style=None, timeseries=False):
@@ -1814,7 +1828,7 @@ class MultiSim(sc.prettyobj):
 
 
     def plot(self, to_plot=None, plot_sims=True, do_show=None, do_save=None, filename='fp_multisim.png',
-             fig_args=None, plot_args=None, **kwargs):
+             fig_args=None, axis_args=None, plot_args=None, style=None, **kwargs):
         '''
         Plot the MultiSim
 
@@ -1823,9 +1837,26 @@ class MultiSim(sc.prettyobj):
 
         See ``sim.plot()`` for additional args.
         '''
-        fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
+        fig_args  = sc.mergedicts(dict(figsize=(16,10), nrows=None, ncols=None), fig_args)
+        axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.30), axis_args)
+        if to_plot == 'method' and len(self.sims) > 1:
+             with fpo.with_style(style):
+                nrows,ncols = fig_args.pop('nrows'), fig_args.pop('ncols')
+                fig = pl.figure(**fig_args)
+                pl.subplots_adjust(**axis_args)
+                do_show = kwargs.pop('do_show', True)
+                rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
+                do_show = kwargs.pop('do_show', True)
+                for index, sim in enumerate(self.sims):
+                    data = sim.format_method_df(timeseries=True)
+                    ax = pl.subplot(rows, cols, index+1)
+                    legend=False
+                    if index == 0:
+                        legend=True
+                    sns.lineplot(ax=ax, y=data["Percentage"], x=data["Year"], hue=data["Method"], data=data, legend=legend).set_title(sim.label)
+                return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
-        if plot_sims:
+        elif plot_sims:
             fig = pl.figure(**fig_args)
             do_show = kwargs.pop('do_show', True)
             labels = sc.autolist()
