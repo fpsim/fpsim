@@ -1409,13 +1409,6 @@ class Sim(fpb.BaseSim):
                                 years.append(year)
                                 y.append(proportion)
                                 methods.append(inv_methods_map[method_index])
-                    colors = sc.gridcolors(ncolors=len(np.unique(methods)))
-
-                    color_col = []
-                    for method in methods:
-                        index = fpd.method_map[method]
-                        print(index)
-                        color_col.append(colors[index-1]) # since no None
                     
                     data = pd.DataFrame({"Method": methods, "Year": years, "Percentage": y})
                     sns.lineplot(ax=ax, y=data["Percentage"], x=data["Year"], hue=data["Method"], data=data)
@@ -1651,7 +1644,7 @@ class MultiSim(sc.prettyobj):
             raise ValueError(errormsg)
 
         reskeys = list(base_sim.results.keys())
-        for key in ['t', 'tfr_years']: # Don't compute high/low for these
+        for key in ['t', 'tfr_years', 'method_usage']: # Don't compute high/low for these
             results[key] = base_sim.results[key]
             reskeys.remove(key)
         for reskey in reskeys:
