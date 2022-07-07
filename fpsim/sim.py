@@ -1847,13 +1847,18 @@ class MultiSim(sc.prettyobj):
                 do_show = kwargs.pop('do_show', True)
                 rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
                 do_show = kwargs.pop('do_show', True)
-                for index, sim in enumerate(self.sims):
-                    data = sim.format_method_df(timeseries=True)
+                labels = np.unique([sim.label for sim in self.sims])
+                for index, label in enumerate(labels):
+                    total_df = pd.DataFrame()
                     ax = pl.subplot(rows, cols, index+1)
-                    legend=False
-                    if index == 0:
-                        legend=True
-                    sns.lineplot(ax=ax, y=data["Percentage"], x=data["Year"], hue=data["Method"], data=data, legend=legend).set_title(sim.label)
+                    for sim in self.sims:
+                        if sim.label == label:
+                            total_df = pd.concat([total_df, sim.format_method_df(timeseries=True)], ignore_index=True)
+                        legend=False
+                        if index == 0:
+                            legend=True
+                    sns.lineplot(ax=ax, y=total_df["Percentage"], x=total_df["Year"], hue=total_df["Method"], data=total_df, style=total_df["Method"], legend=legend).set_title(sim.label)
+                    pl.ylim(0, 9)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
         elif plot_sims:
