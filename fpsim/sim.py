@@ -841,6 +841,7 @@ class Sim(fpb.BaseSim):
         self.results['stillbirths_over_year'] = []
         self.results['miscarriages_over_year'] = []
         self.results['abortions_over_year'] = []
+        self.results['pregnancies_over_year'] = []
         self.results['risky_pregs_over_year'] = []
         self.results['maternal_deaths_over_year'] = []
         self.results['mmr'] = []
