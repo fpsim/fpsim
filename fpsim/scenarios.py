@@ -422,7 +422,10 @@ class Scenarios(sc.prettyobj):
     def plot(self, to_plot=None, plot_sims=True, **kwargs):
         ''' Plot the scenarios with bands -- see ``sim.plot()`` for args '''
         self.check_run()
-        return self.msim_merged.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
+        if to_plot == 'method':
+            return self.msim.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
+        else:
+            return self.msim_merged.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
 
 
     def plot_sims(self, to_plot=None, plot_sims=True, **kwargs):

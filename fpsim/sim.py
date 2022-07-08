@@ -1839,7 +1839,7 @@ class MultiSim(sc.prettyobj):
         '''
         fig_args  = sc.mergedicts(dict(figsize=(16,10), nrows=None, ncols=None), fig_args)
         axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.30), axis_args)
-        if to_plot == 'method' and len(self.sims) > 1:
+        if to_plot == 'method':
              with fpo.with_style(style):
                 nrows,ncols = fig_args.pop('nrows'), fig_args.pop('ncols')
                 fig = pl.figure(**fig_args)
@@ -1857,7 +1857,8 @@ class MultiSim(sc.prettyobj):
                         legend=False
                         if index == 0:
                             legend=True
-                    sns.lineplot(ax=ax, y=total_df["Percentage"], x=total_df["Year"], hue=total_df["Method"], data=total_df, style=total_df["Method"], legend=legend).set_title(sim.label)
+                    #assert 1 == 0
+                    sns.lineplot(ax=ax, y=total_df["Percentage"], x=total_df["Year"], hue=total_df["Method"], data=total_df, legend=legend).set_title(sim.label)#style=total_df["Method"], legend=legend).set_title(sim.label)
                     pl.ylim(0, 9)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
