@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.16.2 (2022-07-01)
+--------------------------
+- Refactors channel aggregation in Scenarios.analyze_sims()
+- *GitHub info*: ``561 https://github.com/amath-idm/fpsim/pull/561``
+
 Version 0.16.1 (2022-06-30)
 --------------------------
 - Add tracking of pregnancies
