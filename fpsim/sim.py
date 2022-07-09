@@ -1811,7 +1811,8 @@ class MultiSim(sc.prettyobj):
                 for index, label in enumerate(np.unique(labels)):
                     total_df = pd.DataFrame()
                     return_default = lambda name: fig_args[name] if name in fig_args else None
-                    ax = pl.subplot(return_default("nrows"), return_default("ncols"), index+1)
+                    rows,cols = sc.getrowscols(n_unique, nrows=return_default('nrows'), ncols=return_default('ncols'))
+                    ax = pl.subplot(rows, cols, index+1)
                     for sim in self.sims:
                         if sim.label == label:
                             total_df = pd.concat([total_df, sim.format_method_df(timeseries=True)], ignore_index=True)
