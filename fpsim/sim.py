@@ -1461,14 +1461,13 @@ class Sim(fpb.BaseSim):
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
     def compute_method_usage(self):
-        """ 
+        '''
         Computes method mix proportions from a sim object 
         
         Returns:
             list of lists where list[years_after_start][method_index] == proportion of 
             fecundity aged women using that method on that year
-        
-        """
+        '''
 
         ppl = self.people
         min_age = 15
