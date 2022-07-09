@@ -193,7 +193,7 @@ def test_scenarios(do_plot=do_plot):
     if do_plot:
         scens.plot()
         scens.plot_sims()
-        scens.plot_method_mix()
+        scens.plot(to_plot='method')
 
     return scens
 
@@ -247,7 +247,6 @@ def test_make_scens():
     scens.run(serial=serial)
 
     return scens
-
 
 if __name__ == '__main__':
 

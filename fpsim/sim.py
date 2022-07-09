@@ -1805,9 +1805,9 @@ class MultiSim(sc.prettyobj):
             n_unique = len(np.unique(labels)) # How many unique sims there are
 
         if to_plot == 'method':
-            axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.30), axis_args)
+            axis_args_method = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.30), axis_args)
             with fpo.with_style(style):
-                pl.subplots_adjust(**axis_args)
+                pl.subplots_adjust(**axis_args_method)
                 for index, label in enumerate(np.unique(labels)):
                     total_df = pd.DataFrame()
                     return_default = lambda name: fig_args[name] if name in fig_args else None
