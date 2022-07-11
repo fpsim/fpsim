@@ -1499,7 +1499,7 @@ class Sim(fpb.BaseSim):
         Returns:
             pandas.DataFrame with columns ["Percentage", "Method", "Sim", "Seed"] and optionally "Year" if timeseries
         '''
-        inv_method_map = {index: name for name, index in fpd.method_map.items()}
+        inv_method_map = {index: name for name, index in self.pars['methods']['map'].items()}
         def get_df_from_result(method_list):
             df_dict = {"Percentage": [], "Method": [], "Sim": [], "Seed": []}
             for method_index, prop in enumerate(method_list):
