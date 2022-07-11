@@ -433,13 +433,6 @@ class Scenarios(sc.prettyobj):
         self.check_run()
         return self.msim.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
 
-
-    def plot_method_mix(self, *args, **kwargs):
-        ''' Plots the method mix -- see ``sim.plot_method_mix()`` for args '''
-        self.check_run()
-        return self.msim.plot_method_mix(*args, **kwargs)
-
-
     def analyze_sims(self, start=None, end=None):
         ''' Take a list of sims that have different labels and extrapolate statistics from each '''
         self.check_run()
