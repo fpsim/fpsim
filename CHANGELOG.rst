@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.17.0 (2022-07-08)
+--------------------------
+- Added method_mix timeseries plotting to Sim, MultiSim, and Scenarios through plot(to_plot='method')
+- Added some test coverage for method mix plotting
+- *GitHub info*: ``561 https://github.com/amath-idm/fpsim/pull/561``
+
 Version 0.16.2 (2022-07-01)
 --------------------------
 - Refactors channel aggregation in Scenarios.analyze_sims()
