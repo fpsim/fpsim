@@ -1480,7 +1480,7 @@ class Sim(fpb.BaseSim):
         unique, counts = np.unique(filtered_methods, return_counts=True)
         count_dict = dict(zip(unique, counts))
 
-        result = [0] * len(fpd.method_map)
+        result = [0] * (len(self.pars['methods']['eff']))
         for method in count_dict:
             result[method] = count_dict[method] / len(filtered_methods)
 
