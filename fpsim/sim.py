@@ -1807,7 +1807,7 @@ class MultiSim(sc.prettyobj):
             axis_args_method = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.30), axis_args)
             with fpo.with_style(style):
                 pl.subplots_adjust(**axis_args_method)
-                for index, label in enumerate(np.unique(labels)):
+                for index, label in enumerate(np.unique(labels)): 
                     total_df = pd.DataFrame()
                     return_default = lambda name: fig_args[name] if name in fig_args else None
                     rows,cols = sc.getrowscols(n_unique, nrows=return_default('nrows'), ncols=return_default('ncols'))
@@ -1815,9 +1815,14 @@ class MultiSim(sc.prettyobj):
                     for sim in self.sims:
                         if sim.label == label:
                             total_df = pd.concat([total_df, sim.format_method_df(timeseries=True)], ignore_index=True)
-                    legend = index == 0 # True for first plot, otherwise False 
+                    legend = index + 1 == cols # True for first plot, otherwise False 
                     sns.lineplot(ax=ax, y="Percentage", x="Year", hue="Method", style="Method", legend=legend, data=total_df).set_title(label)
+                    if legend:
+                        legend_ax = ax
+                    # if legend:
+                    #     ax.legend(loc='upper right')
                 pl.ylim(0, (total_df['Percentage'].max() + 1))
+                legend_ax.legend(loc='lower left', bbox_to_anchor=(1.0, -0.05), frameon=True)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
         elif plot_sims:
