@@ -1819,8 +1819,16 @@ class MultiSim(sc.prettyobj):
                     method_names = total_df['Method'].unique()
                     percentage_by_method = []
                     for index, method in enumerate(method_names):
-                        percentage_by_method.append(total_df[total_df['Method'] == method]['Percentage'].values)
+                        method_df = total_df[(total_df['Method'] == method) & (total_df['Sim'] == label)]
+                        seed_split = []
+                        for seed in method_df['Seed'].unique():
+                            seed_split.append(method_df[method_df['Seed'] == seed]['Percentage'].values)
+                        seed_agg = []
+                        for i in range(len(seed_split[0])):
+                            seed_agg.append(np.mean([seed[i] for seed in seed_split]))
+                        percentage_by_method.append(seed_agg)
 
+                    #assert 1 == 0
                     ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names, colors=colors)
                     ax.set_title(label)
                     ax.legend().set_visible(legend)
