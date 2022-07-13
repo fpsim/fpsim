@@ -1779,7 +1779,7 @@ class MultiSim(sc.prettyobj):
 
 
     def plot(self, to_plot=None, plot_sims=True, do_show=None, do_save=None, filename='fp_multisim.png',
-             fig_args=None, axis_args=None, plot_args=None, style=None, **kwargs):
+             fig_args=None, axis_args=None, plot_args=None, style=None, colors=None, **kwargs):
         '''
         Plot the MultiSim
 
@@ -1815,14 +1815,28 @@ class MultiSim(sc.prettyobj):
                     for sim in self.sims:
                         if sim.label == label:
                             total_df = pd.concat([total_df, sim.format_method_df(timeseries=True)], ignore_index=True)
-                    legend = index + 1 == cols # True for first plot, otherwise False 
-                    sns.lineplot(ax=ax, y="Percentage", x="Year", hue="Method", style="Method", legend=legend, data=total_df).set_title(label)
+                    legend = index + 1 == cols # True for last plot in first row
+                    method_names = total_df['Method'].unique()
+                    percentage_by_method = []
+                    for index, method in enumerate(method_names):
+                        method_df = total_df[(total_df['Method'] == method) & (total_df['Sim'] == label)]
+                        seed_split = []
+                        for seed in method_df['Seed'].unique():
+                            seed_split.append(method_df[method_df['Seed'] == seed]['Percentage'].values)
+                        seed_agg = []
+                        for i in range(len(seed_split[0])):
+                            seed_agg.append(np.mean([seed[i] for seed in seed_split]))
+                        percentage_by_method.append(seed_agg)
+
+                    #assert 1 == 0
+                    ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names, colors=colors)
+                    ax.set_title(label)
+                    ax.legend().set_visible(legend)
                     if legend:
                         legend_ax = ax
-                    # if legend:
-                    #     ax.legend(loc='upper right')
-                pl.ylim(0, (total_df['Percentage'].max() + 1))
-                legend_ax.legend(loc='lower left', bbox_to_anchor=(1.0, -0.05), frameon=True)
+                    results = [sim.results for sim in self.sims]
+                    pl.ylim(0, max(max([sum(proportion[1:]*100) for proportion in results['method_usage']]) for results in [sim.results for sim in self.sims]) + 1)
+                legend_ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
         elif plot_sims:
