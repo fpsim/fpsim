@@ -1779,7 +1779,7 @@ class MultiSim(sc.prettyobj):
 
 
     def plot(self, to_plot=None, plot_sims=True, do_show=None, do_save=None, filename='fp_multisim.png',
-             fig_args=None, axis_args=None, plot_args=None, style=None, **kwargs):
+             fig_args=None, axis_args=None, plot_args=None, style=None, colors=None, **kwargs):
         '''
         Plot the MultiSim
 
@@ -1821,7 +1821,7 @@ class MultiSim(sc.prettyobj):
                     for index, method in enumerate(method_names):
                         percentage_by_method[index] = total_df[total_df['Method'] == method]['Percentage'].values
 
-                    ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names)
+                    ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names, colors=colors)
                     ax.set_title(label)
                     ax.legend().set_visible(legend)
                     if legend:
