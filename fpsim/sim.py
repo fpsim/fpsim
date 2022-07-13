@@ -1815,13 +1815,18 @@ class MultiSim(sc.prettyobj):
                     for sim in self.sims:
                         if sim.label == label:
                             total_df = pd.concat([total_df, sim.format_method_df(timeseries=True)], ignore_index=True)
-                    legend = index + 1 == cols # True for first plot, otherwise False 
-                    sns.lineplot(ax=ax, y="Percentage", x="Year", hue="Method", style="Method", legend=legend, data=total_df).set_title(label)
+                    legend = index + 1 == cols # True for last plot in first row
+                    method_names = total_df['Method'].unique()
+                    percentage_by_method = [0] * len(method_names)
+                    for index, method in enumerate(method_names):
+                        percentage_by_method[index] = total_df[total_df['Method'] == method]['Percentage'].values
+
+                    ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names)
+                    ax.set_title(label)
+                    ax.legend().set_visible(legend)
                     if legend:
                         legend_ax = ax
-                    # if legend:
-                    #     ax.legend(loc='upper right')
-                pl.ylim(0, (total_df['Percentage'].max() + 1))
+                    pl.ylim(0, 50)
                 legend_ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
