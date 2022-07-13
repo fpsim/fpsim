@@ -1817,16 +1817,17 @@ class MultiSim(sc.prettyobj):
                             total_df = pd.concat([total_df, sim.format_method_df(timeseries=True)], ignore_index=True)
                     legend = index + 1 == cols # True for last plot in first row
                     method_names = total_df['Method'].unique()
-                    percentage_by_method = [0] * len(method_names)
+                    percentage_by_method = []
                     for index, method in enumerate(method_names):
-                        percentage_by_method[index] = total_df[total_df['Method'] == method]['Percentage'].values
+                        percentage_by_method.append(total_df[total_df['Method'] == method]['Percentage'].values)
 
                     ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names, colors=colors)
                     ax.set_title(label)
                     ax.legend().set_visible(legend)
                     if legend:
                         legend_ax = ax
-                    pl.ylim(0, 50)
+                    results = [sim.results for sim in self.sims]
+                    pl.ylim(0, max(max([sum(proportion[1:]*100) for proportion in results['method_usage']]) for results in [sim.results for sim in self.sims]) + 1)
                 legend_ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
