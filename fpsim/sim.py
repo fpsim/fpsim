@@ -1822,7 +1822,7 @@ class MultiSim(sc.prettyobj):
                     # if legend:
                     #     ax.legend(loc='upper right')
                 pl.ylim(0, (total_df['Percentage'].max() + 1))
-                legend_ax.legend(loc='lower left', bbox_to_anchor=(1.0, -0.05), frameon=True)
+                legend_ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
         elif plot_sims:
