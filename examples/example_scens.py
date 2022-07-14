@@ -60,11 +60,7 @@ if __name__ == '__main__':
    
     scens_fig = scens.plot()
     cpr_fig = scens.plot('cpr')
-    for fig in [scens_fig, cpr_fig]:
-                    for ax in fig.axes:
-                        ax.set_xlim(left = 2025, 
-                                    right = 2040)
-                        
+    
     
     ##set color dict for method mix plot
     colors = {
@@ -85,6 +81,6 @@ if __name__ == '__main__':
     meth_fig = scens.plot('method', colors=[color for color in colors.values()])                        
     for fig in [meth_fig]:
                     for ax in fig.axes:
-                        ax.set_xlim(left = 2010, 
+                        ax.set_xlim(left = 2010,   #note that 'historical' method mix is not calibrated
                                     right = 2040)                    
     print('Done.')
