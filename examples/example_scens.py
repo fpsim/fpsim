@@ -8,12 +8,13 @@ Created on Thu Jul 14 11:09:58 2022
 @author: michelleob
 """
 
-debug = 1
+debug = 1 
 
 if __name__ == '__main__':
 
     import fpsim as fp
-
+    
+    #keep structure below if replicating to create new scenarios; first number is the full run, second number is for debug
     n_agents   = [10_000, 100][debug]
     start_year = [1980, 2010][debug]
     repeats    = [10, 1][debug]
