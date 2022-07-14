@@ -31,7 +31,7 @@ if __name__ == '__main__':
     d_kw = dict(dest=method) #kwargs for adjusting switching
 
     s1 = fp.make_scen(
-            label = 'test new method',
+            label = 'intro new method, double init',
             year  = year,
             probs = [
                 dict(copy_from='Injectables', **kw),
@@ -40,7 +40,7 @@ if __name__ == '__main__':
                 )
     
     s2 = fp.make_scen(
-           label = 'test new method switching',
+           label = 'intro new method, 20% switching',
            year  = year,
            probs = [
                 dict(source = 'Injectables', value = 0.20, **d_kw)
