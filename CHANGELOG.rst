@@ -11,6 +11,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 Version 0.17.1 (2022-07-14)
 --------------------------
 - Added example_scens.py for a quick debug of adding a novel method when developing new features
+- Updated README with new debugging guidance
 - GitHub info*: ``570 https://github.com/amath-idm/fpsim/pull/570``
 
 Version 0.17.0 (2022-07-08)
