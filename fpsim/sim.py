@@ -1828,13 +1828,12 @@ class MultiSim(sc.prettyobj):
                             seed_agg.append(np.mean([seed[i] for seed in seed_split]))
                         percentage_by_method.append(seed_agg)
 
-                    #assert 1 == 0
-                    ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names, colors=colors)
-                    ax.set_title(label)
+                    colors = [colors[method] for method in method_names] if isinstance(colors, dict) else colors
+                    ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=[name.capitalize() for name in method_names], colors=colors)
+                    ax.set_title(label.capitalize())
                     ax.legend().set_visible(legend)
                     if legend:
                         legend_ax = ax
-                    results = [sim.results for sim in self.sims]
                     pl.ylim(0, max(max([sum(proportion[1:]*100) for proportion in results['method_usage']]) for results in [sim.results for sim in self.sims]) + 1)
                 legend_ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
