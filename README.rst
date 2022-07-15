@@ -68,13 +68,22 @@ Please follow the starsim style guide at: https://github.com/amath-idm/styleguid
 
 **Testing**
 
-* Every time a new feature is added, the developer should develop a unittest which checks the basic implementation of the feature
-* A unittest is simply a function starting with "test" that implements a feature as succinctly as possibly, and checks the expected output with an assertion
-* If you're having trouble starting a unittest feel free to look at some examples `here <https://github.com/amath-idm/fp_analyses/blob/master/tests/test_scenarios.py>`_
-* `Some test suites <https://github.com/amath-idm/fp_analyses/blob/master/tests/test_states.py>`_ organize the tests into a class with a configuration function called ``setUp()``. After implementing a unittest in such a class you may want to take advantage of the shared assets defined in ``setUp()`` to minimize the number of lines of code in your test.
-* The new unittest should follow style guidelines laid out in the `starsim style guide <https://github.com/amath-idm/styleguide/tree/testing>`_
-* The new test should contain a docstring that details what is being tested, how it is tested (what it's being checked against), and the expected value
-* The test should display error message information that is sufficient to create a bug report (summary, expected value, and actual value)
+* Development and Debugging
+
+    - Developers are responsible for ensuring the functionality of new features they develop
+           - Debugging and testing code are core features of ensuring functionality
+           - When debugging in active development mode, ensure that your new feature is compatible with not only a single run of FPsim, but also the multisim scenarios
+           - Ensure new features are compatible with introducing a novel method in scenarios
+           - Use example_scens.py to quickly debug your new feature during development
+
+* Test Coverage       
+    - Every time a new feature is added, the developer should develop a unittest which checks the basic implementation of the feature
+    - A unittest is simply a function starting with "test" that implements a feature as succinctly as possibly, and checks the expected output with an assertion
+    - If you're having trouble starting a unittest feel free to look at some examples `here <https://github.com/amath-idm/fp_analyses/blob/master/tests/test_scenarios.py>`_
+    - `Some test suites <https://github.com/amath-idm/fp_analyses/blob/master/tests/test_states.py>`_ organize the tests into a class with a configuration function called ``setUp()``. After implementing a unittest in such a class you may want to take advantage of the shared assets defined in ``setUp()`` to minimize the number of lines of code in your test.
+    - The new unittest should follow style guidelines laid out in the `starsim style guide <https://github.com/amath-idm/styleguide/tree/testing>`_
+    - The new test should contain a docstring that details what is being tested, how it is tested (what it's being checked against), and the expected value
+    - The test should display error message information that is sufficient to create a bug report (summary, expected value, and actual value)
 
 
 
