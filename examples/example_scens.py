@@ -74,7 +74,6 @@ if __name__ == '__main__':
     'IUDs'              : [0.0, 0.0, 0.9],
     'BTL'               : [0.8, 0.0, 0.0],
     'Other modern'      : [0.8, 0.5, 0.5],
-    'new implants'      : [0.7, 0.8, 0.7],
     'new injectables'   : [0.2, 0.8, 0.2],
     }
                         
