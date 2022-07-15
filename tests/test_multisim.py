@@ -32,6 +32,7 @@ def test_multisim(do_plot=do_plot):
     if do_plot:
         msim.plot(plot_sims=True)
         msim.plot(plot_sims=False)
+        msim.plot_age_first_birth()
 
     return msim
 

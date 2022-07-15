@@ -8,9 +8,63 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.17.1 (2022-07-14)
+--------------------------
+- Added example_scens.py for a quick debug of adding a novel method when developing new features
+- Updated README with new debugging guidance
+- GitHub info*: ``570 https://github.com/amath-idm/fpsim/pull/570``
+
+Version 0.17.0 (2022-07-08)
+--------------------------
+- Added method_mix timeseries plotting to Sim, MultiSim, and Scenarios through plot(to_plot='method')
+- Added some test coverage for method mix plotting
+- *GitHub info*: ``561 https://github.com/amath-idm/fpsim/pull/561``
+
+Version 0.16.2 (2022-07-01)
+--------------------------
+- Refactors channel aggregation in Scenarios.analyze_sims()
+- *GitHub info*: ``561 https://github.com/amath-idm/fpsim/pull/561``
+
+Version 0.16.1 (2022-06-30)
+--------------------------
+- Add tracking of pregnancies
+- Add cumulative sum of pregnancies to plotting functionality (see plot('apo'))
+- *GitHub info*: ``555 https://github.com/amath-idm/fpsim/pull/555``
+
+Version 0.16.0 (2022-06-28)
+--------------------------
+- Split matrix age category >25 into 26-35 and >35 
+- Baseline contraceptive behavior remains the same, but interventions can differentiate now
+- *GitHub info*: ``551 https://github.com/amath-idm/fpsim/pull/551``
+
+Version 0.15.0 (2022-06-13)
+--------------------------
+- Added new plotting functionality ``Scenarios.plot('mortality')``
+- Added new plotting functionality ``Scenarios.plot('apo')`` for adverse pregnancy outcomes
+- Added ``stillbirths_over_year`` to keys, tracking, and plotting
+- Added tracking of miscarriage, abortion, corresponding keys and plotting
+- Temporarily commented out plot_interventions in ``sim.py`` to fix x-axis and vline issues in plotting
+- *GitHub info*: PR ``549 <https://github.com/amath-idm/fpsim/pull/549>``
+
+
 Version 0.14.2 (2022-06-06)
 --------------------------
 - Adding 3 new columns to the results dataframe in Scenarios
+
+Version 0.14.2 (2022-05-31)
+--------------------------
+- Fixed bug in ``fp.snapshot()`` missing non-exact timesteps.
+- Fixed bug with ``fp.timeseries_recorder()`` not being capable of being added as a kwarg.
+- Tidied output of ``SimVerbose.story()``.
+- Added ``sim.get_analyzer()`` and ``sim.get_intervention()`` methods (along with the plural versions).
+- Renamed ``Experiment.dhs_data`` to ``Experiment.data``; likewise for ``model_to_calib`` → ``model``.
+- Fixed bug with MCPR year plotting in ``Experiment``.
+- Fixed bug with analyzers being applied only at the end of the sim instead of at every timestep.
+- Fixed bug with interventions not plotting with simulations.
+- Fixed bug with ``finalize()`` not being called for interventions.
+- Increased code coverage of tests from 67% to 80%.
+- *GitHub info*: PR `533 <https://github.com/amath-idm/fp_analyses/pull/533>`__
+
 
 Version 0.14.1 (2022-05-27)
 --------------------------

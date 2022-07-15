@@ -70,6 +70,7 @@ class People(fpb.BasePeople):
         self.stillbirth       = arr(n, d['stillbirth']) # Number of stillbirths
         self.miscarriage      = arr(n, d['miscarriage']) # Number of miscarriages
         self.abortion         = arr(n, d['abortion']) # Number of abortions
+        self.pregnancies      = arr(n, d['pregnancies']) #Number of conceptions (before abortion)
         self.postpartum       = arr(n, d['postpartum'])
         self.mothers          = arr(n, d['mothers'])
 
@@ -358,8 +359,9 @@ class People(fpb.BasePeople):
 
         # Use a single binomial trial to check for conception successes this month
         conceived = active.binomial(preg_probs[active.inds], as_filter=True)
+        self.step_results['pregnancies'] += len(conceived) # track all pregnancies
         unintended = conceived.filter(conceived.method != 0)
-        self.step_results['unintended_pregs'] += len(unintended)
+        self.step_results['unintended_pregs'] += len(unintended) # track pregnancies due to method failure
 
         # Check for abortion
         is_abort = conceived.binomial(pars['abortion_prob'])
@@ -373,7 +375,7 @@ class People(fpb.BasePeople):
         abort.postpartum_dur = 0
         for i in abort.inds: # Handle adding dates
             all_ppl.abortion_dates[i].append(all_ppl.age[i])
-
+        self.step_results['abortions'] = len(abort)
         # Make selected agents pregnant
         preg.make_pregnant()
 
@@ -466,6 +468,7 @@ class People(fpb.BasePeople):
         miscarriage.gestation  = 0  # Reset gestation counter
         for i in miscarriage.inds: # Handle adding dates
             all_ppl.miscarriage_dates[i].append(all_ppl.age[i])
+        self.step_results['miscarriages'] = len(miscarriage)
         return
 
 
@@ -661,6 +664,7 @@ class People(fpb.BasePeople):
             pp6to11         = 0,
             pp12to23        = 0,
             total_women_fecund = 0,
+            pregnancies     = 0,
             unintended_pregs = 0,
             birthday_fraction = None,
             birth_bins        = {},
@@ -816,7 +820,7 @@ class Sim(fpb.BaseSim):
 
 
     def init_results(self):
-        resultscols = ['t', 'pop_size_months', 'births', 'deaths', 'stillbirths', 'total_births', 'maternal_deaths', 'infant_deaths',
+        resultscols = ['t', 'pop_size_months','pregnancies', 'births', 'deaths', 'stillbirths', 'miscarriages','abortions', 'total_births', 'maternal_deaths', 'infant_deaths',
                        'cum_maternal_deaths', 'cum_infant_deaths', 'on_methods_mcpr', 'no_methods_mcpr', 'on_methods_cpr', 'no_methods_cpr', 'on_methods_acpr',
                        'no_methods_acpr', 'mcpr', 'cpr', 'acpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
@@ -833,12 +837,18 @@ class Sim(fpb.BaseSim):
         self.results['method_failures_over_year'] = []
         self.results['infant_deaths_over_year'] = []
         self.results['total_births_over_year'] = []
-        self.results['live_births_over_year'] = []
+        self.results['live_births_over_year'] = []        
+        self.results['stillbirths_over_year'] = []
+        self.results['miscarriages_over_year'] = []
+        self.results['abortions_over_year'] = []
+        self.results['pregnancies_over_year'] = []
+        self.results['risky_pregs_over_year'] = []
         self.results['maternal_deaths_over_year'] = []
         self.results['mmr'] = []
         self.results['imr'] = []
         self.results['birthday_fraction'] = []
         self.results['asfr'] = {}
+        self.results['method_usage'] = []
 
         for key in fpd.age_bin_map.keys():
             self.results['asfr'][key] = []
@@ -851,11 +861,13 @@ class Sim(fpb.BaseSim):
                 'switching_events_<18',
                 'switching_events_18-20',
                 'switching_events_21-25',
-                'switching_events_>25',
+                'switching_events_26-35',
+                'switching_events_>35',
                 'switching_events_pp_<18',
                 'switching_events_pp_18-20',
                 'switching_events_pp_21-25',
-                'switching_events_pp_>25',
+                'switching_events_pp_26-35',
+                'switching_events_pp_>35',
             ]
             for key in keys:
                 self.results[key] = {} # CK: TODO: refactor
@@ -1016,6 +1028,22 @@ class Sim(fpb.BaseSim):
         return
 
 
+    def finalize_interventions(self):
+        ''' Make any final updates to interventions (e.g. to shrink) '''
+        from . import interventions as fpi # To avoid circular import
+        for intervention in sc.tolist(self['interventions']):
+            if isinstance(intervention, fpi.Intervention):
+                intervention.finalize(self)
+
+
+    def finalize_analyzers(self):
+        ''' Make any final updates to analyzers (e.g. to shrink) '''
+        from . import analyzers as fpa # To avoid circular import
+        for analyzer in sc.tolist(self['analyzers']):
+            if isinstance(analyzer, fpa.Analyzer):
+                analyzer.finalize(self)
+
+
     def run(self, verbose=None):
         ''' Run the simulation '''
 
@@ -1052,8 +1080,9 @@ class Sim(fpb.BaseSim):
             # Update mortality probabilities for year of sim
             self.update_mortality()
 
-            # Apply interventions
+            # Apply interventions and analyzers
             self.apply_interventions()
+            self.apply_analyzers()
 
             # Update the people
             self.people.i = self.i
@@ -1090,6 +1119,9 @@ class Sim(fpb.BaseSim):
             self.results['births'][i]          = r.births*scale
             self.results['deaths'][i]          = r.deaths*scale
             self.results['stillbirths'][i]     = r.stillbirths*scale
+            self.results['miscarriages'][i]     = r.miscarriages*scale
+            self.results['abortions'][i]        = r.abortions*scale
+            self.results['pregnancies'][i]     = r.pregnancies*scale
             self.results['total_births'][i]    = r.total_births*scale
             self.results['maternal_deaths'][i] = r.maternal_deaths*scale
             self.results['infant_deaths'][i]   = r.infant_deaths*scale
@@ -1121,11 +1153,13 @@ class Sim(fpb.BaseSim):
                 self.results['switching_events_<18'][i]        = scale**scale*r.switching_annual['<18']
                 self.results['switching_events_18-20'][i]      = scale*r.switching_annual['18-20']
                 self.results['switching_events_21-25'][i]      = scale*r.switching_annual['21-25']
-                self.results['switching_events_>25'][i]        = scale*r.switching_annual['>25']
+                self.results['switching_events_26-35'][i]        = scale*r.switching_annual['26-35']
+                self.results['switching_events_>35'][i]        = scale*r.switching_annual['>35']
                 self.results['switching_events_pp_<18'][i]     = scale*r.switching_postpartum['<18']
                 self.results['switching_events_pp_18-20'][i]   = scale*r.switching_postpartum['18-20']
                 self.results['switching_events_pp_21-25'][i]   = scale*r.switching_postpartum['21-25']
-                self.results['switching_events_pp_>25'][i]     = scale*r.switching_postpartum['>25']
+                self.results['switching_events_pp_26-35'][i]   = scale*r.switching_postpartum['26-35']
+                self.results['switching_events_pp_>35'][i]     = scale*r.switching_postpartum['>35']
                 self.results['switching_events_annual'][i]     = scale*switch_events['annual']
                 self.results['switching_events_postpartum'][i] = scale*switch_events['postpartum']
 
@@ -1138,15 +1172,24 @@ class Sim(fpb.BaseSim):
                 infant_deaths_over_year    = scale*np.sum(self.results['infant_deaths'][start_index:stop_index])
                 total_births_over_year     = scale*np.sum(self.results['total_births'][start_index:stop_index])
                 live_births_over_year      = scale*np.sum(self.results['births'][start_index:stop_index])
+                stillbirths_over_year      = scale*np.sum(self.results['stillbirths'][start_index:stop_index])
+                miscarriages_over_year     = scale*np.sum(self.results['miscarriages'][start_index:stop_index])
+                abortions_over_year        = scale*np.sum(self.results['abortions'][start_index:stop_index])
                 maternal_deaths_over_year  = scale*np.sum(self.results['maternal_deaths'][start_index:stop_index])
+                pregnancies_over_year  = scale*np.sum(self.results['pregnancies'][start_index:stop_index])
+                self.results['method_usage'].append(self.compute_method_usage()) # only want this per year
                 self.results['pop_size'].append(scale*self.n) # CK: TODO: replace with arrays
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['cpr_by_year'].append(self.results['cpr'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
                 self.results['total_births_over_year'].append(total_births_over_year)
-                self.results['live_births_over_year'].append(live_births_over_year)
+                self.results['live_births_over_year'].append(live_births_over_year)                
+                self.results['stillbirths_over_year'].append(stillbirths_over_year)
+                self.results['miscarriages_over_year'].append(miscarriages_over_year)
+                self.results['abortions_over_year'].append(abortions_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
+                self.results['pregnancies_over_year'].append(pregnancies_over_year)
                 if maternal_deaths_over_year == 0:
                     self.results['mmr'].append(0)
                 else:
@@ -1177,9 +1220,6 @@ class Sim(fpb.BaseSim):
         if not self.mother_ids:
             delattr(self.people, "mothers")
 
-        # Apply analyzers
-        self.apply_analyzers()
-
         # Convert all results to Numpy arrays
         for key,arr in self.results.items():
             if isinstance(arr, list):
@@ -1188,10 +1228,18 @@ class Sim(fpb.BaseSim):
         # Calculate cumulative totals
         self.results['cum_maternal_deaths_by_year'] = np.cumsum(self.results['maternal_deaths_over_year'])
         self.results['cum_infant_deaths_by_year']   = np.cumsum(self.results['infant_deaths_over_year'])
-        self.results['cum_live_births_by_year']     = np.cumsum(self.results['live_births_over_year'])
+        self.results['cum_live_births_by_year']     = np.cumsum(self.results['live_births_over_year'])        
+        self.results['cum_stillbirths_by_year']     = np.cumsum(self.results['stillbirths_over_year'])              
+        self.results['cum_miscarriages_by_year']     = np.cumsum(self.results['miscarriages_over_year'])      
+        self.results['cum_abortions_by_year']     = np.cumsum(self.results['abortions_over_year'])
+        self.results['cum_pregnancies_by_year']     = np.cumsum(self.results['pregnancies_over_year']) 
 
         # Convert to an objdict for easier access
         self.results = sc.objdict(self.results)
+
+        # Finalize interventions and analyzers
+        self.finalize_interventions()
+        self.finalize_analyzers()
 
         if verbose:
             print(f'Final population size: {self.n}.')
@@ -1286,10 +1334,10 @@ class Sim(fpb.BaseSim):
                 to_plot = {
                     'mcpr_by_year':                'Modern contraceptive prevalence rate (%)',
                     'cum_live_births_by_year':     'Live births',
+                    'cum_stillbirths_by_year':     'Stillbirths',
                     'cum_maternal_deaths_by_year': 'Maternal deaths',
                     'cum_infant_deaths_by_year':   'Infant deaths',
-                    'mmr':                         'Maternal mortality ratio',
-                    'imr':                         'Infant mortality rate',
+                    'imr':                         'Infant mortality rate',   
                 }
             elif to_plot == 'cpr':
                 to_plot = {
@@ -1297,6 +1345,26 @@ class Sim(fpb.BaseSim):
                     'cpr':  'CPR (contraceptive prevalence rate)',
                     'acpr': 'ACPR (alternative contraceptive prevalence rate',
                 }
+            elif to_plot == 'mortality':
+                to_plot = {                    
+                    'mmr':                         'Maternal mortality ratio',
+                    'cum_maternal_deaths_by_year': 'Maternal deaths',
+                    'cum_infant_deaths_by_year':   'Infant deaths',
+                    'imr':                         'Infant mortality rate',
+                    }
+            elif to_plot == 'apo': #adverse pregnancy outcomes
+                to_plot = {                    
+                    'cum_pregnancies_by_year':     'Pregnancies',
+                    'cum_stillbirths_by_year':     'Stillbirths',
+                    'cum_miscarriages_by_year':    'Miscarriages',
+                    'cum_abortions_by_year':       'Abortions',
+                    }
+
+            elif to_plot == 'method':
+                to_plot = {
+                    'method_usage':                 'Method usage'
+                } 
+
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
 
             for p,key,reslabel in sc.odict(to_plot).enumitems():
@@ -1338,11 +1406,21 @@ class Sim(fpb.BaseSim):
                         plotlabel = self.label
 
                 # Actually plot
-                ax.plot(x, y, label=plotlabel, **plot_args)
+                if "method_usage" in to_plot:
+                    data = self.format_method_df(timeseries=True)
+                    sns.lineplot(ax=ax, y=data["Percentage"], x=data["Year"], hue=data["Method"], data=data)
+                else:
+                    ax.plot(x, y, label=plotlabel, **plot_args)
+
                 if is_dist:
                     if 'c' in plot_args:
                         fill_args['facecolor'] = plot_args['c']
                     ax.fill_between(x, low, high, **fill_args)
+
+                # Plot interventions, if present
+                # for intv in sc.tolist(self['interventions']):
+                #     if hasattr(intv, 'plot_intervention'): # Don't plot e.g. functions
+                #         intv.plot_intervention(self, ax)
 
                 # Handle annotations
                 fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
@@ -1382,65 +1460,70 @@ class Sim(fpb.BaseSim):
         pl.xlabel('Age (years')
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
-
-    def compute_method_table(self):
-        """ Computes method mix proportions from a sim object """
-        method_table = sc.ddict(list)
-        people = self.people
-        unique, counts = np.unique(people.method, return_counts=True)
-        count_dict = dict(zip(unique, counts))
-        assert len(count_dict.keys()) > 1, 'There are no methods other than None in this Sim'
-
-        # Collect data
-        seed = self.pars['seed']
-        for method in count_dict:
-            if method != fpd.method_map['None']:
-                method_table['Proportion'].append(count_dict[method] / len(people.method))
-                method_table['Seed'].append(seed)
-                method_table['Method'].append(method)
-                method_table['Sim'].append(self.label if self.label else f"Sim (seed={seed})")
-
-        # Convert to dataframe
-        df = pd.DataFrame(method_table) # Makes it a bit easier to subset for bar charts
-
-        # We want names for the methods
-        methods_map = self.pars['methods']['map']
-        inv_methods_map = {value: key for key, value in methods_map.items()}
-        df['Method'] = df['Method'].map(inv_methods_map)
-
-        return df
-
-
-    def plot_method_mix(self, do_show=None, do_save=None, filename="method_mix.png", fig_args=None, data=None):
-        """
-        Plots the average method mix for n_sims runs
-
-        Args:
-            do_show (bool): whether or not the user wants to show the output plot (default: true)
-            do_save (bool): whether or not the user wants to save the plot to filepath (default: false)
-            filename (str): the name of the path to output the plot.
-            fig_args (dict): arguments to pass to ``pl.figure()``
-            data (dataframe): if supplied, plot these data (used by MultiSim)
-        """
-        # Compute or use existing data
-        if data is None:
-            df = self.compute_method_table()
-        else:
-            df = data
-        df['Percentage'] = df['Proportion']*100
+    def compute_method_usage(self):
+        '''
+        Computes method mix proportions from a sim object 
         
-        # Plotting and saving
-        fig = pl.figure(**sc.mergedicts(fig_args)) # Since Seaborn doesn't open a new figure
+        Returns:
+            list of lists where list[years_after_start][method_index] == proportion of 
+            fecundity aged women using that method on that year
+        '''
 
-        palette = sns.color_palette(sc.gridcolors(ncolors=len(np.unique(df['Method'])), ashex=True))
-        sns.barplot(data=df, x='Percentage', y='Method', hue='Sim', order=np.sort(np.unique(df['Method'])), palette=palette)
-        pl.title('Contraceptive method usage')
+        ppl = self.people
+        min_age = 15
+        max_age = self['age_limit_fecundity']
 
-        return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
+        # filtering for women with appropriate characteristics
+        bool_list = ppl.alive * [sex == 0 for sex in ppl.sex] * [min_age <= age for age in ppl.age] * [age < max_age for age in ppl.age]
+        filtered_methods = [method for index, method in enumerate(ppl.method) if bool_list[index]]
 
+        unique, counts = np.unique(filtered_methods, return_counts=True)
+        count_dict = dict(zip(unique, counts))
+
+        result = [0] * (len(self.pars['methods']['eff']))
+        for method in count_dict:
+            result[method] = count_dict[method] / len(filtered_methods)
+
+        return result
+
+    def format_method_df(self, method_list=None, timeseries=False):
+        '''
+        Outputs a dataframe for method mix plotting for either a single year or a timeseries
+        
+        Args:
+            method_list (list): 
+                list of proportions where each index is equal to the integer value of the corresponding method
+            timeseries (boolean): 
+                if true, provides a dataframe with data from every year, otherwise a method_list is required for the year
+
+        Returns:
+            pandas.DataFrame with columns ["Percentage", "Method", "Sim", "Seed"] and optionally "Year" if timeseries
+        '''
+        inv_method_map = {index: name for name, index in self.pars['methods']['map'].items()}
+        def get_df_from_result(method_list):
+            df_dict = {"Percentage": [], "Method": [], "Sim": [], "Seed": []}
+            for method_index, prop in enumerate(method_list):
+                if method_index != fpd.method_map['None']:
+                    df_dict["Percentage"].append(100*prop)
+                    df_dict['Method'].append(inv_method_map[method_index])
+                    df_dict['Sim'].append(self.label)
+                    df_dict['Seed'].append(self.pars['seed'])
+
+            return pd.DataFrame(df_dict)
+
+        if not timeseries:
+            return get_df_from_result(method_list)
+
+        else:
+            initial_year = self.pars['start_year']
+            total_df = pd.DataFrame()
+            for year_offset, method_list in enumerate(self.results['method_usage']):
+                year_df = self.format_method_df(method_list)
+                year_df['Year'] = [initial_year+year_offset] * len(year_df)
+                total_df = pd.concat([total_df, year_df], ignore_index=True)
+            return total_df
 
 #%% Multisim and running
-
 class MultiSim(sc.prettyobj):
     '''
     The MultiSim class handles the running of multiple simulations
@@ -1526,7 +1609,7 @@ class MultiSim(sc.prettyobj):
             raise ValueError(errormsg)
 
         reskeys = list(base_sim.results.keys())
-        for key in ['t', 'tfr_years']: # Don't compute high/low for these
+        for key in ['t', 'tfr_years', 'method_usage']: # Don't compute high/low for these
             results[key] = base_sim.results[key]
             reskeys.remove(key)
         for reskey in reskeys:
@@ -1696,7 +1779,7 @@ class MultiSim(sc.prettyobj):
 
 
     def plot(self, to_plot=None, plot_sims=True, do_show=None, do_save=None, filename='fp_multisim.png',
-             fig_args=None, plot_args=None, **kwargs):
+             fig_args=None, axis_args=None, plot_args=None, style=None, colors=None, **kwargs):
         '''
         Plot the MultiSim
 
@@ -1707,19 +1790,56 @@ class MultiSim(sc.prettyobj):
         '''
         fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
 
-        if plot_sims:
-            fig = pl.figure(**fig_args)
-            do_show = kwargs.pop('do_show', True)
-            labels = sc.autolist()
-            labellist = sc.autolist() # TODO: shouldn't need this
-            for sim in self.sims: # Loop over and find unique labels
-                if sim.label not in labels:
-                    labels += sim.label
-                    labellist += sim.label
-                    label = sim.label
-                else:
-                    labellist += ''
-                n_unique = len(np.unique(labels)) # How many unique sims there are
+        fig = pl.figure(**fig_args)
+        do_show = kwargs.pop('do_show', True)
+        labels = sc.autolist()
+        labellist = sc.autolist() # TODO: shouldn't need this
+        for sim in self.sims: # Loop over and find unique labels
+            if sim.label not in labels:
+                labels += sim.label
+                labellist += sim.label
+                label = sim.label
+            else:
+                labellist += ''
+            n_unique = len(np.unique(labels)) # How many unique sims there are
+
+        if to_plot == 'method':
+            axis_args_method = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.30), axis_args)
+            with fpo.with_style(style):
+                pl.subplots_adjust(**axis_args_method)
+                for index, label in enumerate(np.unique(labels)): 
+                    total_df = pd.DataFrame()
+                    return_default = lambda name: fig_args[name] if name in fig_args else None
+                    rows,cols = sc.getrowscols(n_unique, nrows=return_default('nrows'), ncols=return_default('ncols'))
+                    ax = pl.subplot(rows, cols, index+1)
+                    for sim in self.sims:
+                        if sim.label == label:
+                            total_df = pd.concat([total_df, sim.format_method_df(timeseries=True)], ignore_index=True)
+                    legend = index + 1 == cols # True for last plot in first row
+                    method_names = total_df['Method'].unique()
+                    percentage_by_method = []
+                    for index, method in enumerate(method_names):
+                        method_df = total_df[(total_df['Method'] == method) & (total_df['Sim'] == label)]
+                        seed_split = []
+                        for seed in method_df['Seed'].unique():
+                            seed_split.append(method_df[method_df['Seed'] == seed]['Percentage'].values)
+                        seed_agg = []
+                        for i in range(len(seed_split[0])):
+                            seed_agg.append(np.mean([seed[i] for seed in seed_split]))
+                        percentage_by_method.append(seed_agg)
+
+                    #assert 1 == 0
+                    ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names, colors=colors)
+                    ax.set_title(label)
+                    ax.legend().set_visible(legend)
+                    if legend:
+                        legend_ax = ax
+                    results = [sim.results for sim in self.sims]
+                    pl.ylim(0, max(max([sum(proportion[1:]*100) for proportion in results['method_usage']]) for results in [sim.results for sim in self.sims]) + 1)
+                legend_ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True)
+                return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
+
+        elif plot_sims:
             colors = sc.gridcolors(n_unique)
             colors = {k:c for k,c in zip(labels, colors)}
             for s,sim in enumerate(self.sims): # Note: produces duplicate legend entries
@@ -1733,31 +1853,6 @@ class MultiSim(sc.prettyobj):
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
             return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
-
-
-    def plot_method_mix(self, do_show=True, do_save=False, filename='method_mix.png'):
-        """
-        Plots the average method mix for n_sims runs
-
-        Args:
-            do_show (bool): Whether or not the user wants to show the output plot.
-            do_save (bool): Whether or not the user wants to save the plot to filepath.
-            filename (str): The name of the path to output the plot.
-        """
-
-        # Append all columns of function output to method_table
-        df = pd.DataFrame()
-        for sim in self.sims:
-            sim_df = sim.compute_method_table()
-            df = pd.concat([df, sim_df])
-
-        # Check that sim and seed combinations don't have matching entries
-        sim_seed_combos = list(zip(df['Sim'], df['Seed'], df['Method'])) # need to set to list first since it's an iterator
-        assert len(sim_seed_combos) == len(set(sim_seed_combos)), "Multiple entries with same label, seed, and method"
-
-        # Plot
-        fig = self.base_sim.plot_method_mix(do_show=do_show, do_save=do_save, filename=filename, data=df)
-        return fig
 
     def plot_age_first_birth(self, do_show=False, do_save=True, output_file='age_first_birth_multi.png'):
         length = sum([len([num for num in sim.people.first_birth_age if num is not None]) for sim in self.sims])

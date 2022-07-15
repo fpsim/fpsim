@@ -19,7 +19,7 @@ def check_not_none(obj, *args):
     ''' Check that all needed inputs are supplied '''
     for key in args:
         if obj[key] is None:
-            errormsg = f'Entry "{key}" is not allowed to be None for scenario spec "{obj.which}"'
+            errormsg = f'Entry "{key}" is not allowed to be None for the following scenario spec:\n{obj}'
             raise ValueError(errormsg)
     return
 
@@ -422,20 +422,16 @@ class Scenarios(sc.prettyobj):
     def plot(self, to_plot=None, plot_sims=True, **kwargs):
         ''' Plot the scenarios with bands -- see ``sim.plot()`` for args '''
         self.check_run()
-        return self.msim_merged.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
+        if to_plot == 'method':
+            return self.msim.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
+        else:
+            return self.msim_merged.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
 
 
     def plot_sims(self, to_plot=None, plot_sims=True, **kwargs):
         ''' Plot each sim as a separate line across all senarios -- see ``sim.plot()`` for args '''
         self.check_run()
         return self.msim.plot(to_plot=to_plot, plot_sims=plot_sims, **kwargs)
-
-
-    def plot_method_mix(self, *args, **kwargs):
-        ''' Plots the method mix -- see ``sim.plot_method_mix()`` for args '''
-        self.check_run()
-        return self.msim.plot_method_mix(*args, **kwargs)
-
 
     def analyze_sims(self, start=None, end=None):
         ''' Take a list of sims that have different labels and extrapolate statistics from each '''
@@ -446,54 +442,31 @@ class Scenarios(sc.prettyobj):
         if start is None: start = sim0.pars['start_year']
         if end   is None: end   = sim0.pars['end_year']
 
-        def count_births(sim):
-            year = sim.results['t']
-            births = sim.results['births']
-            inds = sc.findinds((year >= start), year <= end)
-            output = births[inds].sum()
-            return output
+        def analyze_sim(sim):
+            def aggregate_channel(channel, is_sum=True, is_t=False):
+                if is_t:
+                    year = sim.results['t']
+                else:
+                    year = sim.results['tfr_years']
+                channel_results = sim.results[channel]
+                inds = sc.findinds((year >= start), year <= end)
 
-        def method_failure(sim):
-            year = sim.results['tfr_years']
-            meth_fail = sim.results['method_failures_over_year']
-            inds = sc.findinds((year >= start), year <= end)
-            output = meth_fail[inds].sum()
-            return output
+                if is_sum:
+                    return channel_results[inds].sum()
+                else:
+                    return channel_results[inds].mean()
+            
+            # Defines how we calculate each channel, first number is is_sum: 1 = aggregate as sum, 0 = aggregate as mean
+            # The second parameter defines whether to aggregate by year or by timestep where 1 = use sim.t (timestep), 0 = use sim.tfr_years (years)
+            agg_param_dict = {'method_failures_over_year': (1, 0), 'pop_size': (1, 0), 'tfr_rates': (0, 0), 'maternal_deaths_over_year': (1, 0), 
+                            'infant_deaths_over_year': (1, 0), 'mcpr': (0, 1), 'births': (1, 1)}
+            results_dict = {}
 
-        def count_pop(sim):
-            year = sim.results['tfr_years']
-            popsize = sim.results['pop_size']
-            inds = sc.findinds((year >= start), year <= end)
-            output = popsize[inds].sum()
-            return output
+            for channel in agg_param_dict:
+                parameters = agg_param_dict[channel]
+                results_dict[channel] = aggregate_channel(channel, parameters[0], parameters[1])
 
-        def mean_tfr(sim):
-            year = sim.results['tfr_years']
-            rates = sim.results['tfr_rates']
-            inds = sc.findinds((year >= start), year <= end)
-            output = rates[inds].mean()
-            return output
-
-        def count_infant_deaths(sim):
-            year = sim.results['tfr_years']
-            infant_deaths = sim.results['infant_deaths_over_year']
-            inds = sc.findinds((year >= start), year <= end)
-            output = infant_deaths[inds].sum()
-            return output
-
-        def count_maternal_deaths(sim):
-            year = sim.results['tfr_years']
-            maternal_deaths = sim.results['maternal_deaths_over_year']
-            inds = sc.findinds((year >= start), year <= end)
-            output = maternal_deaths[inds].sum()
-            return output
-
-        def mean_mcpr(sim):
-            year = sim.results['tfr_years']
-            mcpr = sim.results['mcpr']
-            inds = sc.findinds((year >= start), year <= end)
-            output = mcpr[inds].mean()
-            return output       
+            return results_dict
 
         # Split the sims up by scenario
         results = sc.objdict()
@@ -511,21 +484,15 @@ class Scenarios(sc.prettyobj):
         raw = sc.ddict(list)
         for key,sims in results.sims.items():
             for sim in sims:
-                n_infant_deaths = count_infant_deaths(sim)
-                n_maternal_deaths = count_maternal_deaths(sim)
-                mcpr = mean_mcpr(sim)
-                n_births = count_births(sim)
-                n_fails  = method_failure(sim)
-                n_pop = count_pop(sim)
-                n_tfr = mean_tfr(sim)
+                results_dict = analyze_sim(sim)
                 raw['scenario'] += [key]      # Append scenario key
-                raw['births']   += [n_births] # Append births
-                raw['fails']    += [n_fails]  # Append failures
-                raw['popsize']  += [n_pop]    # Append population size
-                raw['tfr']      += [n_tfr]    # Append mean tfr rates
-                raw['infant_deaths'] += [n_infant_deaths]
-                raw['maternal_deaths'] += [n_maternal_deaths]
-                raw['mcpr'] += [mcpr]
+                raw['births']   += [results_dict['births']] # Append births
+                raw['fails']    += [results_dict['method_failures_over_year']]  # Append failures
+                raw['popsize']  += [results_dict['pop_size']]    # Append population size
+                raw['tfr']      += [results_dict['tfr_rates']]    # Append mean tfr rates
+                raw['infant_deaths'] += [results_dict['infant_deaths_over_year']]
+                raw['maternal_deaths'] += [results_dict['maternal_deaths_over_year']]
+                raw['mcpr'] += [results_dict['mcpr']]
 
         # Calculate basic stats
         results.stats = sc.objdict()

@@ -92,14 +92,18 @@ def test_change_par():
     return m
 
 
-def test_analyzers():
-    ''' Test analyzers '''
-    sc.heading('Testing analyzers...')
+def test_plot():
+    sc.heading('Testing intervention plotting...')
 
-    sim = make_sim(analyzers=fp.snapshot(timesteps=[100, 200]))
-    sim.run()
+    cp = fp.change_par(par='exposure_factor', years=2002, vals=2.0) # Reduce exposure factor
+    um1 = fp.update_methods(year=2005, eff={'Injectables':1.0})
+    um2 = fp.update_methods(year=2008, probs=dict(source='None', dest='Injectables', value=0.5))
+    sim = make_sim(interventions=[cp, um1, um2]).run()
 
+    if do_plot:
+        sim.plot()
     return sim
+
 
 
 if __name__ == '__main__':
@@ -107,4 +111,4 @@ if __name__ == '__main__':
     with sc.timer():
         isim   = test_intervention_fn()
         cpmsim = test_change_par()
-        asim   = test_analyzers()
+        sim  = test_plot()

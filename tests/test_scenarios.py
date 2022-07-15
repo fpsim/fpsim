@@ -107,7 +107,9 @@ def test_update_methods_probs():
 
     assert m0['annual']['21-25'][none][other] != m1['annual']['21-25'][none][other], "update_methods did not change contraceptive matrix for key 21-25"
     assert m0['annual']['21-25'][none][other] == target_prob1, f"update_methods did not change contraceptive matrix 21-25 to specified {target_prob1}"
-    assert m1['annual']['<18'][none][other]   == target_prob1, f"update_methods did not change contraceptive matrix <25 to specified {target_prob1}"
+    assert m0['annual']['>35'][none][other] != m1['annual']['>35'][none][other], "update_methods did not change contraceptive matrix for key >35"
+    assert m0['annual']['>35'][none][other] == target_prob1, f"update_methods did not change contraceptive matrix >35 to specified {target_prob1}"
+    assert m1['annual']['<18'][none][other]   == target_prob1, f"update_methods did not change contraceptive matrix <18 to specified {target_prob1}"
 
     assert m2['pp0to1']['21-25'][other] != m3['pp0to1']['21-25'][other], "update_methods did not change postpartum contraceptive matrix for key 21-25"
     assert m2['pp0to1']['21-25'][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for 21-25 to specified {target_prob1}"
@@ -133,7 +135,7 @@ def test_scenarios(do_plot=do_plot):
             source = 'None', # Source method, 'all' for all methods
             dest   = 'Other modern', # Destination
             value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-            ages   = ['>25'], # Which age keys to modify -- if not specified, all
+            ages   = ['>35'], # Which age keys to modify -- if not specified, all
         ),
     )
 
@@ -191,7 +193,7 @@ def test_scenarios(do_plot=do_plot):
     if do_plot:
         scens.plot()
         scens.plot_sims()
-        scens.plot_method_mix()
+        scens.plot(to_plot='method')
 
     return scens
 
@@ -232,7 +234,7 @@ def test_make_scens():
     # More probability matrix options
     s.inj1 = fp.make_scen(year=year, method=method, init_factor=5, matrix='annual', ages=None)
     s.inj2 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
-    s.inj3 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>25'])
+    s.inj3 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>35'])
 
     # Test invalid options
     with pytest.raises(sc.KeyNotFoundError):
@@ -245,7 +247,6 @@ def test_make_scens():
     scens.run(serial=serial)
 
     return scens
-
 
 if __name__ == '__main__':
 
