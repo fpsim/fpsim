@@ -7,6 +7,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
 .. contents:: **Contents**
    :local:
    :depth: 1
+   
+Version 0.17.2 (2022-07-15)
+--------------------------
+- Switched method mix plotting from line chart to stacked area chart for all classes
+- *GitHub info*: ``568 https://github.com/amath-idm/fpsim/pull/568``
 
 Version 0.17.1 (2022-07-14)
 --------------------------
@@ -14,11 +19,12 @@ Version 0.17.1 (2022-07-14)
 - Updated README with new debugging guidance
 - GitHub info*: ``570 https://github.com/amath-idm/fpsim/pull/570``
 
+
 Version 0.17.0 (2022-07-08)
 --------------------------
-- Added method_mix timeseries plotting to Sim, MultiSim, and Scenarios through plot(to_plot='method')
+- Added method mix timeseries plotting to Sim, MultiSim, and Scenarios through plot(to_plot='method')
 - Added some test coverage for method mix plotting
-- *GitHub info*: ``561 https://github.com/amath-idm/fpsim/pull/561``
+- *GitHub info*: ``554 https://github.com/amath-idm/fpsim/pull/554``
 
 Version 0.16.2 (2022-07-01)
 --------------------------
