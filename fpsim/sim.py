@@ -1295,7 +1295,7 @@ class Sim(fpb.BaseSim):
 
 
     def plot(self, to_plot=None, xlims=None, ylims=None, do_save=None, do_show=True, filename='fpsim.png', style=None, fig_args=None,
-             plot_args=None, axis_args=None, fill_args=None, label=None, new_fig=True):
+             plot_args=None, axis_args=None, fill_args=None, label=None, new_fig=True, colors=None):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
 
@@ -1313,6 +1313,7 @@ class Sim(fpb.BaseSim):
             fill_args (dict): Passed to pl.fill_between())
             label     (str):  Label to override default
             new_fig   (bool): Whether to create a new figure (true unless part of a multisim)
+            colors    (list/dict): Colors for plots with multiple lines  
         '''
 
         if to_plot is None: to_plot = 'default'
@@ -1406,9 +1407,11 @@ class Sim(fpb.BaseSim):
                         plotlabel = self.label
 
                 # Actually plot
-                if "method_usage" in to_plot:
+                if key == "method_usage":
                     data = self.format_method_df(timeseries=True)
-                    sns.lineplot(ax=ax, y=data["Percentage"], x=data["Year"], hue=data["Method"], data=data)
+                    method_names = data['Method'].unique()
+                    colors = [colors[method] for method in method_names] if isinstance(colors, dict) else colors
+                    ax.stackplot(data["Year"].unique(), data['Percentage'], labels=method_names, colors=colors)
                 else:
                     ax.plot(x, y, label=plotlabel, **plot_args)
 
@@ -1785,6 +1788,7 @@ class MultiSim(sc.prettyobj):
 
         Args:
             plot_sims (bool): whether to plot individual sims (else, plot with uncertainty bands)
+            
 
         See ``sim.plot()`` for additional args.
         '''
@@ -1801,42 +1805,37 @@ class MultiSim(sc.prettyobj):
                 label = sim.label
             else:
                 labellist += ''
-            n_unique = len(np.unique(labels)) # How many unique sims there are
+        n_unique = len(np.unique(labels)) # How many unique sims there are
 
         if to_plot == 'method':
             axis_args_method = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.30), axis_args)
             with fpo.with_style(style):
                 pl.subplots_adjust(**axis_args_method)
-                for index, label in enumerate(np.unique(labels)): 
+                for axis_index, label in enumerate(np.unique(labels)): 
                     total_df = pd.DataFrame()
                     return_default = lambda name: fig_args[name] if name in fig_args else None
                     rows,cols = sc.getrowscols(n_unique, nrows=return_default('nrows'), ncols=return_default('ncols'))
-                    ax = pl.subplot(rows, cols, index+1)
+                    ax = pl.subplot(rows, cols, axis_index+1)
                     for sim in self.sims:
                         if sim.label == label:
                             total_df = pd.concat([total_df, sim.format_method_df(timeseries=True)], ignore_index=True)
-                    legend = index + 1 == cols # True for last plot in first row
                     method_names = total_df['Method'].unique()
-                    percentage_by_method = []
-                    for index, method in enumerate(method_names):
+                    
+                    # Getting the mean of each seed as a list of lists, could add conditional here if different method plots are added
+                    percentage_by_method=[]
+                    for method in method_names:
                         method_df = total_df[(total_df['Method'] == method) & (total_df['Sim'] == label)]
-                        seed_split = []
-                        for seed in method_df['Seed'].unique():
-                            seed_split.append(method_df[method_df['Seed'] == seed]['Percentage'].values)
-                        seed_agg = []
-                        for i in range(len(seed_split[0])):
-                            seed_agg.append(np.mean([seed[i] for seed in seed_split]))
-                        percentage_by_method.append(seed_agg)
-
-                    #assert 1 == 0
+                        seed_split = [method_df[method_df['Seed'] == seed]['Percentage'].values for seed in method_df['Seed'].unique()]
+                        percentage_by_method.append([np.mean([seed[i] for seed in seed_split]) for i in range(len(seed_split[0]))])
+                    
+                    legend = axis_index + 1 == cols # True for last plot in first row
+                    colors = [colors[method] for method in method_names] if isinstance(colors, dict) else colors
                     ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names, colors=colors)
-                    ax.set_title(label)
+                    ax.set_title(label.capitalize())
                     ax.legend().set_visible(legend)
                     if legend:
-                        legend_ax = ax
-                    results = [sim.results for sim in self.sims]
+                        ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True)
                     pl.ylim(0, max(max([sum(proportion[1:]*100) for proportion in results['method_usage']]) for results in [sim.results for sim in self.sims]) + 1)
-                legend_ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
         elif plot_sims:
@@ -1844,7 +1843,6 @@ class MultiSim(sc.prettyobj):
             colors = {k:c for k,c in zip(labels, colors)}
             for s,sim in enumerate(self.sims): # Note: produces duplicate legend entries
                 label = labellist[s]
-                n_unique = len(labels) # How many unique sims there are
                 color = colors[sim.label]
                 alpha = max(0.2, 1/np.sqrt(n_unique))
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
