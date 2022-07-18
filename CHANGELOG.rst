@@ -7,11 +7,18 @@ All notable changes to the codebase are documented in this file. Changes that ma
 .. contents:: **Contents**
    :local:
    :depth: 1
-
-Version 0.17.1 (2022-07-14)
+   
+Version 0.17.2 (2022-07-15)
 --------------------------
 - Switched method mix plotting from line chart to stacked area chart for all classes
 - *GitHub info*: ``568 https://github.com/amath-idm/fpsim/pull/568``
+
+Version 0.17.1 (2022-07-14)
+--------------------------
+- Added example_scens.py for a quick debug of adding a novel method when developing new features
+- Updated README with new debugging guidance
+- GitHub info*: ``570 https://github.com/amath-idm/fpsim/pull/570``
+
 
 Version 0.17.0 (2022-07-08)
 --------------------------
