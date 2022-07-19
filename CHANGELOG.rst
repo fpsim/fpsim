@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
    
+Version 0.17.3 (2022-07-18)
+--------------------------
+- Added tutorial jupyter notebook to showcase Scenarios features
+- *GitHub info*: ``484 https://github.com/amath-idm/fpsim/pull/484``
+   
 Version 0.17.2 (2022-07-15)
 --------------------------
 - Switched method mix plotting from line chart to stacked area chart for all classes
