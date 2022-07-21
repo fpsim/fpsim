@@ -1836,8 +1836,10 @@ class MultiSim(sc.prettyobj):
                     ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names, colors=colors)
                     ax.set_title(label.capitalize())
                     ax.legend().set_visible(legend)
+                    ax.set_xlabel('Year')
+                    ax.set_ylabel('Percentage')
                     if legend:
-                        ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True)
+                        ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True) if len(labels) > 1 else ax.legend(loc='upper left', frameon=True)
                     pl.ylim(0, max(max([sum(proportion[1:]*100) for proportion in results['method_usage']]) for results in [sim.results for sim in self.sims]) + 1)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
