@@ -1390,8 +1390,8 @@ class Sim(fpb.BaseSim):
                     errormsg = f'Could not figure out how to plot {key}: result of length {len(y)} does not match a known x-axis'
                     raise RuntimeError(errormsg)
 
-                percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr']
-                if key in percent_keys:
+                percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr', 'method_usage']
+                if key in percent_keys and key != 'method_usage':
                     y *= 100
                     if is_dist:
                         low *= 100
@@ -1410,8 +1410,9 @@ class Sim(fpb.BaseSim):
                 if key == "method_usage":
                     data = self.format_method_df(timeseries=True)
                     method_names = data['Method'].unique()
+                    flipped_data = {method: [percentage for percentage in data[data['Method'] == method]['Percentage']] for method in method_names}
                     colors = [colors[method] for method in method_names] if isinstance(colors, dict) else colors
-                    ax.stackplot(data["Year"].unique(), data['Percentage'], labels=method_names, colors=colors)
+                    ax.stackplot(data["Year"].unique(), list(flipped_data.values()), labels=method_names, colors=colors)
                 else:
                     ax.plot(x, y, label=plotlabel, **plot_args)
 
@@ -1441,6 +1442,8 @@ class Sim(fpb.BaseSim):
                     pl.xlim(xlims)
                 if ylims is not None:
                     pl.ylim(ylims)
+                if key == "method_usage": # need to overwrite legend for method plot
+                    ax.legend(loc='upper left', frameon=True)
 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
