@@ -6,11 +6,13 @@ import numpy as np
 import sciris as sc
 import fpsim as fp
 import pytest
+from fpsim import defaults as fpd
 
 # Global settings
 int_year = 2002 # Year to start the interventions
 serial   = 0 # Whether to run in serial (for debugging)
-do_plot  = 1 # Whether to do plotting in interactive mode
+do_plot  = 0 # Whether to do plotting in interactive mode
+default_ages = list(fpd.method_age_map.keys())
 sc.options(backend='agg') # Turn off interactive plots
 
 
@@ -75,13 +77,13 @@ def test_update_methods_probs():
             source = 'None', # Source method, 'all' for all methods
             dest   = 'Other modern', # Destination
             value  = target_prob1, # Alternatively, specify the absolute probability of switching to this method
-            ages   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
+            ages   = default_ages[0:2], # Which age keys to modify -- if not specified, all
         ),
         dict(
             source = 'Other modern', # Source method, 'all' for all methods
             dest   = 'None', # Destination
             value  = target_prob2, # Alternatively, specify the absolute probability of switching to this method
-            ages   = ['<18','18-20'], # Which age keys to modify -- if not specified, all
+            ages   = default_ages[0:2], # Which age keys to modify -- if not specified, all
         )
     ]
 
@@ -105,148 +107,189 @@ def test_update_methods_probs():
     none  = mmap['None']
     other = mmap['Other modern']
 
-    assert m0['annual']['21-25'][none][other] != m1['annual']['21-25'][none][other], "update_methods did not change contraceptive matrix for key 21-25"
-    assert m0['annual']['21-25'][none][other] == target_prob1, f"update_methods did not change contraceptive matrix 21-25 to specified {target_prob1}"
-    assert m0['annual']['>35'][none][other] != m1['annual']['>35'][none][other], "update_methods did not change contraceptive matrix for key >35"
-    assert m0['annual']['>35'][none][other] == target_prob1, f"update_methods did not change contraceptive matrix >35 to specified {target_prob1}"
-    assert m1['annual']['<18'][none][other]   == target_prob1, f"update_methods did not change contraceptive matrix <18 to specified {target_prob1}"
+    targeted_age = default_ages[0]
+    alt_targeted_age = default_ages[1]
+    not_target_age = default_ages[-1]
+    assert m0['annual'][not_target_age][none][other] != m1['annual'][not_target_age][none][other], f"update_methods did not change contraceptive matrix for key {not_target_age}"
+    assert m0['annual'][not_target_age][none][other] == target_prob1, f"update_methods did not change contraceptive matrix {targeted_age} to specified {target_prob1}"
+    assert m1['annual'][targeted_age][none][other]   == target_prob1, f"update_methods did not change contraceptive matrix {targeted_age} to specified {target_prob1}"
 
-    assert m2['pp0to1']['21-25'][other] != m3['pp0to1']['21-25'][other], "update_methods did not change postpartum contraceptive matrix for key 21-25"
-    assert m2['pp0to1']['21-25'][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for 21-25 to specified {target_prob1}"
-    assert m3['pp1to6']['<18'][none][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for <18 to specified {target_prob1}"
+    assert m2['pp0to1'][not_target_age][other] != m3['pp0to1'][not_target_age][other], f"update_methods did not change postpartum contraceptive matrix for key {not_target_age}"
+    assert m2['pp0to1'][not_target_age][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for {not_target_age} to specified {target_prob1}"
+    assert m3['pp1to6'][alt_targeted_age][none][other] == target_prob1, f"update_methods did not change postpartum contraceptive matrix for {alt_targeted_age} to specified {target_prob1}"
 
-    assert m3['pp1to6']['<18'][other][none]   == target_prob2, "After updating method switching postpartum for <18 for None to {target_prob2}, value didn't change"
-    assert m3['pp1to6']['21-25'][other][none] != target_prob2, "After updating method postpartum for 21-25, value is still {target_prob2}"
+    assert m3['pp1to6'][alt_targeted_age][other][none] == target_prob2, f"After updating method switching postpartum for {alt_targeted_age} for None to {target_prob2}, value didn't change"
+    assert m3['pp1to6'][not_target_age][other][none] != target_prob2, f"After updating method postpartum for {not_target_age}, value is still {target_prob2}"
 
     return msim
 
+def test_scenarios():
+    def run_scenario(scen, plot=do_plot):
+        '''Runs simple scenario and returns Scenarios object'''
+        scens = fp.Scenarios(location='test', scens=scen, start_year=int_year)
+        scens.run(serial=serial)
+        if plot:
+            scens.plot()
+            scens.plot(to_plot='method')
+            scens.plot_sims()
+        return scens
 
-def test_scenarios(do_plot=do_plot):
-    ''' Test the actual Scenarios object '''
+    output = {} # dictionary of scenarios output
 
-    sc.heading('Testing scenarios...')
+    base_scenario = run_scenario(fp.make_scen(label="Baseline"))
+    base_sim = base_scenario.msim.sims[0].pars['methods']['raw']
+    default_age = default_ages[0]
+    alt_default_age = default_ages[1]
+    unchanged_age = default_ages[-1]
+    none, other = (base_scenario.msim.sims[0].pars['methods']['map']['None'], base_scenario.msim.sims[0].pars['methods']['map']['Other modern'])
 
-    # Increased uptake high efficacy
-    uptake_scen1 = fp.make_scen(
-        label = 'Increased modern',
-        year = int_year,
-        eff = {'Other modern':0.994}, # Co-opt an unused method and simulate a medium-efficacy method
-        probs = dict( # Specify by value
-            source = 'None', # Source method, 'all' for all methods
-            dest   = 'Other modern', # Destination
-            value  = 0.2, # Alternatively, specify the absolute probability of switching to this method
-            ages   = ['>35'], # Which age keys to modify -- if not specified, all
-        ),
-    )
+    output['Baseline'] = base_scenario
 
-    uptake_scen2 = fp.make_scen(
-        label = 'Increased injectables',
-        year = int_year,
-        eff = {'Injectables': 0.95},
-        probs = [
-            # Reduce switching from injectables
-            dict( # Specify by factor
-                source = 'Injectables',  # Source method, 'all' for all methods
-                dest   = 'None',  # Destination
-                factor = 0.0,  # Factor by which to multiply existing probability
-                ages   = ['<18', '18-20'],  # Which age keys to modify -- if not specified, all
-            ),
-            # Increase switching to injectables
-            dict(
-                source = 'None', # Source method, 'all' for all methods
-                dest   = 'Injectables', # Destination
-                factor = 5, # Factor by which to multiply existing probability
-                ages   = ['all'], # Which age keys to modify -- if not specified, all
-            ),
-        ]
-    )
+    '''Tests that Scenarios repeats sims corresponding to scenarios added as expected'''
+    changed_value = 0.99
+    scen = fp.make_scen(label='basic_efficacy_increase_lower', year=int_year, eff={'Injectables': changed_value})
+    scens_repeat = fp.Scenarios(location='test', repeats=2, scens=scen, start_year=int_year)
+    scens_repeat.run(serial=serial)
 
-    uptake_scen3 = uptake_scen1 + uptake_scen2
+    assert len(scens_repeat.msim.sims) == 2, f"Should be {2} sims in scens object but found {len(scens.msim.sims)}"
 
-    #%% Create sims
-    scens = fp.Scenarios(location='test', n_agents=200, repeats=2)
-    scens.add_scen(label='Baseline')
-    scens.add_scen(uptake_scen1)
-    scens.add_scen(uptake_scen2)
-    scens.add_scen(uptake_scen3, label='Increased modern + increased injectables')
+    efficacy = scens_repeat.msim.sims[0].pars['methods']['eff']['Injectables']
+    efficacy_copy = scens_repeat.msim.sims[0].pars['methods']['eff']['Injectables']
 
-    # Run scenarios
-    scens.run(serial=serial)
+    output['Repeated'] = scens_repeat
 
-    # Ensure that everything is unique
-    df = scens.results.df
-    dfhash = df.births + df.fails + df.popsize + df.tfr # Construct a "hash" by summing column values -- at least one should differ
-    assert len(dfhash) == len(dfhash.unique()), 'Number of unique output values is less than the number of sims, could be unlucky or a bug'
+    for efficacy in [efficacy, efficacy_copy]:
+        assert efficacy == changed_value, f"Repeated efficacy scenarios do not match"
 
-    # Check we can't add invalid scenarios
+    '''Tests that Scenarios changes efficacy from dictionary as expected'''
+    scen = fp.make_scen(label='basic_efficacy_increase', year=int_year, eff={'Injectables':changed_value})
+    scens_efficacy = run_scenario(scen)
+
+    efficacy = scens_efficacy.msim.sims[0].pars['methods']['eff']['Injectables']
+    assert efficacy == changed_value, f"Effiacy of Injectables after efficacy scenario should be {changed_value} but is {efficacy}"
+
+    for matrix in ['annual', 'pp1to6', 'pp0to1']:
+        '''Tests that Scenarios handles changes to contraceptive switching as expected'''
+        changed_value = 0.2
+        increase_annual_uptake = sc.objdict(
+            eff = {'Other modern':0.994},
+            year = int_year,
+            probs = [ 
+                dict(
+                    source = 'None',
+                    dest   = 'Other modern',
+                    value  = changed_value,
+                    ages   = [default_age],
+                    matrix = matrix
+                ),
+            ]
+        )
+        
+        scen = fp.make_scen(label=f"increase_{matrix}_uptake", spec=increase_annual_uptake)
+        output[f'{matrix}_matrix'] = run_scenario(scen)
+        scens = output[f'{matrix}_matrix']
+        changed_sim = scens.msim.sims[0].pars['methods']['raw']
+        
+        # Hard check that transition value is changed for methods
+        no_change_message = f"Changing {matrix} matrix to {changed_value} for age {default_age} in Scenarios does not yield {changed_value}"
+        wrong_targeting_message = f"Changing {matrix} matrix to {changed_value} for age {default_age} changed transition value but did not only target age key {default_age} for matrix {matrix}"
+        if matrix != "pp0to1":
+            # Expects 2D array for transition matrix
+            assert changed_sim[matrix][default_age][none][other] == changed_value, no_change_message
+            assert changed_sim[matrix][unchanged_age][none][other] == base_sim[matrix][unchanged_age][none][other], wrong_targeting_message
+        else:
+            # Expects 1D array representing transitions
+            assert changed_sim[matrix][default_age][other] == changed_value, no_change_message
+            assert changed_sim[matrix][unchanged_age][other] == base_sim['pp0to1'][unchanged_age][other], wrong_targeting_message
+
+    '''Checks that inputting scenarios as list has same result as adding them separately'''
+    changed_value2 = 0.95
+    scen1 = fp.make_scen(label='basic_efficacy_increase', year=int_year, eff={'Injectables':changed_value})
+    scen2 = fp.make_scen(label='basic_efficacy_increase_lower', year=int_year, eff={'Injectables':changed_value2})
+    
+    scens_scenario_list = run_scenario([scen1, scen2])
+
+    efficacy1 = scens_scenario_list.msim.sims[0].pars['methods']['eff']['Injectables']
+    efficacy2 = scens_scenario_list.msim.sims[1].pars['methods']['eff']['Injectables']
+
+    output['Scenario_list'] = scens_scenario_list
+
+    assert efficacy1 == changed_value, f"Effiacy of Injectables after efficacy scenarios passed in as list should be 0.99 but is {efficacy1}"
+    assert efficacy2 == changed_value2, f"Effiacy of Injectables after efficacy scenarios passed in as list should be 0.95 but is {efficacy2}"
+
+    '''Checks that Scenarios with custom method contains sims with appropriate parameters'''
+    pars = fp.pars()
+    new_method = 'new condoms'
+    baseline_methods = len(base_scenario.msim.sims[0].pars['methods']['eff'])
+    pars.add_method(name=new_method, eff=0.946)
+    scens_custom_method = fp.Scenarios(location='test', pars=pars, scens=[fp.make_scen(label=f"custom_intervention"), fp.make_scen(label=f"custom_intervention2")])
+    scens_custom_method.run()
+    output['Custom_method'] = scens_custom_method
+    for sim in scens_custom_method.msim.sims:
+        assert len(sim.pars['methods']['eff']) == baseline_methods + 1, 'Method efficacies dict does not contain entry for {new_method}'
+        assert new_method in sim.pars['methods']['map']
+
+    '''Checks that we can't add invalid scenarios'''
     invalid_scen1 = dict(invalid_key='Should fail')
     invalid_scen2 = dict(probs=dict(invalid_key='Also should fail'))
+
     with pytest.raises(TypeError):
         invalid_scens1 = fp.Scenarios(location='test')
-        invalid_scens1.add_scen(invalid_scen1)
+        invalid_scens1.add_scen(invalid_scen1)        
+
     with pytest.raises(ValueError):
-        invalid_scens2 = fp.Scenarios(location='test')
-        invalid_scens2.add_scen(invalid_scen2)
-        invalid_scens2.run()
+        invalid_scens = fp.Scenarios(location='test')
+        invalid_scens.add_scen(invalid_scen2)
+        invalid_scens.run()
 
-    # Plot and print results
-    if do_plot:
-        scens.plot()
-        scens.plot_sims()
-        scens.plot(to_plot='method')
+    '''Checks that scenarios can take varied keyword args'''
+    scen = fp.make_scen(label="switch_with_keywords", year=int_year, source='None', dest='Other modern', factor=2, ages=[default_age, alt_default_age], matrix='pp1to6')
+    scens_keywords = run_scenario(scen)
+    sim_with_keyword_args = scens_keywords.msim.sims[0].pars['methods']['raw']
 
-    return scens
+    switch_age_keywords = sim_with_keyword_args['pp1to6'][default_age][none][other]
+    switch_age_default = base_sim['pp1to6'][default_age][none][other]
+    switch_alt_age_keywords = sim_with_keyword_args['pp1to6'][alt_default_age][none][other]
+    switch_alt_age_default = base_sim['pp1to6'][alt_default_age][none][other]
 
+    output['Keyword_args'] = scens_keywords
 
-def test_make_scens():
-    '''
-    Test that the user-friendly scenarios API works
-    '''
+    assert switch_age_keywords == 2 * switch_age_default, f"Changing matrix to by 2x in scenarios with keyword arguments should be {2 * switch_age_default} for {default_age} but is {switch_age_keywords}"
+    assert switch_alt_age_keywords == 2 * switch_alt_age_default, f"Changing matrix to by 2x in scenarios with keyword arguments should be {2 * switch_alt_age_keywords} for {alt_default_age} but is {switch_alt_age_default}"
+    assert sim_with_keyword_args['pp1to6'][unchanged_age][none][other] == base_sim['pp1to6'][unchanged_age][none][other], f"adding scenario to scenarios class with keywords did not sepcifically target {default_age} in pp1to6 matrix"
+    
+    changed_value = 0
+    alt_scen = fp.make_scen(label="switch_with_alt_keywords", year=int_year, method='Other modern', discont_value=changed_value, ages=':', matrix='annual')
+    scens_alt_keywords = run_scenario(alt_scen)
+    alt_sim_with_keyword_args = scens_alt_keywords.msim.sims[0]['methods']['raw']
 
-    sc.heading('Testing make_scens...')
+    output['Alt_keyword_args'] = scens_alt_keywords
 
-    year   = 2002
-    method = 'Injectables'
+    for age_group in default_ages:
+        switch_value = alt_sim_with_keyword_args['annual'][age_group][other][none]
+        assert switch_value == changed_value, f"Changing discontinuation value to 0 in scenarios with keyword arguments should be {0} for {age_group} but is {switch_value}"
 
-    # Create basic scenarios
-    s = sc.objdict()
-    s.eff   = fp.make_scen(year=year, eff={'Injectables':0.99}) # Basic efficacy scenario
-    s.prob1 = fp.make_scen(year=year, source='None', dest='Injectables', factor=2) # Double rate of injectables initiation
-    s.prob2 = fp.make_scen(year=year, method='Injectables', init_factor=2) # Double rate of injectables initiation -- alternate approach
-    s.par   = fp.make_scen(par='exposure_factor', par_years=2005, par_vals=0.5) # Parameter scenario: halve exposure
+    '''Checks that Scenarios.results against sim.results for each component sim'''
+    scenario_df = base_scenario.results.df
+    sim_results = base_scenario.msim.sims[0].results
 
-    # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
-    s.complex = fp.make_scen(year=year, source='Condoms', dest='Injectables', value=0.5, ages='18-20', matrix='pp1to6')
+    def compare_results(scenario_key, sim_key, is_sum=True):
+        scenario_val = scenario_df[scenario_key][0]
+        if is_sum:
+            sim_val = sum(sim_results[sim_key])
+        else:
+            sim_val = np.mean(sim_results[sim_key])
+            
+        assert scenario_val == sim_val, f"From sim results {sim_key} is {sim_val} while in scenarios {scenario_key} is {scenario_val}"
 
-    # Custom scenario
-    def update_sim(sim): sim.updated = True
-    s.custom = fp.make_scen(interventions=update_sim)
+    # check sums
+    for keys in [("births", "births"), ("fails", "method_failures_over_year"), ("popsize", "pop_size"),
+                    ("infant_deaths", "infant_deaths_over_year"), ("maternal_deaths", "maternal_deaths_over_year")]:
+        compare_results(keys[0], keys[1])
 
-    # Combining multiple scenarios: increase injectables initiation and reduce exposure factor
-    s.multi = fp.make_scen([
-        dict(year=year, method=method, init_factor=2),
-        dict(par='exposure_factor', par_years=2010, par_vals=0.5)
-    ])
-
-    # Scenario addition
-    s.sum = s.eff + s.prob1
-
-    # More probability matrix options
-    s.inj1 = fp.make_scen(year=year, method=method, init_factor=5, matrix='annual', ages=None)
-    s.inj2 = fp.make_scen(year=year, method=method, discont_value=0, matrix='pp1to6', ages=':')
-    s.inj3 = fp.make_scen(year=year, source='None', dest='Injectables', factor=0.2, ages=['<18', '>35'])
-
-    # Test invalid options
-    with pytest.raises(sc.KeyNotFoundError):
-        fp.make_scen(year=year, source='Invalid source', dest='None', factor=0.0)
-    with pytest.raises(sc.KeyNotFoundError):
-        fp.make_scen(year=year, source='None', dest='None', factor=0.0, ages='Invalid ages')
-
-    # Run scenarios
-    scens = fp.Scenarios(location='test', repeats=1, scens=s.values())
-    scens.run(serial=serial)
-
-    return scens
+    # check rates
+    for keys in [("tfr", "tfr_rates"), ("mcpr", "mcpr")]:
+        compare_results(keys[0], keys[1], is_sum=False) 
 
 if __name__ == '__main__':
 
@@ -254,5 +297,4 @@ if __name__ == '__main__':
     with sc.timer():
         msim1  = test_update_methods_eff()
         msim2  = test_update_methods_probs()
-        scens1 = test_scenarios()
-        scens2 = test_make_scens()
+        scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}

@@ -7,6 +7,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
 .. contents:: **Contents**
    :local:
    :depth: 1
+
+Version 0.17.4 (2022-07-28)
+--------------------------
+- Added new test suite for the Scenarios API
+- *GitHub info*: ``527 https://github.com/amath-idm/fpsim/pull/527``
    
 Version 0.17.3 (2022-07-18)
 --------------------------

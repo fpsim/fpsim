@@ -143,6 +143,20 @@ def test_samples(do_plot=False, verbose=True):
 
     return results
 
+def test_method_usage():
+    '''Test that method usage proportions add to 1 and correspond to population'''
+    sim = fp.Sim(location='test')
+    sim.run() 
+    for timestep, proportions in enumerate(sim.results['method_usage']):
+        assert sum(proportions) == 1
+        pop = sim.results['pop_size'][timestep]
+
+        # Checking that proportion isn't calculated from a larger population than expected
+        for proportion in proportions:
+            if proportion > 0:
+                assert (proportion * pop) > 1, "Method usage proportions drawing from a larger population than expected"
+    
+    return sim
 
 # Run all tests
 if __name__ == '__main__':
@@ -154,3 +168,4 @@ if __name__ == '__main__':
         df   = test_to_df()
         ppl  = test_plot_people()
         res  = test_samples()
+        method = test_method_usage()

@@ -494,6 +494,7 @@ class Scenarios(sc.prettyobj):
                 raw['maternal_deaths'] += [results_dict['maternal_deaths_over_year']]
                 raw['mcpr'] += [results_dict['mcpr']]
 
+
         # Calculate basic stats
         results.stats = sc.objdict()
         for statkey in ['mean', 'median', 'std', 'min', 'max']:
