@@ -520,9 +520,9 @@ class People(fpb.BasePeople):
         # Handle stillbirth
         still_prob = deliv.pars['mortality_probs']['stillbirth']
         age_ind = sc.findnearest(deliv.pars['stillbirth_rate']['ages'], deliv.age)
-        still_prob = still_prob * (deliv.pars['stillbirth_rate']['age_probs'][age_ind])
-        
-        is_stillborn = deliv.binomial(still_prob)        
+        still_prob = still_prob * (deliv.pars['stillbirth_rate']['age_probs'][age_ind]) if len(deliv) > 0 else 0
+
+        is_stillborn = deliv.binomial(still_prob)    
         stillborn = deliv.filter(is_stillborn)
         stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
         stillborn.lactating = False   # Set agents of stillbith to not lactate
