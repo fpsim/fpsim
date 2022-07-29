@@ -144,15 +144,15 @@ def test_verbose_channels():
 
     # Since analyzers are applied before people is updated for a timestep
     # we will skip the last timestep
-    events.pop(max(events.keys()))
+    #events.pop(max(events.keys()))
     for timestep in events:
         births += len(events[timestep]['Births'])
         conceptions = conceptions + len(events[timestep]['Conceptions'])
         miscarriages += len(events[timestep]['Miscarriages'])
         deaths += len(events[timestep]['Deaths'])
 
-    sim_births = sum(sim.results['births'][:-2])
-    sim_deaths = sum(sim.results['deaths'][:-2])
+    sim_births = sum(sim.results['births'][:-1])
+    sim_deaths = sum(sim.results['deaths'][:-1])
     assert births == sim_births, f"sim.results births is {sim_births} and births channel is {births} on timestep {timestep}"
     assert deaths == sim_deaths, f"sim.results deaths is {sim_deaths} and deaths channel is {deaths} on timestep {timestep}"
     
