@@ -104,8 +104,6 @@ def test_plot():
         sim.plot()
     return sim
 
-
-
 if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():

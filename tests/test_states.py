@@ -11,10 +11,9 @@ def test_states():
     sc.heading('Testing model states...')
 
     # Set up
-    pars = fp.pars('test')
-    exp = fp.ExperimentVerbose(pars)
-    exp.run_model(mother_ids=True)
-    res = exp.total_results
+    sim = fp.Sim(location='test', analyzers=fp.verbose_sim())
+    sim.run()
+    total_results  = sim['analyzers'].total_results
 
     # Checks that:
     #     no one is SA and pregnant
@@ -35,7 +34,7 @@ def test_states():
 
     postpartum_dur = {}
 
-    for year, attribute_dict in res.items():
+    for year, attribute_dict in total_results.items():
         pregnant = attribute_dict['pregnant']
         breastfeeding = attribute_dict['breastfeed_dur']
         lactating = attribute_dict['lactating']
@@ -74,7 +73,7 @@ def test_states():
     gestation_dur = {}
     breastfeed_dur = {}
 
-    for year, attribute_dict in res.items():
+    for year, attribute_dict in total_results.items():
         for index, value in enumerate(attribute_dict["alive"]):
             if index not in alive_recorder:
                 alive_recorder[index] = []
@@ -94,7 +93,7 @@ def test_states():
     # Checks that lactation, gestation, postpartum do not preclude pregnancy
     print('Testing pre-pregnancy...')
     was_pregnant = {}
-    for year, attribute_dict in res.items():
+    for year, attribute_dict in total_results.items():
         for index, value in enumerate(attribute_dict["pregnant"]):
             if index not in was_pregnant or value:
                 was_pregnant[index] = value
@@ -106,8 +105,8 @@ def test_states():
 
     # Checks that age at first birth is consistent with dobs and ages
     print('Testing first birth age...')
-    last_year_lengths = [len(dob) for dob in res[min(res.keys())]['dobs']] # get first value of dobs to initialize
-    for year, attribute_dict in res.items():
+    last_year_lengths = [len(dob) for dob in total_results[min(total_results.keys())]['dobs']] # get first value of dobs to initialize
+    for year, attribute_dict in total_results.items():
         age_first_birth = attribute_dict['first_birth_age']
         ages = attribute_dict['age']
         this_year_lengths = [len(dob) for dob in attribute_dict['dobs']]
@@ -119,8 +118,8 @@ def test_states():
 
     # Checks that sexual debut and sexual debut age are consistent with sexually active and ages respectively
     print('Testing sexual debut...')
-    all_sa = set([index for index, value in enumerate(res[min(res.keys())]['sexually_active']) if value])
-    for year, attribute_dict in res.items():
+    all_sa = set([index for index, value in enumerate(total_results[min(total_results.keys())]['sexually_active']) if value])
+    for year, attribute_dict in total_results.items():
         ages = attribute_dict['age']
         sexual_debut = attribute_dict['sexual_debut']
         sexual_debut_age = attribute_dict['sexual_debut_age']
@@ -133,7 +132,7 @@ def test_states():
 
     # Checks that people under 11 or over 45 can't get pregnant
     print('Testing age boundaries...')
-    for year, attribute_dict in res.items():
+    for year, attribute_dict in total_results.items():
         for index, pregnant_bool in enumerate(attribute_dict["pregnant"]):
             age = attribute_dict['age'][index]
             if age < 10 or age > 51:
@@ -142,17 +141,17 @@ def test_states():
 
     # Checks that ages aren't wrong due to rounding the months incorrectly
     print('Testing ages...')
-    for year, attribute_dict in res.items():
-        if year in sorted(res.keys())[-10:]:
+    for year, attribute_dict in total_results.items():
+        if year in sorted(total_results.keys())[-10:]:
             for individual, age in enumerate(attribute_dict['age']):
                 age_year = int(age)
                 month = (age - age_year)
                 assert np.isclose(month * 12, round(month * 12), atol=0.5), f"Individual at index: {individual} in year {year} has an age of {age} with a month ({month}) that is not a multiple of 1/12. month * 12 = {month * 12}"
 
-    return exp
+    return sim
 
 
 # Run tests
 if __name__ == '__main__':
     with sc.timer():
-        exp = test_states()
+        sim = test_states()

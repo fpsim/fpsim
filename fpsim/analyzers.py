@@ -3,17 +3,17 @@ Specify the core analyzers available in FPsim. Other analyzers can be
 defined by the user by inheriting from these classes.
 '''
 
+import os
 import numpy as np
 import pandas as pd
 import sciris as sc
 import pylab as pl
-from . import sim as fps
-from . import experiment as fpe
+from . import defaults as fpd
 
 
 #%% Generic intervention classes
 
-__all__ = ['Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids', 'SimVerbose','ExperimentVerbose']
+__all__ = ['Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids', 'verbose_sim']
 
 
 class Analyzer(sc.prettyobj):
@@ -118,7 +118,7 @@ class snapshot(Analyzer):
 
     **Example**::
 
-        sim = cv.Sim(analyzers=fps.snapshot('2020-04-04', '2020-04-14'))
+        sim = fp.Sim(analyzers=fps.snapshot('2020-04-04', '2020-04-14'))
         sim.run()
         snapshot = sim.pars['analyzers'][0]
         people = snapshot.snapshots[0]
@@ -285,42 +285,28 @@ class age_pyramids(Analyzer):
         return fig
 
 
-debug_states = ["alive", "breastfeed_dur", "gestation", "lactating", "lam", "postpartum", "pregnant", "sexually_active", "postpartum_dur", \
-                "parity", "method", "age", "first_birth_age", "dobs", "age", "sexual_debut", "sexual_debut_age"]
-
-class SimVerbose(fps.Sim):
-    def __init__(self, pars=None, mother_ids=False):
+class verbose_sim(Analyzer):
+    def __init__(self, to_csv=False, custom_csv_tables=None, to_file=False):
         """
-        Initializes a SimVerbose object which extends the logging functionality of a normal fp.Sim for the sake of testing
-
-        Configurable:
-            self.to_csv::bool:
-                Saves a csv file for each state selected in the format of row: individual, column: timestep, value: state
-            self.custom_csv_tables::bool:
-                If the user is saving a csv, this is a list of the states to record csv files for (default is all states)
-            self.to_file::bool:
-                Save the results of the sim (either json or multiple csv's)
+        Initializes a verbose_sim analyzer which extends the logging functionality of the sim with calculated channels,
+        total state results of a sim run, the story() feature, and configurable file formatting for results
         """
-        super().__init__(pars, mother_ids=mother_ids)
-        self.test_mode = True
-        self.to_csv = False
-        self.custom_csv_tables = None
-        self.to_file = False
+
+        self.to_csv = to_csv
+        self.custom_csv_tables = custom_csv_tables
+        self.to_file = to_file
         self.initialized = False
 
         self.total_results = sc.ddict(lambda: {})
 
-        n = pars['n_agents']
-        self.last_year_births = [0] * n
-        self.last_year_gestations = [0] * n
-        self.last_year_sexactive = [0] * n
-        self.last_year_deaths = [0] * n
         self.dead_moms = set()
         self.is_sexactive = set()
         self.events = sc.ddict(dict)
-        self.channels = ["Births", "Conceptions", "Miscarriages", "Sexual_Debut", "Deaths"]
+        self.channels = ["Births", "Conceptions", "Miscarriages", "Deaths"]
+        self.set_baseline = False
+        self.states = list(fpd.person_defaults.keys()) + ['dobs'] # states saved by timestep
 
-    def log_daily_totals(self):
+    def apply(self, sim):
         """
         Logs data for total_results and events at each timestep.
 
@@ -331,83 +317,87 @@ class SimVerbose(fps.Sim):
             self.events::dict
                 Dictionary of events correponding to self.channels formatted as {timestep: channel: [indices]}.
         """
-        for state in debug_states:
-            self.total_results[self.y][state] = sc.dcp(getattr(self.people, state))
+        if not self.set_baseline:
+            initial_pop = sim.pars['n_agents']
+            self.last_year_births = [0] * initial_pop
+            self.last_year_gestations = [0] * initial_pop
+            self.last_year_alive = [0] * initial_pop
+            self.last_year_pregnant = [0] * initial_pop
+            self.set_baseline = True
+
+        for state in self.states:
+            self.total_results[sim.y][state] = sc.dcp(getattr(sim.people, state))
 
         # Getting births gestation and sexual_activity
-        self.this_year_births = sc.dcp(self.total_results[self.y]["parity"])
-        self.this_year_gestations = sc.dcp(self.total_results[self.y]["gestation"])
-        self.this_year_sexactive = sc.dcp(self.total_results[self.y]["sexually_active"])
-        self.this_year_alive = sc.dcp(self.total_results[self.y]["alive"])
+        self.this_year_births = sc.dcp(self.total_results[sim.y]["parity"])
+        self.this_year_gestations = sc.dcp(self.total_results[sim.y]["gestation"])
+        self.this_year_alive = sc.dcp(self.total_results[sim.y]["alive"])
+        self.this_year_pregnant = sc.dcp(self.total_results[sim.y]["pregnant"])
 
         for channel in self.channels:
-            self.events[self.y][channel] = []
+            self.events[sim.y][channel] = []
 
         # Comparing parity of previous year to this year, adding births
         for index, last_parity in enumerate(self.last_year_births):
             if last_parity < self.this_year_births[index]:
                 for i in range(self.this_year_births[index] - last_parity):
-                    self.events[self.y]['Births'].append(index)
+                    self.events[sim.y]['Births'].append(index)
 
-        # Comparing gestation of previous year to get conceptions and miscarriages
+        # Comparing pregnancy of previous year to get conceptions
+        for index, last_pregnant in enumerate(self.last_year_pregnant):
+            if last_pregnant == 0 and self.this_year_pregnant[index]:
+                self.events[sim.y]['Conceptions'].append(index)
+
+        # Comparing gestaton of previous year to get miscarriages
         for index, last_gestation in enumerate(self.last_year_gestations):
-            if last_gestation < self.this_year_gestations[index] and last_gestation == 0:
-                self.events[self.y]['Conceptions'].append(index)
-            if last_gestation == (self.pars['end_first_tri'] - 1) and self.this_year_gestations[index] == 0:
-                self.events[self.y]['Miscarriages'].append(index)
+            # This is when miscarriages are checked in Sim
+            if last_gestation == (sim.pars['end_first_tri'] - 1) and self.this_year_gestations[index] == 0:
+                self.events[sim.y]['Miscarriages'].append(index)
 
-        # Getting first instance of a person being sexually active
-        for index, active in enumerate(self.last_year_sexactive):
-            if (not active) and (self.this_year_sexactive[index]) and (index not in self.is_sexactive):
-                self.events[self.y]['Sexual_Debut'].append(index)
-                self.is_sexactive.add(index)
-
-        for index, alive in enumerate(self.last_year_deaths):
+        for index, alive in enumerate(self.last_year_alive):
             if alive > self.this_year_alive[index]:
-                self.events[self.y]['Deaths'].append(index)
+                self.events[sim.y]['Deaths'].append(index)
 
         # Aggregate channels taken from people.results
-        self.events[self.y]['Step_Results'] = self.people.step_results
-
         self.last_year_births = sc.dcp(self.this_year_births)
         self.last_year_gestations = sc.dcp(self.this_year_gestations)
-        self.last_year_sexactive = sc.dcp(self.this_year_sexactive)
+        self.last_year_alive = sc.dcp(self.this_year_alive)
+        self.last_year_pregnant = sc.dcp(self.this_year_pregnant)
 
-    def save_daily_totals(self):
+    def save(self, to_csv=True, to_json=False, custom_csv_tables=None):
         """
         At the end of sim run, stores total_results as either a json or feather file.
 
         Inputs
-            self.to_file::bool
-                If True, writes results to file
-            self.to_feather::bool
-                If True, writes results to feather file
-                If False, writes results to json file
+            self.to_csv::bool
+                If True, writes results to csv files in /sim_output where each state's history is a separate file
+            self.to_json::bool
+                If True, writes results to json file
+            custom_csv_tables::list
+                List of states that the user wants to write to csv, default is all
         Outputs:
             Either a json file at "sim_output/total_results.json"
-            or a feather file for each state at "sim_output/{state}_state"
+            or a csv file for each state at "sim_output/{state}_state.csv"
         """
-        if self.to_file:
-            if not self.to_feather:
-                sc.savejson(filename="sim_output/total_results.json", obj=self.total_results)
-            else:
-                if self.custom_csv_tables is None:
-                    states = debug_states
-                else:
-                    states = self.custom_csv_tables
-                for state in states:
-                    state_frame = pd.DataFrame()
-                    max_length = len(self.total_results[max(self.total_results.keys())][state])
-                    for timestep, _ in self.total_results.items():
-                        colname = str(timestep) + "_" + state
-                        adjustment = max_length - len(self.total_results[timestep][state])
-                        state_frame[colname] = list(self.total_results[timestep][state]) + [None] * adjustment # ONLY WORKS IF LAST YEAR HAS MOST PEOPLE
+        os.makedirs("sim_output", exist_ok=True)
+        if to_json:
+            sc.savejson(filename="sim_output/total_results.json", obj=self.total_results)
 
-                    state_frame.to_csv(f"sim_output/{state}_state.csv")
+        if to_csv:
+            states = self.states if self.custom_csv_tables is None else custom_csv_tables
+            for state in states:
+                state_frame = pd.DataFrame()
+                max_length = len(self.total_results[max(self.total_results.keys())][state])
+                for timestep, _ in self.total_results.items():
+                    colname = str(timestep) + "_" + state
+                    adjustment = max_length - len(self.total_results[timestep][state])
+                    state_frame[colname] = list(self.total_results[timestep][state]) + [None] * adjustment # ONLY WORKS IF LAST YEAR HAS MOST PEOPLE
+
+                state_frame.to_csv(f"sim_output/{state}_state.csv")
 
     def story(self, index, output=False, debug=False):
         """
-        Prints a story of all major events in an individual's life based on calculated SimVerbose channels,
+        Prints a story of all major events in an individual's life based on calculated verbose_sim channels,
         base Sim channels, and statistics calculated within the function such as year of birth of individual.
 
         Args:
@@ -435,8 +425,8 @@ class SimVerbose(fps.Sim):
             errormsg = 'Story function can only be used after sim is run. Try Experiment.run_model() first'
             raise RuntimeError(errormsg)
 
-        ages = self.people['age'] # Progresses even if dead
         last_year = max(self.total_results.keys())
+        ages = self.total_results[last_year]['age'] # Progresses even if dead
         year_born = last_year - ages[index]
         if debug:
             print(last_year)
@@ -448,48 +438,26 @@ class SimVerbose(fps.Sim):
             "Births": "gives birth",
             "Conceptions": "conceives",
             "Miscarriages": "has a miscarriage",
-            "Sexual_Debut": "has her sexual debut",
             "Deaths": "dies"
         }
-        method_list = list(self['methods']['map'].keys())
+        method_list = list(fpd.method_map.keys())
         last_method = method_list[self.total_results[min(self.total_results.keys())]['method'][index]]
-        for t in self.events:
-            if t >= year_born:
+        for y in self.events:
+            if y >= year_born:
                 for new_channel in event_response_dict:
-                    if index in self.events[t][new_channel]:
+                    if index in self.events[y][new_channel]:
                         if new_channel == "Births":
-                            string += f"{to_date(t)}: Person {index} gives birth to child number {self.total_results[t]['parity'][index]}\n"
+                            string += f"{to_date(y)}: Person {index} gives birth to child number {self.total_results[y]['parity'][index]}\n"
                         else:
-                            string += f"{to_date(t)}: Person {index} {event_response_dict[new_channel]}\n"
-            new_method = method_list[self.total_results[t]['method'][index]]
+                            string += f"{to_date(y)}: Person {index} {event_response_dict[new_channel]}\n"
+                    if self.total_results[y]['sexual_debut_age'][index] == 0:
+                        string += f"{to_date(y)}: Person {index} had their sexual debut\n"
+            new_method = method_list[self.total_results[y]['method'][index]]
             if new_method != last_method:
-                string += f"{to_date(t)}: Person {index} switched from {last_method} to {new_method}\n"
+                string += f"{to_date(y)}: Person {index} switched from {last_method} to {new_method}\n"
             last_method = new_method
 
         if not output:
             print(string)
         else:
             return string
-
-
-
-class ExperimentVerbose(fpe.Experiment):
-    def run_model(self, pars=None, mother_ids=False):
-        """
-        Create the sim and run the model, saving
-        total results and individual events in the process
-        """
-
-        if not self.initialized:
-            self.extract_data()
-
-        if pars is None:
-            pars = self.pars
-
-        self.sim = SimVerbose(pars=pars, mother_ids=mother_ids)
-        self.sim.run()
-        self.post_process_sim()
-        self.total_results = self.sim.total_results
-        self.events = self.sim.events
-
-        return

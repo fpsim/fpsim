@@ -8,7 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 0.17.4 (2022-07-28)
+Version 0.17.5 (2022-07-28)
+--------------------------
+- Refactored ExperimentVerbose and verbose_sim and related parts of test suite
+- *GitHub info*: ``471 https://github.com/amath-idm/fpsim/pull/471``
+
+Version 0.17.4 (2022-07-27)
 --------------------------
 - Added new test suite for the Scenarios API
 - *GitHub info*: ``527 https://github.com/amath-idm/fpsim/pull/527``
