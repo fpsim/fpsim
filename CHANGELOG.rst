@@ -8,6 +8,44 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.17.5 (2022-07-28)
+--------------------------
+- Refactored ExperimentVerbose and verbose_sim and related parts of test suite
+- *GitHub info*: ``471 https://github.com/amath-idm/fpsim/pull/471``
+
+Version 0.17.4 (2022-07-27)
+--------------------------
+- Added new test suite for the Scenarios API
+- *GitHub info*: ``527 https://github.com/amath-idm/fpsim/pull/527``
+   
+Version 0.17.3 (2022-07-18)
+--------------------------
+- Added tutorial jupyter notebook to showcase Scenarios features
+- *GitHub info*: ``484 https://github.com/amath-idm/fpsim/pull/484``
+   
+Version 0.17.2 (2022-07-15)
+--------------------------
+- Switched method mix plotting from line chart to stacked area chart for all classes
+- *GitHub info*: ``568 https://github.com/amath-idm/fpsim/pull/568``
+
+Version 0.17.1 (2022-07-14)
+--------------------------
+- Added example_scens.py for a quick debug of adding a novel method when developing new features
+- Updated README with new debugging guidance
+- GitHub info*: ``570 https://github.com/amath-idm/fpsim/pull/570``
+
+
+Version 0.17.0 (2022-07-08)
+--------------------------
+- Added method mix timeseries plotting to Sim, MultiSim, and Scenarios through plot(to_plot='method')
+- Added some test coverage for method mix plotting
+- *GitHub info*: ``554 https://github.com/amath-idm/fpsim/pull/554``
+
+Version 0.16.2 (2022-07-01)
+--------------------------
+- Refactors channel aggregation in Scenarios.analyze_sims()
+- *GitHub info*: ``561 https://github.com/amath-idm/fpsim/pull/561``
+
 Version 0.16.1 (2022-06-30)
 --------------------------
 - Add tracking of pregnancies
