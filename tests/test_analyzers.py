@@ -151,8 +151,8 @@ def test_verbose_channels():
         miscarriages += len(events[timestep]['Miscarriages'])
         deaths += len(events[timestep]['Deaths'])
 
-    sim_births = sum(sim.results['births'][:-1])
-    sim_deaths = sum(sim.results['deaths'][:-1])
+    sim_births = sum(sim.results['births'][:-2])
+    sim_deaths = sum(sim.results['deaths'][:-2])
     assert births == sim_births, f"sim.results births is {sim_births} and births channel is {births} on timestep {timestep}"
     assert deaths == sim_deaths, f"sim.results deaths is {sim_deaths} and deaths channel is {deaths} on timestep {timestep}"
     
