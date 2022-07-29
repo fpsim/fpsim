@@ -144,7 +144,6 @@ def test_verbose_channels():
 
     # Since analyzers are applied before people is updated for a timestep
     # we will skip the last timestep
-    #events.pop(max(events.keys()))
     for timestep in events:
         births += len(events[timestep]['Births'])
         conceptions = conceptions + len(events[timestep]['Conceptions'])
