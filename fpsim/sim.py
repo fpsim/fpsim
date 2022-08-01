@@ -509,76 +509,76 @@ class People(fpb.BasePeople):
 
         # Update states
         deliv = self.filter(self.gestation == self.preg_dur)
+        if len(deliv): # check for any deliveries
+            deliv.pregnant = False
+            deliv.gestation = 0  # Reset gestation counter
+            deliv.lactating = True
+            deliv.postpartum = True # Start postpartum state at time of birth
+            deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
+            deliv.postpartum_dur = 0
 
-        deliv.pregnant = False
-        deliv.gestation = 0  # Reset gestation counter
-        deliv.lactating = True
-        deliv.postpartum = True # Start postpartum state at time of birth
-        deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
-        deliv.postpartum_dur = 0
+            # Handle stillbirth
+            still_prob = self.pars['mortality_probs']['stillbirth']
+            age_ind = sc.findnearest(self.pars['stillbirth_rate']['ages'], deliv.age)
+            still_prob = still_prob * (self.pars['stillbirth_rate']['age_probs'][age_ind]) if len(self) > 0 else 0
 
-        # Handle stillbirth
-        still_prob = deliv.pars['mortality_probs']['stillbirth']
-        age_ind = sc.findnearest(deliv.pars['stillbirth_rate']['ages'], deliv.age)
-        still_prob = still_prob * (deliv.pars['stillbirth_rate']['age_probs'][age_ind]) if len(deliv) > 0 else 0
+            is_stillborn = deliv.binomial(still_prob)    
+            stillborn = deliv.filter(is_stillborn)
+            stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
+            stillborn.lactating = False   # Set agents of stillbith to not lactate
+            self.step_results['stillbirths'] = len(stillborn)
 
-        is_stillborn = deliv.binomial(still_prob)    
-        stillborn = deliv.filter(is_stillborn)
-        stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
-        stillborn.lactating = False   # Set agents of stillbith to not lactate
-        self.step_results['stillbirths'] = len(stillborn)
+            # Add dates of live births and stillbirths separately for agent to remember
+            all_ppl = self.unfilter()
+            live = deliv.filter(~is_stillborn)
+            for i in live.inds: # Handle DOBs
+                all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
+                if len(all_ppl.dobs[i]) == 1:
+                    all_ppl.first_birth_age[i] = all_ppl.age[i]
+            for i in stillborn.inds: # Handle adding dates
+                all_ppl.still_dates[i].append(all_ppl.age[i])
 
-        # Add dates of live births and stillbirths separately for agent to remember
-        all_ppl = self.unfilter()
-        live = deliv.filter(~is_stillborn)
-        for i in live.inds: # Handle DOBs
-            all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
-            if len(all_ppl.dobs[i]) == 1:
-                all_ppl.first_birth_age[i] = all_ppl.age[i]
-        for i in stillborn.inds: # Handle adding dates
-            all_ppl.still_dates[i].append(all_ppl.age[i])
+            # Handle twins
+            is_twin = live.binomial(self.pars['twins_prob'])
+            twin = live.filter(is_twin)
+            self.step_results['births'] += 2*len(twin) # only add births to population if born alive
+            twin.parity += 2 # Add 2 because matching DHS "total children ever born (alive) v201"
 
-        # Handle twins
-        is_twin = live.binomial(self.pars['twins_prob'])
-        twin = live.filter(is_twin)
-        self.step_results['births'] += 2*len(twin) # only add births to population if born alive
-        twin.parity += 2 # Add 2 because matching DHS "total children ever born (alive) v201"
+            # Handle singles
+            single = live.filter(~is_twin)
+            self.step_results['births'] += len(single)
+            single.parity += 1
 
-        # Handle singles
-        single = live.filter(~is_twin)
-        self.step_results['births'] += len(single)
-        single.parity += 1
+            #Calculate total births
+            self.step_results['total_births'] = len(stillborn) + self.step_results['births']
 
-        #Calculate total births
-        self.step_results['total_births'] = len(stillborn) + self.step_results['births']
+            live_age = live.age
+            for key, (age_low, age_high) in fpd.age_bin_map.items():
+                birth_bins = np.sum((live_age >= age_low) * (live_age < age_high))
+                self.step_results['birth_bins'][key] += birth_bins
 
-        live_age = live.age
-        for key, (age_low, age_high) in fpd.age_bin_map.items():
-            birth_bins = np.sum((live_age >= age_low) * (live_age < age_high))
-            self.step_results['birth_bins'][key] += birth_bins
+            # Check mortality
+            live.check_maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
+            i_death = live.check_infant_mortality()
 
-        # Check mortality
-        live.check_maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
-        i_death = live.check_infant_mortality()
+            # TEMP -- update children, need to refactor
+            r = sc.dictobj(**self.step_results)
+            new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
+            children_map = sc.ddict(int)
+            for i in live.inds:
+                children_map[i] += 1
+            for i in twin.inds:
+                children_map[i] += 1
+            for i in i_death.inds:
+                children_map[i] -= 1
 
-        # TEMP -- update children, need to refactor
-        r = sc.dictobj(**self.step_results)
-        new_people = r.births - r.infant_deaths # Do not add agents who died before age 1 to population
-        children_map = sc.ddict(int)
-        for i in live.inds:
-            children_map[i] += 1
-        for i in twin.inds:
-            children_map[i] += 1
-        for i in i_death.inds:
-            children_map[i] -= 1
-
-        assert sum(list(children_map.values())) == new_people
-        start_ind = len(all_ppl)
-        for mother,n_children in children_map.items():
-            end_ind = start_ind+n_children
-            children = list(range(start_ind, end_ind))
-            all_ppl.children[mother] += children
-            start_ind = end_ind
+            assert sum(list(children_map.values())) == new_people
+            start_ind = len(all_ppl)
+            for mother,n_children in children_map.items():
+                end_ind = start_ind+n_children
+                children = list(range(start_ind, end_ind))
+                all_ppl.children[mother] += children
+                start_ind = end_ind
 
         return
 
