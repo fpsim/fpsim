@@ -519,7 +519,7 @@ class People(fpb.BasePeople):
 
             # Handle stillbirth
             still_prob = self.pars['mortality_probs']['stillbirth']
-            age_ind = sc.findnearest(self.pars['stillbirth_rate']['ages'], deliv.age)
+            age_ind = np.searchsorted(self.pars['stillbirth_rate']['ages'], deliv.age)
             still_prob = still_prob * (self.pars['stillbirth_rate']['age_probs'][age_ind]) if len(self) > 0 else 0
 
             is_stillborn = deliv.binomial(still_prob)    
