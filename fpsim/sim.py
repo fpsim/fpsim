@@ -1811,6 +1811,7 @@ class MultiSim(sc.prettyobj):
                 labellist += ''
         n_unique = len(np.unique(labels)) # How many unique sims there are
 
+        # Function to scale all y-axes in fig based on input channel
         def conform_y_axes(figure, channel=None, bottom=0, top=100):
             if channel is not None:
                 maximum_value = max([max(sim.results[channel]) for sim in self.sims])
@@ -1862,7 +1863,7 @@ class MultiSim(sc.prettyobj):
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
                 kw = dict(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
                 sim.plot(to_plot=to_plot, **kw, **kwargs)
-            if to_plot == 'cpr':
+            if to_plot == 'cpr': # can change this line to scale other sets of plots
                 fig = conform_y_axes(fig, 'acpr')
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
