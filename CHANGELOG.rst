@@ -15,8 +15,8 @@ Version 0.18.1 (2022-08-08)
 
 Version 0.18.0 (2022-08-01)
 --------------------------
-- Refactored ExperimentVerbose and verbose_sim and related parts of test suite
-- *GitHub info*: ``471 https://github.com/amath-idm/fpsim/pull/471``
+- Adjusted stillbirth rates from Nori et al., which was conducted June 2022
+- *GitHub info*: ``560 https://github.com/amath-idm/fpsim/pull/560``
 
 Version 0.17.5 (2022-07-28)
 --------------------------
