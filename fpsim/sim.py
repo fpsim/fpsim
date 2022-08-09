@@ -627,6 +627,21 @@ class People(fpb.BasePeople):
         on_method_cpr = np.sum((self.method != 0) * denominator)
         self.step_results['no_methods_cpr'] += no_method_cpr
         self.step_results['on_methods_cpr'] += on_method_cpr
+
+        age_map = fpd.method_age_map
+        age_group_no_method_counts = {key: 0 for key in age_map}
+        age_group_method_counts = {key: 0 for key in age_map}
+        for index, method in enumerate(self.method):
+            if method:
+                for key in age_group_method_counts:
+                    if self.age[index] in range(age_map[key][0], age_map[key][1]):
+                        age_group_method_counts[key] += 1
+                    age_group_no_method_counts[key] += 1
+        
+        for age_str in age_map:
+            self.step_results[f"cpr_{age_str}_method"] += age_group_method_counts[age_str]
+            self.step_results[f"cpr_{age_str}_no_method"] += age_group_no_method_counts[age_str]
+
         return
 
 
@@ -676,6 +691,9 @@ class People(fpb.BasePeople):
         for key in fpd.age_bin_map.keys():
             self.step_results['birth_bins'][key] = 0
             self.step_results['age_bin_totals'][key] = 0
+
+        for age_range in fpd.method_age_map:
+            self.step_results[f"cpr_{age_range}"] = []
 
         m = len(self.pars['methods']['map'])
 
@@ -1346,6 +1364,14 @@ class Sim(fpb.BaseSim):
                     'cpr':  'CPR (contraceptive prevalence rate)',
                     'acpr': 'ACPR (alternative contraceptive prevalence rate',
                 }
+            elif to_plot == 'as_cpr':
+                to_plot = {
+                    'cpr_<18':                      'Contraceptive Prevalence Rate (<18)',
+                    'cpr_18-20':                    'Contraceptive Prevalence Rate (18-20)',
+                    'cpr_21-25':                    'Contraceptive Prevalence Rate (21-25)',
+                    'cpr_25-34':                    'Contraceptive Prevalence Rate (25-34)',
+                    'cpr_35+':                      'Contraceptive Prevalence Rate (35+)'
+                }
             elif to_plot == 'mortality':
                 to_plot = {                    
                     'mmr':                         'Maternal mortality ratio',
@@ -1367,6 +1393,9 @@ class Sim(fpb.BaseSim):
                 } 
 
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
+
+            if 'cpr_<18' in to_plot:
+
 
             for p,key,reslabel in sc.odict(to_plot).enumitems():
                 ax = pl.subplot(rows, cols, p+1)
