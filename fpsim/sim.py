@@ -518,8 +518,14 @@ class People(fpb.BasePeople):
             deliv.postpartum_dur = 0
 
             # Handle stillbirth
+            def find_nearest(array, value): # can handle multiple values
+                idx = np.searchsorted(array, value, side="left")
+                prev_idx_is_less = ((idx == len(array))|(np.fabs(value - array[np.maximum(idx-1, 0)]) < np.fabs(value - array[np.minimum(idx, len(array)-1)])))
+                idx[prev_idx_is_less] -= 1
+                return idx
+
             still_prob = self.pars['mortality_probs']['stillbirth']
-            age_ind = [np.argmin(np.abs(self.pars['stillbirth_rate']['ages'] - age)) for age in deliv.age]
+            age_ind = find_nearest(self.pars['stillbirth_rate']['ages'], deliv.age)
             still_prob = still_prob * (self.pars['stillbirth_rate']['age_probs'][age_ind]) if len(self) > 0 else 0
 
             is_stillborn = deliv.binomial(still_prob)    
