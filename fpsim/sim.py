@@ -518,9 +518,6 @@ class People(fpb.BasePeople):
             deliv.postpartum_dur = 0
 
             # Handle stillbirth
-
-
-
             still_prob = self.pars['mortality_probs']['stillbirth']
             rate_ages = self.pars['stillbirth_rate']['ages']
             age_ind = np.searchsorted(rate_ages, deliv.age, side="left")
