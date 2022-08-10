@@ -629,18 +629,22 @@ class People(fpb.BasePeople):
         self.step_results['on_methods_cpr'] += on_method_cpr
 
         age_map = fpd.method_age_map
-        age_group_no_method_counts = {key: 0 for key in age_map}
-        age_group_method_counts = {key: 0 for key in age_map}
-        for index, method in enumerate(self.method):
-            if method:
-                for key in age_group_method_counts:
-                    if self.age[index] in range(age_map[key][0], age_map[key][1]):
-                        age_group_method_counts[key] += 1
-                    age_group_no_method_counts[key] += 1
         
-        for age_str in age_map:
-            self.step_results[f"cpr_{age_str}_method"] += age_group_method_counts[age_str]
-            self.step_results[f"cpr_{age_str}_no_method"] += age_group_no_method_counts[age_str]
+        age_bins = [0] + [max(age_map[key]) for key in age_map] # flattening age_map bins
+        binned_ages = np.digitize(self.age, age_bins) - 1
+        binned_ages_method = binned_ages[np.logical_and((self.method != 0), (denominator > 0))]
+        binned_ages_no_method = binned_ages[np.logical_and((self.method == 0), (denominator > 0))]
+        
+        age, method_count = np.unique(binned_ages_method, return_counts=True)
+        age_method_counts = dict(zip(age, method_count))
+        age, no_method_count = np.unique(binned_ages_no_method, return_counts=True)
+        age_no_method_counts = dict(zip(age, no_method_count))
+        
+        for index, age_str in enumerate(age_map):
+            if index in age_method_counts:
+                self.step_results[f"cpr_{age_str}_method"] = age_method_counts[index]
+            if index in age_no_method_counts:
+                self.step_results[f"cpr_{age_str}_no_method"] = age_no_method_counts[index]
 
         return
 
@@ -693,7 +697,7 @@ class People(fpb.BasePeople):
             self.step_results['age_bin_totals'][key] = 0
 
         for age_range in fpd.method_age_map:
-            self.step_results[f"cpr_{age_range}"] = []
+            self.step_results[f"cpr_{age_range}"] = 0
 
         m = len(self.pars['methods']['map'])
 
@@ -891,6 +895,9 @@ class Sim(fpb.BaseSim):
                 self.results[key] = {} # CK: TODO: refactor
                 for p in range(self.npts):
                     self.results[key][p] = np.zeros((m, m), dtype=int)
+        
+        for age_group in fpd.method_age_map:
+            self.results[f"cpr_{age_group}"] = []
 
         return
 
@@ -1165,6 +1172,10 @@ class Sim(fpb.BaseSim):
                 self.results[births_key][i] = r.birth_bins[agekey]*scale # Store results of total births per age bin for ASFR
                 self.results[women_key][i]  = r.age_bin_totals[agekey]*scale # Store results of total fecund women per age bin for ASFR
 
+
+            for method_agekey in fpd.method_age_map:    
+                self.results[f"cpr_{method_agekey}"].append(getattr(r, f"cpr_{method_agekey}"))
+
             # Store results of number of switching events in each age group
             if self['track_switching']:
                 switch_events = step_results.pop('switching')
@@ -1393,9 +1404,6 @@ class Sim(fpb.BaseSim):
                 } 
 
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
-
-            if 'cpr_<18' in to_plot:
-
 
             for p,key,reslabel in sc.odict(to_plot).enumitems():
                 ax = pl.subplot(rows, cols, p+1)
