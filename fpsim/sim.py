@@ -642,9 +642,7 @@ class People(fpb.BasePeople):
         
         for index, age_str in enumerate(age_map):
             if index in age_method_counts:
-                self.step_results[f"cpr_{age_str}_method"] = age_method_counts[index]
-            if index in age_no_method_counts:
-                self.step_results[f"cpr_{age_str}_no_method"] = age_no_method_counts[index]
+                self.step_results[f"cpr_{age_str}_method"] = age_method_counts[index] / age_no_method_counts[index]
 
         return
 
@@ -697,7 +695,8 @@ class People(fpb.BasePeople):
             self.step_results['age_bin_totals'][key] = 0
 
         for age_range in fpd.method_age_map:
-            self.step_results[f"cpr_{age_range}"] = 0
+            self.step_results[f"cpr_{age_range}_method"] = 0
+            self.step_results[f"cpr_{age_range}_no_method"] = 0
 
         m = len(self.pars['methods']['map'])
 
@@ -1174,7 +1173,7 @@ class Sim(fpb.BaseSim):
 
 
             for method_agekey in fpd.method_age_map:    
-                self.results[f"cpr_{method_agekey}"].append(getattr(r, f"cpr_{method_agekey}"))
+                self.results[f"cpr_{method_agekey}"].append(getattr(r, f"cpr_{method_agekey}_method"))
 
             # Store results of number of switching events in each age group
             if self['track_switching']:
@@ -1380,8 +1379,8 @@ class Sim(fpb.BaseSim):
                     'cpr_<18':                      'Contraceptive Prevalence Rate (<18)',
                     'cpr_18-20':                    'Contraceptive Prevalence Rate (18-20)',
                     'cpr_21-25':                    'Contraceptive Prevalence Rate (21-25)',
-                    'cpr_25-34':                    'Contraceptive Prevalence Rate (25-34)',
-                    'cpr_35+':                      'Contraceptive Prevalence Rate (35+)'
+                    'cpr_26-35':                    'Contraceptive Prevalence Rate (26-35)',
+                    'cpr_>35':                      'Contraceptive Prevalence Rate (35+)'
                 }
             elif to_plot == 'mortality':
                 to_plot = {                    
@@ -1402,8 +1401,9 @@ class Sim(fpb.BaseSim):
                 to_plot = {
                     'method_usage':                 'Method usage'
                 } 
-
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
+            if 'cpr_<18' in to_plot:
+                rows, cols = 2, 3
 
             for p,key,reslabel in sc.odict(to_plot).enumitems():
                 ax = pl.subplot(rows, cols, p+1)
@@ -1428,6 +1428,8 @@ class Sim(fpb.BaseSim):
                     raise RuntimeError(errormsg)
 
                 percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr', 'method_usage']
+                if 'cpr_' in key:
+                    percent_keys = percent_keys + list(to_plot.keys())
                 if key in percent_keys and key != 'method_usage':
                     y *= 100
                     if is_dist:
@@ -1479,7 +1481,7 @@ class Sim(fpb.BaseSim):
                     pl.xlim(xlims)
                 if ylims is not None:
                     pl.ylim(ylims)
-                if key == "method_usage": # need to overwrite legend for method plot
+                if key == "method_usage" or 'cpr_<18' in to_plot: # need to overwrite legend for method plot
                     ax.legend(loc='upper left', frameon=True)
 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
