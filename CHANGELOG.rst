@@ -8,6 +8,16 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.18.1 (2022-08-08)
+--------------------------
+- Added y-axis scaling to Sim.plot and MultiSim.plot()
+- *GitHub info*: ``583 https://github.com/amath-idm/fpsim/pull/583``
+
+Version 0.18.0 (2022-08-01)
+--------------------------
+- Adjusted stillbirth rates from Nori et al., which was conducted June 2022
+- *GitHub info*: ``560 https://github.com/amath-idm/fpsim/pull/560``
+
 Version 0.17.5 (2022-07-28)
 --------------------------
 - Refactored ExperimentVerbose and verbose_sim and related parts of test suite

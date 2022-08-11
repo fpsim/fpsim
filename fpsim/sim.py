@@ -1338,6 +1338,11 @@ class Sim(fpb.BaseSim):
         self.df = df
         return df
 
+    # Function to scale all y-axes in fig based on input channel
+    def conform_y_axes(self, figure, bottom=0, top=100):
+        for axes in figure.axes:
+            axes.set_ylim([bottom, top])
+        return figure
 
     def plot(self, to_plot=None, xlims=None, ylims=None, do_save=None, do_show=True, filename='fpsim.png', style=None, fig_args=None,
              plot_args=None, axis_args=None, fill_args=None, label=None, new_fig=True, colors=None):
@@ -1420,7 +1425,8 @@ class Sim(fpb.BaseSim):
                 to_plot = {f"mcpr_{age_group}": f"Modern Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
 
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
-            print(f"Results right before plotting: {self.results['acpr_26-35']}")
+            if to_plot == 'cpr':
+                rows,cols = 1,3
             for p,key,reslabel in sc.odict(to_plot).enumitems():
                 ax = pl.subplot(rows, cols, p+1)
 
@@ -1499,7 +1505,14 @@ class Sim(fpb.BaseSim):
                     pl.ylim(ylims)
                 if key == "method_usage" or 'cpr_' in key or 'acpr_' in key or 'mcpr_' in key: # need to overwrite legend for some plots
                     ax.legend(loc='upper left', frameon=True)
-
+            if 'cpr' in to_plot:
+                top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10 # rounding up to nearest 10
+                self.conform_y_axes(figure=fig, top=top) 
+            if 'cpr_' in key or 'acpr_' in key or 'mcpr_' in key:
+                cpr_type = key.split("_")[0]
+                top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]])
+                tidy_top = int(np.ceil(top / 10.0)) * 10
+                self.conform_y_axes(figure=fig, top=tidy_top) 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
 
@@ -1865,6 +1878,11 @@ class MultiSim(sc.prettyobj):
                 labellist += ''
         n_unique = len(np.unique(labels)) # How many unique sims there are
 
+        def get_scale_ceil(channel):
+            maximum_value = max([max(sim.results[channel]) for sim in self.sims])
+            top = int(np.ceil(maximum_value / 10.0)) * 10 # rounding up to nearest 10
+            return top
+
         if to_plot == 'method':
             axis_args_method = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.30), axis_args)
             with fpo.with_style(style):
@@ -1908,9 +1926,16 @@ class MultiSim(sc.prettyobj):
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
                 kw = dict(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
                 sim.plot(to_plot=to_plot, **kw, **kwargs)
+            if to_plot == 'cpr': # can change this line to scale other sets of plots
+                fig = self.base_sim.conform_y_axes(figure=fig, top=get_scale_ceil('acpr'))
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
-            return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
+            if to_plot == 'cpr':
+                self.base_sim.plot(to_plot=to_plot, do_show=False, fig_args=fig_args, plot_args=plot_args, **kwargs)
+                fig = self.base_sim.conform_y_axes(fig, top=get_scale_ceil('acpr'))
+                return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
+            else:
+                return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
     def plot_age_first_birth(self, do_show=False, do_save=True, output_file='age_first_birth_multi.png'):
         length = sum([len([num for num in sim.people.first_birth_age if num is not None]) for sim in self.sims])
