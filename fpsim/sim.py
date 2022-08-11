@@ -639,9 +639,9 @@ class People(fpb.BasePeople):
         age_method_counts = dict(zip(age, method_count))
         age, no_method_count = np.unique(binned_ages_no_method, return_counts=True)
         age_no_method_counts = dict(zip(age, no_method_count))
-        
+
         for index, age_str in enumerate(age_map):
-            if index in age_method_counts:
+            if index in age_method_counts and index in age_no_method_counts:
                 self.step_results[f"cpr_{age_str}_method"] = age_method_counts[index] / age_no_method_counts[index]
 
         return
