@@ -610,10 +610,6 @@ class People(fpb.BasePeople):
             denominator (np.array): array representing all individuals who are eligible for contraceptive methods
         '''
         binned_ages = self.age_by_group
-        if channel == 'acpr':
-            print(f"Binned ages: {binned_ages}")
-            print(f"Binned ages with method: {binned_ages[np.logical_and((self.method != 0), (denominator > 0))]}")
-            print(f"Binned ages without method: {binned_ages[np.logical_and((self.method == 0), (denominator > 0))]}")
         if channel != 'mcpr':
             binned_ages_method = binned_ages[np.logical_and((self.method != 0), (denominator > 0))]
             binned_ages_no_method = binned_ages[np.logical_and((self.method == 0), (denominator > 0))]
@@ -622,10 +618,8 @@ class People(fpb.BasePeople):
             binned_ages_method = binned_ages[np.logical_and((np.isin(self.method, modern_methods)), (denominator > 0))]
             binned_ages_no_method = binned_ages[np.logical_and((self.method == 0), (denominator > 0))]
   
-        age, method_count = np.unique(binned_ages_method, return_counts=True)
-        age_method_counts = dict(zip(age, method_count))
-        age, no_method_count = np.unique(binned_ages_no_method, return_counts=True)
-        age_no_method_counts = dict(zip(age, no_method_count))
+        age_method_counts = dict(zip(*np.unique(binned_ages_method, return_counts=True)))
+        age_no_method_counts = dict(zip(*np.unique(binned_ages_no_method, return_counts=True)))
 
         for index, age_str in enumerate(fpd.method_age_map):
             if index in age_method_counts and index in age_no_method_counts:
@@ -1378,6 +1372,9 @@ class Sim(fpb.BaseSim):
             nrows,ncols = fig_args.pop('nrows'), fig_args.pop('ncols')
             fig = pl.figure(**fig_args) if new_fig else pl.gcf()
             pl.subplots_adjust(**axis_args)
+
+            if 'as_' in to_plot:
+                nrows,ncols = 2, 3
 
             res = self.results # Shorten since heavily used
             method_age_groups = list(fpd.method_age_map.keys())
