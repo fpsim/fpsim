@@ -1504,16 +1504,14 @@ class Sim(fpb.BaseSim):
                     pl.ylim(ylims)
                 if key == "method_usage" or 'cpr_' in key or 'acpr_' in key or 'mcpr_' in key: # need to overwrite legend for some plots
                     ax.legend(loc='upper left', frameon=True)
-            if 'cpr' in to_plot:
-                top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10 # rounding up to nearest 10
-                self.conform_y_axes(figure=fig, top=top) 
-            if 'cpr_' in key or 'acpr_' in key or 'mcpr_' in key:
-                cpr_type = key.split("_")[0]
-                top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]])
-                tidy_top = int(np.ceil(top / 10.0)) * 10
-                print(f"Rounded high: {tidy_top}")
-                print(f"Actual high: {top}")
-                self.conform_y_axes(figure=fig, top=tidy_top) 
+                if 'cpr' in to_plot:
+                    top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10 # rounding up to nearest 10
+                    self.conform_y_axes(figure=fig, top=top) 
+                if 'cpr_' in key or 'acpr_' in key or 'mcpr_' in key:
+                    cpr_type = key.split("_")[0]
+                    top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]])
+                    tidy_top = int(np.ceil(top / 10.0)) * 10
+                    self.conform_y_axes(figure=fig, top=tidy_top) 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
 
@@ -1926,20 +1924,21 @@ class MultiSim(sc.prettyobj):
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
                 kw = dict(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
                 sim.plot(to_plot=to_plot, **kw, **kwargs)
-            if to_plot == 'cpr': # can change this line to scale other sets of plots
-                fig = self.base_sim.conform_y_axes(figure=fig, top=get_scale_ceil('acpr'))
-            if 'as_' in to_plot:
-                cpr_type = to_plot.split("_")[1]
-                top = max([max([max(group_result) for group_result in [sim.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]]) for sim in self.sims])
-                tidy_top = int(np.ceil(top / 10.0)) * 10
-                self.base_sim.conform_y_axes(figure=fig, top=tidy_top)
+            if to_plot is not None:
+                # Scale axes
+                if to_plot == 'cpr':
+                    fig = self.base_sim.conform_y_axes(figure=fig, top=get_scale_ceil('acpr'))
+                if 'as_' in to_plot:
+                    cpr_type = to_plot.split("_")[1]
+                    top = max([max([max(group_result) for group_result in [sim.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]]) for sim in self.sims])
+                    tidy_top = int(np.ceil(top / 10.0)) * 10
+                    self.base_sim.conform_y_axes(figure=fig, top=tidy_top)
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
             return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
     def plot_age_first_birth(self, do_show=False, do_save=True, output_file='age_first_birth_multi.png'):
         length = sum([len([num for num in sim.people.first_birth_age if num is not None]) for sim in self.sims])
-        print(f"Length of total is: {length}")
         data_dict = {"age": [0] * length, "sim": [0] * length}
         i = 0
         for sim in self.sims:
