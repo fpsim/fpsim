@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.18.2 (2022-08-12)
+--------------------------
+- Added age specific plotting for cpr, mcpr, and acpr to Sim, MultiSim, and Scenarios
+- *GitHub info*: ``584 https://github.com/amath-idm/fpsim/pull/584``
+
 Version 0.18.1 (2022-08-08)
 --------------------------
 - Added y-axis scaling to Sim.plot and MultiSim.plot()
