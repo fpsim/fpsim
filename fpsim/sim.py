@@ -1344,7 +1344,7 @@ class Sim(fpb.BaseSim):
             axes.set_ylim([bottom, top])
         return figure
 
-    def plot(self, to_plot=None, xlims=None, ylims=None, do_save=None, do_show=True, filename='fpsim.png', style=None, fig_args=None,
+    def plot(self, to_plot='default', xlims=None, ylims=None, do_save=None, do_show=True, filename='fpsim.png', style=None, fig_args=None,
              plot_args=None, axis_args=None, fill_args=None, label=None, new_fig=True, colors=None):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
@@ -1366,7 +1366,6 @@ class Sim(fpb.BaseSim):
             colors    (list/dict): Colors for plots with multiple lines  
         '''
 
-        if to_plot is None: to_plot = 'default'
         fig_args  = sc.mergedicts(dict(figsize=(16,10), nrows=None, ncols=None), fig_args)
         plot_args = sc.mergedicts(dict(lw=2, alpha=0.7), plot_args)
         axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.25), axis_args)
@@ -1512,6 +1511,8 @@ class Sim(fpb.BaseSim):
                 cpr_type = key.split("_")[0]
                 top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]])
                 tidy_top = int(np.ceil(top / 10.0)) * 10
+                print(f"Rounded high: {tidy_top}")
+                print(f"Actual high: {top}")
                 self.conform_y_axes(figure=fig, top=tidy_top) 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
@@ -1915,7 +1916,6 @@ class MultiSim(sc.prettyobj):
                         ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True) if len(labels) > 1 else ax.legend(loc='upper left', frameon=True)
                     pl.ylim(0, max(max([sum(proportion[1:]*100) for proportion in results['method_usage']]) for results in [sim.results for sim in self.sims]) + 1)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
-
         elif plot_sims:
             colors = sc.gridcolors(n_unique)
             colors = {k:c for k,c in zip(labels, colors)}
@@ -1928,14 +1928,14 @@ class MultiSim(sc.prettyobj):
                 sim.plot(to_plot=to_plot, **kw, **kwargs)
             if to_plot == 'cpr': # can change this line to scale other sets of plots
                 fig = self.base_sim.conform_y_axes(figure=fig, top=get_scale_ceil('acpr'))
+            if 'as_' in to_plot:
+                cpr_type = to_plot.split("_")[1]
+                top = max([max([max(group_result) for group_result in [sim.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]]) for sim in self.sims])
+                tidy_top = int(np.ceil(top / 10.0)) * 10
+                self.base_sim.conform_y_axes(figure=fig, top=tidy_top)
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
-            if to_plot == 'cpr':
-                self.base_sim.plot(to_plot=to_plot, do_show=False, fig_args=fig_args, plot_args=plot_args, **kwargs)
-                fig = self.base_sim.conform_y_axes(fig, top=get_scale_ceil('acpr'))
-                return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
-            else:
-                return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
+            return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
     def plot_age_first_birth(self, do_show=False, do_save=True, output_file='age_first_birth_multi.png'):
         length = sum([len([num for num in sim.people.first_birth_age if num is not None]) for sim in self.sims])
