@@ -1344,7 +1344,7 @@ class Sim(fpb.BaseSim):
             axes.set_ylim([bottom, top])
         return figure
 
-    def plot(self, to_plot='default', xlims=None, ylims=None, do_save=None, do_show=True, filename='fpsim.png', style=None, fig_args=None,
+    def plot(self, to_plot=None, xlims=None, ylims=None, do_save=None, do_show=True, filename='fpsim.png', style=None, fig_args=None,
              plot_args=None, axis_args=None, fill_args=None, label=None, new_fig=True, colors=None):
         '''
         Plot the results -- can supply arguments for both the figure and the plots.
@@ -1365,7 +1365,7 @@ class Sim(fpb.BaseSim):
             new_fig   (bool): Whether to create a new figure (true unless part of a multisim)
             colors    (list/dict): Colors for plots with multiple lines  
         '''
-
+        if to_plot is None: to_plot = 'default'
         fig_args  = sc.mergedicts(dict(figsize=(16,10), nrows=None, ncols=None), fig_args)
         plot_args = sc.mergedicts(dict(lw=2, alpha=0.7), plot_args)
         axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.25), axis_args)
@@ -1377,7 +1377,7 @@ class Sim(fpb.BaseSim):
             fig = pl.figure(**fig_args) if new_fig else pl.gcf()
             pl.subplots_adjust(**axis_args)
 
-            if 'as_' in to_plot:
+            if to_plot is not None and 'as_' in to_plot:
                 nrows,ncols = 2, 3
 
             res = self.results # Shorten since heavily used
@@ -1449,7 +1449,7 @@ class Sim(fpb.BaseSim):
                     raise RuntimeError(errormsg)
 
                 percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr', 'method_usage']
-                if 'cpr_' in key or 'acpr_' in key or 'mcpr_' in key:
+                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key:
                     percent_keys = percent_keys + list(to_plot.keys())
                 if key in percent_keys and key != 'method_usage':
                     y *= 100
@@ -1507,7 +1507,7 @@ class Sim(fpb.BaseSim):
                 if 'cpr' in to_plot:
                     top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10 # rounding up to nearest 10
                     self.conform_y_axes(figure=fig, top=top) 
-                if 'cpr_' in key or 'acpr_' in key or 'mcpr_' in key:
+                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key:
                     cpr_type = key.split("_")[0]
                     top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]])
                     tidy_top = int(np.ceil(top / 10.0)) * 10
