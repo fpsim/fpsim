@@ -1502,7 +1502,7 @@ class Sim(fpb.BaseSim):
                     pl.xlim(xlims)
                 if ylims is not None:
                     pl.ylim(ylims)
-                if key == "method_usage" or 'cpr_' in key or 'acpr_' in key or 'mcpr_' in key: # need to overwrite legend for some plots
+                if (key == "method_usage") or (('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key): # need to overwrite legend for some plots
                     ax.legend(loc='upper left', frameon=True)
                 if 'cpr' in to_plot:
                     top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10 # rounding up to nearest 10
