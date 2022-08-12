@@ -148,7 +148,7 @@ def test_method_usage():
     sim = fp.Sim(location='test')
     sim.run() 
     for timestep, proportions in enumerate(sim.results['method_usage']):
-        assert sum(proportions) == 1
+        assert np.isclose(sum(proportions), 1, atol=0.0001)
         pop = sim.results['pop_size'][timestep]
 
         # Checking that proportion isn't calculated from a larger population than expected
