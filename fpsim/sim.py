@@ -1509,7 +1509,10 @@ class Sim(fpb.BaseSim):
                     self.conform_y_axes(figure=fig, top=top) 
                 if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key:
                     cpr_type = key.split("_")[0]
-                    top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]])
+                    if is_dist:
+                        top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]])
+                    else:
+                        top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'] for age_group in fpd.method_age_map]])
                     tidy_top = int(np.ceil(top / 10.0)) * 10
                     self.conform_y_axes(figure=fig, top=tidy_top) 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
@@ -1930,7 +1933,10 @@ class MultiSim(sc.prettyobj):
                     fig = self.base_sim.conform_y_axes(figure=fig, top=get_scale_ceil('acpr'))
                 if 'as_' in to_plot:
                     cpr_type = to_plot.split("_")[1]
-                    top = max([max([max(group_result) for group_result in [sim.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]]) for sim in self.sims])
+                    if hasattr(sim.results[f'cpr_{list(fpd.method_age_map.keys())[0]}'], 'best'): # if compute_stats has been applied
+                        top = max([max([max(group_result) for group_result in [sim.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]]) for sim in self.sims])
+                    else:
+                        top = max([max([max(group_result) for group_result in [sim.results[f'{cpr_type}_{age_group}'] for age_group in fpd.method_age_map]]) for sim in self.sims])
                     tidy_top = int(np.ceil(top / 10.0)) * 10
                     self.base_sim.conform_y_axes(figure=fig, top=tidy_top)
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
