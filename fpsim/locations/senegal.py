@@ -278,6 +278,8 @@ def stillbirth():
     '''
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
+    
+    Age adjustments come from an extension of Noori et al., which were conducted June 2022.
     '''
 
     data = np.array([
@@ -289,6 +291,8 @@ def stillbirth():
     stillbirth_rate = {}
     stillbirth_rate['year'] = data[:,0]
     stillbirth_rate['probs'] = data[:,1]/1000    # Rate per 1000 total births
+    stillbirth_rate['ages']      = np.array([15,   16,   17,   19,   20,   28,  31,  36,   50])
+    stillbirth_rate['age_probs'] = np.array([3.27, 1.64, 1.85, 1.39, 0.89, 1.0, 1.5, 1.55, 1.78]) #odds ratios 
 
     return stillbirth_rate
 
