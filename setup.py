@@ -32,7 +32,7 @@ setup(
     install_requires=[
         'numpy',
         'numba',
-        'scipy',
+        'scipy<1.9.0',
         'pandas>=1.3', 
         'sciris>=1.2.1',
         'matplotlib>=3.5.0',
