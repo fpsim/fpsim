@@ -630,7 +630,7 @@ class People(fpb.BasePeople):
 
         for index, age_str in enumerate(fpd.method_age_map):
             if index in age_method_counts and index in age_no_method_counts:
-                self.step_results[f"{channel}_{age_str}"] = age_method_counts[index] / age_no_method_counts[index]
+                self.step_results[f"{channel}_{age_str}"] = age_method_counts[index] / (age_no_method_counts[index] + age_method_counts[index])
 
     def track_mcpr(self):
         '''
