@@ -607,30 +607,31 @@ class People(fpb.BasePeople):
             self.step_results['age_bin_totals'][key] += len(this_age_bin)
         return
 
-    def log_channel_method_age(self, channel, denominator):
+    def log_age_split(self, channel, numerator, denominator=None):
         '''
-        Logs the proportions of the channel given with a separate results channel for each
-        method age group
-        
+        Splits channel into multiple channels by method age groups
         Args:
-            channel (str): one of ['mcpr', 'cpr', 'acpr'] that determines the channel to be logged
-            denominator (np.array): array representing all individuals who are eligible for contraceptive methods
+            channel     (str)       : Name of the channel used for determining result channel key
+            numerator   (list(bool)): List where each index is an individual, value is boolean of channel condition
+            denominator (list(bool)): List that is a superset of numerator, used to determine rates
         '''
         binned_ages = self.age_by_group
-        if channel != 'mcpr':
-            binned_ages_method = binned_ages[np.logical_and((self.method != 0), (denominator > 0))]
-            binned_ages_no_method = binned_ages[np.logical_and((self.method == 0), (denominator > 0))]
-        else:
-            modern_methods = sc.findinds(list(self.pars['methods']['modern'].values()))
-            binned_ages_method = binned_ages[np.logical_and((np.isin(self.method, modern_methods)), (denominator > 0))]
-            binned_ages_no_method = binned_ages[np.logical_and((self.method == 0), (denominator > 0))]
-  
-        age_method_counts = dict(zip(*np.unique(binned_ages_method, return_counts=True)))
-        age_no_method_counts = dict(zip(*np.unique(binned_ages_no_method, return_counts=True)))
+        if denominator is not None:
+            binned_ages_true = binned_ages[np.logical_and(numerator, denominator)]
+            binned_ages_false = binned_ages[np.logical_and(~numerator, denominator)]
 
-        for index, age_str in enumerate(fpd.method_age_map):
-            if index in age_method_counts and index in age_no_method_counts:
-                self.step_results[f"{channel}_{age_str}"] = age_method_counts[index] / age_no_method_counts[index]
+            age_true_counts = dict(zip(*np.unique(binned_ages_true, return_counts=True)))
+            age_false_counts = dict(zip(*np.unique(binned_ages_false, return_counts=True)))
+
+            for index, age_str in enumerate(fpd.method_age_map):
+                if index in age_true_counts and index in age_false_counts:
+                    self.step_results[f"{channel}_{age_str}"] = age_true_counts[index] / (age_true_counts[index] + age_false_counts[index])
+        else:
+            binned_ages_true = binned_ages[numerator]
+            age_true_counts = dict(zip(*np.unique(binned_ages_true, return_counts=True)))
+            for index, age_str in enumerate(fpd.method_age_map):
+                if index in age_true_counts:
+                    self.step_results[f"{channel}_{age_str}"] = age_true_counts[index]
 
     def track_mcpr(self):
         '''
@@ -643,13 +644,13 @@ class People(fpb.BasePeople):
         method_age = (self.pars['method_age'] <= self.age)
         fecund_age = self.age < self.pars['age_limit_fecundity']
         denominator = method_age * fecund_age * self.is_female * (self.alive)
+        numerator = np.isin(self.method, modern_methods)
         no_method_mcpr = np.sum((self.method == 0) * denominator)
-        on_method_mcpr = np.sum((np.isin(self.method, modern_methods)) * denominator)
+        on_method_mcpr = np.sum(numerator * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
         self.step_results['on_methods_mcpr'] += on_method_mcpr
-        self.log_channel_method_age('mcpr', denominator)
+        self.log_age_split('mcpr', numerator=numerator, denominator=denominator)
         return
-
 
     def track_cpr(self):
         '''
@@ -660,13 +661,13 @@ class People(fpb.BasePeople):
         '''
         denominator = ((self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * (
                     self.sex == 0) * (self.alive))
+        numerator = self.method != 0
         no_method_cpr = np.sum((self.method == 0) * denominator)
-        on_method_cpr = np.sum((self.method != 0) * denominator)
+        on_method_cpr = np.sum(numerator * denominator)
         self.step_results['no_methods_cpr'] += no_method_cpr
         self.step_results['on_methods_cpr'] += on_method_cpr
-        self.log_channel_method_age('cpr', denominator)
+        self.log_age_split(channel='cpr', numerator=numerator, denominator=denominator)
         return
-
 
     def track_acpr(self):
         '''
@@ -677,13 +678,13 @@ class People(fpb.BasePeople):
         '''
         denominator = ((self.pars['method_age'] <= self.age) * (self.age < self.pars['age_limit_fecundity']) * (
                 self.sex == 0) * (self.pregnant == 0) * (self.sexually_active == 1) * (self.alive))
+        numerator = self.method != 0
         no_method_cpr = np.sum((self.method == 0) * denominator)
-        on_method_cpr = np.sum((self.method != 0) * denominator)
+        on_method_cpr = np.sum(numerator * denominator)
         self.step_results['no_methods_acpr'] += no_method_cpr
         self.step_results['on_methods_acpr'] += on_method_cpr
-        self.log_channel_method_age('acpr', denominator)
+        self.log_age_split(channel='acpr', numerator=numerator, denominator=denominator)
         return
-
 
     def init_step_results(self):
         self.step_results = dict(
