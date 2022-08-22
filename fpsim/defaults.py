@@ -17,6 +17,7 @@ max_parity     = 20   # Maximum number of children
 person_defaults = dict(
     uid                  = -1,
     age                  = 0,
+    age_by_group         = 0,
     sex                  = 0,
     parity               = 0,
     method               = 0,

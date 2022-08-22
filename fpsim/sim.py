@@ -48,15 +48,16 @@ class People(fpb.BasePeople):
 
         # Basic states
         init_states = dir(self)
-        self.uid      = arr(n, np.arange(n))
-        self.age      = arr(n, np.float64(d['age'])) # Age of the person (in years)
-        self.sex      = arr(n, d['sex']) # Female (0) or male (1)
-        self.parity   = arr(n, d['parity']) # Number of children
-        self.method   = arr(n, d['method'])  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
-        self.barrier  = arr(n, d['barrier'])  # Reason for non-use
-        self.alive    = arr(n, d['alive'])
-        self.pregnant = arr(n, d['pregnant'])
-        self.fertile  = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
+        self.uid            = arr(n, np.arange(n))
+        self.age            = arr(n, np.float64(d['age'])) # Age of the person (in years)
+        self.age_by_group   = arr(n, np.float64(d['age_by_group'])) # Age by which method bin the age falls into, as integer
+        self.sex            = arr(n, d['sex']) # Female (0) or male (1)
+        self.parity         = arr(n, d['parity']) # Number of children
+        self.method         = arr(n, d['method'])  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
+        self.barrier        = arr(n, d['barrier'])  # Reason for non-use
+        self.alive          = arr(n, d['alive'])
+        self.pregnant       = arr(n, d['pregnant'])
+        self.fertile        = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
 
         # Sexual and reproductive history
         self.sexually_active  = arr(n, d['sexually_active'])
@@ -590,6 +591,10 @@ class People(fpb.BasePeople):
         '''Advance age in the simulation'''
         self.age += self.pars['timestep'] / fpd.mpy  # Age the person for the next timestep
         self.age = np.minimum(self.age, self.pars['max_age'])
+        
+        # Storing ages by method age group
+        age_bins = [0] + [max(fpd.method_age_map[key]) for key in fpd.method_age_map]
+        self.age_by_group = np.digitize(self.age, age_bins) - 1
         return
 
 
@@ -602,6 +607,30 @@ class People(fpb.BasePeople):
             self.step_results['age_bin_totals'][key] += len(this_age_bin)
         return
 
+    def log_channel_method_age(self, channel, denominator):
+        '''
+        Logs the proportions of the channel given with a separate results channel for each
+        method age group
+        
+        Args:
+            channel (str): one of ['mcpr', 'cpr', 'acpr'] that determines the channel to be logged
+            denominator (np.array): array representing all individuals who are eligible for contraceptive methods
+        '''
+        binned_ages = self.age_by_group
+        if channel != 'mcpr':
+            binned_ages_method = binned_ages[np.logical_and((self.method != 0), (denominator > 0))]
+            binned_ages_no_method = binned_ages[np.logical_and((self.method == 0), (denominator > 0))]
+        else:
+            modern_methods = sc.findinds(list(self.pars['methods']['modern'].values()))
+            binned_ages_method = binned_ages[np.logical_and((np.isin(self.method, modern_methods)), (denominator > 0))]
+            binned_ages_no_method = binned_ages[np.logical_and((self.method == 0), (denominator > 0))]
+  
+        age_method_counts = dict(zip(*np.unique(binned_ages_method, return_counts=True)))
+        age_no_method_counts = dict(zip(*np.unique(binned_ages_no_method, return_counts=True)))
+
+        for index, age_str in enumerate(fpd.method_age_map):
+            if index in age_method_counts and index in age_no_method_counts:
+                self.step_results[f"{channel}_{age_str}"] = age_method_counts[index] / (age_no_method_counts[index] + age_method_counts[index])
 
     def track_mcpr(self):
         '''
@@ -618,6 +647,7 @@ class People(fpb.BasePeople):
         on_method_mcpr = np.sum((np.isin(self.method, modern_methods)) * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
         self.step_results['on_methods_mcpr'] += on_method_mcpr
+        self.log_channel_method_age('mcpr', denominator)
         return
 
 
@@ -634,6 +664,7 @@ class People(fpb.BasePeople):
         on_method_cpr = np.sum((self.method != 0) * denominator)
         self.step_results['no_methods_cpr'] += no_method_cpr
         self.step_results['on_methods_cpr'] += on_method_cpr
+        self.log_channel_method_age('cpr', denominator)
         return
 
 
@@ -650,6 +681,7 @@ class People(fpb.BasePeople):
         on_method_cpr = np.sum((self.method != 0) * denominator)
         self.step_results['no_methods_acpr'] += no_method_cpr
         self.step_results['on_methods_acpr'] += on_method_cpr
+        self.log_channel_method_age('acpr', denominator)
         return
 
 
@@ -683,6 +715,10 @@ class People(fpb.BasePeople):
         for key in fpd.age_bin_map.keys():
             self.step_results['birth_bins'][key] = 0
             self.step_results['age_bin_totals'][key] = 0
+
+        for age_specific_channel in ['acpr', 'cpr', 'mcpr']:
+            for age_range in fpd.method_age_map:
+                self.step_results[f"{age_specific_channel}_{age_range}"] = 0
 
         m = len(self.pars['methods']['map'])
 
@@ -880,6 +916,11 @@ class Sim(fpb.BaseSim):
                 self.results[key] = {} # CK: TODO: refactor
                 for p in range(self.npts):
                     self.results[key][p] = np.zeros((m, m), dtype=int)
+        
+        for age_specific_channel in ['acpr', 'cpr', 'mcpr']:
+            for age_group in fpd.method_age_map:
+                self.results[f"{age_specific_channel}_{age_group}"] = []
+
 
         return
 
@@ -1154,6 +1195,10 @@ class Sim(fpb.BaseSim):
                 self.results[births_key][i] = r.birth_bins[agekey]*scale # Store results of total births per age bin for ASFR
                 self.results[women_key][i]  = r.age_bin_totals[agekey]*scale # Store results of total fecund women per age bin for ASFR
 
+            for age_specific_channel in ['acpr', 'cpr', 'mcpr']:
+                for method_agekey in fpd.method_age_map:    
+                    self.results[f"{age_specific_channel}_{method_agekey}"].append(getattr(r, f"{age_specific_channel}_{method_agekey}"))
+
             # Store results of number of switching events in each age group
             if self['track_switching']:
                 switch_events = step_results.pop('switching')
@@ -1327,7 +1372,6 @@ class Sim(fpb.BaseSim):
             new_fig   (bool): Whether to create a new figure (true unless part of a multisim)
             colors    (list/dict): Colors for plots with multiple lines  
         '''
-
         if to_plot is None: to_plot = 'default'
         fig_args  = sc.mergedicts(dict(figsize=(16,10), nrows=None, ncols=None), fig_args)
         plot_args = sc.mergedicts(dict(lw=2, alpha=0.7), plot_args)
@@ -1340,8 +1384,11 @@ class Sim(fpb.BaseSim):
             fig = pl.figure(**fig_args) if new_fig else pl.gcf()
             pl.subplots_adjust(**axis_args)
 
-            res = self.results # Shorten since heavily used
+            if to_plot is not None and 'as_' in to_plot:
+                nrows,ncols = 2, 3
 
+            res = self.results # Shorten since heavily used
+            method_age_groups = list(fpd.method_age_map.keys())
             # Plot everything
             if to_plot == 'default':
                 to_plot = {
@@ -1372,14 +1419,19 @@ class Sim(fpb.BaseSim):
                     'cum_miscarriages_by_year':    'Miscarriages',
                     'cum_abortions_by_year':       'Abortions',
                     }
-
             elif to_plot == 'method':
                 to_plot = {
                     'method_usage':                 'Method usage'
                 } 
+            elif to_plot == 'as_cpr':
+                to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
+            elif to_plot == 'as_acpr':
+                to_plot = {f"acpr_{age_group}": f"Alternative Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
+            elif to_plot == 'as_mcpr':
+                to_plot = {f"mcpr_{age_group}": f"Modern Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
 
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
-            if 'cpr' in to_plot:
+            if to_plot == 'cpr':
                 rows,cols = 1,3
             for p,key,reslabel in sc.odict(to_plot).enumitems():
                 ax = pl.subplot(rows, cols, p+1)
@@ -1404,6 +1456,8 @@ class Sim(fpb.BaseSim):
                     raise RuntimeError(errormsg)
 
                 percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr', 'method_usage']
+                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key:
+                    percent_keys = percent_keys + list(to_plot.keys())
                 if key in percent_keys and key != 'method_usage':
                     y *= 100
                     if is_dist:
@@ -1455,11 +1509,19 @@ class Sim(fpb.BaseSim):
                     pl.xlim(xlims)
                 if ylims is not None:
                     pl.ylim(ylims)
-                if key == "method_usage": # need to overwrite legend for method plot
+                if (key == "method_usage") or (('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key): # need to overwrite legend for some plots
                     ax.legend(loc='upper left', frameon=True)
                 if 'cpr' in to_plot:
                     top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10 # rounding up to nearest 10
                     self.conform_y_axes(figure=fig, top=top) 
+                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key:
+                    cpr_type = key.split("_")[0]
+                    if is_dist:
+                        top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]])
+                    else:
+                        top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'] for age_group in fpd.method_age_map]])
+                    tidy_top = int(np.ceil(top / 10.0)) * 10
+                    self.conform_y_axes(figure=fig, top=tidy_top) 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
 
@@ -1862,7 +1924,6 @@ class MultiSim(sc.prettyobj):
                         ax.legend(loc='lower left', bbox_to_anchor=(1, -0.05), frameon=True) if len(labels) > 1 else ax.legend(loc='upper left', frameon=True)
                     pl.ylim(0, max(max([sum(proportion[1:]*100) for proportion in results['method_usage']]) for results in [sim.results for sim in self.sims]) + 1)
                 return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
-
         elif plot_sims:
             colors = sc.gridcolors(n_unique)
             colors = {k:c for k,c in zip(labels, colors)}
@@ -1873,20 +1934,24 @@ class MultiSim(sc.prettyobj):
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
                 kw = dict(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
                 sim.plot(to_plot=to_plot, **kw, **kwargs)
-            if to_plot == 'cpr': # can change this line to scale other sets of plots
-                fig = self.base_sim.conform_y_axes(figure=fig, top=get_scale_ceil('acpr'))
+            if to_plot is not None:
+                # Scale axes
+                if to_plot == 'cpr':
+                    fig = self.base_sim.conform_y_axes(figure=fig, top=get_scale_ceil('acpr'))
+                if 'as_' in to_plot:
+                    cpr_type = to_plot.split("_")[1]
+                    if hasattr(sim.results[f'cpr_{list(fpd.method_age_map.keys())[0]}'], 'best'): # if compute_stats has been applied
+                        top = max([max([max(group_result) for group_result in [sim.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]]) for sim in self.sims])
+                    else:
+                        top = max([max([max(group_result) for group_result in [sim.results[f'{cpr_type}_{age_group}'] for age_group in fpd.method_age_map]]) for sim in self.sims])
+                    tidy_top = int(np.ceil(top / 10.0)) * 10
+                    self.base_sim.conform_y_axes(figure=fig, top=tidy_top)
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
-            if to_plot == 'cpr':
-                self.base_sim.plot(to_plot=to_plot, do_show=False, fig_args=fig_args, plot_args=plot_args, **kwargs)
-                fig = self.base_sim.conform_y_axes(fig, top=get_scale_ceil('acpr'))
-                return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
-            else:
-                return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
+            return self.base_sim.plot(to_plot=to_plot, do_show=do_show, fig_args=fig_args, plot_args=plot_args, **kwargs)
 
     def plot_age_first_birth(self, do_show=False, do_save=True, output_file='age_first_birth_multi.png'):
         length = sum([len([num for num in sim.people.first_birth_age if num is not None]) for sim in self.sims])
-        print(f"Length of total is: {length}")
         data_dict = {"age": [0] * length, "sim": [0] * length}
         i = 0
         for sim in self.sims:
