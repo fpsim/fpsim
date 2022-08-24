@@ -154,14 +154,14 @@ Version 0.12.0 (2022-05-22)
 
 
 Version 0.11.5 (2022-05-21)
---------------------------
+---------------------------
 - Improvements to the scenarios, including more helpful docstrings and error messages.
 - Improved error checking of sims.
 - *GitHub info*: PR `502 <https://github.com/amath-idm/fp_analyses/pull/502>`__
 
 
 Version 0.11.4 (2022-05-20)
---------------------------
+---------------------------
 - Renamed parameter ``n`` to ``n_agents``, and adds parameter ``scaled_pop``.
 - Tracking of switch events is disabled by default; set ``pars['track_switching'] = True`` to re-enable.
 - Update default end year from 2019 to 2020.
@@ -169,26 +169,26 @@ Version 0.11.4 (2022-05-20)
 
 
 Version 0.11.3 (2022-05-20)
---------------------------
+---------------------------
 - Tidied ``tests`` folder.
 - Removed the calibration database by default (to keep, use ``fp.Calibration(keep_db=True)``.
 - *GitHub info*: PR `495 <https://github.com/amath-idm/fp_analyses/pull/495>`__
 
 
 Version 0.11.2 (2022-05-20)
---------------------------
+---------------------------
 - Added a ``people.make_pregnant()`` method.
 - *GitHub info*: PR `494 <https://github.com/amath-idm/fp_analyses/pull/494>`__
 
 
 Version 0.11.1 (2022-05-20)
---------------------------
+---------------------------
 - Replaced ``high`` and ``low`` breastfeeding duration parameters with Gumbel distribution parameters ``mu`` and ``beta``.
 - *GitHub info*: PR `493 <https://github.com/amath-idm/fp_analyses/pull/493>`__
 
 
 Version 0.11.0 (2022-05-20)
---------------------------
+---------------------------
 - Major refactor of ``senegal.py``, organizing parameters into groups and renaming.
 - Parameter names made more consistent, e.g. ``exposure_correction`` → ``exposure_factor``, ``maternal_mortality_multiplier`` → ``maternal_mortality_factor``.
 - Added comprehensive parameter checking.
@@ -197,21 +197,21 @@ Version 0.11.0 (2022-05-20)
 
 
 Version 0.10.7 (2022-05-19)
---------------------------
+---------------------------
 - Updated ``fp.Scenarios()`` API.
 - Added a new ``fp.Scenario()`` class, with a convenience function ``fp.make_scen()`` for creating new scenarios, for later use with ``fp.Scenarios()``.
 - *GitHub info*: PR `488 <https://github.com/amath-idm/fp_analyses/pull/488>`__
 
 
 Version 0.10.6 (2022-05-19)
---------------------------
+---------------------------
 - Adds ``fp.parallel()`` to quickly run multiple sims in parallel and return a ``MultiSim`` object.
 - Adds an ``fp.change_par()`` intervention.
 - *GitHub info*: PR `487 <https://github.com/amath-idm/fp_analyses/pull/487>`__
 
 
 Version 0.10.5 (2022-05-18)
---------------------------
+---------------------------
 - Changes how the matrices are implemented. For example, ``sim['methods']['probs']['18-25']`` has been renamed ``sim['methods']['raw']['annual']['18-25']``; ``sim['methods']['probs']['18-25']`` has been renamed ``sim['methods']['adjusted']['annual']['18-25']``; ``sim['methods_postpartum']['probs1to6']['18-25']`` has been renamed ``sim['methods']['adjusted']['pp1to6']['18-25']``; etc.
 - Various other parameters were renamed for consistency (e.g. ``years`` → ``year``).
 - Various other methods were renamed for clarity (e.g. ``maternal_mortality()`` → ``check_maternal_mortality()``; ``check_mcpr()`` → ``track_mcpr()``).
@@ -222,7 +222,7 @@ Version 0.10.5 (2022-05-18)
 
 
 Version 0.10.4 (2022-05-17)
---------------------------
+---------------------------
 - Fixes bugs with the MCPR growth implementation, as well as the wrong matrix being used.
 - Added three new parameters: ``mcpr_growth_rate``, ``mcpr_max``, and ``mcpr_norm_year``, to control how MCPR growth is projected into the future.
 - Updated ``sim.run()`` to return ``self`` rather than ``self.results``.
@@ -230,13 +230,13 @@ Version 0.10.4 (2022-05-17)
 
 
 Version 0.10.3 (2022-05-12)
---------------------------
+---------------------------
 - Move country-specific parameters from ``fpsim.data`` to ``fpsim.locations``.
 - *GitHub info*: PR `464 <https://github.com/amath-idm/fp_analyses/pull/464>`__
 
 
 Version 0.10.2 (2022-05-10)
---------------------------
+---------------------------
 - Refactored ``People.get_method()`` to use more efficient looping.
 - Numbafied ``n_multinomial()`` to get a ~20% speed increase.
 - Added a ``method_timestep`` parameter to allow skipping contraceptive matrix updates (saves significant time for small sims).
@@ -247,13 +247,13 @@ Version 0.10.2 (2022-05-10)
 
 
 Version 0.10.1 (2022-05-09)
---------------------------
+---------------------------
 - Fix ``Scenarios`` class.
 - *GitHub info*: PR `433 <https://github.com/amath-idm/fp_analyses/pull/433>`__
 
 
 Version 0.10.0 (2022-05-08)
---------------------------
+---------------------------
 - Moved Senegal parameters into FPsim.
 - Added age of sexual debut.
 - *GitHub info*: PR `427 <https://github.com/amath-idm/fp_analyses/pull/427>`__
