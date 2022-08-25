@@ -369,6 +369,7 @@ class People(fpb.BasePeople):
         abort = conceived.filter(is_abort)
         preg = conceived.filter(~is_abort)
 
+
         # Update states
         all_ppl = self.unfilter()
         abort.postpartum = False
@@ -379,7 +380,12 @@ class People(fpb.BasePeople):
         self.step_results['abortions'] = len(abort)
         # Make selected agents pregnant
         preg.make_pregnant()
-
+        pregnant_boolean = np.full(len(self), False)
+        pregnant_boolean[np.searchsorted(self.uid, preg.uid)] = True
+        pregnant_age_split = self.log_age_split('pregnancies', pregnant_boolean, None)
+        
+        for key in pregnant_age_split:
+            self.step_results[key] = pregnant_age_split[key]
         return
 
 
@@ -496,7 +502,7 @@ class People(fpb.BasePeople):
         '''Check for probability of infant mortality (death < 1 year of age)'''
         death_prob = (self.pars['mortality_probs']['infant'])
         if len(self) > 0:
-            age_inds = sc.findnearest(self.pars['infant_mortality']['ages'], self.age)
+            age_inds = sc.findnearest(self.pars['infant_mortality']['ages'], self.age) # age inds is index of age group of mother
             death_prob = death_prob * (self.pars['infant_mortality']['age_probs'][age_inds])
         is_death = self.binomial(death_prob)
         death = self.filter(is_death)
@@ -532,6 +538,12 @@ class People(fpb.BasePeople):
             stillborn.lactating = False   # Set agents of stillbith to not lactate
             self.step_results['stillbirths'] = len(stillborn)
 
+            stillbirth_boolean = np.full(len(self), False)
+            stillbirth_boolean[np.searchsorted(self.uid, stillborn.uid)] = True
+            stillbirth_age_split = self.log_age_split('stillbirths', stillbirth_boolean, None)
+            for key in stillbirth_age_split:
+                self.step_results[key] = stillbirth_age_split[key]
+
             # Add dates of live births and stillbirths separately for agent to remember
             all_ppl = self.unfilter()
             live = deliv.filter(~is_stillborn)
@@ -561,9 +573,36 @@ class People(fpb.BasePeople):
                 birth_bins = np.sum((live_age >= age_low) * (live_age < age_high))
                 self.step_results['birth_bins'][key] += birth_bins
 
+            total_women_delivering = np.full(len(self), False)
+            total_women_delivering[np.searchsorted(self.uid, live.uid)] = True
+
             # Check mortality
-            live.check_maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
+            maternal_deaths = live.check_maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
+            maternal_deaths_bool = np.full(len(self), False)
+            maternal_deaths_bool[np.searchsorted(self.uid, maternal_deaths.uid)] = True
+            
+
+            total_infants_bool = np.full(len(self), False)
+            total_infants_bool[np.searchsorted(self.uid, live.uid)] = True
+            
             i_death = live.check_infant_mortality()
+            
+            # Save infant deaths and totals into age buckets
+            infant_deaths_bool = np.full(len(self), False)
+            infant_deaths_bool[np.searchsorted(self.uid, i_death.uid)] = True
+
+            for uid in i_death.uid: # we can see a filtering issue here
+                assert uid in live.uid
+
+            infant_mortality_age_split = self.log_age_split('imr', infant_deaths_bool, total_infants_bool)
+            maternal_mortality_age_split = self.log_age_split('mmr', maternal_deaths_bool, total_women_delivering)
+            live_births_age_split = self.log_age_split('births', total_women_delivering, None) # total deliveries that are not stillbirths
+            for key in infant_mortality_age_split:
+                self.step_results[key] = infant_mortality_age_split[key]
+            for key in maternal_mortality_age_split:
+                self.step_results[key] = maternal_mortality_age_split[key]
+            for key in live_births_age_split:
+                self.step_results[key] = live_births_age_split[key]
 
             # TEMP -- update children, need to refactor
             r = sc.dictobj(**self.step_results)
@@ -616,6 +655,7 @@ class People(fpb.BasePeople):
             denominator (list(bool)): List that is a superset of numerator, used to determine rates
         '''
         binned_ages = self.age_by_group
+        result_dict = {} # must save as dict so this can be reused in Sim
         if denominator is not None:
             binned_ages_true = binned_ages[np.logical_and(numerator, denominator)]
             binned_ages_false = binned_ages[np.logical_and(~numerator, denominator)]
@@ -624,14 +664,22 @@ class People(fpb.BasePeople):
             age_false_counts = dict(zip(*np.unique(binned_ages_false, return_counts=True)))
 
             for index, age_str in enumerate(fpd.method_age_map):
-                if index in age_true_counts and index in age_false_counts:
-                    self.step_results[f"{channel}_{age_str}"] = age_true_counts[index] / (age_true_counts[index] + age_false_counts[index])
+                if index not in age_true_counts or index not in age_false_counts:
+                    result_dict[f"{channel}_{age_str}"] = 0
+                else:
+                    #self.step_results[f"{channel}_{age_str}"] = age_true_counts[index] / (age_true_counts[index] + age_false_counts[index])
+                    result_dict[f"{channel}_{age_str}"] = age_true_counts[index] / (age_true_counts[index] + age_false_counts[index])
         else:
             binned_ages_true = binned_ages[numerator]
             age_true_counts = dict(zip(*np.unique(binned_ages_true, return_counts=True)))
             for index, age_str in enumerate(fpd.method_age_map):
-                if index in age_true_counts:
-                    self.step_results[f"{channel}_{age_str}"] = age_true_counts[index]
+                if index not in age_true_counts:
+                    result_dict[f"{channel}_{age_str}"] = 0
+                    #self.step_results[f"{channel}_{age_str}"] = age_true_counts[index]
+                else:
+                    result_dict[f"{channel}_{age_str}"] = age_true_counts[index] 
+
+        return result_dict
 
     def track_mcpr(self):
         '''
@@ -649,7 +697,9 @@ class People(fpb.BasePeople):
         on_method_mcpr = np.sum(numerator * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
         self.step_results['on_methods_mcpr'] += on_method_mcpr
-        self.log_age_split('mcpr', numerator=numerator, denominator=denominator)
+        as_result_dict = self.log_age_split('mcpr', numerator=numerator, denominator=denominator)
+        for key in as_result_dict:
+            self.step_results[key] = as_result_dict[key]
         return
 
     def track_cpr(self):
@@ -666,7 +716,9 @@ class People(fpb.BasePeople):
         on_method_cpr = np.sum(numerator * denominator)
         self.step_results['no_methods_cpr'] += no_method_cpr
         self.step_results['on_methods_cpr'] += on_method_cpr
-        self.log_age_split(channel='cpr', numerator=numerator, denominator=denominator)
+        as_result_dict = self.log_age_split(channel='cpr', numerator=numerator, denominator=denominator)
+        for key in as_result_dict:
+            self.step_results[key] = as_result_dict[key]
         return
 
     def track_acpr(self):
@@ -683,7 +735,9 @@ class People(fpb.BasePeople):
         on_method_cpr = np.sum(numerator * denominator)
         self.step_results['no_methods_acpr'] += no_method_cpr
         self.step_results['on_methods_acpr'] += on_method_cpr
-        self.log_age_split(channel='acpr', numerator=numerator, denominator=denominator)
+        as_result_dict = self.log_age_split(channel='acpr', numerator=numerator, denominator=denominator)
+        for key in as_result_dict:
+            self.step_results[key] = as_result_dict[key]
         return
 
     def init_step_results(self):
@@ -717,7 +771,7 @@ class People(fpb.BasePeople):
             self.step_results['birth_bins'][key] = 0
             self.step_results['age_bin_totals'][key] = 0
 
-        for age_specific_channel in ['acpr', 'cpr', 'mcpr']:
+        for age_specific_channel in ['acpr', 'cpr', 'mcpr', 'imr', 'mmr', 'stillbirths', "births"]:
             for age_range in fpd.method_age_map:
                 self.step_results[f"{age_specific_channel}_{age_range}"] = 0
 
@@ -896,6 +950,7 @@ class Sim(fpb.BaseSim):
 
         for key in fpd.age_bin_map.keys():
             self.results['asfr'][key] = []
+            self.results[f"tfr_{key}"] = []
 
         if self['track_switching']:
             m = len(self['methods']['map'])
@@ -918,10 +973,9 @@ class Sim(fpb.BaseSim):
                 for p in range(self.npts):
                     self.results[key][p] = np.zeros((m, m), dtype=int)
         
-        for age_specific_channel in ['acpr', 'cpr', 'mcpr']:
+        for age_specific_channel in ['acpr', 'cpr', 'mcpr', 'pregnancies', 'imr', 'mmr', 'stillbirths', 'births']:
             for age_group in fpd.method_age_map:
                 self.results[f"{age_specific_channel}_{age_group}"] = []
-
 
         return
 
@@ -1196,9 +1250,14 @@ class Sim(fpb.BaseSim):
                 self.results[births_key][i] = r.birth_bins[agekey]*scale # Store results of total births per age bin for ASFR
                 self.results[women_key][i]  = r.age_bin_totals[agekey]*scale # Store results of total fecund women per age bin for ASFR
 
-            for age_specific_channel in ['acpr', 'cpr', 'mcpr']:
-                for method_agekey in fpd.method_age_map:    
-                    self.results[f"{age_specific_channel}_{method_agekey}"].append(getattr(r, f"{age_specific_channel}_{method_agekey}"))
+            for age_specific_channel in ['acpr', 'cpr', 'mcpr', 'pregnancies', 'imr', 'mmr', 'stillbirths', 'births']:
+                for method_agekey in fpd.method_age_map:
+                    if age_specific_channel == 'imr':
+                        self.results[f"{age_specific_channel}_{method_agekey}"].append(1000*getattr(r, f"{age_specific_channel}_{method_agekey}"))
+                    elif age_specific_channel == 'mmr':
+                        self.results[f"{age_specific_channel}_{method_agekey}"].append(10000*getattr(r, f"{age_specific_channel}_{method_agekey}"))
+                    else:
+                        self.results[f"{age_specific_channel}_{method_agekey}"].append(getattr(r, f"{age_specific_channel}_{method_agekey}"))
 
             # Store results of number of switching events in each age group
             if self['track_switching']:
@@ -1248,8 +1307,9 @@ class Sim(fpb.BaseSim):
                 else:
                     maternal_mortality_ratio = maternal_deaths_over_year / live_births_over_year * 100000
                     self.results['mmr'].append(maternal_mortality_ratio)
-                if infant_deaths_over_year == 0:
+                if infant_deaths_over_year == 0: # Not sure why this condition is here
                     self.results['imr'].append(infant_deaths_over_year)
+                    
                 else:
                     infant_mortality_rate = infant_deaths_over_year / live_births_over_year * 1000
                     self.results['imr'].append(infant_mortality_rate)
@@ -1260,7 +1320,8 @@ class Sim(fpb.BaseSim):
                     age_bin_total_women_year = self.results['total_women_'+key][stop_index]
                     age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
                     self.results['asfr'][key].append(age_bin_births_per_woman*1000)
-                    tfr += age_bin_births_per_woman # CK: TODO: check if this is right
+                    self.results[f'tfr_{key}'].append(age_bin_births_per_woman * 1000)
+                    tfr += age_bin_births_per_woman # CK: TODO: check if this is right # SB: I think this corresponds to size of age bins?
 
                 self.results['tfr_rates'].append(tfr*5) # CK: TODO: why *5?
 
@@ -1430,6 +1491,22 @@ class Sim(fpb.BaseSim):
                 to_plot = {f"acpr_{age_group}": f"Alternative Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
             elif to_plot == 'as_mcpr':
                 to_plot = {f"mcpr_{age_group}": f"Modern Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
+            elif to_plot == 'as_pregnancies':
+                to_plot = {f"pregnancies_{age_group}": f"Number of Pregnancies for ({age_group})" for age_group in method_age_groups}
+            elif to_plot == 'as_tfr':
+                to_plot = {f"tfr_{age_group}": f"Fertility Rate for ({age_group})" for age_group in fpd.age_bin_map}
+            elif to_plot == 'as_imr':
+                to_plot = {f"imr_{age_group}": f"Infant Mortality Rate for ({age_group})" for age_group in method_age_groups}
+            elif to_plot == 'as_mmr':
+                to_plot = {f"mmr_{age_group}": f"Maternal Mortality Rate for ({age_group})" for age_group in method_age_groups}
+            elif to_plot == 'as_stillbirths':
+                to_plot = {f"stillbirths_{age_group}": f"Stillbirths for ({age_group})" for age_group in method_age_groups}
+            elif to_plot == 'as_births':
+                to_plot = {f"births_{age_group}": f"Live births for ({age_group})" for age_group in method_age_groups}
+
+            for key in self.results:
+                if ('pregnancies_' in key) and 'by_year' not in key:
+                    self.results[key][0] = self.results[key][1] # Clipping first timestep to make it look neater (otherwise would be 0)
 
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
             if to_plot == 'cpr':
@@ -1500,8 +1577,14 @@ class Sim(fpb.BaseSim):
                     pl.ylabel('Percentage')
                 elif key == 'mmr':
                     pl.ylabel('Deaths per 100,000 live births')
-                elif key == 'imr':
+                elif 'imr_' in key:
                     pl.ylabel('Deaths per 1,000 live births')
+                elif 'tfr_' in key:
+                    pl.ylabel('Fertility rate per 1,000 women')
+                elif 'mmr_' in key:
+                    pl.ylabel('Maternal deaths per 10,000 births')
+                elif 'stillbirths_' in key:
+                    pl.ylabel('Number of stillbirths')
                 else:
                     pl.ylabel('Count')
                 pl.xlabel('Year')
@@ -1510,18 +1593,23 @@ class Sim(fpb.BaseSim):
                     pl.xlim(xlims)
                 if ylims is not None:
                     pl.ylim(ylims)
-                if (key == "method_usage") or (('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key): # need to overwrite legend for some plots
+                if (key == "method_usage") or (('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'pregnancies_' or 'imr_' in key or 'births_' in key) and 'by_year' not in key): # need to overwrite legend for some plots
                     ax.legend(loc='upper left', frameon=True)
                 if 'cpr' in to_plot:
                     top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10 # rounding up to nearest 10
                     self.conform_y_axes(figure=fig, top=top) 
-                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key:
-                    cpr_type = key.split("_")[0]
+                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'pregnancies_' in key or 'stillbirths' in key or 'tfr_' in key or 'imr_' in key or 'mmr_' in key or 'births_' in key) and 'by_year' not in key:
+                    channel_type = key.split("_")[0]
+                    tfr_scaling = 'tfr_' in key
+                    age_bins = fpd.age_bin_map if tfr_scaling else fpd.method_age_map
                     if is_dist:
-                        top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]])
+                        top = max([max(group_result) for group_result in [self.results[f'{channel_type}_{age_group}'].high for age_group in age_bins]])
                     else:
-                        top = max([max(group_result) for group_result in [self.results[f'{cpr_type}_{age_group}'] for age_group in fpd.method_age_map]])
+                        top = max([max(group_result) for group_result in [self.results[f'{channel_type}_{age_group}'] for age_group in age_bins]])
                     tidy_top = int(np.ceil(top / 10.0)) * 10
+                    tidy_top = tidy_top + 20 if tfr_scaling or 'imr_' in key else tidy_top
+                    tidy_top = tidy_top + 1000 if 'mmr_' in key else tidy_top
+                    tidy_top = tidy_top + 50 if 'births_' in key else tidy_top
                     self.conform_y_axes(figure=fig, top=tidy_top) 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
