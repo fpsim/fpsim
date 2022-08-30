@@ -1609,7 +1609,7 @@ class Sim(fpb.BaseSim):
                     tidy_top = int(np.ceil(top / 10.0)) * 10
                     tidy_top = tidy_top + 20 if tfr_scaling or 'imr_' in key else tidy_top
                     tidy_top = tidy_top + 1000 if 'mmr_' in key else tidy_top
-                    tidy_top = tidy_top + 50 if 'births_' in key else tidy_top
+                    tidy_top = tidy_top + 50 if 'births_' in key and "still" not in key else tidy_top
                     self.conform_y_axes(figure=fig, top=tidy_top) 
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
@@ -2028,12 +2028,18 @@ class MultiSim(sc.prettyobj):
                 if to_plot == 'cpr':
                     fig = self.base_sim.conform_y_axes(figure=fig, top=get_scale_ceil('acpr'))
                 if 'as_' in to_plot:
-                    cpr_type = to_plot.split("_")[1]
+                    channel_type = to_plot.split("_")[1]
+                    is_tfr = "tfr" in to_plot
+                    age_bins = fpd.method_age_map
+                    if is_tfr:
+                        age_bins = fpd.age_bin_map
                     if hasattr(sim.results[f'cpr_{list(fpd.method_age_map.keys())[0]}'], 'best'): # if compute_stats has been applied
-                        top = max([max([max(group_result) for group_result in [sim.results[f'{cpr_type}_{age_group}'].high for age_group in fpd.method_age_map]]) for sim in self.sims])
+                        top = max([max([max(group_result) for group_result in [sim.results[f'{channel_type}_{age_group}'].high for age_group in age_bins]]) for sim in self.sims])
                     else:
-                        top = max([max([max(group_result) for group_result in [sim.results[f'{cpr_type}_{age_group}'] for age_group in fpd.method_age_map]]) for sim in self.sims])
+                        top = max([max([max(group_result) for group_result in [sim.results[f'{channel_type}_{age_group}'] for age_group in age_bins]]) for sim in self.sims])
                     tidy_top = int(np.ceil(top / 10.0)) * 10
+                    tidy_top = tidy_top + 20 if is_tfr or 'imr' in to_plot else tidy_top
+                    tidy_top = tidy_top + 1000 if 'mmr' in to_plot else tidy_top
                     self.base_sim.conform_y_axes(figure=fig, top=tidy_top)
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
         else:
