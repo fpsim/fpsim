@@ -671,10 +671,10 @@ class People(fpb.BasePeople):
             #print(f"Channel {channel} has {len(numerators)} numerators {len(denominators)} denominators and {len(binned_ages_t)} ages")
         if denominators is not None:
             for timestep_index in range(len(binned_ages_t)):
-                print(f"For channel {channel} at timestep: \
-                {timestep_index}, we have {len(binned_ages_t[timestep_index])} age values, \
-                {len(numerators[timestep_index])} numerator values, and \
-                {len(denominators[timestep_index])} denominator values")
+                # print(f"For channel {channel} at timestep: \
+                # {timestep_index}, we have {len(binned_ages_t[timestep_index])} age values, \
+                # {len(numerators[timestep_index])} numerator values, and \
+                # {len(denominators[timestep_index])} denominator values")
 
                 if len(denominators[timestep_index]) == 0:
                     counts_dict[f"age_true_counts_{timestep_index}"] = {}
@@ -700,14 +700,19 @@ class People(fpb.BasePeople):
                         age_false_counts[index] += counts_dict[age_counts_dict_key][index]
                     else:
                         age_true_counts[index] += counts_dict[age_counts_dict_key][index]
-
+            
             for index, age_str in enumerate(fpd.method_age_map):
+                scale = 1
+                if channel == "imr":
+                    scale = 1000
+                elif channel == "mmr":
+                    scale = 10000
                 if index not in age_true_counts:
                     results_dict[f"{channel}_{age_str}"] = 0
                 elif index in age_true_counts and index not in age_false_counts:
-                    results_dict[f"{channel}_{age_str}"] = 1.0
+                    results_dict[f"{channel}_{age_str}"] = 1.0 * scale
                 else:
-                    results_dict[f"{channel}_{age_str}"] = age_true_counts[index] / (age_true_counts[index] + age_false_counts[index])
+                    results_dict[f"{channel}_{age_str}"] = (age_true_counts[index] / (age_true_counts[index] + age_false_counts[index])) * scale
         else:
             for timestep_index in range(len(binned_ages_t)):
                 binned_ages = binned_ages_t[timestep_index]
@@ -1032,9 +1037,9 @@ class Sim(fpb.BaseSim):
                 for p in range(self.npts):
                     self.results[key][p] = np.zeros((m, m), dtype=int)
         
-        for age_specific_channel in ['acpr', 'cpr', 'mcpr', 'pregnancies', 'stillbirths', 'births', 'imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator']:
+        for age_specific_channel in ['acpr', 'cpr', 'mcpr', 'pregnancies', 'stillbirths', 'births', 'imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr', 'mmr']:
             for age_group in fpd.method_age_map:
-                if 'imr' in age_specific_channel or 'mmr' in age_specific_channel:
+                if 'numerator' in age_specific_channel or 'denominator' in age_specific_channel:
                     self.results[f"{age_specific_channel}"] = []
                 else:
                     self.results[f"{age_specific_channel}_{age_group}"] = []
@@ -1376,8 +1381,8 @@ class Sim(fpb.BaseSim):
                                                      numerators=self.results['mmr_numerator'][start_index:stop_index], denominators=self.results['mmr_denominator'][start_index:stop_index])
                     
                 for age_key in fpd.method_age_map:
-                    self.results['imr_{age_key}'] = imr_results_dict[f"imr_{age_key}"]
-                    self.results['mmr_{age_key}'] = mmr_results_dict[f"mmr_{age_key}"]
+                    self.results[f"imr_{age_key}"].append(imr_results_dict[f"imr_{age_key}"])
+                    self.results[f"mmr_{age_key}"].append(mmr_results_dict[f"mmr_{age_key}"])
 
 
                 if maternal_deaths_over_year == 0:
@@ -1574,9 +1579,9 @@ class Sim(fpb.BaseSim):
             elif to_plot == 'as_tfr':
                 to_plot = {f"tfr_{age_group}": f"Fertility Rate for ({age_group})" for age_group in fpd.age_bin_map}
             elif to_plot == 'as_imr':
-                to_plot = {f"imr_{age_group}": f"Average Infant Mortality Rate for ({age_group})" for age_group in method_age_groups}
+                to_plot = {f"imr_{age_group}": f"Infant Mortality Rate for ({age_group})" for age_group in method_age_groups}
             elif to_plot == 'as_mmr':
-                to_plot = {f"mmr_{age_group}": f"Average Maternal Mortality Rate for ({age_group})" for age_group in method_age_groups}
+                to_plot = {f"mmr_{age_group}": f"Maternal Mortality Rate for ({age_group})" for age_group in method_age_groups}
             elif to_plot == 'as_stillbirths':
                 to_plot = {f"stillbirths_{age_group}": f"Stillbirths for ({age_group})" for age_group in method_age_groups}
             elif to_plot == 'as_births':
@@ -1605,12 +1610,6 @@ class Sim(fpb.BaseSim):
 
                 # Squish mmr and imr to be by year instead of timestep
                 years = res['tfr_years']
-                if "mmr_" in key or "imr_" in key:
-                    split_y = np.array_split(y, len(years))
-                    y = [np.mean(year) for year in split_y]
-                    print(f"Number of years estimated: {len(y)}")
-
-            
 
                 # Figure out x axis
                 years = res['tfr_years']
@@ -1871,12 +1870,17 @@ class MultiSim(sc.prettyobj):
             raise ValueError(errormsg)
 
         reskeys = list(base_sim.results.keys())
-        for bad_key in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr_age_by_group', 'mmr_age_by_group']:
-            reskeys.remove(bad_key)
+        # for bad_key in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr_age_by_group', 'mmr_age_by_group']:
+        #     reskeys.remove(bad_key)
+        # for age_key in fpd.method_age_map:
+        #     for key in reskeys:
+        #         if age_key in key:
+        #             reskeys.remove(key)
         for key in ['t', 'tfr_years', 'method_usage']: # Don't compute high/low for these
             results[key] = base_sim.results[key]
             reskeys.remove(key)
         for reskey in reskeys:
+            print(f"Looking at reskey {reskey}")
             if isinstance(base_sim.results[reskey], dict):
                 if return_raw:
                     for s, sim in enumerate(self.sims):
@@ -1886,7 +1890,6 @@ class MultiSim(sc.prettyobj):
                 npts = len(base_sim.results[reskey])
                 raw[reskey] = np.zeros((npts, len(self.sims)))
                 for s,sim in enumerate(self.sims):
-                    print(f"Looking at reskey {reskey}")
                     raw[reskey][:, s] = sim.results[reskey] # Stack into an array for processing
 
                 if use_mean:
