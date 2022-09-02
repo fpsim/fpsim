@@ -1544,8 +1544,19 @@ class Sim(fpb.BaseSim):
             if to_plot is not None and 'as_' in to_plot:
                 nrows,ncols = 2, 3
 
-            res = self.results # Shorten since heavily used
+            no_plot_age = list(fpd.method_youth_age_map.keys())[-1]
             method_age_groups = list(fpd.method_youth_age_map.keys())
+            method_age_groups.remove(no_plot_age)
+
+            res = self.results # Shorten since heavily used
+            delete_keys = [] # to avoid mutating dict during iteration
+            for key in res:
+                if no_plot_age in key:
+                    delete_keys.append(key)
+            
+            for bad_key in delete_keys:
+                res.remove(bad_key)
+            
             # Plot everything
             if to_plot == 'default':
                 to_plot = {
@@ -1606,6 +1617,7 @@ class Sim(fpb.BaseSim):
             for key in self.results:
                 if ('pregnancies_' in key) and 'by_year' not in key:
                     self.results[key][0] = self.results[key][1] # Clipping first timestep to make it look neater (otherwise would be 0)
+
 
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
             if to_plot == 'cpr':
@@ -1674,6 +1686,8 @@ class Sim(fpb.BaseSim):
                 #         intv.plot_intervention(self, ax)
 
                 # Handle annotations
+                for key in res:
+                    assert no_plot_age not in key
                 fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
                 if key in percent_keys:
                     pl.ylabel('Percentage')
@@ -1704,10 +1718,22 @@ class Sim(fpb.BaseSim):
                     channel_type = key.split("_")[0]
                     tfr_scaling = 'tfr_' in key
                     age_bins = fpd.age_bin_map if tfr_scaling else fpd.method_youth_age_map
+                    if not tfr_scaling and no_plot_age in key:
+                        print(age_bins.keys())
+                        age_bins.pop(no_plot_age)
                     if is_dist:
-                        top = max([max(group_result) for group_result in [self.results[f'{channel_type}_{age_group}'].high for age_group in age_bins]])
+                        top = max([max(group_result) for group_result in [res[f'{channel_type}_{age_group}'].high for age_group in age_bins]])
                     else:
-                        top = max([max(group_result) for group_result in [self.results[f'{channel_type}_{age_group}'] for age_group in age_bins]])
+                        for key in res:
+                            assert no_plot_age not in key
+                            print("results keys")
+                            print(key)
+                        for key in age_bins:
+                            assert no_plot_age not in key
+                            print("age_bins keys")
+                            print(key)
+                        
+                        top = max([max(group_result) for group_result in [res[f'{channel_type}_{age_group}'] for age_group in age_bins]])
                     tidy_top = int(np.ceil(top / 10.0)) * 10
                     tidy_top = tidy_top + 20 if tfr_scaling or 'imr_' in key else tidy_top
                     tidy_top = tidy_top + 50 if 'mmr_' in key else tidy_top
@@ -2069,6 +2095,7 @@ class MultiSim(sc.prettyobj):
         See ``sim.plot()`` for additional args.
         '''
         fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
+        no_plot_age = list(fpd.method_youth_age_map.keys())[-1]
 
         fig = pl.figure(**fig_args)
         do_show = kwargs.pop('do_show', True)
@@ -2084,7 +2111,7 @@ class MultiSim(sc.prettyobj):
         n_unique = len(np.unique(labels)) # How many unique sims there are
 
         def get_scale_ceil(channel):
-            maximum_value = max([max(sim.results[channel]) for sim in self.sims])
+            maximum_value = max([max(sim.results[channel]) for sim in self.sims if no_plot_age not in channel])
             top = int(np.ceil(maximum_value / 10.0)) * 10 # rounding up to nearest 10
             return top
 
@@ -2137,7 +2164,9 @@ class MultiSim(sc.prettyobj):
                 if 'as_' in to_plot:
                     channel_type = to_plot.split("_")[1]
                     is_tfr = "tfr" in to_plot
-                    age_bins = fpd.method_youth_age_map
+                    age_bins = list(fpd.method_youth_age_map)[:-1]
+                    
+
                     if is_tfr:
                         age_bins = fpd.age_bin_map
                     if hasattr(sim.results[f'cpr_{list(fpd.method_youth_age_map.keys())[0]}'], 'best'): # if compute_stats has been applied
