@@ -385,7 +385,7 @@ class Scenarios(sc.prettyobj):
         return
 
 
-    def run(self, *args, **kwargs):
+    def run(self, recompute=True, *args, **kwargs):
         ''' Actually run a list of sims '''
 
         # Check that it's set up
@@ -410,7 +410,7 @@ class Scenarios(sc.prettyobj):
         self.already_run = True
 
         # Process
-        self.msim_merged =self.msim.remerge()
+        self.msim_merged =self.msim.remerge(recompute=recompute)
         self.t.tt('MSIM DEBUG: remerge')
         self.analyze_sims()
         self.t.tt('MSIM DEBUG: analyze')
