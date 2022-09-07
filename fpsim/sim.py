@@ -383,7 +383,7 @@ class People(fpb.BasePeople):
         pregnant_boolean = np.full(len(self), False)
         pregnant_boolean[np.searchsorted(self.uid, preg.uid)] = True
         pregnant_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='pregnancies', numerators=[pregnant_boolean], denominators=None)
-        
+
         for key in pregnant_age_split:
             self.step_results[key] = pregnant_age_split[key]
         return
@@ -532,7 +532,7 @@ class People(fpb.BasePeople):
             age_ind[prev_idx_is_less] -= 1 # adjusting for quirks of np.searchsorted
             still_prob = still_prob * (self.pars['stillbirth_rate']['age_probs'][age_ind]) if len(self) > 0 else 0
 
-            is_stillborn = deliv.binomial(still_prob)    
+            is_stillborn = deliv.binomial(still_prob)
             stillborn = deliv.filter(is_stillborn)
             stillborn.stillbirth += 1  # Track how many stillbirths an agent has had
             stillborn.lactating = False   # Set agents of stillbith to not lactate
@@ -581,13 +581,13 @@ class People(fpb.BasePeople):
             maternal_deaths = live.check_maternal_mortality() # Mothers of only live babies eligible to match definition of maternal mortality ratio
             maternal_deaths_bool = np.full(len(self), False)
             maternal_deaths_bool[np.searchsorted(self.uid, maternal_deaths.uid)] = True
-            
+
 
             total_infants_bool = np.full(len(self), False)
             total_infants_bool[np.searchsorted(self.uid, live.uid)] = True
-            
+
             i_death = live.check_infant_mortality()
-            
+
             # Save infant deaths and totals into age buckets
             infant_deaths_bool = np.full(len(self), False)
             infant_deaths_bool[np.searchsorted(self.uid, i_death.uid)] = True
@@ -628,7 +628,7 @@ class People(fpb.BasePeople):
         '''Advance age in the simulation'''
         self.age += self.pars['timestep'] / fpd.mpy  # Age the person for the next timestep
         self.age = np.minimum(self.age, self.pars['max_age'])
-        
+
         return
 
 
@@ -670,7 +670,7 @@ class People(fpb.BasePeople):
                         age_false_counts[index] += counts_dict[age_counts_dict_key][index]
                     else:
                         age_true_counts[index] += counts_dict[age_counts_dict_key][index]
-            
+
             for index, age_str in enumerate(fpd.method_youth_age_map):
                 scale = 1
                 if channel == "imr":
@@ -701,9 +701,9 @@ class People(fpb.BasePeople):
                 if index not in age_true_counts:
                     results_dict[f"{channel}_{age_str}"] = 0
                 else:
-                    results_dict[f"{channel}_{age_str}"] = age_true_counts[index] 
+                    results_dict[f"{channel}_{age_str}"] = age_true_counts[index]
         return results_dict
-            
+
     def track_mcpr(self):
         '''
         Track for purposes of calculating mCPR at the end of the timestep after all people are updated
@@ -971,7 +971,7 @@ class Sim(fpb.BaseSim):
         self.results['method_failures_over_year'] = []
         self.results['infant_deaths_over_year'] = []
         self.results['total_births_over_year'] = []
-        self.results['live_births_over_year'] = []        
+        self.results['live_births_over_year'] = []
         self.results['stillbirths_over_year'] = []
         self.results['miscarriages_over_year'] = []
         self.results['abortions_over_year'] = []
@@ -1011,7 +1011,7 @@ class Sim(fpb.BaseSim):
                 self.results[key] = {} # CK: TODO: refactor
                 for p in range(self.npts):
                     self.results[key][p] = np.zeros((m, m), dtype=int)
-        
+
         for age_specific_channel in ['acpr', 'cpr', 'mcpr', 'pregnancies', 'births', 'imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr', 'mmr', 'as_stillbirths', 'stillbirths']:
             for age_group in fpd.method_youth_age_map:
                 if 'numerator' in age_specific_channel or 'denominator' in age_specific_channel or 'as_' in age_specific_channel:
@@ -1341,20 +1341,20 @@ class Sim(fpb.BaseSim):
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
                 self.results['total_births_over_year'].append(total_births_over_year)
-                self.results['live_births_over_year'].append(live_births_over_year)                
+                self.results['live_births_over_year'].append(live_births_over_year)
                 self.results['stillbirths_over_year'].append(stillbirths_over_year)
                 self.results['miscarriages_over_year'].append(miscarriages_over_year)
                 self.results['abortions_over_year'].append(abortions_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
                 self.results['pregnancies_over_year'].append(pregnancies_over_year)
 
-                imr_results_dict = self.people.log_age_split(binned_ages_t=self.results['imr_age_by_group'][start_index:stop_index], channel='imr', 
+                imr_results_dict = self.people.log_age_split(binned_ages_t=self.results['imr_age_by_group'][start_index:stop_index], channel='imr',
                                                      numerators=self.results['imr_numerator'][start_index:stop_index], denominators=self.results['imr_denominator'][start_index:stop_index])
-                mmr_results_dict = self.people.log_age_split(binned_ages_t=self.results['mmr_age_by_group'][start_index:stop_index], channel='mmr', 
+                mmr_results_dict = self.people.log_age_split(binned_ages_t=self.results['mmr_age_by_group'][start_index:stop_index], channel='mmr',
                                                      numerators=self.results['mmr_numerator'][start_index:stop_index], denominators=self.results['mmr_denominator'][start_index:stop_index])
-                stillbirths_results_dict = self.people.log_age_split(binned_ages_t=self.results['stillbirth_ages'][start_index:stop_index], channel='stillbirths', 
+                stillbirths_results_dict = self.people.log_age_split(binned_ages_t=self.results['stillbirth_ages'][start_index:stop_index], channel='stillbirths',
                                                      numerators=self.results['as_stillbirths'][start_index:stop_index], denominators=None)
-                    
+
                 for age_key in fpd.method_youth_age_map:
                     self.results[f"imr_{age_key}"].append(imr_results_dict[f"imr_{age_key}"])
                     self.results[f"mmr_{age_key}"].append(mmr_results_dict[f"mmr_{age_key}"])
@@ -1368,7 +1368,7 @@ class Sim(fpb.BaseSim):
                     self.results['mmr'].append(maternal_mortality_ratio)
                 if infant_deaths_over_year == 0:
                     self.results['imr'].append(infant_deaths_over_year)
-                    
+
                 else:
                     infant_mortality_rate = infant_deaths_over_year / live_births_over_year * 1000
                     self.results['imr'].append(infant_mortality_rate)
@@ -1380,7 +1380,7 @@ class Sim(fpb.BaseSim):
                     age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
                     self.results['asfr'][key].append(age_bin_births_per_woman*1000)
                     self.results[f'tfr_{key}'].append(age_bin_births_per_woman * 1000)
-                    tfr += age_bin_births_per_woman # CK: TODO: check if this is right 
+                    tfr += age_bin_births_per_woman # CK: TODO: check if this is right
 
                 self.results['tfr_rates'].append(tfr*5) # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
 
@@ -1401,11 +1401,11 @@ class Sim(fpb.BaseSim):
         # Calculate cumulative totals
         self.results['cum_maternal_deaths_by_year'] = np.cumsum(self.results['maternal_deaths_over_year'])
         self.results['cum_infant_deaths_by_year']   = np.cumsum(self.results['infant_deaths_over_year'])
-        self.results['cum_live_births_by_year']     = np.cumsum(self.results['live_births_over_year'])        
-        self.results['cum_stillbirths_by_year']     = np.cumsum(self.results['stillbirths_over_year'])              
-        self.results['cum_miscarriages_by_year']     = np.cumsum(self.results['miscarriages_over_year'])      
+        self.results['cum_live_births_by_year']     = np.cumsum(self.results['live_births_over_year'])
+        self.results['cum_stillbirths_by_year']     = np.cumsum(self.results['stillbirths_over_year'])
+        self.results['cum_miscarriages_by_year']     = np.cumsum(self.results['miscarriages_over_year'])
         self.results['cum_abortions_by_year']     = np.cumsum(self.results['abortions_over_year'])
-        self.results['cum_pregnancies_by_year']     = np.cumsum(self.results['pregnancies_over_year']) 
+        self.results['cum_pregnancies_by_year']     = np.cumsum(self.results['pregnancies_over_year'])
 
         # Convert to an objdict for easier access
         self.results = sc.objdict(self.results)
@@ -1491,7 +1491,7 @@ class Sim(fpb.BaseSim):
             fill_args (dict): Passed to pl.fill_between())
             label     (str):  Label to override default
             new_fig   (bool): Whether to create a new figure (true unless part of a multisim)
-            colors    (list/dict): Colors for plots with multiple lines  
+            colors    (list/dict): Colors for plots with multiple lines
         '''
         if to_plot is None: to_plot = 'default'
         fig_args  = sc.mergedicts(dict(figsize=(16,10), nrows=None, ncols=None), fig_args)
@@ -1517,10 +1517,10 @@ class Sim(fpb.BaseSim):
             for key in res:
                 if no_plot_age in key:
                     delete_keys.append(key)
-            
+
             for bad_key in delete_keys:
                 res.remove(bad_key)
-            
+
             # Plot everything
             if to_plot == 'default':
                 to_plot = {
@@ -1529,7 +1529,7 @@ class Sim(fpb.BaseSim):
                     'cum_stillbirths_by_year':     'Stillbirths',
                     'cum_maternal_deaths_by_year': 'Maternal deaths',
                     'cum_infant_deaths_by_year':   'Infant deaths',
-                    'imr':                         'Infant mortality rate',   
+                    'imr':                         'Infant mortality rate',
                 }
             elif to_plot == 'cpr':
                 to_plot = {
@@ -1538,14 +1538,14 @@ class Sim(fpb.BaseSim):
                     'acpr': 'ACPR (alternative contraceptive prevalence rate',
                 }
             elif to_plot == 'mortality':
-                to_plot = {                    
+                to_plot = {
                     'mmr':                         'Maternal mortality ratio',
                     'cum_maternal_deaths_by_year': 'Maternal deaths',
                     'cum_infant_deaths_by_year':   'Infant deaths',
                     'imr':                         'Infant mortality rate',
                     }
             elif to_plot == 'apo': #adverse pregnancy outcomes
-                to_plot = {                    
+                to_plot = {
                     'cum_pregnancies_by_year':     'Pregnancies',
                     'cum_stillbirths_by_year':     'Stillbirths',
                     'cum_miscarriages_by_year':    'Miscarriages',
@@ -1554,7 +1554,7 @@ class Sim(fpb.BaseSim):
             elif to_plot == 'method':
                 to_plot = {
                     'method_usage':                 'Method usage'
-                } 
+                }
             elif to_plot == 'as_cpr':
                 to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
             elif to_plot == 'as_acpr':
@@ -1689,12 +1689,12 @@ class Sim(fpb.BaseSim):
                             assert no_plot_age not in key
                             print("age_bins keys")
                             print(key)
-                        
+
                         top = max([max(group_result) for group_result in [res[f'{channel_type}_{age_group}'] for age_group in age_bins]])
                     tidy_top = int(np.ceil(top / 10.0)) * 10
                     tidy_top = tidy_top + 20 if tfr_scaling or 'imr_' in key else tidy_top
                     tidy_top = tidy_top + 50 if 'mmr_' in key else tidy_top
-                    self.conform_y_axes(figure=fig, top=tidy_top) 
+                    self.conform_y_axes(figure=fig, top=tidy_top)
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
 
@@ -1718,10 +1718,10 @@ class Sim(fpb.BaseSim):
 
     def compute_method_usage(self):
         '''
-        Computes method mix proportions from a sim object 
-        
+        Computes method mix proportions from a sim object
+
         Returns:
-            list of lists where list[years_after_start][method_index] == proportion of 
+            list of lists where list[years_after_start][method_index] == proportion of
             fecundity aged women using that method on that year
         '''
 
@@ -1745,11 +1745,11 @@ class Sim(fpb.BaseSim):
     def format_method_df(self, method_list=None, timeseries=False):
         '''
         Outputs a dataframe for method mix plotting for either a single year or a timeseries
-        
+
         Args:
-            method_list (list): 
+            method_list (list):
                 list of proportions where each index is equal to the integer value of the corresponding method
-            timeseries (boolean): 
+            timeseries (boolean):
                 if true, provides a dataframe with data from every year, otherwise a method_list is required for the year
 
         Returns:
@@ -2003,7 +2003,7 @@ class MultiSim(sc.prettyobj):
         return mlist
 
 
-    def remerge(self, base=True, **kwargs):
+    def remerge(self, base=True, recompute=True, **kwargs):
         '''
         Split a sim, compute stats, and re-merge.
 
@@ -2014,8 +2014,9 @@ class MultiSim(sc.prettyobj):
         Note: returns a new MultiSim object (if that concerns you).
         '''
         ms = self.split(**kwargs)
-        for m in ms:
-            m.compute_stats() # Recompute the statistics on each separate MultiSim
+        if recompute:
+            for m in ms:
+                m.compute_stats() # Recompute the statistics on each separate MultiSim
         out = MultiSim.merge(*ms, base=base) # Now re-merge, this time using the base_sim
         return out
 
@@ -2044,7 +2045,7 @@ class MultiSim(sc.prettyobj):
 
         Args:
             plot_sims (bool): whether to plot individual sims (else, plot with uncertainty bands)
-            
+
 
         See ``sim.plot()`` for additional args.
         '''
@@ -2073,7 +2074,7 @@ class MultiSim(sc.prettyobj):
             axis_args_method = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.30), axis_args)
             with fpo.with_style(style):
                 pl.subplots_adjust(**axis_args_method)
-                for axis_index, label in enumerate(np.unique(labels)): 
+                for axis_index, label in enumerate(np.unique(labels)):
                     total_df = pd.DataFrame()
                     return_default = lambda name: fig_args[name] if name in fig_args else None
                     rows,cols = sc.getrowscols(n_unique, nrows=return_default('nrows'), ncols=return_default('ncols'))
@@ -2082,14 +2083,14 @@ class MultiSim(sc.prettyobj):
                         if sim.label == label:
                             total_df = pd.concat([total_df, sim.format_method_df(timeseries=True)], ignore_index=True)
                     method_names = total_df['Method'].unique()
-                    
+
                     # Getting the mean of each seed as a list of lists, could add conditional here if different method plots are added
                     percentage_by_method=[]
                     for method in method_names:
                         method_df = total_df[(total_df['Method'] == method) & (total_df['Sim'] == label)]
                         seed_split = [method_df[method_df['Seed'] == seed]['Percentage'].values for seed in method_df['Seed'].unique()]
                         percentage_by_method.append([np.mean([seed[i] for seed in seed_split]) for i in range(len(seed_split[0]))])
-                    
+
                     legend = axis_index + 1 == cols # True for last plot in first row
                     colors = [colors[method] for method in method_names] if isinstance(colors, dict) else colors
                     ax.stackplot(total_df["Year"].unique(), percentage_by_method, labels=method_names, colors=colors)
@@ -2119,7 +2120,7 @@ class MultiSim(sc.prettyobj):
                     channel_type = to_plot.split("_")[1]
                     is_tfr = "tfr" in to_plot
                     age_bins = list(fpd.method_youth_age_map)[:-1]
-                    
+
 
                     if is_tfr:
                         age_bins = fpd.age_bin_map
