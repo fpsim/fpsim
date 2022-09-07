@@ -502,7 +502,7 @@ class People(fpb.BasePeople):
         '''Check for probability of infant mortality (death < 1 year of age)'''
         death_prob = (self.pars['mortality_probs']['infant'])
         if len(self) > 0:
-            age_inds = sc.findnearest(self.pars['infant_mortality']['ages'], self.age) # age inds is index of age group of mother
+            age_inds = sc.findnearest(self.pars['infant_mortality']['ages'], self.age)
             death_prob = death_prob * (self.pars['infant_mortality']['age_probs'][age_inds])
         is_death = self.binomial(death_prob)
         death = self.filter(is_death)
@@ -543,10 +543,6 @@ class People(fpb.BasePeople):
 
             self.step_results['stillbirth_ages'] = self.age_by_group
             self.step_results['as_stillbirths'] = stillbirth_boolean
-            #stillbirth_age_split = self.log_age_split([self.age_by_group], 'stillbirths', [stillbirth_boolean], None)
-            
-            # for key in stillbirth_age_split:
-            #     self.step_results[key] = stillbirth_age_split[key]
 
             # Add dates of live births and stillbirths separately for agent to remember
             all_ppl = self.unfilter()
@@ -595,32 +591,14 @@ class People(fpb.BasePeople):
             # Save infant deaths and totals into age buckets
             infant_deaths_bool = np.full(len(self), False)
             infant_deaths_bool[np.searchsorted(self.uid, i_death.uid)] = True
-            assert(len(infant_deaths_bool) == len(self))
             self.step_results['imr_age_by_group'] = self.age_by_group # age groups have to be in same context as imr
 
-            for uid in i_death.uid: # we can see a filtering issue here
-                assert uid in live.uid
-
-            for index, boolean_death in enumerate(infant_deaths_bool):
-                if boolean_death:
-                    assert total_infants_bool[index]
-
-            self.step_results['imr_numerator'] = infant_deaths_bool
+            self.step_results['imr_numerator'] = infant_deaths_bool # we need to track these over time to be summed by year
             self.step_results['imr_denominator'] = total_infants_bool
             self.step_results['mmr_numerator'] = maternal_deaths_bool
             self.step_results['mmr_denominator'] = total_women_delivering
-            for value in [self.step_results['imr_numerator'], self.step_results['imr_denominator'], self.step_results['mmr_numerator'], self.step_results['mmr_denominator']]:
-                assert len(self) == len(value)
 
-
-
-            #infant_mortality_age_split = self.log_age_split('imr', infant_deaths_bool, total_infants_bool)
-            #maternal_mortality_age_split = self.log_age_split('mmr', maternal_deaths_bool, total_women_delivering)
             live_births_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='births', numerators=[total_women_delivering], denominators=None)
-            # for key in infant_mortality_age_split:
-            #     self.step_results[key] = infant_mortality_age_split[key]
-            # for key in maternal_mortality_age_split:
-            #     self.step_results[key] = maternal_mortality_age_split[key]
             for key in live_births_age_split:
                 self.step_results[key] = live_births_age_split[key]
 
@@ -642,8 +620,6 @@ class People(fpb.BasePeople):
                 children = list(range(start_ind, end_ind))
                 all_ppl.children[mother] += children
                 start_ind = end_ind
-
-            assert not isinstance(self.step_results['imr_numerator'], int)
 
         return
 
@@ -668,16 +644,8 @@ class People(fpb.BasePeople):
     def log_age_split(self, binned_ages_t, channel, numerators, denominators=None):
         counts_dict = {}
         results_dict = {}
-        if denominators is not None:
-            pass
-            #print(f"Channel {channel} has {len(numerators)} numerators {len(denominators)} denominators and {len(binned_ages_t)} ages")
-        if denominators is not None:
+        if denominators is not None: # true when we are calculating rates (like cpr)
             for timestep_index in range(len(binned_ages_t)):
-                # print(f"For channel {channel} at timestep: \
-                # {timestep_index}, we have {len(binned_ages_t[timestep_index])} age values, \
-                # {len(numerators[timestep_index])} numerator values, and \
-                # {len(denominators[timestep_index])} denominator values")
-
                 if len(denominators[timestep_index]) == 0:
                     counts_dict[f"age_true_counts_{timestep_index}"] = {}
                     counts_dict[f"age_false_counts_{timestep_index}"] = {}
@@ -708,14 +676,14 @@ class People(fpb.BasePeople):
                 if channel == "imr":
                     scale = 1000
                 elif channel == "mmr":
-                    scale = 10000
+                    scale = 100000
                 if index not in age_true_counts:
                     results_dict[f"{channel}_{age_str}"] = 0
                 elif index in age_true_counts and index not in age_false_counts:
                     results_dict[f"{channel}_{age_str}"] = 1.0 * scale
                 else:
                     results_dict[f"{channel}_{age_str}"] = (age_true_counts[index] / (age_true_counts[index] + age_false_counts[index])) * scale
-        else:
+        else: # true when we are calculating counts (like pregnancies)
             for timestep_index in range(len(binned_ages_t)):
                 if len(numerators[timestep_index]) == 0:
                     counts_dict[f"age_counts_{timestep_index}"] = {}
@@ -734,7 +702,6 @@ class People(fpb.BasePeople):
                     results_dict[f"{channel}_{age_str}"] = 0
                 else:
                     results_dict[f"{channel}_{age_str}"] = age_true_counts[index] 
-        #print(f"One of these should be empty \n ---age_counts---: {age_true_counts} \n ----age_false counts----: {age_false_counts} \n results dict {results_dict}")
         return results_dict
             
     def track_mcpr(self):
@@ -1381,9 +1348,6 @@ class Sim(fpb.BaseSim):
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
                 self.results['pregnancies_over_year'].append(pregnancies_over_year)
 
-                # mmr_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='imr', numerators=[self.results[']], denominators=[denominator])
-                assert not isinstance(self.results['imr_numerator'][start_index:stop_index], int)
-
                 imr_results_dict = self.people.log_age_split(binned_ages_t=self.results['imr_age_by_group'][start_index:stop_index], channel='imr', 
                                                      numerators=self.results['imr_numerator'][start_index:stop_index], denominators=self.results['imr_denominator'][start_index:stop_index])
                 mmr_results_dict = self.people.log_age_split(binned_ages_t=self.results['mmr_age_by_group'][start_index:stop_index], channel='mmr', 
@@ -1402,7 +1366,7 @@ class Sim(fpb.BaseSim):
                 else:
                     maternal_mortality_ratio = maternal_deaths_over_year / live_births_over_year * 100000
                     self.results['mmr'].append(maternal_mortality_ratio)
-                if infant_deaths_over_year == 0: # Not sure why this condition is here
+                if infant_deaths_over_year == 0:
                     self.results['imr'].append(infant_deaths_over_year)
                     
                 else:
@@ -1418,7 +1382,7 @@ class Sim(fpb.BaseSim):
                     self.results[f'tfr_{key}'].append(age_bin_births_per_woman * 1000)
                     tfr += age_bin_births_per_woman # CK: TODO: check if this is right 
 
-                self.results['tfr_rates'].append(tfr*5) # CK: TODO: why *5?
+                self.results['tfr_rates'].append(tfr*5) # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
 
             if self.test_mode:
                 self.log_daily_totals()
@@ -1614,11 +1578,6 @@ class Sim(fpb.BaseSim):
                     errormsg = f"Your to_plot value: {to_plot} is not a valid option"
                     raise ValueError(errormsg)
 
-            for key in self.results:
-                if ('pregnancies_' in key) and 'by_year' not in key:
-                    self.results[key][0] = self.results[key][1] # Clipping first timestep to make it look neater (otherwise would be 0)
-
-
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
             if to_plot == 'cpr':
                 rows,cols = 1,3
@@ -1632,7 +1591,6 @@ class Sim(fpb.BaseSim):
                 else:
                     y, low, high = this_res, None, None
 
-                # Squish mmr and imr to be by year instead of timestep
                 years = res['tfr_years']
 
                 # Figure out x axis
@@ -1686,14 +1644,13 @@ class Sim(fpb.BaseSim):
                 #         intv.plot_intervention(self, ax)
 
                 # Handle annotations
-                for key in res:
-                    assert no_plot_age not in key
+                as_plot = ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'pregnancies_' in key or 'stillbirths' in key or 'tfr_' in key or 'imr_' in key or 'mmr_' in key or 'births_' in key) and 'by_year' not in key
                 fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
                 if key in percent_keys:
                     pl.ylabel('Percentage')
-                elif key == 'mmr':
+                elif 'mmr' in key:
                     pl.ylabel('Deaths per 100,000 live births')
-                elif 'imr_' in key:
+                elif 'imr' in key:
                     pl.ylabel('Deaths per 1,000 live births')
                 elif 'tfr_' in key:
                     pl.ylabel('Fertility rate per 1,000 women')
@@ -1709,12 +1666,12 @@ class Sim(fpb.BaseSim):
                     pl.xlim(xlims)
                 if ylims is not None:
                     pl.ylim(ylims)
-                if (key == "method_usage") or (('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'pregnancies_' or 'imr_' in key or 'births_' in key) and 'by_year' not in key): # need to overwrite legend for some plots
+                if (key == "method_usage") or as_plot: # need to overwrite legend for some plots
                     ax.legend(loc='upper left', frameon=True)
                 if 'cpr' in to_plot:
                     top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10 # rounding up to nearest 10
                     self.conform_y_axes(figure=fig, top=top) 
-                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'pregnancies_' in key or 'stillbirths' in key or 'tfr_' in key or 'imr_' in key or 'mmr_' in key or 'births_' in key) and 'by_year' not in key:
+                if as_plot:
                     channel_type = key.split("_")[0]
                     tfr_scaling = 'tfr_' in key
                     age_bins = fpd.age_bin_map if tfr_scaling else fpd.method_youth_age_map
@@ -1908,11 +1865,8 @@ class MultiSim(sc.prettyobj):
 
         reskeys = list(base_sim.results.keys())
         for bad_key in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr_age_by_group', 'mmr_age_by_group', 'as_stillbirths', 'stillbirth_ages']:
-            reskeys.remove(bad_key)
-        # for age_key in fpd.method_age_map:
-        #     for key in reskeys:
-        #         if age_key in key:
-        #             reskeys.remove(key)
+            reskeys.remove(bad_key) # these keys are intermediate results so we don't really want to save them
+
         bad_keys = ['t', 'tfr_years', 'method_usage']
         for key in bad_keys: # Don't compute high/low for these
             results[key] = base_sim.results[key]
@@ -2173,8 +2127,8 @@ class MultiSim(sc.prettyobj):
                         top = max([max([max(group_result) for group_result in [sim.results[f'{channel_type}_{age_group}'].high for age_group in age_bins]]) for sim in self.sims])
                     else:
                         top = max([max([max(group_result) for group_result in [sim.results[f'{channel_type}_{age_group}'] for age_group in age_bins]]) for sim in self.sims])
-                    tidy_top = int(np.ceil(top / 10.0)) * 10
-                    tidy_top = tidy_top + 20 if is_tfr or 'imr' in to_plot else tidy_top
+                    tidy_top = int(np.ceil(top / 10.0)) * 10 # rounds top of y axis up to the nearest ten
+                    tidy_top = tidy_top + 20 if is_tfr or 'imr' in to_plot else tidy_top # some custom axis adjustments for neatness
                     tidy_top = tidy_top + 50 if 'mmr' in to_plot else tidy_top
                     self.base_sim.conform_y_axes(figure=fig, top=tidy_top)
             return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
