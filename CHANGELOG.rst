@@ -8,6 +8,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.19.0 (2022-09-01)
+--------------------------
+- Added age-specific plotting for tfr, pregnancies, imr, mmr, stillbirths, and births to Sim, MultiSim, and Scenarios
+- Added ability to plot channels by age over the course of an interval of time (one year, for example)
+- Added yearly age-specific plotting for pregnancies, imr and mmr
+- *GitHub info*: ``590 https://github.com/amath-idm/fpsim/pull/590``
+
 Version 0.18.2 (2022-08-12)
 --------------------------
 - Added age specific plotting for cpr, mcpr, and acpr to Sim, MultiSim, and Scenarios

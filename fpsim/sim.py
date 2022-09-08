@@ -2120,8 +2120,6 @@ class MultiSim(sc.prettyobj):
                     channel_type = to_plot.split("_")[1]
                     is_tfr = "tfr" in to_plot
                     age_bins = list(fpd.method_youth_age_map)[:-1]
-
-
                     if is_tfr:
                         age_bins = fpd.age_bin_map
                     if hasattr(sim.results[f'cpr_{list(fpd.method_youth_age_map.keys())[0]}'], 'best'): # if compute_stats has been applied
