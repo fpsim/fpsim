@@ -1321,6 +1321,9 @@ class Sim(fpb.BaseSim):
                 self.results['switching_events_postpartum'][i] = scale*switch_events['postpartum']
 
             # Calculate metrics over the last year in the model and save whole years and stats to an array
+            for clear_channel in ['imr_age_by_group', 'imr_numerator', 'imr_denominator', 'mmr_age_by_group', 'mmr_numerator', 'mmr_denominator', 'stillbirth_ages', 'as_stillbirths']:
+                if len(self.results[clear_channel]) > 12:
+                    self.results[clear_channel] = self.results[clear_channel][1:]
             if i % fpd.mpy == 0:
                 self.results['tfr_years'].append(self.y)
                 start_index = (int(self.t)-1)*fpd.mpy
@@ -1348,12 +1351,13 @@ class Sim(fpb.BaseSim):
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
                 self.results['pregnancies_over_year'].append(pregnancies_over_year)
 
-                imr_results_dict = self.people.log_age_split(binned_ages_t=self.results['imr_age_by_group'][start_index:stop_index], channel='imr',
-                                                     numerators=self.results['imr_numerator'][start_index:stop_index], denominators=self.results['imr_denominator'][start_index:stop_index])
-                mmr_results_dict = self.people.log_age_split(binned_ages_t=self.results['mmr_age_by_group'][start_index:stop_index], channel='mmr',
-                                                     numerators=self.results['mmr_numerator'][start_index:stop_index], denominators=self.results['mmr_denominator'][start_index:stop_index])
-                stillbirths_results_dict = self.people.log_age_split(binned_ages_t=self.results['stillbirth_ages'][start_index:stop_index], channel='stillbirths',
-                                                     numerators=self.results['as_stillbirths'][start_index:stop_index], denominators=None)
+                imr_results_dict = self.people.log_age_split(binned_ages_t=self.results['imr_age_by_group'], channel='imr',
+                                                     numerators=self.results['imr_numerator'], denominators=self.results['imr_denominator'])
+                mmr_results_dict = self.people.log_age_split(binned_ages_t=self.results['mmr_age_by_group'], channel='mmr',
+                                                     numerators=self.results['mmr_numerator'], denominators=self.results['mmr_denominator'])
+                stillbirths_results_dict = self.people.log_age_split(binned_ages_t=self.results['stillbirth_ages'], channel='stillbirths',
+                                                     numerators=self.results['as_stillbirths'], denominators=None)
+                
 
                 for age_key in fpd.method_youth_age_map:
                     self.results[f"imr_{age_key}"].append(imr_results_dict[f"imr_{age_key}"])
@@ -1675,21 +1679,10 @@ class Sim(fpb.BaseSim):
                     channel_type = key.split("_")[0]
                     tfr_scaling = 'tfr_' in key
                     age_bins = fpd.age_bin_map if tfr_scaling else fpd.method_youth_age_map
-                    if not tfr_scaling and no_plot_age in key:
-                        print(age_bins.keys())
-                        age_bins.pop(no_plot_age)
+                    age_bins = {bin: interval for bin, interval in age_bins.items() if no_plot_age not in bin}
                     if is_dist:
                         top = max([max(group_result) for group_result in [res[f'{channel_type}_{age_group}'].high for age_group in age_bins]])
                     else:
-                        for key in res:
-                            assert no_plot_age not in key
-                            print("results keys")
-                            print(key)
-                        for key in age_bins:
-                            assert no_plot_age not in key
-                            print("age_bins keys")
-                            print(key)
-
                         top = max([max(group_result) for group_result in [res[f'{channel_type}_{age_group}'] for age_group in age_bins]])
                     tidy_top = int(np.ceil(top / 10.0)) * 10
                     tidy_top = tidy_top + 20 if tfr_scaling or 'imr_' in key else tidy_top
