@@ -2014,7 +2014,7 @@ class MultiSim(sc.prettyobj):
         return out
 
 
-    def to_df(self):
+    def to_df(self, yearly=False):
         '''
         Export all individual sim results to a dataframe
         '''
@@ -2022,10 +2022,16 @@ class MultiSim(sc.prettyobj):
         for s,sim in enumerate(self.sims):
             for reskey in sim.results.keys():
                 res = sim.results[reskey]
-                if sc.isarray(res) and len(res) == sim.npts:
-                    raw_res[reskey] += res.tolist()
-            raw_res['sim'] += [s]*sim.npts
-            raw_res['sim_label'] += [sim.label]*sim.npts
+                if sc.isarray(res):
+                    if len(res) == sim.npts and not yearly:
+                        raw_res[reskey] += res.tolist()
+                    elif len(res) == len(sim.results['tfr_years']) and yearly:
+                        raw_res[reskey] += res.tolist()
+                
+            scale = len(sim.results['tfr_years']) if yearly else sim.npts
+            raw_res['sim'] += [s]*scale
+            raw_res['sim_label'] += [sim.label]*scale 
+
         df = pd.DataFrame(raw_res)
         self.df = df
         return df
