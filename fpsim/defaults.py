@@ -102,3 +102,5 @@ method_youth_age_map = {
     '23-25': [23, 26],
     '>25': [26, max_age+1]
 }
+
+age_specific_channel_bins = method_youth_age_map

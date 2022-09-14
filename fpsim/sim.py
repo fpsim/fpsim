@@ -675,7 +675,7 @@ class People(fpb.BasePeople):
                     else:
                         age_true_counts[index] += counts_dict[age_counts_dict_key][index]
 
-            for index, age_str in enumerate(fpd.method_youth_age_map):
+            for index, age_str in enumerate(fpd.age_specific_channel_bins):
                 scale = 1
                 if channel == "imr":
                     scale = 1000
@@ -701,7 +701,7 @@ class People(fpb.BasePeople):
                     age_true_counts[index] = 0 if index not in age_true_counts else age_true_counts[index]
                     age_true_counts[index] += counts_dict[age_counts_dict_key][index]
 
-            for index, age_str in enumerate(fpd.method_youth_age_map):
+            for index, age_str in enumerate(fpd.age_specific_channel_bins):
                 if index not in age_true_counts:
                     results_dict[f"{channel}_{age_str}"] = 0
                 else:
@@ -823,7 +823,7 @@ class People(fpb.BasePeople):
 
             as_channels = ['acpr', 'cpr', 'mcpr', 'stillbirths', "births", "pregnancies"]
             for age_specific_channel in as_channels:
-                for age_range in fpd.method_youth_age_map:
+                for age_range in fpd.age_specific_channel_bins:
                     self.step_results[f"{age_specific_channel}_{age_range}"] = 0
 
         for key in fpd.age_bin_map.keys():
@@ -892,7 +892,7 @@ class People(fpb.BasePeople):
         alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
 
         # Storing ages by method age group
-        age_bins = [0] + [max(fpd.method_youth_age_map[key]) for key in fpd.method_youth_age_map]
+        age_bins = [0] + [max(fpd.age_specific_channel_bins[key]) for key in fpd.age_specific_channel_bins]
         self.age_by_group = np.digitize(self.age, age_bins) - 1
 
         return self.step_results
@@ -1037,7 +1037,7 @@ class Sim(fpb.BaseSim):
             self.results['mmr_age_by_group'] = []
             self.results['stillbirth_ages'] = []
             for age_specific_channel in ['acpr', 'cpr', 'mcpr', 'pregnancies', 'births', 'imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr', 'mmr', 'as_stillbirths', 'stillbirths']:
-                for age_group in fpd.method_youth_age_map:
+                for age_group in fpd.age_specific_channel_bins:
                     if 'numerator' in age_specific_channel or 'denominator' in age_specific_channel or 'as_' in age_specific_channel:
                         self.results[f"{age_specific_channel}"] = []
                     else:
@@ -1317,7 +1317,7 @@ class Sim(fpb.BaseSim):
                         self.results[f"{age_specific_channel}"] = self.results[f"{age_specific_channel}"][1:]
 
                 for age_specific_channel in ['acpr', 'cpr', 'mcpr', 'pregnancies', 'births']:
-                    for method_agekey in fpd.method_youth_age_map:
+                    for method_agekey in fpd.age_specific_channel_bins:
                         self.results[f"{age_specific_channel}_{method_agekey}"].append(getattr(r, f"{age_specific_channel}_{method_agekey}"))
 
 
@@ -1381,7 +1381,7 @@ class Sim(fpb.BaseSim):
                                                         numerators=self.results['as_stillbirths'], denominators=None)
                     
 
-                    for age_key in fpd.method_youth_age_map:
+                    for age_key in fpd.age_specific_channel_bins:
                         self.results[f"imr_{age_key}"].append(imr_results_dict[f"imr_{age_key}"])
                         self.results[f"mmr_{age_key}"].append(mmr_results_dict[f"mmr_{age_key}"])
                         self.results[f"stillbirths_{age_key}"].append(stillbirths_results_dict[f"stillbirths_{age_key}"])
@@ -1536,7 +1536,7 @@ class Sim(fpb.BaseSim):
 
 
             res = self.results # Shorten since heavily used
-            method_age_groups = list(fpd.method_youth_age_map.keys())
+            method_age_groups = list(fpd.age_specific_channel_bins.keys())
             if self.pars['track_as']:
                 no_plot_age = method_age_groups[-1]
                 method_age_groups.remove(no_plot_age)
@@ -1705,7 +1705,7 @@ class Sim(fpb.BaseSim):
                 if as_plot: # this condition is impossible if self.pars['track_as']
                     channel_type = key.split("_")[0]
                     tfr_scaling = 'tfr_' in key
-                    age_bins = fpd.age_bin_map if tfr_scaling else fpd.method_youth_age_map
+                    age_bins = fpd.age_bin_map if tfr_scaling else fpd.age_specific_channel_bins
                     age_bins = {bin: interval for bin, interval in age_bins.items() if no_plot_age not in bin}
                     if is_dist:
                         top = max([max(group_result) for group_result in [res[f'{channel_type}_{age_group}'].high for age_group in age_bins]])
@@ -2077,7 +2077,7 @@ class MultiSim(sc.prettyobj):
         See ``sim.plot()`` for additional args.
         '''
         fig_args = sc.mergedicts(dict(figsize=(16,10)), fig_args)
-        no_plot_age = list(fpd.method_youth_age_map.keys())[-1]
+        no_plot_age = list(fpd.age_specific_channel_bins.keys())[-1]
 
         fig = pl.figure(**fig_args)
         do_show = kwargs.pop('do_show', True)
@@ -2150,10 +2150,10 @@ class MultiSim(sc.prettyobj):
                 if 'as_' in to_plot:
                     channel_type = to_plot.split("_")[1]
                     is_tfr = "tfr" in to_plot
-                    age_bins = list(fpd.method_youth_age_map)[:-1]
+                    age_bins = list(fpd.age_specific_channel_bins)[:-1]
                     if is_tfr:
                         age_bins = fpd.age_bin_map
-                    if hasattr(sim.results[f'cpr_{list(fpd.method_youth_age_map.keys())[0]}'], 'best'): # if compute_stats has been applied
+                    if hasattr(sim.results[f'cpr_{list(fpd.age_specific_channel_bins.keys())[0]}'], 'best'): # if compute_stats has been applied
                         top = max([max([max(group_result) for group_result in [sim.results[f'{channel_type}_{age_group}'].high for age_group in age_bins]]) for sim in self.sims])
                     else:
                         top = max([max([max(group_result) for group_result in [sim.results[f'{channel_type}_{age_group}'] for age_group in age_bins]]) for sim in self.sims])
