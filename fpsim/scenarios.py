@@ -389,31 +389,25 @@ class Scenarios(sc.prettyobj):
         ''' Actually run a list of sims '''
 
         # Check that it's set up
-        self.t = sc.timer()
         if not self.scens:
             errormsg = 'No scenarios are defined'
             raise ValueError(errormsg)
         if not self.simslist:
             self.make_scens()
-        self.t.tt('MSIM DEBUG: make scens')
 
         # Create msim
         msims = sc.autolist()
         for sims in self.simslist:
             msims += fps.MultiSim(sims)
         self.msim = fps.MultiSim.merge(*msims)
-        self.t.tt('MSIM DEBUG: merge')
 
         # Run
         self.msim.run(**kwargs)
-        self.t.tt('MSIM DEBUG: run')
         self.already_run = True
 
         # Process
         self.msim_merged =self.msim.remerge(recompute=recompute)
-        self.t.tt('MSIM DEBUG: remerge')
         self.analyze_sims()
-        self.t.tt('MSIM DEBUG: analyze')
         return
 
 

@@ -134,7 +134,7 @@ def test_scenarios():
             scens.plot(to_plot='method')
             scens.plot_sims()
         if plot_as:
-            for plot_type in ['as_tfr', 'as_pregnancies', 'as_imr', 'as_mmr', 'as_stillbirths', 'as_births']:
+            for plot_type in ['age_specific_tfr', 'age_specific_pregnancies', 'age_specific_imr', 'age_specific_mmr', 'age_specific_stillbirths', 'age_specific_births']:
                 scens.plot(to_plot=plot_type)
         return scens
 
