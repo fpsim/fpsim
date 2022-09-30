@@ -385,7 +385,7 @@ class Scenarios(sc.prettyobj):
         return
 
 
-    def run(self, *args, **kwargs):
+    def run(self, recompute=True, *args, **kwargs):
         ''' Actually run a list of sims '''
 
         # Check that it's set up
@@ -406,7 +406,7 @@ class Scenarios(sc.prettyobj):
         self.already_run = True
 
         # Process
-        self.msim_merged =self.msim.remerge()
+        self.msim_merged =self.msim.remerge(recompute=recompute)
         self.analyze_sims()
         return
 
@@ -455,10 +455,10 @@ class Scenarios(sc.prettyobj):
                     return channel_results[inds].sum()
                 else:
                     return channel_results[inds].mean()
-            
+
             # Defines how we calculate each channel, first number is is_sum: 1 = aggregate as sum, 0 = aggregate as mean
             # The second parameter defines whether to aggregate by year or by timestep where 1 = use sim.t (timestep), 0 = use sim.tfr_years (years)
-            agg_param_dict = {'method_failures_over_year': (1, 0), 'pop_size': (1, 0), 'tfr_rates': (0, 0), 'maternal_deaths_over_year': (1, 0), 
+            agg_param_dict = {'method_failures_over_year': (1, 0), 'pop_size': (1, 0), 'tfr_rates': (0, 0), 'maternal_deaths_over_year': (1, 0),
                             'infant_deaths_over_year': (1, 0), 'mcpr': (0, 1), 'births': (1, 1)}
             results_dict = {}
 

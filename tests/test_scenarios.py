@@ -12,6 +12,7 @@ from fpsim import defaults as fpd
 int_year = 2002 # Year to start the interventions
 serial   = 0 # Whether to run in serial (for debugging)
 do_plot  = 0 # Whether to do plotting in interactive mode
+do_plot_as = 0 # Whether or not to plot all age-specific channels
 default_ages = list(fpd.method_age_map.keys())
 sc.options(backend='agg') # Turn off interactive plots
 
@@ -124,7 +125,7 @@ def test_update_methods_probs():
     return msim
 
 def test_scenarios():
-    def run_scenario(scen, plot=do_plot):
+    def run_scenario(scen, plot=do_plot, plot_as=do_plot_as):
         '''Runs simple scenario and returns Scenarios object'''
         scens = fp.Scenarios(location='test', scens=scen, start_year=int_year)
         scens.run(serial=serial)
@@ -132,6 +133,9 @@ def test_scenarios():
             scens.plot()
             scens.plot(to_plot='method')
             scens.plot_sims()
+        if plot_as:
+            for plot_type in ['age_specific_tfr', 'age_specific_pregnancies', 'age_specific_imr', 'age_specific_mmr', 'age_specific_stillbirths', 'age_specific_births']:
+                scens.plot(to_plot=plot_type)
         return scens
 
     output = {} # dictionary of scenarios output
