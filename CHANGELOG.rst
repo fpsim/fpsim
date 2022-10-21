@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.19.1 (2022-10-21)
+--------------------------
+- Updated documentation on README
+
+
 Version 0.19.0 (2022-09-01)
 --------------------------
 - Added age-specific plotting for tfr, pregnancies, imr, mmr, stillbirths, and births to Sim, MultiSim, and Scenarios
