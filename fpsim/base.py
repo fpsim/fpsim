@@ -24,11 +24,12 @@ class FlexPretty(sc.prettyobj):
 
     def __repr__(self):
         ''' Use brief repr by default '''
-        try:
-            string = self._brief()
-        except Exception as E:
-            string = sc.objectid(self)
-            string += f'Warning, something went wrong printing object:\n{str(E)}'
+        string = self._brief()
+        # try:
+        #     string = self._brief()
+        # except Exception as E:
+        #     string = sc.objectid(self)
+        #     string += f'Warning, something went wrong printing object:\n{str(E)}'
         return string
 
     def _disp(self):
@@ -424,27 +425,25 @@ class BaseSim(ParsObj):
         see sim.brief() for the user version.
         '''
         # Try to get a detailed description of the sim...
-        try:
-            if self.already_run:
-                births = np.sum(self.results['births'])
-                deaths = np.sum(self.results['deaths'])
-                final = self.results['pop_size'][-1]
-                results = f'b={births:n} ☠={deaths:n} pop={final:n}'
-            else:
-                results = 'not run'
+        # try:
+        if self.already_run:
+            s = self.summary
+            results = f'b={s.births:n} ☠={s.deaths:n} pop={s.final:n}'
+        else:
+            results = 'not run'
 
-            # Set label string
-            labelstr = f'"{self.label}"' if self.label else '<no label>'
+        # Set label string
+        labelstr = f'"{self.label}"' if self.label else '<no label>'
 
-            start = self['start_year']
-            end = self['end_year']
-            n_agents = self['n_agents']
-            string   = f'Sim({labelstr}; n={n_agents:n}; {start}-{end}; results: {results})'
+        start = self['start_year']
+        end = self['end_year']
+        n_agents = self['n_agents']
+        string   = f'Sim({labelstr}; n={n_agents:n}; {start}-{end}; results: {results})'
 
         # ...but if anything goes wrong, return the default with a warning
-        except Exception as E: # pragma: no cover
-            string = sc.objectid(self)
-            string += f'Warning, sim appears to be malformed; use sim.disp() for details:\n{str(E)}'
+        # except Exception as E: # pragma: no cover
+        #     string = sc.objectid(self)
+        #     string += f'Warning, sim appears to be malformed; use sim.disp() for details:\n{str(E)}'
 
         return string
 

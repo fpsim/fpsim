@@ -1459,6 +1459,11 @@ class Sim(fpb.BaseSim):
             print(f'Final population size: {self.n}.')
             elapsed = T.toc(output=True)
             print(f'Run finished for "{self.label}" after {elapsed:0.1f} s')
+        
+        self.summary = sc.objdict()
+        self.summary.births = np.sum(self.results['births'])
+        self.summary.deaths = np.sum(self.results['deaths'])
+        self.summary.final = self.results['pop_size'][-1]
 
         self.already_run = True
 
