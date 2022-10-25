@@ -127,7 +127,7 @@ class Experiment(sc.prettyobj):
         return growth_rate
 
 
-    def run_model(self, pars=None, mother_ids=False):
+    def run_model(self, pars=None, **kwargs):
         ''' Create the sim and run the model '''
 
         if not self.initialized:
@@ -136,7 +136,7 @@ class Experiment(sc.prettyobj):
         if pars is None:
             pars = self.pars
 
-        self.sim = fps.Sim(pars=pars, mother_ids=mother_ids)
+        self.sim = fps.Sim(pars=pars, **kwargs)
         self.sim.run()
         self.post_process_sim()
 

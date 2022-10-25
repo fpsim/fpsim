@@ -945,10 +945,25 @@ def tidy_up(fig, do_show=None, do_save=None, filename=None):
 
 class Sim(fpb.BaseSim):
     '''
-    The Sim class handles the running of the simulation
+    The Sim class handles the running of the simulation: the creation of the
+    population and the dynamics of the epidemic. This class handles the mechanics
+    of the actual simulation, while BaseSim takes care of housekeeping (saving,
+    loading, exporting, etc.). Please see the BaseSim class for additional methods.
+
+    Args:
+        pars     (dict):   parameters to modify from their default values
+        location (str):    name of the location (country) to look for data file to load
+        label    (str):    the name of the simulation (useful to distinguish in batch runs)
+        track_children (bool): whether to track links between mothers and their children (slow, so disabled by default)
+        kwargs   (dict):   additional parameters; passed to ``fp.make_pars()``
+
+    **Examples**::
+
+        sim = fp.Sim()
+        sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Seneagl sim')
     '''
 
-    def __init__(self, pars=None, location=None, label=None, mother_ids=False, **kwargs):
+    def __init__(self, pars=None, location=None, label=None, track_children=False, **kwargs):
         if pars is None:
             pars = fpp.pars(location)
 
@@ -963,7 +978,7 @@ class Sim(fpb.BaseSim):
         self.already_run = False
         self.test_mode   = False
         self.label       = label
-        self.mother_ids  = mother_ids
+        self.track_children  = track_children
         fpu.set_metadata(self) # Set version, date, and git info
         return
 
@@ -1269,7 +1284,7 @@ class Sim(fpb.BaseSim):
             self.people += people
 
             # Update mothers
-            if self.mother_ids:
+            if self.track_children:
                 self.update_mothers()
 
             # Results
@@ -1416,7 +1431,7 @@ class Sim(fpb.BaseSim):
         if self.test_mode:
             self.save_daily_totals()
 
-        if not self.mother_ids:
+        if not self.track_children:
             delattr(self.people, "mothers")
 
         # Convert all results to Numpy arrays
