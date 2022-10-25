@@ -964,10 +964,10 @@ class Sim(fpb.BaseSim):
     '''
 
     def __init__(self, pars=None, location=None, label=None, track_children=False, **kwargs):
-        if pars is None:
-            pars = fpp.pars(location)
 
         # Check parameters
+        loc_pars = fpp.pars(location)
+        pars = sc.mergedicts(loc_pars, pars)
         mismatches = [key for key in kwargs.keys() if key not in fpp.par_keys]
         if len(mismatches):
             errormsg = f'Key(s) {mismatches} not found; available keys are {fpp.par_keys}'
