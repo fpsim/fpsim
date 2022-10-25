@@ -1494,14 +1494,27 @@ class Sim(fpb.BaseSim):
         return pp
 
 
-    def to_df(self):
+    def to_df(self, include_range=False):
         '''
         Export all sim results to a dataframe
+        
+        Args:
+            include_range (bool): if True, and if the sim results have best, high, and low, then export all of them; else just best
         '''
         raw_res = sc.odict(defaultdict=list)
         for reskey in self.results.keys():
             res = self.results[reskey]
-            if sc.isarray(res) and len(res) == self.npts:
+            if isinstance(res, dict):
+                for blh,blhres in res.items(): # Best, low, high
+                    if len(blhres) == self.npts:
+                        if not include_range and blh != 'best':
+                            continue
+                        if include_range:
+                            blhkey = f'{reskey}_{blh}'
+                        else:
+                            blhkey = reskey
+                        raw_res[blhkey] += blhres.tolist()
+            elif sc.isarray(res) and len(res) == self.npts:
                 raw_res[reskey] += res.tolist()
         df = pd.DataFrame(raw_res)
         self.df = df
