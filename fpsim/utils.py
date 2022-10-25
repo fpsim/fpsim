@@ -127,7 +127,7 @@ def set_metadata(obj):
     ''' Set standard metadata for an object '''
     obj.created = sc.now()
     obj.version = fpv.__version__
-    obj.git_info = sc.gitinfo()
+    obj.git_info = sc.gitinfo(verbose=False)
     return
 
 

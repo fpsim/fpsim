@@ -945,10 +945,25 @@ def tidy_up(fig, do_show=None, do_save=None, filename=None):
 
 class Sim(fpb.BaseSim):
     '''
-    The Sim class handles the running of the simulation
+    The Sim class handles the running of the simulation: the creation of the
+    population and the dynamics of the epidemic. This class handles the mechanics
+    of the actual simulation, while BaseSim takes care of housekeeping (saving,
+    loading, exporting, etc.). Please see the BaseSim class for additional methods.
+
+    Args:
+        pars     (dict):   parameters to modify from their default values
+        location (str):    name of the location (country) to look for data file to load
+        label    (str):    the name of the simulation (useful to distinguish in batch runs)
+        track_children (bool): whether to track links between mothers and their children (slow, so disabled by default)
+        kwargs   (dict):   additional parameters; passed to ``fp.make_pars()``
+
+    **Examples**::
+
+        sim = fp.Sim()
+        sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Seneagl sim')
     '''
 
-    def __init__(self, pars=None, location=None, label=None, mother_ids=False, **kwargs):
+    def __init__(self, pars=None, location=None, label=None, track_children=False, **kwargs):
         if pars is None:
             pars = fpp.pars(location)
 
@@ -963,7 +978,7 @@ class Sim(fpb.BaseSim):
         self.already_run = False
         self.test_mode   = False
         self.label       = label
-        self.mother_ids  = mother_ids
+        self.track_children  = track_children
         fpu.set_metadata(self) # Set version, date, and git info
         return
 
@@ -1269,7 +1284,7 @@ class Sim(fpb.BaseSim):
             self.people += people
 
             # Update mothers
-            if self.mother_ids:
+            if self.track_children:
                 self.update_mothers()
 
             # Results
@@ -1416,7 +1431,7 @@ class Sim(fpb.BaseSim):
         if self.test_mode:
             self.save_daily_totals()
 
-        if not self.mother_ids:
+        if not self.track_children:
             delattr(self.people, "mothers")
 
         # Convert all results to Numpy arrays
@@ -1444,6 +1459,11 @@ class Sim(fpb.BaseSim):
             print(f'Final population size: {self.n}.')
             elapsed = T.toc(output=True)
             print(f'Run finished for "{self.label}" after {elapsed:0.1f} s')
+        
+        self.summary = sc.objdict()
+        self.summary.births = np.sum(self.results['births'])
+        self.summary.deaths = np.sum(self.results['deaths'])
+        self.summary.final = self.results['pop_size'][-1]
 
         self.already_run = True
 
@@ -1479,14 +1499,27 @@ class Sim(fpb.BaseSim):
         return pp
 
 
-    def to_df(self):
+    def to_df(self, include_range=False):
         '''
         Export all sim results to a dataframe
+        
+        Args:
+            include_range (bool): if True, and if the sim results have best, high, and low, then export all of them; else just best
         '''
         raw_res = sc.odict(defaultdict=list)
         for reskey in self.results.keys():
             res = self.results[reskey]
-            if sc.isarray(res) and len(res) == self.npts:
+            if isinstance(res, dict):
+                for blh,blhres in res.items(): # Best, low, high
+                    if len(blhres) == self.npts:
+                        if not include_range and blh != 'best':
+                            continue
+                        if include_range:
+                            blhkey = f'{reskey}_{blh}'
+                        else:
+                            blhkey = reskey
+                        raw_res[blhkey] += blhres.tolist()
+            elif sc.isarray(res) and len(res) == self.npts:
                 raw_res[reskey] += res.tolist()
         df = pd.DataFrame(raw_res)
         self.df = df
@@ -2042,26 +2075,29 @@ class MultiSim(sc.prettyobj):
         return out
 
 
-    def to_df(self, yearly=False):
+    def to_df(self, yearly=False, mean=False):
         '''
         Export all individual sim results to a dataframe
         '''
-        raw_res = sc.odict(defaultdict=list)
-        for s,sim in enumerate(self.sims):
-            for reskey in sim.results.keys():
-                res = sim.results[reskey]
-                if sc.isarray(res):
-                    if len(res) == sim.npts and not yearly:
-                        raw_res[reskey] += res.tolist()
-                    elif len(res) == len(sim.results['tfr_years']) and yearly:
-                        raw_res[reskey] += res.tolist()
-                
-            scale = len(sim.results['tfr_years']) if yearly else sim.npts
-            raw_res['sim'] += [s]*scale
-            raw_res['sim_label'] += [sim.label]*scale 
-
-        df = pd.DataFrame(raw_res)
-        self.df = df
+        if mean:
+            df = self.base_sim.to_df()
+        else:
+            raw_res = sc.odict(defaultdict=list)
+            for s,sim in enumerate(self.sims):
+                for reskey in sim.results.keys():
+                    res = sim.results[reskey]
+                    if sc.isarray(res):
+                        if len(res) == sim.npts and not yearly:
+                            raw_res[reskey] += res.tolist()
+                        elif len(res) == len(sim.results['tfr_years']) and yearly:
+                            raw_res[reskey] += res.tolist()
+                    
+                scale = len(sim.results['tfr_years']) if yearly else sim.npts
+                raw_res['sim'] += [s]*scale
+                raw_res['sim_label'] += [sim.label]*scale 
+    
+            df = pd.DataFrame(raw_res)
+            self.df = df
         return df
 
 
