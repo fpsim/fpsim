@@ -8,6 +8,7 @@ This repository contains the code for IDM's family planning model, FPsim.
 The structure is as follows:
 
 - FPsim, in the folder ``fpsim``, is a standalone Python library for performing family planning analyses.
+- Within ``fpsim``, the ``locations`` folder contains parameters and input data for all countries currently calibrated.
 - Docs are in the ``docs`` folder.
 - Examples are in the ``examples`` folder.
 - Tests are in the ``tests`` folder.
