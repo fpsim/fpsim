@@ -5,6 +5,22 @@ This repository contains the code for IDM's family planning model, FPsim.
 
 **FPsim is currently under development**.
 
+User Guide
+------------
+FPsim is designed as an open-source tool for family planning research. 
+However, it is not a silver bullet tool. Like all complex models, it is geared to answer
+complex questions about emerging dynamics in complex social and behavioral systems. 
+
+Before using FPsim, please refer to the following guidelines:
+- FPsim is only as good as the data and assumptions provided. Be sure you are familiar with both before using FPsim.
+- FPsim is not a replacement for good data. The model cannot tell you what uptake of a new method will be.
+- FPsim is not a replacement for descriptive statistics. Before using FPsim, assess your primary research question(s). Can they be answered using descriptive statistics? 
+- FPsim cannot predict exogenous events. Use caution when presenting results. We could not have predicted the Tigray conflict or COVID-19, nor their impacts on FP services.
+
+
+Repo Structure
+--------------
+
 The structure is as follows:
 
 - FPsim, in the folder ``fpsim``, is a standalone Python library for performing family planning analyses.
