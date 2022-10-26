@@ -941,6 +941,7 @@ def tidy_up(fig, do_show=None, do_save=None, filename=None):
     else:
         return fig
 
+
 #%% Sim class
 
 class Sim(fpb.BaseSim):
