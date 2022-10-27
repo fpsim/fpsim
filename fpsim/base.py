@@ -24,12 +24,11 @@ class FlexPretty(sc.prettyobj):
 
     def __repr__(self):
         ''' Use brief repr by default '''
-        string = self._brief()
-        # try:
-        #     string = self._brief()
-        # except Exception as E:
-        #     string = sc.objectid(self)
-        #     string += f'Warning, something went wrong printing object:\n{str(E)}'
+        try:
+            string = self._brief()
+        except Exception as E:
+            string = sc.objectid(self)
+            string += f'Warning, something went wrong printing object:\n{str(E)}'
         return string
 
     def _disp(self):
