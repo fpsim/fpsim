@@ -1,0 +1,9 @@
+pytest
+sphinx-rtd-theme
+sphinxcontrib-napoleon
+sphinx
+ipykernel
+nbsphinx
+pandoc
+pypandoc
+optuna

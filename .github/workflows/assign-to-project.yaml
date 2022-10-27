@@ -1,0 +1,17 @@
+name: FPsim auto-assign issue to project
+on:
+  issues:
+    types: [opened]
+
+jobs:
+  createCard:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Create or Update Project Card
+        # exclude PRs
+        if: ${{ !github.event.issue.pull_request }}
+        uses: peter-evans/create-or-update-project-card@v1
+        with:
+          project-name: "FPsim 2022"
+          column-name: "Needs triage"
+          issue-number: ${{ github.event.issue.number }}
