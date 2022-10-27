@@ -9,11 +9,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-Version 0.19.1 (2022-10-21)
+Version 0.19.1 (2022-10-26)
 ---------------------------
-- Updated documentation on README
+- Moved to new repository location (http://github.com/fpsim/fpsim)
+- Updated documentation in README
 - Created new tutorials in tutorials folder
 - Ordered tutorials by complexity through T1, T2, T3... Tn numbering system
+- *GitHub info*: ``1 https://github.com/fpsim/fpsim/pull/1``
 
 
 Version 0.19.0 (2022-09-01)
