@@ -424,25 +424,25 @@ class BaseSim(ParsObj):
         see sim.brief() for the user version.
         '''
         # Try to get a detailed description of the sim...
-        # try:
-        if self.already_run:
-            s = self.summary
-            results = f'b={s.births:n} ☠={s.deaths:n} pop={s.final:n}'
-        else:
-            results = 'not run'
-
-        # Set label string
-        labelstr = f'"{self.label}"' if self.label else '<no label>'
-
-        start = self['start_year']
-        end = self['end_year']
-        n_agents = self['n_agents']
-        string   = f'Sim({labelstr}; n={n_agents:n}; {start}-{end}; results: {results})'
+        try:
+            if self.already_run:
+                s = self.summary
+                results = f'b={s.births:n} ☠={s.deaths:n} pop={s.final:n}'
+            else:
+                results = 'not run'
+    
+            # Set label string
+            labelstr = f'"{self.label}"' if self.label else '<no label>'
+    
+            start = self['start_year']
+            end = self['end_year']
+            n_agents = self['n_agents']
+            string   = f'Sim({labelstr}; n={n_agents:n}; {start}-{end}; results: {results})'
 
         # ...but if anything goes wrong, return the default with a warning
-        # except Exception as E: # pragma: no cover
-        #     string = sc.objectid(self)
-        #     string += f'Warning, sim appears to be malformed; use sim.disp() for details:\n{str(E)}'
+        except Exception as E: # pragma: no cover
+            string = sc.objectid(self)
+            string += f'Warning, sim appears to be malformed; use sim.disp() for details:\n{str(E)}'
 
         return string
 
