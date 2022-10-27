@@ -1,7 +1,7 @@
-Family planning model and analyses
-==================================
+FPsim: Family Planning Simulator
+================================
 
-This repository contains the code for IDM's family planning model, FPsim. 
+This repository contains the code for the Institute for Disease Modeling's family planning simulator, FPsim. 
 
 **FPsim is currently under development**.
 
@@ -17,13 +17,13 @@ The structure is as follows:
 Installation
 ------------
 
-Run ``pip install -e .`` to install ``fpsim`` and its dependencies. This will make ``fpsim`` available on the Python path.
+Run ``pip install fpsim`` to install and its dependencies from PyPI. Alternatively, clone the repository and run ``pip install -e .`` (including the final dot!).
 
 
 Documentation
 -------------
 
-Documentation is available at https://docs.idmod.org/projects/fpsim/en/latest/.
+Documentation is available at https://docs.fpsim.org.
 
 
 Contributing
