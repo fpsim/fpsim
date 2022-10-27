@@ -15,7 +15,7 @@ Version 0.19.1 (2022-10-26)
 - Updated documentation in README
 - Created new tutorials in tutorials folder
 - Ordered tutorials by complexity through T1, T2, T3... Tn numbering system
-- *GitHub info*: ``1 https://github.com/fpsim/fpsim/pull/1``
+- *GitHub info*: PR `1 <https://github.com/fpsim/fpsim/pull/1>`_
 
 
 Version 0.19.0 (2022-09-01)
@@ -23,83 +23,83 @@ Version 0.19.0 (2022-09-01)
 - Added age-specific plotting for tfr, pregnancies, imr, mmr, stillbirths, and births to Sim, MultiSim, and Scenarios
 - Added ability to plot channels by age over the course of an interval of time (one year, for example)
 - Added yearly age-specific plotting for pregnancies, imr and mmr
-- *GitHub info*: ``590 https://github.com/amath-idm/fpsim/pull/590``
+- *GitHub info*: PR `590 <https://github.com/amath-idm/fpsim/pull/590>`_
 
 
 Version 0.18.2 (2022-08-12)
 ---------------------------
 - Added age specific plotting for cpr, mcpr, and acpr to Sim, MultiSim, and Scenarios
-- *GitHub info*: ``584 https://github.com/amath-idm/fpsim/pull/584``
+- *GitHub info*: PR `584 <https://github.com/amath-idm/fpsim/pull/584>`_
 
 
 Version 0.18.1 (2022-08-08)
 ---------------------------
 - Added y-axis scaling to Sim.plot and MultiSim.plot()
-- *GitHub info*: ``583 https://github.com/amath-idm/fpsim/pull/583``
+- *GitHub info*: PR `583 <https://github.com/amath-idm/fpsim/pull/583>`_
 
 
 Version 0.18.0 (2022-08-01)
 ---------------------------
 - Adjusted stillbirth rates from Nori et al., which was conducted June 2022
-- *GitHub info*: ``560 https://github.com/amath-idm/fpsim/pull/560``
+- *GitHub info*: PR `560 <https://github.com/amath-idm/fpsim/pull/560>`_
 
 
 Version 0.17.5 (2022-07-28)
 ---------------------------
 - Refactored ExperimentVerbose and verbose_sim and related parts of test suite
-- *GitHub info*: ``471 https://github.com/amath-idm/fpsim/pull/471``
+- *GitHub info*: PR `471 <https://github.com/amath-idm/fpsim/pull/471>`_
 
 
 Version 0.17.4 (2022-07-27)
 ---------------------------
 - Added new test suite for the Scenarios API
-- *GitHub info*: ``527 https://github.com/amath-idm/fpsim/pull/527``
+- *GitHub info*: PR `527 <https://github.com/amath-idm/fpsim/pull/527>`_
 
 
 Version 0.17.3 (2022-07-18)
 ---------------------------
 - Added tutorial jupyter notebook to showcase Scenarios features
-- *GitHub info*: ``484 https://github.com/amath-idm/fpsim/pull/484``
+- *GitHub info*: PR `484 <https://github.com/amath-idm/fpsim/pull/484>`_
 
 
 Version 0.17.2 (2022-07-15)
 ---------------------------
 - Switched method mix plotting from line chart to stacked area chart for all classes
-- *GitHub info*: ``568 https://github.com/amath-idm/fpsim/pull/568``
+- *GitHub info*: PR `568 <https://github.com/amath-idm/fpsim/pull/568>`_
 
 
 Version 0.17.1 (2022-07-14)
 ---------------------------
 - Added example_scens.py for a quick debug of adding a novel method when developing new features
 - Updated README with new debugging guidance
-- GitHub info*: ``570 https://github.com/amath-idm/fpsim/pull/570``
+- GitHub info*: PR `570 <https://github.com/amath-idm/fpsim/pull/570>`_
 
 
 Version 0.17.0 (2022-07-08)
 ---------------------------
 - Added method mix timeseries plotting to Sim, MultiSim, and Scenarios through plot(to_plot='method')
 - Added some test coverage for method mix plotting
-- *GitHub info*: ``554 https://github.com/amath-idm/fpsim/pull/554``
+- *GitHub info*: PR `554 <https://github.com/amath-idm/fpsim/pull/554>`_
 
 
 Version 0.16.2 (2022-07-01)
 ---------------------------
 - Refactors channel aggregation in Scenarios.analyze_sims()
-- *GitHub info*: ``561 https://github.com/amath-idm/fpsim/pull/561``
+- *GitHub info*: PR `561 <https://github.com/amath-idm/fpsim/pull/561>`_
 
 
 Version 0.16.1 (2022-06-30)
 ---------------------------
 - Add tracking of pregnancies
 - Add cumulative sum of pregnancies to plotting functionality (see plot('apo'))
-- *GitHub info*: ``555 https://github.com/amath-idm/fpsim/pull/555``
+- *GitHub info*: PR `555 <https://github.com/amath-idm/fpsim/pull/555>`_
 
 
 Version 0.16.0 (2022-06-28)
 ---------------------------
 - Split matrix age category >25 into 26-35 and >35 
 - Baseline contraceptive behavior remains the same, but interventions can differentiate now
-- *GitHub info*: ``551 https://github.com/amath-idm/fpsim/pull/551``
+- *GitHub info*: PR `551 <https://github.com/amath-idm/fpsim/pull/551>`_
 
 
 Version 0.15.0 (2022-06-13)
@@ -109,7 +109,7 @@ Version 0.15.0 (2022-06-13)
 - Added ``stillbirths_over_year`` to keys, tracking, and plotting
 - Added tracking of miscarriage, abortion, corresponding keys and plotting
 - Temporarily commented out plot_interventions in ``sim.py`` to fix x-axis and vline issues in plotting
-- *GitHub info*: PR ``549 <https://github.com/amath-idm/fpsim/pull/549>``
+- *GitHub info*: PR `549 <https://github.com/amath-idm/fpsim/pull/549>`_
 
 
 Version 0.14.2 (2022-06-06)
@@ -129,13 +129,13 @@ Version 0.14.2 (2022-05-31)
 - Fixed bug with interventions not plotting with simulations.
 - Fixed bug with ``finalize()`` not being called for interventions.
 - Increased code coverage of tests from 67% to 80%.
-- *GitHub info*: PR `533 <https://github.com/amath-idm/fp_analyses/pull/533>`__
+- *GitHub info*: PR `533 <https://github.com/amath-idm/fp_analyses/pull/533>`_
 
 
 Version 0.14.1 (2022-05-27)
 ---------------------------
 - Fixed bugs in how ``copy_from`` is implemented in scenarios.
-- *GitHub info*: PR `526 <https://github.com/amath-idm/fp_analyses/pull/526>`__
+- *GitHub info*: PR `526 <https://github.com/amath-idm/fp_analyses/pull/526>`_
 
 
 Version 0.14.0 (2022-05-26)
