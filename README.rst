@@ -1,7 +1,7 @@
-Family planning model and analyses
-==================================
+FPsim: Family Planning Simulator
+================================
 
-This repository contains the code for IDM's family planning model, FPsim. 
+This repository contains the code for the Institute for Disease Modeling's family planning simulator, FPsim. 
 
 **FPsim is currently under development**.
 
@@ -26,6 +26,7 @@ Repo Structure
 The structure is as follows:
 
 - FPsim, in the folder ``fpsim``, is a standalone Python library for performing family planning analyses.
+- Within ``fpsim``, the ``locations`` folder contains parameters and input data for all countries currently calibrated.
 - Docs are in the ``docs`` folder.
 - Examples are in the ``examples`` folder.
 - Tests are in the ``tests`` folder.
@@ -34,13 +35,13 @@ The structure is as follows:
 Installation
 ------------
 
-Run ``pip install -e .`` to install ``fpsim`` and its dependencies. This will make ``fpsim`` available on the Python path.
+Run ``pip install fpsim`` to install and its dependencies from PyPI. Alternatively, clone the repository and run ``pip install -e .`` (including the final dot!).
 
 
 Documentation
 -------------
 
-Documentation is available at https://docs.idmod.org/projects/fpsim/en/latest/.
+Documentation is available at https://docs.fpsim.org.
 
 
 Contributing
@@ -69,7 +70,6 @@ Please follow the starsim style guide at: https://github.com/amath-idm/styleguid
    - @cliffckerr to ensure new feature performance and compatibility with FPsim
    - @mzimmermann-IDM for subject matter expertise, economic and empowerment questions, questions about modeling best practices
    - @avictorious for questions about historical FPsim decisions and subject matter expertise
-   - @SBuxton-IDM for embedded engineer support, public repo tasks, and testing
 
 * Keep PRs as small as possible: e.g., one issue, one PR. Small PRs are easier to review and merge. 
 * At times there may be a backlog of issues, but there should never be a big backlog of PRs. (If you're unsure whether to make a PR, write a detailed issue first.)
@@ -78,7 +78,7 @@ Please follow the starsim style guide at: https://github.com/amath-idm/styleguid
    - Take a look at the issue priority. The PR addressing the higher priority issue should merge first. Make sure you pull the new master after that merge before you push changes for your PR. If both issues are high priority, the one with more time-sensitive commits should be merged first. If you're unsure, ask. 
 
 * If we do have a backlog of PRs, it's fine to make a new branch off your current PR, and make a new PR from that. These "cumulative PRs are not ideal, but they are better than creating merge conflicts with yourself!
-* Before starting work, always ensure you've pulled from master. If you spend more than a few days on your PR, make sure you pull from master regularly. Before making a PR, ensure that your branch is up to date with master.\
+* Before starting work, always ensure you've pulled from master. If you spend more than a few days on your PR, make sure you pull from master regularly. Before making a PR, ensure that your branch is up to date with master.
 * Please create a draft PR on an active branch as soon as you're ready. Be generous in creating draft PRs. It helps with transparency and allows for quicker support if you run into a problem.
 * Make sure tests pass on your PR. If they don't, mark the PR as draft until they do.
 * Even if your work isn't ready for a PR, push it regularly. A guiding principle is to commit every few minutes and push to your branch every 1-2 hours.

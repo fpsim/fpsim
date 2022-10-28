@@ -6,10 +6,13 @@
 In addition, the repository contains scripts for analyzing model output and tests for testing functionality.
 
 
+Full contents
+=============
+
 .. toctree::
-   :maxdepth: 3
-   :titlesonly:
+   :maxdepth: 4
 
    overview
+   tutorials
    whatsnew
    modules

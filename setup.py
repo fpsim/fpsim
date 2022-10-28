@@ -39,9 +39,9 @@ setup(
     install_requires=[
         'numpy',
         'numba',
-        'scipy<1.9.0',
+        'scipy',
         'pandas>=1.3', 
-        'sciris>=1.2.1',
+        'sciris>=2.0.3',
         'matplotlib>=3.5.0',
         'seaborn>=0.9',
         'optuna',

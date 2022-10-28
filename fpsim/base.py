@@ -426,16 +426,14 @@ class BaseSim(ParsObj):
         # Try to get a detailed description of the sim...
         try:
             if self.already_run:
-                births = np.sum(self.results['births'])
-                deaths = np.sum(self.results['deaths'])
-                final = self.results['pop_size'][-1]
-                results = f'b={births:n} ☠={deaths:n} pop={final:n}'
+                s = self.summary
+                results = f'b={s.births:n} ☠={s.deaths:n} pop={s.final:n}'
             else:
                 results = 'not run'
-
+    
             # Set label string
             labelstr = f'"{self.label}"' if self.label else '<no label>'
-
+    
             start = self['start_year']
             end = self['end_year']
             n_agents = self['n_agents']
