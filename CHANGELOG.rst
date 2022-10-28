@@ -9,6 +9,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.19.2 (2022-10-28)
+---------------------------
+- Added user guide
+- *GitHub info*: PR `1 <https://github.com/fpsim/fpsim/pull/1>`_
+
+
 Version 0.19.1 (2022-10-26)
 ---------------------------
 - Moved to new repository location (http://github.com/fpsim/fpsim)
