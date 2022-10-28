@@ -12,7 +12,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 Version 0.19.2 (2022-10-28)
 ---------------------------
 - Added user guide
-- *GitHub info*: PR `1 <https://github.com/fpsim/fpsim/pull/1>`_
+- *GitHub info*: PR `4 <https://github.com/fpsim/fpsim/pull/4>`_
 
 
 Version 0.19.1 (2022-10-26)

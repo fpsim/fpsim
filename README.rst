@@ -17,7 +17,7 @@ Before using FPsim, please refer to the following guidelines:
  * FPsim is only as good as the data and assumptions provided. Be sure you are familiar with both before using FPsim.
  * FPsim is not a replacement for good data. The model cannot tell you what demand for a hypothetical method will be.
  * FPsim is not a replacement for descriptive statistics. Before using FPsim, assess your primary research question(s). Can they be answered using descriptive statistics? 
- * FPsim cannot predict exogenous events. Use caution when interpreting and presenting results. We cannot predict regional conflicts or pandemics, nor their impacts on FP services.
+ * FPsim cannot predict exogenous events. Use caution when interpreting and presenting results. For example, FPsim cannot predict regional conflicts or pandemics, nor their impacts on FP services.
 
 
 Repo Structure
