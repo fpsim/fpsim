@@ -5,8 +5,10 @@ import math
 # v525 - age at first sexual intercourse
 # v531 - age at first sex (imputed with age at first union)
 
+data_file = 'KEIR72FL.DTA'
+
 # Need raw.dta DHS data file here. Using Senegal DHS 2019.
-dhs = pd.read_stata('KEIR72FL.DTA', convert_categoricals = False)  # Substitue your country's DHS data file here
+dhs = pd.read_stata(data_file, convert_categoricals = False)  # Substitue your country's DHS data file here
 dhs['wgt'] = dhs['v005']/1000000
 
 dhs_debut = dhs[(dhs['v531'] != 0) & (dhs['v531'] < 50) & (dhs['v531'] >= 10)]
