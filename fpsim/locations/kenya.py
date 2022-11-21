@@ -388,7 +388,7 @@ def sexual_activity():
     '''
 
     sexually_active = np.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
-                                [0, 0, 0, 50.4, 55.9, 57.3, 60.8, 66.4, 67.5, 68.2, 68.2]])
+                                [0, 0, 0, 31.4, 55.0, 64.4, 69.6, 65.3, 60.7, 57.4, 57.4]])
 
     sexually_active[1] /= 100  # Convert from percent to rate per woman
     activity_ages = sexually_active[0]
