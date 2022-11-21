@@ -3,6 +3,9 @@ Calculate age-dependent mortality rates. From WPP 2022, Kenya, 2010.
 https://population.un.org/wpp/Download/Standard/Mortality/
 WPP2022_MORT_F04_3_LIFE_TABLE_SURVIVORS_MALE.xlsx
 WPP2022_MORT_F04_3_LIFE_TABLE_SURVIVORS_FEMALE.xlsx
+
+Used CSV WPP2022_Life_Table_Complete_Medium_Female_1950-2021, Kenya, 2010
+Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Kenya, 2010
 '''
 
 import pylab as pl
