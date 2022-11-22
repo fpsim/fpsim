@@ -605,9 +605,9 @@ def methods():
     }
 
     # Data on trend in MCPR in Senegal over time, in % # CK: TODO: find source
-    methods['mcpr_years'] = np.array(
+    methods['cpr_years'] = np.array(
         [1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
-    methods['mcpr_rates'] = np.array(
+    methods['cpr_rates'] = np.array(
         [0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20, 20.4]) / 100
 
     return methods
