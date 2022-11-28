@@ -155,47 +155,45 @@ def age_mortality():
 
 def maternal_mortality():
     '''
-    Risk of maternal death assessed at each pregnancy. Data from Huchon et al. (2013) prospective study on risk of maternal death in Senegal and Mali.
-    Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
-    or its management (excluding accidental or incidental causes) during pregnancy and childbirth or within
-    42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
-    expressed per 100,000 live births, for a specified time period.
+    From World Bank indicators for maternal mortality ratio (modeled estimate) per 100,000 live births:
+    https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
     '''
 
     data = np.array([
-        [1990, 0.00278, 0.00319, 0.00364],
-        [2000, 0.00268, 0.00309, 0.00354],
-        [2001, 0.00263, 0.00304, 0.00350],
-        [2002, 0.00259, 0.00300, 0.00346],
-        [2003, 0.00255, 0.00296, 0.00341],
-        [2004, 0.00252, 0.00293, 0.00338],
-        [2005, 0.00249, 0.00290, 0.00335],
-        [2006, 0.00245, 0.00286, 0.00331],
-        [2007, 0.00242, 0.00283, 0.00329],
-        [2008, 0.00237, 0.00278, 0.00323],
-        [2009, 0.00230, 0.00271, 0.00317],
-        [2010, 0.00220, 0.00261, 0.00306],
-        [2011, 0.00207, 0.00248, 0.00293],
-        [2012, 0.00194, 0.00235, 0.00280],
-        [2013, 0.00182, 0.002228327, 0.00268338],
-        [2014, 0.00172, 0.00213, 0.00258],
-        [2015, 0.00161, 0.00202, 0.00248],
-        [2016, 0.00152, 0.00193, 0.00239],
-        [2017, 0.00143, 0.00184, 0.00230],
-        [2018, 0.00135, 0.00176, 0.00222],
-        [2019, 0.00128, 0.00169, 0.00214]
+        [2000, 708],
+        [2001, 702],
+        [2002, 692],
+        [2003, 678],
+        [2004, 653],
+        [2005, 618],
+        [2006, 583],
+        [2007, 545],
+        [2008, 513],
+        [2009, 472],
+        [2010, 432],
+        [2011, 398],
+        [2012, 373],
+        [2013, 364],
+        [2014, 358],
+        [2015, 353],
+        [2016, 346],
+        [2017, 342],
+
     ])
 
     maternal_mortality = {}
     maternal_mortality['year'] = data[:, 0]
     maternal_mortality['probs'] = data[:, 3]
+    maternal_mortality['probs'] = data[:, 1] / 100000  # ratio per 100,000 live births
+    # maternal_mortality['ages'] = np.array([16, 17,   19, 22,   25, 50])
+    # maternal_mortality['age_probs'] = np.array([2.28, 1.63, 1.3, 1.12, 1.0, 1.0]) #need to be added
 
     return maternal_mortality
 
 
 def infant_mortality():
     '''
-    From World Bank indicators for infant morality (< 1 year) for Kenya, per 1000 live births
+    From World Bank indicators for infant mortality (< 1 year) for Kenya, per 1000 live births
     From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
     Adolescent increased risk of infant mortality gradient taken
     from Noori et al for Sub-Saharan African from 2014-2018.  Odds ratios with age 23-25 as reference group:
