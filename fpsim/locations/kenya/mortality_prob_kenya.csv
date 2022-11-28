@@ -1,4 +1,4 @@
-age	prob_male	prob_female
+age	prob_male	prob_female  from un world pop, probs of dying - starts at age 1, NOT 0
 1	0.00751166	0.00697154
 2	0.00489856	0.00429569
 3	0.0033784	0.00288089
