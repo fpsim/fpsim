@@ -3,6 +3,7 @@ Set the parameters for FPsim, specifically for Kenya.
 '''
 
 import numpy as np
+import pandas as pd
 import sciris as sc
 from scipy import interpolate as si
 from fpsim import defaults as fpd
@@ -115,19 +116,20 @@ def age_pyramid():
 
 def age_mortality():
     '''
-    Age-dependent mortality rates, Senegal specific from 1990-1995 -- see age_dependent_mortality.py in the fp_analyses repository
+    Age-dependent mortality rates taken from UN World Population Prospects 2022.  From probability of dying each year.
+    https://population.un.org/wpp/
+    Used CSV WPP2022_Life_Table_Complete_Medium_Female_1950-2021, Kenya, 2010
+    Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Kenya, 2010
     Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
     '''
+    mortality_data = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/mortality_prob_kenya.csv', header=None)
+
+    print(mortality_data)
+
     mortality = {
-        'bins': np.array([0., 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
-        'm': np.array(
-            [0.03075891, 0.00266326, 0.00164035, 0.00247776, 0.00376541, 0.00377009, 0.00433534, 0.00501743, 0.00656144,
-             0.00862479, 0.01224844, 0.01757291, 0.02655129, 0.0403916, 0.06604032, 0.10924413, 0.17495116, 0.26531436,
-             0.36505174, 0.43979833]),
-        'f': np.array(
-            [0.02768283, 0.00262118, 0.00161414, 0.0023998, 0.00311697, 0.00354105, 0.00376715, 0.00429043, 0.00503436,
-             0.00602394, 0.00840777, 0.01193858, 0.01954465, 0.03220238, 0.05614077, 0.0957751, 0.15973906, 0.24231313,
-             0.33755308, 0.41632442])
+        'ages': mortality_data.iloc[1:,0].to_numpy(),
+        'm': mortality_data.iloc[1:,1].to_numpy(),
+        'f': mortality_data.iloc[1:,2].to_numpy()
     }
 
     mortality['year'] = np.array(
@@ -138,9 +140,9 @@ def age_mortality():
          5.7])  # First 2 estimated, last 3 are projected
     mortality['probs'] /= mortality['probs'][8]  # Normalize around 2000 for trending # CK: TODO: shouldn't be hardcoded
 
-    m_mortality_spline_model = si.splrep(x=mortality['bins'],
+    m_mortality_spline_model = si.splrep(x=mortality['ages'],
                                          y=mortality['m'])  # Create a spline of mortality along known age bins
-    f_mortality_spline_model = si.splrep(x=mortality['bins'], y=mortality['f'])
+    f_mortality_spline_model = si.splrep(x=mortality['ages'], y=mortality['f'])
     m_mortality_spline = si.splev(fpd.spline_ages,
                                   m_mortality_spline_model)  # Evaluate the spline along the range of ages in the model with resolution
     f_mortality_spline = si.splev(fpd.spline_ages, f_mortality_spline_model)
