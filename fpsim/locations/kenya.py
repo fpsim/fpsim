@@ -763,14 +763,14 @@ def method_probs():
 
 
 def barriers():
-    ''' Reasons for nonuse -- taken from DHS '''
+    ''' Reasons for nonuse -- taken from Kenya DHS 2014. '''
 
     barriers = sc.odict({
-        'No need': 54.2,
-        'Opposition': 30.5,
-        'Knowledge': 1.7,
-        'Access': 4.5,
-        'Health': 12.9,
+        'No need': 40.3,
+        'Opposition': 22.7,
+        'Knowledge': 3.5,
+        'Access': 13.4,
+        'Health': 32.5,
     })
 
     barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
