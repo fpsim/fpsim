@@ -1,4 +1,4 @@
-age	prob_male	prob_female  from un world pop, probs of dying - starts at age 1, NOT 0
+age	male	female	data from un world pop prospects 2022
 1	0.00751166	0.00697154
 2	0.00489856	0.00429569
 3	0.0033784	0.00288089
@@ -97,4 +97,4 @@ age	prob_male	prob_female  from un world pop, probs of dying - starts at age 1, 
 96	0.30062275	0.25497772
 97	0.31580726	0.26840304
 98	0.33043675	0.28105562
-99	0.34773084	0.29865684
+99	0.34773084	0.29865684	
