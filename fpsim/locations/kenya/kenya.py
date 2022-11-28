@@ -122,14 +122,12 @@ def age_mortality():
     Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Kenya, 2010
     Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
     '''
-    mortality_data = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/mortality_prob_kenya.csv', header=None)
-
-    print(mortality_data)
+    mortality_data = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/mortality_prob_kenya.csv')
 
     mortality = {
-        'ages': mortality_data.iloc[1:,0].to_numpy(),
-        'm': mortality_data.iloc[1:,1].to_numpy(),
-        'f': mortality_data.iloc[1:,2].to_numpy()
+        'ages': mortality_data['age'].to_numpy(),
+        'm': mortality_data['male'].to_numpy(),
+        'f': mortality_data['female'].to_numpy()
     }
 
     mortality['year'] = np.array(
@@ -603,13 +601,13 @@ def methods():
         '>35': [35, fpd.max_age + 1],  # +1 since we're using < rather than <=
     }
 
+
     # Data on trend in CPR over time in from Kenya, in %.
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
-    methods['mcpr_years'] = np.array(
-        [1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
-    methods['mcpr_rates'] = np.array(
-        [0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20, 20.4]) / 100
+    cpr_data = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/kenya_cpr.csv')
+    methods['mcpr_years'] = cpr_data['year'].to_numpy()
+    methods['mcpr_rates'] = cpr_data['cpr'].to_numpy()
 
     return methods
 
