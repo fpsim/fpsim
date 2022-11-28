@@ -5,7 +5,7 @@ Set the parameters for FPsim, specifically for Kenya.
 import numpy as np
 import sciris as sc
 from scipy import interpolate as si
-from .. import defaults as fpd
+from fpsim import defaults as fpd
 
 
 # %% Housekeeping
@@ -183,7 +183,6 @@ def maternal_mortality():
 
     maternal_mortality = {}
     maternal_mortality['year'] = data[:, 0]
-    maternal_mortality['probs'] = data[:, 3]
     maternal_mortality['probs'] = data[:, 1] / 100000  # ratio per 100,000 live births
     # maternal_mortality['ages'] = np.array([16, 17,   19, 22,   25, 50])
     # maternal_mortality['age_probs'] = np.array([2.28, 1.63, 1.3, 1.12, 1.0, 1.0]) #need to be added
@@ -532,19 +531,19 @@ def birth_spacing_pref():
     NOTE: spacing bins must be uniform!
     '''
     postpartum_spacing = np.array([
-        [0, 1.0],
-        [3, 1.0],
-        [6, 1.0],
-        [9, 1.0],
-        [12, 1.0],
-        [15, 1.0],
-        [18, 1.0],
-        [21, 1.0],
-        [24, 1.0],
-        [27, 1.0],
-        [30, 1.0],
-        [33, 1.0],
-        [36, 1.0],
+        [0, 0.5],
+        [3, 0.5],
+        [6, 0.5],
+        [9, 0.5],
+        [12, 0.8],
+        [15, 1.2],
+        [18, 5.0],
+        [21, 5.0],
+        [24, 9.0],
+        [27, 9.0],
+        [30, 9.0],
+        [33, 9.0],
+        [36, 5.0],
     ])
 
     # Calculate the intervals and check they're all the same
@@ -602,10 +601,12 @@ def methods():
         '>35': [35, fpd.max_age + 1],  # +1 since we're using < rather than <=
     }
 
-    # Data on trend in MCPR in Senegal over time, in % # CK: TODO: find source
-    methods['cpr_years'] = np.array(
+    # Data on trend in CPR over time in from Kenya, in %.
+    # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+    # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
+    methods['mcpr_years'] = np.array(
         [1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
-    methods['cpr_rates'] = np.array(
+    methods['mcpr_rates'] = np.array(
         [0.50, 1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8, 19, 20, 20.4]) / 100
 
     return methods
