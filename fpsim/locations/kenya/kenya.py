@@ -120,9 +120,12 @@ def age_mortality():
     https://population.un.org/wpp/
     Used CSV WPP2022_Life_Table_Complete_Medium_Female_1950-2021, Kenya, 2010
     Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Kenya, 2010
-    Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
+    Mortality rate trend from crude death rate per 1000 people, also from UN Data Portal:
+    https://population.un.org/dataportal/data/indicators/59/locations/404/start/1950/end/2030/table/pivotbylocation
     '''
+    data_year = 2010
     mortality_data = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/mortality_prob_kenya.csv')
+    mortality_trend = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/mortality_trend_kenya.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -130,14 +133,12 @@ def age_mortality():
         'f': mortality_data['female'].to_numpy()
     }
 
-    mortality['year'] = np.array(
-        [1950., 1955, 1960, 1965, 1970, 1975, 1980, 1985, 1990, 1995, 2000, 2005, 2010, 2015, 2020, 2025,
-         2030])  # Starting year bin
-    mortality['probs'] = np.array(
-        [28, 27, 26.023, 25.605, 24.687, 20.995, 16.9, 13.531, 11.335, 11.11, 10.752, 9.137, 7.305, 6.141, 5.7, 5.7,
-         5.7])  # First 2 estimated, last 3 are projected
-    mortality['probs'] /= mortality['probs'][8]  # Normalize around 2000 for trending # CK: TODO: shouldn't be hardcoded
+    mortality['year'] = mortality_trend['year'].to_numpy()
+    mortality['probs'] = mortality_trend['crude_death_rate'].to_numpy()
+    trend_ind = np.where(mortality['year']==data_year)
+    trend_val = mortality['probs'][trend_ind]
 
+    mortality['probs'] /= trend_val  # Normalize around data year for trending
     m_mortality_spline_model = si.splrep(x=mortality['ages'],
                                          y=mortality['m'])  # Create a spline of mortality along known age bins
     f_mortality_spline_model = si.splrep(x=mortality['ages'], y=mortality['f'])
