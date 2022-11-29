@@ -603,7 +603,7 @@ def methods():
     }
 
 
-    # Data on trend in CPR over time in from Kenya, in %.
+    # Data on trend in CPR over time in from Kenya, in %. Okay to leave as % as they become ratios to adjust likelihood of non-use in matrices
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
     cpr_data = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/kenya_cpr.csv')
