@@ -454,7 +454,7 @@ def debut_age():
     '''
     Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
     Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
-    Use sexual_debut_age_probs.py under fp_analyses/data to output for other DHS countries
+    Use sexual_debut_age_probs.py under locations/data_processing to output for other DHS countries
     '''
 
     sexual_debut = np.array([
