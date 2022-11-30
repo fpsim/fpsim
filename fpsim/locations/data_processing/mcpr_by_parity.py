@@ -2,7 +2,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 
 do_plot = 1
-data_file = 'KEIR72FL.DTA'  # Need raw .dta DHS data file here. Using Kenya DHS 2014.
+# Data files must be raw individual recode DHS data (available for request at dhsprogram.com), in STATA format (.dta).
+# For example, Kenya's 2014 DHS data would be 'KEIR72FL.DTA'
+data_file = 'Your file here'
 
 # Read in DHS data
 dhs = pd.read_stata(data_file, convert_categoricals = False)
