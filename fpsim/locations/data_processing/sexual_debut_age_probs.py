@@ -5,7 +5,9 @@ import math
 # v525 - age at first sexual intercourse
 # v531 - age at first sex (imputed with age at first union)
 
-data_file = 'KEIR72FL.DTA'
+# Data files must be raw individual recode DHS data (available for request at dhsprogram.com), in STATA format (.dta).
+# For example, Kenya's 2014 DHS data would be 'KEIR72FL.DTA'
+data_file = 'Your file here'
 
 # Need raw.dta DHS data file here. Using Senegal DHS 2019.
 dhs = pd.read_stata(data_file, convert_categoricals = False)  # Substitue your country's DHS data file here
