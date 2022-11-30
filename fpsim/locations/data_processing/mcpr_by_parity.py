@@ -74,13 +74,13 @@ if do_plot:
 
     ax.set_ylabel('mCPR - %')
     ax.set_xlabel('Parity')
-    ax.set_title('mCPR by parity in DHS data') # change title to reflect DHS country and year being used 
+    ax.set_title('mCPR by parity in DHS data') # change title to reflect DHS country and year being used
     ax.set_xticks(ind + width / 2)
     ax.set_xticklabels( ('0', '1', '2', '3', '4', '5', '6', '7+'))
 
     ax.legend(loc = 'upper left')
 
-    plt.savefig('kenya_mcpr_parity.png')
+    plt.savefig('Insert file name here') #eg: kenya_mcpr_parity.png
 
 
 
