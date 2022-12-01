@@ -542,7 +542,7 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
         kwargs.setdefault('end_year', 2010)
 
     # Define valid locations
-    if location in ['senegal', 'default']:
+    if location in ['senegal', 'kenya', 'default']:
         pars = fplocs.senegal.make_pars()
 
     # Else, error
