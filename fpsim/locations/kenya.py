@@ -606,13 +606,13 @@ def methods():
     }
 
 
-    # Data on trend in CPR over time in from Kenya, in %. Okay to leave as % as they become ratios to adjust likelihood of non-use in matrices
+    # Data on trend in CPR over time in from Kenya, in %.
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     cpr_data = pd.read_csv(thisdir / 'kenya' / 'kenya_cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
-    methods['mcpr_rates'] = cpr_data['cpr'].to_numpy()
+    methods['mcpr_rates'] = cpr_data['cpr'].to_numpy()/100
 
     return methods
 
