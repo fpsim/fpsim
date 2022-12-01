@@ -125,8 +125,8 @@ def age_mortality():
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
     data_year = 2010
-    mortality_data = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/mortality_prob_kenya.csv')
-    mortality_trend = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/mortality_trend_kenya.csv')
+    mortality_data = pd.read_csv('/fpsim/locations/kenya/mortality_prob_kenya.csv')
+    mortality_trend = pd.read_csv('/fpsim/locations/kenya/mortality_trend_kenya.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -608,7 +608,7 @@ def methods():
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/kenya_cpr.csv')
+    cpr_data = pd.read_csv('/fpsim/locations/kenya/kenya_cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy()
 
