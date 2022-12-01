@@ -9,7 +9,7 @@ import math
 # For example, Kenya's 2014 DHS data would be 'KEIR72FL.DTA'
 data_file = 'Your file here'
 
-# Need raw.dta DHS data file here. 
+# Need raw.dta DHS data file here.
 dhs = pd.read_stata(data_file, convert_categoricals = False)  # Substitue your country's DHS data file here
 dhs['wgt'] = dhs['v005']/1000000
 
