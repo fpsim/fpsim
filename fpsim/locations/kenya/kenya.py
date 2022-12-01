@@ -120,8 +120,9 @@ def age_mortality():
     https://population.un.org/wpp/
     Used CSV WPP2022_Life_Table_Complete_Medium_Female_1950-2021, Kenya, 2010
     Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Kenya, 2010
-    Mortality rate trend from crude death rate per 1000 people, also from UN Data Portal:
+    Mortality rate trend from crude death rate per 1000 people, also from UN Data Portal, 1950-2030:
     https://population.un.org/dataportal/data/indicators/59/locations/404/start/1950/end/2030/table/pivotbylocation
+    Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
     data_year = 2010
     mortality_data = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/mortality_prob_kenya.csv')
@@ -606,6 +607,7 @@ def methods():
     # Data on trend in CPR over time in from Kenya, in %. Okay to leave as % as they become ratios to adjust likelihood of non-use in matrices
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
+    # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     cpr_data = pd.read_csv('/Users/Annie/Documents/GitHub/fpsim/fpsim/locations/kenya/kenya_cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy()
