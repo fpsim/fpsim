@@ -71,7 +71,7 @@ def data2interp(data, ages, normalize=False):
         interp = np.minimum(1, np.maximum(0, interp))
     return interp
 
-
+# TODO- these need to be changed for Kenya calibration
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
