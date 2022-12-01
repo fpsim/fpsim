@@ -9,6 +9,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 0.19.3 (2022-11-30)
+---------------------------
+- Builds out new parameters file for Kenya
+- Adds and reorganizes directories for external data files and data processing scripts
+
+
 Version 0.19.2 (2022-10-28)
 ---------------------------
 - Added user guide

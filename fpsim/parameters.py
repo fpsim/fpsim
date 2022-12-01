@@ -533,6 +533,8 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     if not location:
         location = 'default'
 
+    location = location.lower() # Ensure it's lowercase
+
     # Set test parameters
     if location == 'test':
         location = 'default'
@@ -544,6 +546,8 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     # Define valid locations
     if location in ['senegal', 'default']:
         pars = fplocs.senegal.make_pars()
+    elif location == 'kenya':
+        pars = fplocs.kenya.make_pars()
 
     # Else, error
     else:
