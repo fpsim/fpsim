@@ -612,7 +612,7 @@ def methods():
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     cpr_data = pd.read_csv(thisdir / 'kenya' / 'kenya_cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
-    methods['mcpr_rates'] = cpr_data['cpr'].to_numpy()/100
+    methods['mcpr_rates'] = cpr_data['cpr'].to_numpy()/100  #convert from percent to rate
 
     return methods
 
