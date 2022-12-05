@@ -9,10 +9,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-Version 0.19.3 (2022-11-30)
+Version 0.20.0 (2022-11-30)
 ---------------------------
 - Builds out new parameters file for Kenya
 - Adds and reorganizes directories for external data files and data processing scripts
+- *GitHub info*: PR `37 <https://github.com/fpsim/fpsim/pull/37>`_
 
 
 Version 0.19.2 (2022-10-28)
