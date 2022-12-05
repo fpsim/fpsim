@@ -77,7 +77,7 @@ def data2interp(data, ages, normalize=False):
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'senegal'
+    files['base'] = sc.thisdir(aspath=True) / 'kenya'
     files['basic_dhs'] = 'senegal-basic-dhs.yaml'
     files['popsize'] = 'senegal-popsize.csv'
     files['mcpr'] = 'senegal-mcpr.csv'
