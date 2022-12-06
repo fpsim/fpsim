@@ -622,6 +622,9 @@ def methods():
 For reference
 def method_probs_senegal():
     
+    It does leave Senegal matrices in place in the Kenya file for now. 
+    We may want to test with these as we work through scenarios and calibration. 
+    
     Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
     from 2018 DHS Senegal contraceptive calendar data.
 
