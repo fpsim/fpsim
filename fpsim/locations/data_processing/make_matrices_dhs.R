@@ -114,4 +114,4 @@ time.initiate %>%
 ggsave("Switching_matrices/Results/pp_switching_time.png", height = 4, width = 6, units = "in", device='png')
 
 write.table(matrices.result, file="Switching_matrices/Results/matrices_Senegal_DHS_2022-12-05.csv", sep=",", row.names = F)
-write.table(matrices.result, file="Switching_matrices/Results/matrices_Kenya_DHS_2022-12-05.csv", sep=",", row.names = F) 
+write.table(matrices.result, file="Switching_matrices/Results/matrices_Kenya_DHS_2022-12-05.csv", sep=",", row.names = F)
