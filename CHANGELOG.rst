@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.21.0 (2022-12-06)
+---------------------------
+- Updates contraceptive matrices in kenya.py to be from Kenya PMA 2019-2020
+- Adds raw data to kenya folder and processing code to data_processing folder
+- *GitHub info*: PR `51 <https://github.com/fpsim/fpsim/pull/51>`_
+
 
 Version 0.20.0 (2022-11-30)
 ---------------------------
