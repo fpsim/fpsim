@@ -80,7 +80,6 @@ def filenames():
     files['tfr']              = 'senegal-tfr.csv'
     files['asfr']             = 'senegal-asfr.csv'
     files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
-    files['pregnancy_parity'] = 'SNIR80FL.obj'
     files['spacing']          = 'BirthSpacing.obj'
     files['methods']          = 'Method_v312.csv'
     return files
