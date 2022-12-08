@@ -75,7 +75,7 @@ def data2interp(data, ages, normalize=False):
     return interp
 
 
-# TODO- these need to be changed for Kenya calibration
+# TODO- these need to be changed for Kenya calibration and commented with their data source
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
