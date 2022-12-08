@@ -80,15 +80,15 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'kenya'
-    files['basic_dhs'] = 'senegal-basic-dhs.yaml'
-    files['popsize'] = 'senegal-popsize.csv'
-    files['mcpr'] = 'senegal-mcpr.csv'
-    files['tfr'] = 'senegal-tfr.csv'
-    files['asfr'] = 'senegal-asfr.csv'
-    files['skyscrapers'] = 'Skyscrapers-All-DHS.csv'
-    files['pregnancy_parity'] = 'SNIR80FL.obj'
-    files['spacing'] = 'BirthSpacing.obj'
-    files['methods'] = 'Method_v312.csv'
+    #files['basic_dhs'] = 'senegal-basic-dhs.yaml'
+    #files['popsize'] = 'senegal-popsize.csv'
+    #files['mcpr'] = 'senegal-mcpr.csv'
+    files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
+    #files['asfr'] = 'senegal-asfr.csv'
+    #files['skyscrapers'] = 'Skyscrapers-All-DHS.csv'
+    #files['pregnancy_parity'] = 'SNIR80FL.obj'
+    #files['spacing'] = 'BirthSpacing.obj'
+    #files['methods'] = 'Method_v312.csv'
     return files
 
 
