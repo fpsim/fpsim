@@ -83,9 +83,8 @@ def filenames():
     #files['basic_dhs'] = 'senegal-basic-dhs.yaml'
     #files['popsize'] = 'senegal-popsize.csv'
     files['mcpr'] = 'kenya_cpr.csv'  # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-        # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
-    #files['asfr'] = 'senegal-asfr.csv'
+    files['asfr'] = 'kenya_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     #files['skyscrapers'] = 'Skyscrapers-All-DHS.csv'
     #files['pregnancy_parity'] = 'SNIR80FL.obj'
     #files['spacing'] = 'BirthSpacing.obj'
