@@ -81,8 +81,8 @@ def filenames():
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'kenya'
     files['basic_dhs'] = 'kenya_basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
-    #files['popsize'] = 'senegal-popsize.csv'
-    files['mcpr'] = 'kenya_cpr.csv'  # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+    files['popsize'] = 'kenya_popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
+    files['mcpr'] = 'kenya_cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
     files['asfr'] = 'kenya_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     #files['skyscrapers'] = 'Skyscrapers-All-DHS.csv'
