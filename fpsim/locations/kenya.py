@@ -95,7 +95,11 @@ def filenames():
 # %% Demographics and pregnancy outcome
 
 def age_pyramid():
-    ''' Starting age bin, male population, female population '''
+    '''
+    Starting age bin, male population, female population
+    Data are from World Population Prospects
+    https://population.un.org/wpp/Download/Standard/Population/
+     '''
     pyramid = np.array([[0, 801895, 800503],  # Kenya 1960
                         [5, 620524, 625424],
                         [10, 463547, 464020],
