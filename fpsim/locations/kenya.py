@@ -80,7 +80,7 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'kenya'
-    #files['basic_dhs'] = 'senegal-basic-dhs.yaml'
+    files['basic_dhs'] = 'kenya_basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
     #files['popsize'] = 'senegal-popsize.csv'
     files['mcpr'] = 'kenya_cpr.csv'  # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
