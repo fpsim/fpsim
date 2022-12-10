@@ -75,27 +75,31 @@ def data2interp(data, ages, normalize=False):
     return interp
 
 
-# TODO- these need to be changed for Kenya calibration
+# TODO- these need to be changed for Kenya calibration and commented with their data source
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'kenya'
-    files['basic_dhs'] = 'senegal-basic-dhs.yaml'
-    files['popsize'] = 'senegal-popsize.csv'
-    files['mcpr'] = 'senegal-mcpr.csv'
-    files['tfr'] = 'senegal-tfr.csv'
-    files['asfr'] = 'senegal-asfr.csv'
-    files['skyscrapers'] = 'Skyscrapers-All-DHS.csv'
-    files['pregnancy_parity'] = 'SNIR80FL.obj'
-    files['spacing'] = 'BirthSpacing.obj'
-    files['methods'] = 'Method_v312.csv'
+    files['basic_dhs'] = 'kenya_basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
+    files['popsize'] = 'kenya_popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
+    files['mcpr'] = 'kenya_cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+    files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
+    files['asfr'] = 'kenya_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
+    #files['skyscrapers'] = 'Skyscrapers-All-DHS.csv'
+    #files['pregnancy_parity'] = 'SNIR80FL.obj'
+    #files['spacing'] = 'BirthSpacing.obj'
+    #files['methods'] = 'Method_v312.csv'
     return files
 
 
 # %% Demographics and pregnancy outcome
 
 def age_pyramid():
-    ''' Starting age bin, male population, female population '''
+    '''
+    Starting age bin, male population, female population
+    Data are from World Population Prospects
+    https://population.un.org/wpp/Download/Standard/Population/
+     '''
     pyramid = np.array([[0, 801895, 800503],  # Kenya 1960
                         [5, 620524, 625424],
                         [10, 463547, 464020],
