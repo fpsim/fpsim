@@ -17,4 +17,4 @@ plot(fitgumbel)
 
 bf_stats <- as.data.frame(fitgumbel$estimate)
 
-write.csv(bf_stats, file = "bf_stats.csv")
+write.csv(bf_stats, file = "bf_stats.csv") #label with country name for saving
