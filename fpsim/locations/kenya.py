@@ -39,8 +39,9 @@ def scalar_pars():
         'preg_dur_low': 9,
         'preg_dur_high': 9,
         'postpartum_dur': 35,
-        'breastfeeding_dur_mu': 11.4261936291137,  # Drawn from kenya_bf_stats.csv ## TODO: Automate pulling in this value from the file
-        'breastfeeding_dur_beta': 7.5435309020483,
+        'breastfeeding_dur_mu': 11.4261936291137,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
+        'breastfeeding_dur_beta': 7.5435309020483, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
+
         'max_lam_dur': 5,  # Duration of lactational amenorrhea
 
         # Pregnancy outcomes
