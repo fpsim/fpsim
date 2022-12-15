@@ -12,7 +12,7 @@ sp <- import('fp_analyses.senegal_parameters')
 
 # Create
 pars <- sp$make_pars()
-pars$n <- 500 # Set population size
+pars$n_agents <- 500 # Set population size
 sim <- fp$Sim(pars=pars)
 
 # Run
