@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.21.2 (2022-12-16)
+---------------------------
+- Updates Kenya, 2nd pass, completed 1st draft
+- Starts calibrate_manual.py for Kenya with ASFR plot
+- *GitHub info*: PR `76 <https://github.com/fpsim/fpsim/pull/76>`_
+
 Version 0.21.1 (2022-12-09)
 ---------------------------
 - Updates calibrated data to compare for Kenya, 1st pass
