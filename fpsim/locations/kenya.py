@@ -38,10 +38,9 @@ def scalar_pars():
         'end_first_tri': 3,
         'preg_dur_low': 9,
         'preg_dur_high': 9,
-        'postpartum_dur': 35,
-        'breastfeeding_dur_mu': 11.4261936291137,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
+        'postpartum_dur': 23,
+        'breastfeeding_dur_mu': 11.4261936291137,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'breastfeeding_dur_beta': 7.5435309020483, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
-
         'max_lam_dur': 5,  # Duration of lactational amenorrhea
 
         # Pregnancy outcomes
@@ -357,21 +356,21 @@ def lactational_amenorrhea():
     Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
     Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
     as those women continue to be postpartum insusceptible.
-    From DHS Senegal calendar data
+    From DHS Kenya 2014 calendar data
     '''
     data = np.array([
-        [0, 0.903125],
-        [1, 0.868794326],
-        [2, 0.746478873],
-        [3, 0.648854962],
-        [4, 0.563573883],
-        [5, 0.457564576],
-        [6, 0.254966887],
-        [7, 0.2],
-        [8, 0.146341463],
-        [9, 0.10982659],
-        [10, 0.10982659],
-        [11, 0.101796407],
+        [0, 0.9557236],
+        [1, 0.8889493],
+        [2, 0.7040052],
+        [3, 0.5332317],
+        [4, 0.4115276],
+        [5, 0.2668908],
+        [6, 0.1364079],
+        [7, 0.0571638],
+        [8, 0.0025502],
+        [9, 0.0259570],
+        [10, 0.0072750],
+        [11, 0.0046938],
     ])
 
     lactational_amenorrhea = {}
@@ -409,49 +408,41 @@ def sexual_activity():
 def sexual_activity_pp():
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
-    Uses DHS Senegal 2018 individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
-    Limited to 35 months postpartum (can use any limit you want 0-35 max)
+    Uses 2014 Kenya DHS individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
+    Data is weighted.
+    Limited to 23 months postpartum (can use any limit you want 0-23 max)
     Postpartum month 0 refers to the first month after delivery
+    TODO-- Add code for processing this for other countries to data_processing
     '''
 
     postpartum_sex = np.array([
-        [0, 0.104166667],
-        [1, 0.300000000],
-        [2, 0.383177570],
-        [3, 0.461538462],
-        [4, 0.476635514],
-        [5, 0.500000000],
-        [6, 0.565217391],
-        [7, 0.541666667],
-        [8, 0.547368421],
-        [9, 0.617391304],
-        [10, 0.578947368],
-        [11, 0.637254902],
-        [12, 0.608247423],
-        [13, 0.582278481],
-        [14, 0.542553191],
-        [15, 0.678260870],
-        [16, 0.600000000],
-        [17, 0.605042017],
-        [18, 0.562500000],
-        [19, 0.529411765],
-        [20, 0.674698795],
-        [21, 0.548780488],
-        [22, 0.616161616],
-        [23, 0.709401709],
-        [24, 0.651376147],
-        [25, 0.780219780],
-        [26, 0.717647059],
-        [27, 0.716417910],
-        [28, 0.683544304],
-        [29, 0.716417910],
-        [30, 0.640625000],
-        [31, 0.650000000],
-        [32, 0.676470588],
-        [33, 0.645161290],
-        [34, 0.606557377],
-        [35, 0.644736842],
+        [0, 0.08453],
+        [1, 0.08870],
+        [2, 0.40634],
+        [3, 0.58030],
+        [4, 0.52688],
+        [5, 0.60641],
+        [6, 0.58103],
+        [7, 0.72973],
+        [8, 0.62647],
+        [9, 0.73497],
+        [10, 0.60254],
+        [11, 0.75723],
+        [12, 0.73159],
+        [13, 0.68409],
+        [14, 0.74925],
+        [15, 0.74059],
+        [16, 0.70051],
+        [17, 0.78479],
+        [18, 0.74965],
+        [19, 0.79351],
+        [20, 0.77338],
+        [21, 0.70340],
+        [22, 0.72395],
+        [23, 0.72202],
     ])
+
+
 
     postpartum_activity = {}
     postpartum_activity['month'] = postpartum_sex[:, 0]
