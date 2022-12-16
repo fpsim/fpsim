@@ -356,7 +356,7 @@ def lactational_amenorrhea():
     Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
     Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
     as those women continue to be postpartum insusceptible.
-    From DHS Senegal calendar data
+    From DHS Kenya 2014 calendar data
     '''
     data = np.array([
         [0, 0.9557236],
@@ -372,7 +372,7 @@ def lactational_amenorrhea():
         [10, 0.0072750],
         [11, 0.0046938],
     ])
-    
+
     lactational_amenorrhea = {}
     lactational_amenorrhea['month'] = data[:, 0]
     lactational_amenorrhea['rate'] = data[:, 1]
