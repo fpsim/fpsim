@@ -409,8 +409,10 @@ def sexual_activity_pp():
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
     Uses 2014 Kenya DHS individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
+    Data is weighted.
     Limited to 23 months postpartum (can use any limit you want 0-23 max)
     Postpartum month 0 refers to the first month after delivery
+    TODO-- Add code for processing this for other countries to data_processing
     '''
 
     postpartum_sex = np.array([
