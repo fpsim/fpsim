@@ -39,8 +39,8 @@ def scalar_pars():
         'preg_dur_low': 9,
         'preg_dur_high': 9,
         'postpartum_dur': 23,
-        'breastfeeding_dur_mu': 19.66828,  # For a Gumbel distribution, drawn from DHS
-        'breastfeeding_dur_beta': 7.2585,
+        'breastfeeding_dur_mu': 11.4261936291137,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'breastfeeding_dur_beta': 7.5435309020483, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur': 5,  # Duration of lactational amenorrhea
 
         # Pregnancy outcomes
