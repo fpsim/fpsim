@@ -1,6 +1,7 @@
 '''
 Set the parameters for FPsim, specifically for Senegal.
 '''
+#test change, delete
 
 import numpy as np
 import sciris as sc
