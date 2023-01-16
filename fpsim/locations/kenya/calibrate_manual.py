@@ -7,6 +7,9 @@ import sciris as sc
 import fpsim as fp
 import pylab as pl
 
+
+sc.tic()
+
 # Set options for plotting
 do_plot_sim = True
 do_plot_asfr = True
@@ -34,9 +37,6 @@ skyscrapers = pd.read_csv('kenya_skyscrapers.csv')
 use = pd.read_csv('use_kenya.csv')
 
 dataset = 'PMA 2022'  # Data to compare to for skyscrapers
-
-
-sc.tic()
 
 
 # Set up sim for Kenya
@@ -175,7 +175,6 @@ if do_plot_methods:
 if do_plot_skyscrapers:
 
         age_keys = list(age_bin_map.keys())[1:]
-        print(f'/age keys: {age_keys}')
         age_bins = pl.arange(min_age, max_age, bin_size)
         parity_bins = pl.arange(0, 7)
         n_age = len(age_bins)
@@ -187,7 +186,6 @@ if do_plot_skyscrapers:
         data_parity_bins = pl.arange(0,7)
         sky_raw_data = skyscrapers
         sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == dataset]
-        print(f'Sky raw data: {sky_raw_data}')
 
         sky_parity = sky_raw_data['parity'].to_numpy()
         sky_props = sky_raw_data['percentage'].to_numpy()
@@ -218,9 +216,6 @@ if do_plot_skyscrapers:
         # Normalize
         for key in ['Data', 'Model']:
                 sky_arr[key] /= sky_arr[key].sum() / 100
-
-        print(f'sky_arr_model: {sky_arr["Model"]}')
-        print(f'sky_arr_data: {sky_arr["Data"]}')
 
         sky_arr['Diff: data - model'] = sky_arr['Data']-sky_arr['Model']
 
