@@ -40,12 +40,12 @@ bin_size = 5
 skyscrapers = pd.read_csv('kenya_skyscrapers.csv')
 use = pd.read_csv('use_kenya.csv')
 
-dataset = 'PMA 2022'  # Data to compare to for skyscrapers
+dataset = 'DHS 2014'  # Data to compare to for skyscrapers
 
 
 # Set up sim for Kenya
 pars = fp.pars(location='kenya')
-pars['n_agents'] = 100_000 # Small population size
+pars['n_agents'] = 10_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -55,11 +55,23 @@ pars['fecundity_var_high'] = 1.05
 sim = fp.Sim(pars=pars)
 sim.run()
 
+
 if do_plot_sim:
     sim.plot()
 
 # Save results
 res = sim.results
+
+
+def pop_growth_rate(years, population):
+        growth_rate = np.zeros(len(years) - 1)
+
+        for i in range(len(years)):
+                if population[i] == population[-1]:
+                        break
+                growth_rate[i] = ((population[i + 1] - population[i]) / population[i]) * 100
+
+        return growth_rate
 
 
 if do_plot_asfr:
@@ -273,9 +285,26 @@ if do_plot_tfr:
         pl.savefig('figs/tfr_over_sim.png')
         pl.show()
 
+if do_plot_pop_growth:
 
+        data_popsize = pd.read_csv('kenya_popsize.csv')
+        data_popsize = data_popsize[data_popsize['year'] <= 2020]  # Restrict years to plot
 
-#if do_plot_pop_growth:
+        data_pop_years = data_popsize['year'].to_numpy()
+        data_population = data_popsize['population'].to_numpy()
+
+        model_growth_rate = pop_growth_rate(res['tfr_years'], res['pop_size'])
+        data_growth_rate = pop_growth_rate(data_pop_years, data_population)
+
+        pl.plot(data_pop_years[1:], data_growth_rate, label='World Bank', color='black')
+        pl.plot(res['tfr_years'][1:], model_growth_rate, label='FPsim', color='cornflowerblue')
+        pl.xlabel('Year')
+        pl.ylabel('Rate')
+        pl.title('Population Growth Rate Data vs Model - Kenya')
+        pl.legend()
+
+        pl.savefig('figs/popgrowth_over_sim.png')
+        pl.show()
 
 
 
