@@ -161,13 +161,13 @@ if do_plot_methods:
         df_mix = pd.DataFrame({'PMA': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
         df_use = pd.DataFrame({'PMA': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
 
-        ax = df_mix.plot.barh()
+        ax = df_mix.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
         ax.set_xlabel('Percent users')
         ax.set_title('Contraceptive method mix model vs data')
 
         pl.savefig("figs/method_mix.png", bbox_inches='tight', dpi=100)
 
-        ax = df_use.plot.barh()
+        ax = df_use.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
         ax.set_xlabel('Percent')
         ax.set_title('Contraceptive method use model vs data')
 
@@ -248,8 +248,8 @@ if do_plot_cpr:
         data_cpr = pd.read_csv('kenya_cpr.csv') # From UN Data Portal
         data_cpr = data_cpr[data_cpr['year'] <= 2020] # Restrict years to plot
 
-        pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal')
-        pl.plot(res['t'], res['cpr']*100, label='FPsim')
+        pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
+        pl.plot(res['t'], res['cpr']*100, label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Percent')
         pl.title('Contraceptive Prevalence Rate in Data vs Model - Kenya')
@@ -263,8 +263,8 @@ if do_plot_tfr:
         # Import data
         data_tfr = pd.read_csv('kenya_tfr.csv')
 
-        pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank')
-        pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim')
+        pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
+        pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
         pl.title('Total Fertility Rate in Data vs Model - Kenya')
