@@ -1,6 +1,7 @@
 '''
-The very start of a script for running plotting to compare the model to data
+A script for running plotting to compare the model to data
 '''
+
 import numpy as np
 import pandas as pd
 import sciris as sc
@@ -15,6 +16,9 @@ do_plot_sim = True
 do_plot_asfr = True
 do_plot_methods = True
 do_plot_skyscrapers = True
+do_plot_cpr = True
+do_plot_tfr = True
+do_plot_pop_growth = True
 
 
 # Set up global variables
@@ -238,7 +242,40 @@ if do_plot_skyscrapers:
 
                 pl.show()
 
+if do_plot_cpr:
 
+        # Import data
+        data_cpr = pd.read_csv('kenya_cpr.csv') # From UN Data Portal
+        data_cpr = data_cpr[data_cpr['year'] <= 2020] # Restrict years to plot
+
+        pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal')
+        pl.plot(res['t'], res['cpr']*100, label='FPsim')
+        pl.xlabel('Year')
+        pl.ylabel('Percent')
+        pl.title('Contraceptive Prevalence Rate in Data vs Model - Kenya')
+        pl.legend()
+
+        pl.savefig('figs/cpr_over_sim.png')
+        pl.show()
+
+if do_plot_tfr:
+
+        # Import data
+        data_tfr = pd.read_csv('kenya_tfr.csv')
+
+        pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank')
+        pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim')
+        pl.xlabel('Year')
+        pl.ylabel('Rate')
+        pl.title('Total Fertility Rate in Data vs Model - Kenya')
+        pl.legend()
+
+        pl.savefig('figs/tfr_over_sim.png')
+        pl.show()
+
+
+
+#if do_plot_pop_growth:
 
 
 
