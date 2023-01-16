@@ -63,7 +63,7 @@ if do_plot_asfr:
             print(f'ASFR (annual) for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
 
         x = [1, 2, 3, 4, 5, 6, 7, 8]
-        asfr_data = [3.03, 64.94, 172.12, 174.12, 136.10, 80.51, 34.88, 13.12]  # From UN Data Kenya 2020
+        asfr_data = [3.03, 64.94, 172.12, 174.12, 136.10, 80.51, 34.88, 13.12]  # From UN Data Kenya 2020 (kenya_asfr.csv)
         x_labels = []
         asfr_model = []
 
@@ -128,27 +128,46 @@ if do_plot_methods:
                 'Other modern': 3.12615612282649
         }
 
-        # Plot bar charts of method mix among users
+        # From data - Kenya PMA 2022 (use_kenya.csv)
+        data_methods_use = {
+                'No use': 51.1078954508456,
+                'Any method': 48.8921045491544
+        }
 
+        # Plot bar charts of method mix and use among users
+
+        # Calculate users vs non-users in model
         model_methods_mix = sc.dcp(model_method_counts)
-        model_none_sum = model_methods_mix['None']
+        model_use = [model_methods_mix['None'], model_methods_mix[1:].sum()]
+        model_use_percent = [i * 100 for i in model_use]
+
+        # Calculate mix within users in model
         model_methods_mix['None'] = 0.0
         model_users_sum = model_methods_mix[:].sum()
         model_methods_mix[:] /= model_users_sum
         mix_model = model_methods_mix.values()[1:]
         mix_percent_model = [i * 100 for i in mix_model]
 
+        # Set method use and mix from data
         mix_percent_data = list(data_methods_mix.values())
+        data_use_percent = list(data_methods_use.values())
 
-        data_mix = mix_percent_data
-        model_mix = mix_percent_model
-        df = pd.DataFrame({'PMA': data_mix, 'FPsim': model_mix}, index=model_labels_methods)
+        # Set up plotting
+        use_labels = list(data_methods_use.keys())
+        df_mix = pd.DataFrame({'PMA': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
+        df_use = pd.DataFrame({'PMA': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
 
-        ax = df.plot.barh()
+        ax = df_mix.plot.barh()
         ax.set_xlabel('Percent users')
         ax.set_title('Contraceptive method mix model vs data')
 
         pl.savefig("figs/method_mix.png", bbox_inches='tight', dpi=100)
+
+        ax = df_use.plot.barh()
+        ax.set_xlabel('Percent')
+        ax.set_title('Contraceptive method use model vs data')
+
+        pl.savefig("figs/method_use.png", bbox_inches='tight', dpi=100)
 
         #pl.show()
 
