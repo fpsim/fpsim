@@ -116,7 +116,7 @@ if do_plot_methods:
         model_method_counts[:] /= model_method_counts[:].sum()
 
         # From data - Kenya PMA 2022 (mix_kenya.csv)
-        data_methods_users = {
+        data_methods_mix = {
                 'Withdrawal': 1.03588605253422,
                 'Other traditional': 4.45800961894192,
                 'Condoms': 8.41657417684055,
@@ -128,19 +128,21 @@ if do_plot_methods:
                 'Other modern': 3.12615612282649
         }
 
-        # Plot bar charts
+        # Plot bar charts of method mix among users
 
-        model_methods_users = sc.dcp(model_method_counts)
-        model_methods_users['None'] = 0.0
-        model_methods_users[:] /= model_methods_users[:].sum()
-        users_model = model_methods_users.values()[1:]
-        users_percent_model = [i * 100 for i in users_model]
+        model_methods_mix = sc.dcp(model_method_counts)
+        model_none_sum = model_methods_mix['None']
+        model_methods_mix['None'] = 0.0
+        model_users_sum = model_methods_mix[:].sum()
+        model_methods_mix[:] /= model_users_sum
+        mix_model = model_methods_mix.values()[1:]
+        mix_percent_model = [i * 100 for i in mix_model]
 
-        users_percent_data = list(data_methods_users.values())
+        mix_percent_data = list(data_methods_mix.values())
 
-        data = users_percent_data
-        model = users_percent_model
-        df = pd.DataFrame({'PMA': data, 'FPsim': model}, index=model_labels_methods)
+        data_mix = mix_percent_data
+        model_mix = mix_percent_model
+        df = pd.DataFrame({'PMA': data_mix, 'FPsim': model_mix}, index=model_labels_methods)
 
         ax = df.plot.barh()
         ax.set_xlabel('Percent users')
