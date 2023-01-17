@@ -48,16 +48,17 @@ class People(fpb.BasePeople):
 
         # Basic states
         init_states = dir(self)
-        self.uid            = arr(n, np.arange(n))
-        self.age            = arr(n, np.float64(d['age'])) # Age of the person (in years)
-        self.age_by_group   = arr(n, np.float64(d['age_by_group'])) # Age by which method bin the age falls into, as integer
-        self.sex            = arr(n, d['sex']) # Female (0) or male (1)
-        self.parity         = arr(n, d['parity']) # Number of children
-        self.method         = arr(n, d['method'])  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
-        self.barrier        = arr(n, d['barrier'])  # Reason for non-use
-        self.alive          = arr(n, d['alive'])
-        self.pregnant       = arr(n, d['pregnant'])
-        self.fertile        = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
+        self.uid                = arr(n, np.arange(n))
+        self.age                = arr(n, np.float64(d['age'])) # Age of the person (in years)
+        self.age_by_group       = arr(n, np.float64(d['age_by_group'])) # Age by which method bin the age falls into, as integer
+        self.sex                = arr(n, d['sex']) # Female (0) or male (1)
+        self.parity             = arr(n, d['parity']) # Number of children
+        self.method             = arr(n, d['method'])  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
+        self.barrier            = arr(n, d['barrier'])  # Reason for non-use
+        self.alive              = arr(n, d['alive'])
+        self.pregnant           = arr(n, d['pregnant'])
+        self.fertile            = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
+        self.short_interval_age = arr(n, d['short_interval_age'])  # assigned likelihood of remaining childfree throughout reproductive years
 
         # Sexual and reproductive history
         self.sexually_active  = arr(n, d['sexually_active'])
