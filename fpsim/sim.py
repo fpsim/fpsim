@@ -58,7 +58,7 @@ class People(fpb.BasePeople):
         self.alive              = arr(n, d['alive'])
         self.pregnant           = arr(n, d['pregnant'])
         self.fertile            = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
-        self.short_interval_age = arr(n, d['short_interval_age'])  # assigned likelihood of remaining childfree throughout reproductive years
+        self.short_interval_age = arr(n, d['short_interval_age'])  #age of agents with short interval
 
         # Sexual and reproductive history
         self.sexually_active  = arr(n, d['sexually_active'])
