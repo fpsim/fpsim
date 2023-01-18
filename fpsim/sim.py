@@ -557,6 +557,14 @@ class People(fpb.BasePeople):
             for i in stillborn.inds: # Handle adding dates
                 all_ppl.still_dates[i].append(all_ppl.age[i])
 
+            # Add age of agents at birth with short birth interval
+            for i in live.inds: # Handle DOBs
+                 if len(all_ppl.dobs[i]) > 1:
+                    for d in range(len(all_ppl.dobs[i]) - 1):
+                         if  (all_ppl.dobs[i][d + 1] - all_ppl.dobs[i][d]) < self.pars['short_int']:                               
+                             short_interval_age = all_ppl.dobs[i][d+1].append(all_ppl.age[i][d+1])                            
+            self.step_results['short_interval_age'] = short_interval_age
+
             # Handle twins
             is_twin = live.binomial(self.pars['twins_prob'])
             twin = live.filter(is_twin)
@@ -798,6 +806,7 @@ class People(fpb.BasePeople):
             pp12to23        = 0,
             total_women_fecund = 0,
             pregnancies     = 0,
+            short_interval_age     = [],
             unintended_pregs = 0,
             birthday_fraction = None,
             birth_bins        = {},
@@ -999,7 +1008,7 @@ class Sim(fpb.BaseSim):
                        'no_methods_acpr', 'mcpr', 'cpr', 'acpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
-                       'total_women_40-44', 'total_women_45-49']
+                       'total_women_40-44', 'total_women_45-49','short_interval_age']
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
@@ -1016,6 +1025,7 @@ class Sim(fpb.BaseSim):
         self.results['miscarriages_over_year'] = []
         self.results['abortions_over_year'] = []
         self.results['pregnancies_over_year'] = []
+        self.results['short_interval_age_over_year'] = []
         self.results['risky_pregs_over_year'] = []
         self.results['maternal_deaths_over_year'] = []
         self.results['mmr'] = []
@@ -1308,6 +1318,7 @@ class Sim(fpb.BaseSim):
             self.results['miscarriages'][i]     = r.miscarriages*scale
             self.results['abortions'][i]        = r.abortions*scale
             self.results['pregnancies'][i]     = r.pregnancies*scale
+            self.results['short_interval_age'][i]     = r.short_interval_age*scale
             self.results['total_births'][i]    = r.total_births*scale
             self.results['maternal_deaths'][i] = r.maternal_deaths*scale
             self.results['infant_deaths'][i]   = r.infant_deaths*scale
@@ -1375,6 +1386,7 @@ class Sim(fpb.BaseSim):
                 abortions_over_year        = scale*np.sum(self.results['abortions'][start_index:stop_index])
                 maternal_deaths_over_year  = scale*np.sum(self.results['maternal_deaths'][start_index:stop_index])
                 pregnancies_over_year  = scale*np.sum(self.results['pregnancies'][start_index:stop_index])
+                short_interval_age_over_year  = scale*len(self.results['short_interval_age'][start_index:stop_index])
                 self.results['method_usage'].append(self.compute_method_usage()) # only want this per year
                 self.results['pop_size'].append(scale*self.n) # CK: TODO: replace with arrays
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
@@ -1388,6 +1400,7 @@ class Sim(fpb.BaseSim):
                 self.results['abortions_over_year'].append(abortions_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
                 self.results['pregnancies_over_year'].append(pregnancies_over_year)
+                self.results['short_interval_age_over_year'].append(short_interval_age_over_year)
 
                 if self.pars['track_as']:
                     imr_results_dict = self.people.log_age_split(binned_ages_t=self.results['imr_age_by_group'], channel='imr',
@@ -1449,6 +1462,7 @@ class Sim(fpb.BaseSim):
         self.results['cum_miscarriages_by_year']     = np.cumsum(self.results['miscarriages_over_year'])
         self.results['cum_abortions_by_year']     = np.cumsum(self.results['abortions_over_year'])
         self.results['cum_pregnancies_by_year']     = np.cumsum(self.results['pregnancies_over_year'])
+        self.results['cum_short_interval_age_by_year']     = np.cumsum(self.results['short_interval_age_over_year'])
 
         # Convert to an objdict for easier access
         self.results = sc.objdict(self.results)
