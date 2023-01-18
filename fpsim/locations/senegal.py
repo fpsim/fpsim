@@ -23,6 +23,7 @@ def scalar_pars():
         'verbose'                : 1, # How much detail to print during the simulation
         'track_switching'        : 0, # Whether to track method switching
         'track_as'               : 0, # Whether to track age-specific channels
+        'short_int'              : 24, # duration of short birth interval in months
 
         # Age limits (in years)
         'method_age'             : 15,
