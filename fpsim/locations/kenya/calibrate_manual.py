@@ -7,6 +7,7 @@ import pandas as pd
 import sciris as sc
 import fpsim as fp
 import pylab as pl
+import seaborn as sns
 
 
 sc.tic()
@@ -19,6 +20,7 @@ do_plot_skyscrapers = True
 do_plot_cpr = True
 do_plot_tfr = True
 do_plot_pop_growth = True
+do_plot_birth_space = True
 
 
 # Set up global variables
@@ -36,16 +38,17 @@ age_bin_map = {
 min_age = 15
 max_age = 50
 bin_size = 5
+mpy = 12
 
 skyscrapers = pd.read_csv('kenya_skyscrapers.csv')
 use = pd.read_csv('use_kenya.csv')
 
-dataset = 'DHS 2014'  # Data to compare to for skyscrapers
+dataset = 'PMA 2022'  # Data to compare to for skyscrapers
 
 
 # Set up sim for Kenya
 pars = fp.pars(location='kenya')
-pars['n_agents'] = 10_000 # Small population size
+pars['n_agents'] = 100_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -61,6 +64,9 @@ if do_plot_sim:
 
 # Save results
 res = sim.results
+
+# Save people from sim
+ppl = sim.people
 
 
 def pop_growth_rate(years, population):
@@ -124,7 +130,6 @@ if do_plot_methods:
         model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 
         # From model
-        ppl = sim.people
         for i in range(len(ppl)):
                 if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
                         model_method_counts[ppl.method[i]] += 1
@@ -221,7 +226,6 @@ if do_plot_skyscrapers:
 
         # Extract from model
         sky_arr['Model'] = pl.zeros((len(age_bins), len(parity_bins)))
-        ppl = sim.people
         for i in range(len(ppl)):
                 if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
                         age_bin = sc.findinds(age_bins <= ppl.age[i])[-1]
@@ -306,10 +310,63 @@ if do_plot_pop_growth:
         pl.savefig('figs/popgrowth_over_sim.png')
         pl.show()
 
+if do_plot_birth_space:
 
+        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
+
+        model_age_first = []
+        model_spacing = []
+        model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+        for i in range(len(ppl)):
+                if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+                        if len(ppl.dobs[i]):
+                                model_age_first.append(ppl.dobs[i][0])
+                        if len(ppl.dobs[i]) > 1:
+                                for d in range(len(ppl.dobs[i]) - 1):
+                                        space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
+                                        ind = sc.findinds(space > spacing_bins[:])[-1]
+                                        model_spacing_counts[ind] += 1
+
+                                        model_spacing.append(space)
+
+        spacing = pd.DataFrame(data=model_spacing)
+        ax = spacing.plot.kde()
+        ax.set_xlabel('Years')
+        ax.set_ylabel('Density')
+        ax.set_title('Birth space in Model')
+        pl.show()
+
+        age_first = pd.DataFrame(data=model_age_first)
+        ax = age_first.plot.kde()
+        ax.set_xlabel('Years')
+        ax.set_ylabel('Density')
+        ax.set_title('Age at first birth in Model')
+        pl.show()
+
+
+
+        model_spacing_counts[:] /= model_spacing_counts[:].sum()
+        model_spacing_counts[:] *= 100
+        print(f'Model spacing counts: {model_spacing_counts}')
+
+        model_spacing_stats = np.array([np.percentile(model_spacing, 25),
+                                                np.percentile(model_spacing, 50),
+                                                np.percentile(model_spacing, 75)])
+        model_age_first_stats = np.array([np.percentile(model_age_first, 25),
+                                                  np.percentile(model_age_first, 50),
+                                                  np.percentile(model_age_first, 75)])
+
+        space_df = pd.DataFrame(data=model_spacing_counts.values(), index=model_spacing_counts.keys())
+        ax = space_df.plot.barh(color='cornflowerblue')
+        ax.set_title('Birth spacing bins in Model vs Data')
+        ax.set_ylabel('Space between births in months')
+        ax.set_xlabel('Percent of all births')
+        pl.savefig('figs/birth_space_bins.png')
+        pl.show()
 
 sc.toc()
 print('Done.')
+
 
 
 '''
