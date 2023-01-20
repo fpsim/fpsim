@@ -74,6 +74,7 @@ class People(fpb.BasePeople):
         self.pregnancies      = arr(n, d['pregnancies']) #Number of conceptions (before abortion)
         self.postpartum       = arr(n, d['postpartum'])
         self.mothers          = arr(n, d['mothers'])
+        self.short_interval   = arr(n, d['short_interval']) # Number of short birth intervals
 
         self.postpartum_dur       = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam                  = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
