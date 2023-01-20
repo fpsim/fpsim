@@ -85,7 +85,7 @@ class People(fpb.BasePeople):
         self.still_dates       = arr(n, []) # Dates of stillbirths -- list of lists
         self.miscarriage_dates = arr(n, []) # Dates of miscarriages -- list of lists
         self.abortion_dates    = arr(n, []) # Dates of abortions -- list of lists
-        self.short_interval_age = arr(n, []) # age of agents at short birth interval -- list of lists
+        self.short_interval_dates = arr(n, []) # age of agents at short birth interval -- list of lists
 
         # Fecundity variation
         fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
@@ -555,7 +555,7 @@ class People(fpb.BasePeople):
                 if len(all_ppl.dobs[i]) == 1:
                     all_ppl.first_birth_age[i] = all_ppl.age[i]
                 if (len(all_ppl.dobs[i]) > 1) and ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int']/ fpd.mpy)):
-                    all_ppl.short_interval_age[i].append(all_ppl.age[i])
+                    all_ppl.short_interval_dates[i].append(all_ppl.age[i])
 
             for i in stillborn.inds: # Handle adding dates
                 all_ppl.still_dates[i].append(all_ppl.age[i])
