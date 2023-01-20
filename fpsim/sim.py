@@ -806,7 +806,6 @@ class People(fpb.BasePeople):
             pp12to23        = 0,
             total_women_fecund = 0,
             pregnancies     = 0,
-            short_interval_age     = [],
             unintended_pregs = 0,
             birthday_fraction = None,
             birth_bins        = {},
@@ -1318,7 +1317,6 @@ class Sim(fpb.BaseSim):
             self.results['miscarriages'][i]     = r.miscarriages*scale
             self.results['abortions'][i]        = r.abortions*scale
             self.results['pregnancies'][i]     = r.pregnancies*scale
-            self.results['short_interval_age'][i]     = r.short_interval_age*scale
             self.results['total_births'][i]    = r.total_births*scale
             self.results['maternal_deaths'][i] = r.maternal_deaths*scale
             self.results['infant_deaths'][i]   = r.infant_deaths*scale
