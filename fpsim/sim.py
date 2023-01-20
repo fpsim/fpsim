@@ -554,11 +554,9 @@ class People(fpb.BasePeople):
                 all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
                 if len(all_ppl.dobs[i]) == 1:
                     all_ppl.first_birth_age[i] = all_ppl.age[i]
-                if (len(all_ppl.dobs[i]) > 1) and ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < self.pars['short_int']):
-                    print(f'Last element in DOBS list for timestep: {all_ppl.dobs[i][-1]}')
-                    print(f'Second to last element in DOBS list for timestep: {all_ppl.dobs[i][-2]}')
+                if (len(all_ppl.dobs[i]) > 1) and ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int']/ fpd.mpy)):
                     all_ppl.short_interval_age[i].append(all_ppl.age[i])
-                    print(f'Short interval arrays: {all_ppl.short_interval_age[i]}')
+
             for i in stillborn.inds: # Handle adding dates
                 all_ppl.still_dates[i].append(all_ppl.age[i])
 
