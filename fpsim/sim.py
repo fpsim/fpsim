@@ -557,6 +557,9 @@ class People(fpb.BasePeople):
                     all_ppl.first_birth_age[i] = all_ppl.age[i]
                 if (len(all_ppl.dobs[i]) > 1) and ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int']/ fpd.mpy)):
                     all_ppl.short_interval_dates[i].append(all_ppl.age[i])
+                    shortbirth = all_ppl
+                
+                shortbirth.short_interval += 1 #Track how many short birth an agent has had    
 
             for i in stillborn.inds: # Handle adding dates
                 all_ppl.still_dates[i].append(all_ppl.age[i])
