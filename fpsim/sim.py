@@ -1384,7 +1384,6 @@ class Sim(fpb.BaseSim):
                 abortions_over_year        = scale*np.sum(self.results['abortions'][start_index:stop_index])
                 maternal_deaths_over_year  = scale*np.sum(self.results['maternal_deaths'][start_index:stop_index])
                 pregnancies_over_year  = scale*np.sum(self.results['pregnancies'][start_index:stop_index])
-                short_interval_age_over_year  = scale*len(self.results['short_interval_age'][start_index:stop_index])
                 self.results['method_usage'].append(self.compute_method_usage()) # only want this per year
                 self.results['pop_size'].append(scale*self.n) # CK: TODO: replace with arrays
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
@@ -1398,7 +1397,6 @@ class Sim(fpb.BaseSim):
                 self.results['abortions_over_year'].append(abortions_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
                 self.results['pregnancies_over_year'].append(pregnancies_over_year)
-                self.results['short_interval_age_over_year'].append(short_interval_age_over_year)
 
                 if self.pars['track_as']:
                     imr_results_dict = self.people.log_age_split(binned_ages_t=self.results['imr_age_by_group'], channel='imr',
@@ -1460,7 +1458,6 @@ class Sim(fpb.BaseSim):
         self.results['cum_miscarriages_by_year']     = np.cumsum(self.results['miscarriages_over_year'])
         self.results['cum_abortions_by_year']     = np.cumsum(self.results['abortions_over_year'])
         self.results['cum_pregnancies_by_year']     = np.cumsum(self.results['pregnancies_over_year'])
-        self.results['cum_short_interval_age_by_year']     = np.cumsum(self.results['short_interval_age_over_year'])
 
         # Convert to an objdict for easier access
         self.results = sc.objdict(self.results)
