@@ -28,6 +28,7 @@ person_defaults = dict(
     stillbirth           = 0,
     miscarriage          = 0,
     abortion             = 0,
+    short_interval       = 0,
     pregnancies          = 0,
     remainder_months     = 0,
     breastfeed_dur       = 0,
