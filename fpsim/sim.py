@@ -558,12 +558,11 @@ class People(fpb.BasePeople):
                 all_ppl.still_dates[i].append(all_ppl.age[i])
 
             # Add age of agents at birth with short birth interval
-            for i in live.inds: # Handle DOBs
-                 if len(all_ppl.dobs[i]) > 1:
-                    for d in range(len(all_ppl.dobs[i]) - 1):
-                         if  (all_ppl.dobs[i][d + 1] - all_ppl.dobs[i][d]) < self.pars['short_int']:                               
-                             short_interval_age = all_ppl.dobs[i][d+1].append(all_ppl.age[i][d+1])                            
-            self.step_results['short_interval_age'] = short_interval_age
+            #for i in live.inds: # Handle DOBs
+                 #if len(all_ppl.dobs[i]) > 1:
+                    #for d in range(len(all_ppl.dobs[i]) - 1):
+                         #if  (all_ppl.dobs[i][d + 1] - all_ppl.dobs[i][d]) < self.pars['short_int']:
+                             #short_interval_age = all_ppl.dobs[i][d+1].append(all_ppl.age[i][d+1])
 
             # Handle twins
             is_twin = live.binomial(self.pars['twins_prob'])
