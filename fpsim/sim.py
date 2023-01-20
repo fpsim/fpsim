@@ -794,6 +794,7 @@ class People(fpb.BasePeople):
             deaths          = 0,
             births          = 0,
             stillbirths     = 0,
+            short_intervals = 0,
             total_births    = 0,
             maternal_deaths = 0,
             infant_deaths   = 0,
