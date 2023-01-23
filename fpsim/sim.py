@@ -551,6 +551,7 @@ class People(fpb.BasePeople):
             # Add dates of live births and stillbirths separately for agent to remember
             all_ppl = self.unfilter()
             live = deliv.filter(~is_stillborn)
+            shortbirth = []
             for i in live.inds: # Handle DOBs
                 all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
                 if len(all_ppl.dobs[i]) == 1:
