@@ -1015,7 +1015,7 @@ class Sim(fpb.BaseSim):
                        'no_methods_acpr', 'mcpr', 'cpr', 'acpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
-                       'total_women_40-44', 'total_women_45-49','short_interval_age']
+                       'total_women_40-44', 'total_women_45-49', 'short_intervals']
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
