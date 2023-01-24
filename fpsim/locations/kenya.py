@@ -61,7 +61,7 @@ def scalar_pars():
         # MCPR
         'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
         'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
-        'mcpr_norm_year': 2018,  # Year to normalize MCPR trend to 1
+        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
