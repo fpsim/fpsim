@@ -368,58 +368,8 @@ sc.toc()
 print('Done.')
 
 
-
 '''
-fig, (ax1, ax2) = pl.subplots(2)
-
-        y_pos1 = pl.arange(len(model_labels_all))
-        all_counts_model = model_method_counts.values()
-
-        ax1.barh(y_pos1, all_counts_model, label = 'FPsim')
-        ax1.set_yticks(y_pos1, labels=model_labels_all)
-        ax1.invert_yaxis()  # labels read top-to-bottom
-        ax1.set_xlabel('Percent method users')
-        ax1.set_title('Method mix in FPsim Kenya including non-use')
-
-        y_pos2 = pl.arange(len(model_labels_methods))
-        model_methods_users = sc.dcp(model_method_counts)
-        model_methods_users['None'] = 0.0
-        model_methods_users[:] /= model_methods_users[:].sum()
-        users_model = model_methods_users.values()[1:]
-        users_percent_model = [i*100 for i in users_model]
-
-        users_percent_data = data_methods_users.values()
-
-        ax2.barh(y_pos2, users_percent_model, label = 'FPsim')
-        ax2.barh(y_pos2, users_percent_data, label = 'PMA')
-        ax2.set_yticks(y_pos2, labels=model_labels_methods)
-        ax2.invert_yaxis()  # labels read top-to-bottom
-        ax2.set_xlabel('Percent method users')
-        ax2.set_title('Method mix in FPsim Kenya')
-
-        pl.show()
-        
-        
-        sky_arr['Data'] = pl.zeros((len(age_bins), len(parity_bins)))
-        count = -1
-        for age_bin in x_age:
-                for pb in parity_bins:
-                        count += 1
-                        parity_bin = min(n_parity - 1, pb)
-                        sky_arr['Data'][age_bin, parity_bin] += sky_props[count]
-        assert count == len(sky_props) - 1  # Ensure they're the right length
-
-        # Extract from model
-        sky_arr['Model'] = pl.zeros((len(age_bins), len(parity_bins)))
-        for i in range(len(ppl)):
-                if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-                        age_bin = sc.findinds(age_bins <= ppl.age[i])[-1]
-                        parity_bin = sc.findinds(parity_bins <= ppl.parity[i])[-1]
-                        sky_arr['Model'][age_bin, parity_bin] += 1
-
-        # Normalize
-        for key in ['Data', 'Model']:
-                sky_arr[key] /= sky_arr[key].sum() / 100
+Leaving code here in case we want to plot age-parity distribution differently with colormesh
 
 
         fig, axs = pl.subplots(3)
@@ -439,6 +389,5 @@ fig, (ax1, ax2) = pl.subplots(2)
         axs[1].set_ylabel('Parity')
 
         pl.show()
-
 
 '''
