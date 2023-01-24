@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.22.0 (2023-1-24)
+--------------------------
+- Add calibrate_manual.py to compare sim runs to data with new data structures
+- Add plot_birth_spacing.py under senegal location to fine tune this calibration
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/109>`_
+
 Version 0.21.2 (2022-12-16)
 ---------------------------
 - Updates Kenya, 2nd pass, completed 1st draft
