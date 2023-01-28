@@ -133,6 +133,7 @@ class SpacingCalib(fp.Calibration):
             pl.barh(y-dy, data - model, label='Diff', facecolor='red', **kw)
             pl.yticks(y, spacing_bins.keys())
             pl.title(f'{sim.label}\n(mismatch: {sim.mismatch*1000:n})')
+            pl.legend()
         
         return
         
@@ -140,9 +141,10 @@ class SpacingCalib(fp.Calibration):
 
 if __name__ == '__main__':
     
-    n = 200
+    trials = 200
     
     with sc.timer():
-        calib = SpacingCalib(calib_pars, total_trials=n)
+        calib = SpacingCalib(calib_pars, total_trials=trials)
         calib.calibrate()
         calib.plot_spacing()
+        sc.pp(calib.to_json()[:5])
