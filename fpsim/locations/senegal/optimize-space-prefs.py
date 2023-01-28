@@ -4,12 +4,30 @@ import sciris as sc
 import numpy as np
 
 # Define upper and lower limits for the parameters
-ranges = dict(
-    space0_9=[0.5, 1],
-    space12=[0.5, 1.5],
-    space15=[1.0, 2.0],
-    space15_36=[1.0, 10.0]
-)
+#ranges = dict(
+    #space0_9=[0.5, 1],
+    #space12=[0.5, 1.5],
+    #space15=[1.0, 2.0],
+    #space15_36=[1.0, 10.0]
+#)
+
+ranges = {
+    '0' : [0.2, 1],
+    '3' : [0.2, 1],
+    '6' : [0.2, 1],
+    '9' : [0.2, 1],
+    '12': [0.5, 1.2],
+    '15': [0.5, 1.2],
+    '18': [1.0, 5.0],
+    '21': [1.0, 5.0],
+    '24': [1.0, 5.0],
+    '27': [1.0, 5.0],
+    '30': [1.0, 5.0],
+    '33': [1.0, 5.0],
+    '36': [1.0, 5.0]
+}
+
+
 
 # Birth spacing percent data
 # data = [16.29, 60.12, 22.29, 1.30]
@@ -26,24 +44,10 @@ data = sc.load(spacing_file)
 
 def make_sim(spacing_pars):
     base_pars = dict(location='senegal')
-    postpartum_spacing = np.array([
-        [0, 0.5],
-        [3, 0.5],
-        [6, 0.5],
-        [9, 0.5],
-        [12, 0.8],
-        [15, 1.2],
-        [18, 5.0],
-        [21, 5.0],
-        [24, 9.0],
-        [27, 9.0],
-        [30, 9.0],
-        [33, 9.0],
-        [36, 5.0],
-    ])
+    prefs = np.array(list(spacing_pars.values()))
+    print(f'spacing pars values: {prefs}')
     sim = fp.Sim(base_pars)
-    #fp.pars['spacing_pref']['preference'] = spacing_pars.values()
-    #fp.pars['spacing_pref']['months'] = spacing_pars.key() # CK: need to get spacing pars in right format
+    sim.pars['spacing_pref']['preference'] = prefs
     return sim
 
 def get_data_spaces(data):
@@ -98,6 +102,6 @@ def run_sim(trial):
 
 if __name__ == '__main__':
     study = optuna.create_study()
-    study.optimize(run_sim, n_trials=100)
+    study.optimize(run_sim, n_trials=10)
 
     print(study.best_params)
