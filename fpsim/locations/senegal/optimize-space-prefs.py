@@ -4,33 +4,12 @@ import sciris as sc
 import numpy as np
 
 # Define upper and lower limits for the parameters
-#ranges = dict(
-    #space0_9=[0.5, 1],
-    #space12=[0.5, 1.5],
-    #space15=[1.0, 2.0],
-    #space15_36=[1.0, 10.0]
-#)
-
-ranges = {
-    '0' : [0.2, 1],
-    '3' : [0.2, 1],
-    '6' : [0.2, 1],
-    '9' : [0.2, 1],
-    '12': [0.5, 1.2],
-    '15': [0.5, 1.2],
-    '18': [1.0, 5.0],
-    '21': [1.0, 5.0],
-    '24': [1.0, 5.0],
-    '27': [1.0, 5.0],
-    '30': [1.0, 5.0],
-    '33': [1.0, 5.0],
-    '36': [1.0, 5.0]
-}
-
-
-
-# Birth spacing percent data
-# data = [16.29, 60.12, 22.29, 1.30]
+ranges = dict(
+    space0_6=[0.2, 1.5],
+    space9_15=[0.2, 1.5],
+    space18_24=[0.5, 2.0],
+    space27_36=[0.5, 10.0]
+)
 
 spacing_file = 'BirthSpacing.obj'
 
@@ -44,10 +23,12 @@ data = sc.load(spacing_file)
 
 def make_sim(spacing_pars):
     base_pars = dict(location='senegal')
-    prefs = np.array(list(spacing_pars.values()))
-    print(f'spacing pars values: {prefs}')
+    #prefs = np.array(list(spacing_pars.values()))
     sim = fp.Sim(base_pars)
-    sim.pars['spacing_pref']['preference'] = prefs
+    sim.pars['spacing_pref']['preference'][:2] = spacing_pars['space0_6']
+    sim.pars['spacing_pref']['preference'][3:5] = spacing_pars['space9_15']
+    sim.pars['spacing_pref']['preference'][6:8] = spacing_pars['space18_24']
+    sim.pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36']
     return sim
 
 def get_data_spaces(data):
@@ -63,6 +44,7 @@ def get_data_spaces(data):
         matches = np.intersect1d(sc.findinds(spacing >= lower), sc.findinds(spacing < upper))
         data_spacing_counts[i] += len(matches)
 
+    data_spacing_counts[:] /= data_spacing_counts[:].sum()
     spaces = data_spacing_counts.values()
     return spaces
 
@@ -78,6 +60,7 @@ def get_spaces(sim):
                     ind = sc.findinds(space > spacing_bins[:])[-1]
                     model_spacing_counts[ind] += 1
 
+    model_spacing_counts[:] /= model_spacing_counts[:].sum()
     spaces = model_spacing_counts.values()
     return spaces
 
@@ -102,6 +85,6 @@ def run_sim(trial):
 
 if __name__ == '__main__':
     study = optuna.create_study()
-    study.optimize(run_sim, n_trials=10)
+    study.optimize(run_sim, n_trials=20)
 
     print(study.best_params)
