@@ -7,35 +7,39 @@ import numpy as np
 import pylab as pl
 import fpsim as fp
 
-# Define upper and lower limits for the parameters
+# Define best, low, high limits for the parameters
 calib_pars = dict(
-    space0_6=[0.5, 0.2, 1.5],
-    space9_15=[0.5, 0.2, 1.5],
-    space18_24=[2.0, 0.5, 3.0],
-    space27_36=[1.0, 0.5, 3.0]
+    space0_6   = [0.5, 0.2, 1.5],
+    space9_15  = [0.5, 0.2, 1.5],
+    space18_24 = [2.0, 0.5, 3.0],
+    space27_36 = [1.0, 0.5, 3.0],
 )
 
 spacing_file = 'BirthSpacing.obj'
 
-spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
+spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years; CK: need to check that this is right
 min_age = 15
 max_age = 50
 
 # Load birth spacing data
 data = sc.load(spacing_file)
 
+
 class SpacingCalib(fp.Calibration):
+    ''' Custom version of calibration, just for birth spacing '''
     
-    def __init__(self, calib_pars, **kwargs):
+    def __init__(self, calib_pars, verbose=True, keep_db=False, **kwargs):
         
+        # Settings
         self.calib_pars = calib_pars
-        self.verbose = True
-        self.keep_db = False
+        self.verbose    = verbose
+        self.keep_db    = keep_db
         
         # Configure Optuna
         self.set_optuna_defaults()
         self.configure_optuna(**kwargs)
         return
+
 
     def validate_pars(self):
         ''' Redefine this to skip it '''
@@ -44,12 +48,11 @@ class SpacingCalib(fp.Calibration):
 
     def make_sim(self, spacing_pars):
         base_pars = dict(location='senegal', n_agents=1000, verbose=0)
-        #prefs = np.array(list(spacing_pars.values()))
         sim = fp.Sim(base_pars)
-        sim.pars['spacing_pref']['preference'][:2] = spacing_pars['space0_6']
-        sim.pars['spacing_pref']['preference'][3:5] = spacing_pars['space9_15']
-        sim.pars['spacing_pref']['preference'][6:8] = spacing_pars['space18_24']
-        sim.pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36']
+        sim.pars['spacing_pref']['preference'][:3]  = spacing_pars['space0_6']
+        sim.pars['spacing_pref']['preference'][3:6] = spacing_pars['space9_15']
+        sim.pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
+        sim.pars['spacing_pref']['preference'][9:]  = spacing_pars['space27_36']
         return sim
     
     
