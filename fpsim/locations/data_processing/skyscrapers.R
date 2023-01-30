@@ -14,9 +14,9 @@ library(haven)
 library(scales)
 
 # -- Download data -- #
-# Most recent PMA round. This is the stata data file version of the 2019 PMA from Ethiopia, I'm waiting or access to more recent.
-pma.raw <- with_dir(normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/Data/PMA/Ethiopia/PMAET_HQFQ_2019_CrossSection_v2.0_30Apr2021/PMAET_HQFQ_2019_CrossSection_v2.0_30Apr2021"), "/"), {read_dta("PMAET_HQFQ_2019_CrossSection_v2.0_30Apr2021.DTA")})
-# Most recent DHS. Thi sthe stata version of the individual recode file.
+# Most recent PMA round
+pma.raw <- with_dir(normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/Data/PMA/Ethiopia/PMAET_HQFQ_2021_CrossSection_v1.0_Aug2022/PMAET_HQFQ_2021_CrossSection_v1.0_Aug2022"), "/"), {read_dta("PMAET_HQFQ_2021_CrossSection_v1.0_Aug2022.DTA")})
+# Most recent DHS. This the stata version of the individual recode file.
 dhs.raw <- with_dir(normalizePath(file.path(Sys.getenv("ONEDRIVE"), "DHS/IR_all/ETIR81DT"), "/"), {read_dta("ETIR81FL.DTA")})
 
 data <- pma.raw  %>% filter(gender == 2 & !is.na(FQ_age) & !is.na(FQweight)) %>% select(birth_events_rw, age = FQ_age, wt = FQweight) %>%
@@ -34,4 +34,4 @@ data.result = data %>%
   group_by(dataset) %>% mutate(n = sum(wt, na.rm = T)) %>% ungroup %>%
   group_by(age, parity, dataset, n) %>% summarize(Freq = sum(wt, na.rm=T)) %>% mutate(percentage = Freq/n*100) %>% select(-n)
 
-write.table(data.result, file="skyscraper_ethiopia_2021-01-27.csv", sep=",", row.names = F)
+write.table(data.result, file="locations/ethiopia/skyscraper_ethiopia_2023-01-30.csv", sep=",", row.names = F)
