@@ -17,6 +17,8 @@ calib_pars = dict(
 
 spacing_file = 'BirthSpacing.obj'
 
+do_save_figs = 1
+
 spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years; CK: need to check that this is right
 min_age = 15
 max_age = 50
@@ -134,6 +136,9 @@ class SpacingCalib(fp.Calibration):
             pl.yticks(y, spacing_bins.keys())
             pl.title(f'{sim.label}\n(mismatch: {sim.mismatch*1000:n})')
             pl.legend()
+
+        if do_save_figs:
+            pl.savefig("birth_space_optimized.png", bbox_inches='tight', dpi=100)
         
         return
         
@@ -141,10 +146,13 @@ class SpacingCalib(fp.Calibration):
 
 if __name__ == '__main__':
     
-    trials = 200
+    trials = 500
     
     with sc.timer():
         calib = SpacingCalib(calib_pars, total_trials=trials)
         calib.calibrate()
         calib.plot_spacing()
-        sc.pp(calib.to_json()[:5])
+        fig = calib.plot_trend()
+        pl.savefig("calib_trend.png", bbox_inches='tight', dpi=100)
+
+        sc.pp(calib.to_json()[:10])
