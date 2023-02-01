@@ -9,10 +9,10 @@ import fpsim as fp
 
 # Define best, low, high limits for the parameters
 calib_pars = dict(
-    space0_6   = [0.5, 0.2, 1.5],
-    space9_15  = [0.5, 0.2, 1.5],
-    space18_24 = [2.0, 0.5, 3.0],
-    space27_36 = [1.0, 0.5, 3.0],
+    space0_6   = [0.5, 0.2, 1.50],
+    space9_15  = [0.5, 0.2, 1.50],
+    space18_24 = [1.5, 0.2, 2.0],
+    space27_36 = [1.2, 0.2, 2.0],
 )
 
 spacing_file = 'BirthSpacing.obj'
