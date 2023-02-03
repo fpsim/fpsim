@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.22.1 (2023-2-03)
+--------------------------
+- Update contraceptive matrices to be weighted
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/113>`_
+
 Version 0.22.0 (2023-1-24)
 --------------------------
 - Add calibrate_manual.py to compare sim runs to data with new data structures
