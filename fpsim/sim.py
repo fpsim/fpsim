@@ -75,6 +75,7 @@ class People(fpb.BasePeople):
         self.postpartum       = arr(n, d['postpartum'])
         self.mothers          = arr(n, d['mothers'])
         self.short_interval   = arr(n, d['short_interval']) # Number of short birth intervals
+        self.SecondOrder_birth   = arr(n, d['SecondOrder_birth']) # Number of second order live birth
 
         self.postpartum_dur       = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam                  = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
@@ -552,14 +553,17 @@ class People(fpb.BasePeople):
             all_ppl = self.unfilter()
             live = deliv.filter(~is_stillborn)
             short_interval = 0
+            SecondOrder_birth = 0
             for i in live.inds: # Handle DOBs
                 all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
                 if len(all_ppl.dobs[i]) == 1:
                     all_ppl.first_birth_age[i] = all_ppl.age[i]
-                if (len(all_ppl.dobs[i]) > 1) and ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int'] / fpd.mpy)):
-                    all_ppl.short_interval_dates[i].append(all_ppl.age[i])
-                    all_ppl.short_interval[i] += 1
-                    short_interval += 1
+                if (len(all_ppl.dobs[i]) > 1): 
+                    SecondOrder_birth +=1                
+                    if ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int'] / fpd.mpy)):
+                      all_ppl.short_interval_dates[i].append(all_ppl.age[i])
+                      all_ppl.short_interval[i] += 1
+                      short_interval += 1
 
             self.step_results['short_intervals'] = short_interval
 
