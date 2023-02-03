@@ -75,7 +75,7 @@ class People(fpb.BasePeople):
         self.postpartum       = arr(n, d['postpartum'])
         self.mothers          = arr(n, d['mothers'])
         self.short_interval   = arr(n, d['short_interval']) # Number of short birth intervals
-        self.SecondOrder_birth   = arr(n, d['SecondOrder_birth']) # Number of second order live birth
+        self.SecondOrder_birth = arr(n, d['SecondOrder_birth']) # Number of second order live birth
 
         self.postpartum_dur       = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam                  = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
@@ -800,7 +800,6 @@ class People(fpb.BasePeople):
             deaths          = 0,
             births          = 0,
             stillbirths     = 0,
-            short_intervals = 0,
             short_intervals = 0,
             SecondOrder_births    = 0,
             maternal_deaths = 0,
