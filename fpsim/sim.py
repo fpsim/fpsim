@@ -559,7 +559,7 @@ class People(fpb.BasePeople):
                 if len(all_ppl.dobs[i]) == 1:
                     all_ppl.first_birth_age[i] = all_ppl.age[i]
                 if (len(all_ppl.dobs[i]) > 1): 
-                    secondary_birth = all_ppl.age[i]              
+                    secondary_birth = all_ppl.dobs[i]             
                     if ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int'] / fpd.mpy)):
                        all_ppl.short_interval_dates[i].append(all_ppl.age[i])
                        all_ppl.short_interval[i] += 1
