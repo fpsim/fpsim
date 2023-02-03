@@ -1021,7 +1021,7 @@ class Sim(fpb.BaseSim):
                        'no_methods_acpr', 'mcpr', 'cpr', 'acpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
-                       'total_women_40-44', 'total_women_45-49', 'short_intervals','secondary_birth']
+                       'total_women_40-44', 'total_women_45-49', 'short_intervals','secondary_births']
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
@@ -1415,7 +1415,7 @@ class Sim(fpb.BaseSim):
                 self.results['miscarriages_over_year'].append(miscarriages_over_year)
                 self.results['abortions_over_year'].append(abortions_over_year)
                 self.results['short_intervals_over_year'].append(short_intervals_over_year)
-                self.results['SecondOrder_births_over_year'].append(SecondOrder_births_over_year)
+                self.results['secondary_births_over_year'].append(secondary_births_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
                 self.results['pregnancies_over_year'].append(pregnancies_over_year)
 
@@ -1479,7 +1479,7 @@ class Sim(fpb.BaseSim):
         self.results['cum_miscarriages_by_year']     = np.cumsum(self.results['miscarriages_over_year'])
         self.results['cum_abortions_by_year']     = np.cumsum(self.results['abortions_over_year'])
         self.results['cum_short_intervals_by_year']     = np.cumsum(self.results['short_intervals_over_year'])
-        self.results['cum_SecondOrder_births_by_year']     = np.cumsum(self.results['SecondOrder_births_over_year'])
+        self.results['cum_secondary_births_by_year']     = np.cumsum(self.results['secondary_births_over_year'])
         self.results['cum_pregnancies_by_year']     = np.cumsum(self.results['pregnancies_over_year'])
 
         # Convert to an objdict for easier access
