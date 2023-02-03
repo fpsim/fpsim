@@ -566,6 +566,7 @@ class People(fpb.BasePeople):
                       short_interval += 1
 
             self.step_results['short_intervals'] = short_interval
+            self.step_results['SecondOrder_births'] = SecondOrder_birth
 
             for i in stillborn.inds: # Handle adding dates
                 all_ppl.still_dates[i].append(all_ppl.age[i])
@@ -800,7 +801,8 @@ class People(fpb.BasePeople):
             births          = 0,
             stillbirths     = 0,
             short_intervals = 0,
-            total_births    = 0,
+            short_intervals = 0,
+            SecondOrder_births    = 0,
             maternal_deaths = 0,
             infant_deaths   = 0,
             on_methods_mcpr = 0,
@@ -1020,7 +1022,7 @@ class Sim(fpb.BaseSim):
                        'no_methods_acpr', 'mcpr', 'cpr', 'acpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
-                       'total_women_40-44', 'total_women_45-49', 'short_intervals']
+                       'total_women_40-44', 'total_women_45-49', 'short_intervals','SecondOrder_births']
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
@@ -1038,6 +1040,7 @@ class Sim(fpb.BaseSim):
         self.results['abortions_over_year'] = []
         self.results['pregnancies_over_year'] = []
         self.results['short_intervals_over_year'] = []
+        self.results['SecondOrder_births_over_year'] = []
         self.results['risky_pregs_over_year'] = []
         self.results['maternal_deaths_over_year'] = []
         self.results['mmr'] = []
@@ -1330,6 +1333,7 @@ class Sim(fpb.BaseSim):
             self.results['miscarriages'][i]     = r.miscarriages*scale
             self.results['abortions'][i]        = r.abortions*scale
             self.results['short_intervals'][i]  = r.short_intervals*scale
+            self.results['SecondOrder_births'][i]  = r.SecondOrder_births*scale
             self.results['pregnancies'][i]     = r.pregnancies*scale
             self.results['total_births'][i]    = r.total_births*scale
             self.results['maternal_deaths'][i] = r.maternal_deaths*scale
@@ -1397,6 +1401,7 @@ class Sim(fpb.BaseSim):
                 miscarriages_over_year     = scale*np.sum(self.results['miscarriages'][start_index:stop_index])
                 abortions_over_year        = scale*np.sum(self.results['abortions'][start_index:stop_index])
                 short_intervals_over_year        = scale*np.sum(self.results['short_intervals'][start_index:stop_index])
+                SecondOrder_births_over_year        = scale*np.sum(self.results['SecondOrder_births'][start_index:stop_index])
                 maternal_deaths_over_year  = scale*np.sum(self.results['maternal_deaths'][start_index:stop_index])
                 pregnancies_over_year  = scale*np.sum(self.results['pregnancies'][start_index:stop_index])
                 self.results['method_usage'].append(self.compute_method_usage()) # only want this per year
@@ -1411,6 +1416,7 @@ class Sim(fpb.BaseSim):
                 self.results['miscarriages_over_year'].append(miscarriages_over_year)
                 self.results['abortions_over_year'].append(abortions_over_year)
                 self.results['short_intervals_over_year'].append(short_intervals_over_year)
+                self.results['SecondOrder_births_over_year'].append(SecondOrder_births_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
                 self.results['pregnancies_over_year'].append(pregnancies_over_year)
 
@@ -1474,6 +1480,7 @@ class Sim(fpb.BaseSim):
         self.results['cum_miscarriages_by_year']     = np.cumsum(self.results['miscarriages_over_year'])
         self.results['cum_abortions_by_year']     = np.cumsum(self.results['abortions_over_year'])
         self.results['cum_short_intervals_by_year']     = np.cumsum(self.results['short_intervals_over_year'])
+        self.results['cum_SecondOrder_births_by_year']     = np.cumsum(self.results['SecondOrder_births_over_year'])
         self.results['cum_pregnancies_by_year']     = np.cumsum(self.results['pregnancies_over_year'])
 
         # Convert to an objdict for easier access
