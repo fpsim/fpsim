@@ -37,6 +37,8 @@ age_bin_map = {
 
 min_age = 15
 max_age = 50
+first_birth_age = 25  # age to start assessing first birth age in model
+space_retro = 5 # num of years to look back over life span for birth space comparison
 bin_size = 5
 mpy = 12
 
@@ -319,15 +321,18 @@ if do_plot_birth_space:
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         for i in range(len(ppl)):
                 if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-                        if len(ppl.dobs[i]):
+                        if len(ppl.dobs[i]) == 0:
+                                model_age_first.append(float('inf'))
+                        if len(ppl.dobs[i]) and ppl.age[i] >= first_birth_age:
                                 model_age_first.append(ppl.dobs[i][0])
                         if len(ppl.dobs[i]) > 1:
                                 for d in range(len(ppl.dobs[i]) - 1):
-                                        space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
-                                        ind = sc.findinds(space > spacing_bins[:])[-1]
-                                        model_spacing_counts[ind] += 1
+                                        if ppl.age[i] - ppl.dobs[i][d] <= space_retro:
+                                                space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
+                                                ind = sc.findinds(space > spacing_bins[:])[-1]
+                                                model_spacing_counts[ind] += 1
 
-                                        model_spacing.append(space)
+                                                model_spacing.append(space)
 
         spacing = pd.DataFrame(data=model_spacing)
         ax = spacing.plot.kde()
