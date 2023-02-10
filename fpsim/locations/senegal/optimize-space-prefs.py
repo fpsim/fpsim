@@ -1,5 +1,9 @@
 '''
-Optimize for birth spacing parameters
+Optimize for birth spacing preference parameters
+These parameters correct up or down for postpartum sexual activity
+Uses calibration class and sets up a special SpacingCalib class
+Currently uses just the Senegal DHS dataset and all birth spaces from the model
+Will need to create option for Kenya with differently structured data
 '''
 
 import sciris as sc
@@ -15,7 +19,7 @@ calib_pars = dict(
     space27_36 = [1.2, 0.2, 2.0],
 )
 
-spacing_file = 'BirthSpacing.obj'
+spacing_file = 'BirthSpacing.obj'   # Senegal DHS birth spacing data
 
 do_save_figs = 1
 
