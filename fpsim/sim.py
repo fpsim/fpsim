@@ -1451,7 +1451,7 @@ class Sim(fpb.BaseSim):
                 if secondary_births_over_year == 0:
                     self.results['proportion_short_interval_by_year'].append(secondary_births_over_year)
                 else:
-                    short_interval_proportion = (short_intervals_over_year / secondary_births_over_year) *100
+                    short_interval_proportion = (short_intervals_over_year / secondary_births_over_year) 
                     self.results['proportion_short_interval_by_year'].append(short_interval_proportion)
 
                 tfr = 0
