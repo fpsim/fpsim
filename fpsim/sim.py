@@ -1345,7 +1345,6 @@ class Sim(fpb.BaseSim):
             self.results['no_methods_cpr'][i]  = r.no_methods_cpr
             self.results['on_methods_acpr'][i] = r.on_methods_acpr
             self.results['no_methods_acpr'][i] = r.no_methods_acpr
-            self.results['proportion_short_interval'][i]      = r.short_intervals/r.secondary_births
             self.results['mcpr'][i]            = r.on_methods_mcpr/(r.no_methods_mcpr + r.on_methods_mcpr)
             self.results['cpr'][i]             = r.on_methods_cpr/(r.no_methods_cpr + r.on_methods_cpr)
             self.results['acpr'][i]            = r.on_methods_acpr/(r.no_methods_acpr + r.on_methods_acpr)
@@ -1410,7 +1409,6 @@ class Sim(fpb.BaseSim):
                 self.results['pop_size'].append(scale*self.n) # CK: TODO: replace with arrays
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['cpr_by_year'].append(self.results['cpr'][i])
-                self.results['proportion_short_interval_by_year'].append(self.results['proportion_short_interval'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
                 self.results['total_births_over_year'].append(total_births_over_year)
@@ -1449,6 +1447,12 @@ class Sim(fpb.BaseSim):
                 else:
                     infant_mortality_rate = infant_deaths_over_year / live_births_over_year * 1000
                     self.results['imr'].append(infant_mortality_rate)
+
+                if secondary_births_over_year == 0:
+                    self.results['proportion_short_interval_by_year'].append(secondary_births_over_year)
+                else:
+                    short_interval_proportion = (short_intervals_over_year / secondary_births_over_year) *100
+                    self.results['proportion_short_interval_by_year'].append(short_interval_proportion)
 
                 tfr = 0
                 for key in fpd.age_bin_map.keys():
