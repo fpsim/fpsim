@@ -1022,7 +1022,7 @@ class Sim(fpb.BaseSim):
                        'no_methods_acpr', 'mcpr', 'cpr', 'acpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
-                       'total_women_40-44', 'total_women_45-49', 'short_intervals','secondary_births']
+                       'total_women_40-44', 'total_women_45-49', 'short_intervals','secondary_births','proportion_short_interval']
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
@@ -1043,6 +1043,7 @@ class Sim(fpb.BaseSim):
         self.results['secondary_births_over_year'] = []
         self.results['risky_pregs_over_year'] = []
         self.results['maternal_deaths_over_year'] = []
+        self.results['proportion_short_interval_by_year'] = []
         self.results['mmr'] = []
         self.results['imr'] = []
         self.results['birthday_fraction'] = []
@@ -1344,6 +1345,7 @@ class Sim(fpb.BaseSim):
             self.results['no_methods_cpr'][i]  = r.no_methods_cpr
             self.results['on_methods_acpr'][i] = r.on_methods_acpr
             self.results['no_methods_acpr'][i] = r.no_methods_acpr
+            self.results['proportion_short_interval'][i]      = r.short_intervals/r.secondary_births
             self.results['mcpr'][i]            = r.on_methods_mcpr/(r.no_methods_mcpr + r.on_methods_mcpr)
             self.results['cpr'][i]             = r.on_methods_cpr/(r.no_methods_cpr + r.on_methods_cpr)
             self.results['acpr'][i]            = r.on_methods_acpr/(r.no_methods_acpr + r.on_methods_acpr)
@@ -1408,6 +1410,7 @@ class Sim(fpb.BaseSim):
                 self.results['pop_size'].append(scale*self.n) # CK: TODO: replace with arrays
                 self.results['mcpr_by_year'].append(self.results['mcpr'][i])
                 self.results['cpr_by_year'].append(self.results['cpr'][i])
+                self.results['proportion_short_interval_by_year'].append(self.results['proportion_short_interval'][i])
                 self.results['method_failures_over_year'].append(unintended_pregs_over_year)
                 self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
                 self.results['total_births_over_year'].append(total_births_over_year)
@@ -1652,6 +1655,10 @@ class Sim(fpb.BaseSim):
                 to_plot = {
                     'method_usage':                 'Method usage'
                 }
+            elif to_plot == 'short-interval':
+                to_plot = {
+                    'proportion_short_interval_by_year':     'proportion of short interval birth'
+                }
             elif to_plot == 'as_cpr':
                 to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
             elif to_plot == 'as_acpr':
@@ -1701,8 +1708,8 @@ class Sim(fpb.BaseSim):
                     errormsg = f'Could not figure out how to plot {key}: result of length {len(y)} does not match a known x-axis'
                     raise RuntimeError(errormsg)
 
-                percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr', 'method_usage']
-                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key:
+                percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr', 'method_usage','proportion_short_interval_by_year']
+                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'proportion_short_interval_' in key) and 'by_year' not in key:
                     percent_keys = percent_keys + list(to_plot.keys())
                 if key in percent_keys and key != 'method_usage':
                     y *= 100
@@ -1740,7 +1747,7 @@ class Sim(fpb.BaseSim):
                 #         intv.plot_intervention(self, ax)
 
                 # Handle annotations
-                as_plot = ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'pregnancies_' in key or 'stillbirths' in key or 'tfr_' in key or 'imr_' in key or 'mmr_' in key or 'births_' in key) and 'by_year' not in key
+                as_plot = ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'pregnancies_' in key or 'stillbirths' in key or 'tfr_' in key or 'imr_' in key or 'mmr_' in key or 'births_' in key or 'proportion_short_interval_' in key) and 'by_year' not in key
                 fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
                 if key in percent_keys:
                     pl.ylabel('Percentage')
