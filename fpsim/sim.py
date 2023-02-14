@@ -1623,6 +1623,8 @@ class Sim(fpb.BaseSim):
                 for bad_key in delete_keys:
                     res.remove(bad_key)
 
+            agelim = ('-'.join([str(self.pars['age_low']),str(self.pars['age_high'])]))  ## age limit to be added to the title of short birth interval plot 
+  
             # Plot everything
             if ('as_' in to_plot and not self.pars['track_as']):
                 raise ValueError(f"Age specific plot selected but sim.pars['track_as'] is False")
@@ -1662,7 +1664,7 @@ class Sim(fpb.BaseSim):
             elif to_plot == 'short-interval':
                 to_plot = {
 #                    'proportion_short_interval_by_year':     'Proportion of short birth interval'
-                    'proportion_short_interval_by_year':     f"Proportion of short birth interval ({age_group})" for age_group in ("".join([str(self.pars['age_low']),"-",str(self.pars['age_high'])]))
+                    'proportion_short_interval_by_year':     f"Proportion of short birth interval ({age_group})" for age_group in agelim.split()
                 }
             elif to_plot == 'as_cpr':
                 to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
