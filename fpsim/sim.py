@@ -558,7 +558,7 @@ class People(fpb.BasePeople):
                 all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
                 if len(all_ppl.dobs[i]) == 1:
                     all_ppl.first_birth_age[i] = all_ppl.age[i]
-                if (len(all_ppl.dobs[i]) > 1): 
+                if (len(all_ppl.dobs[i]) > 1) and all_ppl.age[i] >= self.pars['age_low'] and all_ppl.age[i] < self.pars['age_high']: 
                     secondary_birth += 1
                     if ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int'] / fpd.mpy)):
                        all_ppl.short_interval_dates[i].append(all_ppl.age[i])
