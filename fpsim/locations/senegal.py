@@ -39,8 +39,8 @@ def scalar_pars():
         'breastfeeding_dur_beta' : 7.2585, # Scale parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur'            : 5, # Duration of lactational amenorrhea
         'short_int'              : 24,# Duration of a short birth interval between live births in months
-        'age_low'                : 0, # age limit for the age-specific short birth interval 
-        'age_high'               : 20,# age limit for the age-specific short birth interval
+        'age_low'                : 0, # age limit for tracking the age-specific short birth interval 
+        'age_high'               : 20,# age limit for tracking the age-specific short birth interval
 
         # Pregnancy outcomes
         'abortion_prob'             : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
