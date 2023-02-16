@@ -38,20 +38,20 @@ age_bin_map = {
 min_age = 15
 max_age = 50
 first_birth_age = 25  # age to start assessing first birth age in model
-space_retro = 5 # num of years to look back over life span for birth space comparison
 bin_size = 5
 mpy = 12
 
 skyscrapers = pd.read_csv('kenya_skyscrapers.csv')
 use = pd.read_csv('use_kenya.csv')
 data_spaces = pd.read_csv('birth_spacing_dhs.csv')
+data_afb = pd.read_csv('afb.table.csv')
 
 dataset = 'PMA 2022'  # Data to compare to for skyscrapers
 
 
 # Set up sim for Kenya
 pars = fp.pars(location='kenya')
-pars['n_agents'] = 100_000 # Small population size
+pars['n_agents'] = 1_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -346,10 +346,19 @@ if do_plot_birth_space:
         model_spacing_counts[:] /= model_spacing_counts[:].sum()
         model_spacing_counts[:] *= 100
 
+        # Extract birth spaces from data
         for i, j in data_spaces.iterrows():
                 space = j['space_mo'] / mpy
                 ind = sc.findinds(space > spacing_bins[:])[-1]
                 data_spacing_counts[ind] += j['Freq']
+
+        data_spacing_counts[:] /= data_spacing_counts[:].sum()
+        data_spacing_counts[:] *= 100
+
+        # Extract ages at first birth from data
+        age_first_birth_data = pd.DataFrame(data=data_afb)
+        age_first_birth_model = pd.DataFrame(data=model_age_first)
+
 
 
         #spacing = pd.DataFrame(data=model_spacing)
@@ -359,17 +368,15 @@ if do_plot_birth_space:
         #ax.set_title('Birth space in Model')
         #pl.show()
 
-        #age_first = pd.DataFrame(data=model_age_first)
+        age_first = pd.DataFrame(data=model_age_first)
         #ax = age_first.plot.kde()
         #ax.set_xlabel('Years')
         #ax.set_ylabel('Density')
         #ax.set_title('Age at first birth in Model')
         #pl.show()
 
-        data_spacing_counts[:] /= data_spacing_counts[:].sum()
-        data_spacing_counts[:] *= 100
-
-
+        sns.histplot(data=age_first, binwidth=1)
+        pl.show()
 
 
         data_dict['spacing_bins'] = np.array(data_spacing_counts.values())
