@@ -53,8 +53,8 @@ def scalar_pars():
         # Fecundity and exposure
         'fecundity_var_low': 0.7,
         'fecundity_var_high': 1.1,
-        'high_parity': 4,
-        'high_parity_nonuse': 0.6,
+        'high_parity': 1,
+        'high_parity_nonuse': 1,
         'primary_infertility': 0.05,
         'exposure_factor': 1.0,  # Overall exposure correction factor
 
