@@ -55,8 +55,15 @@ pars['n_agents'] = 1_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
-pars['fecundity_var_low'] = 0.95
-pars['fecundity_var_high'] = 1.05
+pars['fecundity_var_low'] = 0.7
+pars['fecundity_var_high'] = 1.1
+
+spacing_pars = {'space0_6': 0.8746639177495801, 'space18_24': 0.9717562128471247, 'space27_36': 1.3804651692402752, 'space9_15': 0.42470741261297296}
+
+pars['spacing_pref']['preference'][:3] = spacing_pars['space0_6']
+pars['spacing_pref']['preference'][3:6] = spacing_pars['space9_15']
+pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
+pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36']
 
 sim = fp.Sim(pars=pars)
 sim.run()
