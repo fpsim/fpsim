@@ -14,10 +14,10 @@ import pandas as pd
 
 # Define best, low, high limits for the parameters
 calib_pars = dict(
-    space0_6=[0.5, 0.2, 1.50],
-    space9_15=[0.5, 0.2, 1.50],
-    space18_24=[1.5, 0.2, 2.0],
-    space27_36=[1.2, 0.2, 2.0],
+    space0_6=[0.5, 0.2, 2.0],
+    space9_15=[0.5, 0.2, 2.0],
+    space18_24=[0.5, 0.2, 2.0],
+    space27_36=[0.5, 0.2, 2.0],
 )
 
 location = 'kenya'
