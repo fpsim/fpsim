@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.23.1 (2023-2-28)
+--------------------------
+- Add location folder for Ethiopia calibration
+- Add comparison data to Ethiopia folder
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/118>`_
 
 Version 0.23.0 (2023-2-10)
 --------------------------
