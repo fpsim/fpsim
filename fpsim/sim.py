@@ -1664,7 +1664,7 @@ class Sim(fpb.BaseSim):
             elif to_plot == 'short-interval':
                 to_plot = {
 #                    'proportion_short_interval_by_year':     'Proportion of short birth interval'
-                    'proportion_short_interval_by_year':     f"Proportion of short birth interval ({age_group})" for age_group in agelim.split()
+                    'proportion_short_interval_by_year':     f"Proportion of short birth interval [{age_group})" for age_group in agelim.split()
                 }
             elif to_plot == 'as_cpr':
                 to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
