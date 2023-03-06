@@ -22,7 +22,7 @@ def scalar_pars():
         'seed'                   : 1, # Random seed
         'verbose'                : 1, # How much detail to print during the simulation
         'track_switching'        : 0, # Whether to track method switching
-        'track_as'               : 0, # Whether to track age-specific channels
+        'track_as'               : 1, # Whether to track age-specific channels
 
         # Age limits (in years)
         'method_age'             : 15,
@@ -38,6 +38,9 @@ def scalar_pars():
         'breastfeeding_dur_mu'   : 19.66828, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'breastfeeding_dur_beta' : 7.2585, # Scale parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur'            : 5, # Duration of lactational amenorrhea
+        'short_int'              : 24,# Duration of a short birth interval between live births in months
+        'low_age_short_int'      : 0, # age limit for tracking the age-specific short birth interval 
+        'high_age_short_int'     : 20,# age limit for tracking the age-specific short birth interval
 
         # Pregnancy outcomes
         'abortion_prob'             : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
