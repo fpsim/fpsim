@@ -558,7 +558,7 @@ class People(fpb.BasePeople):
                 all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
                 if len(all_ppl.dobs[i]) == 1:
                     all_ppl.first_birth_age[i] = all_ppl.age[i]
-                if (len(all_ppl.dobs[i]) > 1) and all_ppl.age[i] >= self.pars['age_low'] and all_ppl.age[i] < self.pars['age_high']: 
+                if (len(all_ppl.dobs[i]) > 1) and all_ppl.age[i] >= self.pars['low_age_short_int'] and all_ppl.age[i] < self.pars['high_age_short_int']: 
                     secondary_birth += 1
                     if ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int'] / fpd.mpy)):
                        all_ppl.short_interval_dates[i].append(all_ppl.age[i])
@@ -1623,7 +1623,7 @@ class Sim(fpb.BaseSim):
                 for bad_key in delete_keys:
                     res.remove(bad_key)
 
-            agelim = ('-'.join([str(self.pars['age_low']),str(self.pars['age_high'])]))  ## age limit to be added to the title of short birth interval plot 
+            agelim = ('-'.join([str(self.pars['low_age_short_int']),str(self.pars['high_age_short_int'])]))  ## age limit to be added to the title of short birth interval plot 
   
             # Plot everything
             if ('as_' in to_plot and not self.pars['track_as']):
