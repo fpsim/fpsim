@@ -22,7 +22,7 @@ def scalar_pars():
         'seed'                   : 1, # Random seed
         'verbose'                : 1, # How much detail to print during the simulation
         'track_switching'        : 0, # Whether to track method switching
-        'track_as'               : 0, # Whether to track age-specific channels
+        'track_as'               : 1, # Whether to track age-specific channels
 
         # Age limits (in years)
         'method_age'             : 15,
