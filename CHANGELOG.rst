@@ -8,7 +8,6 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-
 Version 0.23.2 (2023-3-6)
 --------------------------
 - Add duration of a short birth interval between live births (short_int) to senegal.py
