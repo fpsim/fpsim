@@ -8,6 +8,19 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.23.2 (2023-3-6)
+--------------------------
+- Add duration of a short birth interval between live births (short_int) to senegal.py
+- Track number of short interval births an agent has had over their life and number are happening at each time step in sim.py 
+- Add age limit parameters (age_low, age_high) to senegal.py to track age-specific short interval births.
+- Create a time series plot of all short births interval during a sim as well as the age-specific time series.
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/107>`_
+
+Version 0.23.1 (2023-2-28)
+--------------------------
+- Add location folder for Ethiopia calibration
+- Add comparison data to Ethiopia folder
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/118>`_
 
 Version 0.23.0 (2023-2-10)
 --------------------------

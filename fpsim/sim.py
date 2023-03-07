@@ -48,16 +48,16 @@ class People(fpb.BasePeople):
 
         # Basic states
         init_states = dir(self)
-        self.uid            = arr(n, np.arange(n))
-        self.age            = arr(n, np.float64(d['age'])) # Age of the person (in years)
-        self.age_by_group   = arr(n, np.float64(d['age_by_group'])) # Age by which method bin the age falls into, as integer
-        self.sex            = arr(n, d['sex']) # Female (0) or male (1)
-        self.parity         = arr(n, d['parity']) # Number of children
-        self.method         = arr(n, d['method'])  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
-        self.barrier        = arr(n, d['barrier'])  # Reason for non-use
-        self.alive          = arr(n, d['alive'])
-        self.pregnant       = arr(n, d['pregnant'])
-        self.fertile        = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
+        self.uid                = arr(n, np.arange(n))
+        self.age                = arr(n, np.float64(d['age'])) # Age of the person (in years)
+        self.age_by_group       = arr(n, np.float64(d['age_by_group'])) # Age by which method bin the age falls into, as integer
+        self.sex                = arr(n, d['sex']) # Female (0) or male (1)
+        self.parity             = arr(n, d['parity']) # Number of children
+        self.method             = arr(n, d['method'])  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
+        self.barrier            = arr(n, d['barrier'])  # Reason for non-use
+        self.alive              = arr(n, d['alive'])
+        self.pregnant           = arr(n, d['pregnant'])
+        self.fertile            = arr(n, d['fertile'])  # assigned likelihood of remaining childfree throughout reproductive years
 
         # Sexual and reproductive history
         self.sexually_active  = arr(n, d['sexually_active'])
@@ -74,6 +74,8 @@ class People(fpb.BasePeople):
         self.pregnancies      = arr(n, d['pregnancies']) #Number of conceptions (before abortion)
         self.postpartum       = arr(n, d['postpartum'])
         self.mothers          = arr(n, d['mothers'])
+        self.short_interval   = arr(n, d['short_interval']) # Number of short birth intervals
+        self.secondary_birth = arr(n, d['secondary_birth']) # Number of secondary live birth
 
         self.postpartum_dur       = arr(n, d['postpartum_dur']) # Tracks # months postpartum
         self.lam                  = arr(n, d['lam']) # Separately tracks lactational amenorrhea, can be using both LAM and another method
@@ -85,6 +87,7 @@ class People(fpb.BasePeople):
         self.still_dates       = arr(n, []) # Dates of stillbirths -- list of lists
         self.miscarriage_dates = arr(n, []) # Dates of miscarriages -- list of lists
         self.abortion_dates    = arr(n, []) # Dates of abortions -- list of lists
+        self.short_interval_dates = arr(n, []) # age of agents at short birth interval -- list of lists
 
         # Fecundity variation
         fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
@@ -549,12 +552,31 @@ class People(fpb.BasePeople):
             # Add dates of live births and stillbirths separately for agent to remember
             all_ppl = self.unfilter()
             live = deliv.filter(~is_stillborn)
+            short_interval = 0
+            secondary_birth = 0
             for i in live.inds: # Handle DOBs
                 all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
                 if len(all_ppl.dobs[i]) == 1:
                     all_ppl.first_birth_age[i] = all_ppl.age[i]
+                if (len(all_ppl.dobs[i]) > 1) and all_ppl.age[i] >= self.pars['low_age_short_int'] and all_ppl.age[i] < self.pars['high_age_short_int']: 
+                    secondary_birth += 1
+                    if ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int'] / fpd.mpy)):
+                       all_ppl.short_interval_dates[i].append(all_ppl.age[i])
+                       all_ppl.short_interval[i] += 1
+                       short_interval += 1
+
+            self.step_results['short_intervals'] += short_interval
+            self.step_results['secondary_births'] += secondary_birth
+
             for i in stillborn.inds: # Handle adding dates
                 all_ppl.still_dates[i].append(all_ppl.age[i])
+
+            # Add age of agents at birth with short birth interval
+            #for i in live.inds: # Handle DOBs
+                 #if len(all_ppl.dobs[i]) > 1:
+                    #for d in range(len(all_ppl.dobs[i]) - 1):
+                         #if  (all_ppl.dobs[i][d + 1] - all_ppl.dobs[i][d]) < self.pars['short_int']:
+                             #short_interval_age = all_ppl.dobs[i][d+1].append(all_ppl.age[i][d+1])
 
             # Handle twins
             is_twin = live.binomial(self.pars['twins_prob'])
@@ -779,6 +801,8 @@ class People(fpb.BasePeople):
             births          = 0,
             stillbirths     = 0,
             total_births    = 0,
+            short_intervals = 0,
+            secondary_births    = 0,
             maternal_deaths = 0,
             infant_deaths   = 0,
             on_methods_mcpr = 0,
@@ -998,7 +1022,7 @@ class Sim(fpb.BaseSim):
                        'no_methods_acpr', 'mcpr', 'cpr', 'acpr', 'pp0to5', 'pp6to11', 'pp12to23', 'nonpostpartum', 'total_women_fecund', 'unintended_pregs', 'birthday_fraction',
                        'total_births_10-14', 'total_births_15-19', 'total_births_20-24', 'total_births_25-29', 'total_births_30-34', 'total_births_35-39', 'total_births_40-44',
                        'total_births_45-49', 'total_women_10-14', 'total_women_15-19', 'total_women_20-24', 'total_women_25-29', 'total_women_30-34', 'total_women_35-39',
-                       'total_women_40-44', 'total_women_45-49']
+                       'total_women_40-44', 'total_women_45-49', 'short_intervals','secondary_births','proportion_short_interval']
         self.results = {}
         for key in resultscols:
             self.results[key] = np.zeros(int(self.npts))
@@ -1015,8 +1039,11 @@ class Sim(fpb.BaseSim):
         self.results['miscarriages_over_year'] = []
         self.results['abortions_over_year'] = []
         self.results['pregnancies_over_year'] = []
+        self.results['short_intervals_over_year'] = []
+        self.results['secondary_births_over_year'] = []
         self.results['risky_pregs_over_year'] = []
         self.results['maternal_deaths_over_year'] = []
+        self.results['proportion_short_interval_by_year'] = []
         self.results['mmr'] = []
         self.results['imr'] = []
         self.results['birthday_fraction'] = []
@@ -1306,6 +1333,8 @@ class Sim(fpb.BaseSim):
             self.results['stillbirths'][i]     = r.stillbirths*scale
             self.results['miscarriages'][i]     = r.miscarriages*scale
             self.results['abortions'][i]        = r.abortions*scale
+            self.results['short_intervals'][i]  = r.short_intervals*scale
+            self.results['secondary_births'][i]  = r.secondary_births*scale
             self.results['pregnancies'][i]     = r.pregnancies*scale
             self.results['total_births'][i]    = r.total_births*scale
             self.results['maternal_deaths'][i] = r.maternal_deaths*scale
@@ -1372,6 +1401,8 @@ class Sim(fpb.BaseSim):
                 stillbirths_over_year      = scale*np.sum(self.results['stillbirths'][start_index:stop_index])
                 miscarriages_over_year     = scale*np.sum(self.results['miscarriages'][start_index:stop_index])
                 abortions_over_year        = scale*np.sum(self.results['abortions'][start_index:stop_index])
+                short_intervals_over_year        = scale*np.sum(self.results['short_intervals'][start_index:stop_index])
+                secondary_births_over_year        = scale*np.sum(self.results['secondary_births'][start_index:stop_index])
                 maternal_deaths_over_year  = scale*np.sum(self.results['maternal_deaths'][start_index:stop_index])
                 pregnancies_over_year  = scale*np.sum(self.results['pregnancies'][start_index:stop_index])
                 self.results['method_usage'].append(self.compute_method_usage()) # only want this per year
@@ -1385,6 +1416,8 @@ class Sim(fpb.BaseSim):
                 self.results['stillbirths_over_year'].append(stillbirths_over_year)
                 self.results['miscarriages_over_year'].append(miscarriages_over_year)
                 self.results['abortions_over_year'].append(abortions_over_year)
+                self.results['short_intervals_over_year'].append(short_intervals_over_year)
+                self.results['secondary_births_over_year'].append(secondary_births_over_year)
                 self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
                 self.results['pregnancies_over_year'].append(pregnancies_over_year)
 
@@ -1414,6 +1447,12 @@ class Sim(fpb.BaseSim):
                 else:
                     infant_mortality_rate = infant_deaths_over_year / live_births_over_year * 1000
                     self.results['imr'].append(infant_mortality_rate)
+
+                if secondary_births_over_year == 0:
+                    self.results['proportion_short_interval_by_year'].append(secondary_births_over_year)
+                else:
+                    short_interval_proportion = (short_intervals_over_year / secondary_births_over_year) 
+                    self.results['proportion_short_interval_by_year'].append(short_interval_proportion)
 
                 tfr = 0
                 for key in fpd.age_bin_map.keys():
@@ -1447,6 +1486,8 @@ class Sim(fpb.BaseSim):
         self.results['cum_stillbirths_by_year']     = np.cumsum(self.results['stillbirths_over_year'])
         self.results['cum_miscarriages_by_year']     = np.cumsum(self.results['miscarriages_over_year'])
         self.results['cum_abortions_by_year']     = np.cumsum(self.results['abortions_over_year'])
+        self.results['cum_short_intervals_by_year']     = np.cumsum(self.results['short_intervals_over_year'])
+        self.results['cum_secondary_births_by_year']     = np.cumsum(self.results['secondary_births_over_year'])
         self.results['cum_pregnancies_by_year']     = np.cumsum(self.results['pregnancies_over_year'])
 
         # Convert to an objdict for easier access
@@ -1582,6 +1623,8 @@ class Sim(fpb.BaseSim):
                 for bad_key in delete_keys:
                     res.remove(bad_key)
 
+            agelim = ('-'.join([str(self.pars['low_age_short_int']),str(self.pars['high_age_short_int'])]))  ## age limit to be added to the title of short birth interval plot 
+  
             # Plot everything
             if ('as_' in to_plot and not self.pars['track_as']):
                 raise ValueError(f"Age specific plot selected but sim.pars['track_as'] is False")
@@ -1617,6 +1660,11 @@ class Sim(fpb.BaseSim):
             elif to_plot == 'method':
                 to_plot = {
                     'method_usage':                 'Method usage'
+                }
+            elif to_plot == 'short-interval':
+                to_plot = {
+#                    'proportion_short_interval_by_year':     'Proportion of short birth interval'
+                    'proportion_short_interval_by_year':     f"Proportion of short birth interval [{age_group})" for age_group in agelim.split()
                 }
             elif to_plot == 'as_cpr':
                 to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
@@ -1667,8 +1715,8 @@ class Sim(fpb.BaseSim):
                     errormsg = f'Could not figure out how to plot {key}: result of length {len(y)} does not match a known x-axis'
                     raise RuntimeError(errormsg)
 
-                percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr', 'method_usage']
-                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key) and 'by_year' not in key:
+                percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr', 'method_usage','proportion_short_interval_by_year']
+                if ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'proportion_short_interval_' in key) and 'by_year' not in key:
                     percent_keys = percent_keys + list(to_plot.keys())
                 if key in percent_keys and key != 'method_usage':
                     y *= 100
@@ -1706,7 +1754,7 @@ class Sim(fpb.BaseSim):
                 #         intv.plot_intervention(self, ax)
 
                 # Handle annotations
-                as_plot = ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'pregnancies_' in key or 'stillbirths' in key or 'tfr_' in key or 'imr_' in key or 'mmr_' in key or 'births_' in key) and 'by_year' not in key
+                as_plot = ('cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'pregnancies_' in key or 'stillbirths' in key or 'tfr_' in key or 'imr_' in key or 'mmr_' in key or 'births_' in key or 'proportion_short_interval_' in key) and 'by_year' not in key
                 fixaxis(useSI=fpd.useSI, set_lim=new_fig) # If it's not a new fig, don't set the lim
                 if key in percent_keys:
                     pl.ylabel('Percentage')
