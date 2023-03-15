@@ -375,15 +375,17 @@ if do_plot_birth_space:
         #ax.set_title('Birth space in Model')
         #pl.show()
 
-        age_first = pd.DataFrame(data=model_age_first)
+        #age_first = pd.DataFrame(data=model_age_first)
         #ax = age_first.plot.kde()
         #ax.set_xlabel('Years')
         #ax.set_ylabel('Density')
         #ax.set_title('Age at first birth in Model')
         #pl.show()
 
-        sns.histplot(data=age_first, binwidth=1)
+        sns.histplot(data=age_first_birth_model, binwidth=1)
+        sns.histplot(x=age_first_birth_data['afb'], weights=age_first_birth_data['wt'], binwidth=1)
         pl.show()
+        pl.savefig("age_first_birth.png", bbox_inches='tight', dpi=100)
 
 
         data_dict['spacing_bins'] = np.array(data_spacing_counts.values())
