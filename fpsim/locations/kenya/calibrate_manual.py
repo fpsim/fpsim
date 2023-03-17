@@ -21,6 +21,10 @@ do_plot_cpr = True
 do_plot_tfr = True
 do_plot_pop_growth = True
 do_plot_birth_space = True
+do_plot_age_first_birth = True
+
+# Set option to save figures
+do_save = 0
 
 
 # Set up global variables
@@ -39,14 +43,15 @@ min_age = 15
 max_age = 50
 first_birth_age = 25  # age to start assessing first birth age in model
 bin_size = 5
-mpy = 12
+mpy = 12 # months per year
 
-skyscrapers = pd.read_csv('kenya_skyscrapers.csv')
-use = pd.read_csv('use_kenya.csv')
-data_spaces = pd.read_csv('birth_spacing_dhs.csv')
-data_afb = pd.read_csv('afb.table.csv')
+# Import Kenya data files to compare
+skyscrapers = pd.read_csv('kenya_skyscrapers.csv') # Age-parity distribution file
+use = pd.read_csv('use_kenya.csv') #Dichotomous contraceptive method use
+data_spaces = pd.read_csv('birth_spacing_dhs.csv')  # Birth-to-birth interval data
+data_afb = pd.read_csv('afb.table.csv')  # Ages at first birth in DHS for women age 25-50
 
-dataset = 'PMA 2022'  # Data to compare to for skyscrapers
+dataset = 'PMA 2022'  # Data to compare to for skyscrapers, can also use DHS 2014
 
 
 # Set up sim for Kenya
@@ -57,18 +62,24 @@ pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 # Free parameters for calibration
 pars['fecundity_var_low'] = 0.7
 pars['fecundity_var_high'] = 1.1
+pars['exposure_factor'] = 1
+pars['high_parity'] = 1
+pars['high_parity_nonuse'] = 1
 
-spacing_pars = {'space0_6': 0.8746639177495801, 'space18_24': 0.9717562128471247, 'space27_36': 1.3804651692402752, 'space9_15': 0.42470741261297296}
-
+# Last free parameter, postpartum sexual activity correction or 'birth spacing preferece'
+# Set all to 1 to reset
+spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-kenya.py'
 pars['spacing_pref']['preference'][:3] = spacing_pars['space0_6']
 pars['spacing_pref']['preference'][3:6] = spacing_pars['space9_15']
 pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
 pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36']
 
+# Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in kenya.py
+
 sim = fp.Sim(pars=pars)
 sim.run()
 
-
+# Plot results from sum run
 if do_plot_sim:
     sim.plot()
 
@@ -78,8 +89,10 @@ res = sim.results
 # Save people from sim
 ppl = sim.people
 
+# Set up dictionaries to compare from model vs data
 data_dict = {}
 model_dict = {} # For comparison from model to data
+
 
 def pop_growth_rate(years, population):
         growth_rate = np.zeros(len(years) - 1)
@@ -382,8 +395,10 @@ if do_plot_birth_space:
         #ax.set_title('Age at first birth in Model')
         #pl.show()
 
-        sns.histplot(data=age_first_birth_model, binwidth=1)
-        sns.histplot(x=age_first_birth_data['afb'], weights=age_first_birth_data['wt'], binwidth=1)
+        sns.histplot(data=age_first_birth_model, stat='proportion', kde=True, binwidth=1, color='cornflowerblue', label='FPsim')
+        sns.histplot(x=age_first_birth_data['afb'], stat='proportion', kde=True, weights=age_first_birth_data['wt'], binwidth=1, color='gray', label='DHS data')
+        pl.xlabel('Age at first birth')
+        pl.legend()
         pl.show()
         pl.savefig("age_first_birth.png", bbox_inches='tight', dpi=100)
 
