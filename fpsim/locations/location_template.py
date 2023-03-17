@@ -1,6 +1,11 @@
-'''
-Set the parameters for FPsim, specifically for Senegal.
-'''
+# -*- coding: utf-8 -*-
+"""
+This file is a shell for calibrating new contexts. 
+Save a copy of this script, name the copy 'location'.py (e.g. ethiopia.py; bihar.py)
+Location specific parameters are commented out. 
+Fill in values for your location then remove the comment to allow the par to be functional.
+"""
+
 
 import numpy as np
 import sciris as sc
@@ -12,7 +17,7 @@ from .. import defaults as fpd
 def scalar_pars():
     scalar_pars = {
         # Basic parameters
-        'location'               : 'senegal',
+        'location'               : 'example', #TODO: your location in single quotation marks: e.g. 'senegal',
         'n_agents'               : 1_000, # Number of agents
         'scaled_pop'             : None, # Scaled population / total population size
         'start_year'             : 1960, # Start year of simulation
@@ -35,16 +40,13 @@ def scalar_pars():
         'preg_dur_low'           : 9,
         'preg_dur_high'          : 9,
         'postpartum_dur'         : 35,
-        'breastfeeding_dur_mu'   : 19.66828, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
-        'breastfeeding_dur_beta' : 7.2585, # Scale parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
+ ### context-specific       'breastfeeding_dur_mu'   : 19.66828, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
+ ### context-specific       'breastfeeding_dur_beta' : 7.2585, # Scale parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur'            : 5, # Duration of lactational amenorrhea
-        'short_int'              : 24,# Duration of a short birth interval between live births in months
-        'low_age_short_int'      : 0, # age limit for tracking the age-specific short birth interval 
-        'high_age_short_int'     : 20,# age limit for tracking the age-specific short birth interval
 
         # Pregnancy outcomes
-        'abortion_prob'             : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
-        'twins_prob'                : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+ ### context-specific       'abortion_prob'             : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/ - probability of abortion, per pregnancy
+### context-specific        'twins_prob'                : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
         'LAM_efficacy'              : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
         'maternal_mortality_factor' : 1,
 
@@ -57,9 +59,9 @@ def scalar_pars():
         'exposure_factor'        : 1.0, # Overall exposure correction factor
 
         # MCPR
-        'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
-        'mcpr_max'               : 0.90, # Do not allow MCPR to increase beyond this
-        'mcpr_norm_year'         : 2018, # Year to normalize MCPR trend to 1
+### context-specific  ASSUMPTION      'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
+### context-specific        'mcpr_max'               : 0.90, # Do not allow MCPR to increase beyond this
+### context-specific        'mcpr_norm_year'         : 2018, # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
@@ -74,18 +76,19 @@ def data2interp(data, ages, normalize=False):
 
 
 def filenames():
-    ''' Data files for use with calibration, etc -- not needed for running a sim '''
+    ''' Data files for use with calibration, etc -- not needed for running a sim 
+    These data files are created using code in the data processing folder '''
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'senegal'
-    files['basic_dhs']        = 'senegal-basic-dhs.yaml'
-    files['popsize']          = 'senegal-popsize.csv'
-    files['mcpr']             = 'senegal-mcpr.csv'
-    files['tfr']              = 'senegal-tfr.csv'
-    files['asfr']             = 'senegal-asfr.csv'
-    files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
-    files['pregnancy_parity'] = 'SNIR80FL.obj'
-    files['spacing']          = 'BirthSpacing.obj'
-    files['methods']          = 'Method_v312.csv'
+### context-specific    files['base'] = sc.thisdir(aspath=True) / 'senegal'
+### context-specific    files['basic_dhs']        = 'senegal-basic-dhs.yaml'
+### context-specific    files['popsize']          = 'senegal-popsize.csv'
+### context-specific    files['mcpr']             = 'senegal-mcpr.csv'
+### context-specific    files['tfr']              = 'senegal-tfr.csv'
+### context-specific    files['asfr']             = 'senegal-asfr.csv'
+### context-specific    files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
+### context-specific    files['pregnancy_parity'] = 'SNIR80FL.obj'
+### context-specific    files['spacing']          = 'BirthSpacing.obj'
+### context-specific    files['methods']          = 'Method_v312.csv'
     return files
 
 
@@ -94,6 +97,8 @@ def filenames():
 def age_pyramid():
     ''' Starting age bin, male population, female population '''
     pyramid = np.array([
+        
+        ### context-specific -- REPLACE
          [0,  318225,  314011], # Senegal 1962
          [5,  249054,  244271],
         [10,  191209,  190998],
@@ -121,7 +126,8 @@ def age_mortality():
     Age-dependent mortality rates, Senegal specific from 1990-1995 -- see age_dependent_mortality.py in the fp_analyses repository
     Mortality rate trend from crude mortality rate per 1000 people: https://data.worldbank.org/indicator/SP.DYN.CDRT.IN?locations=SN
     '''
-    mortality = {
+### context-specific REPLACE
+#    mortality = {
         'bins': np.array([ 0.,  5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95]),
         'm': np.array([0.03075891, 0.00266326, 0.00164035, 0.00247776, 0.00376541,0.00377009, 0.00433534, 0.00501743, 0.00656144, 0.00862479, 0.01224844, 0.01757291, 0.02655129, 0.0403916 , 0.06604032,0.10924413, 0.17495116, 0.26531436, 0.36505174, 0.43979833]),
         'f': np.array([0.02768283, 0.00262118, 0.00161414, 0.0023998 , 0.00311697, 0.00354105, 0.00376715, 0.00429043, 0.00503436, 0.00602394, 0.00840777, 0.01193858, 0.01954465, 0.03220238, 0.05614077, 0.0957751 , 0.15973906, 0.24231313, 0.33755308, 0.41632442])
@@ -152,8 +158,8 @@ def maternal_mortality():
     42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
     expressed per 100,000 live births, for a specified time period.
     '''
-
-    data = np.array([
+### context-specific
+#    data = np.array([
         [1990, 0.00278, 0.00319, 0.00364],
         [2000, 0.00268, 0.00309, 0.00354],
         [2001, 0.00263, 0.00304, 0.00350],
@@ -192,8 +198,8 @@ def infant_mortality():
     from Noori et al for Sub-Saharan African from 2014-2018.  Odds ratios with age 23-25 as reference group:
     https://www.medrxiv.org/content/10.1101/2021.06.10.21258227v1
     '''
-
-    data = np.array([
+### context-specific - REPLACE
+ #   data = np.array([
         [1960, 128.3],
         [1961, 128.2],
         [1962, 128.3],
@@ -262,7 +268,7 @@ def infant_mortality():
     infant_mortality['ages'] = np.array([16, 17,   19, 22,   25, 50])
     infant_mortality['age_probs'] = np.array([2.28, 1.63, 1.3, 1.12, 1.0, 1.0])
 
-    return infant_mortality
+#    return infant_mortality
 
 
 def miscarriage():
@@ -278,7 +284,9 @@ def miscarriage():
     return miscarriage_interp
 
 
-def stillbirth():
+#def stillbirth():
+    
+    ### context-specific - REPLACE
     '''
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
@@ -335,7 +343,8 @@ def fecundity_ratio_nullip():
     return fecundity_nullip_interp
 
 
-def lactational_amenorrhea():
+#def lactational_amenorrhea():
+    ### context-specific - REPLACE
     '''
     Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
     Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
@@ -366,8 +375,8 @@ def lactational_amenorrhea():
 
 
 #%% Pregnancy exposure
-
-def sexual_activity():
+### context-specific - REPLACE
+#def sexual_activity():
     '''
     Returns a linear interpolation of rates of female sexual activity, defined as
     percentage women who have had sex within the last four weeks.
@@ -390,7 +399,9 @@ def sexual_activity():
     return activity_interp
 
 
-def sexual_activity_pp():
+#def sexual_activity_pp():
+
+### context-specific - REPLACE
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
     Uses DHS Senegal 2018 individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
@@ -444,7 +455,9 @@ def sexual_activity_pp():
     return postpartum_activity
 
 
-def debut_age():
+#def debut_age():
+    
+    ### context-specific - REPLACE
     '''
     Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
     Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
@@ -596,6 +609,8 @@ def methods():
         '>35'   : [35, fpd.max_age+1], # +1 since we're using < rather than <=
     }
 
+
+### context-specific - REPLACE
     # Data on trend in MCPR in Senegal over time, in % # CK: TODO: find source
     methods['mcpr_years'] = np.array([1950, 1980, 1986, 1992, 1997, 2005, 2010, 2012, 2014, 2015, 2016, 2017, 2018, 2019, 2020])
     methods['mcpr_rates'] = np.array([0.50,  1.0, 2.65, 4.53, 7.01, 7.62, 8.85, 11.3, 14.7, 15.3, 16.5, 18.8,   19,   20, 20.4])/100
@@ -603,7 +618,9 @@ def methods():
     return methods
 
 
-def method_probs():
+#def method_probs():
+    
+    ### context-specific - REPLACE
     '''
     Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
     from 2018 DHS Senegal contraceptive calendar data.
@@ -752,8 +769,12 @@ def method_probs():
     return raw
 
 
-def barriers():
-    ''' Reasons for nonuse -- taken from DHS '''
+#def barriers():
+    
+    ### context-specific - REPLACE
+    
+    ''' Reasons for nonuse -- taken from DHS. 
+    NOTE: Barriers are not currently used in sim.py'''
 
     barriers = sc.odict({
       'No need'   :  54.2,
@@ -806,3 +827,4 @@ def make_pars():
     pars['barriers']       = barriers()
 
     return pars
+
