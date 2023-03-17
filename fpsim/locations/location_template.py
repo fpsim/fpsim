@@ -1,8 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-FPsim shell for calibrating new contexts - use context-specific data to fill in
-This script sets the parameters for a new location
-Save a copy, name the copy 'location'.py (e.g. ethiopia.py; bihar.py)
+This file is a shell for calibrating new contexts. 
+Save a copy of this script, name the copy 'location'.py (e.g. ethiopia.py; bihar.py)
+Location specific parameters are commented out. 
+Fill in values for your location then remove the comment to allow the par to be functional.
 """
 
 
