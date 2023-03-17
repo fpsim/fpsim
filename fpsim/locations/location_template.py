@@ -45,7 +45,7 @@ def scalar_pars():
         'max_lam_dur'            : 5, # Duration of lactational amenorrhea
 
         # Pregnancy outcomes
- ### context-specific       'abortion_prob'             : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
+ ### context-specific       'abortion_prob'             : 0.08, # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/ - probability of abortion, per pregnancy
 ### context-specific        'twins_prob'                : 0.015, # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
         'LAM_efficacy'              : 0.98, # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
         'maternal_mortality_factor' : 1,
