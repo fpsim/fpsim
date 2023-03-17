@@ -235,7 +235,8 @@ if do_plot_methods:
 
 if do_plot_skyscrapers:
         '''
-        Plot an age-parity distribution for model vs data'''
+        Plot an age-parity distribution for model vs data
+        '''
 
         dataset = 'PMA 2022'  # Data to compare to for skyscrapers, can also use DHS 2014
 
@@ -305,71 +306,89 @@ if do_plot_skyscrapers:
                 if do_save:
                         pl.savefig('figs/skyscrapers_' + str(key.lower()) + '.png')
 
-               
+
 if do_plot_cpr:
+        '''
+        Plot contraceptive prevalence rate for model vs data
+        '''
 
         # Import data
         data_cpr = pd.read_csv('kenya_cpr.csv') # From UN Data Portal
         data_cpr = data_cpr[data_cpr['year'] <= 2020] # Restrict years to plot
 
+        # Plot
         pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
         pl.plot(res['t'], res['cpr']*100, label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Percent')
         pl.title('Contraceptive Prevalence Rate in Data vs Model - Kenya')
         pl.legend()
-
-        pl.savefig('figs/cpr_over_sim.png')
         pl.show()
+        if do_save:
+                pl.savefig('figs/cpr_over_sim.png')
+
 
 if do_plot_tfr:
+        '''
+        Plot total fertility rate for model vs data
+        '''
 
         # Import data
         data_tfr = pd.read_csv('kenya_tfr.csv')
 
+        # Plot
         pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
         pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
         pl.title('Total Fertility Rate in Data vs Model - Kenya')
         pl.legend()
-
-        pl.savefig('figs/tfr_over_sim.png')
         pl.show()
+        if do_save:
+                pl.savefig('figs/tfr_over_sim.png')
 
 if do_plot_pop_growth:
+        '''
+        Plot annual population growth rate for model vs data
+        '''
 
+        # Import data
         data_popsize = pd.read_csv('kenya_popsize.csv')
         data_popsize = data_popsize[data_popsize['year'] <= 2020]  # Restrict years to plot
 
         data_pop_years = data_popsize['year'].to_numpy()
         data_population = data_popsize['population'].to_numpy()
 
+        # Extract from model
         model_growth_rate = pop_growth_rate(res['tfr_years'], res['pop_size'])
         data_growth_rate = pop_growth_rate(data_pop_years, data_population)
 
+        # Plot
         pl.plot(data_pop_years[1:], data_growth_rate, label='World Bank', color='black')
         pl.plot(res['tfr_years'][1:], model_growth_rate, label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
         pl.title('Population Growth Rate Data vs Model - Kenya')
         pl.legend()
-
-        pl.savefig('figs/popgrowth_over_sim.png')
         pl.show()
+        if do_save:
+                pl.savefig('figs/popgrowth_over_sim.png')
+
 
 if do_plot_birth_space_afb:
         '''
-        Plots model versus data for birth space and age at first birth
+        Plot birth space and age at first birth for model vs data
         '''
-        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
 
+        # Set up
+        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
         model_age_first = []
         model_spacing = []
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
 
 
+        # Extract age at first birth and birth spaces from model
         for i in range(len(ppl)):
                 if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
                         if len(ppl.dobs[i]) == 0:
@@ -381,58 +400,39 @@ if do_plot_birth_space_afb:
                                         space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
                                         ind = sc.findinds(space > spacing_bins[:])[-1]
                                         model_spacing_counts[ind] += 1
-
                                         model_spacing.append(space)
 
+        # Normalize model birth space bin counts to percentages
         model_spacing_counts[:] /= model_spacing_counts[:].sum()
         model_spacing_counts[:] *= 100
 
-        # Extract birth spaces from data
+        age_first_birth_model = pd.DataFrame(data=model_age_first)
+
+        # Extract birth spaces and age at first birth from data
         for i, j in data_spaces.iterrows():
                 space = j['space_mo'] / mpy
                 ind = sc.findinds(space > spacing_bins[:])[-1]
                 data_spacing_counts[ind] += j['Freq']
 
+        age_first_birth_data = pd.DataFrame(data=data_afb)
+
+        # Normalize dat birth space bin counts to percentages
         data_spacing_counts[:] /= data_spacing_counts[:].sum()
         data_spacing_counts[:] *= 100
 
-        # Extract ages at first birth from data
-        age_first_birth_data = pd.DataFrame(data=data_afb)
-        age_first_birth_model = pd.DataFrame(data=model_age_first)
-
-
-
-        #spacing = pd.DataFrame(data=model_spacing)
-        #ax = spacing.plot.kde()
-        #ax.set_xlabel('Years')
-        #ax.set_ylabel('Density')
-        #ax.set_title('Birth space in Model')
-        #pl.show()
-
-        #age_first = pd.DataFrame(data=model_age_first)
-        #ax = age_first.plot.kde()
-        #ax.set_xlabel('Years')
-        #ax.set_ylabel('Density')
-        #ax.set_title('Age at first birth in Model')
-        #pl.show()
-
+        # Plot age at first birth (histogram with KDE)
         sns.histplot(data=age_first_birth_model, stat='proportion', kde=True, binwidth=1, color='cornflowerblue', label='FPsim')
         sns.histplot(x=age_first_birth_data['afb'], stat='proportion', kde=True, weights=age_first_birth_data['wt'], binwidth=1, color='gray', label='DHS data')
         pl.xlabel('Age at first birth')
         pl.legend()
         pl.show()
-        pl.savefig("age_first_birth.png", bbox_inches='tight', dpi=100)
+        if do_save:
+                pl.savefig('figs/age_first_birth.png', bbox_inches='tight', dpi=100)
 
 
+        # Plot birth space bins with diff
         data_dict['spacing_bins'] = np.array(data_spacing_counts.values())
         model_dict['spacing_bins'] = np.array(model_spacing_counts.values())
-
-        model_spacing_stats = np.array([np.percentile(model_spacing, 25),
-                                                np.percentile(model_spacing, 50),
-                                                np.percentile(model_spacing, 75)])
-        model_age_first_stats = np.array([np.percentile(model_age_first, 25),
-                                                  np.percentile(model_age_first, 50),
-                                                  np.percentile(model_age_first, 75)])
 
         diff = model_dict['spacing_bins'] - data_dict['spacing_bins']
 
@@ -442,25 +442,15 @@ if do_plot_birth_space_afb:
                 {'Model': model_dict['spacing_bins'], 'Data': data_dict['spacing_bins'], 'Diff': diff},
                 index=spacing_bins.keys())
 
-        print(bins_frame)
+        print(bins_frame) # Print in output, remove if not needed
 
-        # Plot spacing bins
         ax = bins_frame.plot.barh(color={'Data': 'black', 'Model': 'cornflowerblue', 'Diff': 'red'})
         ax.set_xlabel('Percent of live birth spaces')
         ax.set_ylabel('Birth space in months')
         ax.set_title('Birth space bins calibration - Kenya')
-
-        pl.savefig("birth_space_bins_kenya.png", bbox_inches='tight', dpi=100)
         pl.show()
-
-
-        #model_space_df = pd.DataFrame(data=model_spacing_counts.values(), index=model_spacing_counts.keys())
-        #ax = model_space_df.plot.barh(color='cornflowerblue')
-        #ax.set_title('Birth spacing bins in Model vs Data')
-        #ax.set_ylabel('Space between births in months')
-        #ax.set_xlabel('Percent of all births')
-        #pl.savefig('figs/birth_space_bins.png')
-        #pl.show()
+        if do_save:
+                pl.savefig('figs/birth_space_bins_kenya.png', bbox_inches='tight', dpi=100)
 
 sc.toc()
 print('Done.')
