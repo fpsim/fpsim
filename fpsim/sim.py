@@ -1477,7 +1477,7 @@ class Sim(fpb.BaseSim):
         # Convert all results to Numpy arrays
         for key,arr in self.results.items():
             if isinstance(arr, list):
-                self.results[key] = np.array(arr, dtype=object) # Convert any lists to arrays
+                self.results[key] = np.array(arr) # Convert any lists to arrays
 
         # Calculate cumulative totals
         self.results['cum_maternal_deaths_by_year'] = np.cumsum(self.results['maternal_deaths_over_year'])
