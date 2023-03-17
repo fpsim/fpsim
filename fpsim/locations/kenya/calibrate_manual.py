@@ -20,8 +20,7 @@ do_plot_skyscrapers = True
 do_plot_cpr = True
 do_plot_tfr = True
 do_plot_pop_growth = True
-do_plot_birth_space = True
-do_plot_age_first_birth = True
+do_plot_birth_space_afb = True
 
 # Set option to save figures
 do_save = 0
@@ -51,7 +50,6 @@ use = pd.read_csv('use_kenya.csv') #Dichotomous contraceptive method use
 data_spaces = pd.read_csv('birth_spacing_dhs.csv')  # Birth-to-birth interval data
 data_afb = pd.read_csv('afb.table.csv')  # Ages at first birth in DHS for women age 25-50
 
-dataset = 'PMA 2022'  # Data to compare to for skyscrapers, can also use DHS 2014
 
 
 # Set up sim for Kenya
@@ -95,6 +93,9 @@ model_dict = {} # For comparison from model to data
 
 
 def pop_growth_rate(years, population):
+        '''
+        Calculates growth rate as a time series to help compare model to data
+        '''
         growth_rate = np.zeros(len(years) - 1)
 
         for i in range(len(years)):
@@ -104,20 +105,27 @@ def pop_growth_rate(years, population):
 
         return growth_rate
 
-
+# Start series of options for plotting data to model comaprisons
 if do_plot_asfr:
+        '''
+        Plot age-specific fertility rate between model and data
+        '''
+        # Print ASFR form model in output
         for key in age_bin_map.keys():
             print(f'ASFR (annual) for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
 
+        # Load data
         x = [1, 2, 3, 4, 5, 6, 7, 8]
         asfr_data = [3.03, 64.94, 172.12, 174.12, 136.10, 80.51, 34.88, 13.12]  # From UN Data Kenya 2020 (kenya_asfr.csv)
         x_labels = []
         asfr_model = []
 
+        # Extract from model
         for key in age_bin_map.keys():
                 x_labels.append(key)
                 asfr_model.append(res['asfr'][key][-1])
 
+        # Plot
         fig, ax = pl.subplots()
         kw = dict(lw=3, alpha=0.7, markersize=10)
         ax.plot(x, asfr_data, marker='^', color='black', label="UN data", **kw)
@@ -129,11 +137,17 @@ if do_plot_asfr:
         ax.set_ylabel('ASFR in 2019')
         ax.legend(frameon=False)
         sc.boxoff()
-        pl.savefig('figs/asfr.png')
         pl.show()
+        if do_save:
+                pl.savefig('figs/asfr.png')
 
 if do_plot_methods:
+        '''
+        Plots both dichotomous method use and non-use and contraceptive mix
+        '''
 
+        # Pull method definitions from parameters file (kenya.py)
+        # Sould be similar for other locations unless wanting to change efficacy
         methods_map_model = {  # Index, modern, efficacy
         'None': [0, False, 0.000],
         'Withdrawal': [1, False, 0.866],
@@ -148,20 +162,21 @@ if do_plot_methods:
         'Other modern': [9, True, 0.880],
         }
 
+        # Setup
         model_labels_all = list(methods_map_model.keys())
         model_labels_methods = sc.dcp(model_labels_all)
         model_labels_methods = model_labels_methods[1:]
 
         model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 
-        # From model
+        # Extract from model
         for i in range(len(ppl)):
                 if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
                         model_method_counts[ppl.method[i]] += 1
 
         model_method_counts[:] /= model_method_counts[:].sum()
 
-        # From data - Kenya PMA 2022 (mix_kenya.csv)
+        # Method mix from data - Kenya PMA 2022 (mix_kenya.csv)
         data_methods_mix = {
                 'Withdrawal': 1.03588605253422,
                 'Other traditional': 4.45800961894192,
@@ -174,7 +189,7 @@ if do_plot_methods:
                 'Other modern': 3.12615612282649
         }
 
-        # From data - Kenya PMA 2022 (use_kenya.csv)
+        # Method use from data - Kenya PMA 2022 (use_kenya.csv)
         data_methods_use = {
                 'No use': 51.1078954508456,
                 'Any method': 48.8921045491544
@@ -203,26 +218,31 @@ if do_plot_methods:
         df_mix = pd.DataFrame({'PMA': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
         df_use = pd.DataFrame({'PMA': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
 
+        # Plot mix
         ax = df_mix.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
         ax.set_xlabel('Percent users')
         ax.set_title('Contraceptive method mix model vs data')
+        if do_save:
+                pl.savefig("figs/method_mix.png", bbox_inches='tight', dpi=100)
 
-        pl.savefig("figs/method_mix.png", bbox_inches='tight', dpi=100)
-
+        # Plot use
         ax = df_use.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
         ax.set_xlabel('Percent')
         ax.set_title('Contraceptive method use model vs data')
-
-        pl.savefig("figs/method_use.png", bbox_inches='tight', dpi=100)
-
-        #pl.show()
+        if do_save:
+                pl.savefig("figs/method_use.png", bbox_inches='tight', dpi=100)
 
 
 if do_plot_skyscrapers:
+        '''
+        Plot an age-parity distribution for model vs data'''
 
+        dataset = 'PMA 2022'  # Data to compare to for skyscrapers, can also use DHS 2014
+
+        # Set up
         age_keys = list(age_bin_map.keys())[1:]
         age_bins = pl.arange(min_age, max_age, bin_size)
-        parity_bins = pl.arange(0, 7)
+        parity_bins = pl.arange(0, 7) # Plot up to parity 6
         n_age = len(age_bins)
         n_parity = len(parity_bins)
         x_age = pl.arange(n_age)
@@ -262,6 +282,7 @@ if do_plot_skyscrapers:
         for key in ['Data', 'Model']:
                 sky_arr[key] /= sky_arr[key].sum() / 100
 
+        # Find diff to help visualize in plotting
         sky_arr['Diff: data - model'] = sky_arr['Data']-sky_arr['Model']
 
         # Plot skyscrapers
@@ -279,10 +300,12 @@ if do_plot_skyscrapers:
                 pl.gca().view_init(30, 45)
                 pl.draw()
 
-                pl.savefig('figs/skyscrapers_' + str(key.lower()) + '.png')
-
                 pl.show()
 
+                if do_save:
+                        pl.savefig('figs/skyscrapers_' + str(key.lower()) + '.png')
+
+               
 if do_plot_cpr:
 
         # Import data
@@ -335,12 +358,10 @@ if do_plot_pop_growth:
         pl.savefig('figs/popgrowth_over_sim.png')
         pl.show()
 
-if do_plot_birth_space:
-
+if do_plot_birth_space_afb:
         '''
         Plots model versus data for birth space and age at first birth
         '''
-
         spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
 
         model_age_first = []
