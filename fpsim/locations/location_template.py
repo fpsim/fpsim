@@ -17,7 +17,7 @@ from .. import defaults as fpd
 def scalar_pars():
     scalar_pars = {
         # Basic parameters
-        'location'               : #your location in single quotation marks: 'senegal',
+        'location'               : 'example', #TODO: your location in single quotation marks: e.g. 'senegal',
         'n_agents'               : 1_000, # Number of agents
         'scaled_pop'             : None, # Scaled population / total population size
         'start_year'             : 1960, # Start year of simulation
