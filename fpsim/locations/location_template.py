@@ -59,7 +59,7 @@ def scalar_pars():
         'exposure_factor'        : 1.0, # Overall exposure correction factor
 
         # MCPR
-### context-specific        'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
+### context-specific  ASSUMPTION      'mcpr_growth_rate'       : 0.02, # The year-on-year change in MCPR after the end of the data
 ### context-specific        'mcpr_max'               : 0.90, # Do not allow MCPR to increase beyond this
 ### context-specific        'mcpr_norm_year'         : 2018, # Year to normalize MCPR trend to 1
     }
