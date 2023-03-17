@@ -54,7 +54,7 @@ data_afb = pd.read_csv('afb.table.csv')  # Ages at first birth in DHS for women 
 
 # Set up sim for Kenya
 pars = fp.pars(location='kenya')
-pars['n_agents'] = 1_000 # Small population size
+pars['n_agents'] = 100_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -62,7 +62,7 @@ pars['fecundity_var_low'] = 0.95
 pars['fecundity_var_high'] = 1.05
 pars['exposure_factor'] = 1
 pars['high_parity'] = 1
-pars['high_parity_nonuse'] = 5
+pars['high_parity_nonuse'] = 1
 
 # Last free parameter, postpartum sexual activity correction or 'birth spacing preferece'
 # Set all to 1 to reset
@@ -431,7 +431,7 @@ if do_plot_birth_space_afb:
 
         # Plot age at first birth (histogram with KDE)
         sns.histplot(data=age_first_birth_model, stat='proportion', kde=True, binwidth=1, color='cornflowerblue', label='FPsim')
-        sns.histplot(x=age_first_birth_data['afb'], stat='proportion', kde=True, weights=age_first_birth_data['wt'], binwidth=1, color='yellow', label='DHS data')
+        sns.histplot(x=age_first_birth_data['afb'], stat='proportion', kde=True, weights=age_first_birth_data['wt'], binwidth=1, color='dimgrey', label='DHS data')
         pl.xlabel('Age at first birth')
         pl.legend()
 
