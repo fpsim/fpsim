@@ -76,7 +76,8 @@ def data2interp(data, ages, normalize=False):
 
 
 def filenames():
-    ''' Data files for use with calibration, etc -- not needed for running a sim '''
+    ''' Data files for use with calibration, etc -- not needed for running a sim 
+    These data files are created using code in the data processing folder '''
     files = {}
 ### context-specific    files['base'] = sc.thisdir(aspath=True) / 'senegal'
 ### context-specific    files['basic_dhs']        = 'senegal-basic-dhs.yaml'
