@@ -38,7 +38,7 @@ def scalar_pars():
         'end_first_tri': 3,
         'preg_dur_low': 9,
         'preg_dur_high': 9,
-        'postpartum_dur': 35,
+        'postpartum_dur': 23,
         'breastfeeding_dur_mu': 11.4261936291137,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'breastfeeding_dur_beta': 7.5435309020483, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur': 5,  # Duration of lactational amenorrhea
@@ -442,19 +442,7 @@ def sexual_activity_pp():
         [20, 0.77338],
         [21, 0.70340],
         [22, 0.72395],
-        [23, 0.72202],
-        [24, 0.7],
-        [25, 0.7],
-        [26, 0.7],
-        [27, 0.7],
-        [28, 0.7],
-        [29, 0.7],
-        [30, 0.6],
-        [31, 0.6],
-        [32, 0.6],
-        [33, 0.6],
-        [34, 0.6],
-        [35, 0.6],
+        [23, 0.72202]
     ])
 
 
@@ -548,19 +536,19 @@ def birth_spacing_pref():
     NOTE: spacing bins must be uniform!
     '''
     postpartum_spacing = np.array([
-        [0, 0.875],
-        [3, 0.875],
-        [6, 0.875],
-        [9, 0.425],
-        [12, 0.425],
-        [15, 0.425],
-        [18, 0.972],
-        [21, 0.972],
-        [24, 0.972],
-        [27, 1.38],
-        [30, 1.38],
-        [33, 1.38],
-        [36, 1.38],
+        [0, 1],
+        [3, 1],
+        [6, 1],
+        [9, 1],
+        [12, 1],
+        [15, 1],
+        [18, 1],
+        [21, 1],
+        [24, 1],
+        [27, 1],
+        [30, 1],
+        [33, 1],
+        [36, 1],
     ])
 
     # Calculate the intervals and check they're all the same
