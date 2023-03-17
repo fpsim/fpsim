@@ -23,7 +23,7 @@ do_plot_pop_growth = True
 do_plot_birth_space_afb = True
 
 # Set option to save figures
-do_save = 0
+do_save = 1
 
 
 # Set up global variables
@@ -58,11 +58,11 @@ pars['n_agents'] = 1_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
-pars['fecundity_var_low'] = 0.7
-pars['fecundity_var_high'] = 1.1
+pars['fecundity_var_low'] = 0.95
+pars['fecundity_var_high'] = 1.05
 pars['exposure_factor'] = 1
 pars['high_parity'] = 1
-pars['high_parity_nonuse'] = 1
+pars['high_parity_nonuse'] = 5
 
 # Last free parameter, postpartum sexual activity correction or 'birth spacing preferece'
 # Set all to 1 to reset
@@ -70,7 +70,7 @@ spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}
 pars['spacing_pref']['preference'][:3] = spacing_pars['space0_6']
 pars['spacing_pref']['preference'][3:6] = spacing_pars['space9_15']
 pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
-pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36']
+#pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
 
 # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in kenya.py
 
@@ -137,9 +137,11 @@ if do_plot_asfr:
         ax.set_ylabel('ASFR in 2019')
         ax.legend(frameon=False)
         sc.boxoff()
-        pl.show()
+
         if do_save:
                 pl.savefig('figs/asfr.png')
+
+        pl.show()
 
 if do_plot_methods:
         '''
@@ -301,10 +303,11 @@ if do_plot_skyscrapers:
                 pl.gca().view_init(30, 45)
                 pl.draw()
 
-                pl.show()
 
                 if do_save:
                         pl.savefig('figs/skyscrapers_' + str(key.lower()) + '.png')
+
+                pl.show()
 
 
 if do_plot_cpr:
@@ -323,9 +326,11 @@ if do_plot_cpr:
         pl.ylabel('Percent')
         pl.title('Contraceptive Prevalence Rate in Data vs Model - Kenya')
         pl.legend()
-        pl.show()
+
         if do_save:
                 pl.savefig('figs/cpr_over_sim.png')
+
+        pl.show()
 
 
 if do_plot_tfr:
@@ -343,9 +348,11 @@ if do_plot_tfr:
         pl.ylabel('Rate')
         pl.title('Total Fertility Rate in Data vs Model - Kenya')
         pl.legend()
-        pl.show()
+
         if do_save:
                 pl.savefig('figs/tfr_over_sim.png')
+
+        pl.show()
 
 if do_plot_pop_growth:
         '''
@@ -370,9 +377,11 @@ if do_plot_pop_growth:
         pl.ylabel('Rate')
         pl.title('Population Growth Rate Data vs Model - Kenya')
         pl.legend()
-        pl.show()
+
         if do_save:
                 pl.savefig('figs/popgrowth_over_sim.png')
+
+        pl.show()
 
 
 if do_plot_birth_space_afb:
@@ -422,12 +431,14 @@ if do_plot_birth_space_afb:
 
         # Plot age at first birth (histogram with KDE)
         sns.histplot(data=age_first_birth_model, stat='proportion', kde=True, binwidth=1, color='cornflowerblue', label='FPsim')
-        sns.histplot(x=age_first_birth_data['afb'], stat='proportion', kde=True, weights=age_first_birth_data['wt'], binwidth=1, color='gray', label='DHS data')
+        sns.histplot(x=age_first_birth_data['afb'], stat='proportion', kde=True, weights=age_first_birth_data['wt'], binwidth=1, color='yellow', label='DHS data')
         pl.xlabel('Age at first birth')
         pl.legend()
-        pl.show()
+
         if do_save:
                 pl.savefig('figs/age_first_birth.png', bbox_inches='tight', dpi=100)
+
+        pl.show()
 
 
         # Plot birth space bins with diff
@@ -448,9 +459,11 @@ if do_plot_birth_space_afb:
         ax.set_xlabel('Percent of live birth spaces')
         ax.set_ylabel('Birth space in months')
         ax.set_title('Birth space bins calibration - Kenya')
-        pl.show()
+
         if do_save:
                 pl.savefig('figs/birth_space_bins_kenya.png', bbox_inches='tight', dpi=100)
+
+        pl.show()
 
 sc.toc()
 print('Done.')
