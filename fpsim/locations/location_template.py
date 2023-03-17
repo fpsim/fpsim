@@ -772,7 +772,9 @@ def methods():
 #def barriers():
     
     ### context-specific - REPLACE
-    ''' Reasons for nonuse -- taken from DHS '''
+    
+    ''' Reasons for nonuse -- taken from DHS. 
+    NOTE: Barriers are not currently used in sim.py'''
 
     barriers = sc.odict({
       'No need'   :  54.2,
