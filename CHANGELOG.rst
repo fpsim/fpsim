@@ -14,30 +14,30 @@ Version 0.23.2 (2023-3-6)
 - Track number of short interval births an agent has had over their life and number are happening at each time step in sim.py 
 - Add age limit parameters (age_low, age_high) to senegal.py to track age-specific short interval births.
 - Create a time series plot of all short births interval during a sim as well as the age-specific time series.
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/107>`_
+- *GitHub info*: PR `107 <https://github.com/fpsim/fpsim/pull/107>`_
 
 Version 0.23.1 (2023-2-28)
 --------------------------
 - Add location folder for Ethiopia calibration
 - Add comparison data to Ethiopia folder
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/118>`_
+- *GitHub info*: PR `118 <https://github.com/fpsim/fpsim/pull/118>`_
 
 Version 0.23.0 (2023-2-10)
 --------------------------
 - Add optimize-space-prefs.py using Calibration class to algorithmically find best birth space params
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/119>`_
+- *GitHub info*: PR `119 <https://github.com/fpsim/fpsim/pull/119>`_
 
 Version 0.22.1 (2023-2-03)
 --------------------------
 - Update contraceptive matrices to be weighted
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/113>`_
+- *GitHub info*: PR `113 <https://github.com/fpsim/fpsim/pull/113>`_
 
 
 Version 0.22.0 (2023-1-24)
 --------------------------
 - Add calibrate_manual.py to compare sim runs to data with new data structures
 - Add plot_birth_spacing.py under senegal location to fine tune this calibration
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/109>`_
+- *GitHub info*: PR `109 <https://github.com/fpsim/fpsim/pull/109>`_
 
 Version 0.21.2 (2022-12-16)
 ---------------------------
