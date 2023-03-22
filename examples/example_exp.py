@@ -11,6 +11,9 @@ do_plot = True
 exp = fp.Experiment()
 exp.run()
 
+df = exp.summarize()
+print(df)
+
 if do_plot:
     exp.sim.plot()
     exp.plot()
