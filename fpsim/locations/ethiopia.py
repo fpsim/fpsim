@@ -43,7 +43,7 @@ def scalar_pars(): ##UPDATED FOR ETHIOPIA
         'breastfeeding_dur_beta': 8.20149079, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur': 5,  # Duration of lactational amenorrhea
 
-        # Pregnancy outcomes
+        # Pregnancy outcomes ##UPDATED FOR ETHIOPIA
         'abortion_prob': 0.176,
         # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
         'twins_prob': 0.011,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
@@ -337,7 +337,7 @@ def female_age_fecundity():
     return fecundity_interp
 
 
-def fecundity_ratio_nullip():
+def fecundity_ratio_nullip(): 
     '''
     Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
     from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
@@ -450,7 +450,7 @@ def sexual_activity_pp(): ##NOT YET UPDATED FOR ETHIOPIA
     return postpartum_activity
 
 
-def debut_age(): ##NOT YET UPDATED FOR ETHIOPIA
+def debut_age(): ##UPDATED FOR ETHIOPIA
     '''
     Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
     Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
@@ -458,38 +458,35 @@ def debut_age(): ##NOT YET UPDATED FOR ETHIOPIA
     '''
 
     sexual_debut = np.array([
-        [10.0, 0.008404629256166524],
-        [11.0, 0.006795048697926663],
-        [12.0, 0.026330525753311643],
-        [13.0, 0.04440278185223372],
-        [14.0, 0.08283157906888061],
-        [15.0, 0.14377365580688461],
-        [16.0, 0.13271744734209995],
-        [17.0, 0.11915611658325072],
-        [18.0, 0.13735481818469894],
-        [19.0, 0.0841039265081519],
-        [20.0, 0.07725867074164659],
-        [21.0, 0.03982337306065369],
-        [22.0, 0.031195559243867545],
-        [23.0, 0.020750304422300126],
-        [24.0, 0.014468030815585422],
-        [25.0, 0.010870195645684769],
-        [26.0, 0.007574195696769944],
-        [27.0, 0.0034378402773621282],
-        [28.0, 0.0031344552061394622],
-        [29.0, 0.0018168079578966389],
-        [30.0, 0.001385356426809007],
-        [31.0, 0.0004912818135032509],
-        [32.0, 0.00045904179812542576],
-        [33.0, 0.0005049625590548578],
-        [34.0, 0.000165858204720886],
-        [35.0, 0.00019259487032758347],
-        [36.0, 0.0002126920535675137],
-        [37.0, 8.84428869703282e-05],
-        [38.0, 5.07209448615522e-05],
-        [39.0, 6.555458199225806e-05],
-        [41.0, 0.00013980442816424654],
-        [44.0, 4.372731039149624e-05]])
+        [10, 0.00671240845335203],
+        [11, 0.00918135820646243],
+        [12, 0.0309770814788788],
+        [13, 0.059400507503726],
+        [14, 0.130291755291],
+        [15, 0.196183864268175],
+        [16, 0.130556610013873],
+        [17, 0.103290455840828],
+        [18, 0.110776245328648],
+        [19, 0.0530816775521274],
+        [20, 0.0588590881799291],
+        [21, 0.026991174849838],
+        [22, 0.0271788262050103],
+        [23, 0.0188626403851833],
+        [24, 0.0112214052863469],
+        [25, 0.0109271507351524],
+        [26, 0.00443999952806908],
+        [27, 0.00359275321149036],
+        [28, 0.00303477463739577],
+        [29, 0.0017573689141809],
+        [30, 0.00121215246872525],
+        [31, 0.000711491329468429],
+        [32, 0.000137332034070925],
+        [33, 0.000279848072025066],
+        [34, 7.17053090713206E-06],
+        [35, 9.65008015799441E-05],
+        [36, 8.46224502635213E-06],
+        [37, 3.97705796721265E-05],
+        [43, 0.00019012606885453]])
 
     debut_age = {}
     debut_age['ages'] = sexual_debut[:, 0]
