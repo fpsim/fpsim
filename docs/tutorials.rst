@@ -4,5 +4,6 @@
     :maxdepth: 1
 
     tutorials/T1_intro.ipynb
-    tutorials/T2_plotting.ipynb
+    tutorials/T2_scenarios.ipynb
+    tutorials/T3_scenarios_plotting.ipynb
     
