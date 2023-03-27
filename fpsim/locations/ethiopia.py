@@ -33,7 +33,7 @@ def scalar_pars(): ##UPDATED FOR ETHIOPIA
         'age_limit_fecundity': 50,
         'max_age': 99,
 
-        # Durations (in months)
+        # Durations (in months) ##UPDATED FOR ETHIOPIA
         'switch_frequency': 12,  # How frequently to check for changes to contraception
         'end_first_tri': 3,
         'preg_dur_low': 9,
@@ -307,7 +307,7 @@ def stillbirth(): ##UPDATING IN PROGRESS - ##TODO - LOOK INTO HOW NOORI ET AL SH
         [2019, 24.6],
     ])
 
-    stillbirth_rate = {}
+    stillbirth_rate = {} ##NOT YET UPDATED FOR ETHIOPIA
     stillbirth_rate['year'] = data[:, 0]
     stillbirth_rate['probs'] = data[:, 1] / 1000  # Rate per 1000 total births
     stillbirth_rate['ages'] = np.array([15, 16, 17, 19, 20, 28, 31, 36, 50])
