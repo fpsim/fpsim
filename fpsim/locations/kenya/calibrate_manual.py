@@ -8,9 +8,14 @@ import sciris as sc
 import fpsim as fp
 import pylab as pl
 import seaborn as sns
+import csv
 
+# Global Variables
+
+country = 'kenya'
 
 sc.tic()
+
 
 # Set options for plotting
 do_plot_sim = True
@@ -40,14 +45,13 @@ max_age = 50
 bin_size = 5
 mpy = 12
 
-skyscrapers = pd.read_csv('kenya_skyscrapers.csv')
-use = pd.read_csv('use_kenya.csv')
+skyscrapers = pd.read_csv(f'{country}_skyscrapers.csv')
+use = pd.read_csv(f'use_{country}.csv')
 
 dataset = 'PMA 2022'  # Data to compare to for skyscrapers
 
-
 # Set up sim for Kenya
-pars = fp.pars(location='kenya')
+pars = fp.pars(location=country)
 pars['n_agents'] = 100_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
@@ -85,7 +89,11 @@ if do_plot_asfr:
             print(f'ASFR (annual) for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
 
         x = [1, 2, 3, 4, 5, 6, 7, 8]
-        asfr_data = [3.03, 64.94, 172.12, 174.12, 136.10, 80.51, 34.88, 13.12]  # From UN Data Kenya 2020 (kenya_asfr.csv)
+        with open('kenya_asfr.csv', 'r') as file:
+                data = file.readlines()
+        second_last_row = data[-2]
+        asfr_data = second_last_row.split(',')[1:-1]
+        #asfr_data = [3.03, 64.94, 172.12, 174.12, 136.10, 80.51, 34.88, 13.12]  # From UN Data Kenya 2020 (kenya_asfr.csv)
         x_labels = []
         asfr_model = []
 
@@ -110,6 +118,7 @@ if do_plot_asfr:
 if do_plot_methods:
 
         methods_map_model = {  # Index, modern, efficacy
+        ### TODO. From kenya.py methods() data var? how does this get generated?
         'None': [0, False, 0.000],
         'Withdrawal': [1, False, 0.866],
         'Other traditional': [2, False, 0.861],
@@ -137,22 +146,50 @@ if do_plot_methods:
         model_method_counts[:] /= model_method_counts[:].sum()
 
         # From data - Kenya PMA 2022 (mix_kenya.csv)
+        ##Ideally want to standardize
+        ### TODO Ideally want to standardize the labels/numbers in mix_{country}.csv file so can just search for the label or by key number
+
+        with open('mix_kenya.csv', 'r') as file:
+                reader = csv.reader(file)
+                for row in reader:
+                        if row[1] == 'BTL/vasectomy':
+                                BTL = row[-1]
+                        elif row[1] == 'condoms':
+                                condoms = row[-1]
+                        elif row[1] == 'implant':
+                                implant = row[-1]
+                        elif row[1] == 'injectables':
+                                injectables = row[-1]
+                        elif row[1] == 'IUD':
+                                IUD = row[-1]
+                        elif row[1] == 'other modern':
+                                other_modern = row[-1]
+                        elif row[1] == 'other traditional':
+                                other_traditional = row[-1]
+                        elif row[1] == 'pill':
+                                pill = row[-1]
+                        elif row[1] == 'withdrawal':
+                                withdrawal = row[-1]
         data_methods_mix = {
-                'Withdrawal': 1.03588605253422,
-                'Other traditional': 4.45800961894192,
-                'Condoms': 8.41657417684055,
-                'Pill': 7.95412504624491,
-                'Injectables': 34.0732519422863,
-                'Implants': 33.9622641509434,
-                'IUDs': 3.08916019237884,
-                'BTL': 3.88457269700333,
-                'Other modern': 3.12615612282649
+                'Withdrawal': withdrawal,
+                'Other traditional': other_traditional,
+                'Condoms': condoms,
+                'Pill': pill,
+                'Injectables': injectables,
+                'Implants': implant,
+                'IUDs': IUD,
+                'BTL': BTL,
+                'Other modern': other_modern
         }
 
         # From data - Kenya PMA 2022 (use_kenya.csv)
+        with open('use_kenya.csv', 'r') as file:
+                data = file.readlines()
+        no_use = data[-2].split(',')[3]
+        any_method = data[-1].split(',')[3]
         data_methods_use = {
-                'No use': 51.1078954508456,
-                'Any method': 48.8921045491544
+                'No use': no_use,
+                'Any method': any_method
         }
 
         # Plot bar charts of method mix and use among users
@@ -277,21 +314,20 @@ if do_plot_cpr:
 if do_plot_tfr:
 
         # Import data
-        data_tfr = pd.read_csv('kenya_tfr.csv')
+        data_tfr = pd.read_csv(f'{country}_tfr.csv')
 
         pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
         pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
-        pl.title('Total Fertility Rate in Data vs Model - Kenya')
+        pl.title(f'Total Fertility Rate in Data vs Model - {country}')
         pl.legend()
 
         pl.savefig('figs/tfr_over_sim.png')
         pl.show()
 
 if do_plot_pop_growth:
-
-        data_popsize = pd.read_csv('kenya_popsize.csv')
+        data_popsize = pd.read_csv(f'{country}_popsize.csv')
         data_popsize = data_popsize[data_popsize['year'] <= 2020]  # Restrict years to plot
 
         data_pop_years = data_popsize['year'].to_numpy()
@@ -304,7 +340,7 @@ if do_plot_pop_growth:
         pl.plot(res['tfr_years'][1:], model_growth_rate, label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
-        pl.title('Population Growth Rate Data vs Model - Kenya')
+        pl.title(f'Population Growth Rate Data vs Model - {country}')
         pl.legend()
 
         pl.savefig('figs/popgrowth_over_sim.png')

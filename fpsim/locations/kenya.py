@@ -42,6 +42,10 @@ def scalar_pars():
         'breastfeeding_dur_mu': 11.4261936291137,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'breastfeeding_dur_beta': 7.5435309020483, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur': 5,  # Duration of lactational amenorrhea
+        ### NOTE: These were copied from Senegal just to enable the manual_calibration script to run. These values need to be verified.
+        'short_int': 24,  # Duration of a short birth interval between live births in months
+        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
+        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
 
         # Pregnancy outcomes
         'abortion_prob': 0.201,
