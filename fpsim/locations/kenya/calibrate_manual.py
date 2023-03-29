@@ -45,6 +45,8 @@ max_age = 50
 bin_size = 5
 mpy = 12
 
+## TODO: put all filenames from which to read data at the top
+
 skyscrapers = pd.read_csv(f'{country}_skyscrapers.csv')
 use = pd.read_csv(f'use_{country}.csv')
 
@@ -89,10 +91,12 @@ if do_plot_asfr:
             print(f'ASFR (annual) for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
 
         x = [1, 2, 3, 4, 5, 6, 7, 8]
-        with open('kenya_asfr.csv', 'r') as file:
+        with open(f'{country}_asfr.csv', 'r') as file:
                 data = file.readlines()
         second_last_row = data[-2]
         asfr_data = second_last_row.split(',')[1:-1]
+        ## TODO: pull data based on year on line 56
+
         #asfr_data = [3.03, 64.94, 172.12, 174.12, 136.10, 80.51, 34.88, 13.12]  # From UN Data Kenya 2020 (kenya_asfr.csv)
         x_labels = []
         asfr_model = []
@@ -119,6 +123,7 @@ if do_plot_methods:
 
         methods_map_model = {  # Index, modern, efficacy
         ### TODO. From kenya.py methods() data var? how does this get generated?
+        ### Best to pull from location file (kenya.py as example)
         'None': [0, False, 0.000],
         'Withdrawal': [1, False, 0.866],
         'Other traditional': [2, False, 0.861],
@@ -152,26 +157,13 @@ if do_plot_methods:
         with open('mix_kenya.csv', 'r') as file:
                 reader = csv.reader(file)
                 for row in reader:
-                        if row[1] == 'BTL/vasectomy':
-                                BTL = row[-1]
-                        elif row[1] == 'condoms':
-                                condoms = row[-1]
-                        elif row[1] == 'implant':
-                                implant = row[-1]
-                        elif row[1] == 'injectables':
-                                injectables = row[-1]
-                        elif row[1] == 'IUD':
-                                IUD = row[-1]
-                        elif row[1] == 'other modern':
-                                other_modern = row[-1]
-                        elif row[1] == 'other traditional':
-                                other_traditional = row[-1]
-                        elif row[1] == 'pill':
-                                pill = row[-1]
-                        elif row[1] == 'withdrawal':
-                                withdrawal = row[-1]
+                        method_perc = []
+                        for row in reader:
+                                method_perc.append(row[-1])
+
+        ## If data in different format than that in method_mix_PMA.R, will need to modify list indices below
         data_methods_mix = {
-                'Withdrawal': withdrawal,
+                'Withdrawal': method_perc[9],
                 'Other traditional': other_traditional,
                 'Condoms': condoms,
                 'Pill': pill,
@@ -183,6 +175,8 @@ if do_plot_methods:
         }
 
         # From data - Kenya PMA 2022 (use_kenya.csv)
+        ## Use 'use' dataframe pulled up above
+
         with open('use_kenya.csv', 'r') as file:
                 data = file.readlines()
         no_use = data[-2].split(',')[3]
@@ -296,7 +290,7 @@ if do_plot_skyscrapers:
                 pl.show()
 
 if do_plot_cpr:
-
+        ### TODO: replace 2020 with end year specified above
         # Import data
         data_cpr = pd.read_csv('kenya_cpr.csv') # From UN Data Portal
         data_cpr = data_cpr[data_cpr['year'] <= 2020] # Restrict years to plot
@@ -328,12 +322,14 @@ if do_plot_tfr:
 
 if do_plot_pop_growth:
         data_popsize = pd.read_csv(f'{country}_popsize.csv')
+        ### TODO: replace 2020 with end year specified above
         data_popsize = data_popsize[data_popsize['year'] <= 2020]  # Restrict years to plot
 
         data_pop_years = data_popsize['year'].to_numpy()
         data_population = data_popsize['population'].to_numpy()
 
         model_growth_rate = pop_growth_rate(res['tfr_years'], res['pop_size'])
+
         data_growth_rate = pop_growth_rate(data_pop_years, data_population)
 
         pl.plot(data_pop_years[1:], data_growth_rate, label='World Bank', color='black')
