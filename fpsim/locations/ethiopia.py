@@ -121,17 +121,17 @@ def age_pyramid(): ##UPDATED FOR ETHIOPIA
     return pyramid
 
 
-def age_mortality(): ##UPDATE IN PROGRESS FOR ETHIOPIA - NEED TO DETERMINE WHAT YEAR TO NORM TO (E.G. 2010)
+def age_mortality(): ##UPDATED FOR ETHIOPIA
     '''
     Age-dependent mortality rates taken from UN World Population Prospects 2022.  From probability of dying each year.
     https://population.un.org/wpp/
-    Used CSV WPP2022_Life_Table_Complete_Medium_Female_1950-2021, Ethiopia, 2010 
-    Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Ethiopia, 2010
+    Used CSV WPP2022_Life_Table_Complete_Medium_Female_1950-2021, Ethiopia, 2020 
+    Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Ethiopia, 2020
     Mortality rate trend from crude death rate per 1000 people, also from UN Data Portal, 1950-2030:
     https://population.un.org/dataportal/data/indicators/59/locations/231/start/1950/end/2030/table/pivotbylocation
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
-    data_year = 2010
+    data_year = 2020 #NORMED TO 2020 BASED ON ETHIOPIA PROBABILITY DATA
     mortality_data = pd.read_csv(thisdir / 'ethiopia' / 'mortality_prob_ethiopia.csv')
     mortality_trend = pd.read_csv(thisdir / 'ethiopia' / 'mortality_trend_ethiopia.csv')       
 
