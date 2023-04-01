@@ -42,6 +42,9 @@ def scalar_pars():
         'breastfeeding_dur_mu': 11.4261936291137,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'breastfeeding_dur_beta': 7.5435309020483, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur': 5,  # Duration of lactational amenorrhea
+        'short_int': 24,  # Duration of a short birth interval between live births in months
+        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
+        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
 
         # Pregnancy outcomes
         'abortion_prob': 0.201,
@@ -53,8 +56,8 @@ def scalar_pars():
         # Fecundity and exposure
         'fecundity_var_low': 0.7,
         'fecundity_var_high': 1.1,
-        'high_parity': 4,
-        'high_parity_nonuse': 0.6,
+        'high_parity': 1,
+        'high_parity_nonuse': 1,
         'primary_infertility': 0.05,
         'exposure_factor': 1.0,  # Overall exposure correction factor
 
@@ -439,7 +442,7 @@ def sexual_activity_pp():
         [20, 0.77338],
         [21, 0.70340],
         [22, 0.72395],
-        [23, 0.72202],
+        [23, 0.72202]
     ])
 
 
@@ -533,19 +536,19 @@ def birth_spacing_pref():
     NOTE: spacing bins must be uniform!
     '''
     postpartum_spacing = np.array([
-        [0, 0.5],
-        [3, 0.5],
-        [6, 0.5],
-        [9, 0.5],
-        [12, 0.8],
-        [15, 1.2],
-        [18, 5.0],
-        [21, 5.0],
-        [24, 9.0],
-        [27, 9.0],
-        [30, 9.0],
-        [33, 9.0],
-        [36, 5.0],
+        [0, 1],
+        [3, 1],
+        [6, 1],
+        [9, 1],
+        [12, 1],
+        [15, 1],
+        [18, 1],
+        [21, 1],
+        [24, 1],
+        [27, 1],
+        [30, 1],
+        [33, 1],
+        [36, 1],
     ])
 
     # Calculate the intervals and check they're all the same

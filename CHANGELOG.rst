@@ -8,6 +8,14 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.24.0 (2023-3-17)
+--------------------------
+- Finish a manual calibration script for plotting model outcomes vs data for Kenya
+- Goal is to make this script more flexible for other locations, still needs some tweaks for data import
+- Compares ASFR, TFR, age/parity mix, contraceptive use and mix, CPR, pop growth rate, age at first birth,
+and birth spacing bins
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/133>`_
+
 Version 0.23.2 (2023-3-6)
 --------------------------
 - Add duration of a short birth interval between live births (short_int) to senegal.py
