@@ -381,7 +381,7 @@ def lactational_amenorrhea(): ##NOT YET UPDATED FOR ETHIOPIA
 
 # %% Pregnancy exposure
 
-def sexual_activity(): ##NOT YET UPDATED FOR ETHIOPIA
+def sexual_activity(): ##UPDATED FOR ETHIOPIA
     '''
     Returns a linear interpolation of rates of female sexual activity, defined as
     percentage women who have had sex within the last four weeks.
@@ -391,10 +391,11 @@ def sexual_activity(): ##NOT YET UPDATED FOR ETHIOPIA
     Excludes women who answer "never had sex", probabilities are only applied to agents who have sexually debuted
     Data taken from 2018 DHS, no trend over years for now
     Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
+    Last value duplicated so that it interpolates out to 50 and then stops
     '''
 
     sexually_active = np.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
-                                [0, 0, 0, 31.4, 55.0, 64.4, 69.6, 65.3, 60.7, 57.4, 57.4]])
+                                [0, 0, 0, 15, 51.2, 69.4, 69.3, 68.6, 68.1, 59.7, 59.7]])
 
     sexually_active[1] /= 100  # Convert from percent to rate per woman
     activity_ages = sexually_active[0]
