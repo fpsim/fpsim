@@ -280,7 +280,7 @@ def infant_mortality(): ##NOT YET UPDATED FOR ETHIOPIA
     return infant_mortality
 
 
-def miscarriage(): ##NOT YET UPDATED FOR ETHIOPIA
+def miscarriage():
     '''
     Returns a linear interpolation of the likelihood of a miscarriage
     by age, taken from data from Magnus et al BMJ 2019: https://pubmed.ncbi.nlm.nih.gov/30894356/
@@ -293,7 +293,7 @@ def miscarriage(): ##NOT YET UPDATED FOR ETHIOPIA
     return miscarriage_interp
 
 
-def stillbirth(): ##UPDATING IN PROGRESS - ##TODO - LOOK INTO HOW NOORI ET AL SHOULD BE APPLIED TO THE UPDATED ARRAY
+def stillbirth(): #UPDATED FOR ETHIOPIA
     '''
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
@@ -301,13 +301,13 @@ def stillbirth(): ##UPDATING IN PROGRESS - ##TODO - LOOK INTO HOW NOORI ET AL SH
     Age adjustments come from an extension of Noori et al., which were conducted June 2022. 
     '''
 
-    data = np.array([ #UPDATED FOR ETHIOPIA BASED ON UN-IGME REPORT
+    data = np.array([ 
         [2000, 35.8],
         [2010, 31.1],
         [2019, 24.6],
     ])
 
-    stillbirth_rate = {} ##NOT YET UPDATED FOR ETHIOPIA
+    stillbirth_rate = {}
     stillbirth_rate['year'] = data[:, 0]
     stillbirth_rate['probs'] = data[:, 1] / 1000  # Rate per 1000 total births
     stillbirth_rate['ages'] = np.array([15, 16, 17, 19, 20, 28, 31, 36, 50])
@@ -496,7 +496,7 @@ def debut_age(): ##UPDATED FOR ETHIOPIA
     return debut_age
 
 
-def exposure_age(): ##NOT YET UPDATED FOR ETHIOPIA
+def exposure_age():
     '''
     Returns an array of experimental factors to be applied to account for
     residual exposure to either pregnancy or live birth by age.  Exposure to pregnancy will
@@ -510,7 +510,7 @@ def exposure_age(): ##NOT YET UPDATED FOR ETHIOPIA
     return exposure_age_interp
 
 
-def exposure_parity(): ##NOT YET UPDATED FOR ETHIOPIA
+def exposure_parity():
     '''
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
     or live birth by parity.
@@ -522,7 +522,7 @@ def exposure_parity(): ##NOT YET UPDATED FOR ETHIOPIA
     return exposure_parity_interp
 
 
-def birth_spacing_pref(): ##NOT YET UPDATED FOR ETHIOPIA
+def birth_spacing_pref():
     '''
     Returns an array of birth spacing preferences by closest postpartum month.
     Applied to postpartum pregnancy likelihoods.
@@ -561,7 +561,7 @@ def birth_spacing_pref(): ##NOT YET UPDATED FOR ETHIOPIA
 
 # %% Contraceptive methods
 
-def methods(): ##NOT YET UPDATED FOR ETHIOPIA
+def methods():
     '''
     Names, indices, modern/traditional flag, and efficacies of contraceptive methods -- see also parameters.py
     Efficacy from Guttmacher, fp_prerelease/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
