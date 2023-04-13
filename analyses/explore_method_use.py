@@ -45,6 +45,8 @@ youth_sexually_infrequent = 0
 adult_postdebut = 0
 youth_postdebut = 0
 
+time_to_debut = []
+
 for i in range(len(ppl)):
     if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
         all_women += 1
@@ -54,6 +56,11 @@ for i in range(len(ppl)):
             use_before_debut += 1
         if ppl.sexual_debut[i] == 0:
             predebut += 1
+        if ppl.age[i] >= ppl.fated_debut[i]:
+            if ppl.sexual_debut[i] == 0:
+                time_to_debut.append(ppl.age[i] - ppl.fated_debut[i])
+            else:
+                time_to_debut.append(ppl.sexual_debut_age[i] - ppl.fated_debut[i])
         if ppl.months_inactive[i] >= 12 and ppl.sexual_debut[i] == 1:
             sexually_infrequent += 1
         if ppl.months_inactive[i] >= 12 and ppl.sexual_debut[i] == 1 and ppl.age[i] >= 18:
@@ -66,6 +73,10 @@ for i in range(len(ppl)):
             youth_postdebut += 1
 
 postdebut = all_women - predebut
+
+ttd = pl.asarray(time_to_debut)
+
+print(f'mean years from fated debut to first sex: {ttd.mean()}')
 
 method_perc = method_users / all_women
 use_before_debut_perc = use_before_debut / all_women
