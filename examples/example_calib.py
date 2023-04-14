@@ -1,5 +1,7 @@
 '''
-Simple example usage for FPsim
+Simple example usage for FPsim.
+An automatic calibration algorithm that takes in any parameter for fpsim and optimizes it for a mismatch
+between a sim and data based on the Experiment class
 '''
 
 import sciris as sc
