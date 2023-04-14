@@ -1,5 +1,6 @@
 '''
 Simple example usage for FPsim
+Runs one sim and outputs the diff between the sim and data for selected calibration targets
 '''
 
 import fpsim as fp
