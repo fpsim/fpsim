@@ -29,7 +29,6 @@ default_flags = sc.objdict(
     skyscrapers   = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
     first_birth   = 1, # Age at first birth mean with standard deviation; 'age_first_birth'
     birth_space   = 1, # Birth spacing both in bins and mean with standard deviation; 'spacing'
-    age_pregnancy = 1, # Summary stats (mean, std, 25, 50, 75%) ages of those currently pregnant; 'age_pregnant_stats',
     mcpr          = 1, # Modern contraceptive prevalence; 'mcpr'
     methods       = 1, # Overall percentage of method use and method use among users; 'methods'
     mmr           = 1, # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'
@@ -90,7 +89,7 @@ class Experiment(sc.prettyobj):
 
         self.data.update(json)
 
-        self.data['pregnancy_parity'] = self.load_data('pregnancy_parity')
+        #self.data['pregnancy_parity'] = self.load_data('pregnancy_parity')
 
         # Extract population size over time
         if self.pars:
@@ -147,10 +146,6 @@ class Experiment(sc.prettyobj):
         self.people = self.sim.people  # Extract people objects from sim
         self.model_results = self.sim.results  # Stores dictionary of results
 
-        # Store dataframe of agent's age, pregnancy status, and parity
-        model_pregnancy_parity = self.sim.store_postpartum()
-        model_pregnancy_parity = model_pregnancy_parity.drop(['PP0to5', 'PP6to11', 'PP12to23', 'NonPP'], axis=1)
-        self.model['pregnancy_parity'] = model_pregnancy_parity
         self.method_keys = list(self.sim['methods']['map'].keys())
         return
 
@@ -441,43 +436,6 @@ class Experiment(sc.prettyobj):
 
         return
 
-    def extract_age_pregnancy(self):
-
-        index = [0, 1, 2, 3, 7] #indices of count, min, and max to drop from descriptive stats
-        # Keep mean [1], 25% [4], 50%[5], 75% [6]
-
-        data = self.data['pregnancy_parity'] # Copy DataFrame for mainupation
-        preg = data[data['Pregnant'] == 1]
-        stat = preg['Age'].describe()
-        data_stats_all = stat.to_numpy()
-        data_stats = np.delete(data_stats_all, index)
-
-        self.data['age_pregnant_stats'] = data_stats  # Array of mean, std, 25%, 50%, 75% of ages of agents currently pregnant
-
-        model = self.model['pregnancy_parity']  # Copy DataFrame for manipulation
-        pregnant = model[model['Pregnant'] == 1]
-        stats = pregnant['Age'].describe()
-        model_stats_all = stats.to_numpy()
-        model_stats = np.delete(model_stats_all, index)
-
-        self.model['age_pregnant_stats'] = model_stats
-
-        parity_data = data.groupby('Parity')['Age'].describe()
-        parity_data = parity_data.head(11) # Include only parities 0-10 to exclude outliers
-        parity_data = parity_data.drop(['count', 'mean', 'std', 'min', 'max'], axis = 1)
-        parity_data.fillna(0)
-        parity_data_stats = parity_data.to_numpy()
-
-        self.data['age_parity_stats'] = parity_data_stats
-
-        parity_model = model.groupby('Parity')['Age'].describe()
-        parity_model = parity_model.head(11)
-        parity_model = parity_model.drop(['count', 'mean', 'std', 'min', 'max'], axis = 1)
-        parity_model.fillna(0)
-        parity_model_stats = parity_model.to_numpy()
-
-        self.model['age_parity_stats'] = parity_model_stats
-
 
     def compute_fit(self, *args, **kwargs):
         ''' Compute how good the fit is '''
@@ -498,15 +456,11 @@ class Experiment(sc.prettyobj):
         if self.flags.skyscrapers:   self.extract_skyscrapers()
         if self.flags.birth_space:   self.extract_birth_spacing()
         if self.flags.methods:       self.extract_methods()
-        if self.flags.age_pregnancy: self.extract_age_pregnancy()
 
         # Remove people, they're large!
         if not keep_people:
             del self.people
 
-        # Remove raw dataframes of pregnancy / parity data from dictionary
-        del self.data['pregnancy_parity']
-        del self.model['pregnancy_parity']
 
         # Compute comparison
         self.df = self.compare()
@@ -637,7 +591,7 @@ class Experiment(sc.prettyobj):
             if key in keys:
                 keys.remove(key)
         nkeys = len(keys)
-        expected = 13
+        expected = 11
         if nkeys != expected:
             errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys} -- did you use run_model() instead of run()?'
             raise ValueError(errormsg)
@@ -742,35 +696,6 @@ class Experiment(sc.prettyobj):
             ax.set_yticklabels(quartile_keys)
             ax.legend()
 
-            # Age pregnant stats
-            ax = axs[0,2]
-            height = 0.4
-            y = np.arange(len(data.age_pregnant_stats))
-            ax.barh(y=y+height/2, width=data.age_pregnant_stats, height=height, align='center', label='Data')
-            ax.barh(y=y-height/2, width=sim.age_pregnant_stats,  height=height, align='center', label='Sim')
-            ax.set_title('Age of women currently pregnant')
-            ax.set_xlabel('Age')
-            ax.set_yticks(range(n_quartiles))
-            ax.set_yticklabels(quartile_keys)
-            ax.legend()
-
-            # Age parity stats
-            ax = axs[1,2]
-            cols = sc.gridcolors(3)
-            for i,yvals in enumerate([data.age_parity_stats, sim.age_parity_stats]):
-                for j in range(3):
-                    vals = yvals[:,j]
-                    if i==0:
-                        marker = 'o'
-                        label = 'Data'
-                    else:
-                        marker = '-'
-                        label = 'Sim'
-                    ax.plot(vals, marker, c=cols[j], label=label)
-            ax.set_title('Age parity stats - quartiles')
-            ax.set_xlabel('Parity')
-            ax.set_ylabel('Age')
-            ax.legend()
 
             # Method counts
             ax = axs[2,2]
