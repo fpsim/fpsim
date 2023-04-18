@@ -350,7 +350,7 @@ def fecundity_ratio_nullip():
     return fecundity_nullip_interp
 
 
-def lactational_amenorrhea(): ##NOT YET UPDATED FOR ETHIOPIA
+def lactational_amenorrhea(): ##UPDATED FOR ETHIOPIA
     '''
     Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
     Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
@@ -358,18 +358,18 @@ def lactational_amenorrhea(): ##NOT YET UPDATED FOR ETHIOPIA
     From DHS Kenya 2014 calendar data
     '''
     data = np.array([
-        [0, 0.9557236],
-        [1, 0.8889493],
-        [2, 0.7040052],
-        [3, 0.5332317],
-        [4, 0.4115276],
-        [5, 0.2668908],
-        [6, 0.1364079],
-        [7, 0.0571638],
-        [8, 0.0025502],
-        [9, 0.0259570],
-        [10, 0.0072750],
-        [11, 0.0046938],
+        [0, 0.9892715],
+        [1, 0.8494371],
+        [2, 0.8265375],
+        [3, 0.730395],
+        [4, 0.666934],
+        [5, 0.4947101],
+        [6, 0.3667066],
+        [7, 0.2191162],
+        [8, 0.3135374],
+        [9, 0.1113177],
+        [10, 0.0981782],
+        [11, 0.0847675],
     ])
 
     lactational_amenorrhea = {}
@@ -405,7 +405,7 @@ def sexual_activity(): ##UPDATED FOR ETHIOPIA
     return activity_interp
 
 
-def sexual_activity_pp(): ##NOT YET UPDATED FOR ETHIOPIA
+def sexual_activity_pp(): ##UPDATED FOR ETHIOPIA
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
     Uses 2014 Kenya DHS individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
