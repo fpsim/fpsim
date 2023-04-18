@@ -374,7 +374,6 @@ if do_plot_pop_growth:
         '''
 
         # Import data
-        #data_popsize = pd.read_csv(f'{country}_popsize.csv')
         data_popsize = data_popsize[data_popsize['year'] <= pars['end_year']]  # Restrict years to plot
 
         data_pop_years = data_popsize['year'].to_numpy()
