@@ -331,7 +331,6 @@ if do_plot_cpr:
         Plot contraceptive prevalence rate for model vs data
         '''
         # Import data
-        #data_cpr = pd.read_csv(f'{country}_cpr.csv') # From UN Data Portal
         data_cpr = data_cpr[data_cpr['year'] <= pars['end_year']] # Restrict years to plot
 
         # Plot
