@@ -162,7 +162,7 @@ class Calibration(sc.prettyobj):
         ''' Define the objective for Optuna '''
         pars = {}
         for key, (best,low,high) in self.calib_pars.items():
-            pars[key] = trial.suggest_uniform(key, low, high) # Sample from beta values within this range
+            pars[key] = trial.suggest_float(key, low, high) # Sample from beta values within this range
         mismatch = self.run_exp(pars)
         return mismatch
 

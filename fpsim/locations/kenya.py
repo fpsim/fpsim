@@ -27,6 +27,9 @@ def scalar_pars():
         'verbose': 1,  # How much detail to print during the simulation
         'track_switching': 0,  # Whether to track method switching
         'track_as': 0,  # Whether to track age-specific channels
+        'short_int': 24,  # Duration of a short birth interval between live births in months
+        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
+        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
 
         # Age limits (in years)
         'method_age': 15,
@@ -89,7 +92,6 @@ def filenames():
     files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
     files['asfr'] = 'kenya_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     files['skyscrapers'] = 'kenya_skyscrapers.csv' # Choose from either DHS 2014 or PMA 2022
-    #files['pregnancy_parity'] = 'SNIR80FL.obj'
     #files['spacing'] = 'BirthSpacing.obj'
     #files['methods'] = 'Method_v312.csv'
     return files

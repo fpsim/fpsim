@@ -8,6 +8,14 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.24.1 (2023-4-14)
+--------------------------
+- Fixes example_calib.py and example_exp.py to run with fpsim library
+- Updates manual_calibration.py to be flexible to take any location with identically structured data as Kenya
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/133>`_
+
+
+
 Version 0.24.0 (2023-3-17)
 --------------------------
 - Finish a manual calibration script for plotting model outcomes vs data for Kenya
