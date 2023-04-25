@@ -199,7 +199,7 @@ def maternal_mortality(): ##UPDATED FOR ETHIOPIA
     return maternal_mortality
 
 
-def infant_mortality(): ##NOT YET UPDATED FOR ETHIOPIA
+def infant_mortality(): ##UPDATED FOR ETHIOPIA
     '''
     From World Bank indicators for infant mortality (< 1 year) for Ethiopia, per 1000 live births
     From API_SP.DYN.IMRT.IN_DS2_en_csv_v2_5358355
