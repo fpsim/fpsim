@@ -9,6 +9,10 @@ import fpsim as fp
 import pylab as pl
 import seaborn as sns
 
+# Global Variables
+
+# Name of the country being calibrated. To note that this should match the name of the country data folder
+country = 'kenya'
 
 sc.tic()
 
@@ -44,16 +48,20 @@ first_birth_age = 25  # age to start assessing first birth age in model
 bin_size = 5
 mpy = 12 # months per year
 
-# Import Kenya data files to compare
-skyscrapers = pd.read_csv('kenya_skyscrapers.csv') # Age-parity distribution file
-use = pd.read_csv('use_kenya.csv') #Dichotomous contraceptive method use
-data_spaces = pd.read_csv('birth_spacing_dhs.csv')  # Birth-to-birth interval data
-data_afb = pd.read_csv('afb.table.csv')  # Ages at first birth in DHS for women age 25-50
 
+# Import country data files to compare
+skyscrapers = pd.read_csv(f'./{country}/{country}_skyscrapers.csv') # Age-parity distribution file
+use = pd.read_csv(f'./{country}/use_{country}.csv') #Dichotomous contraceptive method use
+data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
+data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
+data_cpr = pd.read_csv(f'./{country}/{country}_cpr.csv')  # From UN Data Portal
+data_asfr = pd.read_csv(f'./{country}/{country}_asfr.csv')
+data_methods = pd.read_csv(f'./{country}/mix_{country}.csv')
+data_tfr = pd.read_csv(f'./{country}/{country}_tfr.csv')
+data_popsize = pd.read_csv(f'./{country}/{country}_popsize.csv')
 
-
-# Set up sim for Kenya
-pars = fp.pars(location='kenya')
+# Set up sim for country
+pars = fp.pars(location=country)
 pars['n_agents'] = 100_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
@@ -72,7 +80,7 @@ pars['spacing_pref']['preference'][3:6] = spacing_pars['space9_15']
 pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
 #pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
 
-# Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in kenya.py
+# Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
 
 sim = fp.Sim(pars=pars)
 sim.run()
@@ -114,9 +122,12 @@ if do_plot_asfr:
         for key in age_bin_map.keys():
             print(f'ASFR (annual) for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
 
-        # Load data
         x = [1, 2, 3, 4, 5, 6, 7, 8]
-        asfr_data = [3.03, 64.94, 172.12, 174.12, 136.10, 80.51, 34.88, 13.12]  # From UN Data Kenya 2020 (kenya_asfr.csv)
+
+        # Load data
+        year = data_asfr[data_asfr['year'] == pars['end_year']]
+        asfr_data = year.drop(['year', '50-54'], axis=1).values.tolist()[0]
+
         x_labels = []
         asfr_model = []
 
@@ -148,20 +159,21 @@ if do_plot_methods:
         Plots both dichotomous method use and non-use and contraceptive mix
         '''
 
-        # Pull method definitions from parameters file (kenya.py)
-        # Sould be similar for other locations unless wanting to change efficacy
+        # Pull method definitions from parameters file
+        # Method map; this remains constant across locations. True indicates modern method,
+        # and False indicates traditional method
         methods_map_model = {  # Index, modern, efficacy
-        'None': [0, False, 0.000],
-        'Withdrawal': [1, False, 0.866],
-        'Other traditional': [2, False, 0.861],
+        'None': [0, False],
+        'Withdrawal': [1, False],
+        'Other traditional': [2, False],
         # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-        'Condoms': [3, True, 0.946],
-        'Pill': [4, True, 0.945],
-        'Injectables': [5, True, 0.983],
-        'Implants': [6, True, 0.994],
-        'IUDs': [7, True, 0.986],
-        'BTL': [8, True, 0.995],
-        'Other modern': [9, True, 0.880],
+        'Condoms': [3, True],
+        'Pill': [4, True],
+        'Injectables': [5, True],
+        'Implants': [6, True],
+        'IUDs': [7, True],
+        'BTL': [8, True],
+        'Other modern': [9, True],
         }
 
         # Setup
@@ -178,23 +190,26 @@ if do_plot_methods:
 
         model_method_counts[:] /= model_method_counts[:].sum()
 
-        # Method mix from data - Kenya PMA 2022 (mix_kenya.csv)
+
+        # Method mix from data - country PMA data (mix_{country}.csv)
         data_methods_mix = {
-                'Withdrawal': 1.03588605253422,
-                'Other traditional': 4.45800961894192,
-                'Condoms': 8.41657417684055,
-                'Pill': 7.95412504624491,
-                'Injectables': 34.0732519422863,
-                'Implants': 33.9622641509434,
-                'IUDs': 3.08916019237884,
-                'BTL': 3.88457269700333,
-                'Other modern': 3.12615612282649
+                'Withdrawal': data_methods.loc[data_methods['method'] == 'withdrawal', 'perc'].iloc[0],
+                'Other traditional': data_methods.loc[data_methods['method'] == 'other traditional', 'perc'].iloc[0],
+                'Condoms': data_methods.loc[data_methods['method'] == 'condoms', 'perc'].iloc[0],
+                'Pill': data_methods.loc[data_methods['method'] == 'pill', 'perc'].iloc[0],
+                'Injectables': data_methods.loc[data_methods['method'] == 'injectables', 'perc'].iloc[0],
+                'Implants': data_methods.loc[data_methods['method'] == 'implant', 'perc'].iloc[0],
+                'IUDs': data_methods.loc[data_methods['method'] == 'IUD', 'perc'].iloc[0],
+                'BTL': data_methods.loc[data_methods['method'] == 'BTL/vasectomy', 'perc'].iloc[0],
+                'Other modern': data_methods.loc[data_methods['method'] == 'other modern', 'perc'].iloc[0]
         }
 
-        # Method use from data - Kenya PMA 2022 (use_kenya.csv)
+        # Method use from data - country PMA data (use_{country}.csv)
+        no_use = use.loc[0, 'perc']
+        any_method = use.loc[1, 'perc']
         data_methods_use = {
-                'No use': 51.1078954508456,
-                'Any method': 48.8921045491544
+                'No use': no_use,
+                'Any method': any_method
         }
 
         # Plot bar charts of method mix and use among users
@@ -311,20 +326,19 @@ if do_plot_skyscrapers:
 
 
 if do_plot_cpr:
+
         '''
         Plot contraceptive prevalence rate for model vs data
         '''
-
         # Import data
-        data_cpr = pd.read_csv('kenya_cpr.csv') # From UN Data Portal
-        data_cpr = data_cpr[data_cpr['year'] <= 2020] # Restrict years to plot
+        data_cpr = data_cpr[data_cpr['year'] <= pars['end_year']] # Restrict years to plot
 
         # Plot
         pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
         pl.plot(res['t'], res['cpr']*100, label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Percent')
-        pl.title('Contraceptive Prevalence Rate in Data vs Model - Kenya')
+        pl.title(f'Contraceptive Prevalence Rate in Data vs Model - {country}')
         pl.legend()
 
         if do_save:
@@ -339,14 +353,14 @@ if do_plot_tfr:
         '''
 
         # Import data
-        data_tfr = pd.read_csv('kenya_tfr.csv')
+        #data_tfr = pd.read_csv(f'{country}_tfr.csv')
 
         # Plot
         pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
         pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
-        pl.title('Total Fertility Rate in Data vs Model - Kenya')
+        pl.title(f'Total Fertility Rate in Data vs Model - {country}')
         pl.legend()
 
         if do_save:
@@ -360,14 +374,14 @@ if do_plot_pop_growth:
         '''
 
         # Import data
-        data_popsize = pd.read_csv('kenya_popsize.csv')
-        data_popsize = data_popsize[data_popsize['year'] <= 2020]  # Restrict years to plot
+        data_popsize = data_popsize[data_popsize['year'] <= pars['end_year']]  # Restrict years to plot
 
         data_pop_years = data_popsize['year'].to_numpy()
         data_population = data_popsize['population'].to_numpy()
 
         # Extract from model
         model_growth_rate = pop_growth_rate(res['tfr_years'], res['pop_size'])
+
         data_growth_rate = pop_growth_rate(data_pop_years, data_population)
 
         # Plot
@@ -375,7 +389,7 @@ if do_plot_pop_growth:
         pl.plot(res['tfr_years'][1:], model_growth_rate, label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
-        pl.title('Population Growth Rate Data vs Model - Kenya')
+        pl.title(f'Population Growth Rate Data vs Model - {country}')
         pl.legend()
 
         if do_save:
@@ -458,10 +472,10 @@ if do_plot_birth_space_afb:
         ax = bins_frame.plot.barh(color={'Data': 'black', 'Model': 'cornflowerblue', 'Diff': 'red'})
         ax.set_xlabel('Percent of live birth spaces')
         ax.set_ylabel('Birth space in months')
-        ax.set_title('Birth space bins calibration - Kenya')
+        ax.set_title(f'Birth space bins calibration - {country}')
 
         if do_save:
-                pl.savefig('figs/birth_space_bins_kenya.png', bbox_inches='tight', dpi=100)
+                pl.savefig(f'figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
 
         pl.show()
 
