@@ -909,7 +909,7 @@ class People(fpb.BasePeople):
         fecund = alive_now.filter((alive_now.sex == 0) * (alive_now.age < alive_now.pars['age_limit_fecundity']))
         nonpreg = fecund.filter(~fecund.pregnant)
         lact    = fecund.filter(fecund.lactating)
-        methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
+        methods = nonpreg.filter((nonpreg.age >= nonpreg.fated_debut) * (nonpreg.months_inactive < 12))
 
         # Update everything else
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
