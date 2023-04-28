@@ -16,7 +16,7 @@ min_age = 15
 do_plot_sim = False
 
 # Set up sim parameters
-pars = fp.pars(location='kenya')
+pars = fp.pars(location='senegal')
 pars['n_agents'] = 100_000 # Small population size
 
 sc.tic()
@@ -37,6 +37,7 @@ ppl = sim.people
 all_women = 0
 method_users = 0
 use_before_debut = 0
+use_while_inactive = 0
 
 predebut = 0
 sexually_infrequent = 0
@@ -57,9 +58,9 @@ for i in range(len(ppl)):
         if ppl.sexual_debut[i] == 0:
             predebut += 1
         if ppl.age[i] >= ppl.fated_debut[i]:
-            if ppl.sexual_debut[i] == 0:
-                time_to_debut.append(ppl.age[i] - ppl.fated_debut[i])
-            else:
+            #if ppl.sexual_debut[i] == 0:
+                #time_to_debut.append(ppl.age[i] - ppl.fated_debut[i])
+            if ppl.sexual_debut[i] == 1:
                 time_to_debut.append(ppl.sexual_debut_age[i] - ppl.fated_debut[i])
         if ppl.months_inactive[i] >= 12 and ppl.sexual_debut[i] == 1:
             sexually_infrequent += 1
@@ -71,6 +72,8 @@ for i in range(len(ppl)):
             adult_postdebut += 1
         if ppl.sexual_debut[i] == 1 and ppl.age[i] < 18:
             youth_postdebut += 1
+        if ppl.months_inactive[i] >= 12 and ppl.method[i] != 0:
+            use_while_inactive += 1
 
 postdebut = all_women - predebut
 
@@ -80,15 +83,18 @@ print(f'mean years from fated debut to first sex: {ttd.mean()}')
 
 method_perc = method_users / all_women
 use_before_debut_perc = use_before_debut / all_women
+use_while_inactive_perc = use_while_inactive / all_women
 
 data_values = {'Method users': method_users,
                 'Women 15-49': all_women,
-                'Users before debut': use_before_debut
+                'Users before debut': use_before_debut,
+                'Users while inactive': use_while_inactive
                }
 
 data_percs =  {'CPR': method_users/all_women *100,
                 'Percent users not debuted': use_before_debut/method_users *100,
                 'CPR from non-debuters': use_before_debut/all_women *100
+                #'CPR from inactive': use_while_inactive/all_women * 100
                }
 
 data_sexually_infrequent = {'% 15-49 not yet': predebut/all_women *100,
