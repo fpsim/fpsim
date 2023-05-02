@@ -11,7 +11,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 Version 0.24.2 (2023-5-2)
 --------------------------
 - Builds out new parameters file for Ethiopia
-- Adds camparison data for Ethiopia calibration data files for 
+- Adds camparison data for Ethiopia calibration
 - *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/156>`_
 
 Version 0.24.1 (2023-4-14)
