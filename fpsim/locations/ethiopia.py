@@ -13,7 +13,7 @@ from .. import defaults as fpd
 thisdir = sc.path(sc.thisdir())  # For loading CSV files
 
 
-def scalar_pars(): ##UPDATED FOR ETHIOPIA
+def scalar_pars():
     scalar_pars = {
         # Basic parameters
         'location': 'ethiopia',
@@ -33,7 +33,7 @@ def scalar_pars(): ##UPDATED FOR ETHIOPIA
         'age_limit_fecundity': 50,
         'max_age': 99,
 
-        # Durations (in months) ##UPDATED FOR ETHIOPIA
+        # Durations (in months)
         'switch_frequency': 12,  # How frequently to check for changes to contraception
         'end_first_tri': 3,
         'preg_dur_low': 9,
@@ -43,7 +43,7 @@ def scalar_pars(): ##UPDATED FOR ETHIOPIA
         'breastfeeding_dur_beta': 8.20149079, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur': 5,  # Duration of lactational amenorrhea
 
-        # Pregnancy outcomes ##UPDATED FOR ETHIOPIA
+        # Pregnancy outcomes
         'abortion_prob': 0.176,
         # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
         'twins_prob': 0.011,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
@@ -75,7 +75,7 @@ def data2interp(data, ages, normalize=False):
     return interp
 
 
-def filenames(): ##UPDATE IN PROGRESS FOR ETHIOPIA
+def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'ethiopia'
@@ -93,7 +93,7 @@ def filenames(): ##UPDATE IN PROGRESS FOR ETHIOPIA
 
 # %% Demographics and pregnancy outcome
 
-def age_pyramid(): ##UPDATED FOR ETHIOPIA
+def age_pyramid():
     '''
     Starting age bin, male population, female population
     Data are from World Population Prospects
@@ -121,7 +121,7 @@ def age_pyramid(): ##UPDATED FOR ETHIOPIA
     return pyramid
 
 
-def age_mortality(): ##UPDATED FOR ETHIOPIA
+def age_mortality():
     '''
     Age-dependent mortality rates taken from UN World Population Prospects 2022.  From probability of dying each year.
     https://population.un.org/wpp/
@@ -131,7 +131,7 @@ def age_mortality(): ##UPDATED FOR ETHIOPIA
     https://population.un.org/dataportal/data/indicators/59/locations/231/start/1950/end/2030/table/pivotbylocation
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
-    data_year = 2020 #NORMED TO 2020 BASED ON ETHIOPIA PROBABILITY DATA
+    data_year = 2020 # NORMED TO 2020 BASED ON ETHIOPIA PROBABILITY DATA
     mortality_data = pd.read_csv(thisdir / 'ethiopia' / 'mortality_prob_ethiopia.csv')
     mortality_trend = pd.read_csv(thisdir / 'ethiopia' / 'mortality_trend_ethiopia.csv')       
 
@@ -162,7 +162,7 @@ def age_mortality(): ##UPDATED FOR ETHIOPIA
     return mortality
 
 
-def maternal_mortality(): ##UPDATED FOR ETHIOPIA
+def maternal_mortality():
     '''
     From World Bank indicators for maternal mortality ratio (modeled estimate) per 100,000 live births:
     https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
@@ -199,7 +199,7 @@ def maternal_mortality(): ##UPDATED FOR ETHIOPIA
     return maternal_mortality
 
 
-def infant_mortality(): ##UPDATED FOR ETHIOPIA
+def infant_mortality():
     '''
     From World Bank indicators for infant mortality (< 1 year) for Ethiopia, per 1000 live births
     From API_SP.DYN.IMRT.IN_DS2_en_csv_v2_5358355
@@ -289,7 +289,7 @@ def miscarriage():
     return miscarriage_interp
 
 
-def stillbirth(): #UPDATED FOR ETHIOPIA
+def stillbirth():
     '''
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
@@ -346,12 +346,12 @@ def fecundity_ratio_nullip():
     return fecundity_nullip_interp
 
 
-def lactational_amenorrhea(): ##UPDATED FOR ETHIOPIA
+def lactational_amenorrhea():
     '''
     Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
     Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
     as those women continue to be postpartum insusceptible.
-    From DHS Kenya 2014 calendar data
+    From DHS Ethiopia 2016 calendar data
     '''
     data = np.array([
         [0, 0.9892715],
@@ -377,7 +377,7 @@ def lactational_amenorrhea(): ##UPDATED FOR ETHIOPIA
 
 # %% Pregnancy exposure
 
-def sexual_activity(): ##UPDATED FOR ETHIOPIA
+def sexual_activity():
     '''
     Returns a linear interpolation of rates of female sexual activity, defined as
     percentage women who have had sex within the last four weeks.
@@ -401,10 +401,10 @@ def sexual_activity(): ##UPDATED FOR ETHIOPIA
     return activity_interp
 
 
-def sexual_activity_pp(): ##UPDATED FOR ETHIOPIA
+def sexual_activity_pp():
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
-    Uses 2014 Kenya DHS individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
+    Uses 2016 Ethiopia DHS individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
     Data is weighted.
     Limited to 23 months postpartum (can use any limit you want 0-23 max)
     Postpartum month 0 refers to the first month after delivery
@@ -447,7 +447,7 @@ def sexual_activity_pp(): ##UPDATED FOR ETHIOPIA
     return postpartum_activity
 
 
-def debut_age(): ##UPDATED FOR ETHIOPIA
+def debut_age():
     '''
     Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
     Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
@@ -596,11 +596,11 @@ def methods():
         '>35': [35, fpd.max_age + 1],  # +1 since we're using < rather than <=
     }
 
-    # Data on trend in CPR over time in from Kenya, in %.
+    # Data on trend in CPR over time in from Ethiopia, in %.
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
+    # https://population.un.org/dataportal/data/indicators/1/locations/231/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'kenya' / 'kenya_cpr.csv')
+    cpr_data = pd.read_csv(thisdir / 'ethiopia' / 'ethiopia_cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
@@ -611,7 +611,7 @@ def methods():
 For reference
 def method_probs_senegal():
     
-    It does leave Senegal matrices in place in the Kenya file for now. 
+    It does leave Senegal matrices in place in the Ethiopia file for now. 
     We may want to test with these as we work through scenarios and calibration. 
     
     Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
@@ -764,7 +764,7 @@ def method_probs_senegal():
 def method_probs(): ##NOT YET UPDATED FOR ETHIOPIA
     '''
     Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
-    from PMA Kenya contraceptive calendar data.
+    from PMA Ethiopia contraceptive calendar data.
 
     Probabilities in this function are annual probabilities of initiating (top row), discontinuing (first column),
     continuing (diagonal), or switching methods (all other entries).
@@ -775,8 +775,8 @@ def method_probs(): ##NOT YET UPDATED FOR ETHIOPIA
     Probabilities at postpartum month 6 are 5 month transitional probabilities
     for starting or changing methods over the first 6 months postpartum.
 
-    Data from Kenya PMA contraceptive calendars, 2019-2020
-    Processed from matrices_kenya_pma_2019_20.csv using process_matrices.py
+    Data from Ethiopia PMA contraceptive calendars, 2019-2020
+    Processed from matrices_ethiopia_pma_2019_20.csv using process_matrices.py
     '''
 
     raw = {
@@ -913,7 +913,7 @@ def method_probs(): ##NOT YET UPDATED FOR ETHIOPIA
     return raw
 
 
-def barriers(): ##UPDATED FOR ETHIOPIA
+def barriers():
     ''' Reasons for nonuse -- taken from Ethiopia DHS 2005. '''
 
     barriers = sc.odict({
