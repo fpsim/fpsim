@@ -19,6 +19,8 @@ library(survey)
 dhs.data <- with_dir(normalizePath(file.path(Sys.getenv("ONEDRIVE"), "DHS/IR_all"), "/"),   # read individual recode data
                      {read_dta("KEIR72DT/KEIR72FL.DTA", col_select = c("v005", "caseid", "v212", "v201", "v012"))}) %>% # weight, individual id, age at first birth, number of children, current age
   mutate(wt = v005/1000000, afb = ifelse(v201==0, Inf, v212))                                                           # calculate individual weight, calucate age at first birth by including infinity for those who have yet to have a birth
+afb.table <- dhs.data %>% select(wt, age = v012, afb)
+write.csv(afb.table, "locations/kenya/afb.table.csv", row.names = F)
 
 # Weighted table of age at first birth by current age
 afb <- svytable(~ v012 + afb, svydesign(id=~caseid, weights=~wt, data =dhs.data))
@@ -36,11 +38,3 @@ afb.median <- as.data.frame(afb) %>%
          median = afb + perc) %>%                                     # calculate the interpolated median
   filter(dif >0) %>% filter(dif == min(dif)) %>% select(median)       # keep only the median result
 write.csv(afb.median, "locations/kenya/afb.median.csv", row.names = F)
-
-# Created a weighted table of all ages at first birth
-afb.table <- as.data.frame(afb) %>%
-  mutate_at(c("v012", "afb"), ~as.numeric(as.character(.))) %>%       # Make age and age at first birth numeric
-  group_by(afb) %>% summarize(Freq = sum(Freq)) %>% arrange(afb)      # sum number of women in each ag at first birth category
-write.csv(afb.table, "locations/kenya/afb.table.csv", row.names = F)
-
-
