@@ -78,7 +78,7 @@ def filenames():
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'senegal'
     files['basic_dhs']        = 'senegal-basic-dhs.yaml'
-    files['popsize']          = 'senegal-popsize.csv'
+    files['popsize']          = 'senegal_popsize.csv'
     files['mcpr']             = 'senegal-mcpr.csv'
     files['tfr']              = 'senegal-tfr.csv'
     files['asfr']             = 'senegal-asfr.csv'
