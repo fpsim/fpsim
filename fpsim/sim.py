@@ -72,7 +72,7 @@ class People(fpb.BasePeople):
         self.miscarriage      = arr(n, d['miscarriage']) # Number of miscarriages
         self.abortion         = arr(n, d['abortion']) # Number of abortions
         self.pregnancies      = arr(n, d['pregnancies']) #Number of conceptions (before abortion)
-        self.months_inactive  = arr(n, d['months_inactive'])
+        self.months_inactive  = arr(n, d['months_inactive']) # Number of months an agents has been sexually inactive once debuted
         self.postpartum       = arr(n, d['postpartum'])
         self.mothers          = arr(n, d['mothers'])
         self.short_interval   = arr(n, d['short_interval']) # Number of short birth intervals
