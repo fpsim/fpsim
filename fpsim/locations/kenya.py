@@ -63,6 +63,8 @@ def scalar_pars():
         'high_parity_nonuse': 1,
         'primary_infertility': 0.05,
         'exposure_factor': 1.0,  # Overall exposure correction factor
+        'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
+                                   # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
 
         # MCPR
         'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
