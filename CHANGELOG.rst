@@ -8,6 +8,16 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+
+
+Version 0.25.0 (2023-5-13)
+--------------------------
+- Adds to sim.py to track sexual inactivity in agents
+- Restricts method use to only those women sexually active over the last 12 months and debuted
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/157>`_
+
+
+
 Version 0.24.1 (2023-4-14)
 --------------------------
 - Fixes example_calib.py and example_exp.py to run with fpsim library
