@@ -8,7 +8,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 0.25.1 (2023-5-31)
+Version 0.26.0 (2023-5-31)
 --------------------------
 - Builds out new parameters file for Ethiopia
 - Adds camparison data for Ethiopia calibration
