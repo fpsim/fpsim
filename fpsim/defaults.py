@@ -31,6 +31,7 @@ person_defaults = dict(
     short_interval       = 0,
     secondary_birth      = 0,
     pregnancies          = 0,
+    months_inactive      = 0,
     remainder_months     = 0,
     breastfeed_dur       = 0,
     breastfeed_dur_total = 0,

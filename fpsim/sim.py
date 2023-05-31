@@ -72,6 +72,7 @@ class People(fpb.BasePeople):
         self.miscarriage      = arr(n, d['miscarriage']) # Number of miscarriages
         self.abortion         = arr(n, d['abortion']) # Number of abortions
         self.pregnancies      = arr(n, d['pregnancies']) #Number of conceptions (before abortion)
+        self.months_inactive  = arr(n, d['months_inactive']) # Number of months an agents has been sexually inactive once debuted
         self.postpartum       = arr(n, d['postpartum'])
         self.mothers          = arr(n, d['mothers'])
         self.short_interval   = arr(n, d['short_interval']) # Number of short birth intervals
@@ -326,6 +327,22 @@ class People(fpb.BasePeople):
         first_debut = non_pp.filter(now_active * never_sex)
         first_debut.sexual_debut = True
         first_debut.sexual_debut_age = first_debut.age
+
+        active_sex = self.sexually_active == 1
+        debuted = self.sexual_debut == 1
+        active = self.filter(active_sex * debuted)
+        inactive = self.filter(~active_sex * debuted)
+        active.months_inactive = 0
+        inactive.months_inactive += 1
+
+        inactive_year = self.months_inactive >= 12
+        sexually_infrequent = self.filter(inactive_year)
+
+        #print (f'Age: {sexually_infrequent.age}')
+        #print (f'Debuted?: {sexually_infrequent.sexual_debut}')
+        #print (f'Debut age: {sexually_infrequent.sexual_debut_age}')
+        #print (f'Months inactive: {sexually_infrequent.months_inactive}')
+        #print (f'On method?: {sexually_infrequent.method}')
 
         return
 
@@ -892,7 +909,10 @@ class People(fpb.BasePeople):
         fecund = alive_now.filter((alive_now.sex == 0) * (alive_now.age < alive_now.pars['age_limit_fecundity']))
         nonpreg = fecund.filter(~fecund.pregnant)
         lact    = fecund.filter(fecund.lactating)
-        methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
+        if self.pars['restrict_method_use'] == 1:
+            methods = nonpreg.filter((nonpreg.age >= nonpreg.fated_debut) * (nonpreg.months_inactive < 12))
+        else:
+            methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
 
         # Update everything else
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
