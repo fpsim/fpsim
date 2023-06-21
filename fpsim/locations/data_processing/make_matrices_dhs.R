@@ -20,14 +20,16 @@ library(data.table)
 # Source https://dhsprogram.com/data/dataset_admin/index.cfm
 # recode https://www.dhsprogram.com/publications/publication-dhsg4-dhs-questionnaires-and-manuals.cfm
 data.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "DHS"), "/")
-dhs.raw.2018 <- with_dir(data.path, {read_dta("SN_2018_ContinuousDHS_10072020_1835_122388/SNIR80DT/SNIR80FL.DTA")}) # read individual recode data
-dhs.raw.2017 <- with_dir(data.path, {read_dta("SN_2017_ContinuousDHS_10142020_2310_122388/SNIR7ZDT/SNIR7ZFL.DTA")}) # read individual recode data
-dhs.kenya <- with_dir(data.path, {read_dta("KE_2014_DHS_09162022_2324_122388/KEIR72DT/KEIR72FL.DTA")}) # read individual recode data
+
+# Senegal
+dhs.raw <- with_dir(data.path, {read_dta("SN_2018_ContinuousDHS_10072020_1835_122388/SNIR80DT/SNIR80FL.DTA")}) %>% # read individual recode data
+  bind_rows(with_dir(data.path, {read_dta("SN_2017_ContinuousDHS_10142020_2310_122388/SNIR7ZDT/SNIR7ZFL.DTA")})) # read individual recode data
+
+# Kenya
+dhs.raw <- with_dir(data.path, {read_dta("KE_2014_DHS_09162022_2324_122388/KEIR72DT/KEIR72FL.DTA")}) # read individual recode data
 
 # keep only calendar data, age, and parity
-# data <- dhs.raw.2018 %>%
-#   bind_rows(dhs.raw.2017) %>%
-data <- dhs.kenya %>%
+data <- dhs.raw %>%
   mutate(age = as.numeric(v012),                                                                            # convert age to numeric
          parity1=as.numeric(v220)) %>%                                                                      # convert parity to numeric, living children categorical 0-5, 6+
   select(age, parity1, vcal_1) %>%
@@ -113,5 +115,5 @@ time.initiate %>%
   facet_wrap(~month.b, scales = "free_y")
 ggsave("Switching_matrices/Results/pp_switching_time.png", height = 4, width = 6, units = "in", device='png')
 
-write.table(matrices.result, file="Switching_matrices/Results/matrices_Senegal_DHS_2022-12-05.csv", sep=",", row.names = F)
-write.table(matrices.result, file="Switching_matrices/Results/matrices_Kenya_DHS_2022-12-05.csv", sep=",", row.names = F)
+# write.table(matrices.result, file="Switching_matrices/Results/matrices_Senegal_DHS_2022-12-05.csv", sep=",", row.names = F)
+# write.table(matrices.result, file="Switching_matrices/Results/matrices_Kenya_DHS_2022-12-05.csv", sep=",", row.names = F)
