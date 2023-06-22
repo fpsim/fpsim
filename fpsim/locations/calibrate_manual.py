@@ -12,7 +12,7 @@ import seaborn as sns
 # Global Variables
 
 # Name of the country being calibrated. To note that this should match the name of the country data folder
-country = 'kenya'
+country = 'senegal'
 
 sc.tic()
 
@@ -126,7 +126,7 @@ if do_plot_asfr:
 
         # Load data
         year = data_asfr[data_asfr['year'] == pars['end_year']]
-        asfr_data = year.drop(['year', '50-54'], axis=1).values.tolist()[0]
+        asfr_data = year.drop(['year', '50-54'], axis=1, errors='ignore').values.tolist()[0]
 
         x_labels = []
         asfr_model = []
@@ -255,7 +255,7 @@ if do_plot_skyscrapers:
         Plot an age-parity distribution for model vs data
         '''
 
-        dataset = 'PMA 2022'  # Data to compare to for skyscrapers, can also use DHS 2014
+        dataset = 'DHS 2014'  # Data to compare to for skyscrapers, can also use DHS 2014
 
         # Set up
         age_keys = list(age_bin_map.keys())[1:]
@@ -282,7 +282,7 @@ if do_plot_skyscrapers:
         proportion = 0
         age_name = ''
         for age, row in sky_raw_data.iterrows():
-                if row.age in age_keys:
+                if row.age in age_keys and row.parity <7:
                         age_ind = age_keys.index(row.age)
                         sky_arr['Data'][age_ind, row.parity] = row.percentage
 
