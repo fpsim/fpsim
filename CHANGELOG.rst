@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.26.1 (2023-6-29)
+--------------------------
+- Updates code for contraceptive matrices
+- Adds contraceptive matrices for Ethiopia to run manual calibration
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/161>`_
+
 Version 0.26.0 (2023-5-31)
 --------------------------
 - Builds out new parameters file for Ethiopia
