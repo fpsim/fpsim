@@ -8,18 +8,19 @@
 rm(list=ls())
 
 # -- Libraries -- #
-library(tidyverse)
-library(haven)
-library(withr)
+library(tidyverse)      
+library(haven)  
+library(withr)  
 library(labelled)
 library(lubridate)
 library(expm)
 library(data.table)
 
 # -- Download data -- #
-data.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/PMA/Kenya"), "/")
-data1.raw <- with_dir(data.path, {read_dta("PMA2019_KEP1_HQFQ_v2.0_25Aug2021.DTA")})
-data2.raw <- with_dir(data.path, {read_dta("PMA2020_KEP2_HQFQ_v2.0_25Jan2022.DTA")})
+data.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/Data/PMA/Kenya"), "/")
+data1.raw <- with_dir(data.path, {read_dta("PMA2019_KEP1_HQFQ_v2.0_25Aug2021/PMA2019_KEP1_HQFQ_v2.0_25Aug2021.DTA")})
+data2.raw <- with_dir(data.path, {read_dta("PMA2020_KEP2_HQFQ_v2.0_25Jan2022/PMA2020_KEP2_HQFQ_v2.0_25Jan2022.DTA")})
+data3.raw <- with_dir(data.path, {read_dta("PMA2022_KEP3_HQFQ_v2.0_17Aug2022/PMA2022_KEP3_HQFQ_v2.0_17Aug2022.DTA")})
 var_labels1 <- pivot_longer(as.data.frame(var_label(data1.raw)), cols = 1:611, names_to = "Variable", values_to = "Description") # data frame of variable descriptions
 var_labels2 <- pivot_longer(as.data.frame(var_label(data2.raw)), cols = 1:567, names_to = "Variable", values_to = "Description") # data frame of variable descriptions
 val_labels1 <- val_labels(data1.raw) # value labels
@@ -27,16 +28,19 @@ val_labels2 <- val_labels(data2.raw) # value labels
 
 with(data1.raw, summary(parse_date_time(FQdoi_corrected, "b d Y H M S Op")))
 with(data2.raw, summary(parse_date_time(FQdoi_corrected, "b d Y H M S Op")))
+with(data3.raw, summary(parse_date_time(FQdoi_correctedSIF, "Y m d H M S")))
 
 # keep only calendar data, age, and parity
 data <- data2.raw %>%
-  select(birth_events, ur, age = FQ_age, calendar_c1_full, phase) %>%
-  rbind(data1.raw %>% select(birth_events, ur, age = FQ_age, calendar_c1_full, phase)) %>%
+  bind_rows(data1.raw) %>% mutate(county = as.character(county)) %>%
+  bind_rows(data3.raw %>% mutate_at(c("doi_corrected", "county"), list(~as.character(.)))) %>%
+  select(birth_events, ur, age = FQ_age, calendar_c1_full, phase, wt = FQweight, last_time_sex, last_time_sex_value) %>%
   mutate(parity1 = case_when(birth_events>6 ~ 6, is.na(birth_events) ~ 0, T ~ birth_events),
+         sex.active = case_when(last_time_sex>0 & last_time_sex_value < 100 ~ as.numeric(paste0(last_time_sex, ifelse(last_time_sex_value<10,0,""), last_time_sex_value))),
          cal = str_squish(calendar_c1_full),
          cal = gsub("30","39",cal),                                                                         # recode contraceptive methods, Periodic abstinence/rhythm to other traditional
          cal = gsub("13","M",cal), cal = gsub("11", "M", cal), cal = gsub("10", "M", cal),                  # recode contraceptive methods to other modern, std days, diaphragm, female condom
-         cal = gsub("8", "M", cal), cal = gsub("12", "M", cal), cal = gsub(",2", ",M", cal),                # recode contraceptive methods to other modern, emergency contraception, foam and jelly, male sterilization
+         cal = gsub("8", "M", cal), cal = gsub("12", "M", cal), cal = gsub(",2", ",M", cal),                # recode contraceptive methods to other modern, emergency contraception, foam and jelly, male sterilization  
          cal = gsub("14", "L", cal), cal = gsub("31", "R", cal), cal= gsub("39", "W", cal),                 # change double digit codes to single
          cal = gsub(",", "", cal),                                                                          # remove commas
          cal_clean = sapply(strsplit(cal, split = ""),  function(str) {paste(rev(str), collapse = "")}),    # reverse string so oldest is first
@@ -59,10 +63,10 @@ data <- data2.raw %>%
                            pp.12 = str_detect(substr(cal_clean, month-12, month), "B"),                     # postpartum in past 12 months
                            b.month = ifelse(month.a == "B", month, NA)) %>% fill(b.month) %>% mutate(       # month of most recent birth
                            month.pp = ifelse(pp.12, month-b.month, NA),                                     # number of months pp
-                           termination = str_detect(substr(cal_clean, month-6, month), "T")) %>%            # termination within past 6 months
+                           termination = str_detect(substr(cal_clean, month-6, month), "T")) %>%            # termination within past 6 months  
   filter(!is.na(month.a) & !is.na(month.b) & month.a != "P" & month.b != "P" &  month.a != "T" & month.b != "T" &  month.a != "L" & month.b != "L") %>% # remove missing values, remove pregnancy, remove lac.am, remove termination
   filter(month.b != "B") %>%                                                                                # had to remove a few (17) weird entries of none to birth or birth to birth
-  filter(phase == 2 | (phase == 1 & month > 14)) %>%                                                        # remove Nov 2018 - Dec 2019 from phase 1 cal because that will overlap with phase 2
+  filter(phase == 1 | (phase == 2 & month > 26) | (phase == 3 & month > 26)) %>%                            # remove Nov 2017 - Dec 2019 (26 months) from phase 2 cal because that will overlap with phase 1, similarly remove Nov 2018 - Dec 2020 from cal 3
   mutate_at(c("month.a", "month.b", "month.6"), ~factor(.,
                                          levels = c("0",    "7",    "4",   "5",          "9",      "1",               "R",          "L",      "3",       "W",          "M",         "P",        "T",           "B",     "A"),
                                          labels = c("None", "Pill", "IUD", "Injectable", "Condom", "F.sterilization", "Withdrawal", "Lac.Am", "Implant", "Other.trad", "Other.mod", "Pregnant", "Termination", "Birth", "Abstinence")))
@@ -72,8 +76,9 @@ matrices <- data %>%
   filter(!is.na(postpartum)) %>%                                                                            # Not using months 1-5 postpartum
   bind_rows(data %>% filter(month.a == "Birth" & !is.na(month.6) & month.6 != "Lac.Am" & month.6 != "Termination" & month.6 != "Pregnant") %>%  # Duplicate pp rows so we can have 6 month pp timepoint
               mutate(postpartum = "6", age_grp = age_grp.6, From = month.b, To = month.6)) %>%              # For the 6 month pp matrices, replace age group with age group at the 6 month point
-  group_by(postpartum, From, age_grp) %>% mutate(n = n()) %>% ungroup %>%                                   # sum total in 'from' each method
-  group_by(postpartum, From, To, n, age_grp) %>% summarise(Freq = n()) %>% mutate(Freq = Freq/n) %>% ungroup %>%
+  filter(!(postpartum == "No" & sex.active > 311)) %>%                                                      # Filter out women in the non-postartum matrix who have not has sex in the past year+
+  group_by(postpartum, From, age_grp) %>% mutate(n = sum(wt, na.rm = T)) %>% ungroup %>%                                   # sum total in 'from' each method
+  group_by(postpartum, From, To, n, age_grp) %>% summarise(Freq = sum(wt, na.rm = T)) %>% mutate(Freq = Freq/n) %>% ungroup %>%
   full_join(expand.grid(age_grp = unique(data$age_grp), From = unique(data$month.a), To = unique(data$month.a), postpartum = c("6", "No")) %>% # Add in any missing rows to make sure matrices will be square
               filter(From != 'Birth' & From != "None" & To != "Birth")) %>%                                 # Don't need from none or birth or to birth in the switching matrices so remove from new rows
   mutate(Freq = ifelse(is.na(Freq), ifelse(From == To, 1, 0), Freq), n = ifelse(is.na(n), 0, n)) %>%  ungroup %>% # for added rows, set p(x to x) to 1 and all others to 0, and set n to 0
@@ -91,33 +96,9 @@ for (g in groups){
 matrices.result <- as.data.frame(data.table::rbindlist(list(matrices[postpartum != "No"], npdata))) %>%
   mutate(age_grp = factor(age_grp, levels = c("<18", "18-20", "20-25", "25-35", ">35")),
          From = factor(From, levels = c("Birth", "None", "Withdrawal", "Other.trad", "Condom", "Pill", "Injectable", "Implant", "IUD", "F.sterilization", "Other.mod"))) %>%
-  select(postpartum, age_grp, From, n, None, Withdrawal, Other.trad, Condom, Pill, Injectable, Implant, IUD, F.sterilization, Other.mod) %>% arrange( postpartum, age_grp, From)
-
-matrices.clean <- matrices.result %>%
-  mutate(matrix = ifelse(From == "Birth" | From == "None", "initiate","switch/discont"),                    # Name each matrix type
-         initiate = ifelse(From == "Birth" | From == "None", 1-None, NA)) %>%                               # calculate probability of initiation as 1-None
-  bind_rows(matrices.result %>% filter(From == "Birth" | From == "None") %>% mutate(matrix = "initiate.method")) %>% # Add in rows for method when initiate
-  mutate_at(c(5:14), .funs = ~ifelse(matrix == "initiate", NA,.)) %>%                                       # replace with NA for all others in initiation matrix
-  mutate(None = ifelse(matrix == "initiate.method", NA, None)) %>%                                          # Replace None column with NA for initiate method matrices
-  mutate(rowsum=rowSums(.[6:14])) %>% mutate_at(c(6:14), .funs = ~ifelse(matrix == "initiate.method", ./rowsum,.)) %>% # Normalize initiate methods
-  arrange(matrix, postpartum, age_grp) %>% select(-rowsum)
+  select(postpartum, age_grp, From, n, None, Withdrawal, Other.trad, Condom, Pill, Injectable, Implant, IUD, F.sterilization, Other.mod) %>% arrange( postpartum, age_grp, From) 
 
 rowSums(matrices.result[, 5:14], na.rm = T) # check sum to 1
 
-# -- Look at distribution of time to switch postpartum -- #
-time.initiate <- data %>%
-  filter(pp.12 & (month.a == "None" | month.a == "Birth") & month.b != "None") %>%
-  group_by(month.b, month.pp) %>% summarize(count = n())
-
-time.initiate %>%
-  ggplot() +
-  geom_bar(aes(x = month.pp, y = count), stat = "identity") +
-  theme_bw(base_size = 10) +
-  ylab("Count") + xlab("Months PP") +
-  theme(panel.grid.minor = element_blank(),
-        panel.border = element_blank(),
-        strip.background = element_rect(fill = NA)) +
-  facet_wrap(~month.b, scales = "free_y")
-ggsave("Switching_matrices/Results/pp_switching_time.png", height = 4, width = 6, units = "in", device='png')
-
-write.table(matrices.result, file="Switching_matrices/Results/matrices_Kenya_PMA_2022-12-05.csv", sep=",", row.names = F)
+# save matrices
+# write.table(matrices.result, file="kenya/matrices_kenya_pma_2019_20_21.csv", sep=",", row.names = F) 
