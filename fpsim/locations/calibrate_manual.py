@@ -12,7 +12,7 @@ import seaborn as sns
 # Global Variables
 
 # Name of the country being calibrated. To note that this should match the name of the country data folder
-country = 'kenya'
+country = 'ethiopia'
 
 sc.tic()
 
