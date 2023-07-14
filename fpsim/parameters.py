@@ -548,6 +548,8 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
         pars = fplocs.senegal.make_pars()
     elif location == 'kenya':
         pars = fplocs.kenya.make_pars()
+    elif location == 'ethiopia':
+        pars = fplocs.ethiopia.make_pars()
 
     # Else, error
     else:
