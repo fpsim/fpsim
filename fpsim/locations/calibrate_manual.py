@@ -1,8 +1,29 @@
 '''
-A script for running plotting to compare the model to data
+A script for running plotting to compare the model to data.
+
+PRIOR TO RUNNING:
+1. Be sure to set the user global variables in the first section below (country, plotting options,
+save option, and skyscrapers dataset name)
+
+2. Ensure that fpsim/locations contains both a directory for the country
+being calibrated as well as a corresponding location file (i.e. 'ethiopia.py')
+
+3. In order to run this script, the country data must be stored in the country directory mentioned above and with the
+following naming conventions:
+        {country}_skyscrapers.csv' # Age-parity distribution file
+        use_{country}.csv' # Dichotomous contraceptive method use
+        birth_spacing_dhs.csv'  # Birth-to-birth interval data
+        afb.table.csv'  # Ages at first birth in DHS for women age 25-50
+        {country}_cpr.csv'  # Contraceptive prevalence rate data; from UN Data Portal
+        {country}_asfr.csv'  # Age-specific data fertility rate data
+        mix_{country}.csv'  # Contraceptive method mix
+        {country}_tfr.csv'  # Total fertility rate data {country}_popsize.csv'  # Population by year
+
+4. Ensure that the data in the aforementioned files is formatted in the same manner as the kenya data files,
+which were used as a standard in writing this script.
+
 '''
 import os
-
 import numpy as np
 import pandas as pd
 import sciris as sc
@@ -10,12 +31,11 @@ import fpsim as fp
 import pylab as pl
 import seaborn as sns
 
-# Global Variables
+####################################################
+# GLOBAL VARIABLES: USER MUST SET
 
 # Name of the country being calibrated. To note that this should match the name of the country data folder
 country = 'ethiopia'
-
-sc.tic()
 
 # Set options for plotting
 do_plot_sim = True
@@ -29,6 +49,13 @@ do_plot_birth_space_afb = True
 
 # Set option to save figures
 do_save = 1
+
+# Dataset contained in the skyscrapers csv file to which the model data will be compared (i.e. 'PMA 2022',
+# 'DHS 2014', etc). If this is set to a dataset not included in the {country}_skyscrapers.csv file, you will receive
+# an error when running the script.
+dataset = 'DHS 2011'
+
+####################################################
 
 if do_save == 1 and os.path.exists(f'./{country}/figs') is False:
     os.mkdir(f'./{country}/figs')
@@ -49,7 +76,7 @@ min_age = 15
 max_age = 50
 first_birth_age = 25  # age to start assessing first birth age in model
 bin_size = 5
-mpy = 12 # months per year
+mpy = 12  # months per year
 
 
 # Import country data files to compare
@@ -62,6 +89,8 @@ data_asfr = pd.read_csv(f'./{country}/{country}_asfr.csv')
 data_methods = pd.read_csv(f'./{country}/mix_{country}.csv')
 data_tfr = pd.read_csv(f'./{country}/{country}_tfr.csv')
 data_popsize = pd.read_csv(f'./{country}/{country}_popsize.csv')
+
+sc.tic()
 
 # Set up sim for country
 pars = fp.pars(location=country)
@@ -243,22 +272,20 @@ if do_plot_methods:
         ax.set_xlabel('Percent users')
         ax.set_title('Contraceptive method mix model vs data')
         if do_save:
-                pl.savefig("figs/method_mix.png", bbox_inches='tight', dpi=100)
+                pl.savefig(f"{country}/figs/method_mix.png", bbox_inches='tight', dpi=100)
 
         # Plot use
         ax = df_use.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
         ax.set_xlabel('Percent')
         ax.set_title('Contraceptive method use model vs data')
         if do_save:
-                pl.savefig("figs/method_use.png", bbox_inches='tight', dpi=100)
+                pl.savefig(f"{country}/figs/method_use.png", bbox_inches='tight', dpi=100)
 
 
 if do_plot_skyscrapers:
         '''
         Plot an age-parity distribution for model vs data
         '''
-
-        dataset = 'DHS 2011'  # Data to compare to for skyscrapers, can also use DHS 2014
 
         # Set up
         age_keys = list(age_bin_map.keys())[1:]
@@ -365,7 +392,7 @@ if do_plot_tfr:
         pl.legend()
 
         if do_save:
-                pl.savefig('figs/tfr_over_sim.png')
+                pl.savefig(f'{country}/figs/tfr_over_sim.png')
 
         pl.show()
 
@@ -475,7 +502,7 @@ if do_plot_birth_space_afb:
         ax.set_title(f'Birth space bins calibration - {country}')
 
         if do_save:
-                pl.savefig(f'figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
+                pl.savefig(f'{country}/figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
 
         pl.show()
 
