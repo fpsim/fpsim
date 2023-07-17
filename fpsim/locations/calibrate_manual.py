@@ -1,6 +1,7 @@
 '''
 A script for running plotting to compare the model to data
 '''
+import os
 
 import numpy as np
 import pandas as pd
@@ -29,6 +30,8 @@ do_plot_birth_space_afb = True
 # Set option to save figures
 do_save = 1
 
+if do_save == 1 and os.path.exists(f'./{country}/figs') is False:
+    os.mkdir(f'./{country}/figs')
 
 # Set up global variables
 age_bin_map = {
@@ -150,7 +153,7 @@ if do_plot_asfr:
         sc.boxoff()
 
         if do_save:
-                pl.savefig('figs/asfr.png')
+            pl.savefig(f'{country}/figs/asfr.png')
 
         pl.show()
 
@@ -255,7 +258,7 @@ if do_plot_skyscrapers:
         Plot an age-parity distribution for model vs data
         '''
 
-        dataset = 'PMA 2022'  # Data to compare to for skyscrapers, can also use DHS 2014
+        dataset = 'DHS 2011'  # Data to compare to for skyscrapers, can also use DHS 2014
 
         # Set up
         age_keys = list(age_bin_map.keys())[1:]
@@ -301,10 +304,10 @@ if do_plot_skyscrapers:
                 sky_arr[key] /= sky_arr[key].sum() / 100
 
         # Find diff to help visualize in plotting
-        sky_arr['Diff: data - model'] = sky_arr['Data']-sky_arr['Model']
+        sky_arr['Diff_data-model'] = sky_arr['Data']-sky_arr['Model']
 
         # Plot skyscrapers
-        for key in ['Data', 'Model', 'Diff: data - model']:
+        for key in ['Data', 'Model', 'Diff_data-model']:
                 fig = pl.figure(figsize=(20, 14))
 
                 sc.bar3d(fig=fig, data=sky_arr[key], cmap='jet')
@@ -320,10 +323,9 @@ if do_plot_skyscrapers:
 
 
                 if do_save:
-                        pl.savefig('figs/skyscrapers_' + str(key.lower()) + '.png')
+                        pl.savefig(f'{country}/figs/skyscrapers_' + str(key.lower()) + '.png')
 
                 pl.show()
-
 
 if do_plot_cpr:
 
@@ -342,10 +344,9 @@ if do_plot_cpr:
         pl.legend()
 
         if do_save:
-                pl.savefig('figs/cpr_over_sim.png')
+            pl.savefig(f'{country}/figs/cpr_over_sim.png')
 
         pl.show()
-
 
 if do_plot_tfr:
         '''
@@ -393,10 +394,9 @@ if do_plot_pop_growth:
         pl.legend()
 
         if do_save:
-                pl.savefig('figs/popgrowth_over_sim.png')
+            pl.savefig(f'{country}/figs//popgrowth_over_sim.png')
 
         pl.show()
-
 
 if do_plot_birth_space_afb:
         '''
@@ -450,7 +450,7 @@ if do_plot_birth_space_afb:
         pl.legend()
 
         if do_save:
-                pl.savefig('figs/age_first_birth.png', bbox_inches='tight', dpi=100)
+            pl.savefig(f'{country}/figs/age_first_birth.png', bbox_inches='tight', dpi=100)
 
         pl.show()
 
