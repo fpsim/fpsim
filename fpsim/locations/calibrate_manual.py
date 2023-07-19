@@ -17,7 +17,8 @@ following naming conventions:
         {country}_cpr.csv'  # Contraceptive prevalence rate data; from UN Data Portal
         {country}_asfr.csv'  # Age-specific data fertility rate data
         mix_{country}.csv'  # Contraceptive method mix
-        {country}_tfr.csv'  # Total fertility rate data {country}_popsize.csv'  # Population by year
+        {country}_tfr.csv'  # Total fertility rate data
+        {country}_popsize.csv'  # Population by year
 
 4. Ensure that the data in the aforementioned files is formatted in the same manner as the kenya data files,
 which were used as a standard in writing this script.
@@ -57,8 +58,19 @@ dataset = 'DHS 2011'
 
 ####################################################
 
-if do_save == 1 and os.path.exists(f'./{country}/figs') is False:
+if do_save == 1 and os.path.exists(f'./{country}/figs') == False:
     os.mkdir(f'./{country}/figs')
+
+# Import country data files to compare
+skyscrapers = pd.read_csv(f'./{country}/{country}_skyscrapers.csv') # Age-parity distribution file
+use = pd.read_csv(f'./{country}/use_{country}.csv') #Dichotomous contraceptive method use
+data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
+data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
+data_cpr = pd.read_csv(f'./{country}/{country}_cpr.csv')  # From UN Data Portal
+data_asfr = pd.read_csv(f'./{country}/{country}_asfr.csv')
+data_methods = pd.read_csv(f'./{country}/mix_{country}.csv')
+data_tfr = pd.read_csv(f'./{country}/{country}_tfr.csv')
+data_popsize = pd.read_csv(f'./{country}/{country}_popsize.csv')
 
 # Set up global variables
 age_bin_map = {
@@ -78,18 +90,6 @@ first_birth_age = 25  # age to start assessing first birth age in model
 bin_size = 5
 mpy = 12  # months per year
 
-
-# Import country data files to compare
-skyscrapers = pd.read_csv(f'./{country}/{country}_skyscrapers.csv') # Age-parity distribution file
-use = pd.read_csv(f'./{country}/use_{country}.csv') #Dichotomous contraceptive method use
-data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
-data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
-data_cpr = pd.read_csv(f'./{country}/{country}_cpr.csv')  # From UN Data Portal
-data_asfr = pd.read_csv(f'./{country}/{country}_asfr.csv')
-data_methods = pd.read_csv(f'./{country}/mix_{country}.csv')
-data_tfr = pd.read_csv(f'./{country}/{country}_tfr.csv')
-data_popsize = pd.read_csv(f'./{country}/{country}_popsize.csv')
-
 sc.tic()
 
 # Set up sim for country
@@ -106,7 +106,7 @@ pars['high_parity_nonuse'] = 1
 
 # Last free parameter, postpartum sexual activity correction or 'birth spacing preferece'
 # Set all to 1 to reset
-spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-kenya.py'
+spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-{country}.py'
 pars['spacing_pref']['preference'][:3] = spacing_pars['space0_6']
 pars['spacing_pref']['preference'][3:6] = spacing_pars['space9_15']
 pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
@@ -117,7 +117,7 @@ pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
 sim = fp.Sim(pars=pars)
 sim.run()
 
-# Plot results from sum run
+# Plot results from sim run
 if do_plot_sim:
     sim.plot()
 
@@ -299,7 +299,7 @@ if do_plot_skyscrapers:
         # Load data
         data_parity_bins = pl.arange(0,7)
         sky_raw_data = skyscrapers
-        sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == dataset]
+        sky_raw_data = sky_raw_data[sky_raw_data['skyscrapers_dataset'] == skyscrapers_dataset]
 
         sky_parity = sky_raw_data['parity'].to_numpy()
         sky_props = sky_raw_data['percentage'].to_numpy()
