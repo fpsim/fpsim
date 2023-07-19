@@ -54,7 +54,7 @@ do_save = 1
 # Dataset contained in the skyscrapers csv file to which the model data will be compared (i.e. 'PMA 2022',
 # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_skyscrapers.csv file, you will receive
 # an error when running the script.
-dataset = 'DHS 2011'
+skyscrapers_dataset = 'DHS 2011'
 
 ####################################################
 
@@ -299,7 +299,7 @@ if do_plot_skyscrapers:
         # Load data
         data_parity_bins = pl.arange(0,7)
         sky_raw_data = skyscrapers
-        sky_raw_data = sky_raw_data[sky_raw_data['skyscrapers_dataset'] == skyscrapers_dataset]
+        sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == skyscrapers_dataset]
 
         sky_parity = sky_raw_data['parity'].to_numpy()
         sky_props = sky_raw_data['percentage'].to_numpy()
