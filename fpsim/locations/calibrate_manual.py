@@ -175,7 +175,7 @@ if do_plot_asfr:
         ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
         pl.xticks(x, x_labels)
         pl.ylim(bottom=-10)
-        ax.set_title('Age specific fertility rate per 1000 woman years')
+        ax.set_title(f'{country.capitalize()}Age specific fertility rate per 1000 woman years')
         ax.set_xlabel('Age')
         ax.set_ylabel('ASFR in 2019')
         ax.legend(frameon=False)
@@ -270,14 +270,14 @@ if do_plot_methods:
         # Plot mix
         ax = df_mix.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
         ax.set_xlabel('Percent users')
-        ax.set_title('Contraceptive method mix model vs data')
+        ax.set_title(f'{country.capitalize()}: Contraceptive Method Mix - Model vs Data')
         if do_save:
                 pl.savefig(f"{country}/figs/method_mix.png", bbox_inches='tight', dpi=100)
 
         # Plot use
         ax = df_use.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
         ax.set_xlabel('Percent')
-        ax.set_title('Contraceptive method use model vs data')
+        ax.set_title(f'{country.capitalize()}: Contraceptive Method Use - Model vs Data')
         if do_save:
                 pl.savefig(f"{country}/figs/method_use.png", bbox_inches='tight', dpi=100)
 
@@ -340,7 +340,7 @@ if do_plot_skyscrapers:
                 sc.bar3d(fig=fig, data=sky_arr[key], cmap='jet')
                 pl.xlabel('Age', fontweight='bold')
                 pl.ylabel('Parity', fontweight='bold')
-                pl.title(f'Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
+                pl.title(f'{country.capitalize()}: Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
                 pl.gca().set_xticks(pl.arange(n_age))
                 pl.gca().set_yticks(pl.arange(n_parity))
                 pl.gca().set_xticklabels(age_bins)
@@ -367,7 +367,7 @@ if do_plot_cpr:
         pl.plot(res['t'], res['cpr']*100, label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Percent')
-        pl.title(f'Contraceptive Prevalence Rate in Data vs Model - {country}')
+        pl.title(f'{country.capitalize()}: Contraceptive Prevalence Rate - Model vs Data')
         pl.legend()
 
         if do_save:
@@ -388,7 +388,7 @@ if do_plot_tfr:
         pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
-        pl.title(f'Total Fertility Rate in Data vs Model - {country}')
+        pl.title(f'{country.capitalize()}: Total Fertility Rate - Model vs Data')
         pl.legend()
 
         if do_save:
@@ -417,7 +417,7 @@ if do_plot_pop_growth:
         pl.plot(res['tfr_years'][1:], model_growth_rate, label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
-        pl.title(f'Population Growth Rate Data vs Model - {country}')
+        pl.title(f'{country.capitalize()}: Population Growth Rate - Model vs Data')
         pl.legend()
 
         if do_save:
@@ -474,6 +474,7 @@ if do_plot_birth_space_afb:
         sns.histplot(data=age_first_birth_model, stat='proportion', kde=True, binwidth=1, color='cornflowerblue', label='FPsim')
         sns.histplot(x=age_first_birth_data['afb'], stat='proportion', kde=True, weights=age_first_birth_data['wt'], binwidth=1, color='dimgrey', label='DHS data')
         pl.xlabel('Age at first birth')
+        pl.title(f'{country.capitalize()}: Age at First Birth - Model vs Data')
         pl.legend()
 
         if do_save:
@@ -499,7 +500,7 @@ if do_plot_birth_space_afb:
         ax = bins_frame.plot.barh(color={'Data': 'black', 'Model': 'cornflowerblue', 'Diff': 'red'})
         ax.set_xlabel('Percent of live birth spaces')
         ax.set_ylabel('Birth space in months')
-        ax.set_title(f'Birth space bins calibration - {country}')
+        ax.set_title(f'{country.capitalize()}: Birth Space Bins - Model vs Data')
 
         if do_save:
                 pl.savefig(f'{country}/figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
