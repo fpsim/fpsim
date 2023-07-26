@@ -54,7 +54,7 @@ do_save = 1
 # Dataset contained in the skyscrapers csv file to which the model data will be compared (i.e. 'PMA 2022',
 # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_skyscrapers.csv file, you will receive
 # an error when running the script.
-skyscrapers_dataset = 'DHS 2011'
+skyscrapers_dataset = 'PMA 2019'
 
 ####################################################
 
@@ -175,7 +175,7 @@ if do_plot_asfr:
         ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
         pl.xticks(x, x_labels)
         pl.ylim(bottom=-10)
-        ax.set_title(f'{country.capitalize()}Age specific fertility rate per 1000 woman years')
+        ax.set_title(f'{country.capitalize()}: Age specific fertility rate per 1000 woman years')
         ax.set_xlabel('Age')
         ax.set_ylabel('ASFR in 2019')
         ax.legend(frameon=False)
