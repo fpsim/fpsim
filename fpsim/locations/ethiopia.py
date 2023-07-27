@@ -27,6 +27,9 @@ def scalar_pars():
         'verbose': 1,  # How much detail to print during the simulation
         'track_switching': 0,  # Whether to track method switching
         'track_as': 0,  # Whether to track age-specific channels
+        'short_int': 24,  # Duration of a short birth interval between live births in months
+        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
+        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
 
         # Age limits (in years)
         'method_age': 15,
@@ -42,6 +45,9 @@ def scalar_pars():
         'breastfeeding_dur_mu': 9.30485863,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'breastfeeding_dur_beta': 8.20149079, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur': 5,  # Duration of lactational amenorrhea
+        'short_int': 24,  # Duration of a short birth interval between live births in months
+        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
+        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
 
         # Pregnancy outcomes
         'abortion_prob': 0.176,
@@ -57,6 +63,8 @@ def scalar_pars():
         'high_parity_nonuse': 0.6,
         'primary_infertility': 0.05,
         'exposure_factor': 1.0,  # Overall exposure correction factor
+        'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
+                                   # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
 
         # MCPR
         'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
