@@ -1,12 +1,18 @@
+'''
+Explore alternatives to skyscrapers
+'''
+
 import numpy as np
 import sciris as sc
 import pylab as pl
 import fpsim as fp
 
 T = sc.timer()
+do_save = True
 
 
 #%% Load data
+
 filename = sc.thispath(fp) / 'locations/ethiopia/ethiopia_skyscrapers.csv'
 df = sc.dataframe.read_csv(filename) # Load data
 dataset = ['DHS 2011', 'PMA 2019'][1] # Choose which dataset to use
@@ -71,32 +77,19 @@ for row,data in enumerate([arr, norm_arr]):
         y = data[:,a]
         pl.plot(y, 'o-', c=colors[a], label='Age '+agemap_r[a], lw=3, alpha=0.7)
     
-    pl.legend()
+    pl.legend(frameon=False)
     pl.xlabel('Parity')
     pl.ylabel('Percentage')
     pl.title('Option 3: Line plots'+suffix, **tkw)
     sc.boxoff(ax3)
     sc.setylim(ax=ax3)
-    
-    # # Option 3: Stacked lines 2
-    # ax4 = pl.subplot(2,2,4)
-    # colors = sc.vectocolor(ages, cmap='parula')
-    # for a in ages:
-    #     y = arr[:,a]
-    #     y *= 100/y.sum()
-    #     pl.plot(y, 'o-', c=colors[a], label=agemap_r[a], lw=3, alpha=0.7)
-    
-    # pl.legend()
-    # pl.xlabel('Parity')
-    # pl.ylabel('Percentage (of age bin)')
-    # pl.title('Option 3: Line plots, normalized by age bin', **tkw)
-    
-    # for ax in [ax3, ax4]:
-    #     sc.boxoff(ax)
-    #     sc.setylim(ax=ax)
 
-# sc.figlayout()
+
+#%% Tidy up
+
+sc.figlayout(top=0.95, bottom=0.05, left=0.05, right=0.95)
 pl.show()
-
+if do_save:
+    sc.savefig('skyscraper-options.png')
 
 T.toc('Done')
