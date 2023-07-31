@@ -126,7 +126,9 @@ if do_plot_asfr:
 
         # Load data
         year = data_asfr[data_asfr['year'] == pars['end_year']]
-        asfr_data = year.drop(['year', '50-54'], axis=1, errors='ignore').values.tolist()[0]
+        if '50-54' in year.columns:
+                year = year.drop(['50-54'], axis=1)
+        asfr_data = year.drop(['year'], axis=1).values.tolist()[0]
 
         x_labels = []
         asfr_model = []
@@ -268,7 +270,7 @@ if do_plot_skyscrapers:
 
         # Load data
         data_parity_bins = pl.arange(0,7)
-        sky_raw_data = skyscrapers
+        sky_raw_data = skyscrapers[skyscrapers['parity'] < 7]
         sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == dataset]
 
         sky_parity = sky_raw_data['parity'].to_numpy()
