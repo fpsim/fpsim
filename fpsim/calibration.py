@@ -66,7 +66,7 @@ class Calibration(sc.prettyobj):
         g.db_name   = f'{g.name}.db'
         g.storage   = f'sqlite:///{g.db_name}'
         g.n_trials  = 20  # Define the number of trials, i.e. sim runs, per worker
-        g.n_workers = 1
+        g.n_workers = sc.cpu_count()
         self.g = g
         return
 
@@ -223,7 +223,6 @@ class Calibration(sc.prettyobj):
         t0 = sc.tic()
         self.make_study()
         self.run_workers()
-        #self.worker()
         self.study = op.load_study(storage=self.g.storage, study_name=self.g.name)
         self.best_pars = self.study.best_params
         T = sc.toc(t0, output=True)
