@@ -20,7 +20,7 @@ __all__ = ['Experiment', 'Fit', 'compute_gof', 'diff_summaries']
 min_age = 15
 max_age = 50
 bin_size = 5
-year_str = '2017'
+dataset = 'PMA 2019'
 mpy = 12 # Months per year
 
 # Flags for what to run
@@ -241,7 +241,9 @@ class Experiment(sc.prettyobj):
 
         # Extract ASFR for different age bins
         asfr = self.load_data('asfr')  # From DHS
-        self.data['asfr_bins'] = list(asfr.iloc[:, 0])
+        age_bins = list(asfr.columns)
+        age_bins.remove('year')
+        self.data['asfr_bins'] = age_bins
         self.data['asfr']      = asfr.iloc[:, 1].to_numpy()
 
         # Model extraction
@@ -273,7 +275,7 @@ class Experiment(sc.prettyobj):
         # Load data
         data_parity_bins = pl.arange(0, 18) # CK: TODO: refactor
         sky_raw_data = self.load_data('skyscrapers')
-        sky_raw_data = sky_raw_data[sky_raw_data.year == year_str]
+        sky_raw_data = sky_raw_data[sky_raw_data.dataset == dataset]
         # sky_parity = sky_raw_data[2].to_numpy() # Not used currently
         sky_props = sky_raw_data.percentage.to_numpy()
         sky_arr = sc.odict()
