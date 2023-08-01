@@ -178,7 +178,7 @@ if __name__ == '__main__':
 
                 # Load data
                 year = data_asfr[data_asfr['year'] == pars['end_year']]
-                asfr_data = year.drop(['year', '50-54'], axis=1).values.tolist()[0]
+                asfr_data = year.drop(['year'], axis=1).values.tolist()[0]
 
                 x_labels = []
                 asfr_model = []

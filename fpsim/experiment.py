@@ -21,14 +21,15 @@ min_age = 15
 max_age = 50
 bin_size = 5
 dataset = 'PMA 2019'
-mpy = 12 # Months per year
+first_birth_age = 25  # age to start assessing first birth age in model
+mpy = 12  # Months per year
 
 # Flags for what to run
 default_flags = sc.objdict(
     popsize       = 1, # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
     skyscrapers   = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
     first_birth   = 1, # Age at first birth mean with standard deviation; 'age_first_birth'
-    birth_space   = 1, # Birth spacing both in bins and mean with standard deviation; 'spacing'
+    birth_space   = 0, # Birth spacing both in bins and mean with standard deviation; 'spacing'
     mcpr          = 1, # Modern contraceptive prevalence; 'mcpr'
     methods       = 1, # Overall percentage of method use and method use among users; 'methods'
     mmr           = 1, # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'
@@ -262,32 +263,42 @@ class Experiment(sc.prettyobj):
 
     def extract_skyscrapers(self):
 
+        age_bin_map = {
+            '10-14': [10, 15],
+            '15-19': [15, 20],
+            '20-24': [20, 25],
+            '25-29': [25, 30],
+            '30-34': [30, 35],
+            '35-39': [35, 40],
+            '40-44': [40, 45],
+            '45-49': [45, 50]
+        }
+
         # Set up
-        min_age = 15 # CK: TODO: remove hardcoding
+        min_age = 15  # CK: TODO: remove hardcoding
         max_age = 50
         bin_size = 5
+        age_keys = list(age_bin_map.keys())[1:]
         age_bins = pl.arange(min_age, max_age, bin_size)
-        parity_bins = pl.arange(0, 7)
+        parity_bins = pl.arange(0, 7)  # Plot up to parity 6
         n_age = len(age_bins)
         n_parity = len(parity_bins)
-        x_age = pl.arange(n_age)
 
         # Load data
-        data_parity_bins = pl.arange(0, 18) # CK: TODO: refactor
+        # data_parity_bins = pl.arange(0, 7) # CK: TODO: refactor
         sky_raw_data = self.load_data('skyscrapers')
         sky_raw_data = sky_raw_data[sky_raw_data.dataset == dataset]
         # sky_parity = sky_raw_data[2].to_numpy() # Not used currently
-        sky_props = sky_raw_data.percentage.to_numpy()
+        sky_parity = sky_raw_data['parity'].to_numpy()
+        sky_props = sky_raw_data['percentage'].to_numpy()
         sky_arr = sc.odict()
 
-        sky_arr['Data'] = pl.zeros((len(age_bins), len(parity_bins)))
-        count = -1
-        for age_bin in x_age:
-            for dpb in data_parity_bins:
-                count += 1
-                parity_bin = min(n_parity - 1, dpb)
-                sky_arr['Data'][age_bin, parity_bin] += sky_props[count]
-        assert count == len(sky_props) - 1  # Ensure they're the right length
+        sky_arr['Data'] = pl.zeros((len(age_keys), len(parity_bins)))
+
+        for age, row in sky_raw_data.iterrows():
+            if row.age in age_keys:
+                age_ind = age_keys.index(row.age)
+                sky_arr['Data'][age_ind, row.parity] = row.percentage
 
         # Extract from model
         sky_arr['Model'] = pl.zeros((len(age_bins), len(parity_bins)))
@@ -309,67 +320,60 @@ class Experiment(sc.prettyobj):
 
         return
 
-
     def extract_birth_spacing(self):
 
+        # Set up
+        data_afb = self.load_data('spacing')
         spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
-
-        # From data
-        data = self.load_data('spacing')
-        spacing, first = data['spacing'], data['first']
-        data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
-
-        # Spacing bins from data
-        spacing_bins_array = sc.cat(spacing_bins[:], np.inf)
-        for i in range(len(spacing_bins_array)-1):
-            lower = spacing_bins_array[i]
-            upper = spacing_bins_array[i+1]
-            matches = np.intersect1d(sc.findinds(spacing >= lower), sc.findinds(spacing < upper))
-            data_spacing_counts[i] += len(matches)
-
-        data_spacing_counts[:] /= data_spacing_counts[:].sum()
-        data_spacing_counts[:] *= 100
-        data_spacing_stats = np.array([pl.percentile(spacing, 25),
-                                        pl.percentile(spacing, 50),
-                                        pl.percentile(spacing, 75)])
-        data_age_first_stats = np.array([pl.percentile(first, 25),
-                                          pl.percentile(first, 50),
-                                          pl.percentile(first, 75)])
-
-        # Save to dictionary
-        self.data['spacing_bins'] = np.array(data_spacing_counts.values())
-        self.data['spacing_stats'] = data_spacing_stats
-        self.data['age_first_stats'] = data_age_first_stats
-
-        # From model
         model_age_first = []
         model_spacing = []
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+        data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+
         ppl = self.people
-        for i in  range(len(ppl)):
-            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-                if len(ppl.dobs[i]):
+
+        # Extract age at first birth and birth spaces from model
+        for i in range(len(ppl)):
+            if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                if len(ppl.dobs[i]) == 0:
+                    model_age_first.append(float('inf'))
+                if len(ppl.dobs[i]) and ppl.age[i] >= first_birth_age:
                     model_age_first.append(ppl.dobs[i][0])
                 if len(ppl.dobs[i]) > 1:
                     for d in range(len(ppl.dobs[i]) - 1):
                         space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
                         ind = sc.findinds(space > spacing_bins[:])[-1]
                         model_spacing_counts[ind] += 1
-
                         model_spacing.append(space)
 
+        # Normalize model birth space bin counts to percentages
         model_spacing_counts[:] /= model_spacing_counts[:].sum()
         model_spacing_counts[:] *= 100
+
+        age_first_birth_model = pd.DataFrame(data=model_age_first)
+
+        # Extract birth spaces and age at first birth from data
+        for i, j in data_afb.iterrows():
+            space = j['space_mo'] / mpy
+            ind = sc.findinds(space > spacing_bins[:])[-1]
+            data_spacing_counts[ind] += j['Freq']
+
+        age_first_birth_data = pd.DataFrame(data=data_afb)
+
+        # Normalize dat birth space bin counts to percentages
+        data_spacing_counts[:] /= data_spacing_counts[:].sum()
+        data_spacing_counts[:] *= 100
+
         try:
             model_spacing_stats = np.array([np.percentile(model_spacing, 25),
                                             np.percentile(model_spacing, 50),
                                             np.percentile(model_spacing, 75)])
             model_age_first_stats = np.array([np.percentile(model_age_first, 25),
-                                            np.percentile(model_age_first, 50),
-                                            np.percentile(model_age_first, 75)])
-        except Exception as E: # pragma: nocover
+                                              np.percentile(model_age_first, 50),
+                                              np.percentile(model_age_first, 75)])
+        except Exception as E:  # pragma: nocover
             print(f'Could not calculate birth spacing, returning zeros: {E}')
-            model_spacing_counts = {k:0 for k in spacing_bins.keys()}
+            model_spacing_counts = {k: 0 for k in spacing_bins.keys()}
             model_spacing_stats = np.zeros(data_spacing_stats.shape)
             model_age_first_stats = np.zeros(data_age_first_stats.shape)
 

@@ -93,8 +93,8 @@ def filenames():
     files['tfr'] = 'ethiopia_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
     files['asfr'] = 'ethiopia_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     files['skyscrapers'] = 'ethiopia_skyscrapers.csv' # Choose from either DHS 2016 or PMA 2022
-    #files['pregnancy_parity'] = 'SNIR80FL.obj'     ##NOT YET UPDATED FOR ETHIOPIA
-    #files['spacing'] = 'BirthSpacing.obj' .        ##NOT YET UPDATED FOR ETHIOPIA
+    #files['pregnancy_parity'] = 'SNIR80FL.obj'     ##NOT YET UPDATED FOR ETHIOPIA  TODO: Update these files with latest country data filenames
+    #files['spacing'] = 'birth_spacing_dhs.csv'      ##NOT YET UPDATED FOR ETHIOPIA
     #files['methods'] = 'Method_v312.csv'           ##NOT YET UPDATED FOR ETHIOPIA
     return files
 
