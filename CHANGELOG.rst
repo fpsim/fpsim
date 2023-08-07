@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.26.3 (2023-8-7)
+--------------------------
+- Adds Tutorial for manual calibration to docs/tutorials/ directory
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/164>`_
+
 Version 0.26.2 (2023-7-25)
 --------------------------
 - Updates code for manual calibration
