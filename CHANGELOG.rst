@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.26.2 (2023-7-25)
+--------------------------
+- Updates code for manual calibration
+- Adds folder to create figures for manual calibration runs
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/164>`_
+
 Version 0.26.1 (2023-6-29)
 --------------------------
 - Updates code for contraceptive matrices
