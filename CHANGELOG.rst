@@ -8,13 +8,17 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.24.2 (2023-8-7)
+--------------------------
+- Updates Senegal files in locations/senegal to be in the same format as Kenya for standardization purposes
+- Minor updates to calibrate_manual.py to be able to run with Senegal data (in addition to Kenya and other contexts)
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/133>`_
+
 Version 0.24.1 (2023-4-14)
 --------------------------
 - Fixes example_calib.py and example_exp.py to run with fpsim library
 - Updates manual_calibration.py to be flexible to take any location with identically structured data as Kenya
 - *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/133>`_
-
-
 
 Version 0.24.0 (2023-3-17)
 --------------------------

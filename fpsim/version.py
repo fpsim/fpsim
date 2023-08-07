@@ -1,4 +1,4 @@
-__version__ = '0.24.1'
-__versiondate__ = '2023-3-17'
+__version__ = '0.24.2'
+__versiondate__ = '2023-8-7'
 
 __license__ = f'FPsim {__version__} ({__versiondate__}) — © 2019-2022 by IDM'

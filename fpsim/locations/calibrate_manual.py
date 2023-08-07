@@ -270,7 +270,7 @@ if do_plot_skyscrapers:
 
         # Load data
         data_parity_bins = pl.arange(0,7)
-        sky_raw_data = skyscrapers[skyscrapers['parity'] < 7]
+        sky_raw_data = skyscrapers[skyscrapers['parity'] < 7]  # Only analyzing rows with parity <7
         sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == dataset]
 
         sky_parity = sky_raw_data['parity'].to_numpy()
