@@ -1,7 +1,30 @@
 '''
-A script for running plotting to compare the model to data
-'''
+A script for running plotting to compare the model to data.
 
+PRIOR TO RUNNING:
+1. Be sure to set the user global variables in the first section below (country, plotting options,
+save option, and skyscrapers dataset name)
+
+2. Ensure that fpsim/locations contains both a directory for the country
+being calibrated as well as a corresponding location file (i.e. 'ethiopia.py')
+
+3. In order to run this script, the country data must be stored in the country directory mentioned above and with the
+following naming conventions:
+        {country}_skyscrapers.csv' # Age-parity distribution file
+        use_{country}.csv' # Dichotomous contraceptive method use
+        birth_spacing_dhs.csv'  # Birth-to-birth interval data
+        afb.table.csv'  # Ages at first birth in DHS for women age 25-50
+        {country}_cpr.csv'  # Contraceptive prevalence rate data; from UN Data Portal
+        {country}_asfr.csv'  # Age-specific data fertility rate data
+        mix_{country}.csv'  # Contraceptive method mix
+        {country}_tfr.csv'  # Total fertility rate data
+        {country}_popsize.csv'  # Population by year
+
+4. Ensure that the data in the aforementioned files is formatted in the same manner as the kenya data files,
+which were used as a standard in writing this script.
+
+'''
+import os
 import numpy as np
 import pandas as pd
 import sciris as sc
@@ -9,12 +32,12 @@ import fpsim as fp
 import pylab as pl
 import seaborn as sns
 
-# Global Variables
+####################################################
+# GLOBAL VARIABLES: USER MUST SET
 
 # Name of the country being calibrated. To note that this should match the name of the country data folder
-country = 'senegal'
+country = 'ethiopia'
 
-sc.tic()
 
 # Set options for plotting
 do_plot_sim = True
@@ -29,6 +52,26 @@ do_plot_birth_space_afb = True
 # Set option to save figures
 do_save = 1
 
+# Dataset contained in the skyscrapers csv file to which the model data will be compared (i.e. 'PMA 2022',
+# 'DHS 2014', etc). If this is set to a dataset not included in the {country}_skyscrapers.csv file, you will receive
+# an error when running the script.
+skyscrapers_dataset = 'PMA 2019'
+
+####################################################
+
+if do_save == 1 and os.path.exists(f'./{country}/figs') == False:
+    os.mkdir(f'./{country}/figs')
+
+# Import country data files to compare
+skyscrapers = pd.read_csv(f'./{country}/{country}_skyscrapers.csv') # Age-parity distribution file
+use = pd.read_csv(f'./{country}/use_{country}.csv') #Dichotomous contraceptive method use
+data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
+data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
+data_cpr = pd.read_csv(f'./{country}/{country}_cpr.csv')  # From UN Data Portal
+data_asfr = pd.read_csv(f'./{country}/{country}_asfr.csv')
+data_methods = pd.read_csv(f'./{country}/mix_{country}.csv')
+data_tfr = pd.read_csv(f'./{country}/{country}_tfr.csv')
+data_popsize = pd.read_csv(f'./{country}/{country}_popsize.csv')
 
 # Set up global variables
 age_bin_map = {
@@ -46,19 +89,9 @@ min_age = 15
 max_age = 50
 first_birth_age = 25  # age to start assessing first birth age in model
 bin_size = 5
-mpy = 12 # months per year
+mpy = 12  # months per year
 
-
-# Import country data files to compare
-skyscrapers = pd.read_csv(f'./{country}/{country}_skyscrapers.csv') # Age-parity distribution file
-use = pd.read_csv(f'./{country}/use_{country}.csv') #Dichotomous contraceptive method use
-data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
-data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
-data_cpr = pd.read_csv(f'./{country}/{country}_cpr.csv')  # From UN Data Portal
-data_asfr = pd.read_csv(f'./{country}/{country}_asfr.csv')
-data_methods = pd.read_csv(f'./{country}/mix_{country}.csv')
-data_tfr = pd.read_csv(f'./{country}/{country}_tfr.csv')
-data_popsize = pd.read_csv(f'./{country}/{country}_popsize.csv')
+sc.tic()
 
 # Set up sim for country
 pars = fp.pars(location=country)
@@ -74,7 +107,7 @@ pars['high_parity_nonuse'] = 1
 
 # Last free parameter, postpartum sexual activity correction or 'birth spacing preferece'
 # Set all to 1 to reset
-spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-kenya.py'
+spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-{country}.py'
 pars['spacing_pref']['preference'][:3] = spacing_pars['space0_6']
 pars['spacing_pref']['preference'][3:6] = spacing_pars['space9_15']
 pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
@@ -85,7 +118,7 @@ pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
 sim = fp.Sim(pars=pars)
 sim.run()
 
-# Plot results from sum run
+# Plot results from sim run
 if do_plot_sim:
     sim.plot()
 
@@ -145,14 +178,14 @@ if do_plot_asfr:
         ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
         pl.xticks(x, x_labels)
         pl.ylim(bottom=-10)
-        ax.set_title('Age specific fertility rate per 1000 woman years')
+        ax.set_title(f'{country.capitalize()}: Age specific fertility rate per 1000 woman years')
         ax.set_xlabel('Age')
         ax.set_ylabel('ASFR in 2019')
         ax.legend(frameon=False)
         sc.boxoff()
 
         if do_save:
-                pl.savefig('figs/asfr.png')
+            pl.savefig(f'{country}/figs/asfr.png')
 
         pl.show()
 
@@ -240,24 +273,22 @@ if do_plot_methods:
         # Plot mix
         ax = df_mix.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
         ax.set_xlabel('Percent users')
-        ax.set_title('Contraceptive method mix model vs data')
+        ax.set_title(f'{country.capitalize()}: Contraceptive Method Mix - Model vs Data')
         if do_save:
-                pl.savefig("figs/method_mix.png", bbox_inches='tight', dpi=100)
+                pl.savefig(f"{country}/figs/method_mix.png", bbox_inches='tight', dpi=100)
 
         # Plot use
         ax = df_use.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
         ax.set_xlabel('Percent')
-        ax.set_title('Contraceptive method use model vs data')
+        ax.set_title(f'{country.capitalize()}: Contraceptive Method Use - Model vs Data')
         if do_save:
-                pl.savefig("figs/method_use.png", bbox_inches='tight', dpi=100)
+                pl.savefig(f"{country}/figs/method_use.png", bbox_inches='tight', dpi=100)
 
 
 if do_plot_skyscrapers:
         '''
         Plot an age-parity distribution for model vs data
         '''
-
-        dataset = 'DHS 2014'  # Data to compare to for skyscrapers, can also use DHS 2014
 
         # Set up
         age_keys = list(age_bin_map.keys())[1:]
@@ -271,8 +302,7 @@ if do_plot_skyscrapers:
         # Load data
         data_parity_bins = pl.arange(0,7)
         sky_raw_data = skyscrapers[skyscrapers['parity'] < 7]  # Only analyzing rows with parity <7
-        sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == dataset]
-
+        sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == skyscrapers_dataset]
         sky_parity = sky_raw_data['parity'].to_numpy()
         sky_props = sky_raw_data['percentage'].to_numpy()
 
@@ -303,16 +333,16 @@ if do_plot_skyscrapers:
                 sky_arr[key] /= sky_arr[key].sum() / 100
 
         # Find diff to help visualize in plotting
-        sky_arr['Diff: data - model'] = sky_arr['Data']-sky_arr['Model']
+        sky_arr['Diff_data-model'] = sky_arr['Data']-sky_arr['Model']
 
         # Plot skyscrapers
-        for key in ['Data', 'Model', 'Diff: data - model']:
+        for key in ['Data', 'Model', 'Diff_data-model']:
                 fig = pl.figure(figsize=(20, 14))
 
                 sc.bar3d(fig=fig, data=sky_arr[key], cmap='jet')
                 pl.xlabel('Age', fontweight='bold')
                 pl.ylabel('Parity', fontweight='bold')
-                pl.title(f'Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
+                pl.title(f'{country.capitalize()}: Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
                 pl.gca().set_xticks(pl.arange(n_age))
                 pl.gca().set_yticks(pl.arange(n_parity))
                 pl.gca().set_xticklabels(age_bins)
@@ -322,10 +352,9 @@ if do_plot_skyscrapers:
 
 
                 if do_save:
-                        pl.savefig('figs/skyscrapers_' + str(key.lower()) + '.png')
+                        pl.savefig(f'{country}/figs/skyscrapers_' + str(key.lower()) + '.png')
 
                 pl.show()
-
 
 if do_plot_cpr:
 
@@ -340,14 +369,13 @@ if do_plot_cpr:
         pl.plot(res['t'], res['cpr']*100, label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Percent')
-        pl.title(f'Contraceptive Prevalence Rate in Data vs Model - {country}')
+        pl.title(f'{country.capitalize()}: Contraceptive Prevalence Rate - Model vs Data')
         pl.legend()
 
         if do_save:
-                pl.savefig('figs/cpr_over_sim.png')
+            pl.savefig(f'{country}/figs/cpr_over_sim.png')
 
         pl.show()
-
 
 if do_plot_tfr:
         '''
@@ -362,11 +390,11 @@ if do_plot_tfr:
         pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
-        pl.title(f'Total Fertility Rate in Data vs Model - {country}')
+        pl.title(f'{country.capitalize()}: Total Fertility Rate - Model vs Data')
         pl.legend()
 
         if do_save:
-                pl.savefig('figs/tfr_over_sim.png')
+                pl.savefig(f'{country}/figs/tfr_over_sim.png')
 
         pl.show()
 
@@ -391,14 +419,13 @@ if do_plot_pop_growth:
         pl.plot(res['tfr_years'][1:], model_growth_rate, label='FPsim', color='cornflowerblue')
         pl.xlabel('Year')
         pl.ylabel('Rate')
-        pl.title(f'Population Growth Rate Data vs Model - {country}')
+        pl.title(f'{country.capitalize()}: Population Growth Rate - Model vs Data')
         pl.legend()
 
         if do_save:
-                pl.savefig('figs/popgrowth_over_sim.png')
+            pl.savefig(f'{country}/figs//popgrowth_over_sim.png')
 
         pl.show()
-
 
 if do_plot_birth_space_afb:
         '''
@@ -449,10 +476,11 @@ if do_plot_birth_space_afb:
         sns.histplot(data=age_first_birth_model, stat='proportion', kde=True, binwidth=1, color='cornflowerblue', label='FPsim')
         sns.histplot(x=age_first_birth_data['afb'], stat='proportion', kde=True, weights=age_first_birth_data['wt'], binwidth=1, color='dimgrey', label='DHS data')
         pl.xlabel('Age at first birth')
+        pl.title(f'{country.capitalize()}: Age at First Birth - Model vs Data')
         pl.legend()
 
         if do_save:
-                pl.savefig('figs/age_first_birth.png', bbox_inches='tight', dpi=100)
+            pl.savefig(f'{country}/figs/age_first_birth.png', bbox_inches='tight', dpi=100)
 
         pl.show()
 
@@ -474,10 +502,10 @@ if do_plot_birth_space_afb:
         ax = bins_frame.plot.barh(color={'Data': 'black', 'Model': 'cornflowerblue', 'Diff': 'red'})
         ax.set_xlabel('Percent of live birth spaces')
         ax.set_ylabel('Birth space in months')
-        ax.set_title(f'Birth space bins calibration - {country}')
+        ax.set_title(f'{country.capitalize()}: Birth Space Bins - Model vs Data')
 
         if do_save:
-                pl.savefig(f'figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
+                pl.savefig(f'{country}/figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
 
         pl.show()
 

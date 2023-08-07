@@ -169,13 +169,16 @@ class timeseries_recorder(Analyzer):
         self.data = sc.objdict()
         return
 
+
     def initialize(self, sim):
         """
         Initializes self.keys from sim.people
         """
         super().initialize()
-        self.keys = sim.people.keys()
-        self.keys.remove('dobs')
+        self.keys = []
+        for key in sim.people.keys():
+            if sc.isarray(sim.people[key]):
+                self.keys.append(key)
         for key in self.keys:
             self.data[key] = []
         return
@@ -317,6 +320,7 @@ class verbose_sim(Analyzer):
             self.events::dict
                 Dictionary of events correponding to self.channels formatted as {timestep: channel: [indices]}.
         """
+        print('Warning, needs to be refactored to not use dataframes on each step')
         if not self.set_baseline:
             initial_pop = sim.pars['n_agents']
             self.last_year_births = [0] * initial_pop

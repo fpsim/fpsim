@@ -1,5 +1,5 @@
 '''
-Set the parameters for FPsim, specifically for Kenya.
+Set the parameters for FPsim, specifically for Ethiopia.
 '''
 
 import numpy as np
@@ -16,7 +16,7 @@ thisdir = sc.path(sc.thisdir())  # For loading CSV files
 def scalar_pars():
     scalar_pars = {
         # Basic parameters
-        'location': 'kenya',
+        'location': 'ethiopia',
         'n_agents': 1_000,  # Number of agents
         'scaled_pop': None,  # Scaled population / total population size
         'start_year': 1960,  # Start year of simulation
@@ -42,25 +42,25 @@ def scalar_pars():
         'preg_dur_low': 9,
         'preg_dur_high': 9,
         'postpartum_dur': 23,
-        'breastfeeding_dur_mu': 11.4261936291137,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'breastfeeding_dur_beta': 7.5435309020483, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
+        'breastfeeding_dur_mu': 9.30485863,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'breastfeeding_dur_beta': 8.20149079, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
         'max_lam_dur': 5,  # Duration of lactational amenorrhea
         'short_int': 24,  # Duration of a short birth interval between live births in months
         'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
         'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
 
         # Pregnancy outcomes
-        'abortion_prob': 0.201,
-        # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
-        'twins_prob': 0.016,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'LAM_efficacy': 0.98,  # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
+        'abortion_prob': 0.176,
+        # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
+        'twins_prob': 0.011,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+        'LAM_efficacy': 0.98,  # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/   
         'maternal_mortality_factor': 1,
 
         # Fecundity and exposure
         'fecundity_var_low': 0.7,
         'fecundity_var_high': 1.1,
-        'high_parity': 1,
-        'high_parity_nonuse': 1,
+        'high_parity': 4,
+        'high_parity_nonuse': 0.6,
         'primary_infertility': 0.05,
         'exposure_factor': 1.0,  # Overall exposure correction factor
         'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
@@ -83,19 +83,19 @@ def data2interp(data, ages, normalize=False):
     return interp
 
 
-# TODO- these need to be changed for Kenya calibration and commented with their data source
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'kenya'
-    files['basic_dhs'] = 'kenya_basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
-    files['popsize'] = 'kenya_popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
-    files['mcpr'] = 'kenya_cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
-    files['asfr'] = 'kenya_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-    files['skyscrapers'] = 'kenya_skyscrapers.csv' # Choose from either DHS 2014 or PMA 2022
-    #files['spacing'] = 'BirthSpacing.obj'
-    #files['methods'] = 'Method_v312.csv'
+    files['base'] = sc.thisdir(aspath=True) / 'ethiopia'
+    files['basic_dhs'] = 'ethiopia_basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
+    files['popsize'] = 'ethiopia_popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
+    files['mcpr'] = 'ethiopia_cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+    files['tfr'] = 'ethiopia_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
+    files['asfr'] = 'ethiopia_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
+    files['skyscrapers'] = 'ethiopia_skyscrapers.csv' # Choose from either DHS 2016 or PMA 2022
+    #files['pregnancy_parity'] = 'SNIR80FL.obj'     ##NOT YET UPDATED FOR ETHIOPIA
+    #files['spacing'] = 'BirthSpacing.obj' .        ##NOT YET UPDATED FOR ETHIOPIA
+    #files['methods'] = 'Method_v312.csv'           ##NOT YET UPDATED FOR ETHIOPIA
     return files
 
 
@@ -107,23 +107,23 @@ def age_pyramid():
     Data are from World Population Prospects
     https://population.un.org/wpp/Download/Standard/Population/
      '''
-    pyramid = np.array([[0, 801895, 800503],  # Kenya 1960
-                        [5, 620524, 625424],
-                        [10, 463547, 464020],
-                        [15, 333241, 331921],
-                        [20, 307544, 309057],
-                        [25, 292141, 287621],
-                        [30, 247826, 236200],
-                        [35, 208416, 190234],
-                        [40, 177914, 162057],
-                        [45, 156771, 138943],
-                        [50, 135912, 123979],
-                        [55, 108653, 111939],
-                        [60, 85407, 94582],
-                        [65, 61664, 71912],
-                        [70, 40797, 49512],
-                        [75, 22023, 29298],
-                        [80, 11025, 17580],
+    pyramid = np.array([[0, 2081014, 2059245],  # Ethiopia 1962 
+                        [5, 1593445, 1598968],
+                        [10, 1399939, 1383499],
+                        [15, 1230342, 1207218],
+                        [20, 1033903, 1026122],
+                        [25, 871410, 869670],
+                        [30, 734635, 735269],
+                        [35, 616805, 620278],
+                        [40, 513096, 518738],
+                        [45, 423949, 431205],
+                        [50, 344289, 356727],
+                        [55, 273144, 292624],
+                        [60, 180126, 218849],
+                        [65, 113574, 155562],
+                        [70, 74792, 105071],
+                        [75, 39508,	60379],
+                        [80, 21143,	36845],
                         ], dtype=float)
 
     return pyramid
@@ -133,15 +133,15 @@ def age_mortality():
     '''
     Age-dependent mortality rates taken from UN World Population Prospects 2022.  From probability of dying each year.
     https://population.un.org/wpp/
-    Used CSV WPP2022_Life_Table_Complete_Medium_Female_1950-2021, Kenya, 2010
-    Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Kenya, 2010
+    Used CSV WPP2022_Life_Table_Complete_Medium_Female_1950-2021, Ethiopia, 2020 
+    Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Ethiopia, 2020
     Mortality rate trend from crude death rate per 1000 people, also from UN Data Portal, 1950-2030:
-    https://population.un.org/dataportal/data/indicators/59/locations/404/start/1950/end/2030/table/pivotbylocation
+    https://population.un.org/dataportal/data/indicators/59/locations/231/start/1950/end/2030/table/pivotbylocation
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
-    data_year = 2010
-    mortality_data = pd.read_csv(thisdir / 'kenya' / 'mortality_prob_kenya.csv')
-    mortality_trend = pd.read_csv(thisdir / 'kenya' / 'mortality_trend_kenya.csv')
+    data_year = 2020 # NORMED TO 2020 BASED ON ETHIOPIA PROBABILITY DATA
+    mortality_data = pd.read_csv(thisdir / 'ethiopia' / 'mortality_prob_ethiopia.csv')
+    mortality_trend = pd.read_csv(thisdir / 'ethiopia' / 'mortality_trend_ethiopia.csv')       
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -173,28 +173,28 @@ def age_mortality():
 def maternal_mortality():
     '''
     From World Bank indicators for maternal mortality ratio (modeled estimate) per 100,000 live births:
-    https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
+    https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
     '''
 
     data = np.array([
-        [2000, 708],
-        [2001, 702],
-        [2002, 692],
-        [2003, 678],
-        [2004, 653],
-        [2005, 618],
-        [2006, 583],
-        [2007, 545],
-        [2008, 513],
-        [2009, 472],
-        [2010, 432],
-        [2011, 398],
-        [2012, 373],
-        [2013, 364],
-        [2014, 358],
-        [2015, 353],
-        [2016, 346],
-        [2017, 342],
+        [2000, 1030],
+        [2001, 988],
+        [2002, 985],
+        [2003, 972],
+        [2004, 929],
+        [2005, 865],
+        [2006, 795],
+        [2007, 731],
+        [2008, 681],
+        [2009, 638],
+        [2010, 597],
+        [2011, 558],
+        [2012, 527],
+        [2013, 498],
+        [2014, 472],
+        [2015, 446],
+        [2016, 422],
+        [2017, 401],
 
     ])
 
@@ -209,74 +209,70 @@ def maternal_mortality():
 
 def infant_mortality():
     '''
-    From World Bank indicators for infant mortality (< 1 year) for Kenya, per 1000 live births
-    From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
+    From World Bank indicators for infant mortality (< 1 year) for Ethiopia, per 1000 live births
+    From API_SP.DYN.IMRT.IN_DS2_en_csv_v2_5358355
     Adolescent increased risk of infant mortality gradient taken
     from Noori et al for Sub-Saharan African from 2014-2018.  Odds ratios with age 23-25 as reference group:
     https://www.medrxiv.org/content/10.1101/2021.06.10.21258227v1
     '''
 
     data = np.array([
-        [1960, 118.1],
-        [1961, 113.7],
-        [1962, 109.8],
-        [1963, 106.5],
-        [1964, 103.8],
-        [1965, 101.6],
-        [1966, 99.8],
-        [1967, 98.0],
-        [1968, 96.3],
-        [1969, 94.5],
-        [1970, 92.6],
-        [1971, 90.8],
-        [1972, 88.8],
-        [1973, 86.7],
-        [1974, 84.5],
-        [1975, 82.2],
-        [1976, 79.8],
-        [1977, 77.4],
-        [1978, 75.0],
-        [1979, 72.7],
-        [1980, 70.5],
-        [1981, 68.5],
-        [1982, 66.7],
-        [1983, 65.1],
-        [1984, 63.8],
-        [1985, 62.9],
-        [1986, 62.4],
-        [1987, 62.4],
-        [1988, 62.8],
-        [1989, 63.7],
-        [1990, 64.8],
-        [1991, 66.1],
-        [1992, 67.2],
-        [1993, 67.9],
-        [1994, 68.0],
-        [1995, 67.6],
-        [1996, 66.5],
-        [1997, 65.1],
-        [1998, 63.5],
-        [1999, 61.7],
-        [2000, 59.7],
-        [2001, 57.6],
-        [2002, 55.4],
-        [2003, 53.1],
-        [2004, 50.7],
-        [2005, 48.1],
-        [2006, 45.8],
-        [2007, 43.8],
-        [2008, 41.4],
-        [2009, 40.3],
-        [2010, 39.4],
-        [2011, 38.6],
-        [2012, 38.2],
-        [2013, 37.5],
-        [2014, 36.5],
-        [2015, 35.3],
-        [2016, 34.5],
-        [2017, 33.9],
-        [2018, 32.8],
-        [2019, 31.9]
+        [1966, 146.6],        
+        [1967, 146.1],
+        [1968, 145.9],
+        [1969, 145.8],
+        [1970, 145.6],
+        [1971, 145.4],
+        [1972, 145.1],
+        [1973, 145],
+        [1974, 144.7],
+        [1975, 144.4],
+        [1976, 144.1],
+        [1977, 143.8],
+        [1978, 143.4],
+        [1979, 142.6],
+        [1980, 141.5],
+        [1981, 139.9],
+        [1982, 138],
+        [1983, 135.8],
+        [1984, 133.4],
+        [1985, 131],
+        [1986, 128.7],
+        [1987, 126.4],
+        [1988, 124.2],
+        [1989, 121.9],
+        [1990, 119.5],
+        [1991, 116.9],
+        [1992, 114],
+        [1993, 110.7],
+        [1994, 107.2],
+        [1995, 103.7],
+        [1996, 100.3],
+        [1997, 96.8],
+        [1998, 93.5],
+        [1999, 90.3],
+        [2000, 87],
+        [2001, 83.7],
+        [2002, 80.2],
+        [2003, 76.7],
+        [2004, 73.1],
+        [2005, 69.5],
+        [2006, 66.1],
+        [2007, 62.8],
+        [2008, 59.8],
+        [2009, 57],
+        [2010, 54.4],
+        [2011, 51.9],
+        [2012, 49.5],
+        [2013, 47.3],
+        [2014, 45.2],
+        [2015, 43.2],
+        [2016, 41.3],
+        [2017, 39.6],
+        [2018, 38],
+        [2019, 36.6],
+        [2020, 35.4],
+        [2021, 34.3]
     ])
 
     infant_mortality = {}
@@ -306,13 +302,13 @@ def stillbirth():
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
 
-    Age adjustments come from an extension of Noori et al., which were conducted June 2022.
+    Age adjustments come from an extension of Noori et al., which were conducted June 2022. 
     '''
 
-    data = np.array([
-        [2000, 22.5],
-        [2010, 20.6],
-        [2019, 19.7],
+    data = np.array([ 
+        [2000, 35.8],
+        [2010, 31.1],
+        [2019, 24.6],
     ])
 
     stillbirth_rate = {}
@@ -345,7 +341,7 @@ def female_age_fecundity():
     return fecundity_interp
 
 
-def fecundity_ratio_nullip():
+def fecundity_ratio_nullip(): 
     '''
     Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
     from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
@@ -363,21 +359,21 @@ def lactational_amenorrhea():
     Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
     Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
     as those women continue to be postpartum insusceptible.
-    From DHS Kenya 2014 calendar data
+    From DHS Ethiopia 2016 calendar data
     '''
     data = np.array([
-        [0, 0.9557236],
-        [1, 0.8889493],
-        [2, 0.7040052],
-        [3, 0.5332317],
-        [4, 0.4115276],
-        [5, 0.2668908],
-        [6, 0.1364079],
-        [7, 0.0571638],
-        [8, 0.0025502],
-        [9, 0.0259570],
-        [10, 0.0072750],
-        [11, 0.0046938],
+        [0, 0.9892715],
+        [1, 0.8494371],
+        [2, 0.8265375],
+        [3, 0.730395],
+        [4, 0.666934],
+        [5, 0.4947101],
+        [6, 0.3667066],
+        [7, 0.2191162],
+        [8, 0.3135374],
+        [9, 0.1113177],
+        [10, 0.0981782],
+        [11, 0.0847675],
     ])
 
     lactational_amenorrhea = {}
@@ -399,10 +395,11 @@ def sexual_activity():
     Excludes women who answer "never had sex", probabilities are only applied to agents who have sexually debuted
     Data taken from 2018 DHS, no trend over years for now
     Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
+    Last value duplicated so that it interpolates out to 50 and then stops
     '''
 
     sexually_active = np.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
-                                [0, 0, 0, 31.4, 55.0, 64.4, 69.6, 65.3, 60.7, 57.4, 57.4]])
+                                [0, 0, 0, 15, 51.2, 69.4, 69.3, 68.6, 68.1, 59.7, 59.7]])
 
     sexually_active[1] /= 100  # Convert from percent to rate per woman
     activity_ages = sexually_active[0]
@@ -415,7 +412,7 @@ def sexual_activity():
 def sexual_activity_pp():
     '''
     Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
-    Uses 2014 Kenya DHS individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
+    Uses 2016 Ethiopia DHS individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
     Data is weighted.
     Limited to 23 months postpartum (can use any limit you want 0-23 max)
     Postpartum month 0 refers to the first month after delivery
@@ -423,30 +420,30 @@ def sexual_activity_pp():
     '''
 
     postpartum_sex = np.array([
-        [0, 0.08453],
-        [1, 0.08870],
-        [2, 0.40634],
-        [3, 0.58030],
-        [4, 0.52688],
-        [5, 0.60641],
-        [6, 0.58103],
-        [7, 0.72973],
-        [8, 0.62647],
-        [9, 0.73497],
-        [10, 0.60254],
-        [11, 0.75723],
-        [12, 0.73159],
-        [13, 0.68409],
-        [14, 0.74925],
-        [15, 0.74059],
-        [16, 0.70051],
-        [17, 0.78479],
-        [18, 0.74965],
-        [19, 0.79351],
-        [20, 0.77338],
-        [21, 0.70340],
-        [22, 0.72395],
-        [23, 0.72202]
+        [0, 0.19253],
+        [1, 0.31858],
+        [2, 0.49293],
+        [3, 0.64756],
+        [4, 0.78684],
+        [5, 0.67009],
+        [6, 0.75804],
+        [7, 0.79867],
+        [8, 0.84857],
+        [9, 0.80293],
+        [10, 0.89259],
+        [11, 0.8227],
+        [12, 0.85876],
+        [13, 0.83104],
+        [14, 0.77563],
+        [15, 0.79917],
+        [16, 0.79582],
+        [17, 0.84817],
+        [18, 0.77804],
+        [19, 0.80811],
+        [20, 0.82049],
+        [21, 0.77607],
+        [22, 0.79261],
+        [23, 0.8373],
     ])
 
 
@@ -466,38 +463,35 @@ def debut_age():
     '''
 
     sexual_debut = np.array([
-        [10.0, 0.008404629256166524],
-        [11.0, 0.006795048697926663],
-        [12.0, 0.026330525753311643],
-        [13.0, 0.04440278185223372],
-        [14.0, 0.08283157906888061],
-        [15.0, 0.14377365580688461],
-        [16.0, 0.13271744734209995],
-        [17.0, 0.11915611658325072],
-        [18.0, 0.13735481818469894],
-        [19.0, 0.0841039265081519],
-        [20.0, 0.07725867074164659],
-        [21.0, 0.03982337306065369],
-        [22.0, 0.031195559243867545],
-        [23.0, 0.020750304422300126],
-        [24.0, 0.014468030815585422],
-        [25.0, 0.010870195645684769],
-        [26.0, 0.007574195696769944],
-        [27.0, 0.0034378402773621282],
-        [28.0, 0.0031344552061394622],
-        [29.0, 0.0018168079578966389],
-        [30.0, 0.001385356426809007],
-        [31.0, 0.0004912818135032509],
-        [32.0, 0.00045904179812542576],
-        [33.0, 0.0005049625590548578],
-        [34.0, 0.000165858204720886],
-        [35.0, 0.00019259487032758347],
-        [36.0, 0.0002126920535675137],
-        [37.0, 8.84428869703282e-05],
-        [38.0, 5.07209448615522e-05],
-        [39.0, 6.555458199225806e-05],
-        [41.0, 0.00013980442816424654],
-        [44.0, 4.372731039149624e-05]])
+        [10, 0.00671240845335203],
+        [11, 0.00918135820646243],
+        [12, 0.0309770814788788],
+        [13, 0.059400507503726],
+        [14, 0.130291755291],
+        [15, 0.196183864268175],
+        [16, 0.130556610013873],
+        [17, 0.103290455840828],
+        [18, 0.110776245328648],
+        [19, 0.0530816775521274],
+        [20, 0.0588590881799291],
+        [21, 0.026991174849838],
+        [22, 0.0271788262050103],
+        [23, 0.0188626403851833],
+        [24, 0.0112214052863469],
+        [25, 0.0109271507351524],
+        [26, 0.00443999952806908],
+        [27, 0.00359275321149036],
+        [28, 0.00303477463739577],
+        [29, 0.0017573689141809],
+        [30, 0.00121215246872525],
+        [31, 0.000711491329468429],
+        [32, 0.000137332034070925],
+        [33, 0.000279848072025066],
+        [34, 7.17053090713206E-06],
+        [35, 9.65008015799441E-05],
+        [36, 8.46224502635213E-06],
+        [37, 3.97705796721265E-05],
+        [43, 0.00019012606885453]])
 
     debut_age = {}
     debut_age['ages'] = sexual_debut[:, 0]
@@ -610,11 +604,11 @@ def methods():
         '>35': [35, fpd.max_age + 1],  # +1 since we're using < rather than <=
     }
 
-    # Data on trend in CPR over time in from Kenya, in %.
+    # Data on trend in CPR over time in from Ethiopia, in %.
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
+    # https://population.un.org/dataportal/data/indicators/1/locations/231/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'kenya' / 'kenya_cpr.csv')
+    cpr_data = pd.read_csv(thisdir / 'ethiopia' / 'ethiopia_cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
@@ -625,7 +619,7 @@ def methods():
 For reference
 def method_probs_senegal():
     
-    It does leave Senegal matrices in place in the Kenya file for now. 
+    It does leave Senegal matrices in place in the Ethiopia file for now. 
     We may want to test with these as we work through scenarios and calibration. 
     
     Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
@@ -778,7 +772,7 @@ def method_probs_senegal():
 def method_probs():
     '''
     Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
-    from PMA Kenya contraceptive calendar data.
+    from PMA Ethiopia contraceptive calendar data.
 
     Probabilities in this function are annual probabilities of initiating (top row), discontinuing (first column),
     continuing (diagonal), or switching methods (all other entries).
@@ -789,8 +783,8 @@ def method_probs():
     Probabilities at postpartum month 6 are 5 month transitional probabilities
     for starting or changing methods over the first 6 months postpartum.
 
-    Data from Kenya PMA contraceptive calendars, 2019-2020
-    Processed from matrices_kenya_pma_2019_20.csv using process_matrices.py
+    Data from Ethiopia PMA contraceptive calendars, 2019-2020
+    Processed from matrices_ethiopia_pma_2019_20.csv using process_matrices.py
     '''
 
     raw = {
@@ -798,129 +792,129 @@ def method_probs():
         # Main switching matrix: all non-postpartum women
         'annual': {
             '<18': np.array([
-                [0.9578, 0.0003, 0.0023, 0.024 , 0.0025, 0.005 , 0.0043, 0.0002, 0.0002, 0.0035],
-                [0.5684, 0.0179, 0.0038, 0.0752, 0.2552, 0.0295, 0.0024, 0.0001, 0.0001, 0.0475],
-                [0.1187, 0.0001, 0.8034, 0.0471, 0.0173, 0.0021, 0.0003, 0.    , 0.    , 0.0111],
-                [0.6347, 0.0006, 0.0016, 0.3171, 0.0078, 0.0131, 0.002 , 0.0001, 0.0001, 0.0229],
-                [0.1704, 0.0001, 0.0006, 0.0162, 0.7059, 0.0896, 0.0038, 0.    , 0.    , 0.0135],
-                [0.1791, 0.    , 0.0007, 0.0027, 0.0169, 0.7371, 0.0629, 0.    , 0.    , 0.0006],
-                [0.1138, 0.    , 0.0144, 0.002 , 0.0006, 0.0302, 0.8386, 0.    , 0.    , 0.0004],
-                [0.1352, 0.    , 0.0002, 0.0019, 0.0002, 0.0003, 0.0003, 0.8617, 0.    , 0.0003],
+                [0.9236, 0.0004, 0.0017, 0.0007, 0.0042, 0.0596, 0.0076, 0.0006, 0.    , 0.0017],
+                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ],
+                [0.1374, 0.    , 0.8571, 0.    , 0.0003, 0.0044, 0.0005, 0.    , 0.    , 0.0001],
+                [0.2815, 0.0001, 0.0003, 0.6995, 0.0007, 0.0164, 0.0012, 0.0001, 0.    , 0.0003],
+                [0.4681, 0.0001, 0.0006, 0.0013, 0.3023, 0.1869, 0.003 , 0.0005, 0.    , 0.0371],
+                [0.3267, 0.0001, 0.0017, 0.0005, 0.0043, 0.6549, 0.009 , 0.0023, 0.    , 0.0005],
+                [0.1937, 0.    , 0.0008, 0.0001, 0.0007, 0.0087, 0.7957, 0.0001, 0.    , 0.0002],
+                [0.4158, 0.0001, 0.0004, 0.0002, 0.0011, 0.0142, 0.0017, 0.5662, 0.    , 0.0004],
                 [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ],
-                [0.7052, 0.0003, 0.0166, 0.1279, 0.0253, 0.0282, 0.0032, 0.0001, 0.0001, 0.0931]]),
+                [0.5988, 0.0001, 0.0006, 0.024 , 0.0186, 0.0258, 0.0027, 0.0002, 0.    , 0.3293]]),
             '18-20': np.array([
-                [0.8392, 0.0014, 0.0132, 0.0705, 0.0131, 0.0331, 0.0199, 0.0003, 0.0001, 0.0091],
-                [0.3917, 0.2362, 0.0072, 0.3268, 0.0115, 0.0138, 0.0093, 0.0001, 0.    , 0.0033],
-                [0.1867, 0.0082, 0.6907, 0.0706, 0.0035, 0.0147, 0.0037, 0.    , 0.    , 0.0219],
-                [0.4299, 0.0063, 0.0162, 0.4647, 0.0286, 0.0279, 0.0213, 0.0001, 0.    , 0.0049],
-                [0.2567, 0.0005, 0.0031, 0.0339, 0.5704, 0.0974, 0.0262, 0.    , 0.    , 0.0117],
-                [0.2396, 0.0002, 0.0047, 0.0134, 0.0189, 0.6235, 0.0971, 0.    , 0.    , 0.0025],
-                [0.1203, 0.0001, 0.001 , 0.0057, 0.0246, 0.0458, 0.8005, 0.    , 0.    , 0.002 ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    , 0.    ],
-                [0.0612, 0.    , 0.0004, 0.0026, 0.0004, 0.0011, 0.0006, 0.    , 0.9332, 0.0004],
-                [0.5869, 0.0079, 0.0513, 0.1252, 0.0303, 0.0183, 0.0228, 0.0001, 0.    , 0.1571]]),
+                [0.8783, 0.0002, 0.0021, 0.0017, 0.0115, 0.0845, 0.0194, 0.0016, 0.    , 0.0006],
+                [0.0599, 0.9362, 0.0001, 0.0001, 0.0004, 0.0027, 0.0006, 0.0001, 0.    , 0.    ],
+                [0.1874, 0.    , 0.8002, 0.0002, 0.0012, 0.0088, 0.002 , 0.0002, 0.    , 0.0001],
+                [0.8023, 0.0001, 0.0012, 0.117 , 0.0068, 0.0498, 0.0109, 0.009 , 0.    , 0.0028],
+                [0.2326, 0.    , 0.0003, 0.0003, 0.7384, 0.025 , 0.0026, 0.0003, 0.    , 0.0004],
+                [0.279 , 0.    , 0.0003, 0.0004, 0.0069, 0.6868, 0.0219, 0.0045, 0.    , 0.0002],
+                [0.2046, 0.    , 0.0002, 0.0018, 0.0058, 0.0224, 0.7647, 0.0002, 0.    , 0.0001],
+                [0.3239, 0.    , 0.0004, 0.0004, 0.0372, 0.1151, 0.0048, 0.5179, 0.    , 0.0002],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ],
+                [0.8974, 0.0002, 0.0017, 0.0016, 0.0093, 0.0693, 0.0156, 0.0013, 0.    , 0.0036]]),
             '21-25': np.array([
-                [0.7658, 0.0054, 0.0157, 0.0507, 0.0161, 0.0809, 0.0427, 0.0026, 0.0003, 0.0198],
-                [0.4475, 0.1729, 0.1476, 0.0282, 0.0091, 0.0755, 0.0965, 0.0009, 0.0001, 0.0219],
-                [0.1748, 0.0125, 0.6072, 0.0684, 0.0151, 0.0648, 0.03  , 0.0004, 0.    , 0.0269],
-                [0.3311, 0.011 , 0.0225, 0.5046, 0.0152, 0.0625, 0.0344, 0.0019, 0.0001, 0.0168],
-                [0.2285, 0.0069, 0.0112, 0.0189, 0.5645, 0.1011, 0.0465, 0.0115, 0.    , 0.0108],
-                [0.1962, 0.0019, 0.0063, 0.0099, 0.0263, 0.6879, 0.0656, 0.0005, 0.    , 0.0054],
-                [0.1346, 0.0013, 0.0028, 0.0084, 0.0107, 0.0481, 0.7906, 0.0006, 0.    , 0.003 ],
-                [0.1184, 0.0005, 0.0011, 0.0038, 0.0014, 0.0208, 0.0221, 0.83  , 0.    , 0.0019],
-                [0.1765, 0.0007, 0.0016, 0.0057, 0.0017, 0.0085, 0.0043, 0.0003, 0.7981, 0.0028],
-                [0.5085, 0.0085, 0.0829, 0.0964, 0.0422, 0.12  , 0.04  , 0.0015, 0.0001, 0.0999]]),
+                [0.8704, 0.0008, 0.0026, 0.0011, 0.0106, 0.0794, 0.0291, 0.0047, 0.    , 0.0012],
+                [0.1535, 0.8357, 0.0002, 0.0001, 0.0009, 0.0067, 0.0024, 0.0004, 0.    , 0.0001],
+                [0.0473, 0.    , 0.8681, 0.    , 0.0333, 0.0408, 0.0047, 0.0004, 0.    , 0.0053],
+                [0.0851, 0.    , 0.0001, 0.8887, 0.0006, 0.0237, 0.0014, 0.0003, 0.    , 0.0001],
+                [0.3553, 0.0002, 0.0027, 0.0002, 0.4916, 0.1088, 0.0297, 0.0111, 0.    , 0.0003],
+                [0.2505, 0.0001, 0.0014, 0.0002, 0.0118, 0.7151, 0.0152, 0.0052, 0.    , 0.0005],
+                [0.1413, 0.0001, 0.0002, 0.0001, 0.0027, 0.0409, 0.8127, 0.0019, 0.    , 0.0001],
+                [0.0687, 0.    , 0.0001, 0.    , 0.0007, 0.0038, 0.0265, 0.9002, 0.    , 0.0001],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ],
+                [0.7042, 0.0004, 0.0254, 0.0005, 0.0214, 0.061 , 0.0145, 0.0024, 0.    , 0.1703]]),
             '26-35': np.array([
-                [0.7865, 0.0028, 0.0097, 0.0245, 0.0209, 0.0864, 0.0506, 0.0057, 0.0016, 0.0113],
-                [0.1941, 0.5082, 0.0085, 0.0392, 0.0435, 0.0802, 0.1139, 0.0011, 0.0002, 0.011 ],
-                [0.1255, 0.0019, 0.6694, 0.0287, 0.0362, 0.0787, 0.0313, 0.0108, 0.0002, 0.0172],
-                [0.3772, 0.0169, 0.0177, 0.462 , 0.0312, 0.0451, 0.0171, 0.003 , 0.0005, 0.0294],
-                [0.1759, 0.0024, 0.0081, 0.0102, 0.6488, 0.0881, 0.052 , 0.0076, 0.0002, 0.0068],
-                [0.1732, 0.0022, 0.0081, 0.0087, 0.0257, 0.72  , 0.0565, 0.002 , 0.0004, 0.0031],
-                [0.1008, 0.0019, 0.0025, 0.0021, 0.0075, 0.0383, 0.8418, 0.0026, 0.0001, 0.0024],
-                [0.0852, 0.0034, 0.0059, 0.0015, 0.014 , 0.0097, 0.0227, 0.8567, 0.0001, 0.0008],
-                [0.0304, 0.0001, 0.0003, 0.0009, 0.0004, 0.0019, 0.001 , 0.0001, 0.961 , 0.0042],
-                [0.3847, 0.0026, 0.0276, 0.1025, 0.0153, 0.1219, 0.0486, 0.0019, 0.0063, 0.2886]]),
+                [0.875 , 0.0001, 0.0014, 0.0008, 0.0078, 0.0827, 0.0261, 0.0058, 0.0002, 0.0001],
+                [0.0664, 0.8974, 0.0001, 0.    , 0.0005, 0.0342, 0.0012, 0.0003, 0.    , 0.    ],
+                [0.1795, 0.    , 0.8028, 0.0001, 0.0008, 0.0081, 0.0081, 0.0005, 0.    , 0.    ],
+                [0.1613, 0.    , 0.0002, 0.7594, 0.001 , 0.0613, 0.0027, 0.0009, 0.    , 0.013 ],
+                [0.3407, 0.    , 0.0018, 0.0002, 0.4605, 0.1452, 0.0463, 0.0052, 0.0001, 0.    ],
+                [0.2059, 0.0002, 0.0016, 0.0002, 0.0094, 0.7561, 0.0203, 0.0059, 0.0004, 0.    ],
+                [0.1098, 0.    , 0.0007, 0.    , 0.0014, 0.0176, 0.8692, 0.001 , 0.    , 0.0002],
+                [0.0641, 0.    , 0.0013, 0.    , 0.0003, 0.0028, 0.0009, 0.9306, 0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ],
+                [0.3603, 0.    , 0.0003, 0.0002, 0.0017, 0.0172, 0.0052, 0.0338, 0.    , 0.5813]]),
             '>35': np.array([
-                [0.9082, 0.0012, 0.0024, 0.0207, 0.0116, 0.0343, 0.014 , 0.0007, 0.002 , 0.0049],
-                [0.1334, 0.775 , 0.0004, 0.025 , 0.0015, 0.0366, 0.027 , 0.0002, 0.0002, 0.0007],
-                [0.0334, 0.0026, 0.9284, 0.0049, 0.0056, 0.0204, 0.0011, 0.0011, 0.    , 0.0025],
-                [0.2519, 0.0098, 0.0006, 0.6864, 0.0064, 0.0079, 0.0218, 0.0001, 0.0003, 0.0148],
-                [0.1553, 0.0002, 0.0138, 0.0039, 0.7037, 0.0656, 0.0487, 0.0056, 0.0002, 0.003 ],
-                [0.1269, 0.0013, 0.0111, 0.0047, 0.0218, 0.7748, 0.0499, 0.0044, 0.0017, 0.0033],
-                [0.0765, 0.0022, 0.0044, 0.0033, 0.0148, 0.0389, 0.8536, 0.0019, 0.0012, 0.0032],
-                [0.0605, 0.0001, 0.0013, 0.0007, 0.0006, 0.0126, 0.0063, 0.9143, 0.0001, 0.0034],
-                [0.0061, 0.    , 0.    , 0.0001, 0.0001, 0.0002, 0.0027, 0.    , 0.9909, 0.    ],
-                [0.2256, 0.0004, 0.0198, 0.0236, 0.038 , 0.0711, 0.0689, 0.0004, 0.0003, 0.5519]])
+                [0.9342, 0.0001, 0.0009, 0.0001, 0.0034, 0.0482, 0.0118, 0.001 , 0.    , 0.0002],
+                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ],
+                [0.0867, 0.    , 0.9104, 0.    , 0.0002, 0.0021, 0.0005, 0.    , 0.    , 0.    ],
+                [0.1769, 0.    , 0.0001, 0.8162, 0.0003, 0.0053, 0.0011, 0.0001, 0.    , 0.    ],
+                [0.1985, 0.    , 0.0141, 0.    , 0.6921, 0.066 , 0.0075, 0.0183, 0.    , 0.0033],
+                [0.1747, 0.0003, 0.0005, 0.    , 0.0061, 0.8054, 0.0117, 0.0012, 0.    , 0.    ],
+                [0.0998, 0.    , 0.0013, 0.0002, 0.0061, 0.0315, 0.861 , 0.0001, 0.    , 0.    ],
+                [0.1299, 0.    , 0.0002, 0.    , 0.0148, 0.0037, 0.0008, 0.8504, 0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ],
+                [0.0957, 0.    , 0.    , 0.    , 0.0002, 0.0023, 0.0006, 0.    , 0.    , 0.9012]])
         },
 
 
         # Postpartum switching matrix, 1 to 6 months
         'pp1to6': {
             '<18': np.array([
-                [0.7005, 0.    , 0.0054, 0.026 , 0.0172, 0.1096, 0.1413, 0.    ,0.    , 0.    ],
+                [0.8316, 0.    , 0.0046, 0.    , 0.0069, 0.1376, 0.018 , 0.0012,0.    , 0.    ],
                 [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
                 [0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
                 [0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.6154, 0.3846, 0.    , 0.    ,0.    , 0.    ],
-                [0.0913, 0.    , 0.    , 0.    , 0.    , 0.7858, 0.1229, 0.    ,0.    , 0.    ],
+                [0.0135, 0.    , 0     , 0     , 0.1861, 0.8004, 0.    , 0.    ,0.    , 0.    ], 
+                [0.0036, 0.    , 0.    , 0.    , 0.    , 0.9964, 0.    , 0.    ,0.    , 0.    ], 
                 [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ,0.    , 0.    ],
                 [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
                 [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
                 [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]]),
             '18-20': np.array([
-                [0.565 , 0.    , 0.    , 0.0078, 0.0146, 0.2205, 0.192 , 0.    ,0.    , 0.    ],
-                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.6788, 0.    , 0.    , 0.3212, 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.397 , 0.    , 0.603 , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.9237, 0.0763, 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]]),
-            '21-25': np.array([
-                [0.4814, 0.0062, 0.0085, 0.0191, 0.0364, 0.2541, 0.1712, 0.0205, 0.    , 0.0025],
-                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.6549, 0.    , 0.    , 0.3451, 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.5075, 0.    , 0.451 , 0.0415, 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.6087, 0.32  , 0.0713, 0.    ,0.    , 0.    ],
-                [0.0329, 0.    , 0.    , 0.    , 0.    , 0.8558, 0.1014, 0.0098,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.3303, 0.    , 0.    ,0.    , 0.6697]]),
-            '26-35': np.array([
-                [0.5309, 0.    , 0.0128, 0.0119, 0.0355, 0.2012, 0.1932, 0.0144,0.    , 0.    ],
-                [0.    , 0.8094, 0.    , 0.    , 0.    , 0.1906, 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.9214, 0.    , 0.    , 0.0786, 0.    , 0.    ,0.    , 0.    ],
-                [0.096 , 0.    , 0.    , 0.8052, 0.    , 0.0704, 0.    , 0.    ,0.    , 0.0285],
-                [0.    , 0.    , 0.    , 0.    , 0.7361, 0.1569, 0.107 , 0.    ,0.    , 0.    ],
-                [0.0445, 0.    , 0.    , 0.    , 0.    , 0.9078, 0.035 , 0.    ,0.0127, 0.    ],
-                [0.0063, 0.    , 0.    , 0.    , 0.0052, 0.014 , 0.9746, 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
-                [0.2318, 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.7682, 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]]),
-            '>35': np.array([
-                [0.6572, 0.    , 0.0115, 0.0184, 0.0639, 0.1318, 0.1068, 0.0031,0.0047, 0.0025],
+                [0.7971, 0.    , 0.0027, 0.    , 0.0046, 0.1534, 0.0383, 0.004, 0.    , 0.    ],
                 [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
                 [0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.4391, 0.    , 0.    , 0.5609, 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
                 [0.    , 0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.0392, 0.    , 0.    , 0.    , 0.    , 0.    , 0.9608, 0.    ,0.    , 0.    ],
+                [0.2151, 0.    , 0.    , 0.    , 0.0337, 0.7016, 0.0496, 0.    ,0.    , 0     ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]]),
+            '21-25': np.array([ 
+                [0.807 , 0.0005, 0.0011, 0.0011, 0.0187, 0.1338, 0.0307, 0.0067,0.    , 0.0004],
+                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.3813, 0.6187, 0.    , 0.    ,0.    , 0.    ],
+                [0.0722, 0.    , 0.    , 0.    , 0.    , 0.9278, 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]]),
+            '26-35': np.array([
+                [0.8582, 0.0007, 0.0019, 0.0001, 0.0118, 0.1083, 0.0151, 0.0039, 0, 0],
+                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.2954, 0.    , 0.    , 0.    , 0.6214, 0.    , 0.    , 0.0832,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.989 , 0.    , 0.0067,0.0043, 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]]),
+            '>35': np.array([
+                [0.8897, 0.    , 0.0035, 0.0004, 0.0012, 0.0733, 0.0194, 0.0099,0.    , 0.0025],
+                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
+                [0.0568, 0.    , 0.    , 0.    , 0.    , 0.9432, 0.    , 0.    ,0.    , 0.    ],
+                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ,0.    , 0.    ],
                 [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
                 [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
                 [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]])
         },
 
-        # Postpartum initiation vectors, 0 to 1 month
+        # Postpartum initiation vectors, 0 to 1 month 
         'pp0to1': {
-            '<18': np.array([0.801 , 0.    , 0.0052, 0.0099, 0.0089, 0.0508, 0.1243, 0.    ,0.    , 0.    ]),
-            '18-20': np.array([0.7849, 0.    , 0.0066, 0.0134, 0.0082, 0.0793, 0.1007, 0.0038, 0.    , 0.0033]),
-            '21-25': np.array([0.7252, 0.003 , 0.0104, 0.0151, 0.0108, 0.1242, 0.1068, 0.0015, 0.    , 0.0029]),
-            '26-35': np.array([0.7706, 0.004 , 0.011 , 0.0121, 0.0142, 0.0835, 0.0829, 0.0095,0.0092, 0.0031]),
-            '>35': np.array([0.8013, 0.    , 0.0037, 0.0093, 0.0059, 0.0594, 0.0622, 0.0075, 0.0406, 0.0101]),
+            '<18': np.array([0.95, 0., 0., 0., 0.0031, 0.0383, 0.0073, 0.0013, 0., 0.]),
+            '18-20': np.array([0.9382, 0., 0., 0., 0.0015, 0.0466, 0.0118, 0.0019, 0., 0.]),
+            '21-25': np.array([0.9583, 0.0006, 0., 0., 0.0003, 0.0343, 0.0053, 0.0013, 0., 0.]),
+            '26-35': np.array([0.9693, 0., 0.0005, 0., 0.0032, 0.0195, 0.0044, 0.0025, 0.0005, 0.]),
+            '>35': np.array([0.9556, 0., 0., 0., 0.0009, 0.0298, 0.0028, 0.0048, 0.006, 0.]),
         }
     }
 
@@ -928,14 +922,14 @@ def method_probs():
 
 
 def barriers():
-    ''' Reasons for nonuse -- taken from Kenya DHS 2014. '''
+    ''' Reasons for nonuse -- taken from Ethiopia DHS 2005. '''
 
     barriers = sc.odict({
-        'No need': 40.3,
-        'Opposition': 22.7,
-        'Knowledge': 3.5,
-        'Access': 13.4,
-        'Health': 32.5,
+        'No need': 45.9,
+        'Opposition': 25.0,
+        'Knowledge': 11.9,
+        'Access': 0.5,
+        'Health': 13.7,
     })
 
     barriers[:] /= barriers[:].sum()  # Ensure it adds to 1

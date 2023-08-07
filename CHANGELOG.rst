@@ -8,11 +8,36 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 0.24.2 (2023-8-7)
+
+Version 0.26.3 (2023-8-7)
 --------------------------
 - Updates Senegal files in locations/senegal to be in the same format as Kenya for standardization purposes
 - Minor updates to calibrate_manual.py to be able to run with Senegal data (in addition to Kenya and other contexts)
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/133>`_
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/165>`_
+
+Version 0.26.2 (2023-7-25)
+--------------------------
+- Updates code for manual calibration
+- Adds folder to create figures for manual calibration runs
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/164>`_
+
+Version 0.26.1 (2023-6-29)
+--------------------------
+- Updates code for contraceptive matrices
+- Adds contraceptive matrices for Ethiopia to run manual calibration
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/161>`_
+
+Version 0.26.0 (2023-5-31)
+--------------------------
+- Builds out new parameters file for Ethiopia
+- Adds camparison data for Ethiopia calibration
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/156>`_
+
+Version 0.25.0 (2023-5-13)
+--------------------------
+- Adds to sim.py to track sexual inactivity in agents
+- Restricts method use to only those women sexually active over the last 12 months and debuted
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/157>`_
 
 Version 0.24.1 (2023-4-14)
 --------------------------

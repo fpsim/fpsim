@@ -3,4 +3,4 @@
 #   pip install pytest-parallel
 
 export SCIRIS_BACKEND='agg' # Don't show plots
-pytest test_*.py --workers auto --durations=0
+pytest test_*.py -n auto --durations=0
