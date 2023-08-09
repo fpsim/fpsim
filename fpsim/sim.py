@@ -95,6 +95,15 @@ class People(fpb.BasePeople):
         self.personal_fecundity = arr(n, np.random.random(n)*(fv[1]-fv[0])+fv[0]) # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.remainder_months = arr(n, d['remainder_months'])
 
+        # Empowerment-related sociodemographic attributes
+        self.has_paid_employment = arr(n, d['paid_employment'])
+        self.edu_lvl_target  = arr(n, d['edu_target'])  # Target level of education
+        self.edu_lvl_current = arr(n, d['edu_init'])   # Current level of education
+        self.relationship_status    = arr(n, d['relationship_status'])  # Curent civil/partnership/relationship status
+        self.geographic_area        = arr(n, d['geographic_area'])  # Whether a person lives in a rural or urban area
+        # TODO: geographic_area would have two (or more) values such as "rural" vs "urban"
+        # TODO: decide whether this attribute could be made into a simpler boolan like self.urban, where not(urban)==rural
+
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]
