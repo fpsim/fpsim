@@ -53,7 +53,7 @@ class People(fpb.BasePeople):
         self.age_by_group       = arr(n, np.float64(d['age_by_group'])) # Age by which method bin the age falls into, as integer
         self.sex                = arr(n, d['sex']) # Female (0) or male (1)
         self.parity             = arr(n, d['parity']) # Number of children
-        self.method             = arr(n, d['method'])  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
+        self.method             = arr(n, d['method'])   # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM as method
         self.barrier            = arr(n, d['barrier'])  # Reason for non-use
         self.alive              = arr(n, d['alive'])
         self.pregnant           = arr(n, d['pregnant'])
@@ -933,6 +933,8 @@ class People(fpb.BasePeople):
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
+        #TODO: update empowerment?
+
         # Update results
         fecund.update_age_bin_totals()
         self.track_mcpr()
@@ -1143,12 +1145,42 @@ class Sim(fpb.BaseSim):
         return ages, sexes
 
 
-    def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
+    def get_employment(self, n, sexes, ages):
+        """
+        # TODO: placeholder
+        Set distribution of paid_employment
+        """
+        # TODO: made up probabilities
+        employment_dict = dict(age_cutoffs           = np.array([0, 10, 20, 30, 40, 50, 60, 70, 80, 90,]),                 # Age cutoffs (lower limits)
+                               paid_employment_probs = np.array([0.0, 0.05, 0.15, 0.15, 0.15, 0.15, 0.1, 0.1, 0.05, 0.05]),)
+        paid_employment = np.zeros(n, dtype=bool)
+        # Find only female agents?
+        f_inds = sc.findinds(sexes == 0)
+        # Do we need a min max age threshold, like reproductive age??
+        inds = np.digitize(ages[f_inds], employment_dict['age_cutoffs'])-1
+        prob_paid_work = employment_dict['paid_employment_probs'][inds]  # Probability of having a paid job
+        has_paid_employment = np.random.random(len(inds)) < prob_paid_work
+        paid_employment[f_inds] = has_paid_employment
+        return paid_employment
+
+
+    def get_education_attainment(self):
+        """
+        # TODO: placeholder for default distribution of education attainment
+
+        """
+        pass
+
+
+
+
+    def make_people(self, n=1, age=None, sex=None, method=None, employment=None, debut_age=None):
         ''' Set up each person '''
         _age, _sex = self.get_age_sex(n)
         if age    is None: age    = _age
         if sex    is None: sex    = _sex
         if method is None: method = np.zeros(n, dtype=np.int64)
+        if employment is None:  employment = self.get_employment(n, sex, age)
         barrier = fpu.n_multinomial(self['barriers'][:], n)
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
@@ -1236,6 +1268,19 @@ class Sim(fpb.BaseSim):
                 for child in all_ppl.children[mother_index]:
                     all_ppl.mothers[child] = mother_index
         return
+
+
+    def update_education(self):
+        '''
+        #TODO: placeholder to advance education level
+        '''
+        pass
+
+
+    def update_empowerment(self):
+        '''Update empowerment attributes'''
+        # TODO: placeholder to advance empowerment metrics
+        pass
 
 
     def apply_interventions(self):
