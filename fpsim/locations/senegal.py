@@ -79,14 +79,15 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'senegal'
-    files['basic_dhs']        = 'senegal-basic-dhs.yaml'
-    files['popsize']          = 'senegal-popsize.csv'
-    files['mcpr']             = 'senegal-mcpr.csv'
-    files['tfr']              = 'senegal-tfr.csv'
-    files['asfr']             = 'senegal-asfr.csv'
-    files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
-    files['spacing']          = 'BirthSpacing.obj'  #TODO: Update these files with latest country data filenames
-    files['methods']          = 'Method_v312.csv'
+    files['basic_dhs']        = 'senegal_basic_dhs.yaml'
+    files['popsize']          = 'senegal_popsize.csv'
+    files['mcpr']             = 'senegal_cpr.csv'
+    files['tfr']              = 'senegal_tfr.csv'
+    files['asfr']             = 'senegal_asfr.csv'
+    files['skyscrapers']      = 'senegal_skyscrapers.csv'
+    files['spacing']          = 'birth_spacing_dhs.csv'
+    files['methods']          = 'mix_senegal.csv'
+    files['afb'] = 'afb.table.csv'
     return files
 
 
