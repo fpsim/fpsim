@@ -694,6 +694,17 @@ class People(fpb.BasePeople):
             self.step_results['age_bin_totals'][key] += len(this_age_bin)
         return
 
+
+    def update_education(self):
+        '''
+        Advance education level
+        '''
+        self.edu_attainment += self.pars['timestep'] / fpd.mpy
+
+        # Ensure education attainment does not exceed the education target
+        self.edu_attainment = np.minimum(self.edu_attainment, self.edu_target)
+
+
     def log_age_split(self, binned_ages_t, channel, numerators, denominators=None):
         counts_dict = {}
         results_dict = {}
@@ -1268,13 +1279,6 @@ class Sim(fpb.BaseSim):
                 for child in all_ppl.children[mother_index]:
                     all_ppl.mothers[child] = mother_index
         return
-
-
-    def update_education(self):
-        '''
-        #TODO: placeholder to advance education level
-        '''
-        pass
 
 
     def update_empowerment(self):
