@@ -705,6 +705,11 @@ class People(fpb.BasePeople):
         self.edu_attainment = np.minimum(self.edu_attainment, self.edu_target)
 
 
+    def update_empowerment(self):
+        '''Update empowerment attributes'''
+        # TODO: placeholder to advance empowerment metrics
+        pass
+
     def log_age_split(self, binned_ages_t, channel, numerators, denominators=None):
         counts_dict = {}
         results_dict = {}
@@ -1279,12 +1284,6 @@ class Sim(fpb.BaseSim):
                 for child in all_ppl.children[mother_index]:
                     all_ppl.mothers[child] = mother_index
         return
-
-
-    def update_empowerment(self):
-        '''Update empowerment attributes'''
-        # TODO: placeholder to advance empowerment metrics
-        pass
 
 
     def apply_interventions(self):
