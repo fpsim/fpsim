@@ -706,7 +706,7 @@ class People(fpb.BasePeople):
         self.edu_attainment = np.minimum(self.edu_attainment, self.edu_target)
 
 
-    def check_education_disruptions(self):
+    def check_education_disruption(self):
         '''
         TODO: Decide whether we want to include this interaction between pregancy and empowerment
         metrics and education progression.
@@ -716,12 +716,18 @@ class People(fpb.BasePeople):
         '''
         # Hinder education progression if a woman is pregnant and towards the end of the first trimester
         preg = self.filter(self.pregnant)
-        end_first_tri  = preg.filter(preg.gestation == self.pars['end_first_tri'])
+        end_first_tri = preg.filter(preg.gestation == self.pars['end_first_tri'])
 
         # Disrupt education
         end_first_tri.edu_disruption = True
 
-        # TODO: add additional logic of factors that would revert the disruption -- maybe in a different function
+    def check_education_resumption(self):
+        '''
+        # TODO: add additional logic of factors that would revert the disruption
+        '''
+        # Basic mechanism to resume education post-pregnancy:
+        # If education was interrupted due to pregnancy, resume after 6 months pospartum
+        self.edu_disruption[self.postpartum_dur > 0.25*(self.pars['postpartum_dur'])] = False
 
 
     def update_empowerment(self):
@@ -969,8 +975,13 @@ class People(fpb.BasePeople):
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
         # Empowerment
-        self.check_education_disruptions()
-        non_disrupted = self.filter(~self.edu_disruption)
+        # Check who is eligible to resume their education
+        disrupted = alive_now.filter(alive_now.edu_disruption)
+        disrupted.check_education_resumption()
+        # Check who will suffer a disruption in their education
+        alive_now.check_education_disruption()
+        # Progress education of everyone who has no disruptions
+        non_disrupted = alive_now.filter(~alive_now.edu_disruption)
         non_disrupted.update_education()
 
 
