@@ -96,13 +96,14 @@ class People(fpb.BasePeople):
         self.remainder_months = arr(n, d['remainder_months'])
 
         # Empowerment-related sociodemographic attributes
-        self.has_paid_employment = arr(n, d['paid_employment'])
-        self.edu_lvl_target  = arr(n, d['edu_target'])  # Target level of education
-        self.edu_lvl_current = arr(n, d['edu_init'])   # Current level of education
+        self.paid_employment = arr(n, d['paid_employment'])
+        self.edu_target      = arr(n, d['edu_target'])       # Target Highest Level of Education (in years)
+        self.edu_attainement = arr(n, d['edu_init'])         # Highest level of education completed by the person so far (in years)
         self.relationship_status    = arr(n, d['relationship_status'])  # Curent civil/partnership/relationship status
-        self.geographic_area        = arr(n, d['geographic_area'])  # Whether a person lives in a rural or urban area
-        # TODO: geographic_area would have two (or more) values such as "rural" vs "urban"
-        # TODO: decide whether this attribute could be made into a simpler boolan like self.urban, where not(urban)==rural
+        self.partnership_formation_age = arr(n, d['partnership_formation_age'])
+        self.urban                  = arr(n, d['urban'])            # Whether a person lives in a rural or urban area
+        self.control_over_wages = arr(n, d['control_over_wages'])   # Decision making autonomy over major household purchases
+        self.sexual_autonomy    = arr(n, d['sexual_autonomy'])      # Ability to refuse sex
 
         # Store keys
         final_states = dir(self)
