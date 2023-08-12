@@ -97,8 +97,9 @@ class People(fpb.BasePeople):
 
         # Empowerment-related sociodemographic attributes
         self.paid_employment = arr(n, d['paid_employment'])
-        self.edu_target      = arr(n, d['edu_target'])       # Target Highest Level of Education (in years)
-        self.edu_attainement = arr(n, d['edu_init'])         # Highest level of education completed by the person so far (in years)
+        self.edu_target      = arr(n, d['edu_target'])       # Target Highest Level of Education (in years) # TODO: I think this could be a single 'global' parameter
+        self.edu_attainment  = arr(n, d['edu_init'])         # Highest level of education completed by the person so far (in years)
+        self.edu_disruption  = arr(n, d['edu_disruption'])   # Whether a woman has had her education progression disrupted
         self.relationship_status    = arr(n, d['relationship_status'])  # Curent civil/partnership/relationship status
         self.partnership_formation_age = arr(n, d['partnership_formation_age'])
         self.urban                  = arr(n, d['urban'])            # Whether a person lives in a rural or urban area
@@ -697,12 +698,27 @@ class People(fpb.BasePeople):
 
     def update_education(self):
         '''
-        Advance education level
+        Advance education level for women who have not had disruptions
         '''
         self.edu_attainment += self.pars['timestep'] / fpd.mpy
 
         # Ensure education attainment does not exceed the education target
         self.edu_attainment = np.minimum(self.edu_attainment, self.edu_target)
+
+
+    def check_education_disruptions(self):
+        '''
+        TODO: Decided whether we want to include this interaction between pregancy and empowerment
+        metrics and education progression.
+        '''
+        # Hinder education progression if a woman is pregnant and towards the end of the first trimester
+        preg = self.filter(self.pregnant)
+        end_first_tri  = preg.filter(preg.gestation == self.pars['end_first_tri'])
+
+        # Disrupt education
+        end_first_tri.edu_disruption = True
+
+        # TODO: add additional logic of factors that would revert the disruption
 
 
     def update_empowerment(self):
@@ -949,7 +965,11 @@ class People(fpb.BasePeople):
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
-        #TODO: update empowerment?
+        # Empowerment
+        self.check_education_disruptions()
+        non_disrupted = self.filter(~self.edu_disruption)
+        non_disrupted.update_education()
+
 
         # Update results
         fecund.update_age_bin_totals()
