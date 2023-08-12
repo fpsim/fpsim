@@ -708,8 +708,11 @@ class People(fpb.BasePeople):
 
     def check_education_disruptions(self):
         '''
-        TODO: Decided whether we want to include this interaction between pregancy and empowerment
+        TODO: Decide whether we want to include this interaction between pregancy and empowerment
         metrics and education progression.
+
+        TODO: Decide whether we want to add additional risk factors that would increase the likelihood
+        of having an education disruption (ie, teenage pregnancy and urban vs rural settings)
         '''
         # Hinder education progression if a woman is pregnant and towards the end of the first trimester
         preg = self.filter(self.pregnant)
@@ -718,7 +721,7 @@ class People(fpb.BasePeople):
         # Disrupt education
         end_first_tri.edu_disruption = True
 
-        # TODO: add additional logic of factors that would revert the disruption
+        # TODO: add additional logic of factors that would revert the disruption -- maybe in a different function
 
 
     def update_empowerment(self):
