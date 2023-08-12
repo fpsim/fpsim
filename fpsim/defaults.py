@@ -48,6 +48,7 @@ person_defaults = dict(
     paid_employment      = False,
     edu_target           = 16,
     edu_init             = 0,
+    edu_disruption       = False,
     relationship_status  = "single",
     partnership_formation_age  = -1,
     urban                = True,
