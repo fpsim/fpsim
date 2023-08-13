@@ -713,6 +713,10 @@ class People(fpb.BasePeople):
 
         TODO: Decide whether we want to add additional risk factors that would increase the likelihood
         of having an education disruption (ie, teenage pregnancy and urban vs rural settings)
+
+        # From DHS: https://dhsprogram.com/pubs/pdf/SR277/SR277.pdf
+        # In Kenya 2022: 19% of women aged 15-49 have more than secondary education, while 6% of women
+        have no education -- 3% urban vs 7% rural.
         '''
         # Hinder education progression if a woman is pregnant and towards the end of the first trimester
         preg = self.filter(self.pregnant)
@@ -1209,14 +1213,14 @@ class Sim(fpb.BaseSim):
         # Do we need a min max age threshold, like reproductive age??
         inds = np.digitize(ages[f_inds], employment_dict['age_cutoffs'])-1
         prob_paid_work = employment_dict['paid_employment_probs'][inds]  # Probability of having a paid job
-        has_paid_employment = np.random.random(len(inds)) < prob_paid_work
+        has_paid_employment = fpu.n_binomial(prob_paid_work, len(inds))
         paid_employment[f_inds] = has_paid_employment
         return paid_employment
 
 
     def get_education_attainment(self):
         """
-        # TODO: placeholder for default distribution of education attainment
+        # TODO: placeholder for initial default distribution of education attainment
 
         """
         pass
@@ -1234,7 +1238,16 @@ class Sim(fpb.BaseSim):
         barrier = fpu.n_multinomial(self['barriers'][:], n)
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
-        data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile)
+        # TODO: Temporary initialisation of  empowerment attributes
+        # Placeholder relationship age -- sexual debut age + 6 years (median marriage age is 21 in Kenya)
+        partnership_formation_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)] + 6
+        urban_pop_frac = 0.3 # TODO: this should be a global location parameter
+        urban = fpu.n_binomial(urban_pop_frac, n)
+        control_over_wages = np.random.random(n)
+        sexual_autonomy = np.random.random(n)
+        data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile,
+                    partnership_formation_age=partnership_formation_age, employment=employment, urban=urban,
+                    control_over_wages=control_over_wages, sexual_autonomy=sexual_autonomy)
         return data
 
 
