@@ -97,7 +97,6 @@ class People(fpb.BasePeople):
 
         # Empowerment-related sociodemographic attributes
         self.paid_employment = arr(n, d['paid_employment'])
-        self.edu_target      = arr(n, d['edu_target'])       # Target Highest Level of Education (in years) # TODO: I think this could be a single 'global' parameter
         self.edu_attainment  = arr(n, d['edu_init'])         # Highest level of education completed by the person so far (in years)
         self.edu_disruption  = arr(n, d['edu_disruption'])   # Whether a woman has had her education progression disrupted
         self.relationship_status    = arr(n, d['relationship_status'])  # Curent civil/partnership/relationship status
@@ -703,7 +702,7 @@ class People(fpb.BasePeople):
         self.edu_attainment += self.pars['timestep'] / fpd.mpy
 
         # Ensure education attainment does not exceed the education target
-        self.edu_attainment = np.minimum(self.edu_attainment, self.edu_target)
+        self.edu_attainment = np.minimum(self.edu_attainment, self.pars['edu_target'])
 
 
     def check_education_disruption(self):
@@ -1220,14 +1219,26 @@ class Sim(fpb.BaseSim):
 
     def get_education_attainment(self, ages):
         """
-        # TODO: temporary initialisation for default distribution of education attainment
+        # TODO: temporary initialisation for default distribution of education attainment, and education disruption
         """
         # NOTE: We could have attributes like edu_start, edu_stop to track the dates, and or whether a person should start or
         # has started education, but for simplicity currrent education attainment will be min(16, age - 6) where the
         # offset represents the age at which people start primary school. Then of the people who have attained 16 years
         # of education, 80% are reverted to year 12 to represent the 20% of women who proceed to tertiary education.
-        edu_attainment = np.minimum(16, ages - 6)
-        return edu_attainment
+        edu_attainment = np.minimum(self['edu_target'], ages - 6)
+
+        # Roll 80% of women back to year 12
+        achieved_tertiary_inds = edu_attainment >= self['edu_target']
+        dropout_before_tertiary = fpu.n_binomial(0.8, len(achieved_tertiary_inds))
+        edu_attainment[dropout_before_tertiary] = 12.0
+
+        edu_disruption = arr(len(edu_attainment), False)
+        # TODO: we may need an attribute that captures permanent disruption / dropout,
+        # with the current mechanism women who are here flagged as having their education disrupted, have
+        # the potential to resume their education if post-pregnancy
+        edu_disruption[dropout_before_tertiary] = True
+
+        return edu_attainment, edu_disruption
 
 
     def make_people(self, n=1, age=None, sex=None, method=None, employment=None, debut_age=None):
@@ -1241,7 +1252,7 @@ class Sim(fpb.BaseSim):
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
         # TODO: Temporary initialisation of  empowerment attributes
-        edu_attainment = self.get_education_attainment(age)
+        edu_attainment, edu_disruption = self.get_education_attainment(age)
         # Placeholder relationship age -- sexual debut age + 6 years (median marriage age is 21 in Kenya)
         partnership_formation_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)] + 6
         urban_pop_frac = 0.3  # TODO: this should be a global location parameter
@@ -1251,7 +1262,7 @@ class Sim(fpb.BaseSim):
         data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile,
                     partnership_formation_age=partnership_formation_age, employment=employment, urban=urban,
                     control_over_wages=control_over_wages, sexual_autonomy=sexual_autonomy,
-                    edu_attainment=edu_attainment)
+                    edu_attainment=edu_attainment, edu_disruption=edu_disruption)
         return data
 
 
