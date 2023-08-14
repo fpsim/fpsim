@@ -1218,14 +1218,16 @@ class Sim(fpb.BaseSim):
         return paid_employment
 
 
-    def get_education_attainment(self):
+    def get_education_attainment(self, ages):
         """
-        # TODO: placeholder for initial default distribution of education attainment
-
+        # TODO: temporary initialisation for default distribution of education attainment
         """
-        pass
-
-
+        # NOTE: We could have attributes like edu_start, edu_stop to track the dates, and or whether a person should start or
+        # has started education, but for simplicity currrent education attainment will be min(16, age - 6) where the
+        # offset represents the age at which people start primary school. Then of the people who have attained 16 years
+        # of education, 80% are reverted to year 12 to represent the 20% of women who proceed to tertiary education.
+        edu_attainment = np.minimum(16, ages - 6)
+        return edu_attainment
 
 
     def make_people(self, n=1, age=None, sex=None, method=None, employment=None, debut_age=None):
@@ -1239,15 +1241,17 @@ class Sim(fpb.BaseSim):
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
         # TODO: Temporary initialisation of  empowerment attributes
+        edu_attainment = self.get_education_attainment(age)
         # Placeholder relationship age -- sexual debut age + 6 years (median marriage age is 21 in Kenya)
         partnership_formation_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)] + 6
-        urban_pop_frac = 0.3 # TODO: this should be a global location parameter
+        urban_pop_frac = 0.3  # TODO: this should be a global location parameter
         urban = fpu.n_binomial(urban_pop_frac, n)
         control_over_wages = np.random.random(n)
         sexual_autonomy = np.random.random(n)
         data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile,
                     partnership_formation_age=partnership_formation_age, employment=employment, urban=urban,
-                    control_over_wages=control_over_wages, sexual_autonomy=sexual_autonomy)
+                    control_over_wages=control_over_wages, sexual_autonomy=sexual_autonomy,
+                    edu_attainment=edu_attainment)
         return data
 
 
