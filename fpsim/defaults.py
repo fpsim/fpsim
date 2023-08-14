@@ -46,7 +46,6 @@ person_defaults = dict(
     lam                  = False,
     mothers              = -1,
     paid_employment      = False,
-    edu_target           = 16.0,
     edu_init             = 0.0,
     edu_disruption       = False,
     relationship_status  = "single",
