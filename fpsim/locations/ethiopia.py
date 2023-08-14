@@ -58,6 +58,9 @@ def scalar_pars():
         'primary_infertility': 0.05,
         'exposure_factor': 1.0,  # Overall exposure correction factor
 
+        # Empowerment
+        'edu_target': 16.0,  # Maximum number of education years representing tertiaray education
+
         # MCPR
         'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
         'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
