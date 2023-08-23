@@ -99,7 +99,7 @@ class People(fpb.BasePeople):
         self.paid_employment = arr(n, d['paid_employment'])
         self.edu_attainment  = arr(n, d['edu_init'])         # Highest level of education completed by the person so far (in years)
         self.edu_disruption  = arr(n, d['edu_disruption'])   # Whether a woman has had her education progression disrupted
-        self.relationship_status    = arr(n, d['relationship_status'])  # Curent civil/partnership/relationship status
+        self.partnered    = arr(n, d['partnered'])           # Curent civil/partnership/relationship status
         self.partnership_formation_age = arr(n, d['partnership_formation_age'])
         self.urban                  = arr(n, d['urban'])            # Whether a person lives in a rural or urban area
         self.control_over_wages = arr(n, d['control_over_wages'])   # Decision making autonomy over major household purchases
