@@ -320,43 +320,24 @@ class Experiment(sc.prettyobj):
 
     def extract_birth_spacing(self):
 
+        # Set up
+        data_afb = self.load_data('afb')
+        data_afb = data_afb.sort_values(by='afb')
+        data_spaces = self.load_data('spacing')
+        data_spaces = data_spaces.sort_values(by='space_mo')
         spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
-
-        # From data
-        data = self.load_data('spacing')
-        spacing, first = data['spacing'], data['first']
-        data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
-
-        # Spacing bins from data
-        spacing_bins_array = sc.cat(spacing_bins[:], np.inf)
-        for i in range(len(spacing_bins_array) - 1):
-            lower = spacing_bins_array[i]
-            upper = spacing_bins_array[i + 1]
-            matches = np.intersect1d(sc.findinds(spacing >= lower), sc.findinds(spacing < upper))
-            data_spacing_counts[i] += len(matches)
-
-        data_spacing_counts[:] /= data_spacing_counts[:].sum()
-        data_spacing_counts[:] *= 100
-        data_spacing_stats = np.array([pl.percentile(spacing, 25),
-                                       pl.percentile(spacing, 50),
-                                       pl.percentile(spacing, 75)])
-        data_age_first_stats = np.array([pl.percentile(first, 25),
-                                         pl.percentile(first, 50),
-                                         pl.percentile(first, 75)])
-
-        # Save to dictionary
-        self.data['spacing_bins'] = np.array(data_spacing_counts.values())
-        self.data['spacing_stats'] = data_spacing_stats
-        self.data['age_first_stats'] = data_age_first_stats
-
-        # From model
         model_age_first = []
         model_spacing = []
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+        data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         ppl = self.people
+
+        # Extract age at first birth and birth spaces from model
         for i in range(len(ppl)):
-            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-                if len(ppl.dobs[i]):
+            if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                if len(ppl.dobs[i]) == 0:
+                    model_age_first.append(float('inf'))
+                if len(ppl.dobs[i]) and ppl.age[i] >= first_birth_age:
                     model_age_first.append(ppl.dobs[i][0])
                 if len(ppl.dobs[i]) > 1:
                     for d in range(len(ppl.dobs[i]) - 1):
@@ -368,6 +349,46 @@ class Experiment(sc.prettyobj):
         # Normalize model birth space bin counts to percentages
         model_spacing_counts[:] /= model_spacing_counts[:].sum()
         model_spacing_counts[:] *= 100
+
+        # Extract birth spaces and age at first birth from data
+        for i, j in data_spaces.iterrows():
+            space = j['space_mo'] / mpy
+            ind = sc.findinds(space > spacing_bins[:])[-1]
+            data_spacing_counts[ind] += j['Freq']
+
+        # Normalize dat birth space bin counts to percentages
+        data_spacing_counts[:] /= data_spacing_counts[:].sum()
+        data_spacing_counts[:] *= 100
+
+        # Extract afb and respective weights data
+        afb_values = data_afb["afb"].values.tolist()
+        afb_weights = data_afb["wt"].values.tolist()
+
+        # Calculate the cumulative weights and total weight of the afb data
+        afb_cum_weights = np.cumsum(afb_weights)
+        afb_total_weight = afb_cum_weights[-1]
+
+        # Extract birth spacing and respective frequency data
+        birth_spacing_values = data_spaces["space_mo"].values.tolist()
+        birth_spacing_weights = data_spaces["Freq"].values.tolist()
+
+        # Calculate the cumulative weights and total weight of the birth spacing data
+        birth_spacing_cum_weights = np.cumsum(birth_spacing_weights)
+        birth_spacing_total_weight = birth_spacing_cum_weights[-1]
+
+        data_spacing_stats = np.array([np.interp((.25 * afb_total_weight), afb_cum_weights, afb_values),
+                                       np.interp((.50 * afb_total_weight), afb_cum_weights, afb_values),
+                                       np.interp((.75 * afb_total_weight), afb_cum_weights, afb_values)])
+
+        data_age_first_stats = np.array([np.interp((.25 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values),
+                                       np.interp((.50 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values),
+                                       np.interp((.75 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values)])
+
+        # Save to dictionary
+        self.data['spacing_bins'] = np.array(data_spacing_counts.values())
+        self.data['spacing_stats'] = data_spacing_stats
+        self.data['age_first_stats'] = data_age_first_stats
+
         try:
             model_spacing_stats = np.array([np.percentile(model_spacing, 25),
                                             np.percentile(model_spacing, 50),
