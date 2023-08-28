@@ -336,7 +336,7 @@ class Experiment(sc.prettyobj):
         for i in range(len(ppl)):
             if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
                 if len(ppl.dobs[i]) == 0:
-                    model_age_first.append(float('inf'))
+                    continue
                 if len(ppl.dobs[i]) and ppl.age[i] >= first_birth_age:
                     model_age_first.append(ppl.dobs[i][0])
                 if len(ppl.dobs[i]) > 1:
