@@ -20,7 +20,6 @@ __all__ = ['Experiment', 'Fit', 'compute_gof', 'diff_summaries']
 min_age = 15
 max_age = 50
 bin_size = 5
-dataset = 'PMA 2019'
 first_birth_age = 25  # age to start assessing first birth age in model
 mpy = 12  # Months per year
 
@@ -120,7 +119,8 @@ class Experiment(sc.prettyobj):
         # Extract mcpr over time
         mcpr = self.load_data('mcpr')
         self.data['mcpr_years'] = mcpr.iloc[:,0].to_numpy()
-        self.data['mcpr'] = mcpr.iloc[:,1].to_numpy()
+        #self.data['cpr'] = mcpr.iloc[:,1].to_numpy()
+        self.data['mcpr'] = mcpr.iloc[:,2].to_numpy()
 
         self.initialized = True
 
@@ -283,8 +283,10 @@ class Experiment(sc.prettyobj):
         n_age = len(age_bins)
         n_parity = len(parity_bins)
 
-        # Load data
+        # Load data TO NOTE: By default, the dataset that is used for comparison with the model is the last dataset (
+        # typically the most recent) in the skyscrapers file
         sky_raw_data = self.load_data('skyscrapers')
+        dataset = sky_raw_data.iloc[-1]['dataset']
         sky_raw_data = sky_raw_data[sky_raw_data.dataset == dataset]
         # sky_parity = sky_raw_data[2].to_numpy() # Not used currently
         sky_parity = sky_raw_data['parity'].to_numpy()
@@ -294,7 +296,7 @@ class Experiment(sc.prettyobj):
         sky_arr['Data'] = pl.zeros((len(age_keys), len(parity_bins)))
 
         for age, row in sky_raw_data.iterrows():
-            if row.age in age_keys:
+            if row.age in age_keys and row.parity < n_parity:
                 age_ind = age_keys.index(row.age)
                 sky_arr['Data'][age_ind, row.parity] = row.percentage
 
@@ -410,31 +412,23 @@ class Experiment(sc.prettyobj):
         return
 
     def extract_methods(self):
+        data_method_counts = sc.odict().make(self.method_keys, vals=0.0)
+        model_method_counts = sc.dcp(data_method_counts)
 
-        # Pull method definitions from parameters file
-        # Method map; this remains constant across locations. True indicates modern method,
-        # and False indicates traditional method
+        # Extract from data
         data_methods = self.load_data('methods')
-        methods_map_model = {  # Index, modern, efficacy
-            'None': [0, False],
-            'Withdrawal': [1, False],
-            'Other traditional': [2, False],
-            # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-            'Condoms': [3, True],
-            'Pill': [4, True],
-            'Injectables': [5, True],
-            'Implants': [6, True],
-            'IUDs': [7, True],
-            'BTL': [8, True],
-            'Other modern': [9, True],
-        }
+        for index, row in data_methods.iterrows():
+            data_method_counts[row['method']] = row['perc']
 
-        # Setup
-        model_labels_all = list(methods_map_model.keys())
-        model_labels_methods = sc.dcp(model_labels_all)
-        model_labels_methods = model_labels_methods[1:]
-
-        model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
+        # Update data method mix using non-user percentage from 'use' file
+        data_use = self.load_data('use')
+        data_method_counts['None'] = data_use.loc[0, 'perc']
+        use_freq = (data_use.loc[1, 'perc'])/100
+        for key, value in data_method_counts.items():
+            value /= 100
+            if key != 'None':
+                value *= use_freq
+            data_method_counts.update({key: value})
 
         # Extract from model
         ppl = self.people
@@ -444,47 +438,22 @@ class Experiment(sc.prettyobj):
 
         model_method_counts[:] /= model_method_counts[:].sum()
 
-        # Method mix from data - country PMA data (mix_{country}.csv)
-        data_methods_mix = {
-            'Withdrawal': data_methods.loc[data_methods['method'] == 'withdrawal', 'perc'].iloc[0],
-            'Other traditional': data_methods.loc[data_methods['method'] == 'other traditional', 'perc'].iloc[0],
-            'Condoms': data_methods.loc[data_methods['method'] == 'condoms', 'perc'].iloc[0],
-            'Pill': data_methods.loc[data_methods['method'] == 'pill', 'perc'].iloc[0],
-            'Injectables': data_methods.loc[data_methods['method'] == 'injectables', 'perc'].iloc[0],
-            'Implants': data_methods.loc[data_methods['method'] == 'implant', 'perc'].iloc[0],
-            'IUDs': data_methods.loc[data_methods['method'] == 'IUD', 'perc'].iloc[0],
-            'BTL': data_methods.loc[data_methods['method'] == 'BTL/vasectomy', 'perc'].iloc[0],
-            'Other modern': data_methods.loc[data_methods['method'] == 'other modern', 'perc'].iloc[0]
-        }
-        """
-        # Method use from data - country PMA data (use_{country}.csv)
-        no_use = use.loc[0, 'perc']
-        any_method = use.loc[1, 'perc']
-        data_methods_use = {
-            'No use': no_use,
-            'Any method': any_method
-        }
-        """
-        # Plot bar charts of method mix and use among users
+        # Make labels
+        data_labels = data_method_counts.keys()
+        for d in range(len(data_labels)):
+            if data_method_counts[d] > 0.01:
+                data_labels[d] = f'{data_labels[d]}: {data_method_counts[d] * 100:0.1f}%'
+            else:
+                data_labels[d] = ''
+        model_labels = model_method_counts.keys()
+        for d in range(len(model_labels)):
+            if model_method_counts[d] > 0.01:
+                model_labels[d] = f'{model_labels[d]}: {model_method_counts[d] * 100:0.1f}%'
+            else:
+                model_labels[d] = ''
 
-        # Calculate users vs non-users in model
-        model_methods_mix = sc.dcp(model_method_counts)
-        model_use = [model_methods_mix['None'], model_methods_mix[1:].sum()]
-        model_use_percent = [i * 100 for i in model_use]
-
-        # Calculate mix within users in model
-        model_methods_mix['None'] = 0.0
-        model_users_sum = model_methods_mix[:].sum()
-        model_methods_mix[:] /= model_users_sum
-        mix_model = model_methods_mix.values()[1:]
-        mix_percent_model = [i * 100 for i in mix_model]
-
-        # Set method use and mix from data
-        mix_percent_data = list(data_methods_mix.values())
-
-
-        self.data['method_counts'] = mix_percent_data
-        self.model['method_counts'] = mix_percent_model
+        self.data['method_counts'] = np.array(data_method_counts.values())
+        self.model['method_counts'] = np.array(model_method_counts.values())
 
         return
 

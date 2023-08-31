@@ -123,18 +123,10 @@ if __name__ == '__main__':
 
         # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
 
-
-
         calibration = fp.Calibration(pars, calib_pars=freepars)
-        # calibration = sim.calibrate(calib_pars=freepars,
-        #                             n_trials=10,
-        #                             n_workers=4,
-        #                             keep_db=True)
         calibration.calibrate()
 
         sim = fp.Sim(pars=calibration.best_pars)
-        #sim.pars = calibration.best_pars
-
         sim.run()
 
         # Plot results from sim run
@@ -245,15 +237,15 @@ if __name__ == '__main__':
 
                 # Method mix from data - country PMA data (mix_{country}.csv)
                 data_methods_mix = {
-                        'Withdrawal': data_methods.loc[data_methods['method'] == 'withdrawal', 'perc'].iloc[0],
-                        'Other traditional': data_methods.loc[data_methods['method'] == 'other traditional', 'perc'].iloc[0],
-                        'Condoms': data_methods.loc[data_methods['method'] == 'condoms', 'perc'].iloc[0],
-                        'Pill': data_methods.loc[data_methods['method'] == 'pill', 'perc'].iloc[0],
-                        'Injectables': data_methods.loc[data_methods['method'] == 'injectables', 'perc'].iloc[0],
-                        'Implants': data_methods.loc[data_methods['method'] == 'implant', 'perc'].iloc[0],
-                        'IUDs': data_methods.loc[data_methods['method'] == 'IUD', 'perc'].iloc[0],
-                        'BTL': data_methods.loc[data_methods['method'] == 'BTL/vasectomy', 'perc'].iloc[0],
-                        'Other modern': data_methods.loc[data_methods['method'] == 'other modern', 'perc'].iloc[0]
+                        'Withdrawal': data_methods.loc[data_methods['method'] == 'Withdrawal', 'perc'].iloc[0],
+                        'Other traditional': data_methods.loc[data_methods['method'] == 'Other traditional', 'perc'].iloc[0],
+                        'Condoms': data_methods.loc[data_methods['method'] == 'Condoms', 'perc'].iloc[0],
+                        'Pill': data_methods.loc[data_methods['method'] == 'Pill', 'perc'].iloc[0],
+                        'Injectables': data_methods.loc[data_methods['method'] == 'Injectables', 'perc'].iloc[0],
+                        'Implants': data_methods.loc[data_methods['method'] == 'Implants', 'perc'].iloc[0],
+                        'IUDs': data_methods.loc[data_methods['method'] == 'IUDs', 'perc'].iloc[0],
+                        'BTL': data_methods.loc[data_methods['method'] == 'BTL', 'perc'].iloc[0],
+                        'Other modern': data_methods.loc[data_methods['method'] == 'Other modern', 'perc'].iloc[0]
                 }
 
                 # Method use from data - country PMA data (use_{country}.csv)
@@ -332,7 +324,7 @@ if __name__ == '__main__':
                 proportion = 0
                 age_name = ''
                 for age, row in sky_raw_data.iterrows():
-                        if row.age in age_keys:
+                        if row.age in age_keys and row.parity < n_parity:
                                 age_ind = age_keys.index(row.age)
                                 sky_arr['Data'][age_ind, row.parity] = row.percentage
 

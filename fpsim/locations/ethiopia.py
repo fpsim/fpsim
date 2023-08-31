@@ -96,6 +96,7 @@ def filenames():
     files['spacing'] = 'birth_spacing_dhs.csv'
     files['methods'] = 'mix_ethiopia.csv'
     files['afb'] = 'afb.table.csv'
+    files['use'] = 'use_ethiopia.csv'
     return files
 
 
