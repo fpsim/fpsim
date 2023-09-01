@@ -95,6 +95,9 @@ class People(fpb.BasePeople):
         self.personal_fecundity = arr(n, np.random.random(n)*(fv[1]-fv[0])+fv[0]) # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.remainder_months = arr(n, d['remainder_months'])
 
+        # Empowerment-related sociodemographic attributes
+        self.paid_employment = arr(n, d['paid_employment'])
+
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]
