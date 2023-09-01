@@ -133,7 +133,7 @@ def age_pyramid():
 def urban_proportion():
     """Load information about the proportion of people who live in an urban setting"""
     urban_data = pd.read_csv(thisdir / 'kenya' / 'urban.csv')
-    return urban_data["mean"]
+    return urban_data["mean"][0]  # Return this value as a float
 
 
 def age_mortality():
