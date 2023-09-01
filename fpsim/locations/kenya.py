@@ -66,9 +66,6 @@ def scalar_pars():
         'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
                                    # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
 
-        # Empowerment-related parameters
-        'urban_prop': 0.408741205152983, # from kenya/urban.csv TODO: read this value from file directly.
-
         # MCPR
         'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
         'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
@@ -988,6 +985,6 @@ def make_pars():
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
-    #pars['urban_prop'] = urban_proportion()
+    pars['urban_prop'] = urban_proportion()
 
     return pars
