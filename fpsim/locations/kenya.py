@@ -66,9 +66,13 @@ def scalar_pars():
         'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
                                    # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
 
+        # Empowerment-related parameters
+        'urban_prop': 0.408741205152983, # from kenya/urban.csv TODO: read this value from file directly.
+
         # MCPR
         'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
         'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
+        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
         'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
     }
     return scalar_pars
@@ -127,6 +131,12 @@ def age_pyramid():
                         ], dtype=float)
 
     return pyramid
+
+
+def urban_proportion():
+    """Load information about the proportion of people who live in an urban setting"""
+    urban_data = pd.read_csv(thisdir / 'kenya' / 'urban.csv')
+    return urban_data["mean"]
 
 
 def age_mortality():
@@ -978,5 +988,6 @@ def make_pars():
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
+    #pars['urban_prop'] = urban_proportion()
 
     return pars

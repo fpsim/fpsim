@@ -1141,6 +1141,11 @@ class Sim(fpb.BaseSim):
         return ages, sexes
 
 
+    def initialize_urban(self, n, urban_prop):
+        """Get initial distribution of urban"""
+        return fpu.n_binomial(urban_prop, n)
+
+
     def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
         ''' Set up each person '''
         _age, _sex = self.get_age_sex(n)
@@ -1150,7 +1155,9 @@ class Sim(fpb.BaseSim):
         barrier = fpu.n_multinomial(self['barriers'][:], n)
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
-        data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile)
+        urban = self.initialize_urban(self['urban_prop'])
+        data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile,
+                    urban=urban)
         return data
 
 
