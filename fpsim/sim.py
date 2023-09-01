@@ -95,6 +95,14 @@ class People(fpb.BasePeople):
         self.personal_fecundity = arr(n, np.random.random(n)*(fv[1]-fv[0])+fv[0]) # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.remainder_months = arr(n, d['remainder_months'])
 
+        # Empowerment-related sociodemographic attributes
+        self.paid_employment = arr(n, d['paid_employment'])
+        self.partnered    = arr(n, d['partnered'])           # Whether a person is in a relationship or not
+        self.urban        = arr(n, d['urban'])               # Whether a person lives in rural or urban setting
+        self.control_over_wages = arr(n, d['control_over_wages'])  # Decision making autonomy over major household purchases
+        self.sexual_autonomy    = arr(n, d['sexual_autonomy'])      # Ability to refuse sex
+        self.education_attainment  = arr(n, d['education_attainment'])          # Highest level of education completed by the person so far (in years)
+
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]
