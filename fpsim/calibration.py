@@ -175,14 +175,9 @@ class Calibration(sc.prettyobj):
 
 
     def run_workers(self):
-
-        serial = self.g.n_workers == 1
-        output = sc.parallelize(self.worker, iterarg=self.g.n_workers, serial=serial)  # Will run in serial if there is only 1 worker
-
         ''' Run multiple workers in parallel '''
-        #output = sc.parallelize(self.worker, self.g.n_workers)
+        output = sc.parallelize(self.worker, self.g.n_workers)
         return output
-
 
     def remove_db(self):
         '''

@@ -23,17 +23,6 @@ bin_size = 5
 first_birth_age = 25  # age to start assessing first birth age in model
 mpy = 12  # Months per year
 
-age_bin_map = {
-    '10-14': [10, 15],
-    '15-19': [15, 20],
-    '20-24': [20, 25],
-    '25-29': [25, 30],
-    '30-34': [30, 35],
-    '35-39': [35, 40],
-    '40-44': [40, 45],
-    '45-49': [45, 50]
-}
-
 # Flags for what to run
 default_flags = sc.objdict(
     popsize       = 1, # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
@@ -277,7 +266,7 @@ class Experiment(sc.prettyobj):
     def extract_skyscrapers(self):
 
         # Set up
-        age_keys = list(age_bin_map.keys())[1:]
+        age_keys = list(fpd.age_bin_map.keys())[1:]
         age_bins = pl.arange(min_age, max_age, bin_size)
         parity_bins = pl.arange(0, 7)  # Plot up to parity 6
         n_age = len(age_bins)
