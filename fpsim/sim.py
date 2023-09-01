@@ -583,7 +583,7 @@ class People(fpb.BasePeople):
                 all_ppl.dobs[i].append(all_ppl.age[i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
                 if len(all_ppl.dobs[i]) == 1:
                     all_ppl.first_birth_age[i] = all_ppl.age[i]
-                if (len(all_ppl.dobs[i]) > 1) and all_ppl.age[i] >= self.pars['low_age_short_int'] and all_ppl.age[i] < self.pars['high_age_short_int']: 
+                if (len(all_ppl.dobs[i]) > 1) and all_ppl.age[i] >= self.pars['low_age_short_int'] and all_ppl.age[i] < self.pars['high_age_short_int']:
                     secondary_birth += 1
                     if ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int'] / fpd.mpy)):
                        all_ppl.short_interval_dates[i].append(all_ppl.age[i])
@@ -771,7 +771,7 @@ class People(fpb.BasePeople):
         on_method_mcpr = np.sum(numerator * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
         self.step_results['on_methods_mcpr'] += on_method_mcpr
-        
+
         if self.pars['track_as']:
             as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='mcpr', numerators=[numerator], denominators=[denominator])
             for key in as_result_dict:
@@ -813,7 +813,7 @@ class People(fpb.BasePeople):
         on_method_cpr = np.sum(numerator * denominator)
         self.step_results['no_methods_acpr'] += no_method_cpr
         self.step_results['on_methods_acpr'] += on_method_cpr
-        
+
         if self.pars['track_as']:
             as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='acpr', numerators=[numerator], denominators=[denominator])
             for key in as_result_dict:
@@ -1146,6 +1146,44 @@ class Sim(fpb.BaseSim):
         return fpu.n_binomial(urban_prop, n)
 
 
+    def initialize_empowerment(self, n, ages, sexes):
+       """Get initial distribution of women's empowerment metrics/attributes"""
+       empowerment_data = self['empowerment']
+
+       # Find only female agents
+       f_inds = sc.findinds(sexes == 0)
+
+       # Map column names in data to attribute names
+       # TODO: remove mapping by updating either data column names to match attribute names,
+       #  or change attr names to match data column names
+       mapping_dict = {'age': 'age',
+                       'paid_employment': 'paidwork',
+                       'sexual_autonomy': 'refusesex',
+                       'control_over_wages': 'decisionwages'}
+       updated_dict = {}
+       for k, v in mapping_dict.items():
+           updated_dict[k] = empowerment_data[v]
+
+       # Get ages from women
+       f_ages = ages[f_inds]
+
+       # Create age bins
+       age_cutoffs = np.hstack((0, updated_dict['age'], np.max(updated_dict['age']+1)))
+       inds = np.digitize(f_ages, age_cutoffs)-1
+
+       # Empowerment dictionary
+       empowerment_dict = {}
+       empowerment_dict['paid_employment'] = np.zeros(n, dtype=bool)
+       empowerment_dict['sexual_autonomy'] = np.zeros(n, dtype=float)
+       empowerment_dict['control_over_wages'] = np.zeros(n, dtype=float)
+
+       # Set probs to 0 outside the age range in the data
+       paid_employment_probs = np.hstack((0.0, updated_dict['paid_employment'], 0.0))
+       empowerment_dict['paid_employment'][f_inds] = fpu.binomial_arr(paid_employment_probs[inds])
+
+       return empowerment_dict
+
+
     def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
         ''' Set up each person '''
         _age, _sex = self.get_age_sex(n)
@@ -1156,8 +1194,9 @@ class Sim(fpb.BaseSim):
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
         urban = self.initialize_urban(n, self['urban_prop'])
+        empowerment_dict = self.initialize_empowerment(n, age, sex)
         data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile,
-                    urban=urban)
+                    urban=urban, **empowerment_dict)
         return data
 
 
@@ -1463,7 +1502,7 @@ class Sim(fpb.BaseSim):
                                                         numerators=self.results['mmr_numerator'], denominators=self.results['mmr_denominator'])
                     stillbirths_results_dict = self.people.log_age_split(binned_ages_t=self.results['stillbirth_ages'], channel='stillbirths',
                                                         numerators=self.results['as_stillbirths'], denominators=None)
-                    
+
 
                     for age_key in fpd.age_specific_channel_bins:
                         self.results[f"imr_{age_key}"].append(imr_results_dict[f"imr_{age_key}"])
@@ -1486,7 +1525,7 @@ class Sim(fpb.BaseSim):
                 if secondary_births_over_year == 0:
                     self.results['proportion_short_interval_by_year'].append(secondary_births_over_year)
                 else:
-                    short_interval_proportion = (short_intervals_over_year / secondary_births_over_year) 
+                    short_interval_proportion = (short_intervals_over_year / secondary_births_over_year)
                     self.results['proportion_short_interval_by_year'].append(short_interval_proportion)
 
                 tfr = 0
@@ -1536,7 +1575,7 @@ class Sim(fpb.BaseSim):
             print(f'Final population size: {self.n}.')
             elapsed = T.toc(output=True)
             print(f'Run finished for "{self.label}" after {elapsed:0.1f} s')
-        
+
         self.summary = sc.objdict()
         self.summary.births = np.sum(self.results['births'])
         self.summary.deaths = np.sum(self.results['deaths'])
@@ -1658,8 +1697,8 @@ class Sim(fpb.BaseSim):
                 for bad_key in delete_keys:
                     res.remove(bad_key)
 
-            agelim = ('-'.join([str(self.pars['low_age_short_int']),str(self.pars['high_age_short_int'])]))  ## age limit to be added to the title of short birth interval plot 
-  
+            agelim = ('-'.join([str(self.pars['low_age_short_int']),str(self.pars['high_age_short_int'])]))  ## age limit to be added to the title of short birth interval plot
+
             # Plot everything
             if ('as_' in to_plot and not self.pars['track_as']):
                 raise ValueError(f"Age specific plot selected but sim.pars['track_as'] is False")
@@ -1818,7 +1857,7 @@ class Sim(fpb.BaseSim):
                         top = int(np.ceil(max(self.results['acpr'].high) / 10.0)) * 10 # rounding up to nearest 10
                     else:
                         top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10
-                    self.conform_y_axes(figure=fig, top=top) 
+                    self.conform_y_axes(figure=fig, top=top)
                 if as_plot: # this condition is impossible if self.pars['track_as']
                     channel_type = key.split("_")[0]
                     tfr_scaling = 'tfr_' in key
@@ -2175,11 +2214,11 @@ class MultiSim(sc.prettyobj):
                             raw_res[reskey] += res.tolist()
                         elif len(res) == len(sim.results['tfr_years']) and yearly:
                             raw_res[reskey] += res.tolist()
-                    
+
                 scale = len(sim.results['tfr_years']) if yearly else sim.npts
                 raw_res['sim'] += [s]*scale
-                raw_res['sim_label'] += [sim.label]*scale 
-    
+                raw_res['sim_label'] += [sim.label]*scale
+
             df = pd.DataFrame(raw_res)
             self.df = df
         return df
