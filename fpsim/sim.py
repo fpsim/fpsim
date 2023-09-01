@@ -98,7 +98,7 @@ class People(fpb.BasePeople):
         # Empowerment-related sociodemographic attributes
         self.paid_employment = arr(n, d['paid_employment'])
         self.partnered    = arr(n, d['partnered'])           # Whether a person is in a relationship or not
-
+        self.urban        = arr(n, d['urban'])               # Whether a person lives in rural or urban setting
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]

@@ -47,6 +47,7 @@ person_defaults = dict(
     mothers              = -1,
     paid_employment      = False,
     partnered            = False,
+    urban                = True,
 )
 
 # Postpartum keys to months
