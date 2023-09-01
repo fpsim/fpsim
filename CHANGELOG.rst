@@ -8,6 +8,10 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.26.4 (2023-9-1)
+--------------------------
+- Refactoring of Experiment class to run with the latest country data formats
+- Country files have updated references to these updated country data files
 
 Version 0.26.3 (2023-8-7)
 --------------------------
