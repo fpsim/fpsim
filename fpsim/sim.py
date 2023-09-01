@@ -1155,7 +1155,7 @@ class Sim(fpb.BaseSim):
         barrier = fpu.n_multinomial(self['barriers'][:], n)
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
-        urban = self.initialize_urban(self['urban_prop'])
+        urban = self.initialize_urban(n, self['urban_prop'])
         data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile,
                     urban=urban)
         return data
