@@ -101,6 +101,7 @@ class People(fpb.BasePeople):
         self.urban        = arr(n, d['urban'])               # Whether a person lives in rural or urban setting
         self.control_over_wages = arr(n, d['control_over_wages'])  # Decision making autonomy over major household purchases
         self.sexual_autonomy    = arr(n, d['sexual_autonomy'])      # Ability to refuse sex
+        self.education_attainment  = arr(n, d['education_attainment'])          # Highest level of education completed by the person so far (in years)
 
         # Store keys
         final_states = dir(self)
