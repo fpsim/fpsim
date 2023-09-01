@@ -949,6 +949,19 @@ def barriers():
     return barriers
 
 
+# Empowerment metrics
+def empowerment_distributions():
+    """Intial distributions of empowerment attributes based on latest DHS data <YYYY>
+    TODO: perhaps split into single functions, one per attribute?
+    """
+    empowerment_data =  pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
+    empowerment_dict = {}
+    for col in empowerment_data.columns:
+        if not col.endswith('.se'):  # Exclude columns that end with ".se"
+            empowerment_dict[col] = empowerment_data[col].to_numpy()
+    return empowerment_dict
+
+
 # %% Make and validate parameters
 
 def make_pars():
@@ -986,5 +999,6 @@ def make_pars():
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
     pars['urban_prop'] = urban_proportion()
+    pars['empowerment'] = empowerment_distributions()
 
     return pars
