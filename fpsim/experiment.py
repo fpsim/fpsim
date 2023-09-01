@@ -337,9 +337,7 @@ class Experiment(sc.prettyobj):
         # Extract age at first birth and birth spaces from model
         for i in range(len(ppl)):
             if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
-                if len(ppl.dobs[i]) == 0:
-                    continue
-                if len(ppl.dobs[i]) and ppl.age[i] >= first_birth_age:
+                if len(ppl.dobs[i]):
                     model_age_first.append(ppl.dobs[i][0])
                 if len(ppl.dobs[i]) > 1:
                     for d in range(len(ppl.dobs[i]) - 1):
