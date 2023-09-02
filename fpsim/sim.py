@@ -1181,6 +1181,12 @@ class Sim(fpb.BaseSim):
        paid_employment_probs = np.hstack((0.0, updated_dict['paid_employment'], 0.0))
        empowerment_dict['paid_employment'][f_inds] = fpu.binomial_arr(paid_employment_probs[inds])
 
+       # Use data values for sexual autonomy and control over wages
+       # TODO: update the assumption made for women <15 years old
+       for metric in ['control_over_wages', 'sexual_autonomy']:
+           probs = np.hstack((updated_dict[metric][0]/2, updated_dict[metric], updated_dict[metric][-1]))
+           empowerment_dict['paid_employment'][f_inds] = probs[inds]
+
        return empowerment_dict
 
 
