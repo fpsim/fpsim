@@ -1190,6 +1190,25 @@ class Sim(fpb.BaseSim):
        return empowerment_dict
 
 
+    def initialize_partnered(self, n, ages, sexes):
+        """Get initial distribution of whether a woman is partenered or not"""
+        partnership_data = self['age_partnership']
+        # Find only female agents
+        f_inds = sc.findinds(sexes == 0)
+
+        # Get ages from women
+        f_ages = ages[f_inds]
+
+        # Create age bins from age 0
+        age_cutoffs = np.hstack((0, partnership_data['age'], np.max(partnership_data['age'] + 1)))
+        probs = np.hstack((0.0, partnership_data['partnership_probs'], 0.0))
+        inds = np.digitize(f_ages, age_cutoffs) - 1
+        partnered =  np.zeros(n, dtype=float)
+        partnered[f_inds] = fpu.binomial_arr(probs[inds])
+
+        return partnered
+
+
     def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
         ''' Set up each person '''
         _age, _sex = self.get_age_sex(n)
@@ -1201,8 +1220,9 @@ class Sim(fpb.BaseSim):
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
         urban = self.initialize_urban(n, self['urban_prop'])
         empowerment_dict = self.initialize_empowerment(n, age, sex)
+        partnered = self.initialize_partnered(n, age, sex)
         data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile,
-                    urban=urban, **empowerment_dict)
+                    urban=urban, partnered=partnered, **empowerment_dict)
         return data
 
 
