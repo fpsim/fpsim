@@ -1229,7 +1229,9 @@ class Sim(fpb.BaseSim):
     def init_people(self, output=False, **kwargs):
         ''' Create the people '''
         p = sc.objdict(self.make_people(n=int(self['n_agents'])))
-        self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier, debut_age=p.debut_age, fertile=p.fertile)
+        self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier, debut_age=p.debut_age, fertile=p.fertile,
+                             urban=p.urban, partnered=p.partnered, paid_employment=p.paid_employment, sexual_autonomy=p.sexual_autonomy,
+                             control_over_wages=p.control_over_wages)
         return
 
 
