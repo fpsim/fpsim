@@ -961,6 +961,7 @@ def empowerment_distributions():
             empowerment_dict[col] = empowerment_data[col].to_numpy()
     return empowerment_dict
 
+
 def age_partnership():
     """ Probabilities of being partnered at age X"""
     age_partnership_data =  pd.read_csv(thisdir / 'kenya' / 'age_partnership.csv')
@@ -968,6 +969,22 @@ def age_partnership():
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
     return  partnership_dict
+
+
+def parity_age_education():
+    ''' Matrix of education. The education file has four columns:
+    - "age",
+    - "parity",
+    - "edu" years of education expected, given age X and parity Y.
+    For each combinate of those three variables, there is a probability.
+    - "cum.percent" cumulative proportion of women of age X and parity Y, that have at least Z years of education.
+    '''
+
+    age_parity_edu_data = pd.read_csv(thisdir / 'kenya' / 'education.csv')
+    # Transform to a multi-index data frame, uses a bit less memory
+    age_parity_edu_data.set_index(["parity", "age", "edu"], inplace=True)
+
+    return age_parity_edu_data
 
 
 # %% Make and validate parameters
@@ -1009,5 +1026,6 @@ def make_pars():
     pars['urban_prop'] = urban_proportion()
     pars['empowerment'] = empowerment_distributions()
     pars['age_partnership'] = age_partnership()
+    pars['parity_age_education'] = parity_age_education()
 
     return pars
