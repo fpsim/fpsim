@@ -961,6 +961,14 @@ def empowerment_distributions():
             empowerment_dict[col] = empowerment_data[col].to_numpy()
     return empowerment_dict
 
+def age_partnership():
+    """ Probabilities of being partnered at age X"""
+    age_partnership_data =  pd.read_csv(thisdir / 'kenya' / 'age_partnership.csv')
+    partnership_dict = {}
+    partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
+    partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
+    return  partnership_dict
+
 
 # %% Make and validate parameters
 
@@ -1000,5 +1008,6 @@ def make_pars():
     pars['barriers'] = barriers()
     pars['urban_prop'] = urban_proportion()
     pars['empowerment'] = empowerment_distributions()
+    pars['age_partnership'] = age_partnership()
 
     return pars
