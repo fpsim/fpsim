@@ -1208,6 +1208,46 @@ class Sim(fpb.BaseSim):
 
         return partnered
 
+    def initialize_education(self, n, ages, sexes, parity=0):
+        '''Initialise education_attainement based on probability of age at the start of the simulation, and parity 0
+        # NOTE:PSL: how parity is initialised?
+
+        parity = [0, 1]
+        age = [23, 24]
+        edu = [10, 15]
+        midx = tuple(zip(parity, age, edu))
+
+        # Get probs with lists
+        probs = df.loc[midx].reset_index()["cum.percent"]
+
+        # With np arrays
+        probs = df.loc[tuple(np.column_stack([ages, parity, education]).T].reset_index()["cum.percent"]
+
+        # May fail with KeyError if probs are not defined for a specific combination
+
+        '''
+        # Multi-index data frame with indices "parity", "age", "edu"
+        age_edu_df = self['parity_age_education'].loc[parity, :]
+
+        # Find only female agents
+        f_inds = sc.findinds(sexes == 0)
+        # Get ages from women
+        f_ages = ages[f_inds]
+        # Allocate array
+        education_attainment = np.zeros(n, dtype=int)
+
+        for age in age_edu_df.index.unique(level="age"):
+            # Not all ages have the same number of "edu" years
+            edu_probs = age_edu_df.loc[age].diff().rename(columns={"cum.percent": "probs"})
+            age_inds = sc.findinds(f_ages >= age, f_ages < age+1)
+            edu_probs.dropna(inplace=True)
+            education_attainment[f_inds[age_inds]] = np.random.choice(edu_probs.index.unique(level="edu"),
+                                                                      p=edu_probs["probs"].values,
+                                                                      size=len(age_inds))
+
+
+        return education_attainment
+
 
     def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
         ''' Set up each person '''
@@ -1221,15 +1261,21 @@ class Sim(fpb.BaseSim):
         urban = self.initialize_urban(n, self['urban_prop'])
         empowerment_dict = self.initialize_empowerment(n, age, sex)
         partnered = self.initialize_partnered(n, age, sex)
+        education_attainment = self.initialize_education(n, age, sex)
         data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile,
-                    urban=urban, partnered=partnered, **empowerment_dict)
+                    urban=urban, partnered=partnered, education_attainment=education_attainment, **empowerment_dict)
         return data
 
 
     def init_people(self, output=False, **kwargs):
         ''' Create the people '''
         p = sc.objdict(self.make_people(n=int(self['n_agents'])))
-        self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier, debut_age=p.debut_age, fertile=p.fertile)
+        self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier,
+                             debut_age=p.debut_age, fertile=p.fertile,
+                             urban=p.urban, partnered=p.partnered, paid_employment=p.paid_employment,
+                             sexual_autonomy=p.sexual_autonomy,
+                             control_over_wages=p.control_over_wages,
+                             education_attainment=p.education_attainment)
         return
 
 
