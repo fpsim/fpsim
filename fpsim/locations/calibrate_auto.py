@@ -1,5 +1,6 @@
 '''
-A script for running plotting to compare the model to data.
+A sample script for using the Calibration class to generate the optimal set of free parameters, run a sim with that set
+of free params, and then generate plots showing the discrepancies between the model vs data.
 
 PRIOR TO RUNNING:
 1. Be sure to set the user global variables in the first section below (country, plotting options,
@@ -10,15 +11,16 @@ being calibrated as well as a corresponding location file (i.e. 'ethiopia.py')
 
 3. In order to run this script, the country data must be stored in the country directory mentioned above and with the
 following naming conventions:
-        {country}_skyscrapers.csv' # Age-parity distribution file
-        use_{country}.csv' # Dichotomous contraceptive method use
-        birth_spacing_dhs.csv'  # Birth-to-birth interval data
-        afb.table.csv'  # Ages at first birth in DHS for women age 25-50
-        {country}_cpr.csv'  # Contraceptive prevalence rate data; from UN Data Portal
-        {country}_asfr.csv'  # Age-specific data fertility rate data
-        mix_{country}.csv'  # Contraceptive method mix
-        {country}_tfr.csv'  # Total fertility rate data
-        {country}_popsize.csv'  # Population by year
+
+{country}_skyscrapers.csv' # Age-parity distribution file
+use_{country}.csv' # Dichotomous contraceptive method use
+birth_spacing_dhs.csv'  # Birth-to-birth interval data
+afb.table.csv'  # Ages at first birth in DHS for women age 25-50
+{country}_cpr.csv'  # Contraceptive prevalence rate data; from UN Data Portal
+{country}_asfr.csv'  # Age-specific data fertility rate data
+mix_{country}.csv'  # Contraceptive method mix
+{country}_tfr.csv'  # Total fertility rate data
+{country}_popsize.csv'  # Population by year
 
 4. Ensure that the data in the aforementioned files is formatted in the same manner as the kenya data files,
 which were used as a standard in writing this script.
@@ -99,12 +101,6 @@ if __name__ == '__main__':
         pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
         # Free parameters for calibration
-        pars['fecundity_var_low'] = 0.95
-        pars['fecundity_var_high'] = 1.05
-        pars['exposure_factor'] = 1
-        pars['high_parity'] = 1
-        pars['high_parity_nonuse'] = 1
-
         freepars = dict(
                 fecundity_var_low = [0.95, 0.925, 0.975],
                 fecundity_var_high = [1.05, 1.025, 1.075],
@@ -112,6 +108,7 @@ if __name__ == '__main__':
                 high_parity = [1.0, 0.95, 1.0],
                 high_parity_nonuse = [1.0, 0.95, 1.0]
         )
+        # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
 
         # Last free parameter, postpartum sexual activity correction or 'birth spacing preferece'
         # Set all to 1 to reset
@@ -120,8 +117,6 @@ if __name__ == '__main__':
         pars['spacing_pref']['preference'][3:6] = spacing_pars['space9_15']
         pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
         #pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
-
-        # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
 
         calibration = fp.Calibration(pars, calib_pars=freepars)
         calibration.calibrate()
