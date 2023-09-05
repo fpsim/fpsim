@@ -80,14 +80,14 @@ def filenames():
     These data files are created using code in the data processing folder '''
     files = {}
 ### context-specific    files['base'] = sc.thisdir(aspath=True) / 'senegal'
-### context-specific    files['basic_dhs']        = 'senegal_basic_dhs.yaml'
-### context-specific    files['popsize']          = 'senegal_popsize.csv'
-### context-specific    files['mcpr']             = 'senegal_cpr.csv'
-### context-specific    files['tfr']              = 'senegal_tfr.csv'
-### context-specific    files['asfr']             = 'senegal_asfr.csv'
-### context-specific    files['skyscrapers']      = 'senegal_skyscrapers.csv'
+### context-specific    files['basic_dhs']        = 'basic_dhs.yaml'
+### context-specific    files['popsize']          = 'popsize.csv'
+### context-specific    files['mcpr']             = 'cpr.csv'
+### context-specific    files['tfr']              = 'tfr.csv'
+### context-specific    files['asfr']             = 'asfr.csv'
+### context-specific    files['skyscrapers']      = 'skyscrapers.csv'
 ### context-specific    files['spacing']          = 'birth_spacing_dhs.csv'
-### context-specific    files['methods']          = 'mix_senegal.csv'
+### context-specific    files['methods']          = 'mix.csv'
     return files
 
 

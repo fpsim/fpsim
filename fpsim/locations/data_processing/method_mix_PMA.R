@@ -24,7 +24,7 @@ ggplot(use,
   xlab('') + ylab('%') + 
   theme(legend.position = 'none')
 
-write.csv(use, "use_kenya.csv")
+write.csv(use, "use.csv")
 ##recode - note that methods MUST be in order of efficacy
 kdat$method_recode <- NA
 kdat$method_recode[is.na(kdat$method_recode) == TRUE & kdat$femalester == 1] <- 'BTL/vasectomy'
@@ -63,7 +63,7 @@ ggplot(mix,
   theme_minimal() +
   ylim(0,50)
 
-write.csv(mix, "mix_kenya.csv")
+write.csv(mix, "mix.csv")
 
 
 
