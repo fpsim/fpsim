@@ -1241,8 +1241,10 @@ class Sim(fpb.BaseSim):
             edu_probs = age_edu_df.loc[age].diff().rename(columns={"cum.percent": "probs"})
             age_inds = sc.findinds(f_ages >= age, f_ages < age+1)
             edu_probs.dropna(inplace=True)
+            # Renormalise probabilities to add up to 1
+            probs = edu_probs["probs"].values / edu_probs["probs"].values.sum()
             education_attainment[f_inds[age_inds]] = np.random.choice(edu_probs.index.unique(level="edu"),
-                                                                      p=edu_probs["probs"].values,
+                                                                      p=probs,
                                                                       size=len(age_inds))
 
 
