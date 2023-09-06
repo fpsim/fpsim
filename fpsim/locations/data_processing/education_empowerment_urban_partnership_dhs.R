@@ -91,10 +91,12 @@ table.edu <- table.edu.ind %>%
   mutate(edu = as.numeric(as.character(edu)),
          age = as.numeric(as.character(age))) %>%
   group_by(age, parity) %>% arrange(-edu) %>%
-  mutate(total = sum(Freq), sum = cumsum(Freq), cum.percent = sum/total) %>% # percentage with each year of education in the age/parity group
+  mutate(total = sum(Freq), sum = cumsum(Freq), cum.percent = sum/total, # percentage with each year of education in the age/parity group
+         perc = Freq/total) %>% # percent distribution within each age/parity group
   select(-total, -sum, -Freq)
 # write.csv(table.edu, "fpsim/locations/kenya/education.csv", row.names = F)
 # cum.percent is the percentage in the age/parity group with that year or more of education
+# perc is the distribution of years of edu at each age/parity
 
 # Visualize
 table.edu %>%
