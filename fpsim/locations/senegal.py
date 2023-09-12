@@ -84,7 +84,7 @@ def filenames():
     files['mcpr']             = 'senegal-mcpr.csv'
     files['tfr']              = 'senegal-tfr.csv'
     files['asfr']             = 'senegal-asfr.csv'
-    files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
+    files['ageparity']      = 'Skyscrapers-All-DHS.csv'
     files['spacing']          = 'BirthSpacing.obj'
     files['methods']          = 'Method_v312.csv'
     return files

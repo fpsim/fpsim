@@ -92,7 +92,7 @@ def filenames():
     files['mcpr'] = 'ethiopia_cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     files['tfr'] = 'ethiopia_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
     files['asfr'] = 'ethiopia_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-    files['skyscrapers'] = 'ethiopia_skyscrapers.csv' # Choose from either DHS 2016 or PMA 2022
+    files['ageparity'] = 'ethiopia_ageparity.csv' # Choose from either DHS 2016 or PMA 2022
     #files['pregnancy_parity'] = 'SNIR80FL.obj'     ##NOT YET UPDATED FOR ETHIOPIA
     #files['spacing'] = 'BirthSpacing.obj' .        ##NOT YET UPDATED FOR ETHIOPIA
     #files['methods'] = 'Method_v312.csv'           ##NOT YET UPDATED FOR ETHIOPIA

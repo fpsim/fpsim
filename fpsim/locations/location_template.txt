@@ -85,7 +85,7 @@ def filenames():
 ### context-specific    files['mcpr']             = 'senegal-mcpr.csv'
 ### context-specific    files['tfr']              = 'senegal-tfr.csv'
 ### context-specific    files['asfr']             = 'senegal-asfr.csv'
-### context-specific    files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
+### context-specific    files['ageparity']      = 'Skyscrapers-All-DHS.csv'
 ### context-specific    files['pregnancy_parity'] = 'SNIR80FL.obj'
 ### context-specific    files['spacing']          = 'BirthSpacing.obj'
 ### context-specific    files['methods']          = 'Method_v312.csv'
