@@ -337,7 +337,7 @@ if do_plot_skyscrapers:
         for key in ['Data', 'Model', 'Diff_data-model']:
                 fig = pl.figure(figsize=(20, 14))
 
-                sc.bar3d(fig=fig, data=sky_arr[key], cmap='jet')
+                pl.pcolormesh(sky_arr[key], cmap='parula')
                 pl.xlabel('Age', fontweight='bold')
                 pl.ylabel('Parity', fontweight='bold')
                 pl.title(f'{country.capitalize()}: Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
@@ -347,7 +347,6 @@ if do_plot_skyscrapers:
                 pl.gca().set_yticklabels(parity_bins)
                 pl.gca().view_init(30, 45)
                 pl.draw()
-
 
                 if do_save:
                         pl.savefig(f'{country}/figs/skyscrapers_' + str(key.lower()) + '.png')
