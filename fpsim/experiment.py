@@ -26,7 +26,7 @@ mpy = 12 # Months per year
 # Flags for what to run
 default_flags = sc.objdict(
     popsize       = 1, # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
-    ageparity   = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'ageparity'
+    ageparity   = 1, # Population distribution of agents in each age/parity bin (age-parity plot); 'ageparity'
     first_birth   = 1, # Age at first birth mean with standard deviation; 'age_first_birth'
     birth_space   = 1, # Birth spacing both in bins and mean with standard deviation; 'spacing'
     mcpr          = 1, # Modern contraceptive prevalence; 'mcpr'
@@ -646,7 +646,7 @@ class Experiment(sc.prettyobj):
             ax.set_ylabel('Modern contraceptive prevalence rate')
             ax.legend()
 
-            # Data skyscraper
+            # Data age-parity
             ax = axs[0,1]
             ax.pcolormesh(self.age_bins, self.parity_bins, data.ageparity.transpose(), shading='nearest', cmap='turbo')
             ax.set_aspect(1./ax.get_data_ratio()) # Make square
@@ -654,7 +654,7 @@ class Experiment(sc.prettyobj):
             ax.set_xlabel('Age')
             ax.set_ylabel('Parity')
 
-            # Sim skyscraper
+            # Sim age-parity
             ax = axs[1,1]
             ax.pcolormesh(self.age_bins, self.parity_bins, sim.ageparity.transpose(), shading='nearest', cmap='turbo')
             ax.set_aspect(1./ax.get_data_ratio())
