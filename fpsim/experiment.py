@@ -26,7 +26,7 @@ mpy = 12 # Months per year
 # Flags for what to run
 default_flags = sc.objdict(
     popsize       = 1, # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
-    skyscrapers   = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'skyscrapers'
+    ageparity   = 1, # Population distribution of agents in each age/parity bin (skyscraper plot); 'ageparity'
     first_birth   = 1, # Age at first birth mean with standard deviation; 'age_first_birth'
     birth_space   = 1, # Birth spacing both in bins and mean with standard deviation; 'spacing'
     mcpr          = 1, # Modern contraceptive prevalence; 'mcpr'
@@ -258,7 +258,7 @@ class Experiment(sc.prettyobj):
         return
 
 
-    def extract_skyscrapers(self):
+    def extract_ageparity(self):
 
         # Set up
         min_age = 15 # CK: TODO: remove hardcoding
@@ -272,7 +272,7 @@ class Experiment(sc.prettyobj):
 
         # Load data
         data_parity_bins = pl.arange(0, 18) # CK: TODO: refactor
-        sky_raw_data = self.load_data('skyscrapers')
+        sky_raw_data = self.load_data('ageparity')
         sky_raw_data = sky_raw_data[sky_raw_data.year == year_str]
         # sky_parity = sky_raw_data[2].to_numpy() # Not used currently
         sky_props = sky_raw_data.percentage.to_numpy()
@@ -300,8 +300,8 @@ class Experiment(sc.prettyobj):
         for key in ['Data', 'Model']:
             sky_arr[key] /= sky_arr[key].sum() / 100
 
-        self.data['skyscrapers'] = sky_arr['Data']
-        self.model['skyscrapers'] = sky_arr['Model']
+        self.data['ageparity'] = sky_arr['Data']
+        self.model['ageparity'] = sky_arr['Model']
         self.age_bins = age_bins
         self.parity_bins = parity_bins
 
@@ -453,7 +453,7 @@ class Experiment(sc.prettyobj):
     def post_process_results(self, keep_people=False, compute_fit=True, **kwargs):
         ''' Compare the model and the data '''
         self.extract_model()
-        if self.flags.skyscrapers:   self.extract_skyscrapers()
+        if self.flags.ageparity:   self.extract_ageparity()
         if self.flags.birth_space:   self.extract_birth_spacing()
         if self.flags.methods:       self.extract_methods()
 
@@ -648,7 +648,7 @@ class Experiment(sc.prettyobj):
 
             # Data skyscraper
             ax = axs[0,1]
-            ax.pcolormesh(self.age_bins, self.parity_bins, data.skyscrapers.transpose(), shading='nearest', cmap='turbo')
+            ax.pcolormesh(self.age_bins, self.parity_bins, data.ageparity.transpose(), shading='nearest', cmap='turbo')
             ax.set_aspect(1./ax.get_data_ratio()) # Make square
             ax.set_title('Age-parity plot: data')
             ax.set_xlabel('Age')
@@ -656,7 +656,7 @@ class Experiment(sc.prettyobj):
 
             # Sim skyscraper
             ax = axs[1,1]
-            ax.pcolormesh(self.age_bins, self.parity_bins, sim.skyscrapers.transpose(), shading='nearest', cmap='turbo')
+            ax.pcolormesh(self.age_bins, self.parity_bins, sim.ageparity.transpose(), shading='nearest', cmap='turbo')
             ax.set_aspect(1./ax.get_data_ratio())
             ax.set_title('Age-parity plot: sim')
             ax.set_xlabel('Age')
