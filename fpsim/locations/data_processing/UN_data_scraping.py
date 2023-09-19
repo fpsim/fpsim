@@ -21,7 +21,7 @@ get_cpr = True  # Contraceptive prevalence rate
 get_mortality_prob = True # Mortality prob
 get_mortality_trend = True # Mortality trend
 get_asfr = True # Age-specific fertility rate
-get_pop_pyramid = False # Population pyramid (5-year age groups for both male/female sex)
+get_pop_pyramid = True # Population pyramid (5-year age groups for both male/female sex)
 
 # API Base URL
 base_url = "https://population.un.org/dataportalapi/api/v1"
@@ -82,7 +82,7 @@ if get_cpr:
     df_mcpr.rename(columns={'timeLabel': 'year', 'value': 'mcpr'}, inplace=True)
     df2 = pd.merge(df_cpr, df_mcpr, on='year')
 
-    df2.to_csv(f'../{country}/cpr.csv')
+    df2.to_csv(f'../{country}/cpr.csv', index=False)
 
 # Called if creating country file mortality_prob.csv
 if get_mortality_prob: # TODO: Need to confirm this indicator is correct
@@ -110,7 +110,7 @@ if get_mortality_trend:
     df = get_data(target)
     df = df.filter(['timeLabel', 'value'])
     df.rename(columns={'timeLabel': 'year', 'value': 'crude_death_rate'}, inplace=True)
-    df.to_csv(f'../{country}/mortality_trend.csv')
+    df.to_csv(f'../{country}/mortality_trend.csv', index=False)
 
 # Called if creating country file asfr.csv
 if get_asfr:
