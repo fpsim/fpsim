@@ -11,6 +11,7 @@ rm(list=ls())
 library(tidyverse)      
 library(haven)   
 library(survey)
+library(withr)
 
 # -- Data -- #
 
@@ -99,7 +100,7 @@ table.partner <- as.data.frame(svytable(~age_partner, svydes1)) %>%
 
 # -- education -- #
 
-# for initialization
+# - for initialization
 # Visualize education by age
 table.edu.mean <- as.data.frame(svyby(~edu, ~age, svydes1, svymean)) 
 # create projections for older and younger women by slope 
@@ -124,7 +125,7 @@ table.edu.inital <- data.frame(age = c(1:14, 50:99)) %>%
   bind_rows(table.edu.mean)
 # write.csv(table.edu.inital, "fpsim/locations/kenya/edu_initialization.csv", row.names = F)
 
-# for education objective
+# - for education objective
 # Distribution of years of education for all women over age 20 (assumed that they have finished edu)
 data.20 <- data %>% filter(age>20) 
 svydes2 = svydesign(id = data.20$v001, strata=data.20$v023, weights = data.20$v005/1000000, data=data.20)
@@ -136,7 +137,33 @@ table.edu.20 %>%
   theme_bw(base_size = 13)
 # write.csv(table.edu.20, "fpsim/locations/kenya/edu_objective.csv", row.names = F)
 
+# - For interruption following pregnancy
+# Need to use PMA data because it has age at stopping education (DHS doesn't)
+pma.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/Data/PMA"), "/")
 
+data.raw.pma <-  with_dir(pma.path, {read_dta("Kenya/PMA2019_KEP1_HQFQ_v3.0_21Oct2021/PMA2019_KEP1_HQFQ_v3.0_21Oct2022.DTA")}) %>% mutate(wave = 1) %>% mutate_at(c("RE_ID", "county"), list(~as.character(.))) %>%
+  bind_rows(with_dir(pma.path, {read_dta("Kenya/PMA2020_KEP2_HQFQ_v3.0_21Oct2022/PMA2021_KEP2_HQFQ_v3.0_21Oct2022.DTA")}) %>% mutate(wave = 2) %>% mutate_at(c("RE_ID", "county"), list(~as.character(.)))) %>%
+  bind_rows(with_dir(pma.path, {read_dta("Kenya/PMA2022_KEP3_HQFQ_v3.0_21Oct2022/PMA2022_KEP3_HQFQ_v3.0_21Oct2022.DTA")}) %>% mutate(wave = 3) %>% mutate_at(c("doi_corrected", "county"), list(~as.character(.))))
 
+# recode data for school and birth timing
+data.pma <- data.raw.pma %>% filter(!is.na(FQweight)) %>%
+  mutate(birthage1 = floor(as.numeric(difftime(parse_date_time(first_birth, "Y-m-d"), parse_date_time(birthdateSIF, "Y-m-d"), units = "weeks")/52)), # age at first birth
+         school_birth1 = ifelse(between(school_left_age, birthage1-1, birthage1+1), 1, 0), # stop school within one year of first birth
+         school_birth1 = ifelse(is.na(school_birth1), 0, school_birth1), # replace NA with no
+         birthage2 = floor(as.numeric(difftime(parse_date_time(recent_birthSIF, "Y-m-d"), parse_date_time(birthdateSIF, "Y-m-d"), units = "weeks")/52)), # age at most recent (but not first) birth
+         school_birth2 = ifelse(between(school_left_age, birthage2-1, birthage2+1), 1, 0), # stopped school within one year of recent birth
+         school_birth2 = ifelse(is.na(school_birth2), 0, school_birth2), # replace NA with no
+         recentbyoung = ifelse(recent_birthSIF != first_birthSIF & birthage2<23, 1, 0)) %>% # was recent birth at age 22 or younger
+  filter(birth_events>0) # only use data for women who have had a birth
+svydes3 <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = data.pma, nest = T)
+
+# table of probability of stopping school by age and parity
+stop.school <- as.data.frame(prop.table(svytable(~school_birth1+birthage1, svydes3), margin = 2)) %>% filter(school_birth1 == 1) %>% rename(`1` = Freq, age = birthage1) %>% select(-school_birth1) %>%
+  left_join(stop.school2 <- as.data.frame(prop.table(svytable(~school_birth2+birthage2, svydes3), margin = 2)) %>% filter(school_birth2 == 1) %>% rename(`2+` = Freq, age = birthage2) %>% select(-school_birth2)) %>%
+  gather(parity, percent, -age)
+stop.school %>%
+  ggplot() +
+  geom_point(aes(y = percent, x = age, color = parity))
+# write.csv(stop.school, "fpsim/locations/kenya/edu_stop.csv", row.names = F)
 
 
