@@ -124,6 +124,18 @@ table.edu.inital <- data.frame(age = c(1:14, 50:99)) %>%
   bind_rows(table.edu.mean)
 # write.csv(table.edu.inital, "fpsim/locations/kenya/edu_initialization.csv", row.names = F)
 
+# for education objective
+# Distribution of years of education for all women over age 20 (assumed that they have finished edu)
+data.20 <- data %>% filter(age>20) 
+svydes2 = svydesign(id = data.20$v001, strata=data.20$v023, weights = data.20$v005/1000000, data=data.20)
+table.edu.20 <- as.data.frame(svytable(~edu+urban, svydes2)) %>% group_by(urban) %>% mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
+table.edu.20 %>%
+  ggplot() +
+  geom_line(aes(y = percent, x = edu, group = urban, color = urban)) +
+  ylab("Percent of women") + 
+  theme_bw(base_size = 13)
+# write.csv(table.edu.20, "fpsim/locations/kenya/edu_objective.csv", row.names = F)
+
 
 
 
