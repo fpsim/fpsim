@@ -97,6 +97,33 @@ table.partner <- as.data.frame(svytable(~age_partner, svydes1)) %>%
   mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
 # write.csv(table.partner, "fpsim/locations/kenya/age_partnership.csv", row.names = F)
 
+# -- education -- #
+
+# for initialization
+# Visualize education by age
+table.edu.mean <- as.data.frame(svyby(~edu, ~age, svydes1, svymean)) 
+# create projections for older and younger women by slope 
+table.edu.lag <- table.edu.mean %>%
+  mutate(slope = (edu-lag(edu,1)) / (age-lag(age,1)),
+         group = case_when(age<20~1, age>43~2)) %>%
+  group_by(group) %>% mutate(avg.slope = ifelse(group == 1, mean(slope, na.rm = T), NA),
+                             avg.edu = ifelse(group == 2, mean(edu), NA))
+# visualize
+table.edu.mean %>%
+  ggplot() +
+  geom_line(aes(y = edu, x = age)) +
+  geom_ribbon(aes(ymin = edu-se, ymax = edu+se, x = age), alpha = 0.5) +
+  geom_segment(aes(x = 49, y = min(table.edu.lag$avg.edu, na.rm = T), xend = 70, yend = min(table.edu.lag$avg.edu, na.rm = T))) +
+  geom_segment(aes(y = 0, x = 15 - min(table.edu.lag$edu, na.rm = T)/min(table.edu.lag$avg.slope, na.rm = T), xend = 15, yend = min(table.edu.lag$edu, na.rm = T))) +
+  ylab("Mean years of education") + xlab("Age") +
+  theme_bw(base_size = 13)
+
+# final edu table for initialization
+table.edu.inital <- data.frame(age = c(1:14, 50:99)) %>%
+  mutate(edu = ifelse(age<15, pmax(min(table.edu.lag$edu, na.rm = T) - min(table.edu.lag$avg.slope, na.rm = T)*(15-age), 0), min(table.edu.lag$avg.edu, na.rm = T))) %>%
+  bind_rows(table.edu.mean)
+# write.csv(table.edu.inital, "fpsim/locations/kenya/edu_initialization.csv", row.names = F)
+
 
 
 
