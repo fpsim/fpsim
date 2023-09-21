@@ -101,6 +101,12 @@ class People(fpb.BasePeople):
         self.paid_employment = arr(n, d['paid_employment'])     # Whether a person has a paid job or not
         self.control_over_wages = arr(n, d['control_over_wages'])   # Decision making autonomy over major household purchases
         self.sexual_autonomy    = arr(n, d['sexual_autonomy'])      # Ability to refuse sex
+        # Empowerment-education attributes
+        self.edu_goal        = arr(n, d['edu_goal'])        # Highest-ideal level of education to be completed (in years), could be individualised or constant across agents
+        self.edu_attainment  = arr(n, d['edu_attainment'])  # Current level of education achieved in years
+        self.edu_dropout     = arr(n, d['edu_dropout'])     # Whether a person has dropped out of the edu system, before reaching their goal
+        self.edu_interrupted = arr(n, d['edu_interrupted']) # Whether a person/woman has had their education temporarily interrupted, but can resume
+        self.edu_finished    = arr(n, d['edu_finished'])    # Whether a person/woman has reached their education goals
 
         # Store keys
         final_states = dir(self)
