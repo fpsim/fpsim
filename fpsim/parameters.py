@@ -519,6 +519,7 @@ def empowerment_pars():
     empwrmnt_pars = dict(
         urban_prop      = None,
         empowerment     = None,
+        education       = None,
         age_partnership = None,
     )
 
