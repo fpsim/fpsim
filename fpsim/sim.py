@@ -102,11 +102,11 @@ class People(fpb.BasePeople):
         self.control_over_wages = arr(n, d['control_over_wages'])   # Decision making autonomy over major household purchases
         self.sexual_autonomy    = arr(n, d['sexual_autonomy'])      # Ability to refuse sex
         # Empowerment-education attributes
-        self.edu_goal        = arr(n, d['edu_goal'])        # Highest-ideal level of education to be completed (in years), could be individualised or constant across agents
+        self.edu_objective   = arr(n, d['edu_objective'])   # Highest-ideal level of education to be completed (in years), could be individualised or constant across agents
         self.edu_attainment  = arr(n, d['edu_attainment'])  # Current level of education achieved in years
         self.edu_dropout     = arr(n, d['edu_dropout'])     # Whether a person has dropped out of the edu system, before reaching their goal
         self.edu_interrupted = arr(n, d['edu_interrupted']) # Whether a person/woman has had their education temporarily interrupted, but can resume
-        self.edu_finished    = arr(n, d['edu_finished'])    # Whether a person/woman has reached their education goals
+        self.edu_completed   = arr(n, d['edu_completed'])   # Whether a person/woman has reached their education goals
 
         # Store keys
         final_states = dir(self)
@@ -1195,7 +1195,7 @@ class Sim(fpb.BaseSim):
 
         # Education dictionary
         education = {}
-        education['edu_goal'] = np.zeros(n, dtype=float)
+        education['edu_objective'] = np.zeros(n, dtype=float)
         education['edu_attainment'] = np.zeros(n, dtype=float)
         education['edu_completed']  = np.zeros(n, dtype=bool)
         pass
@@ -1265,7 +1265,7 @@ class Sim(fpb.BaseSim):
             paid_employment=p.paid_employment,
             sexual_autonomy=p.sexual_autonomy,
             control_over_wages=p.control_over_wages,
-            edu_goal=p.edu_goal,
+            edu_objective=p.edu_objective,
             edu_attainment=p.edu_attainment,
             edu_completed=p.edu_completed
         )
