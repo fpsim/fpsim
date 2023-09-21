@@ -7,7 +7,7 @@ import pandas as pd
 import sciris as sc
 from scipy import interpolate as si
 from .. import defaults as fpd
-
+from .. import utils as fpu
 # %% Housekeeping
 
 thisdir = sc.path(sc.thisdir())  # For loading CSV files
@@ -951,21 +951,142 @@ def barriers():
     return barriers
 
 
+def empowerment_sexual_autonomy(ages, interp="pwlin", interp_pars=None):
+    """
+    Interpolate data from DHS and extrapolate to cover the full range of ages
+
+    NOTE: this is a temporary implementation to illustrate different parameterisation to
+    interpolate/extrapolate DHS data.
+    """
+
+    if interp == "pwlin": # piecewise linear interpolation
+        inflection_age, inflection_prob, m1, m2 = interp_pars
+        arr = fpu.piecewise_linear(ages, inflection_age, inflection_prob, m1, m2)
+        # Set the metric to zero for ages < 5
+        arr[ages < 5] = 0.0
+        # Set the metric to zero if it goes below 0
+        arr[arr < 0] = 0.0
+        # Set metric to 1 if it goes above with this parameterisation
+        arr[arr > 1] = 1.0
+    else:
+        mssg = f"Uknown parametrisation [{interp}] to interpolate and extrapolate data."
+        raise ValueError(mssg)
+    return arr
+
+
+def empowerment_control_over_wages(ages, interp="pwlin", interp_pars=None):
+    """
+    Interpolate data from DHS and extrapolate to cover the full range of ages
+
+    NOTE: this is a temporary implementation to illustrate different parameterisation to
+    interpolate/extrapolate DHS data.
+    """
+
+    if interp == "pwlin":  # piecewise linear interpolation
+        inflection_age, inflection_prob, m1, m2 = interp_pars
+        arr = fpu.piecewise_linear(ages, inflection_age, inflection_prob, m1, m2)
+        # Set the metric to zero for ages < 5
+        arr[ages < 5] = 0.0
+        # Set other metric to zero if it goes below 0
+        arr[arr < 0] = 0.0
+        # Set metric to 1 if it goes above with this parameterisation
+        arr[arr > 1] = 1.0
+    else:
+        mssg = f"Uknown parametrisation [{interp}] to interpolate and extrapolate data."
+        raise ValueError(mssg)
+    return arr
+
+
+def empowerment_paid_employment(ages, interp="pwlin", interp_pars=None):
+    """
+    Interpolate data from DHS and extrapolate to cover the full range of ages
+
+    NOTE: this is a temporary implementation to illustrate different parameterisation to
+    interpolate/extrapolate DHS data.
+
+    TODO: rethink this implementation and whether it's necessary at all.
+    """
+    if interp == "pwlin": # piecewise linear interpolation
+        inflection_age, inflection_prob, m1, m2 = interp_pars
+        arr = fpu.piecewise_linear(ages, inflection_age, inflection_prob, m1, m2)
+        # Set other probabilities to zero in the range 5 <= age < 15
+        arr[arr < 0] = 0.0
+        # Decline probability of having paid wages above 60 -- age of retirement in Kenya
+        inflection_age_2 = 60
+        m3 = -m2 # NOTE: assumption
+        age_inds = sc.findinds(ages >= inflection_age_2 - 5)
+        arr[age_inds] = fpu.piecewise_linear(ages[age_inds], inflection_age_2, arr[inflection_age_2], m2, m3)
+    elif interp == "logistic":  # five paremter logistic
+        from scipy import optimize
+        fit_pars, fit_err = optimize.curve_fit(fpu.logistic_5p,interp_pars["age"], interp_pars["data"])
+        arr = fpu.logistic_5p(ages, *fit_pars)
+    else:
+        mssg = f"Uknown parametrisation [{interp}] to interpolate and extrapolate data."
+        raise ValueError(mssg)
+    # regardless of parameterisation, set probability of paid employment to zero for ages <5, child labour data
+    # covers range 5-14, which supports having a nonzero probability of paid emplpoyment in that range
+    arr[ages < 5] = 0.0
+    return arr
+
+
 # Empowerment metrics
-def empowerment_distributions():
+def empowerment_distributions(optimise_fit=False):
     """Intial distributions of empowerment attributes based on latest DHS data <YYYY>
     TODO: perhaps split into single functions, one per attribute?
+
+    NOTE: DHS data covers the age group from 15 to 49 (inclusive). In this function we
+    interpolate data to reduce noise and extrapolate to cover the age range (0, 100).
+    Interpolation is done using a piecewise linear approximation with an inflexion point
+    on
+
+    Paid employment (https://github.com/fpsim/fpsim/issues/185)
+    0.6198487 at age 25
+    slope <25, 6.216042e-02 (SE 2.062729e-03)
+    slope >25, 0.0008010242 (SE 0.0592966648)
+
+    Control over wages (https://github.com/fpsim/fpsim/issues/187)
+    Parameterization:
+    0.9434381 at age 20
+    slope <20, 2.548961e-02 (SE 5.243655e-03)
+    slope >20, 0.0008366125 (SE 0.0194093421)
+
+    Sexual autonomy (https://github.com/fpsim/fpsim/issues/188)
+    Parameterization:
+    0.8292142 at age 25
+    slope <25, 0.025677 (SE 0.003474)
+    slope>25, -0.003916498 (SE 0.026119389)
     """
+    # Load empirical data
     empowerment_data =  pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
+
+    # Drop columns that end with ".se"
+    columns_to_drop = [col for col in empowerment_data.columns if col.endswith('.se')]
+    empowerment_data.drop(columns=columns_to_drop, inplace=True)
+    empowerment_data.rename(columns=lambda x: x + '.emp', inplace=True)
+
+    # Interpolate and extrapolate DHS empowerment data
     empowerment_dict = {}
-    for col in empowerment_data.columns:
-        if not col.endswith('.se'):  # Exclude columns that end with ".se"
-            empowerment_dict[col] = empowerment_data[col].to_numpy()
-    return empowerment_dict
+    # Parameters for interpolating and extrapolating with piecewise linear approximation.
+    # This parameters have been estimated from data over the range 15-49 years old
+    #                                           age, prob at age, slope < age,  slope >= age
+    pwlin_interp = {"paid_employment":    (25.0, 0.6198487, 6.216042e-02,  0.0008010242),
+                    "control_over_wages": (20.0, 0.9434381, 2.548961e-02,  0.0008366125),
+                    "sexual_autonomy":    (25.0, 0.8292142, 0.025677    , -0.003916498)}
+
+    # Create vector of ages 0, 100 (inclusive)
+    ages = np.arange(101.0)
+
+    # Interpolate and extrapolate data for different empowerment metrics
+    empowerment_dict["paid_employment"]    = empowerment_paid_employment(ages, interp_pars=pwlin_interp["paid_employment"])
+    empowerment_dict["control_over_wages"] = empowerment_control_over_wages(ages, interp_pars=pwlin_interp["control_over_wages"])
+    empowerment_dict["sexual_autonomy"]    = empowerment_sexual_autonomy(ages, interp_pars=pwlin_interp["sexual_autonomy"])
+
+    return empowerment_dict, empowerment_data
+
 
 def age_partnership():
     """ Probabilities of being partnered at age X"""
-    age_partnership_data =  pd.read_csv(thisdir / 'kenya' / 'age_partnership.csv')
+    age_partnership_data = pd.read_csv(thisdir / 'kenya' / 'age_partnership.csv')
     partnership_dict = {}
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
@@ -1009,7 +1130,8 @@ def make_pars():
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
     pars['urban_prop'] = urban_proportion()
-    pars['empowerment'] = empowerment_distributions()
+    empowerment_dict, _ = empowerment_distributions() # This function returns raw data too
+    pars['empowerment'] = empowerment_dict
     pars['age_partnership'] = age_partnership()
 
     return pars
