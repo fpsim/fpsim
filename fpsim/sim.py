@@ -1189,7 +1189,7 @@ class Sim(fpb.BaseSim):
            # TODO: update the assumption made for women <15 years old
            for metric in ['control_over_wages', 'sexual_autonomy']:
                probs = np.hstack((updated_dict[metric][0]/2, updated_dict[metric], updated_dict[metric][-1]))
-               empowerment_dict['paid_employment'][f_inds] = probs[inds]
+               empowerment_dict[metric][f_inds] = probs[inds]
 
        return empowerment_dict
 
