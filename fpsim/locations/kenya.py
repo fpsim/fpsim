@@ -1094,6 +1094,17 @@ def age_partnership():
     return  partnership_dict
 
 
+def education_distributions():
+    # Load empirical data
+    education_data = {}
+    education_data["edu_objective"] = pd.read_csv(thisdir / 'kenya' / 'edu_objective.csv')      # Data to set the individual education objectives based on geographic setting
+    education_data["edu_attainment"] = pd.read_csv(thisdir / 'kenya' / 'edu_initialization.csv') # Data to determine current edu attainment based on age
+    education_data["edu_dropout_probs"] = pd.read_csv(thisdir / 'kenya' / 'edu_stop.csv') # Data with probabilities of dropping out given age and parity
+
+    # Put all this data into numpy arrays that can be used in sim.py
+    pass
+
+
 # %% Make and validate parameters
 
 def make_pars():
@@ -1131,8 +1142,10 @@ def make_pars():
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
     pars['urban_prop'] = urban_proportion()
-    empowerment_dict, _ = empowerment_distributions() # This function returns raw data too
+    empowerment_dict, _ = empowerment_distributions() # This function returns extrapolated and raw data
     pars['empowerment'] = empowerment_dict
+    education_dict, _ = education_distributions() # This function returns extrapolated and raw data
+    pars['education'] = education_dict
     pars['age_partnership'] = age_partnership()
 
     return pars
