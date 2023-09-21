@@ -1030,7 +1030,7 @@ def empowerment_paid_employment(ages, interp="pwlin", interp_pars=None):
 
 
 # Empowerment metrics
-def empowerment_distributions(optimise_fit=False):
+def empowerment_distributions():
     """Intial distributions of empowerment attributes based on latest DHS data <YYYY>
     TODO: perhaps split into single functions, one per attribute?
 
@@ -1077,6 +1077,7 @@ def empowerment_distributions(optimise_fit=False):
     ages = np.arange(101.0)
 
     # Interpolate and extrapolate data for different empowerment metrics
+    empowerment_dict["age"] = ages
     empowerment_dict["paid_employment"]    = empowerment_paid_employment(ages, interp_pars=pwlin_interp["paid_employment"])
     empowerment_dict["control_over_wages"] = empowerment_control_over_wages(ages, interp_pars=pwlin_interp["control_over_wages"])
     empowerment_dict["sexual_autonomy"]    = empowerment_sexual_autonomy(ages, interp_pars=pwlin_interp["sexual_autonomy"])
