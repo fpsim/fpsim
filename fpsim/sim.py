@@ -1185,6 +1185,22 @@ class Sim(fpb.BaseSim):
         return empowerment
 
 
+    def initialize_education(self, n, ages, sexes, urban):
+        """Get initial distribution of education goal, attainment and whether
+        a woman has reached their education goal"""
+
+        # Initialise individual education goal
+        # Initialise individual education attainment - number of education years completed at start of simualtion
+        # Assess whether a woman has completed her education based on the values of the two previous attributeds
+
+        # Education dictionary
+        education = {}
+        education['edu_goal'] = np.zeros(n, dtype=float)
+        education['edu_attainment'] = np.zeros(n, dtype=float)
+        education['edu_completed']  = np.zeros(n, dtype=bool)
+        pass
+
+
     def initialize_partnered(self, n, ages, sexes):
         """Get initial distribution of whether a woman is partenered or not"""
         partnership_data = self['age_partnership']
@@ -1216,19 +1232,43 @@ class Sim(fpb.BaseSim):
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
         urban = self.initialize_urban(n, self['urban_prop'])
-        empowerment_dict = self.initialize_empowerment(n, age, sex)
         partnered = self.initialize_partnered(n, age, sex)
-        data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile,
-                    urban=urban, partnered=partnered, **empowerment_dict)
+        empowerment = self.initialize_empowerment(n, age, sex)
+        education   = self.initialize_education(n, age, sex, urban)
+        data = dict(
+            age=age,
+            sex=sex,
+            method=method,
+            barrier=barrier,
+            debut_age=debut_age,
+            fertile=fertile,
+            urban=urban,
+            partnered=partnered,
+            **sc.mergedicts(empowerment, education)
+        )
         return data
 
 
     def init_people(self, output=False, **kwargs):
         ''' Create the people '''
         p = sc.objdict(self.make_people(n=int(self['n_agents'])))
-        self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier, debut_age=p.debut_age, fertile=p.fertile,
-                             urban=p.urban, partnered=p.partnered, paid_employment=p.paid_employment, sexual_autonomy=p.sexual_autonomy,
-                             control_over_wages=p.control_over_wages)
+        self.people = People(
+            pars=self.pars,
+            age=p.age,
+            sex=p.sex,
+            method=p.method,
+            barrier=p.barrier,
+            debut_age=p.debut_age,
+            fertile=p.fertile,
+            urban=p.urban,
+            partnered=p.partnered,
+            paid_employment=p.paid_employment,
+            sexual_autonomy=p.sexual_autonomy,
+            control_over_wages=p.control_over_wages,
+            edu_goal=p.edu_goal,
+            edu_attainment=p.edu_attainment,
+            edu_completed=p.edu_completed
+        )
         return
 
 
