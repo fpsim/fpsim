@@ -208,3 +208,39 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
         raise NotImplementedError(errormsg)
 
     return samples
+
+
+def piecewise_linear(x, x0, y0, m1, m2):
+    '''
+    Compute a two-part piecewise linear function at given x values.
+
+    This function calculates the values of a piecewise linear function defined
+    by two slopes (k1 and k2), a point of intersection (x0, y0), and an array
+    of x values. The function returns an array of corresponding y values based
+    on the piecewise linear function.
+
+    Args:
+    x (array-like)
+        The array of x values at which the piecewise linear function is evaluated
+    x0 (float)
+        The x-coordinate of the point of intersection between the two linear segments (inflection point)
+    y0 (float)
+        The y-coordinate of the point of intersection between the two linear segments
+    m1 (float)
+        The slope of the first linear segment (for x < x0).
+    m2 (float)
+        The slope of the second linear segment (for x >= x0).
+
+    Returns:
+    y : ndarray
+        An array of y values corresponding to the piecewise linear function
+        evaluated at the input x values.
+
+    **Examples**::
+
+    >>> x_values = np.array([1, 2, 3, 4, 5])
+    >>> y_values = piecewise_linear(x_values, 3, 2, 1, -1)
+    >>> print(y_values)
+    [ 4.  3.  2.  1.  0.]
+    '''
+    return np.piecewise(x, [x < x0], [lambda x:m1*x + y0-m1*x0, lambda x:m2*x + y0-m2*x0])
