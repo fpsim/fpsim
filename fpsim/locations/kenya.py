@@ -1151,18 +1151,16 @@ def education_dropout_probs(df):
 
 def education_distributions():
     # Load empirical data
-    education_data = {}
-    education_data["edu_objective"] = pd.read_csv(thisdir / 'kenya' / 'edu_objective.csv')       # Data to set the individual education objectives based on geographic setting
-    education_data["edu_attainment"] = pd.read_csv(thisdir / 'kenya' / 'edu_initialization.csv') # Data to determine current edu attainment based on age
-    education_data["edu_dropout_probs"] = pd.read_csv(thisdir / 'kenya' / 'edu_stop.csv')        # Data with probabilities of dropping out given age and parity
+    education_data = {"edu_objective": pd.read_csv(thisdir / 'kenya' / 'edu_objective.csv'),
+                      "edu_attainment": pd.read_csv(thisdir / 'kenya' / 'edu_initialization.csv'),
+                      "edu_dropout_probs": pd.read_csv(thisdir / 'kenya' / 'edu_stop.csv')}
 
-    education_dict = {}
-    education_dict["edu_objective"] = education_objective(education_data["edu_objective"])
-    education_dict["edu_attainment"], education_dict["age"] = education_attainment(education_data["edu_attainment"])
-    education_dict["edu_droput_probs"] = education_dropout_probs(education_data["edu_dropout_probs"])
+    education_dict = {"edu_objective": education_objective(education_data["edu_objective"]),
+                      "edu_attainment": (education_attainment(education_data["edu_attainment"]))[0],
+                      "age": (education_attainment(education_data["edu_attainment"]))[1],
+                      "edu_droput_probs": education_dropout_probs(education_data["edu_dropout_probs"])}
 
-    # Put all this data into numpy arrays that can be used in sim.py
-    pass
+    return education_dict, education_data
 
 
 # %% Make and validate parameters
