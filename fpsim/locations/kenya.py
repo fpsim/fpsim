@@ -1073,8 +1073,8 @@ def empowerment_distributions():
                     "control_over_wages": (20.0, 0.9434381, 2.548961e-02,  0.0008366125),
                     "sexual_autonomy":    (25.0, 0.8292142, 0.025677    , -0.003916498)}
 
-    # Create vector of ages 0, 100 (inclusive)
-    ages = np.arange(101.0)
+    # Create vector of ages 0, 99 (inclusive)
+    ages = np.arange(100.0)
 
     # Interpolate and extrapolate data for different empowerment metrics
     empowerment_dict["age"] = ages
@@ -1094,12 +1094,72 @@ def age_partnership():
     return  partnership_dict
 
 
+def education_objective(df):
+    """
+    Convert education objective data to necesary numeric types and into a numpy array
+    NOTE: These values are based on the distribution of education for women over age 20 with no children,
+    stratified by urban/rural from DHS.
+    """
+    # This df has columns
+    # edu: years education, urban: geographic setting, percent
+    # transformed to a 2d array of proportions with dimensions (n_urban, n_edu_years)
+    arr = df["percent"].to_numpy().reshape(df["urban"].nunique(), df["edu"].nunique())
+    return arr
+
+
+def education_attainment(df):
+    """
+    Convert education attainment data to necesary numeric types and into a numpy array
+    These data are the mean years of education of a woman aged X years from DHS.
+
+    NOTE: The data in education_initialization.csv have been extrapolated. Here we only
+    interpolate data for the group 15-49 (inclusive range).
+    """
+    # This df has columns
+    # age: and edu: mean years of education
+    df.sort_values(by="age", ascending=True, inplace=True)
+    ages = df["age"].to_numpy()
+    arr  = df["edu"].to_numpy()
+
+    # We interpolate data from 15-49 years
+    # Get indices of those ages
+    inds = np.array(sc.findinds(ages >= 15, ages <= 55))
+    from scipy import interpolate
+    # TODO: parameterise interpolation, or provide interpolated data in csv file
+    f_interp = interpolate.interp1d(ages[inds[::4]], arr[inds[::4]], kind="quadratic")
+    arr[inds] = f_interp(ages[inds])
+    return arr, ages
+
+
+def education_dropout_probs(df):
+    """
+    Convert education dropout probability to necessary numeric types and data structure
+
+    NOTE: This df contains PMA data:
+    - Of women with a first birth before age 18, 12.6% stopped education within 1 year of that birth.
+    - Of women who had a subsequent (not first) birth before age 18, 14.1% stopped school within 1 year of that birth.
+
+    The probabilities in this df represents the prob of stopping/droppping out of education within 1 year of that birth.
+    """
+    data = {}
+    for k in df["parity"].unique():
+        data[k] = {"age": None, "percent": None}
+        data[k]["age"] = df["age"].unique()
+        data[k]["percent"] = df["percent"][df["parity"] == k].to_numpy()
+    return data
+
+
 def education_distributions():
     # Load empirical data
     education_data = {}
-    education_data["edu_objective"] = pd.read_csv(thisdir / 'kenya' / 'edu_objective.csv')      # Data to set the individual education objectives based on geographic setting
+    education_data["edu_objective"] = pd.read_csv(thisdir / 'kenya' / 'edu_objective.csv')       # Data to set the individual education objectives based on geographic setting
     education_data["edu_attainment"] = pd.read_csv(thisdir / 'kenya' / 'edu_initialization.csv') # Data to determine current edu attainment based on age
-    education_data["edu_dropout_probs"] = pd.read_csv(thisdir / 'kenya' / 'edu_stop.csv') # Data with probabilities of dropping out given age and parity
+    education_data["edu_dropout_probs"] = pd.read_csv(thisdir / 'kenya' / 'edu_stop.csv')        # Data with probabilities of dropping out given age and parity
+
+    education_dict = {}
+    education_dict["edu_objective"] = education_objective(education_data["edu_objective"])
+    education_dict["edu_attainment"], education_dict["age"] = education_attainment(education_data["edu_attainment"])
+    education_dict["edu_droput_probs"] = education_dropout_probs(education_data["edu_dropout_probs"])
 
     # Put all this data into numpy arrays that can be used in sim.py
     pass
