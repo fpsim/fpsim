@@ -38,6 +38,7 @@ import seaborn as sns
 # Name of the country being calibrated. To note that this should match the name of the country data folder
 country = 'ethiopia'
 
+
 # Set options for plotting
 do_plot_sim = True
 do_plot_asfr = True
@@ -168,7 +169,7 @@ if do_plot_asfr:
 
         # Load data
         year = data_asfr[data_asfr['year'] == pars['end_year']]
-        asfr_data = year.drop(['year', '50-54'], axis=1).values.tolist()[0]
+        asfr_data = year.drop(['year'], axis=1).values.tolist()[0]
 
         x_labels = []
         asfr_model = []
@@ -235,15 +236,15 @@ if do_plot_methods:
 
         # Method mix from data - country PMA data (mix_{country}.csv)
         data_methods_mix = {
-                'Withdrawal': data_methods.loc[data_methods['method'] == 'withdrawal', 'perc'].iloc[0],
-                'Other traditional': data_methods.loc[data_methods['method'] == 'other traditional', 'perc'].iloc[0],
-                'Condoms': data_methods.loc[data_methods['method'] == 'condoms', 'perc'].iloc[0],
-                'Pill': data_methods.loc[data_methods['method'] == 'pill', 'perc'].iloc[0],
-                'Injectables': data_methods.loc[data_methods['method'] == 'injectables', 'perc'].iloc[0],
-                'Implants': data_methods.loc[data_methods['method'] == 'implant', 'perc'].iloc[0],
-                'IUDs': data_methods.loc[data_methods['method'] == 'IUD', 'perc'].iloc[0],
-                'BTL': data_methods.loc[data_methods['method'] == 'BTL/vasectomy', 'perc'].iloc[0],
-                'Other modern': data_methods.loc[data_methods['method'] == 'other modern', 'perc'].iloc[0]
+                'Withdrawal': data_methods.loc[data_methods['method'] == 'Withdrawal', 'perc'].iloc[0],
+                'Other traditional': data_methods.loc[data_methods['method'] == 'Other traditional', 'perc'].iloc[0],
+                'Condoms': data_methods.loc[data_methods['method'] == 'Condoms', 'perc'].iloc[0],
+                'Pill': data_methods.loc[data_methods['method'] == 'Pill', 'perc'].iloc[0],
+                'Injectables': data_methods.loc[data_methods['method'] == 'Injectables', 'perc'].iloc[0],
+                'Implants': data_methods.loc[data_methods['method'] == 'Implants', 'perc'].iloc[0],
+                'IUDs': data_methods.loc[data_methods['method'] == 'IUDs', 'perc'].iloc[0],
+                'BTL': data_methods.loc[data_methods['method'] == 'BTL', 'perc'].iloc[0],
+                'Other modern': data_methods.loc[data_methods['method'] == 'Other modern', 'perc'].iloc[0]
         }
 
         # Method use from data - country PMA data (use_{country}.csv)
@@ -308,9 +309,8 @@ if do_plot_skyscrapers:
 
         # Load data
         data_parity_bins = pl.arange(0,7)
-        sky_raw_data = skyscrapers
+        sky_raw_data = skyscrapers[skyscrapers['parity'] < 7]  # Only analyzing rows with parity <7
         sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == skyscrapers_dataset]
-
         sky_parity = sky_raw_data['parity'].to_numpy()
         sky_props = sky_raw_data['percentage'].to_numpy()
 
@@ -322,7 +322,7 @@ if do_plot_skyscrapers:
         proportion = 0
         age_name = ''
         for age, row in sky_raw_data.iterrows():
-                if row.age in age_keys:
+                if row.age in age_keys and row.parity <7:
                         age_ind = age_keys.index(row.age)
                         sky_arr['Data'][age_ind, row.parity] = row.percentage
 
