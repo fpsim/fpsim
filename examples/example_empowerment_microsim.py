@@ -7,7 +7,7 @@ import fpsim as fp
 
 # Set options
 do_plot = True
-pars = fp.pars(location='kenya', validate=False) # NOTE: validation is disabled because otherwise it requires that we also define the new parameters in the default location file (senegal)
+pars = fp.pars(location='kenya')
 pars['n_agents'] = 500 # Small population size
 
 sc.tic()
