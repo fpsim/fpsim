@@ -105,7 +105,7 @@ pars['exposure_factor'] = 1
 pars['high_parity'] = 1
 pars['high_parity_nonuse'] = 1
 
-# Last free parameter, postpartum sexual activity correction or 'birth spacing preferece'
+# Last free parameter, postpartum sexual activity correction or 'birth spacing preference'
 # Set all to 1 to reset
 spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-{country}.py'
 pars['spacing_pref']['preference'][:3] = spacing_pars['space0_6']
@@ -115,6 +115,16 @@ pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
 
 # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
 
+# Print out free params being used
+print("FREE PARAMETERS BEING USED:")
+print(f"Fecundity range: {pars['fecundity_var_low']}-{pars['fecundity_var_high']}")
+print(f"Exposure factor: {pars['exposure_factor']}")
+print(f"High parity: {pars['high_parity']}")
+print(f"High parity, nonuse: {pars['high_parity_nonuse']}")
+print(f"Birth spacing preference: {spacing_pars}")
+print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
+
+# Run the sim
 sim = fp.Sim(pars=pars)
 sim.run()
 
@@ -299,9 +309,8 @@ if do_plot_skyscrapers:
 
         # Load data
         data_parity_bins = pl.arange(0,7)
-        sky_raw_data = skyscrapers
+        sky_raw_data = skyscrapers[skyscrapers['parity'] < 7]  # Only analyzing rows with parity <7
         sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == skyscrapers_dataset]
-
         sky_parity = sky_raw_data['parity'].to_numpy()
         sky_props = sky_raw_data['percentage'].to_numpy()
 
@@ -313,7 +322,7 @@ if do_plot_skyscrapers:
         proportion = 0
         age_name = ''
         for age, row in sky_raw_data.iterrows():
-                if row.age in age_keys:
+                if row.age in age_keys and row.parity <7:
                         age_ind = age_keys.index(row.age)
                         sky_arr['Data'][age_ind, row.parity] = row.percentage
 
