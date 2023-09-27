@@ -70,6 +70,7 @@ def scalar_pars():
         'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
         'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
         'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
+        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
@@ -129,6 +130,12 @@ def age_pyramid():
                         ], dtype=float)
 
     return pyramid
+
+
+def urban_proportion():
+    """Load information about the proportion of people who live in an urban setting"""
+    urban_data = pd.read_csv(thisdir / 'kenya' / 'urban.csv')
+    return urban_data["mean"][0]  # Return this value as a float
 
 
 def age_mortality():
@@ -944,6 +951,27 @@ def barriers():
     return barriers
 
 
+# Empowerment metrics
+def empowerment_distributions():
+    """Intial distributions of empowerment attributes based on latest DHS data <YYYY>
+    TODO: perhaps split into single functions, one per attribute?
+    """
+    empowerment_data =  pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
+    empowerment_dict = {}
+    for col in empowerment_data.columns:
+        if not col.endswith('.se'):  # Exclude columns that end with ".se"
+            empowerment_dict[col] = empowerment_data[col].to_numpy()
+    return empowerment_dict
+
+def age_partnership():
+    """ Probabilities of being partnered at age X"""
+    age_partnership_data =  pd.read_csv(thisdir / 'kenya' / 'age_partnership.csv')
+    partnership_dict = {}
+    partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
+    partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
+    return  partnership_dict
+
+
 # %% Make and validate parameters
 
 def make_pars():
@@ -980,5 +1008,8 @@ def make_pars():
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
+    pars['urban_prop'] = urban_proportion()
+    pars['empowerment'] = empowerment_distributions()
+    pars['age_partnership'] = age_partnership()
 
     return pars
