@@ -1,4 +1,4 @@
-__version__ = '0.26.4'
+__version__ = '0.26.5'
 __versiondate__ = '2023-9-27'
 
 

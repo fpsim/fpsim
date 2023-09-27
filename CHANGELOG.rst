@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.26.5 (2023-9-27)
+--------------------------
+- Adds Tutorial for manual calibration to docs/tutorials/ directory
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/166>`_
+
 Version 0.26.4 (2023-9-27)
 --------------------------
 - Refactoring of Experiment class to run with the latest country data formats
