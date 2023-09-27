@@ -95,8 +95,10 @@ def filenames():
     files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
     files['asfr'] = 'kenya_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     files['skyscrapers'] = 'kenya_skyscrapers.csv' # Choose from either DHS 2014 or PMA 2022
-    #files['spacing'] = 'BirthSpacing.obj'
-    #files['methods'] = 'Method_v312.csv'
+    files['spacing'] = 'birth_spacing_dhs.csv'
+    files['methods'] = 'mix_kenya.csv'
+    files['afb'] = 'afb.table.csv'
+    files['use'] = 'use_kenya.csv'
     return files
 
 
