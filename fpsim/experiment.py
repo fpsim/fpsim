@@ -99,7 +99,7 @@ class Experiment(sc.prettyobj):
             print(f'Warning: parameters not defined, using default of n={n}')
         pop_size = self.load_data('popsize')
         self.data['pop_years'] = pop_size.year.to_numpy()
-        self.data['pop_size']  = pop_size.popsize.to_numpy() / (pop_size.popsize[0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
+        self.data['pop_size']  = pop_size.population.to_numpy() / (pop_size.population[0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
 
         # Extract population growth rate
         data_growth_rate = self.pop_growth_rate(self.data['pop_years'], self.data['pop_size'])
