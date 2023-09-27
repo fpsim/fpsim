@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.26.6 (2023-9-27)
+--------------------------
+- Renamed the country data filenames to be standardized across contexts
+- Updated references to these updated country data files
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/196>`_
+
 Version 0.26.5 (2023-9-27)
 --------------------------
 - Adds Tutorial for manual calibration to docs/tutorials/ directory

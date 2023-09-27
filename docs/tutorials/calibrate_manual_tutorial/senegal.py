@@ -79,14 +79,14 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'senegal'
-    files['basic_dhs']        = 'senegal-basic-dhs.yaml'
-    files['popsize']          = 'senegal-popsize.csv'
-    files['mcpr']             = 'senegal-mcpr.csv'
-    files['tfr']              = 'senegal-tfr.csv'
-    files['asfr']             = 'senegal-asfr.csv'
-    files['skyscrapers']      = 'Skyscrapers-All-DHS.csv'
-    files['spacing']          = 'BirthSpacing.obj'
-    files['methods']          = 'Method_v312.csv'
+    files['basic_dhs']        = 'basic-dhs.yaml'
+    files['popsize']          = 'popsize.csv'
+    files['mcpr']             = 'mcpr.csv'
+    files['tfr']              = 'tfr.csv'
+    files['asfr']             = 'asfr.csv'
+    files['skyscrapers']      = 'skyscrapers.csv'
+    files['spacing']          = 'birth_spacing_dhs.csv'
+    files['methods']          = 'mix.csv'
     return files
 
 

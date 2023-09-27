@@ -12,15 +12,15 @@ being calibrated as well as a corresponding location file (i.e. 'ethiopia.py')
 3. In order to run this script, the country data must be stored in the country directory mentioned above and with the
 following naming conventions:
 
-{country}_skyscrapers.csv' # Age-parity distribution file
-use_{country}.csv' # Dichotomous contraceptive method use
+skyscrapers.csv' # Age-parity distribution file
+use.csv' # Dichotomous contraceptive method use
 birth_spacing_dhs.csv'  # Birth-to-birth interval data
 afb.table.csv'  # Ages at first birth in DHS for women age 25-50
-{country}_cpr.csv'  # Contraceptive prevalence rate data; from UN Data Portal
-{country}_asfr.csv'  # Age-specific data fertility rate data
-mix_{country}.csv'  # Contraceptive method mix
-{country}_tfr.csv'  # Total fertility rate data
-{country}_popsize.csv'  # Population by year
+cpr.csv'  # Contraceptive prevalence rate data; from UN Data Portal
+asfr.csv'  # Age-specific data fertility rate data
+mix.csv'  # Contraceptive method mix
+tfr.csv'  # Total fertility rate data
+popsize.csv'  # Population by year
 
 4. Ensure that the data in the aforementioned files is formatted in the same manner as the kenya data files,
 which were used as a standard in writing this script.
@@ -65,15 +65,15 @@ if __name__ == '__main__':
             os.mkdir(f'./{country}/figs')
 
         # Import country data files to compare
-        skyscrapers = pd.read_csv(f'./{country}/{country}_skyscrapers.csv') # Age-parity distribution file
-        use = pd.read_csv(f'./{country}/use_{country}.csv') #Dichotomous contraceptive method use
+        skyscrapers = pd.read_csv(f'./{country}/skyscrapers.csv')  # Age-parity distribution file
+        use = pd.read_csv(f'./{country}/use.csv')  # Dichotomous contraceptive method use
         data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
         data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
-        data_cpr = pd.read_csv(f'./{country}/{country}_cpr.csv')  # From UN Data Portal
-        data_asfr = pd.read_csv(f'./{country}/{country}_asfr.csv')
-        data_methods = pd.read_csv(f'./{country}/mix_{country}.csv')
-        data_tfr = pd.read_csv(f'./{country}/{country}_tfr.csv')
-        data_popsize = pd.read_csv(f'./{country}/{country}_popsize.csv')
+        data_cpr = pd.read_csv(f'./{country}/cpr.csv')  # From UN Data Portal
+        data_asfr = pd.read_csv(f'./{country}/asfr.csv')
+        data_methods = pd.read_csv(f'./{country}/mix.csv')
+        data_tfr = pd.read_csv(f'./{country}/tfr.csv')
+        data_popsize = pd.read_csv(f'./{country}/popsize.csv')
 
         # Set up global variables
         age_bin_map = {
@@ -230,7 +230,7 @@ if __name__ == '__main__':
                 model_method_counts[:] /= model_method_counts[:].sum()
 
 
-                # Method mix from data - country PMA data (mix_{country}.csv)
+                # Method mix from data - country PMA data (mix.csv)
                 data_methods_mix = {
                         'Withdrawal': data_methods.loc[data_methods['method'] == 'Withdrawal', 'perc'].iloc[0],
                         'Other traditional': data_methods.loc[data_methods['method'] == 'Other traditional', 'perc'].iloc[0],
@@ -243,7 +243,7 @@ if __name__ == '__main__':
                         'Other modern': data_methods.loc[data_methods['method'] == 'Other modern', 'perc'].iloc[0]
                 }
 
-                # Method use from data - country PMA data (use_{country}.csv)
+                # Method use from data - country PMA data (use.csv)
                 no_use = use.loc[0, 'perc']
                 any_method = use.loc[1, 'perc']
                 data_methods_use = {
@@ -388,7 +388,7 @@ if __name__ == '__main__':
                 '''
 
                 # Import data
-                #data_tfr = pd.read_csv(f'{country}_tfr.csv')
+                #data_tfr = pd.read_csv(f'tfr.csv')
 
                 # Plot
                 pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')

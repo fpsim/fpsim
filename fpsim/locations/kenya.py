@@ -89,16 +89,16 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'kenya'
-    files['basic_dhs'] = 'kenya_basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
-    files['popsize'] = 'kenya_popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
-    files['mcpr'] = 'kenya_cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+    files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
+    files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
+    files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
-    files['asfr'] = 'kenya_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-    files['skyscrapers'] = 'kenya_skyscrapers.csv' # Choose from either DHS 2014 or PMA 2022
+    files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
+    files['skyscrapers'] = 'skyscrapers.csv' # Choose from either DHS 2014 or PMA 2022
     files['spacing'] = 'birth_spacing_dhs.csv'
-    files['methods'] = 'mix_kenya.csv'
+    files['methods'] = 'mix.csv'
     files['afb'] = 'afb.table.csv'
-    files['use'] = 'use_kenya.csv'
+    files['use'] = 'use.csv'
     return files
 
 
@@ -149,8 +149,8 @@ def age_mortality():
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
     data_year = 2010
-    mortality_data = pd.read_csv(thisdir / 'kenya' / 'mortality_prob_kenya.csv')
-    mortality_trend = pd.read_csv(thisdir / 'kenya' / 'mortality_trend_kenya.csv')
+    mortality_data = pd.read_csv(thisdir / 'kenya' / 'mortality_prob.csv')
+    mortality_trend = pd.read_csv(thisdir / 'kenya' / 'mortality_trend.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -623,7 +623,7 @@ def methods():
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'kenya' / 'kenya_cpr.csv')
+    cpr_data = pd.read_csv(thisdir / 'kenya' / 'cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
