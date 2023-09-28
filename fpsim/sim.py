@@ -706,9 +706,13 @@ class People(fpb.BasePeople):
             students.edu_attainment[completed_inds] = students.edu_objective[completed_inds]
 
         # Make some students dropout based on dropout | parity probabilities
-        #students.edu_dropout
-
-
+        try:
+            par1 = self.filter((students.parity == 1))
+            par1.dropout_education('1') # Women with parity 1
+            par2plus = self.filter(students.parity >= 2)
+            par2plus.dropout_education('2+') # Women with parity 2+
+        except ValueError: # which occurs at the very beginning when everyone has parity 0
+            pass
 
     def interrupt_education(self):
         '''
@@ -718,7 +722,6 @@ class People(fpb.BasePeople):
         # Hinder education progression if a woman is pregnant and towards the end of the first trimester
         pregnant_students = self.filter(self.pregnant & ~self.edu_completed & ~self.edu_dropout & ~self.edu_interrupted)
         end_first_tri = pregnant_students.filter(pregnant_students.gestation == self.pars['end_first_tri'])
-
         # Disrupt education
         end_first_tri.edu_interrupted = True
 
@@ -732,10 +735,17 @@ class People(fpb.BasePeople):
         # Basic mechanism to resume education post-pregnancy:
         # If education was interrupted due to pregnancy, resume after 9 months pospartum
         pospartum_students = self.filter(self.postpartum & ~self.edu_completed & ~self.edu_dropout & self.edu_interrupted)
-        self.edu_interrupted[self.postpartum_dur > 0.5 * (self.pars['postpartum_dur'])] = False
+        resume_inds = sc.findinds(pospartum_students.postpartum_dur > 0.5 * self.pars['postpartum_dur'])
+        if len(resume_inds):
+            pospartum_students.edu_interrupted[resume_inds] = False
 
-    def dropout_education(self):
-        pass
+
+    def dropout_education(self, parity):
+        dropout_dict = self.pars['education']['edu_dropout_probs'][parity]
+        age_cutoffs = np.hstack((dropout_dict['age'], dropout_dict['age'].max() + 1))
+        age_inds = np.digitize(self.age, age_cutoffs) - 1
+        # Decide who will dropout
+        self.edu_dropout = fpu.binomial_arr(dropout_dict['percent'][age_inds])
 
 
     def update_age_bin_totals(self):
@@ -987,9 +997,9 @@ class People(fpb.BasePeople):
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
         # Update education
-        alive_now.update_education()
-        alive_now.disrupt_education()
-        alive_now.resume_education()
+        alive_now.update_education()    # Advance attainment, determine who reaches their objective and who dropouts
+        alive_now.interrupt_education() # Check if anyone will have their education interrupted
+        alive_now.resume_education()    # Determine who goes back to school after an interruption
 
 
         # Update results
