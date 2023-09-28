@@ -687,6 +687,9 @@ class People(fpb.BasePeople):
 
         return
 
+    def update_education(self):
+        pass
+
 
     def update_age_bin_totals(self):
         '''
@@ -1188,17 +1191,34 @@ class Sim(fpb.BaseSim):
     def initialize_education(self, n, ages, sexes, urban):
         """Get initial distribution of education goal, attainment and whether
         a woman has reached their education goal"""
+        education_dict = self['education']
 
-        # Initialise individual education goal
-        # Initialise individual education attainment - number of education years completed at start of simualtion
-        # Assess whether a woman has completed her education based on the values of the two previous attributeds
-
+        # Initialise individual education attainment - number of education years completed at start of simulation
+        # Assess whether a woman has completed her education based on the values of the two previous attributes
         # Education dictionary
-        education = {}
-        education['edu_objective'] = np.zeros(n, dtype=float)
-        education['edu_attainment'] = np.zeros(n, dtype=float)
-        education['edu_completed']  = np.zeros(n, dtype=bool)
-        pass
+        education = {'edu_objective': np.zeros(n, dtype=float),
+                     'edu_attainment': np.zeros(n, dtype=float),
+                     'edu_completed': np.zeros(n, dtype=bool),
+                     'edu_droput': np.zeros(n, dtype=bool)}
+
+        if education_dict is not None:
+            # Initialise individual education objectives from a 2d array of probs with dimensions (urban, edu_years)
+            f_inds_urban = sc.findinds(sexes == 0, urban == True)
+            f_inds_rural = sc.findinds(sexes == 0, urban == False)
+            # Set objectives
+            probs_rural = education_dict['edu_objective'][1, :]
+            probs_urban = education_dict['edu_objective'][0, :]
+            edu_years = np.arange(len(probs_rural))
+            education['edu_objective'][f_inds_rural] = np.random.choice(edu_years, size=len(f_inds_rural), p=probs_rural)  # Probs in rural settings
+            education['edu_objective'][f_inds_urban] = np.random.choice(edu_years, size=len(f_inds_urban), p=probs_urban)  # Probs in urban settings
+            # Initialise education attainment - ie, current state of education at the start of the simulation
+
+            # Make some women drop out
+
+            # Of the women who haven't dpropped out, check whether they have achieved their education goal
+
+
+        return education
 
 
     def initialize_partnered(self, n, ages, sexes):
