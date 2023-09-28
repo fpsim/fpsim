@@ -1101,7 +1101,7 @@ def education_objective(df):
     stratified by urban/rural from DHS.
     """
     # This df has columns
-    # edu: years education, urban: geographic setting, percent
+    # edu: years education, urban: geographic setting, percent:
     # transformed to a 2d array of proportions with dimensions (n_urban, n_edu_years)
     arr = df["percent"].to_numpy().reshape(df["urban"].nunique(), df["edu"].nunique())
     return arr
@@ -1109,14 +1109,14 @@ def education_objective(df):
 
 def education_attainment(df):
     """
-    Convert education attainment data to necesary numeric types and into a numpy array
+    Convert education attainment data to necessary numeric types and into a numpy array
     These data are the mean years of education of a woman aged X years from DHS.
 
     NOTE: The data in education_initialization.csv have been extrapolated. Here we only
     interpolate data for the group 15-49 (inclusive range).
     """
     # This df has columns
-    # age: and edu: mean years of education
+    # age:age in years and edu: mean years of education
     df.sort_values(by="age", ascending=True, inplace=True)
     ages = df["age"].to_numpy()
     arr  = df["edu"].to_numpy()
@@ -1155,9 +1155,10 @@ def education_distributions():
                       "edu_attainment": pd.read_csv(thisdir / 'kenya' / 'edu_initialization.csv'),
                       "edu_dropout_probs": pd.read_csv(thisdir / 'kenya' / 'edu_stop.csv')}
 
-    education_dict = {"edu_objective": education_objective(education_data["edu_objective"]),
-                      "edu_attainment": (education_attainment(education_data["edu_attainment"]))[0],
-                      "age": (education_attainment(education_data["edu_attainment"]))[1],
+    attainment, age = education_attainment(education_data["edu_attainment"])
+    education_dict = {"age": age,
+                      "edu_objective": education_objective(education_data["edu_objective"]),
+                      "edu_attainment": attainment,
                       "edu_droput_probs": education_dropout_probs(education_data["edu_dropout_probs"])}
 
     return education_dict, education_data
