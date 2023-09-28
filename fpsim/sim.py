@@ -1211,12 +1211,20 @@ class Sim(fpb.BaseSim):
             edu_years = np.arange(len(probs_rural))
             education['edu_objective'][f_inds_rural] = np.random.choice(edu_years, size=len(f_inds_rural), p=probs_rural)  # Probs in rural settings
             education['edu_objective'][f_inds_urban] = np.random.choice(edu_years, size=len(f_inds_urban), p=probs_urban)  # Probs in urban settings
+
             # Initialise education attainment - ie, current state of education at the start of the simulation
+            f_inds = sc.findinds(sexes == 0)
 
-            # Make some women drop out
+            # Get ages for female agents and round them so we can use them as indices
+            f_ages = np.floor(ages[f_inds]).astype(int)
+            # Set the initial number of education years an agent has based on her age
+            education['edu_attainment'][f_inds] = np.floor((education_dict['edu_attainment'][f_ages]))
 
-            # Of the women who haven't dpropped out, check whether they have achieved their education goal
-
+            # Check people who completed their education
+            completed_inds =  sc.findinds((education['edu_objective'][f_inds] - education['edu_attainment'][f_inds]) <= 0)
+            # Set attainment to edu_objective, just in case that initial edu_attainment > edu_objective
+            education['edu_attainment'][f_inds[completed_inds]] = education['edu_objective'][f_inds[completed_inds]]
+            education['edu_completed'][f_inds[completed_inds]] = True
 
         return education
 
