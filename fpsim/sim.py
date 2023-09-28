@@ -688,6 +688,53 @@ class People(fpb.BasePeople):
         return
 
     def update_education(self):
+        '''Advance education attainment in the simulation, determine if agents have completed their educationm,
+        #TODO: decide if we want to split this method into multiple methods
+        '''
+
+        # Filter people who have not: completed education, dropped out or had their education interrupted
+        students = self.filter((~self.edu_completed & ~self.edu_dropout & ~self.edu_interrupted))
+        # Advance education attainment
+        students.edu_attainment += self.pars['timestep'] / fpd.mpy
+
+        # Check if people have completed their education
+        completed_inds = sc.findinds((students.edu_objective - students.edu_attainment) <= 0)
+        if len(completed_inds):
+            students.edu_completed[completed_inds] = True
+            # NOTE: this line is not really needed. If we remove it we may end up with people who have
+            # edu_attainment larger than their edu_objective
+            students.edu_attainment[completed_inds] = students.edu_objective[completed_inds]
+
+        # Make some students dropout based on dropout | parity probabilities
+        #students.edu_dropout
+
+
+
+    def interrupt_education(self):
+        '''
+        Interrupt education due to pregnancy. This method hinders education progression if a
+        woman is pregnant and towards the end of the first trimester
+        '''
+        # Hinder education progression if a woman is pregnant and towards the end of the first trimester
+        pregnant_students = self.filter(self.pregnant & ~self.edu_completed & ~self.edu_dropout & ~self.edu_interrupted)
+        end_first_tri = pregnant_students.filter(pregnant_students.gestation == self.pars['end_first_tri'])
+
+        # Disrupt education
+        end_first_tri.edu_interrupted = True
+
+
+    def resume_education(self):
+        '''
+        # Basic mechanism to resume education post-pregnancy:
+        # If education was interrupted due to pregnancy, resume after 9 months pospartum
+        #TODO: check if there's any evidence supporting this assumption
+        '''
+        # Basic mechanism to resume education post-pregnancy:
+        # If education was interrupted due to pregnancy, resume after 9 months pospartum
+        pospartum_students = self.filter(self.postpartum & ~self.edu_completed & ~self.edu_dropout & self.edu_interrupted)
+        self.edu_interrupted[self.postpartum_dur > 0.5 * (self.pars['postpartum_dur'])] = False
+
+    def dropout_education(self):
         pass
 
 
@@ -938,6 +985,12 @@ class People(fpb.BasePeople):
         lact.update_breastfeeding()
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
+
+        # Update education
+        alive_now.update_education()
+        alive_now.disrupt_education()
+        alive_now.resume_education()
+
 
         # Update results
         fecund.update_age_bin_totals()
