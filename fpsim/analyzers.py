@@ -13,7 +13,7 @@ from . import defaults as fpd
 
 #%% Generic intervention classes
 
-__all__ = ['Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids', 'verbose_sim']
+__all__ = ['Analyzer', 'snapshot', 'timeseries_recorder', 'age_pyramids', 'verbose_sim', 'empowerment_recorder']
 
 
 class Analyzer(sc.prettyobj):
@@ -218,6 +218,90 @@ class timeseries_recorder(Analyzer):
                 mean = data.mean()
                 label = f'mean: {mean}'
                 pl.plot(x, data, label=label, **pl_args)
+                pl.title(key)
+                pl.legend()
+            except:
+                pl.title(f'Could not plot {key}')
+
+        return fig
+
+
+class empowerment_recorder(Analyzer):
+    '''
+    Record every empowerment attribute for every person as a timeseries.
+
+    Attributes:
+
+        self.i: The list of timesteps (ie, 0 to 261 steps).
+        self.t: The time elapsed in years given how many timesteps have passed (ie, 25.75 years).
+        self.y: The calendar year of timestep (ie, 1975.75).
+        self.keys: A list of people's empowerment attributes.
+        self.data: A dictionary where self.data[state][timestep]
+    '''
+
+    def __init__(self):
+        """
+        Initializes self.i/t/y as empty lists and self.data as empty dictionary
+        """
+        super().__init__()
+        self.i = []
+        self.t = []
+        self.y = []
+        self.data = sc.objdict()
+        return
+
+
+    def initialize(self, sim):
+        """
+        Initializes self.keys from sim.people
+        """
+        super().initialize()
+        self.keys = ['partnered', 'urban', 'paid_employment', 'control_over_wages', 'sexual_autonomy',
+                     'edu_objective', 'edu_attainment', 'edu_dropout', 'edu_interrupted', 'edu_completed']
+
+        for key in self.keys:
+            self.data[key] = np.zeros((sim.npts, sim.pars['n_agents']))
+        return
+
+
+    def apply(self, sim):
+        """
+        Applies recorder at each timestep
+        """
+        self.i.append(sim.i)
+        self.t.append(sim.t)
+        self.y.append(sim.y)
+        for k in self.keys:
+            # TODO: generalise. just getting the first n_agents
+            self.data[k][sim.i, :] = sim.people[k][:sim.pars['n_agents']]
+
+
+    def plot(self, x='y', data_args=None, fig_args=None, pl_args=None):
+        """
+        Plots time series of each state as a line graph
+        """
+
+        xmap = dict(i=self.i, t=self.t, y=self.y)
+        x = xmap[x]
+
+        fig_args  = sc.mergedicts(fig_args)
+        pl_args = sc.mergedicts(pl_args)
+        nkeys = len(self.keys)
+        rows,cols = sc.get_rows_cols(nkeys)
+
+        fig = pl.figure(**fig_args)
+
+        if data_args is None:
+            to_plot = self.keys
+        else:
+            to_plot = data_args
+        for k, key in enumerate(to_plot):
+            pl.subplot(rows,cols,k+1)
+            try:
+                data = np.array(self.data[key], dtype=float)
+                #mean = data.mean()
+                label = f'agent: {mean}'
+                pl.plot(x, data[:, 0], label=label, **pl_args)
                 pl.title(key)
                 pl.legend()
             except:
