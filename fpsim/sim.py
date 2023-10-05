@@ -97,6 +97,7 @@ class People(fpb.BasePeople):
 
         # Empowerment-related sociodemographic attributes
         self.partnered       = arr(n, d['partnered'])           # Whether a person is in a relationship or not
+        self.partnership_age = arr(n, d['partnership_age'])     # Age at first partnership in years, initialised from data
         self.urban           = arr(n, d['urban'])               # Whether a person lives in rural or urban setting
         self.paid_employment = arr(n, d['paid_employment'])     # Whether a person has a paid job or not
         self.control_over_wages = arr(n, d['control_over_wages'])   # Decision making autonomy over major household purchases
@@ -303,6 +304,17 @@ class People(fpb.BasePeople):
             self.step_results['deaths'] += len(died)
 
         return
+
+
+    def check_partnership(self):
+        '''
+        Decide if an agent has reached their age at first partnership. Age-based data from DHS.
+        '''
+
+        is_not_partnered = self.partnered == 0
+        reached_partnership_age = self.age >= self.partnership_age
+        first_timers = self.filter(is_not_partnered * reached_partnership_age)
+        first_timers.partnered = True
 
 
     def check_sexually_active(self):
@@ -720,6 +732,7 @@ class People(fpb.BasePeople):
         new_students = self.filter(~self.edu_started & (self.age >= 6))  # TODO: make this number a parameter
         new_students.edu_started = True
 
+
     def interrupt_education(self):
         '''
         Interrupt education due to pregnancy. This method hinders education progression if a
@@ -993,6 +1006,10 @@ class People(fpb.BasePeople):
             methods = nonpreg.filter((nonpreg.age >= nonpreg.fated_debut) * (nonpreg.months_inactive < 12))
         else:
             methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
+
+        # Check if has reached their age at first partnership and set partnered attribute to True.
+        # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
+        alive_now.check_partnership()
 
         # Update everything else
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
@@ -1304,9 +1321,10 @@ class Sim(fpb.BaseSim):
 
 
     def initialize_partnered(self, n, ages, sexes):
-        """Get initial distribution of whether a woman is partenered or not"""
+        """Get initial distribution of age at first partnership"""
         partnership_data = self['age_partnership']
-        partnered =  np.zeros(n, dtype=float)
+        partnered =  np.zeros(n, dtype=bool)
+        partnership_age = np.zeros(n, dtype=float)
 
         if partnership_data is not None:
             # Find only female agents
@@ -1314,14 +1332,14 @@ class Sim(fpb.BaseSim):
 
             # Get ages from women
             f_ages = ages[f_inds]
+            # Select age at first partnership
+            partnership_age[f_inds] = np.random.choice(partnership_data['age'], size=len(f_inds), p=partnership_data['partnership_probs'])
 
-            # Create age bins from age 0
-            age_cutoffs = np.hstack((0, partnership_data['age'], np.max(partnership_data['age'] + 1)))
-            probs = np.hstack((0.0, partnership_data['partnership_probs'], 0.0))
-            inds = np.digitize(f_ages, age_cutoffs) - 1
-            partnered[f_inds] = fpu.binomial_arr(probs[inds])
+            # Check if age at first partnership => than current age to set partnered
+            p_inds = sc.findinds((f_ages >= partnership_age[f_inds]))
+            partnered[f_inds[p_inds]] = True
 
-        return partnered
+        return partnered, partnership_age
 
 
     def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
@@ -1334,7 +1352,7 @@ class Sim(fpb.BaseSim):
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
         urban = self.initialize_urban(n, self['urban_prop'])
-        partnered = self.initialize_partnered(n, age, sex)
+        partnered, partnership_age = self.initialize_partnered(n, age, sex)
         empowerment = self.initialize_empowerment(n, age, sex)
         education   = self.initialize_education(n, age, sex, urban)
         data = dict(
@@ -1346,6 +1364,7 @@ class Sim(fpb.BaseSim):
             fertile=fertile,
             urban=urban,
             partnered=partnered,
+            partnership_age=partnership_age,
             **sc.mergedicts(empowerment, education)
         )
         return data
@@ -1364,6 +1383,7 @@ class Sim(fpb.BaseSim):
             fertile=p.fertile,
             urban=p.urban,
             partnered=p.partnered,
+            partnership_age=p.partnership_age,
             paid_employment=p.paid_employment,
             sexual_autonomy=p.sexual_autonomy,
             control_over_wages=p.control_over_wages,
