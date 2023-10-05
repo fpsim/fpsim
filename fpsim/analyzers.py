@@ -8,6 +8,8 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 import pylab as pl
+import matplotlib.pyplot as plt
+from mpl_toolkits.axes_grid1 import make_axes_locatable
 from . import defaults as fpd
 
 
@@ -226,84 +228,119 @@ class timeseries_recorder(Analyzer):
         return fig
 
 
+class education_recorder(Analyzer):
+    pass
+
+
 class empowerment_recorder(Analyzer):
     '''
-    Record every empowerment attribute for every person as a timeseries.
+    Records timeseries of empowerment attributes for different age groups.
+     - For boolean attributes it computes the percentage returns percentage.
+     - For float attributes it computes the median of the attribute from the population of interes
 
     Attributes:
-
-        self.i: The list of timesteps (ie, 0 to 261 steps).
-        self.t: The time elapsed in years given how many timesteps have passed (ie, 25.75 years).
-        self.y: The calendar year of timestep (ie, 1975.75).
+        self.bins: A list of ages, default is a sequence from 0 to max_age + 1.
         self.keys: A list of people's empowerment attributes.
-        self.data: A dictionary where self.data[state][timestep]
+        self.data: A dictionary where self.data[attribute] is a a matrix of shape (number of timesteps, number of bins - 1) containing age pyramid data.
+
     '''
 
-    def __init__(self):
+    def __init__(self, bins=None):
         """
         Initializes self.i/t/y as empty lists and self.data as empty dictionary
         """
         super().__init__()
-        self.i = []
-        self.t = []
-        self.y = []
+        self.bins = bins
         self.data = sc.objdict()
+        self.keys = ['partnered', 'urban', 'paid_employment', 'control_over_wages', 'sexual_autonomy', 'age']
+        self.nbins = None
         return
-
 
     def initialize(self, sim):
         """
         Initializes self.keys from sim.people
         """
         super().initialize()
-        self.keys = ['partnered', 'urban', 'paid_employment', 'control_over_wages', 'sexual_autonomy',
-                     'edu_objective', 'edu_attainment', 'edu_dropout', 'edu_interrupted', 'edu_completed']
+        if self.bins is None:
+            self.bins = np.arange(0, sim.pars['max_age']+2)
+        self.nbins = len(self.bins)-1
 
         for key in self.keys:
-            self.data[key] = np.zeros((sim.npts, sim.pars['n_agents']))
+            self.data[key] = np.full((sim.npts, self.nbins), np.nan)
         return
-
 
     def apply(self, sim):
         """
-        Applies recorder at each timestep
+        Records histogram of empowerment attribute of all **alive female** individuals
         """
-        self.i.append(sim.i)
-        self.t.append(sim.t)
-        self.y.append(sim.y)
-        for k in self.keys:
-            # TODO: generalise. just getting the first n_agents
-            self.data[k][sim.i, :] = sim.people[k][:sim.pars['n_agents']]
+        # Alive and female
+        living_females = sc.findinds(sim.people.alive, sim.people.is_female)
+        ages = sim.people.age[living_females]
+        age_group = np.digitize(ages, self.bins)
 
+        for key in self.keys:
+            data = sim.people[key][living_females]
+            if key == 'age':
+                # Count how many living females we have in this age group
+                vals = [np.sum(age_group == group_idx) for group_idx in range(self.nbins)]
+            else:
+                if isinstance(data.dtype, bool):
+                    vals = [np.mean(data[age_group == group_idx] == True) for group_idx in range(self.nbins)]
+                else:  # assume float
+                    vals = [np.median(data[age_group == group_idx]) for group_idx in range(self.nbins)]
+            self.data[key][sim.i, :] = vals
 
-    def plot(self, x='y', data_args=None, fig_args=None, pl_args=None):
+    def plot(self, to_plot=None, fig_args=None, pl_args=None):
         """
         Plots time series of each state as a line graph
         """
-
-        xmap = dict(i=self.i, t=self.t, y=self.y)
-        x = xmap[x]
-
         fig_args  = sc.mergedicts(fig_args)
         pl_args = sc.mergedicts(pl_args)
-        nkeys = len(self.keys)
-        rows,cols = sc.get_rows_cols(nkeys)
-
         fig = pl.figure(**fig_args)
 
-        if data_args is None:
+        if to_plot is None:
             to_plot = self.keys
-        else:
-            to_plot = data_args
+
+        nkeys = len(to_plot)
+        rows, cols = sc.get_rows_cols(nkeys)
+
+        axs = []
         for k, key in enumerate(to_plot):
-            pl.subplot(rows,cols,k+1)
+            axs.append(fig.add_subplot(rows, cols, k+1))
             try:
                 data = np.array(self.data[key], dtype=float)
-                #mean = data.mean()
-                label = f'agent: {mean}'
-                pl.plot(x, data[:, 0], label=label, **pl_args)
-                pl.title(key)
-                pl.legend()
+                label = f'metric: {key}'
+                if key in ['partnered', 'urban', 'paid_employment']:
+                    clabel = f"proportion"
+                    cmap = 'BuPu'
+                    vmin, vmax = 0, 1
+                elif key in ['age']:
+                    cmap = 'viridis'
+                    vmin, vmax = None, None
+                else:
+                    clabel = f"average (median)"
+                    cmap = 'coolwarm'
+                    vmin, vmax = 0, 1
+
+                pcm = axs[k].pcolormesh(data.T, label=label, cmap=cmap, vmin=vmin, vmax=vmax, **pl_args)
+
+                # Add colorbar to the right of the subplot
+                divider = make_axes_locatable(axs[k])
+                cax = divider.append_axes("right", size="2.5%", pad=0.05)
+
+                # Add colorbar to the right of the subplot
+                plt.colorbar(pcm, cax=cax, label=clabel)
+
+                # Generate age group labels and tick positions
+                ytick_labels = [f"{self.bins[i]:.0f}-{self.bins[i+1]-1:.0f}" for i in range(self.nbins)]
+                ytick_positions = np.arange(0.5, self.nbins + 0.5)  # Center positions for ticks
+
+                # Label plots
+                axs[k].set_yticks(ytick_positions)
+                axs[k].set_yticklabels(ytick_labels)
+                axs[k].set_title(key)
+                axs[k].set_xlabel('Timestep')
+                axs[k].set_ylabel('Age group')
             except:
                 pl.title(f'Could not plot {key}')
 
@@ -336,7 +373,7 @@ class age_pyramids(Analyzer):
         super().initialize()
         if self.bins is None:
             self.bins = np.arange(0, sim.pars['max_age']+2)
-            nbins = len(self.bins)-1
+        nbins = len(self.bins)-1
         self.data = np.full((sim.npts, nbins), np.nan)
         self._raw = sc.dcp(self.data)
         return
