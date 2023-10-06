@@ -160,7 +160,7 @@ class timeseries_recorder(Analyzer):
         self.data: A dictionary where self.data[state][timestep] is the mean of the state at that timestep.
     '''
 
-    def __init__(self):
+    def __init__(self, to_record=None):
         """
         Initializes self.i/t/y as empty lists and self.data as empty dictionary
         """
@@ -169,6 +169,8 @@ class timeseries_recorder(Analyzer):
         self.t = []
         self.y = []
         self.data = sc.objdict()
+        self.keys = to_record
+        self.to_record = []
         return
 
 
@@ -177,10 +179,12 @@ class timeseries_recorder(Analyzer):
         Initializes self.keys from sim.people
         """
         super().initialize()
-        self.keys = []
-        for key in sim.people.keys():
+        if self.keys is None:
+            self.keys = sim.people.keys()
+
+        for key in self.keys:
             if sc.isarray(sim.people[key]):
-                self.keys.append(key)
+                self.to_record.append(key)
         for key in self.keys:
             self.data[key] = []
         return
@@ -193,7 +197,7 @@ class timeseries_recorder(Analyzer):
         self.i.append(sim.i)
         self.t.append(sim.t)
         self.y.append(sim.y)
-        for k in self.keys:
+        for k in self.to_record:
             val = np.mean(sim.people[k])
             self.data[k].append(val)
 
