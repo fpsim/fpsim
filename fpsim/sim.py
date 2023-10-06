@@ -107,7 +107,7 @@ class People(fpb.BasePeople):
         self.edu_dropout     = arr(n, d['edu_dropout'])     # Whether a person has dropped out of the edu system, before reaching their goal
         self.edu_interrupted = arr(n, d['edu_interrupted']) # Whether a person/woman has had their education temporarily interrupted, but can resume
         self.edu_completed   = arr(n, d['edu_completed'])   # Whether a person/woman has reached their education goals
-
+        self.edu_started     = arr(n, d['edu_started'])       # Whether a person/woman has started thier education
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]
@@ -687,32 +687,38 @@ class People(fpb.BasePeople):
 
         return
 
+
     def update_education(self):
         '''Advance education attainment in the simulation, determine if agents have completed their educationm,
-        #TODO: decide if we want to split this method into multiple methods
         '''
 
         # Filter people who have not: completed education, dropped out or had their education interrupted
-        students = self.filter((~self.edu_completed & ~self.edu_dropout & ~self.edu_interrupted))
+        students = self.filter((self.edu_started & ~self.edu_completed  & ~self.edu_dropout & ~self.edu_interrupted))
         # Advance education attainment
         students.edu_attainment += self.pars['timestep'] / fpd.mpy
-
-        # Check if people have completed their education
-        completed_inds = sc.findinds((students.edu_objective - students.edu_attainment) <= 0)
-        if len(completed_inds):
-            students.edu_completed[completed_inds] = True
-            # NOTE: this line is not really needed. If we remove it we may end up with people who have
-            # edu_attainment larger than their edu_objective
-            students.edu_attainment[completed_inds] = students.edu_objective[completed_inds]
-
+        # Check who will experience an interruption
+        students.interrupt_education()
         # Make some students dropout based on dropout | parity probabilities
-        try:
-            par1 = self.filter((students.parity == 1))
-            par1.dropout_education('1') # Women with parity 1
-            par2plus = self.filter(students.parity >= 2)
-            par2plus.dropout_education('2+') # Women with parity 2+
-        except ValueError: # which occurs at the very beginning when everyone has parity 0
-            pass
+        par1 = students.filter(students.parity == 1)
+        par1.dropout_education('1')  # Women with parity 1
+        par2plus = students.filter(students.parity >= 2)
+        par2plus.dropout_education('2+') # Women with parity 2+
+
+
+    def graduate(self):
+        completed_inds = sc.findinds(self.edu_attainment >= self.edu_objective)
+        # NOTE: the two lines below were necessary because edu_completed was not being updating as expected
+        tmp = self.edu_completed
+        tmp[completed_inds] = True
+        self.edu_completed  = tmp
+
+
+    def start_education(self):
+        '''
+        Begin education
+        '''
+        new_students = self.filter(~self.edu_started & (self.age >= 6))  # TODO: make this number a parameter
+        new_students.edu_started = True
 
     def interrupt_education(self):
         '''
@@ -720,7 +726,7 @@ class People(fpb.BasePeople):
         woman is pregnant and towards the end of the first trimester
         '''
         # Hinder education progression if a woman is pregnant and towards the end of the first trimester
-        pregnant_students = self.filter(self.pregnant & ~self.edu_completed & ~self.edu_dropout & ~self.edu_interrupted)
+        pregnant_students = self.filter(self.pregnant)
         end_first_tri = pregnant_students.filter(pregnant_students.gestation == self.pars['end_first_tri'])
         # Disrupt education
         end_first_tri.edu_interrupted = True
@@ -729,15 +735,16 @@ class People(fpb.BasePeople):
     def resume_education(self):
         '''
         # Basic mechanism to resume education post-pregnancy:
-        # If education was interrupted due to pregnancy, resume after 9 months pospartum
+        # If education was interrupted due to pregnancy, resume after 9 months pospartum ()
         #TODO: check if there's any evidence supporting this assumption
         '''
         # Basic mechanism to resume education post-pregnancy:
         # If education was interrupted due to pregnancy, resume after 9 months pospartum
-        pospartum_students = self.filter(self.postpartum & ~self.edu_completed & ~self.edu_dropout & self.edu_interrupted)
+        pospartum_students = self.filter(self.postpartum & self.edu_interrupted & ~self.edu_completed & ~self.edu_dropout)
         resume_inds = sc.findinds(pospartum_students.postpartum_dur > 0.5 * self.pars['postpartum_dur'])
-        if len(resume_inds):
-            pospartum_students.edu_interrupted[resume_inds] = False
+        tmp = pospartum_students.edu_interrupted
+        tmp[resume_inds] = False
+        pospartum_students.edu_interrupted = tmp
 
 
     def dropout_education(self, parity):
@@ -997,10 +1004,11 @@ class People(fpb.BasePeople):
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
         # Update education
-        alive_now.update_education()    # Advance attainment, determine who reaches their objective and who dropouts
-        alive_now.interrupt_education() # Check if anyone will have their education interrupted
-        alive_now.resume_education()    # Determine who goes back to school after an interruption
-
+        alive_now_f = self.filter(self.is_female)
+        alive_now_f.start_education()   # Check if anyone needs to start school
+        alive_now_f.update_education()  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
+        alive_now_f.resume_education()    # Determine who goes back to school after an interruption
+        alive_now_f.graduate()            # Check if anyone achieves their education goal
 
         # Update results
         fecund.update_age_bin_totals()
@@ -1261,6 +1269,7 @@ class Sim(fpb.BaseSim):
         # Education dictionary
         education = {'edu_objective': np.zeros(n, dtype=float),
                      'edu_attainment': np.zeros(n, dtype=float),
+                     'edu_started'   : np.zeros(n, dtype=bool),
                      'edu_completed': np.zeros(n, dtype=bool),
                      'edu_droput': np.zeros(n, dtype=bool)}
 
@@ -1283,12 +1292,14 @@ class Sim(fpb.BaseSim):
             # Set the initial number of education years an agent has based on her age
             education['edu_attainment'][f_inds] = np.floor((education_dict['edu_attainment'][f_ages]))
 
+            # Check people who started their education
+            started_inds = sc.findinds(education['edu_attainment'][f_inds] > 0.0)
             # Check people who completed their education
-            completed_inds =  sc.findinds((education['edu_objective'][f_inds] - education['edu_attainment'][f_inds]) <= 0)
+            completed_inds = sc.findinds(education['edu_objective'][f_inds]-education['edu_attainment'][f_inds] <= 0)
             # Set attainment to edu_objective, just in case that initial edu_attainment > edu_objective
             education['edu_attainment'][f_inds[completed_inds]] = education['edu_objective'][f_inds[completed_inds]]
             education['edu_completed'][f_inds[completed_inds]] = True
-
+            education['edu_started'][f_inds[started_inds]] = True
         return education
 
 
@@ -1358,7 +1369,8 @@ class Sim(fpb.BaseSim):
             control_over_wages=p.control_over_wages,
             edu_objective=p.edu_objective,
             edu_attainment=p.edu_attainment,
-            edu_completed=p.edu_completed
+            edu_completed=p.edu_completed,
+            edu_started=p.edu_started,
         )
         return
 
