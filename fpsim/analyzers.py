@@ -266,7 +266,7 @@ class empowerment_recorder(Analyzer):
         self.nbins = len(self.bins)-1
 
         for key in self.keys:
-            self.data[key] = np.full((sim.npts, self.nbins), np.nan)
+            self.data[key] = np.full((self.nbins, sim.npts), np.nan)
         return
 
     def apply(self, sim):
@@ -276,23 +276,23 @@ class empowerment_recorder(Analyzer):
         # Alive and female
         living_females = sc.findinds(sim.people.alive, sim.people.is_female)
         ages = sim.people.age[living_females]
-        age_group = np.digitize(ages, self.bins)
+        age_group = np.digitize(ages, self.bins) - 1
 
         for key in self.keys:
             data = sim.people[key][living_females]
             if key == 'age':
                 # Count how many living females we have in this age group
-                vals = [np.sum(age_group == group_idx) for group_idx in range(self.nbins)]
-            else:
-                if isinstance(data.dtype, bool):
-                    vals = [np.mean(data[age_group == group_idx] == True) for group_idx in range(self.nbins)]
-                else:  # assume float
-                    vals = [np.median(data[age_group == group_idx]) for group_idx in range(self.nbins)]
-            self.data[key][sim.i, :] = vals
+                temp = np.histogram(ages, self.bins)[0]
+                vals = temp / temp.sum() # Transform to density
+            elif key in ['partnered', 'urban', 'paid_employment']:
+                vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
+            else:  # assume float
+                vals = [np.median(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
+            self.data[key][:, sim.i] = vals
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
         """
-        Plots time series of each state as a line graph
+        Plot all keys in self.keys or in to_plot as a heatmaps
         """
         fig_args  = sc.mergedicts(fig_args)
         pl_args = sc.mergedicts(pl_args)
@@ -311,18 +311,21 @@ class empowerment_recorder(Analyzer):
                 data = np.array(self.data[key], dtype=float)
                 label = f'metric: {key}'
                 if key in ['partnered', 'urban', 'paid_employment']:
-                    clabel = f"proportion"
-                    cmap = 'BuPu'
+                    clabel = f"proportion of {key}"
+                    cmap = 'RdPu'
                     vmin, vmax = 0, 1
+                    if key in ['urban']:
+                        cmap = 'RdYlBu_r'
                 elif key in ['age']:
-                    cmap = 'viridis'
-                    vmin, vmax = None, None
+                    clabel = f"proportion of agents"
+                    cmap = 'Blues'
+                    vmin, vmax = 0, np.nanmax(data[:])
                 else:
                     clabel = f"average (median)"
                     cmap = 'coolwarm'
                     vmin, vmax = 0, 1
 
-                pcm = axs[k].pcolormesh(data.T, label=label, cmap=cmap, vmin=vmin, vmax=vmax, **pl_args)
+                pcm = axs[k].pcolormesh(data, label=label, cmap=cmap, vmin=vmin, vmax=vmax, **pl_args)
 
                 # Add colorbar to the right of the subplot
                 divider = make_axes_locatable(axs[k])
@@ -335,12 +338,19 @@ class empowerment_recorder(Analyzer):
                 ytick_labels = [f"{self.bins[i]:.0f}-{self.bins[i+1]-1:.0f}" for i in range(self.nbins)]
                 ytick_positions = np.arange(0.5, self.nbins + 0.5)  # Center positions for ticks
 
+                # Reduce the number of labels if we have too many bins
+                max_labels = 10
+                if len(ytick_labels) > max_labels:
+                    step_size = len(ytick_labels) // max_labels
+                    ytick_labels = ytick_labels[::step_size]
+                    ytick_positions = ytick_positions[::step_size]
+
                 # Label plots
                 axs[k].set_yticks(ytick_positions)
                 axs[k].set_yticklabels(ytick_labels)
                 axs[k].set_title(key)
                 axs[k].set_xlabel('Timestep')
-                axs[k].set_ylabel('Age group')
+                axs[k].set_ylabel('Age (years)')
             except:
                 pl.title(f'Could not plot {key}')
 
