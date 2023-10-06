@@ -55,6 +55,7 @@ person_defaults = dict(
     edu_dropout          = False,
     edu_interrupted      = False,
     edu_completed        = False,
+    edu_started          = False,
 )
 
 # Postpartum keys to months
