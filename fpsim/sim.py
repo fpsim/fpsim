@@ -1021,11 +1021,12 @@ class People(fpb.BasePeople):
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
         # Update education
-        alive_now_f = self.filter(self.is_female)
-        alive_now_f.start_education()   # Check if anyone needs to start school
-        alive_now_f.update_education()  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
-        alive_now_f.resume_education()    # Determine who goes back to school after an interruption
-        alive_now_f.graduate()            # Check if anyone achieves their education goal
+        if self.pars['education'] is not None:
+            alive_now_f = self.filter(self.is_female)
+            alive_now_f.start_education()   # Check if anyone needs to start school
+            alive_now_f.update_education()  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
+            alive_now_f.resume_education()    # Determine who goes back to school after an interruption
+            alive_now_f.graduate()            # Check if anyone achieves their education goal
 
         # Update results
         fecund.update_age_bin_totals()
