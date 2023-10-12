@@ -307,6 +307,7 @@ class education_recorder(Analyzer):
             pl.ylim([0, 24])
             pl.title('Education')
             pl.ylabel('Education (years)')
+            pl.xlabel('Timesteps')
             pl.legend()
 
             k += 1
@@ -326,14 +327,21 @@ class education_recorder(Analyzer):
                     plt.step(self.time, 4*data[:, index],  color="black", ls="--", label=f"{state}", where='mid', **pl_args)
                 pl.title(f"Education trajectories - Start age: {int(age_data[0, index])}; final age {int(age_data[-1, index])}.")
                 pl.ylabel('State')
+                pl.xlabel('Timesteps')
                 pl.legend()
             return fig
 
 
-        def plot_waterfall(self, max_timepoints=30, fig_args=None, pl_args=None):
+        def plot_waterfall(self, max_timepoints=30, min_age=18, fig_args=None, pl_args=None):
             from scipy.stats import gaussian_kde
             data_att = self.trajectories["edu_attainment"]
             data_obj = self.trajectories["edu_objective"]
+            data_age = self.trajectories["age"]
+
+            mask = data_age < min_age
+            data_att = np.ma.array(data_att, mask=mask, fill_value=np.nan)
+            data_obj = np.ma.array(data_obj, mask=mask, fill_value=np.nan)
+
 
             n_tpts = data_att.shape[0]
             if n_tpts <= max_timepoints:
