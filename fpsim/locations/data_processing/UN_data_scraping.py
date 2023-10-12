@@ -77,7 +77,7 @@ def get_data(target):
         print("writing file...")
 
     # If country folder doesn't already exist, create it (location in which created data files will be stored)
-    if os.path.exists(f'../{country}') == False:
+    if not os.path.exists(f'../{country}'):
         os.mkdir(f'../{country}')
 
     return df
