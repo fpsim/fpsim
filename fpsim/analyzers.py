@@ -287,7 +287,7 @@ class education_recorder(Analyzer):
             Args:
                index: index of the female individual, must be less the analyzer's max_pop_size
             """
-            fig_args = sc.mergedicts(fig_args)
+            fig_args = sc.mergedicts(fig_args, {'figsize': (5, 7)})
             pl_args = sc.mergedicts(pl_args)
             rows, cols = sc.get_rows_cols(2)
 
