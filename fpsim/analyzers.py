@@ -244,9 +244,9 @@ class education_recorder(Analyzer):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)   # Initialize the Analyzer object
             self.snapshots = sc.odict()  # Store the actual snapshots
-            self.keys = ['edu_objective', 'edu_attainment',
-                         'edu_dropout', 'edu_interrupted', 'edu_completed',
-                         'pregnant', 'alive']
+            self.keys = ['edu_objective', 'edu_attainment', 'edu_completed',
+                         'edu_dropout', 'edu_interrupted',
+                         'pregnant', 'alive', 'age']
             self.max_pop_size = 0   # keep track of the maximum size of the population
             self.time = []
             self.trajectories = {}  # Store education trajectories
@@ -297,7 +297,7 @@ class education_recorder(Analyzer):
 
             k = 0
             pl.subplot(rows, cols, k + 1)
-
+            age_data = self.trajectories["age"]
             state = "edu_attainment"
             data = self.trajectories[state]
             pl.step(self.time, data[:, index], color="black", label=f"{state}", where='mid', **pl_args)
@@ -324,10 +324,60 @@ class education_recorder(Analyzer):
                     pl.step(self.time, data[:, index], color="#dd1c77", label=f"{state}", where='mid', **pl_args)
                 elif state == 'alive':
                     plt.step(self.time, 4*data[:, index],  color="black", ls="--", label=f"{state}", where='mid', **pl_args)
-                pl.title('Education')
+                pl.title(f"Education trajectories - Start age: {int(age_data[0, index])}; final age {int(age_data[-1, index])}.")
                 pl.ylabel('State')
                 pl.legend()
             return fig
+
+
+        def plot_waterfall(self, max_timepoints=30, fig_args=None, pl_args=None):
+            from scipy.stats import gaussian_kde
+            data_att = self.trajectories["edu_attainment"]
+            data_obj = self.trajectories["edu_objective"]
+
+            n_tpts = data_att.shape[0]
+            if n_tpts <= max_timepoints:
+                tpts_to_plot = np.arange(n_tpts)
+            else:
+                tpts_to_plot = np.linspace(0, n_tpts - 1, max_timepoints, dtype=int)
+
+            fig_args = sc.mergedicts(fig_args, {'figsize': (3, 10)})
+            pl_args = sc.mergedicts(pl_args, {'y_scaling': 0.8})
+
+            fig = plt.figure(**fig_args)
+            ax = fig.add_subplot(111)
+
+            edu_min, edu_max = 0, 25
+            edu_years = np.linspace(edu_min, edu_max, 50)
+            y_scaling = pl_args['y_scaling']
+
+            # Set the y-axis (time) labels
+            ax.set_yticks(y_scaling*np.arange(len(tpts_to_plot)))
+            ax.set_yticklabels(tpts_to_plot)
+
+            # Loop through the selected time points and create kernel density estimates
+            for idx, ti in enumerate(tpts_to_plot):
+                data_att_ti = np.sort(data_att[ti, :][~np.isnan(data_att[ti, :])])
+                data_obj_ti = np.sort(data_obj[ti, :][~np.isnan(data_obj[ti, :])])
+                kde_att = gaussian_kde(data_att_ti)
+                kde_obj = gaussian_kde(data_obj_ti)
+
+                y_att = kde_att(edu_years)
+                y_obj = kde_obj(edu_years)
+                ax.fill_between(edu_years, y_scaling*idx, y_obj / y_obj.max() + y_scaling*idx, color='#2f72de', alpha=0.3)
+                ax.plot(edu_years, y_att / y_att.max() + y_scaling*idx, color='black', alpha=0.7)
+
+            # Labels
+            ax.set_xlim([edu_min, edu_max])
+            ax.set_xlabel('Education years')
+            ax.set_ylabel('Timesteps')
+            ax.set_title('Evolution of \n population-level education \n objective and attainment')
+
+
+            # Show the plot
+            plt.show()
+
+
 
 
 class empowerment_recorder(Analyzer):
