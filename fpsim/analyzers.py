@@ -281,11 +281,11 @@ class education_recorder(Analyzer):
                     self.trajectories[state][ti, 0:stop_idx] = self.snapshots[t][state]
             return
 
-        def plot(self, inds=[0], fig_args=None, pl_args=None):
+        def plot(self, index=0, fig_args=None, pl_args=None):
             """
             Plots time series of each state as a line graph
             Args:
-               inds: indices of agents to plot
+               index: index of the female individual, must be less the analyzer's max_pop_size
             """
             fig_args = sc.mergedicts(fig_args)
             pl_args = sc.mergedicts(pl_args)
@@ -300,10 +300,10 @@ class education_recorder(Analyzer):
 
             state = "edu_attainment"
             data = self.trajectories[state]
-            pl.step(self.time, data[:, inds], color="black", label=f"{state}", where='mid', **pl_args)
+            pl.step(self.time, data[:, index], color="black", label=f"{state}", where='mid', **pl_args)
             state = "edu_objective"
             data = self.trajectories[state]
-            pl.step(self.time, data[:, inds], color="red", ls="--", label=f"{state}", where='mid', **pl_args)
+            pl.step(self.time, data[:, index], color="red", ls="--", label=f"{state}", where='mid', **pl_args)
             pl.ylim([0, 24])
             pl.title('Education')
             pl.ylabel('Education (years)')
@@ -315,15 +315,15 @@ class education_recorder(Analyzer):
                 data = self.trajectories[state]
                 if state in keys2:
                     if state  == 'edu_interrupted':
-                        pl.step(self.time, 3*data[:, inds], color=[0.7, 0.7, 0.7], label=f"{state}", ls=":", where='mid', **pl_args)
+                        pl.step(self.time, 3*data[:, index], color=[0.7, 0.7, 0.7], label=f"{state}", ls=":", where='mid', **pl_args)
                     elif state == "edu_dropout":
-                        pl.step(self.time, 3*data[:, inds], color="black", label=f"{state}", ls=":", where='mid', **pl_args)
+                        pl.step(self.time, 3*data[:, index], color="black", label=f"{state}", ls=":", where='mid', **pl_args)
                     else:
-                        pl.step(self.time, 3*data[:, inds], color="#2ca25f", label=f"{state}", where='mid', **pl_args)
+                        pl.step(self.time, 3*data[:, index], color="#2ca25f", label=f"{state}", where='mid', **pl_args)
                 elif state  == 'pregnant':
-                    pl.step(self.time, data[:, inds], color="#dd1c77", label=f"{state}", where='mid', **pl_args)
+                    pl.step(self.time, data[:, index], color="#dd1c77", label=f"{state}", where='mid', **pl_args)
                 elif state == 'alive':
-                    plt.step(self.time, 4*data[:, inds],  color="black", ls="--", label=f"{state}", where='mid', **pl_args)
+                    plt.step(self.time, 4*data[:, index],  color="black", ls="--", label=f"{state}", where='mid', **pl_args)
                 pl.title('Education')
                 pl.ylabel('State')
                 pl.legend()
