@@ -1157,9 +1157,11 @@ def education_distributions():
 
     attainment, age = education_attainment(education_data["edu_attainment"])
     education_dict = {"age": age,
+                      "age_start": 6.0,
                       "edu_objective": education_objective(education_data["edu_objective"]),
                       "edu_attainment": attainment,
-                      "edu_dropout_probs": education_dropout_probs(education_data["edu_dropout_probs"])}
+                      "edu_dropout_probs": education_dropout_probs(education_data["edu_dropout_probs"]),
+                      }
 
     return education_dict, education_data
 
