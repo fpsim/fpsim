@@ -108,7 +108,7 @@ class People(fpb.BasePeople):
         self.edu_dropout     = arr(n, d['edu_dropout'])     # Whether a person has dropped out of the edu system, before reaching their goal
         self.edu_interrupted = arr(n, d['edu_interrupted']) # Whether a person/woman has had their education temporarily interrupted, but can resume
         self.edu_completed   = arr(n, d['edu_completed'])   # Whether a person/woman has reached their education goals
-        self.edu_started     = arr(n, d['edu_started'])       # Whether a person/woman has started thier education
+        self.edu_started     = arr(n, d['edu_started'])     # Whether a person/woman has started thier education
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]
@@ -729,7 +729,7 @@ class People(fpb.BasePeople):
         '''
         Begin education
         '''
-        new_students = self.filter(~self.edu_started & (self.age >= 6))  # TODO: make this number a parameter
+        new_students = self.filter(~self.edu_started & (self.age >= self.pars["education"]["age_start"]))
         new_students.edu_started = True
 
 
