@@ -1077,7 +1077,6 @@ class Sim(fpb.BaseSim):
         self.results['birthday_fraction'] = []
         self.results['asfr'] = {}
         self.results['method_usage'] = []
-
         for key in fpd.age_bin_map.keys():
             self.results['asfr'][key] = []
             self.results[f"tfr_{key}"] = []
@@ -1143,68 +1142,61 @@ class Sim(fpb.BaseSim):
 
     def initialize_urban(self, n, urban_prop):
         """Get initial distribution of urban"""
-        return fpu.n_binomial(urban_prop, n)
+        urban = np.ones(n, dtype=bool)
+        if urban_prop is not None:
+            urban = fpu.n_binomial(urban_prop, n)
+        return urban
 
 
     def initialize_empowerment(self, n, ages, sexes):
-       """Get initial distribution of women's empowerment metrics/attributes"""
-       empowerment_data = self['empowerment']
+        """Get initial distribution of women's empowerment metrics/attributes"""
+        # NOTE: we assume that either probabilities or metrics in empowerment_dict are defined over all possible ages
+        # from 0 to 100 years old.
+        empowerment_dict = self['empowerment']
 
-       # Find only female agents
-       f_inds = sc.findinds(sexes == 0)
+        # Empowerment dictionary
+        empowerment = {}
+        empowerment['paid_employment'] = np.zeros(n, dtype=bool)
+        empowerment['sexual_autonomy'] = np.zeros(n, dtype=float)
+        empowerment['control_over_wages'] = np.zeros(n, dtype=float)
 
-       # Map column names in data to attribute names
-       # TODO: remove mapping by updating either data column names to match attribute names,
-       #  or change attr names to match data column names
-       mapping_dict = {'age': 'age',
-                       'paid_employment': 'paidwork',
-                       'sexual_autonomy': 'refusesex',
-                       'control_over_wages': 'decisionwages'}
-       updated_dict = {}
-       for k, v in mapping_dict.items():
-           updated_dict[k] = empowerment_data[v]
+        if empowerment_dict is not None:
+            # Find only female agents
+            f_inds = sc.findinds(sexes == 0)
 
-       # Get ages from women
-       f_ages = ages[f_inds]
+            # Get ages from women
+            f_ages = ages[f_inds]
 
-       # Create age bins
-       age_cutoffs = np.hstack((0, updated_dict['age'], np.max(updated_dict['age']+1)))
-       inds = np.digitize(f_ages, age_cutoffs)-1
+            # Create age bins
+            age_cutoffs = np.hstack((empowerment_dict['age'], empowerment_dict['age'].max()+1))
+            age_inds = np.digitize(f_ages, age_cutoffs)-1
 
-       # Empowerment dictionary
-       empowerment_dict = {}
-       empowerment_dict['paid_employment'] = np.zeros(n, dtype=bool)
-       empowerment_dict['sexual_autonomy'] = np.zeros(n, dtype=float)
-       empowerment_dict['control_over_wages'] = np.zeros(n, dtype=float)
+            # Paid employment
+            paid_employment_probs = empowerment_dict['paid_employment']
+            empowerment['paid_employment'][f_inds] = fpu.binomial_arr(paid_employment_probs[age_inds])
 
-       # Set probs to 0 outside the age range in the data
-       paid_employment_probs = np.hstack((0.0, updated_dict['paid_employment'], 0.0))
-       empowerment_dict['paid_employment'][f_inds] = fpu.binomial_arr(paid_employment_probs[inds])
-
-       # Use data values for sexual autonomy and control over wages
-       # TODO: update the assumption made for women <15 years old
-       for metric in ['control_over_wages', 'sexual_autonomy']:
-           probs = np.hstack((updated_dict[metric][0]/2, updated_dict[metric], updated_dict[metric][-1]))
-           empowerment_dict['paid_employment'][f_inds] = probs[inds]
-
-       return empowerment_dict
+            for metric in ['control_over_wages', 'sexual_autonomy']:
+                empowerment[metric][f_inds] = empowerment_dict[metric][age_inds]
+        return empowerment
 
 
     def initialize_partnered(self, n, ages, sexes):
         """Get initial distribution of whether a woman is partenered or not"""
         partnership_data = self['age_partnership']
-        # Find only female agents
-        f_inds = sc.findinds(sexes == 0)
-
-        # Get ages from women
-        f_ages = ages[f_inds]
-
-        # Create age bins from age 0
-        age_cutoffs = np.hstack((0, partnership_data['age'], np.max(partnership_data['age'] + 1)))
-        probs = np.hstack((0.0, partnership_data['partnership_probs'], 0.0))
-        inds = np.digitize(f_ages, age_cutoffs) - 1
         partnered =  np.zeros(n, dtype=float)
-        partnered[f_inds] = fpu.binomial_arr(probs[inds])
+
+        if partnership_data is not None:
+            # Find only female agents
+            f_inds = sc.findinds(sexes == 0)
+
+            # Get ages from women
+            f_ages = ages[f_inds]
+
+            # Create age bins from age 0
+            age_cutoffs = np.hstack((0, partnership_data['age'], np.max(partnership_data['age'] + 1)))
+            probs = np.hstack((0.0, partnership_data['partnership_probs'], 0.0))
+            inds = np.digitize(f_ages, age_cutoffs) - 1
+            partnered[f_inds] = fpu.binomial_arr(probs[inds])
 
         return partnered
 

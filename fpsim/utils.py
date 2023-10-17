@@ -208,3 +208,66 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
         raise NotImplementedError(errormsg)
 
     return samples
+
+
+def piecewise_linear(x, x0, y0, m1, m2):
+    '''
+    Compute a two-part piecewise linear function at given x values.
+
+    This function calculates the values of a piecewise linear function defined
+    by two slopes (k1 and k2), a point of intersection (x0, y0), and an array
+    of x values. The function returns an array of corresponding y values based
+    on the piecewise linear function.
+
+    Args:
+    x (array-like)
+        The array of x values at which the piecewise linear function is evaluated
+    x0 (float)
+        The x-coordinate of the point of intersection between the two linear segments (inflection point)
+    y0 (float)
+        The y-coordinate of the point of intersection between the two linear segments
+    m1 (float)
+        The slope of the first linear segment (for x < x0).
+    m2 (float)
+        The slope of the second linear segment (for x >= x0).
+
+    Returns:
+    y : ndarray
+        An array of y values corresponding to the piecewise linear function
+        evaluated at the input x values.
+
+    **Examples**::
+    >>> x_values = np.array([1, 2, 3, 4, 5])
+    >>> y_values = piecewise_linear(x_values, 3, 2, 1, -1)
+    '''
+    return np.piecewise(x, [x < x0], [lambda x:m1*x + y0-m1*x0, lambda x:m2*x + y0-m2*x0])
+
+
+def logistic_5p(x, a, b, c, d, e):
+    '''
+    A logistic function with 5 parameters (5p) that enables asymmetry
+
+    Args:
+    x (array-like)
+       The array of x values at which the function is evaluated
+    a (float):
+      Minimum value (baseline) as x -> -infinity.
+    d (float):
+      Maximum value (saturation) as x -> infinity.
+    b (float):
+      Slope parameter
+    c (float):
+      Value of x at which the function reaches the midpoint between a and d.
+    e (float):
+      Exponent parameter controlling asymmetry.
+        - If e = 1, the curve is symmetric.
+        - If e > 1, the curve asymptotes toward "a" more quickly than it asymptotes toward "d."
+        - If e < 1, the curve asymptotes toward "d" more quickly than it asymptotes toward "a."
+
+    Returns:
+    y : (ndarray)
+        An array of y values corresponding to the piecewise linear function
+        evaluated at the input x values.
+    '''
+
+    return d + ((a - d)/(1.0 + np.exp(b*(x-c)))**e)
