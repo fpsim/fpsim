@@ -8,6 +8,30 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.26.6 (2023-9-27)
+--------------------------
+- Renamed the country data filenames to be standardized across contexts
+- Updated references to these updated country data files
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/196>`_
+
+Version 0.26.5 (2023-9-27)
+--------------------------
+- Adds Tutorial for manual calibration to docs/tutorials/ directory
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/166>`_
+
+Version 0.26.4 (2023-9-27)
+--------------------------
+- Refactoring of Experiment class to run with the latest country data formats
+- Country files have updated references to these updated country data files
+- Senegal country data files updated to latest standard format (based on Kenya)
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/193>`_
+
+Version 0.26.3 (2023-9-27)
+--------------------------
+- Updates Senegal files in locations/senegal to be in the same format as Kenya for standardization purposes
+- Minor updates to calibrate_manual.py to be able to run with Senegal data (in addition to Kenya and other contexts)
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/165>`_
+
 Version 0.26.2 (2023-7-25)
 --------------------------
 - Updates code for manual calibration

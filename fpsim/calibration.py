@@ -179,7 +179,6 @@ class Calibration(sc.prettyobj):
         output = sc.parallelize(self.worker, self.g.n_workers)
         return output
 
-
     def remove_db(self):
         '''
         Remove the database file if keep_db is false and the path exists.
