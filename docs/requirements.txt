@@ -7,3 +7,6 @@ nbsphinx
 pandoc
 pypandoc
 optuna
+myst-parser
+readthedocs-sphinx-search
+jupyterlab
