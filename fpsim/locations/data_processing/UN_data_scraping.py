@@ -17,6 +17,9 @@ For more information about the UN Data Portal API, visit this site: https://popu
 import os
 import pandas as pd
 import requests
+import sciris as sc
+import zipfile
+from urllib import request
 
 # COUNTRY CODES FOR REFERENCE
 # Senegal ID = 686
@@ -32,15 +35,24 @@ location_id = 686
 startYear = 1960
 endYear = 2030
 
+# Variables used in pulling WPP data
+years = ['1950-2021']
+pop_stem = 'WPP2022_Population1JanuaryByAge5GroupSex_Medium'
+female_mort_stem = 'WPP2022_Life_Table_Complete_Medium_Female_1950-2021'
+male_mort_stem = 'WPP2022_Life_Table_Complete_Medium_Male_1950-2021'
+thisdir = sc.path(sc.thisdir())
+filesdir = thisdir / 'scraped_data'
+
 # Set options for web scraping of data; all True by default
 get_cpr = True  # Contraceptive prevalence rate
 get_mortality_prob = True # Mortality prob
 get_mortality_trend = True # Mortality trend
 get_asfr = True # Age-specific fertility rate
-get_pop_pyramid = True # Population pyramid (5-year age groups for both male/female sex)
+get_pop_data = True # Population pyramid (5-year age groups for both male/female sex)
 
 # API Base URL
 base_url = "https://population.un.org/dataportalapi/api/v1"
+wpp_base_url = "https://population.un.org/wpp/Download/Files/1_Indicators%20(Standard)/CSV_FILES/"
 
 # Function that calls a GET request to the UN Data Portal API given the target/uri specified
 def get_data(target):
@@ -77,10 +89,57 @@ def get_data(target):
         print("writing file...")
 
     # If country folder doesn't already exist, create it (location in which created data files will be stored)
-    if not os.path.exists(f'../{country}'):
-        os.mkdir(f'../{country}')
+    if not os.path.exists(f'{filesdir}/{country}'):
+        os.makedirs(f'{filesdir}/{country}')
 
     return df
+
+
+def get_UN_data(label='', file_stem=None, outfile=None, columns=None, force=None, tidy=None):
+    ''' Download data from UN Population Division '''
+    if force is None: force = False
+    if tidy  is None: tidy  = True
+
+    sc.heading(f'Downloading {label} data...')
+    T = sc.timer()
+
+    # Download data if it's not already in the directory
+    url = f'{wpp_base_url}{file_stem}.zip'
+    local_path = f'{file_stem}.csv'
+    if force or not os.path.exists(local_path):
+        print(f'\nDownloading from {url}, this may take a while...')
+        filehandle, _ = request.urlretrieve(url)
+        zip_file_object = zipfile.ZipFile(filehandle, 'r')
+        zip_file_object.extractall()
+    else:
+        print(f'Skipping {local_path}, already downloaded')
+
+    # Extract the parts used in the model and save
+    df = pd.read_csv()
+    df = df[columns]
+    df.to_csv(filesdir/outfile)
+    if tidy:
+        print(f'Removing {local_path}')
+        os.remove(local_path)
+    T.toctic(label=f'  Done with {label}')
+
+    T.toc(doprint=False)
+    print(f'Done with {label}: took {T.timings[:].sum():0.1f} s.')
+
+    return
+
+def get_pop_data(force=None, tidy=None):
+    ''' Import population sizes by age from UNPD '''
+    columns = ["Location", "Time", "AgeGrpStart", "PopMale", "PopFemale"]
+    outfile = f'{pop_stem}.csv'
+    kw = dict(label='pop', file_stem=pop_stem, outfile=outfile, columns=columns, force=force, tidy=tidy)
+    return get_UN_data(**kw)
+
+def get_age_data(force=None, tidy=None, file_stem=None, outfile=None):
+    ''' Import population sizes by age from UNPD '''
+    columns = ["Location", "Time", "AgeGrpStart", "qx"]
+    kw = dict(label='age', file_stem=file_stem, outfile=outfile, columns=columns, force=force, tidy=tidy)
+    return get_UN_data(**kw)
 
 # Called if creating country file cpr.csv
 if get_cpr:
@@ -102,31 +161,30 @@ if get_cpr:
     df2 = pd.merge(df_cpr, df_mcpr, on='year')
 
     # Save file
-    df2.to_csv(f'../{country}/cpr.csv', index=False)
+    df2.to_csv(f'{filesdir}/{country}/cpr.csv', index=False)
 
 # Called if creating country file mortality_prob.csv
-if get_mortality_prob: # TODO: Need to confirm this indicator is correct
-    # Set params used in API
-    ind = 80
-    startYear = 2020
-    endYear = 2020
+if get_mortality_prob:
+    get_age_data(file_stem=female_mort_stem, outfile=f'{female_mort_stem}.csv')
+    get_age_data(file_stem=male_mort_stem, outfile=f'{male_mort_stem}.csv')
 
-    # Call API
-    target = base_url + f"/data/indicators/{ind}/locations/{location_id}/start/{startYear}/end/{endYear}"
-    df = get_data(target)
+    # Load female data from scraped data
+    df = pd.read_csv(f'{filesdir}/{female_mort_stem}.csv')
+    df_female = df.loc[(df['Location']==country.capitalize()) & (df['Time']==df['Time'].max())]
+    df_female = df_female.filter(["AgeGrpStart", "qx"])
+    df_female.rename(columns={'AgeGrpStart': 'age', 'qx': 'female'}, inplace=True)
 
-    # Reformat data
-    df = df.filter(['ageStart', 'sex', 'value'])
-    df = df.loc[(df['sex'] == 'Male') | (df['sex'] == 'Female')]
-    df['ageStart'] = df['ageStart'].astype('int')
-    df = df.rename(columns={'ageStart': 'age'})
-    df = df.pivot(index='age', columns='sex', values='value')
-    df = df.rename(columns={'Male': 'male', 'Female': 'female'})
-    df = df.round(decimals=8)
-    df = df[['male', 'female']]
+    # Load male data from scraped data
+    df = pd.read_csv(f'{filesdir}/{male_mort_stem}.csv')
+    df_male = df.loc[(df['Location']==country.capitalize()) & (df['Time']==df['Time'].max())]
+    df_male = df_male.filter(["AgeGrpStart", "qx"])
+    df_male.rename(columns={'AgeGrpStart': 'age', 'qx': 'male'}, inplace=True)
+
+    # Combine two dataframes
+    df_combined = pd.merge(df_female, df_male, on="age")
 
     # Save file
-    df.to_csv(f'../{country}/mortality_prob.csv')
+    df_combined.to_csv(f'{filesdir}/{country}/mortality_prob.csv')
 
 # Called if creating country file mortality_trend.csv
 if get_mortality_trend:
@@ -143,7 +201,7 @@ if get_mortality_trend:
     df.rename(columns={'timeLabel': 'year', 'value': 'crude_death_rate'}, inplace=True)
 
     # Save file
-    df.to_csv(f'../{country}/mortality_trend.csv', index=False)
+    df.to_csv(f'{filesdir}/{country}/mortality_trend.csv', index=False)
 
 # Called if creating country file asfr.csv
 if get_asfr:
@@ -163,24 +221,20 @@ if get_asfr:
     df = df.round(decimals=3).drop('50-54', axis=1)
 
     # Save file
-    df.to_csv(f'../{country}/asfr.csv')
+    df.to_csv(f'{filesdir}/{country}/asfr.csv')
 
-# Called if creating country file pop_pyramid.csv, which is used by the {country}.py file
-if get_pop_pyramid: #TODO: this assumes we can take pop values from UN Data Portal API, whereas in country file it says it's taken from WPP. Ok, or should we download data from WPP instead?
-    # Set params used in API
-    ind = 46
-    startYear = 1962
-    endYear = 1962
+# Called if scraping population data from WPP, which is used by the {country}.py file in creating the population pyramid
+if get_pop_data:
+    get_pop_data()
 
-    # Call API
-    target = base_url + f"/data/indicators/{ind}/locations/{location_id}/start/{startYear}/end/{endYear}"
-    df = get_data(target)
+    df = pd.read_csv(f'{filesdir}/{pop_stem}.csv')
+    df = df.loc[(df['Location']==country.capitalize()) & (df['Time']==startYear) & (df['AgeGrpStart']<=80)]
+    df = df.filter(["AgeGrpStart", "PopMale", "PopFemale"])
+    df['PopMale'] = df['PopMale']*1000
+    df['PopFemale'] = df['PopFemale']*1000
 
-    # Reformat data
-    df = df.filter(['ageStart', 'sex', 'value'])
-    df = df.loc[(df['sex'] == 'Male') | (df['sex'] == 'Female')]
-    df = df.pivot(index='ageStart', columns='sex', values='value')
-    df = df[['Male', 'Female']]
+    data = df.to_numpy()
 
-    # Save file
-    df.to_csv(f'../{country}/pop_pyramid.csv')
+    print(data)
+
+
