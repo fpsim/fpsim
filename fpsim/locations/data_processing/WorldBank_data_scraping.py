@@ -17,6 +17,7 @@ For more information about the UN Data Portal API, visit this site: https://popu
 import os
 import pandas as pd
 import requests
+import sciris as sc
 import json
 
 # ISO2 COUNTRY CODES FOR REFERENCE
@@ -33,14 +34,15 @@ iso_code = 'ET'
 startYear = 1960
 endYear = 2030
 
+thisdir = sc.path(sc.thisdir())
+filesdir = thisdir / 'scraped_data'
+
 # Set options for web scraping of data; all True by default
 get_pop = True  # Annual population size
 get_tfr = True  # Total fertility rate
 get_maternal_mortality = True  # Maternal mortality
 get_infant_mortality = True  # Infant mortality
 get_basic_dhs = True  # Includes maternal mortality, infant mortality, crude birth rate, & crude death rate
-#mortality_prob = False
-#mortality_rate = False
 
 # API Base URL
 base_url = "https://api.worldbank.org/v2"
@@ -84,10 +86,8 @@ def get_data(target):
         print("writing file...")
 
     # If country folder doesn't already exist, create it (location in which created data files will be stored)
-    # TODO: Eventually probably want to write directly to country folders in locations directory. Need to confirm if we
-    #  want to do this or write to local folder to avoid accidentally overwriting preexisting country data files.
-    if not os.path.exists(f'{country}'):
-        os.mkdir(f'{country}')
+    if not os.path.exists(f'{filesdir}/{country}'):
+        os.makedirs(f'{filesdir}/{country}')
 
     return df
 
@@ -105,7 +105,7 @@ if get_pop:
     df.dropna(subset=['population'], inplace=True)
     df = df.sort_values('year')
 
-    df.to_csv(f'{country}/popsize.csv', index=False)
+    df.to_csv(f'{filesdir}/{country}/popsize.csv', index=False)
 
 
 if get_tfr:
@@ -121,7 +121,7 @@ if get_tfr:
     df.dropna(subset=['tfr'], inplace=True)
     df = df.sort_values('year')
 
-    df.to_csv(f'{country}/tfr.csv', index=False)
+    df.to_csv(f'{filesdir}/{country}/tfr.csv', index=False)
 
 if get_maternal_mortality:
     # Set params used in API
@@ -137,7 +137,7 @@ if get_maternal_mortality:
     df['mmr'] = df['mmr'].astype(int)
     df = df.sort_values('year')
 
-    df.to_csv(f'{country}/maternal_mortality.csv', index=False)
+    df.to_csv(f'{filesdir}/{country}/maternal_mortality.csv', index=False)
 
 if get_infant_mortality:
     # Set params used in API
@@ -152,12 +152,12 @@ if get_infant_mortality:
     df.dropna(subset=['imr'], inplace=True)
     df = df.sort_values('year')
 
-    df.to_csv(f'{country}/infant_mortality.csv', index=False)
+    df.to_csv(f'{filesdir}/{country}/infant_mortality.csv', index=False)
 
 if get_basic_dhs:
     # Get the most recent year of data in infant & maternal mortality data
-    im_data = pd.read_csv(f'{country}/infant_mortality.csv')
-    mm_data = pd.read_csv(f'{country}/maternal_mortality.csv')
+    im_data = pd.read_csv(f'{filesdir}/{country}/infant_mortality.csv')
+    mm_data = pd.read_csv(f'{filesdir}/{country}/maternal_mortality.csv')
 
     latest_data_year = im_data.iloc[-1]['year']
     if mm_data.iloc[-1]['year'] < latest_data_year:
@@ -188,7 +188,7 @@ if get_basic_dhs:
         'crude_birth_rate': cbr,  # Per 1,000 inhabitants, From World Bank
     }
 
-    with open(f'{country}/basic_dhs.yaml', 'w') as file:
+    with open(f'{filesdir}/{country}/basic_dhs.yaml', 'w') as file:
         file.write(json.dumps(basic_dhs_data))
 
 
