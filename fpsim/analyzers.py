@@ -269,8 +269,7 @@ class education_recorder(Analyzer):
              Process data in snapshots so we can plot it easily
             """
             if self.finalized:
-                raise RuntimeError(
-                    'Analyzer already finalized')  # Raise an error because finalizing multiple times has a high probability of producing incorrect results e.g. applying rescale factors twice
+                raise RuntimeError('Analyzer already finalized')
             self.finalized = True
             # Process data so we can plot it easily
             self.time = np.array([key for key in self.snapshots.keys()], dtype=int)
@@ -332,16 +331,17 @@ class education_recorder(Analyzer):
             return fig
 
 
-        def plot_waterfall(self, max_timepoints=30, min_age=18, fig_args=None, pl_args=None):
+        def plot_waterfall(self, max_timepoints=30, min_age=18, max_age=20, fig_args=None, pl_args=None):
             from scipy.stats import gaussian_kde
+
             data_att = self.trajectories["edu_attainment"]
             data_obj = self.trajectories["edu_objective"]
             data_age = self.trajectories["age"]
 
-            mask = data_age < min_age
-            data_att = np.ma.array(data_att, mask=mask, fill_value=np.nan)
-            data_obj = np.ma.array(data_obj, mask=mask, fill_value=np.nan)
+            mask = (data_age < min_age) | (data_age > max_age) | np.isnan(data_age)
 
+            data_att = np.ma.array(data_att, mask=mask)
+            data_obj = np.ma.array(data_obj, mask=mask)
 
             n_tpts = data_att.shape[0]
             if n_tpts <= max_timepoints:
@@ -350,12 +350,13 @@ class education_recorder(Analyzer):
                 tpts_to_plot = np.linspace(0, n_tpts - 1, max_timepoints, dtype=int)
 
             fig_args = sc.mergedicts(fig_args, {'figsize': (3, 10)})
-            pl_args = sc.mergedicts(pl_args, {'y_scaling': 0.8})
+            pl_args = sc.mergedicts(pl_args, {'y_scaling': 0.9})
 
             fig = plt.figure(**fig_args)
             ax = fig.add_subplot(111)
 
             edu_min, edu_max = 0, 25
+            edu_mid = (edu_max-edu_min)/2 + edu_min
             edu_years = np.linspace(edu_min, edu_max, 50)
             y_scaling = pl_args['y_scaling']
 
@@ -363,23 +364,45 @@ class education_recorder(Analyzer):
             ax.set_yticks(y_scaling*np.arange(len(tpts_to_plot)))
             ax.set_yticklabels(tpts_to_plot)
 
+            # Initialize legend labels
+            edu_att_label = None
+            edu_obj_label = None
+
             # Loop through the selected time points and create kernel density estimates
             for idx, ti in enumerate(tpts_to_plot):
-                data_att_ti = np.sort(data_att[ti, :][~np.isnan(data_att[ti, :])])
-                data_obj_ti = np.sort(data_obj[ti, :][~np.isnan(data_obj[ti, :])])
-                kde_att = gaussian_kde(data_att_ti)
-                kde_obj = gaussian_kde(data_obj_ti)
+                data_att_ti = np.sort(data_att[ti, :][~data_att[ti, :].mask].data)
+                data_obj_ti = np.sort(data_obj[ti, :][~data_obj[ti, :].mask].data)
 
-                y_att = kde_att(edu_years)
-                y_obj = kde_obj(edu_years)
-                ax.fill_between(edu_years, y_scaling*idx, y_obj / y_obj.max() + y_scaling*idx, color='#2f72de', alpha=0.3)
-                ax.plot(edu_years, y_att / y_att.max() + y_scaling*idx, color='black', alpha=0.7)
+                try:
+                    kde_att = gaussian_kde(data_att_ti)
+                    kde_obj = gaussian_kde(data_obj_ti)
 
-            # Labels
+                    y_att = kde_att(edu_years)
+                    y_obj = kde_obj(edu_years)
+
+                    if idx == len(tpts_to_plot) - 1:
+                        edu_obj_label = 'Distribution of education objectives'
+                        edu_att_label = 'Current distribution of education attainment'
+
+                    ax.fill_between(edu_years, y_scaling*idx, y_obj / y_obj.max() + y_scaling*idx,
+                                    color='#2f72de', alpha=0.3, label=edu_obj_label)
+                    ax.plot(edu_years, y_att / y_att.max() + y_scaling*idx,
+                            color='black', alpha=0.7, label=edu_att_label)
+                except:
+                    # No data available for this age group or age range,
+                    ax.plot(edu_years,  (y_scaling * idx) * np.ones_like(edu_years),
+                            color='black', alpha=0.2, label=edu_att_label)
+                    ax.annotate('No data available ', xy=(edu_mid, y_scaling*idx), xycoords='data', fontsize=8,
+                                ha='center', va='center', bbox=dict(boxstyle='round,pad=0.4', fc='none', ec="none"))
+
+
+
+            # Labels and annotations
             ax.set_xlim([edu_min, edu_max])
             ax.set_xlabel('Education years')
             ax.set_ylabel('Timesteps')
-            ax.set_title('Evolution of \n population-level education \n objective and attainment')
+            ax.legend()
+            ax.set_title(f"Evolution of education \n objective and attainment for age group:\n{min_age}-{max_age}.")
 
 
             # Show the plot
