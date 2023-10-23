@@ -330,8 +330,25 @@ class education_recorder(Analyzer):
                 pl.legend()
             return fig
 
+        def plot_waterfall(self, max_timepoints=30, min_age=18, max_age=40, fig_args=None, pl_args=None):
+            """
+            Plot a waterfall plot showing the evolution of education objective and attainment over time
+            for a specified age group.
 
-        def plot_waterfall(self, max_timepoints=30, min_age=18, max_age=20, fig_args=None, pl_args=None):
+            Args:
+                max_timepoints (int, optional): The maximum number of timepoints to plot, defaults to 30.
+                min_age (int, optional): The minimum age for the age group, defaults to 18.
+                max_age (int, optional): The maximum age for the age group, defaults to 20.
+
+            Returns:
+                figure handle
+
+            The function generates uses kernel density estimation to visualize the data. If there's not data for the
+            min max age specified, for a specific time step (ie, there are no agents in that age group), it adds a
+            textbox. This is an edge case that can happen for a simulation with very few agents, and a very narrow
+            age group.
+            """
+
             from scipy.stats import gaussian_kde
 
             data_att = self.trajectories["edu_attainment"]
@@ -395,8 +412,6 @@ class education_recorder(Analyzer):
                     ax.annotate('No data available ', xy=(edu_mid, y_scaling*idx), xycoords='data', fontsize=8,
                                 ha='center', va='center', bbox=dict(boxstyle='round,pad=0.4', fc='none', ec="none"))
 
-
-
             # Labels and annotations
             ax.set_xlim([edu_min, edu_max])
             ax.set_xlabel('Education years')
@@ -404,11 +419,9 @@ class education_recorder(Analyzer):
             ax.legend()
             ax.set_title(f"Evolution of education \n objective and attainment for age group:\n{min_age}-{max_age}.")
 
-
             # Show the plot
             plt.show()
-
-
+            return fig
 
 
 class empowerment_recorder(Analyzer):
