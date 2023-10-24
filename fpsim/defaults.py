@@ -47,10 +47,16 @@ person_defaults = dict(
     mothers              = -1,
     paid_employment      = False,
     partnered            = False,
+    partnership_age      = -1,
     urban                = True,
     control_over_wages   = 0,
     sexual_autonomy      = 0,
-    education_attainment = 0,
+    edu_objective        = 0,
+    edu_attainment       = 0,
+    edu_dropout          = False,
+    edu_interrupted      = False,
+    edu_completed        = False,
+    edu_started          = False,
 )
 
 # Postpartum keys to months
