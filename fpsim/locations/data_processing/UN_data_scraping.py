@@ -4,7 +4,7 @@
 This script can be run to pull the country data from the UN Data Portal used for calibration. If the 'get' options below
 are set to True, this script will utilize the UN Data Portal API to scrape the data - and create files for -
 contraceptive prevalence rate (cpr.csv), mortality probability (mortality_prob.csv), mortality trend (mortality_trend.csv),
-age-specific fertility rate (asfr.csv), and the population pyramid (which is used in the {country}.py file).
+age-specific fertility rate (asfr.csv), and population (which is used in the {country}.py file to create the pop pyramid).
 
 The only setup required is to set the country name (all lower-case) and location ID (which can be found in the file
 un_data_country_codes.csv, also located in the data_processing folder). If the country folder already exists, the script
@@ -44,15 +44,16 @@ thisdir = sc.path(sc.thisdir())
 filesdir = thisdir / 'scraped_data'
 
 # Set options for web scraping of data; all True by default
-get_cpr = True  # Contraceptive prevalence rate
-get_mortality_prob = True # Mortality prob
-get_mortality_trend = True # Mortality trend
-get_asfr = True # Age-specific fertility rate
-get_pop_data = True # Population pyramid (5-year age groups for both male/female sex)
+get_cpr = False  # Contraceptive prevalence rate
+get_mortality_prob = True  # Mortality prob
+get_mortality_trend = False  # Mortality trend
+get_asfr = False  # Age-specific fertility rate
+get_pop = True  # Population pyramid (5-year age groups for both male/female sex)
 
 # API Base URL
 base_url = "https://population.un.org/dataportalapi/api/v1"
 wpp_base_url = "https://population.un.org/wpp/Download/Files/1_Indicators%20(Standard)/CSV_FILES/"
+
 
 # Function that calls a GET request to the UN Data Portal API given the target/uri specified
 def get_data(target):
@@ -105,28 +106,32 @@ def get_UN_data(label='', file_stem=None, outfile=None, columns=None, force=None
 
     # Download data if it's not already in the directory
     url = f'{wpp_base_url}{file_stem}.zip'
-    local_path = f'{file_stem}.csv'
-    if force or not os.path.exists(local_path):
+    local_csv = f'{filesdir}/{file_stem}.csv'
+    local_zip = f'{filesdir}/{file_stem}.zip'
+    if force or not os.path.exists(local_csv):
         print(f'\nDownloading from {url}, this may take a while...')
-        filehandle, _ = request.urlretrieve(url)
-        zip_file_object = zipfile.ZipFile(filehandle, 'r')
-        zip_file_object.extractall()
-    else:
-        print(f'Skipping {local_path}, already downloaded')
+        sc.download(url, filename=local_zip)
+        zip_file_object = zipfile.ZipFile(local_zip, 'r')
+        zip_file_object.extractall(filesdir)
+        zip_file_object.close()
 
-    # Extract the parts used in the model and save
-    df = pd.read_csv()
-    df = df[columns]
-    df.to_csv(filesdir/outfile)
+        # Extract the parts used in the model and save
+        df = pd.read_csv(local_csv, usecols=columns)
+        df.to_csv(f'{local_csv}')
+    else:
+        print(f'Skipping {local_csv}, already downloaded')
+
     if tidy:
-        print(f'Removing {local_path}')
-        os.remove(local_path)
+        print(f'Removing {local_zip}')
+        os.remove(local_zip)
+
     T.toctic(label=f'  Done with {label}')
 
     T.toc(doprint=False)
     print(f'Done with {label}: took {T.timings[:].sum():0.1f} s.')
 
     return
+
 
 def get_pop_data(force=None, tidy=None):
     ''' Import population sizes by age from UNPD '''
@@ -135,11 +140,13 @@ def get_pop_data(force=None, tidy=None):
     kw = dict(label='pop', file_stem=pop_stem, outfile=outfile, columns=columns, force=force, tidy=tidy)
     return get_UN_data(**kw)
 
+
 def get_age_data(force=None, tidy=None, file_stem=None, outfile=None):
     ''' Import population sizes by age from UNPD '''
     columns = ["Location", "Time", "AgeGrpStart", "qx"]
     kw = dict(label='age', file_stem=file_stem, outfile=outfile, columns=columns, force=force, tidy=tidy)
     return get_UN_data(**kw)
+
 
 # Called if creating country file cpr.csv
 if get_cpr:
@@ -224,9 +231,10 @@ if get_asfr:
     df.to_csv(f'{filesdir}/{country}/asfr.csv')
 
 # Called if scraping population data from WPP, which is used by the {country}.py file in creating the population pyramid
-if get_pop_data:
+if get_pop:
     get_pop_data()
-
+# TODO: Move to template file; this code will be used to extract pop pyramids from population file scraped here
+''' 
     df = pd.read_csv(f'{filesdir}/{pop_stem}.csv')
     df = df.loc[(df['Location']==country.capitalize()) & (df['Time']==startYear) & (df['AgeGrpStart']<=80)]
     df = df.filter(["AgeGrpStart", "PopMale", "PopFemale"])
@@ -234,7 +242,5 @@ if get_pop_data:
     df['PopFemale'] = df['PopFemale']*1000
 
     data = df.to_numpy()
-
-    print(data)
-
+'''
 
