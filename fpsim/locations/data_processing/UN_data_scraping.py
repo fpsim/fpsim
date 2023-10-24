@@ -1,25 +1,27 @@
-'''
+"""
 9/19/23, Emily Driano
 
 This script can be run to pull the country data from the UN Data Portal used for calibration. If the 'get' options below
 are set to True, this script will utilize the UN Data Portal API to scrape the data - and create files for -
-contraceptive prevalence rate (cpr.csv), mortality probability (mortality_prob.csv), mortality trend (mortality_trend.csv),
-age-specific fertility rate (asfr.csv), and population (which is used in the {country}.py file to create the pop pyramid).
+contraceptive prevalence rate (cpr.csv), mortality probability (mortality_prob.csv), mortality trend (mortality_trend.csv), and
+age-specific fertility rate (asfr.csv). It also scrapes the World Population Prospects (WPP) for the annual world pop data, which
+is stored in a WPP csv in data_processing (which is used in the {country}.py file to create the pop pyramid).
 
 The only setup required is to set the country name (all lower-case) and location ID (which can be found in the file
-un_data_country_codes.csv, also located in the data_processing folder). If the country folder already exists, the script
-will create the respective files and overwrite or create the files in the existing country folder. If the country folder
-does not exist, the script will create a relevant country folder and create/store the newly-created files in this folder.
+country_codes.csv, also located in the data_processing folder). The script will store any created files in a temporary
+location for each respective country, in data_processing/scraped_data/{country_name}. As the WPP files are location-agnostic,
+they are stored in data_processing/scraped_data.
 
 For more information about the UN Data Portal API, visit this site: https://population.un.org/dataportal/about/dataapi
+For more information about the UN World Population Prospects: https://population.un.org/wpp/Download/Standard/CSV/
 
-'''
+"""
+
 import os
 import pandas as pd
 import requests
 import sciris as sc
 import zipfile
-from urllib import request
 
 # COUNTRY CODES FOR REFERENCE
 # Senegal ID = 686
@@ -44,16 +46,19 @@ thisdir = sc.path(sc.thisdir())
 filesdir = thisdir / 'scraped_data'
 
 # Set options for web scraping of data; all True by default
-get_cpr = False  # Contraceptive prevalence rate
+get_cpr = True  # Contraceptive prevalence rate
 get_mortality_prob = True  # Mortality prob
-get_mortality_trend = False  # Mortality trend
-get_asfr = False  # Age-specific fertility rate
+get_mortality_trend = True  # Mortality trend
+get_asfr = True  # Age-specific fertility rate
 get_pop = True  # Population pyramid (5-year age groups for both male/female sex)
 
 # API Base URL
 base_url = "https://population.un.org/dataportalapi/api/v1"
 wpp_base_url = "https://population.un.org/wpp/Download/Files/1_Indicators%20(Standard)/CSV_FILES/"
 
+# If country folder doesn't already exist, create it (location in which created data files will be stored)
+if not os.path.exists(f'{filesdir}/{country}'):
+    os.makedirs(f'{filesdir}/{country}')
 
 # Function that calls a GET request to the UN Data Portal API given the target/uri specified
 def get_data(target):
@@ -89,10 +94,6 @@ def get_data(target):
         df = pd.concat([df, df_temp])
         print("writing file...")
 
-    # If country folder doesn't already exist, create it (location in which created data files will be stored)
-    if not os.path.exists(f'{filesdir}/{country}'):
-        os.makedirs(f'{filesdir}/{country}')
-
     return df
 
 
@@ -118,12 +119,11 @@ def get_UN_data(label='', file_stem=None, outfile=None, columns=None, force=None
         # Extract the parts used in the model and save
         df = pd.read_csv(local_csv, usecols=columns)
         df.to_csv(f'{local_csv}')
+        if tidy:
+            print(f'Removing {local_zip}')
+            os.remove(local_zip)
     else:
         print(f'Skipping {local_csv}, already downloaded')
-
-    if tidy:
-        print(f'Removing {local_zip}')
-        os.remove(local_zip)
 
     T.toctic(label=f'  Done with {label}')
 
@@ -191,7 +191,7 @@ if get_mortality_prob:
     df_combined = pd.merge(df_female, df_male, on="age")
 
     # Save file
-    df_combined.to_csv(f'{filesdir}/{country}/mortality_prob.csv')
+    df_combined.to_csv(f'{filesdir}/{country}/mortality_prob.csv', index=False)
 
 # Called if creating country file mortality_trend.csv
 if get_mortality_trend:
@@ -233,14 +233,3 @@ if get_asfr:
 # Called if scraping population data from WPP, which is used by the {country}.py file in creating the population pyramid
 if get_pop:
     get_pop_data()
-# TODO: Move to template file; this code will be used to extract pop pyramids from population file scraped here
-''' 
-    df = pd.read_csv(f'{filesdir}/{pop_stem}.csv')
-    df = df.loc[(df['Location']==country.capitalize()) & (df['Time']==startYear) & (df['AgeGrpStart']<=80)]
-    df = df.filter(["AgeGrpStart", "PopMale", "PopFemale"])
-    df['PopMale'] = df['PopMale']*1000
-    df['PopFemale'] = df['PopFemale']*1000
-
-    data = df.to_numpy()
-'''
-
