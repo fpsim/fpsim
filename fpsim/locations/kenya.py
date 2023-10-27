@@ -974,7 +974,7 @@ def empowerment_sexual_autonomy(ages, interp="pwlin", interp_pars=None):
     return arr
 
 
-def empowerment_control_over_wages(ages, interp="pwlin", interp_pars=None):
+def empowerment_decision_wages(ages, interp="pwlin", interp_pars=None):
     """
     Interpolate data from DHS and extrapolate to cover the full range of ages
 
@@ -1079,7 +1079,7 @@ def empowerment_distributions():
     # Interpolate and extrapolate data for different empowerment metrics
     empowerment_dict["age"] = ages
     empowerment_dict["paid_employment"]    = empowerment_paid_employment(ages, interp_pars=pwlin_interp["paid_employment"])
-    empowerment_dict["control_over_wages"] = empowerment_control_over_wages(ages, interp_pars=pwlin_interp["decision_wages"])
+    empowerment_dict["decision_wages"]     = empowerment_decision_wages(ages, interp_pars=pwlin_interp["decision_wages"])
     empowerment_dict["sexual_autonomy"]    = empowerment_sexual_autonomy(ages, interp_pars=pwlin_interp["sexual_autonomy"])
 
     return empowerment_dict, empowerment_data
