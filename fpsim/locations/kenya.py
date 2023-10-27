@@ -1080,21 +1080,17 @@ def empowerment_distributions():
     """
     # Load empirical data
     empowerment_data =  pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
-
-    # Drop columns that end with ".se"
-    columns_to_drop = [col for col in empowerment_data.columns if col.endswith('.se')]
-    empowerment_data.drop(columns=columns_to_drop, inplace=True)
-    empowerment_data.rename(columns=lambda x: x + '.mean', inplace=True)
-
-    # Interpolate and extrapolate DHS empowerment data
+    mean_cols = {col: col+'.mean' for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"}
+    empowerment_data.rename(columns=mean_cols, inplace=True)
     empowerment_dict = {}
+    # Interpolate and extrapolate DHS empowerment data
     # Parameters for interpolating and extrapolating with piecewise linear approximation.
     # This parameters have been estimated from data over the range 15-49 years old
     #                                           age, prob at age, slope < age,  slope >= age
     pwlin_interp = {"paid_employment": (25.0, 0.6198487, 6.216042e-02,  0.0008010242),
                     "decision_wages":  (28.0, 0.5287573, 4.644537e-02, -0.001145422),
                     "decision_health": (16.0, 9.90297066e-01, 6.26846208e-02,  1.44754082e-04),
-                    "sexual_autonomy": (25.0, 0.8292142, 0.025677    , -0.003916498),}
+                    "sexual_autonomy": (25.0, 0.8292142, 0.025677    , -0.003916498)}
 
     # Create vector of ages 0, 99 (inclusive)
     ages = np.arange(100.0)
