@@ -50,6 +50,7 @@ person_defaults = dict(
     partnership_age      = -1,
     urban                = True,
     decision_wages       = 0,
+    decision_health      = 0,
     sexual_autonomy      = 0,
     edu_objective        = 0,
     edu_attainment       = 0,

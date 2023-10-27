@@ -997,6 +997,28 @@ def empowerment_decision_wages(ages, interp="pwlin", interp_pars=None):
     return arr
 
 
+def empowerment_decision_health(ages, interp="pwlin", interp_pars=None):
+    """
+    Interpolate data from DHS and extrapolate to cover the full range of ages
+
+    NOTE: this is a temporary implementation to illustrate different parameterisation to
+    interpolate/extrapolate DHS data.
+    """
+
+    if interp == "pwlin":  # piecewise linear interpolation
+        inflection_age, inflection_prob, m1, m2 = interp_pars
+        arr = fpu.piecewise_linear(ages, inflection_age, inflection_prob, m1, m2)
+        # Set other metric to zero if it goes below 0
+        arr[arr < 0] = 0.0
+        # Set metric to 1 if it goes above with this parameterisation
+        arr[arr > 1] = 1.0
+    else:
+        mssg = f"Uknown parametrisation [{interp}] to interpolate and extrapolate data."
+        raise ValueError(mssg)
+    return arr
+
+
+
 def empowerment_paid_employment(ages, interp="pwlin", interp_pars=None):
     """
     Interpolate data from DHS and extrapolate to cover the full range of ages
@@ -1018,7 +1040,7 @@ def empowerment_paid_employment(ages, interp="pwlin", interp_pars=None):
         arr[age_inds] = fpu.piecewise_linear(ages[age_inds], inflection_age_2, arr[inflection_age_2], m2, m3)
     elif interp == "logistic":  # five paremter logistic
         from scipy import optimize
-        fit_pars, fit_err = optimize.curve_fit(fpu.logistic_5p,interp_pars["age"], interp_pars["data"])
+        fit_pars, fit_err = optimize.curve_fit(fpu.logistic_5p, interp_pars["age"], interp_pars["data"])
         arr = fpu.logistic_5p(ages, *fit_pars)
     else:
         mssg = f"Uknown parametrisation [{interp}] to interpolate and extrapolate data."
@@ -1062,7 +1084,7 @@ def empowerment_distributions():
     # Drop columns that end with ".se"
     columns_to_drop = [col for col in empowerment_data.columns if col.endswith('.se')]
     empowerment_data.drop(columns=columns_to_drop, inplace=True)
-    empowerment_data.rename(columns=lambda x: x + '.emp', inplace=True)
+    empowerment_data.rename(columns=lambda x: x + '.mean', inplace=True)
 
     # Interpolate and extrapolate DHS empowerment data
     empowerment_dict = {}
@@ -1071,6 +1093,7 @@ def empowerment_distributions():
     #                                           age, prob at age, slope < age,  slope >= age
     pwlin_interp = {"paid_employment": (25.0, 0.6198487, 6.216042e-02,  0.0008010242),
                     "decision_wages":  (28.0, 0.5287573, 4.644537e-02, -0.001145422),
+                    "decision_health": (16.0, 9.90297066e-01, 6.26846208e-02,  1.44754082e-04),
                     "sexual_autonomy": (25.0, 0.8292142, 0.025677    , -0.003916498),}
 
     # Create vector of ages 0, 99 (inclusive)
@@ -1080,6 +1103,7 @@ def empowerment_distributions():
     empowerment_dict["age"] = ages
     empowerment_dict["paid_employment"]    = empowerment_paid_employment(ages, interp_pars=pwlin_interp["paid_employment"])
     empowerment_dict["decision_wages"]     = empowerment_decision_wages(ages, interp_pars=pwlin_interp["decision_wages"])
+    empowerment_dict["decision_health"]    = empowerment_decision_health(ages, interp_pars=pwlin_interp["decision_health"])
     empowerment_dict["sexual_autonomy"]    = empowerment_sexual_autonomy(ages, interp_pars=pwlin_interp["sexual_autonomy"])
 
     return empowerment_dict, empowerment_data
