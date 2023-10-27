@@ -100,8 +100,10 @@ class People(fpb.BasePeople):
         self.partnership_age = arr(n, d['partnership_age'])     # Age at first partnership in years, initialised from data
         self.urban           = arr(n, d['urban'])               # Whether a person lives in rural or urban setting
         self.paid_employment = arr(n, d['paid_employment'])     # Whether a person has a paid job or not
-        self.decision_wages = arr(n, d['decision_wages'])   # Decision making autonomy over major household purchases
-        self.sexual_autonomy    = arr(n, d['sexual_autonomy'])      # Ability to refuse sex
+        self.decision_wages  = arr(n, d['decision_wages'])       # Decision making autonomy over major household purchases/wages
+        self.decision_health = arr(n, d['decision_health'])      # Decision making autonomy over her health
+        self.sexual_autonomy    = arr(n, d['sexual_autonomy'])   # Ability to refuse sex
+
         # Empowerment-education attributes
         self.edu_objective   = arr(n, d['edu_objective'])   # Highest-ideal level of education to be completed (in years), could be individualised or constant across agents
         self.edu_attainment  = arr(n, d['edu_attainment'])  # Current level of education achieved in years
@@ -1256,6 +1258,8 @@ class Sim(fpb.BaseSim):
         empowerment['paid_employment'] = np.zeros(n, dtype=bool)
         empowerment['sexual_autonomy'] = np.zeros(n, dtype=float)
         empowerment['decision_wages'] = np.zeros(n, dtype=float)
+        empowerment['decision_health'] = np.zeros(n, dtype=float)
+
 
         if empowerment_dict is not None:
             # Find only female agents
@@ -1272,7 +1276,7 @@ class Sim(fpb.BaseSim):
             paid_employment_probs = empowerment_dict['paid_employment']
             empowerment['paid_employment'][f_inds] = fpu.binomial_arr(paid_employment_probs[age_inds])
 
-            for metric in ['decision_wages', 'sexual_autonomy']:
+            for metric in ['decision_wages', 'decision_health', 'sexual_autonomy']:
                 empowerment[metric][f_inds] = empowerment_dict[metric][age_inds]
         return empowerment
 
@@ -1388,6 +1392,7 @@ class Sim(fpb.BaseSim):
             paid_employment=p.paid_employment,
             sexual_autonomy=p.sexual_autonomy,
             decision_wages=p.decision_wages,
+            decision_health=p.decision_health,
             edu_objective=p.edu_objective,
             edu_attainment=p.edu_attainment,
             edu_completed=p.edu_completed,
