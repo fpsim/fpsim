@@ -1104,6 +1104,11 @@ def empowerment_distributions(seed=None):
                     "decision_health": [16.0, 9.90297066e-01, 6.26846208e-02,  1.44754082e-04],
                     "sexual_autonomy": [25.0, 0.8292142, 0.025677    , -0.003916498]}
 
+    data_points = {"paid_employment": [],
+                    "decision_wages":  [],
+                    "decision_health": [],
+                    "sexual_autonomy": []}
+
     cols = ["paid_employment", "decision_wages", "decision_health", "sexual_autonomy"]
     ages_interp = empowerment_data["age"].to_numpy()
     for col in cols:
@@ -1111,12 +1116,12 @@ def empowerment_distributions(seed=None):
         scale = empowerment_data[f"{col}.se"]
         # Use the standard error to capture the unvertainty in the mean eastimates of each metric
         data = np.random.normal(loc=loc, scale=scale)
+        data_points[col] = data
         # Optimise linear interpolation parameters
-        #import ipdb; ipdb.set_trace()
         fit_pars, fit_err = optimize.curve_fit(fpu.piecewise_linear, ages_interp, data, p0=pwlin_interp[col])
         # Update linear interpolation parameters
-        pwlin_interp[col][0] = int(fit_pars[0])  # age of inflection
-        pwlin_interp[col][1:] = fit_pars[1:]     # val at age of inflection, slope < age,  slope >= age
+        pwlin_interp[col][0] = fit_pars[0]  # age of inflection
+        pwlin_interp[col][1:] = fit_pars[1:]  # val at age of inflection, slope < age,  slope >= age
 
     # Create vector of ages 0, 99 (inclusive) to extrapolate data
     ages = np.arange(100.0)
@@ -1127,6 +1132,8 @@ def empowerment_distributions(seed=None):
     empowerment_dict["decision_wages"]  = empowerment_decision_wages(ages, interp_pars=pwlin_interp["decision_wages"])
     empowerment_dict["decision_health"] = empowerment_decision_health(ages, interp_pars=pwlin_interp["decision_health"])
     empowerment_dict["sexual_autonomy"] = empowerment_sexual_autonomy(ages, interp_pars=pwlin_interp["sexual_autonomy"])
+    empowerment_dict["pwlin_pars"] = pwlin_interp
+    empowerment_dict["data_points"] = data_points
 
     return empowerment_dict, empowerment_data
 
