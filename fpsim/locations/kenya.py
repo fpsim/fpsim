@@ -1069,9 +1069,9 @@ def empowerment_distributions():
     # Parameters for interpolating and extrapolating with piecewise linear approximation.
     # This parameters have been estimated from data over the range 15-49 years old
     #                                           age, prob at age, slope < age,  slope >= age
-    pwlin_interp = {"paid_employment":    (25.0, 0.6198487, 6.216042e-02,  0.0008010242),
-                    "control_over_wages": (20.0, 0.9434381, 2.548961e-02,  0.0008366125),
-                    "sexual_autonomy":    (25.0, 0.8292142, 0.025677    , -0.003916498)}
+    pwlin_interp = {"paid_employment": (25.0, 0.6198487, 6.216042e-02,  0.0008010242),
+                    "decision_wages":  (28.0, 0.5287573, 4.644537e-02, -0.001145422),
+                    "sexual_autonomy": (25.0, 0.8292142, 0.025677    , -0.003916498),}
 
     # Create vector of ages 0, 99 (inclusive)
     ages = np.arange(100.0)
@@ -1079,7 +1079,7 @@ def empowerment_distributions():
     # Interpolate and extrapolate data for different empowerment metrics
     empowerment_dict["age"] = ages
     empowerment_dict["paid_employment"]    = empowerment_paid_employment(ages, interp_pars=pwlin_interp["paid_employment"])
-    empowerment_dict["control_over_wages"] = empowerment_control_over_wages(ages, interp_pars=pwlin_interp["control_over_wages"])
+    empowerment_dict["control_over_wages"] = empowerment_control_over_wages(ages, interp_pars=pwlin_interp["decision_wages"])
     empowerment_dict["sexual_autonomy"]    = empowerment_sexual_autonomy(ages, interp_pars=pwlin_interp["sexual_autonomy"])
 
     return empowerment_dict, empowerment_data
