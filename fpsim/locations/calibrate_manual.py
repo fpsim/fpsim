@@ -37,17 +37,18 @@ import seaborn as sns
 # GLOBAL VARIABLES: USER MUST SET
 
 # Name of the country being calibrated. To note that this should match the name of the country data folder
-country = 'ethiopia'
+country = 'kenya'
 
 # Set options for plotting
-do_plot_sim = True
-do_plot_asfr = True
-do_plot_methods = True
-do_plot_skyscrapers = True
-do_plot_cpr = True
-do_plot_tfr = True
-do_plot_pop_growth = True
-do_plot_birth_space_afb = True
+do_plot_sim = False
+do_plot_asfr = False
+do_plot_methods = False
+do_plot_skyscrapers = False
+do_plot_cpr = False
+do_plot_tfr = False
+do_plot_pop_growth = False
+do_plot_birth_space_afb = False
+do_plot_empowerment = True
 
 # Set option to save figures
 do_save = 1
@@ -72,6 +73,7 @@ data_asfr = pd.read_csv(f'./{country}/asfr.csv')
 data_methods = pd.read_csv(f'./{country}/mix.csv')
 data_tfr = pd.read_csv(f'./{country}/tfr.csv')
 data_popsize = pd.read_csv(f'./{country}/popsize.csv')
+data_empowerment = pd.read_csv(f'./{country}/empowerment.csv')
 
 # Set up global variables
 age_bin_map = {
@@ -95,7 +97,7 @@ sc.tic()
 
 # Set up sim for country
 pars = fp.pars(location=country)
-pars['n_agents'] = 100_000 # Small population size
+pars['n_agents'] = 1_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -516,6 +518,22 @@ if do_plot_birth_space_afb:
                 pl.savefig(f'{country}/figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
 
         pl.show()
+
+if do_plot_empowerment:
+        ### Extract and plot paid work
+        # Extract from data
+        data_paid_work = data_empowerment[['age', 'paid_employment']]
+        ages = data_paid_work['age'].values.tolist()
+        data = data_paid_work['paid_employment'].values.tolist()
+
+        # Extract from model
+        # Create a dictionary using each age in empowerment.csv as keys and an array (of paid work T/F values per person in the model) as values.
+        # Calculate average # of individuals with paid work by each age using the array
+
+        #for i in range(len(ppl)):
+        #        if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+
+
 
 sc.toc()
 print('Done.')
