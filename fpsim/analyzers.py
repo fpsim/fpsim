@@ -247,7 +247,7 @@ class education_recorder(Analyzer):
             self.keys = ['edu_objective', 'edu_attainment', 'edu_completed',
                          'edu_dropout', 'edu_interrupted',
                          'pregnant', 'alive', 'age']
-            self.max_pop_size = 0   # keep track of the maximum size of the population
+            self.max_agents = 0     # maximum number of agents this analyzer tracks
             self.time = []
             self.trajectories = {}  # Store education trajectories
             return
@@ -261,7 +261,7 @@ class education_recorder(Analyzer):
             self.snapshots[str(sim.i)] = {}
             for key in self.keys:
                 self.snapshots[str(sim.i)][key] = sc.dcp(females[key])  # Take snapshot!
-                self.max_pop_size = max(self.max_pop_size, len(females))
+                self.max_agents = max(self.max_agents, len(females))
             return
 
         def finalize(self, sim=None):
@@ -274,7 +274,7 @@ class education_recorder(Analyzer):
             # Process data so we can plot it easily
             self.time = np.array([key for key in self.snapshots.keys()], dtype=int)
             for state in self.keys:
-                self.trajectories[state] = np.full((len(self.time), self.max_pop_size), np.nan)
+                self.trajectories[state] = np.full((len(self.time), self.max_agents), np.nan)
                 for ti, t in enumerate(self.time):
                     stop_idx = len(self.snapshots[t][state])
                     self.trajectories[state][ti, 0:stop_idx] = self.snapshots[t][state]
