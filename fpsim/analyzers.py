@@ -444,7 +444,7 @@ class empowerment_recorder(Analyzer):
         super().__init__()
         self.bins = bins
         self.data = sc.objdict()
-        self.keys = ['partnered', 'urban', 'paid_employment', 'control_over_wages', 'sexual_autonomy', 'age']
+        self.keys = ['partnered', 'urban', 'paid_employment', 'decision_wages', 'decision_health', 'sexual_autonomy', 'age']
         self.nbins = None
         return
 
