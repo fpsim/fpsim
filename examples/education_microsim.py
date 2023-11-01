@@ -20,8 +20,8 @@ sim.run()
 if do_plot:
     edu_analyzer= sim.get_analyzers()[0]
     #Plot a subset of the the available trajectories for female individuals
-    # for idx in range(edu_analyzer.max_pop_size//8):
-    #     edu_analyzer.plot(index=idx)
+    for idx in range(max(2, edu_analyzer.max_agents//8)):
+        edu_analyzer.plot(index=idx)
     edu_analyzer.plot_waterfall()
     plt.show()
 
