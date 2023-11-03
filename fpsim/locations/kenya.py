@@ -959,7 +959,7 @@ def empowerment_sexual_autonomy(ages, regression_fun, regression_pars=None):
     interpolate/extrapolate DHS data.
     """
     arr = regression_fun(ages, *regression_pars)
-    if regression_fun.__name__ == "piecewise_linear"  # piecewise linear interpolation
+    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
         # Set the metric to zero for ages < 5
         arr[ages < 5] = 0.0
         # Set the metric to zero if it goes below 0
@@ -977,7 +977,7 @@ def empowerment_decision_wages(ages, regression_fun, regression_pars=None):
     interpolate/extrapolate DHS data.
     """
     arr = regression_fun(ages, *regression_pars)
-    if regression_fun.__name__ == "piecewise_linear"  # piecewise linear interpolation
+    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
         # Set the metric to zero for ages < 5
         arr[ages < 5] = 0.0
         # Set other metric to zero if it goes below 0
