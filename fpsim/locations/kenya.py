@@ -1103,6 +1103,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     cols = ["paid_employment", "decision_wages", "decision_health", "sexual_autonomy"]
     ages_interp = empowerment_data["age"].to_numpy()
     for col in cols:
+        print(col)
         loc = empowerment_data[f"{col}.mean"]
         scale = empowerment_data[f"{col}.se"]
         # Use the standard error to capture the unvertainty in the mean eastimates of each metric
@@ -1111,7 +1112,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
         # Optimise regression parameters
         fit_pars, fit_err = optimize.curve_fit(regression_fun, ages_interp, data, p0=regression_pars[col])
         # Update regression parameters
-        regression_pars  = fit_pars
+        regression_pars[col]  = fit_pars
 
     # Create vector of ages 0, 99 (inclusive) to extrapolate data
     ages = np.arange(100.0)
