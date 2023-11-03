@@ -277,7 +277,7 @@ def logistic_5p_dfun(x, a, b, c, d, e):
     '''
     Derivative of the 5 paraemter logistic function, same parameters
     '''
-    return b*(a - d)*e*np.exp(b(-c + x))*(1.0 + np.exp(b(-c + x)))**(-1.0 - e)
+    return b*(a - d)*e*np.exp(b*(-c + x))*(1.0 + np.exp(b*(-c + x)))**(-1.0 - e)
 
 
 def sigmoid_product(x, a1, b1, a2, b2):
