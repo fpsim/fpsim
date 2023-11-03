@@ -1122,6 +1122,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     empowerment_dict["decision_wages"]  = empowerment_decision_wages(ages, regression_fun, regression_pars=regression_pars["decision_wages"])
     empowerment_dict["decision_health"] = empowerment_decision_health(ages, regression_fun, regression_pars=regression_pars["decision_health"])
     empowerment_dict["sexual_autonomy"] = empowerment_sexual_autonomy(ages, regression_fun, regression_pars=regression_pars["sexual_autonomy"])
+    # Store the estimates of each metric and the optimised regression parameters
     empowerment_dict["regression_pars"] = regression_pars
     empowerment_dict["sampled_points"] = data_points
 
