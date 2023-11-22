@@ -18,22 +18,6 @@ do_save = True
 min_age = 15
 max_age = 50
 
-# TODO: Import new data
-new_mcpr = 45.9
-new_asfr = [2.9, 62.6, 167.8, 171.6, 132.2, 77.0, 32.8, 11.7]
-new_method_mix = {
-    'Withdrawal': 1.04,
-    'Other traditional': 4.46,
-    'Condoms': 8.42,
-    'Pill': 7.95,
-    'Injectables': 34.07,
-    'Implants': 33.96,
-    'IUDs': 3.09,
-    'BTL': 3.88,
-    'Other modern': 3.13
-}
-# new_birth_spacing =
-
 age_bin_map = {
         '10-14': [10, 15],
         '15-19': [15, 20],
@@ -45,11 +29,23 @@ age_bin_map = {
         '45-49': [45, 50]
 }
 
+# Import new data
+data_mcpr = pd.read_csv(f'../{country}/cpr.csv')
+data_asfr = pd.read_csv(f'../{country}/asfr.csv')
+data_mix = pd.read_csv(f'../{country}/mix.csv')
+data_birth_spacing = pd.read_csv(f'../{country}/birth_spacing_dhs.csv')
+
 
 # Analyze difference between predicted and actual mcpr values. From UN Data Portal
 def compare_mcpr():
+    # Extract mcpr from latest data
+    new_mcpr = data_mcpr.loc[data_mcpr['year'] == 2022, 'mcpr'].iloc[0]
+
+    # Extract mcpr from model
     res_index = np.where(res['t'] == pars['end_year'])[0][0]
     predicted_mcpr = res['mcpr'][res_index] * 100
+
+    # Print comparison
     print('#################### MCPR COMPARISON ####################')
     print(f'Predicted mcpr value: {predicted_mcpr}')
     print(f'Actual mcpr value: {new_mcpr}')
@@ -71,8 +67,11 @@ def compare_mcpr():
 
 # Analyze difference between predicted and actual asfr values. From UN Data Portal
 def compare_asfr():
-    x = [1, 2, 3, 4, 5, 6, 7, 8]
+    # Extract new asfr data
+    new_asfr = data_asfr.loc[data_asfr['year'] == 2021].drop(columns='year').values.tolist()[0]
 
+    # Prepare for extraction of asfr from model
+    x = [1, 2, 3, 4, 5, 6, 7, 8]
     x_labels = []
     asfr_model = []
 
@@ -97,17 +96,30 @@ def compare_asfr():
     if do_save:
         pl.savefig(f'../{country}/prediction_figs/asfr.png')
 
-    pl.show()
-
     print('#################### ASFR COMPARISON ####################')
     print(f'Predicted asfr value: {asfr_model}')
     print(f'Actual asfr value: {new_asfr}')
 
+    pl.show()
     return
 
 
 # Analyze difference between predicted and actual mcpr values. Generated from method_mix_PMA.R
 def compare_method_mix():
+    # Extract new method mix data from data
+    new_method_mix = {}
+    '''new_method_mix = {
+        'Withdrawal': 1.04,
+        'Other traditional': 4.46,
+        'Condoms': 8.42,
+        'Pill': 7.95,
+        'Injectables': 34.07,
+        'Implants': 33.96,
+        'IUDs': 3.09,
+        'BTL': 3.88,
+        'Other modern': 3.13
+    }'''
+
     # Pull method definitions from parameters file
     # Method map; this remains constant across locations. True indicates modern method,
     # and False indicates traditional method
@@ -124,6 +136,10 @@ def compare_method_mix():
         'BTL': [8, True],
         'Other modern': [9, True],
     }
+
+    for key in methods_map_model:
+        if key != 'None':
+            new_method_mix[key] = data_mix.loc[data_mix['method'] == key, 'perc'].iloc[0]
 
     # Setup
     model_labels_all = list(methods_map_model.keys())
@@ -151,6 +167,9 @@ def compare_method_mix():
     mix_percent_data = list(new_method_mix.values())
     df_mix = pd.DataFrame({'PMA': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
 
+    print('#################### METHOD MIX COMPARISON ####################')
+    print(df_mix)
+
     # Plot mix
     ax = df_mix.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'})
     ax.set_xlabel('Percent users')
@@ -159,15 +178,66 @@ def compare_method_mix():
         pl.savefig(f'../{country}/prediction_figs/method_mix.png', bbox_inches='tight', dpi=100)
 
     pl.show()
-
     return
 
 
-"""
-# Analyze difference between predicted and actual birth spacing values. Generated from birth_spacing.R script
+# Analyze difference between predicted and actual birth spacing values (generated from birth_spacing.R script)
 def compare_birth_spacing():
+    # Set up
+    spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
+    model_spacing = []
+    data_dict = {}
+    model_dict = {}
+    model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+    data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+
+    # Extract birth spaces from model
+    for i in range(len(ppl)):
+        if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+            if len(ppl.dobs[i]) > 1:
+                for d in range(len(ppl.dobs[i]) - 1):
+                    space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
+                    ind = sc.findinds(space > spacing_bins[:])[-1]
+                    model_spacing_counts[ind] += 1
+                    model_spacing.append(space)
+
+    # Normalize model birth space bin counts to percentages
+    model_spacing_counts[:] /= model_spacing_counts[:].sum()
+    model_spacing_counts[:] *= 100
+
+    # Extract birth spaces and age at first birth from data
+    for i, j in data_birth_spacing.iterrows():
+        space = j['space_mo'] / 12
+        ind = sc.findinds(space > spacing_bins[:])[-1]
+        data_spacing_counts[ind] += j['Freq']
+
+    # Normalize dat birth space bin counts to percentages
+    data_spacing_counts[:] /= data_spacing_counts[:].sum()
+    data_spacing_counts[:] *= 100
+
+    # Plot birth space bins with diff
+    data_dict['spacing_bins'] = np.array(data_spacing_counts.values())
+    model_dict['spacing_bins'] = np.array(model_spacing_counts.values())
+
+    diff = model_dict['spacing_bins'] - data_dict['spacing_bins']
+
+    bins_frame = pd.DataFrame(
+        {'Model': model_dict['spacing_bins'], 'Data': data_dict['spacing_bins'], 'Diff': diff},
+        index=spacing_bins.keys())
+
+    print('#################### BIRTH SPACING COMPARISON ####################')
+    print(bins_frame)  # Print in output, remove if not needed
+
+    ax = bins_frame.plot.barh(color={'Data': 'black', 'Model': 'cornflowerblue', 'Diff': 'red'})
+    ax.set_xlabel('Percent of live birth spaces')
+    ax.set_ylabel('Birth space in months')
+    ax.set_title(f'{country.capitalize()}: {latest_year} Birth Space Bins - Model vs Data')
+
+    if do_save:
+        pl.savefig(f'../{country}/prediction_figs/birth_space_bins.png', bbox_inches='tight', dpi=100)
+
+    pl.show()
     return
-"""
 
 
 if __name__ == "__main__":
@@ -194,7 +264,7 @@ if __name__ == "__main__":
     compare_mcpr()
     compare_asfr()
     compare_method_mix()
-    #compare_birth_spacing()
+    compare_birth_spacing()
 
     sc.toc()
     print('Done.')
