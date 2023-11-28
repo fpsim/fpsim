@@ -1,6 +1,8 @@
 """
 This is a script that runs a comparison between a country's newest data and the calibrated model's predicted values
 for that respective year. It can be used as a means of assessing a model's accuracy in its predictions.
+
+Written by Emily Driano
 """
 import os
 import sciris as sc
@@ -10,11 +12,17 @@ import pandas as pd
 import pylab as pl
 
 
+# User defined variables
+country = 'kenya'   # The name of the country model being assessed
+latest_year = 2022  # The year of data to compare the model's predicted values vs the new actual values
+do_plot = True      # Determines whether the comparison functions generate plots to visualize the data
+do_save = True      # Determines whether generated plots are saved (to {country}/prediction_figs)
+compare_mcpr = True     # Determines whether to run a comparison of modern contraceptive prevalence rate
+compare_asfr = True     # Determines whether to run a comparison of age-specific fertility rate
+compare_method_mix = True       # Determines whether to run comparison of contraceptive method mix
+compare_birth_spacing = True    # Determines whether to run comparison of birth spacing
+
 # Global Variables
-country = 'kenya'
-latest_year = 2022
-do_plot = True
-do_save = True
 min_age = 15
 max_age = 50
 
@@ -29,15 +37,12 @@ age_bin_map = {
         '45-49': [45, 50]
 }
 
-# Import new data
-data_mcpr = pd.read_csv(f'../{country}/cpr.csv')
-data_asfr = pd.read_csv(f'../{country}/asfr.csv')
-data_mix = pd.read_csv(f'../{country}/mix.csv')
-data_birth_spacing = pd.read_csv(f'../{country}/birth_spacing_dhs.csv')
-
 
 # Analyze difference between predicted and actual mcpr values. From UN Data Portal
 def compare_mcpr():
+    # Import new data ## TODO: Import/scrape DHS data for comparison
+    data_mcpr = pd.read_csv(f'../{country}/cpr.csv')
+
     # Extract mcpr from latest data
     new_mcpr = data_mcpr.loc[data_mcpr['year'] == 2022, 'mcpr'].iloc[0]
 
@@ -45,7 +50,7 @@ def compare_mcpr():
     res_index = np.where(res['t'] == pars['end_year'])[0][0]
     predicted_mcpr = res['mcpr'][res_index] * 100
 
-    # Print comparison
+    # Print comparison ## TODO: Calculate and print score for accuracy
     print('#################### MCPR COMPARISON ####################')
     print(f'Predicted mcpr value: {predicted_mcpr}')
     print(f'Actual mcpr value: {new_mcpr}')
@@ -67,6 +72,9 @@ def compare_mcpr():
 
 # Analyze difference between predicted and actual asfr values. From UN Data Portal
 def compare_asfr():
+    # Import new data ## TODO: Import/scrape DHS data for comparison
+    data_asfr = pd.read_csv(f'../{country}/asfr.csv')
+
     # Extract new asfr data
     new_asfr = data_asfr.loc[data_asfr['year'] == 2021].drop(columns='year').values.tolist()[0]
 
@@ -96,6 +104,7 @@ def compare_asfr():
     if do_save:
         pl.savefig(f'../{country}/prediction_figs/asfr.png')
 
+    # TODO: Calculate and print score for accuracy
     print('#################### ASFR COMPARISON ####################')
     print(f'Predicted asfr value: {asfr_model}')
     print(f'Actual asfr value: {new_asfr}')
@@ -106,6 +115,9 @@ def compare_asfr():
 
 # Analyze difference between predicted and actual mcpr values. Generated from method_mix_PMA.R
 def compare_method_mix():
+    # Import new data ## TODO: Import/scrape DHS data for comparison
+    data_mix = pd.read_csv(f'../{country}/mix.csv')
+
     # Extract new method mix data from data
     new_method_mix = {}
     '''new_method_mix = {
@@ -167,6 +179,7 @@ def compare_method_mix():
     mix_percent_data = list(new_method_mix.values())
     df_mix = pd.DataFrame({'PMA': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
 
+    # TODO: Calculate and print score for accuracy
     print('#################### METHOD MIX COMPARISON ####################')
     print(df_mix)
 
@@ -183,6 +196,9 @@ def compare_method_mix():
 
 # Analyze difference between predicted and actual birth spacing values (generated from birth_spacing.R script)
 def compare_birth_spacing():
+    # Import new data ## TODO: Import/scrape DHS data for comparison
+    data_birth_spacing = pd.read_csv(f'../{country}/birth_spacing_dhs.csv')
+
     # Set up
     spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
     model_spacing = []
@@ -225,6 +241,7 @@ def compare_birth_spacing():
         {'Model': model_dict['spacing_bins'], 'Data': data_dict['spacing_bins'], 'Diff': diff},
         index=spacing_bins.keys())
 
+    # TODO: Calculate and print score for accuracy
     print('#################### BIRTH SPACING COMPARISON ####################')
     print(bins_frame)  # Print in output, remove if not needed
 
@@ -261,10 +278,14 @@ if __name__ == "__main__":
             os.mkdir(f'../{country}/prediction_figs')
 
     # Run comparison between model predicted values and new actual data
-    compare_mcpr()
-    compare_asfr()
-    compare_method_mix()
-    compare_birth_spacing()
+    if compare_mcpr:
+        compare_mcpr()
+    if compare_asfr:
+        compare_asfr()
+    if compare_method_mix:
+        compare_method_mix()
+    if compare_birth_spacing:
+        compare_birth_spacing()
 
     sc.toc()
     print('Done.')
