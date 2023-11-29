@@ -100,6 +100,7 @@ def filenames():
     files['afb'] = 'afb.table.csv'
     files['use'] = 'use.csv'
     files['empowerment'] = 'empowerment.csv'
+    files['education'] = 'edu_initialization.csv'
     return files
 
 

@@ -75,6 +75,7 @@ data_methods = pd.read_csv(f'./{country}/mix.csv')
 data_tfr = pd.read_csv(f'./{country}/tfr.csv')
 data_popsize = pd.read_csv(f'./{country}/popsize.csv')
 data_empowerment = pd.read_csv(f'./{country}/empowerment.csv')
+data_edu = pd.read_csv(f'./{country}/edu_initialization.csv')
 
 # Set up global variables
 age_bin_map = {
@@ -544,7 +545,30 @@ if do_plot_empowerment:
     model_paid_emp = list(model_paid_work_dict.values())
 
     # Extract education from data
+    data_edu = data_edu[['age', 'edu']].sort_values(by='age')
+    data_years_edu = data_edu['edu'].values.tolist()
+
     # Extract education from model
+    model_edu_dict = {}
+    # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
+    for age in range(min_age, max_age):
+        model_edu_dict[age] = []
+
+    for i in range(len(ppl)):
+        if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+            age = math.floor(ppl.age[i])
+            model_edu_dict[age].append(ppl.edu_attainment[i])
+
+    # Calculate average # of years of educational attainment for each age
+    for age in model_edu_dict:
+        if len(model_edu_dict[age]) != 0:
+            avg_edu = sum(model_edu_dict[age])/len(model_edu_dict[age])
+            model_edu_dict[age] = avg_edu
+        else:
+            model_edu_dict[age] = 0
+    model_edu = list(model_edu_dict.values())
+
+    #TODO: Plot empowerment metrics
 
 sc.toc()
 print('Done.')
