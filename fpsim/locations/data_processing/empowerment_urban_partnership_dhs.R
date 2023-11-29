@@ -1,5 +1,5 @@
 #########################################
-# -- EMpowerment data from DHS       - ##
+# -- Empowerment data from DHS       - ##
 # -- DHS data
 # -- Marita Zimmermann
 # -- August 2023
@@ -24,8 +24,12 @@ data <- data.raw %>%
   mutate(age = v012, parity = v220, edu = v133,
          paidwork = case_when(v731 %in% c(1,2,3) & v741 %in% c(1,2,3) ~ 1, # done work in the past year and paid in cash or in kind
                               v731 == 0 | v741 == 0 ~ 0),
-         decisionwages = case_when(v739 %in% c(1,2,3) ~ 1, v739 %in% c(4,5) ~ 0), # 1 she decides with or without someone else, 0 someone else decides
+         decision.wages = case_when(v739 %in% c(1,2,3) ~ 1, v739 %in% c(4,5) ~ 0), # 1 she decides with or without someone else, 0 someone else decides
+         decisionwages = case_when(paidwork == 1 & decision.wages == 1 ~ 1, paidwork == 0 | decision.wages == 0 ~ 0), # create a combined variable for paid work and decision making autonomy
          refusesex = case_when(v850a == 1 ~ 1, v850a == 8 ~ 0.5, v850a == 0 ~ 0), # 1 she can refuse sex, 0.5 don't know/it depends, 0 no
+         decisionpurchase = case_when(v743b %in% c(1,2,3) ~ 1, v739 %in% c(4,5) ~ 0), # large purchases, 1 she decides with or without someone else, 0 someone else decides
+         decisionhealth = case_when(v743a %in% c(1,2,3) ~ 1, v739 %in% c(4,5) ~ 0), # health, 1 she decides with or without someone else, 0 someone else decides
+         decisionfamily = case_when(v743d %in% c(1,2,3) ~ 1, v739 %in% c(4,5) ~ 0), # visiting family, 1 she decides with or without someone else, 0 someone else decides
          urban = ifelse(v025 == 1, 1, 0), # 1 if urban
          age_partner = v511) # age at first cohabitation
 svydes1 = svydesign(id = data$v001, strata=data$v023, weights = data$v005/1000000, data=data)
@@ -36,7 +40,8 @@ svydes1 = svydesign(id = data$v001, strata=data$v023, weights = data$v005/100000
 # Table of the three empowerment outcomes by age
 table.emp <- as.data.frame(svyby(~paidwork, ~age, svydes1, svymean)) %>% rename(paidwork.se = se) %>%
   left_join(as.data.frame(svyby(~decisionwages, ~age, svydes1, svymean, na.rm = T)) %>% rename(decisionwages.se = se)) %>%
-  left_join(as.data.frame(svyby(~refusesex, ~age, svydes1, svymean, na.rm = T)) %>% rename(refusesex.se = se))
+  left_join(as.data.frame(svyby(~refusesex, ~age, svydes1, svymean, na.rm = T)) %>% rename(refusesex.se = se)) %>%
+  left_join(as.data.frame(svyby(~decisionhealth, ~age, svydes1, svymean, na.rm = T)) %>% rename(decisionhealth.se = se))
 # write.csv(table.emp, "fpsim/locations/kenya/empowerment.csv", row.names = F)
 
 # Ability to refuse sex
@@ -59,14 +64,14 @@ summary(pred1)$coefficients[2,] + summary(pred1)$coefficients[3.]
 table.emp.2 <- table.emp %>%
   gather(var, val, -age) %>% mutate(var2 = ifelse(grepl("\\.se", var), "se", "value"), var = gsub("\\.se", "", var)) %>% spread(var2, val) %>%
   filter(var == "decisionwages") 
-pred2 <- lm(value~age + I((age-20)*(age>=20)), data = table.emp.2)
+pred2 <- lm(value~age + I((age-28)*(age>=28)), data = table.emp.2)
 table.emp.2 %>%
   ggplot() +
   geom_point(aes(y = value, x = age)) +
   geom_line(aes(y=predict(pred2), x = age)) +
   ylab("Decision making: her wages") +
   theme_bw(base_size = 13) 
-predict(pred2)[20-14]
+predict(pred2)[28-14]
 summary(pred2)
 summary(pred2)$coefficients[2,]
 summary(pred2)$coefficients[2,] + summary(pred2)$coefficients[3.]
@@ -86,6 +91,16 @@ predict(pred3)[25-14]
 summary(pred3)
 summary(pred3)$coefficients[2,]
 summary(pred3)$coefficients[2,] + summary(pred3)$coefficients[3.]
+
+# Decision making power over health
+table.emp.4 <- table.emp %>%
+  gather(var, val, -age) %>% mutate(var2 = ifelse(grepl("\\.se", var), "se", "value"), var = gsub("\\.se", "", var)) %>% spread(var2, val) %>%
+  filter(var == "decisionhealth") 
+table.emp.4 %>%
+  ggplot() +
+  geom_point(aes(y = value, x = age)) +
+  ylab("Decision making autonomy over health") +
+  theme_bw(base_size = 13) 
 
 # -- urban/rural -- #
 
@@ -165,5 +180,4 @@ stop.school %>%
   ggplot() +
   geom_point(aes(y = percent, x = age, color = parity))
 # write.csv(stop.school, "fpsim/locations/kenya/edu_stop.csv", row.names = F)
-
 
