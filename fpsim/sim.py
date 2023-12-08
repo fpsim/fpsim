@@ -109,6 +109,10 @@ class People(fpb.BasePeople):
         self.edu_interrupted = arr(n, d['edu_interrupted']) # Whether a person/woman has had their education temporarily interrupted, but can resume
         self.edu_completed   = arr(n, d['edu_completed'])   # Whether a person/woman has reached their education goals
         self.edu_started     = arr(n, d['edu_started'])     # Whether a person/woman has started thier education
+
+        # Subnational attributes
+        self.region          = arr(n, d['region'])           # Region a person lives in
+        
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]

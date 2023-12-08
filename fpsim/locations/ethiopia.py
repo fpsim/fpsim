@@ -70,6 +70,9 @@ def scalar_pars():
         'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
         'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
         'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
+        
+        #Subnational
+        # move defined regions here
     }
     return scalar_pars
 
@@ -87,16 +90,19 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'ethiopia'
-    files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
+    files['basic_dhs'] = 'basic_dhs .yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
     files['popsize'] = 'popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
+    files['popfrac_region'] = 'popsize_region.csv' # From Ethiopian Statistical Service http://www.statsethiopia.gov.et/wp-content/uploads/2023/08/Population-of-Zones-and-Weredas-Projected-as-of-July-2023.pdf
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
     files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     files['skyscrapers'] = 'skyscrapers.csv' # Choose from either DHS 2016 or PMA 2022
     files['spacing'] = 'birth_spacing_dhs.csv'
     files['methods'] = 'mix.csv'
+    files['methods_region'] = 'mix_region.csv'
     files['afb'] = 'afb.table.csv'
     files['use'] = 'use.csv'
+    files['use_region'] = 'use_region.csv'
     return files
 
 
@@ -129,6 +135,41 @@ def age_pyramid():
 
     return pyramid
 
+def region(self): ## better to define these at the top as a global variable
+    '''
+    Defines the regions in ethiopia that will be assigned to each agent based on the proportion of the population living there.
+    '''
+    region = ( # List of valid region values
+            "Addis Ababa",
+            "Afar",
+            "Amhara",
+            "Benishangul-Gumuz",
+            "Dire Dawa",
+            "Gambella",
+            "Harari",
+            "Oromia",
+            "SNNPR",
+            "Somali",
+            "Tigray"
+        )
+
+def popsize_region(): #change this to call in the CSV file instead because these values will fluctuate
+    '''
+    Defines the proportion of the population in each region to establish the probability of living in a given region
+    '''
+    data = {  # Index, Proportion
+        'Addis Ababa': [1, 0.036606048],
+        'Afar': [2, 0.019263411],
+        'Amhara': [3, 0.215423578],
+        'Benishangul-Gumuz': [4, 0.011608154],
+        'Dire Dawa': [5, 0.005112784],
+        'Gambella': [6, 0.004871527],
+        'Harari': [7, 0.002625985],
+        'Oromia': [8, 0.379366712],
+        'SNNPR': [9, 0.20917945],
+        'Somali': [10, 0.061770967],
+        'Tigray': [11, 0.054171384],
+    }
 
 def age_mortality():
     '''
@@ -140,7 +181,7 @@ def age_mortality():
     https://population.un.org/dataportal/data/indicators/59/locations/231/start/1950/end/2030/table/pivotbylocation
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
-    data_year = 2020 # NORMED TO 2020 BASED ON ETHIOPIA PROBABILITY DATA
+    data_year = 2020 # Normed TO 2020 based on Ethiopia's Probability Data
     mortality_data = pd.read_csv(thisdir / 'ethiopia' / 'mortality_prob.csv')
     mortality_trend = pd.read_csv(thisdir / 'ethiopia' / 'mortality_trend.csv')
 
@@ -618,6 +659,9 @@ def methods():
 
     return methods
 
+# Define methods region based on empowerment work (self, region)
+# Anything that is definied for the an individual person would be done in sim.py
+# 
 
 '''
 For reference
@@ -976,5 +1020,11 @@ def make_pars():
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
+
+    # Regional parameters
+    pars['region'] = region()
+    pars['popsize_region'] = popsize_region()
+    pars['methods_region'] = methods_region()
+    pars['use_region'] = use_region()
 
     return pars
