@@ -1,0 +1,56 @@
+﻿barrier,region,perc
+Access,Addis Ababa,0.17064846
+Access,Afar,0.17064846
+Access,Amhara,0.76791809
+Access,Benishangul-Gumuz,0.08532423
+Access,Dire Dawa,0
+Access,Gambela,0.17064846
+Access,Harari,0
+Access,Oromia,0.51194539
+Access,SNNPR,0.76791809
+Access,Somali,0
+Access,Tigray,0.08532423
+Health,Addis Ababa,1.19453925
+Health,Afar,0.17064846
+Health,Amhara,3.83959044
+Health,Benishangul-Gumuz,0.08532423
+Health,Dire Dawa,0.68259386
+Health,Gambela,0.2559727
+Health,Harari,0.51194539
+Health,Oromia,5.54607509
+Health,SNNPR,6.14334471
+Health,Somali,0
+Health,Tigray,2.47440273
+Knowledge,Addis Ababa,0.08532423
+Knowledge,Afar,0
+Knowledge,Amhara,0.2559727
+Knowledge,Benishangul-Gumuz,0
+Knowledge,Dire Dawa,0
+Knowledge,Gambela,0.17064846
+Knowledge,Harari,0
+Knowledge,Oromia,0.42662116
+Knowledge,SNNPR,0.17064846
+Knowledge,Somali,0.17064846
+Knowledge,Tigray,0
+No need,Addis Ababa,5.46075085
+No need,Afar,1.10921502
+No need,Amhara,11.51877133
+No need,Benishangul-Gumuz,2.64505119
+No need,Dire Dawa,4.01023891
+No need,Gambela,2.21843003
+No need,Harari,2.90102389
+No need,Oromia,8.61774744
+No need,SNNPR,11.34812287
+No need,Somali,0.51194539
+No need,Tigray,8.19112628
+Opposition,Addis Ababa,0.59726962
+Opposition,Afar,0.59726962
+Opposition,Amhara,2.90102389
+Opposition,Benishangul-Gumuz,0.42662116
+Opposition,Dire Dawa,1.96245734
+Opposition,Gambela,0.17064846
+Opposition,Harari,1.27986348
+Opposition,Oromia,3.58361775
+Opposition,SNNPR,3.92491468
+Opposition,Somali,0.2559727
+Opposition,Tigray,0.85324232
