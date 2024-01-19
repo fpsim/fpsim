@@ -92,17 +92,26 @@ def filenames():
     files['base'] = sc.thisdir(aspath=True) / 'ethiopia'
     files['basic_dhs'] = 'basic_dhs .yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
     files['popsize'] = 'popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
-    files['popfrac_region'] = 'popsize_region.csv' # From Ethiopian Statistical Service http://www.statsethiopia.gov.et/wp-content/uploads/2023/08/Population-of-Zones-and-Weredas-Projected-as-of-July-2023.pdf
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
     files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     files['skyscrapers'] = 'skyscrapers.csv' # Choose from either DHS 2016 or PMA 2022
     files['spacing'] = 'birth_spacing_dhs.csv'
     files['methods'] = 'mix.csv'
-    files['methods_region'] = 'mix_region.csv'
     files['afb'] = 'afb.table.csv'
     files['use'] = 'use.csv'
-    files['use_region'] = 'use_region.csv'
+    files['urban'] = 'urban.csv'
+    #subnational files
+    files['region'] = '/subnational/region.csv' ## From DHS 2016 
+    files['asfr_region'] = '/subnational/asfr_region.csv' ## From DHS 2016
+    files['tfr_region'] = '/subnational/tfr_region.csv' ## From DHS 2016
+    files['methods_region'] = '/subnational/mix_region.csv' ## From DHS 2016
+    files['use_region'] = '/subnational/use_region.csv'  ## From PMA 2019
+    files['barriers_region'] = '/subnational/barriers_region.csv' ## From PMA 2019
+    #files['LAM_region'] = '/subnational/LAM_region.csv'
+    #files['sexual_activity_region'] = '/subnational/sexual_activity_region.csv'
+    #files['sexual_activity_pp_region'] = '/subnational/sexual_activity_pp_region.csv'
+    #files['debut_age_region'] = '/subnational/debut_age_region.csv'
     return files
 
 
@@ -135,41 +144,27 @@ def age_pyramid():
 
     return pyramid
 
-def region(self): ## better to define these at the top as a global variable
+def urban_proportion():
     '''
-    Defines the regions in ethiopia that will be assigned to each agent based on the proportion of the population living there.
+    Load information about the proportion of people who live in an urban setting
+    Uses 2016 Ethiopia DHS individual recode (v024) ### TO-DO - Add subnational preprocessing data file
     '''
-    region = ( # List of valid region values
-            "Addis Ababa",
-            "Afar",
-            "Amhara",
-            "Benishangul-Gumuz",
-            "Dire Dawa",
-            "Gambella",
-            "Harari",
-            "Oromia",
-            "SNNPR",
-            "Somali",
-            "Tigray"
-        )
+    urban_data = pd.read_csv(thisdir / 'ethiopia' / 'urban.csv')
+    return urban_data["mean"][0]  # Return this value as a float
 
-def popsize_region(): #change this to call in the CSV file instead because these values will fluctuate
+
+def region_proportion(): #change this to call in the CSV file instead because these values will fluctuate
     '''
-    Defines the proportion of the population in each region to establish the probability of living in a given region
+    Defines the proportion of the population in each region to establish the probability of living in a given region.
+    Uses 2016 Ethiopia DHS individual recode (v025) for region and V024 for urban to produce subnational estimates
     '''
-    data = {  # Index, Proportion
-        'Addis Ababa': [1, 0.036606048],
-        'Afar': [2, 0.019263411],
-        'Amhara': [3, 0.215423578],
-        'Benishangul-Gumuz': [4, 0.011608154],
-        'Dire Dawa': [5, 0.005112784],
-        'Gambella': [6, 0.004871527],
-        'Harari': [7, 0.002625985],
-        'Oromia': [8, 0.379366712],
-        'SNNPR': [9, 0.20917945],
-        'Somali': [10, 0.061770967],
-        'Tigray': [11, 0.054171384],
-    }
+    region = pd.read_csv(thisdir / 'subnational' / 'ethiopia' / 'region.csv')
+    region['region'] = region[:, 0] # Return region names
+    region['mean'] = region[:, 1] # Return proportion living in each region
+    region['urban'] = region[:, 2] # Return propotion living in an urban area by region
+    
+    return region
+
 
 def age_mortality():
     '''
@@ -428,6 +423,19 @@ def lactational_amenorrhea():
     return lactational_amenorrhea
 
 
+def lactational_amenorrhea_region():
+    '''
+    Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, , stratified by region
+    Uses 2016 Ethiopia DHS individual recode (v025) for region and V024 for urban to produce subnational estimates
+    '''
+    lactational_amenorrhea_region = pd.read_csv(thisdir / 'subnational' / 'ethiopia' / 'LAM_region.csv')
+    lactational_amenorrhea_region['region'] = lactational_amenorrhea_region[:, 0] # Return region names
+    lactational_amenorrhea_region['month'] = lactational_amenorrhea_region[:, 1] # Return month postpartum
+    lactational_amenorrhea_region['perc'] = lactational_amenorrhea_region[:, 2] # Return percent of breastfeeding women
+    
+    return lactational_amenorrhea_region
+
+
 # %% Pregnancy exposure
 
 def sexual_activity():
@@ -453,6 +461,19 @@ def sexual_activity():
 
     return activity_interp
 
+def sexual_activity_region():
+    '''
+    Returns a linear interpolation of rates of female sexual activity, stratified by region
+    '''
+
+    sexual_activity_region = pd.read_csv(thisdir / 'subnational' / 'ethiopia' / 'urban.csv')
+
+    sexual_activity_region[2] /= 100  # Convert from percent to rate per woman #### NEEDS TO BE FIXED
+    activity_ages_region = sexual_activity_region[1]
+    activity_interp_model = si.interp1d(x=activity_ages, y=sexual_activity_region[2])
+    activity_interp = activity_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
+
+    return activity_interp
 
 def sexual_activity_pp():
     '''
@@ -500,6 +521,18 @@ def sexual_activity_pp():
     return postpartum_activity
 
 
+def sexual_activity_pp_region():
+    '''
+     # Returns an additional array of monthly likelihood of having resumed sexual activity by region
+    '''
+    postpartum_activity_region = pd.read_csv(thisdir / 'subnational' / 'ethiopia' / 'sexual_activity_pp_region.csv')
+    postpartum_activity_region['region'] = postpartum_activity_region[:, 0] # Return region names
+    postpartum_activity_region['month'] = postpartum_activity_region[:, 1] # Return month postpartum
+    postpartum_activity_region['perc'] = postpartum_activity_region[:, 2] # Return likelihood of resumed sexual activity
+    
+    return postpartum_activity_region
+
+
 def debut_age():
     '''
     Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
@@ -543,6 +576,18 @@ def debut_age():
     debut_age['probs'] = sexual_debut[:, 1]
 
     return debut_age
+ 
+
+def debut_age_region():
+    '''
+ #   Returns an additional array of weighted probabilities of sexual debut by region
+    '''
+    debut_age_region = pd.read_csv(thisdir / 'subnational' / 'ethiopia' / 'debut_age_region.csv')
+    debut_age_region['region'] = debut_age_region[:, 0] # Return region names
+    debut_age_region['age'] = debut_age_region[:, 1] # Return month postpartum
+    debut_age_region['prob'] = debut_age_region[:, 2] # Return weighted probabilities of sexual debut
+    
+    return debut_age_region
 
 
 def exposure_age():
@@ -973,11 +1018,11 @@ def barriers():
     ''' Reasons for nonuse -- taken from Ethiopia PMA 2019. '''
 
     barriers = sc.odict({ #updated based on PMA cross-sectional data
-        'No need': 58.4,
-        'Opposition': 16.5,
-        'Knowledge': 1.3,
-        'Access': 2.7,
-        'Health': 21.0,
+        'No need': 58.5,
+        'Opposition': 16.6,
+        'Knowledge': 1.28,
+        'Access': 2.73,
+        'Health': 20.9,
     })
 
     barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
@@ -1022,9 +1067,13 @@ def make_pars():
     pars['barriers'] = barriers()
 
     # Regional parameters
-    pars['region'] = region()
-    pars['popsize_region'] = popsize_region()
-    pars['methods_region'] = methods_region()
+    pars['urban_prop'] = urban_proportion()
+    pars['region_prop'] = region_proportion()
+    pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
+    pars['sexual_activity_region'] = sexual_activity_region()
+    pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
+    pars['debut_age_region'] = debut_age_region()
+    pars['methods_region'] = mix_region()
+    pars['barriers_region'] = use_region()
     pars['use_region'] = use_region()
-
     return pars
