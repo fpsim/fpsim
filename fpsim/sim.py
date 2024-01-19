@@ -112,7 +112,7 @@ class People(fpb.BasePeople):
 
         # Subnational attributes
         self.region          = arr(n, d['region'])           # Region a person lives in
-        
+
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]
@@ -1347,6 +1347,53 @@ class Sim(fpb.BaseSim):
         return partnered, partnership_age
 
 
+    def initialize_region(self, n, ages, sexes, urban):
+        """Get initial distribution of region"""
+        region_dict = self['region']
+
+        # Initialise individual region
+        # Region dictionary
+        region = {'asfr_region': np.zeros(n, dtype=bool),
+                     'region': np.zeros(n, dtype=bool),
+                     'asfr_region'   : np.zeros(n, dtype=bool),
+                     'tfr_region': np.zeros(n, dtype=bool),
+                     'use_region': np.zeros(n, dtype=bool),
+                     'methods_region'   : np.zeros(n, dtype=bool),
+                     'barriers_region': np.zeros(n, dtype=bool),
+                     'sexual_activity_region': np.zeros(n, dtype=bool),
+                     'sexual_activity_pp_region'   : np.zeros(n, dtype=bool),
+                     'debut_age_region': np.zeros(n, dtype=bool),
+                     'lactational_amenorrhea_region ': np.zeros(n, dtype=bool)}
+
+        if region_dict is not None:
+            # Initialise individual education objectives from a 2d array of probs with dimensions (region, edu_years)
+            f_inds_urban = sc.findinds(sexes == 0, urban == True)
+            f_inds_rural = sc.findinds(sexes == 0, urban == False)
+            # Set objectives
+            probs_rural = region_dict['region'][1, :]
+            probs_urban = region_dict['region'][0, :]
+            edu_years = np.arange(len(probs_rural))
+            education['region'][f_inds_rural] = np.random.choice(edu_years, size=len(f_inds_rural), p=probs_rural)  # Probs in rural settings
+            education['region'][f_inds_urban] = np.random.choice(edu_years, size=len(f_inds_urban), p=probs_urban)  # Probs in urban settings
+
+            # Initialise education attainment - ie, current state of education at the start of the simulation
+            f_inds = sc.findinds(sexes == 0)
+
+            # Get ages for female agents and round them so we can use them as indices
+            f_ages = np.floor(ages[f_inds]).astype(int)
+            # Set the initial number of education years an agent has based on her age
+            education['edu_attainment'][f_inds] = np.floor((education_dict['edu_attainment'][f_ages]))
+
+            # Check people who started their education
+            started_inds = sc.findinds(education['edu_attainment'][f_inds] > 0.0)
+            # Check people who completed their education
+            completed_inds = sc.findinds(education['edu_objective'][f_inds]-education['edu_attainment'][f_inds] <= 0)
+            # Set attainment to edu_objective, just in case that initial edu_attainment > edu_objective
+            education['edu_attainment'][f_inds[completed_inds]] = education['edu_objective'][f_inds[completed_inds]]
+            education['edu_completed'][f_inds[completed_inds]] = True
+            education['edu_started'][f_inds[started_inds]] = True
+        return region
+
     def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
         ''' Set up each person '''
         _age, _sex = self.get_age_sex(n)
@@ -1360,6 +1407,7 @@ class Sim(fpb.BaseSim):
         partnered, partnership_age = self.initialize_partnered(n, age, sex)
         empowerment = self.initialize_empowerment(n, age, sex)
         education   = self.initialize_education(n, age, sex, urban)
+        region = self.initialize_region((n, self['region_prop']))
         data = dict(
             age=age,
             sex=sex,
@@ -1370,7 +1418,8 @@ class Sim(fpb.BaseSim):
             urban=urban,
             partnered=partnered,
             partnership_age=partnership_age,
-            **sc.mergedicts(empowerment, education)
+            **sc.mergedicts(empowerment, education),
+            region=region,
         )
         return data
 
@@ -1396,6 +1445,7 @@ class Sim(fpb.BaseSim):
             edu_attainment=p.edu_attainment,
             edu_completed=p.edu_completed,
             edu_started=p.edu_started,
+            region=p.region,
         )
         return
 
