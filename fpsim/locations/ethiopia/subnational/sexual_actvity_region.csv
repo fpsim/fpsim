@@ -1,122 +1,122 @@
-﻿age,region,perc
-0,Addis Ababa,0
-5,Addis Ababa,0
-10,Addis Ababa,0
-15,Addis Ababa,4.938183
-20,Addis Ababa,23.485852
-25,Addis Ababa,45.095993
-30,Addis Ababa,44.119399
-35,Addis Ababa,42.884594
-40,Addis Ababa,41.354786
-45,Addis Ababa,30.629064
-50,Addis Ababa,30.629064
-0,Afar,0
-5,Afar,0
-10,Afar,0
-15,Afar,26.477082
-20,Afar,61.880685
-25,Afar,63.270923
-30,Afar,62.504016
-35,Afar,69.642974
-40,Afar,72.170926
-45,Afar,36.026939
-50,Afar,36.026939
-0,Amhara,0
-5,Amhara,0
-10,Amhara,0
-15,Amhara,18.676323
-20,Amhara,47.624907
-25,Amhara,68.253581
-30,Amhara,70.291497
-35,Amhara,71.113327
-40,Amhara,68.427166
-45,Amhara,64.998227
-50,Amhara,64.998227
-0,Benishangul-Gumuz,0
-5,Benishangul-Gumuz,0
-10,Benishangul-Gumuz,0
-15,Benishangul-Gumuz,18.748693
-20,Benishangul-Gumuz,61.176628
-25,Benishangul-Gumuz,79.609863
-30,Benishangul-Gumuz,73.198711
-35,Benishangul-Gumuz,76.460302
-40,Benishangul-Gumuz,81.865051
-45,Benishangul-Gumuz,63.528688
-50,Benishangul-Gumuz,63.528688
-0,Dire Dawa,0
-5,Dire Dawa,0
-10,Dire Dawa,0
-15,Dire Dawa,16.275721
-20,Dire Dawa,46.455721
-25,Dire Dawa,56.773481
-30,Dire Dawa,56.672613
-35,Dire Dawa,52.781144
-40,Dire Dawa,47.253385
-45,Dire Dawa,43.907839
-50,Dire Dawa,43.907839
-0,Gambela,0
-5,Gambela,0
-10,Gambela,0
-15,Gambela,17.355256
-20,Gambela,46.748265
-25,Gambela,46.906959
-30,Gambela,53.00526
-35,Gambela,57.974215
-40,Gambela,52.12355
-45,Gambela,49.581698
-50,Gambela,49.581698
-0,Harari,0
-5,Harari,0
-10,Harari,0
-15,Harari,17.609022
-20,Harari,49.401482
-25,Harari,59.541466
-30,Harari,53.681201
-35,Harari,53.046955
-40,Harari,44.766715
-45,Harari,39.928588
-50,Harari,39.928588
-0,Oromia,0
-5,Oromia,0
-10,Oromia,0
-15,Oromia,16.324713
-20,Oromia,61.387284
-25,Oromia,79.744718
-30,Oromia,73.141136
-35,Oromia,70.669111
-40,Oromia,70.070428
-45,Oromia,62.625028
-50,Oromia,62.625028
-0,SNNPR,0
-5,SNNPR,0
-10,SNNPR,0
-15,SNNPR,11.053994
-20,SNNPR,46.797423
-25,SNNPR,64.480772
-30,SNNPR,72.428857
-35,SNNPR,74.064696
-40,SNNPR,78.446504
-45,SNNPR,65.776287
-50,SNNPR,65.776287
-0,Somali,0
-5,Somali,0
-10,Somali,0
-15,Somali,15.957323
-20,Somali,51.523513
-25,Somali,61.970034
-30,Somali,57.072149
-35,Somali,67.350863
-40,Somali,61.614467
-45,Somali,45.086483
-50,Somali,45.086483
-0,Tigray,0
-5,Tigray,0
-10,Tigray,0
-15,Tigray,12.973801
-20,Tigray,46.931252
-25,Tigray,57.320536
-30,Tigray,58.896967
-35,Tigray,51.078061
-40,Tigray,48.161126
-45,Tigray,38.961515
-50,Tigray,38.961515
+﻿region,age,perc
+Addis Ababa,0,0
+Addis Ababa,5,0
+Addis Ababa,10,0
+Addis Ababa,15,4.938183
+Addis Ababa,20,23.485852
+Addis Ababa,25,45.095993
+Addis Ababa,30,44.119399
+Addis Ababa,35,42.884594
+Addis Ababa,40,41.354786
+Addis Ababa,45,30.629064
+Addis Ababa,50,30.629064
+Afar,0,0
+Afar,5,0
+Afar,10,0
+Afar,15,26.477082
+Afar,20,61.880685
+Afar,25,63.270923
+Afar,30,62.504016
+Afar,35,69.642974
+Afar,40,72.170926
+Afar,45,36.026939
+Afar,50,36.026939
+Amhara,0,0
+Amhara,5,0
+Amhara,10,0
+Amhara,15,18.676323
+Amhara,20,47.624907
+Amhara,25,68.253581
+Amhara,30,70.291497
+Amhara,35,71.113327
+Amhara,40,68.427166
+Amhara,45,64.998227
+Amhara,50,64.998227
+Benishangul-Gumuz,0,0
+Benishangul-Gumuz,5,0
+Benishangul-Gumuz,10,0
+Benishangul-Gumuz,15,18.748693
+Benishangul-Gumuz,20,61.176628
+Benishangul-Gumuz,25,79.609863
+Benishangul-Gumuz,30,73.198711
+Benishangul-Gumuz,35,76.460302
+Benishangul-Gumuz,40,81.865051
+Benishangul-Gumuz,45,63.528688
+Benishangul-Gumuz,50,63.528688
+Dire Dawa,0,0
+Dire Dawa,5,0
+Dire Dawa,10,0
+Dire Dawa,15,16.275721
+Dire Dawa,20,46.455721
+Dire Dawa,25,56.773481
+Dire Dawa,30,56.672613
+Dire Dawa,35,52.781144
+Dire Dawa,40,47.253385
+Dire Dawa,45,43.907839
+Dire Dawa,50,43.907839
+Gambela,0,0
+Gambela,5,0
+Gambela,10,0
+Gambela,15,17.355256
+Gambela,20,46.748265
+Gambela,25,46.906959
+Gambela,30,53.00526
+Gambela,35,57.974215
+Gambela,40,52.12355
+Gambela,45,49.581698
+Gambela,50,49.581698
+Harari,0,0
+Harari,5,0
+Harari,10,0
+Harari,15,17.609022
+Harari,20,49.401482
+Harari,25,59.541466
+Harari,30,53.681201
+Harari,35,53.046955
+Harari,40,44.766715
+Harari,45,39.928588
+Harari,50,39.928588
+Oromia,0,0
+Oromia,5,0
+Oromia,10,0
+Oromia,15,16.324713
+Oromia,20,61.387284
+Oromia,25,79.744718
+Oromia,30,73.141136
+Oromia,35,70.669111
+Oromia,40,70.070428
+Oromia,45,62.625028
+Oromia,50,62.625028
+SNNPR,0,0
+SNNPR,5,0
+SNNPR,10,0
+SNNPR,15,11.053994
+SNNPR,20,46.797423
+SNNPR,25,64.480772
+SNNPR,30,72.428857
+SNNPR,35,74.064696
+SNNPR,40,78.446504
+SNNPR,45,65.776287
+SNNPR,50,65.776287
+Somali,0,0
+Somali,5,0
+Somali,10,0
+Somali,15,15.957323
+Somali,20,51.523513
+Somali,25,61.970034
+Somali,30,57.072149
+Somali,35,67.350863
+Somali,40,61.614467
+Somali,45,45.086483
+Somali,50,45.086483
+Tigray,0,0
+Tigray,5,0
+Tigray,10,0
+Tigray,15,12.973801
+Tigray,20,46.931252
+Tigray,25,57.320536
+Tigray,30,58.896967
+Tigray,35,51.078061
+Tigray,40,48.161126
+Tigray,45,38.961515
+Tigray,50,38.961515
