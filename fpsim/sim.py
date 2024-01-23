@@ -108,7 +108,7 @@ class People(fpb.BasePeople):
         self.edu_dropout     = arr(n, d['edu_dropout'])     # Whether a person has dropped out of the edu system, before reaching their goal
         self.edu_interrupted = arr(n, d['edu_interrupted']) # Whether a person/woman has had their education temporarily interrupted, but can resume
         self.edu_completed   = arr(n, d['edu_completed'])   # Whether a person/woman has reached their education goals
-        self.edu_started     = arr(n, d['edu_started'])     # Whether a person/woman has started thier education
+        self.edu_started     = arr(n, d['edu_started'])     # Whether a person/woman has started their education
 
         # Subnational attributes
         self.region          = arr(n, d['region'])           # Region a person lives in
@@ -1242,7 +1242,7 @@ class Sim(fpb.BaseSim):
         return ages, sexes
 
 
-    def initialize_urban(self, n, urban_prop, region):
+    def initialize_urban(self, n, urban_prop, region=None):
         """Get initial distribution of urban"""
         urban = np.ones(n, dtype=bool)
         if self.regional is False:
@@ -1394,10 +1394,13 @@ class Sim(fpb.BaseSim):
         if method is None: method = np.zeros(n, dtype=np.int64)
         if self.regional == True:
             region = self.initialize_region(n)
+            urban = self.initialize_urban(n, self['urban_prop'], region)
+        elif self.regional == False:
+            region = None
+            urban = self.initialize_urban(n, self['urban_prop'])
         barrier = fpu.n_multinomial(self['barriers'][:], n)
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
-        urban = self.initialize_urban(n, self['urban_prop'], region)
         partnered, partnership_age = self.initialize_partnered(n, age, sex)
         empowerment = self.initialize_empowerment(n, age, sex)
         education   = self.initialize_education(n, age, sex, urban)
