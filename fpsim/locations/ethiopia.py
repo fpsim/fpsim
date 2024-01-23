@@ -20,7 +20,7 @@ def scalar_pars():
         'n_agents': 1_000,  # Number of agents
         'scaled_pop': None,  # Scaled population / total population size
         'start_year': 1960,  # Start year of simulation
-        'end_year': 2020,  # End year of simulation
+        'end_year': 2019,  # End year of simulation
         'timestep': 1,  # The simulation timestep in months
         'method_timestep': 1,  # How many simulation timesteps to go for every method update step
         'seed': 1,  # Random seed
@@ -153,17 +153,19 @@ def urban_proportion():
     return urban_data["mean"][0]  # Return this value as a float
 
 
-def region_proportion(): #change this to call in the CSV file instead because these values will fluctuate
+def region_proportions():
     '''
     Defines the proportion of the population in each region to establish the probability of living in a given region.
     Uses 2016 Ethiopia DHS individual recode (v025) for region and V024 for urban to produce subnational estimates
     '''
-    region = pd.read_csv(thisdir / 'subnational' / 'ethiopia' / 'region.csv')
-    region['region'] = region[:, 0] # Return region names
-    region['mean'] = region[:, 1] # Return proportion living in each region
-    region['urban'] = region[:, 2] # Return propotion living in an urban area by region
+    region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'region.csv')
+
+    region_dict = {}
+    region_dict['region'] = region_data['region'] # Return region names
+    region_dict['mean'] = region_data['mean'] # Return proportion living in each region
+    region_dict['urban'] = region_data['urban'] # Return proportion living in an urban area by region
     
-    return region
+    return region_dict
 
 
 def age_mortality():
@@ -915,12 +917,13 @@ def make_pars():
 
     # Regional parameters
     pars['urban_prop'] = urban_proportion()
-    pars['region_prop'] = region_proportion()
-    pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
-    pars['sexual_activity_region'] = sexual_activity_region()
-    pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
-    pars['debut_age_region'] = debut_age_region()
-    pars['methods_region'] = mix_region()
-    pars['barriers_region'] = use_region()
-    pars['use_region'] = use_region()
+    region_dict = region_proportions() # This function returns extrapolated and raw data
+    pars['region'] = region_dict
+    #pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
+    #pars['sexual_activity_region'] = sexual_activity_region()
+    #pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
+    #pars['debut_age_region'] = debut_age_region()
+    #pars['methods_region'] = mix_region()
+    #pars['barriers_region'] = use_region()
+    #pars['use_region'] = use_region()
     return pars

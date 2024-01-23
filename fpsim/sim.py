@@ -1117,7 +1117,7 @@ class Sim(fpb.BaseSim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Seneagl sim')
     '''
 
-    def __init__(self, pars=None, location=None, label=None, track_children=False, **kwargs):
+    def __init__(self, pars=None, location=None, label=None, track_children=False, regional=False, **kwargs):
 
         # Check parameters
         loc_pars = fpp.pars(location)
@@ -1133,6 +1133,7 @@ class Sim(fpb.BaseSim):
         self.test_mode   = False
         self.label       = label
         self.track_children  = track_children
+        self.regional        = regional
         fpu.set_metadata(self) # Set version, date, and git info
         return
 
@@ -1241,11 +1242,23 @@ class Sim(fpb.BaseSim):
         return ages, sexes
 
 
-    def initialize_urban(self, n, urban_prop):
+    def initialize_urban(self, n, urban_prop, region):
         """Get initial distribution of urban"""
         urban = np.ones(n, dtype=bool)
-        if urban_prop is not None:
-            urban = fpu.n_binomial(urban_prop, n)
+        if self.regional is False:
+            if urban_prop is not None:
+                urban = fpu.n_binomial(urban_prop, n)
+        elif self.regional is True:
+            region_dict = self.pars['region']
+            urban_by_region = pd.DataFrame({'region': region_dict['region'], 'urban': region_dict['urban']})
+            # For each region defined in region.csv, assign a regional distribution of urban/rural population
+            for r in urban_by_region['region']:
+                # Find indices in region array
+                f_inds = sc.findinds(region==r)
+                region_urban_prop = urban_by_region.loc[urban_by_region['region']==r, 'urban'].values[0]
+                urban_values = np.random.choice([True, False], size=len(f_inds), p=[region_urban_prop, 1-region_urban_prop])
+                urban[f_inds] = urban_values
+
         return urban
 
 
@@ -1347,19 +1360,18 @@ class Sim(fpb.BaseSim):
         return partnered, partnership_age
 
 
-    def initialize_region(self, n, urban):
+    def initialize_region(self, n):
         """Get initial distribution of region"""
         region_dict = self['region']
 
         # Initialise individual region
         # Region dictionary
-        region = {'asfr_region': np.zeros(n, dtype=bool),
-                     'region': np.zeros(n, dtype=bool),
-                     'asfr_region'   : np.zeros(n, dtype=bool),
-                     'tfr_region': np.zeros(n, dtype=bool),
-                     'use_region': np.zeros(n, dtype=bool),
-                     'methods_region'   : np.zeros(n, dtype=bool),
-                     'barriers_region': np.zeros(n, dtype=bool),
+        region = {   'region': np.zeros(n, dtype=str),
+                     #'asfr_region': np.zeros(n, dtype=bool),
+                     #'tfr_region': np.zeros(n, dtype=bool),
+                     #'use_region': np.zeros(n, dtype=bool),
+                     #'methods_region': np.zeros(n, dtype=bool),
+                     #'barriers_region': np.zeros(n, dtype=bool),
                      #'sexual_activity_region': np.zeros(n, dtype=bool),
                      #'sexual_activity_pp_region'   : np.zeros(n, dtype=bool),
                      #'debut_age_region': np.zeros(n, dtype=bool),
@@ -1367,15 +1379,12 @@ class Sim(fpb.BaseSim):
                      }
 
         if region_dict is not None:
-            # Initialise individual setting from a 2d array of probs with dimensions (region, urban)
-            f_inds_urban = sc.findinds(urban == True)
-            f_inds_rural = sc.findinds(urban == False)
-            # Set objectives
-            probs_urban = region_dict['region'][2, :]
-            region['region'][f_inds_rural] = np.random.choice(region, size=len(f_inds_rural), p=1-probs_urban)  # Probs in rural settings
-            region['region'][f_inds_urban] = np.random.choice(region, size=len(f_inds_urban), p=probs_urban)  # Probs in urban settings
+            # Set distribution for individuals based on regional proportions
+            region_names = region_dict['region']
+            region_probs = region_dict['mean']
+            region_dist = np.random.choice(region_names, size=n, p=region_probs)
 
-        return region
+        return region_dist
 
     def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
         ''' Set up each person '''
@@ -1383,14 +1392,15 @@ class Sim(fpb.BaseSim):
         if age    is None: age    = _age
         if sex    is None: sex    = _sex
         if method is None: method = np.zeros(n, dtype=np.int64)
+        if self.regional == True:
+            region = self.initialize_region(n)
         barrier = fpu.n_multinomial(self['barriers'][:], n)
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
-        urban = self.initialize_urban(n, self['urban_prop'])
+        urban = self.initialize_urban(n, self['urban_prop'], region)
         partnered, partnership_age = self.initialize_partnered(n, age, sex)
         empowerment = self.initialize_empowerment(n, age, sex)
         education   = self.initialize_education(n, age, sex, urban)
-        region = self.initialize_region((n, self['region_prop']))
         data = dict(
             age=age,
             sex=sex,
