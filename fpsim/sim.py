@@ -1295,7 +1295,7 @@ class Sim(fpb.BaseSim):
                      'edu_attainment': np.zeros(n, dtype=float),
                      'edu_started'   : np.zeros(n, dtype=bool),
                      'edu_completed': np.zeros(n, dtype=bool),
-                     'edu_droput': np.zeros(n, dtype=bool)}
+                     'edu_dropout': np.zeros(n, dtype=bool)}
 
         if education_dict is not None:
             # Initialise individual education objectives from a 2d array of probs with dimensions (urban, edu_years)
