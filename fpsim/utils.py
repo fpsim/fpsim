@@ -287,8 +287,10 @@ def sigmoid_product(x, a1, b1, a2, b2):
 
     Current form produces  0 <= f(x) <= 1
     '''
-
-    return (1.0 / (1.0 + np.exp(a1 - b1*x))) * (1.0 / (1.0 + np.exp(a2 - b2*x)))
+    max_exp = 709
+    x1 = np.clip(a1 - b1*x, -max_exp, max_exp)
+    x2 = np.clip(a2 - b2*x, -max_exp, max_exp)
+    return (1.0 / (1.0 + np.exp(x1))) * (1.0 / (1.0 + np.exp(x2)))
 
 
 def gompertz(x, a, b, c):
