@@ -703,6 +703,16 @@ class People(fpb.BasePeople):
 
 
     def update_education(self):
+        '''
+        Step up through all the steps of education dynamics
+        '''
+        self.start_education()   # Check if anyone needs to start school
+        self.advance_education()  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
+        self.resume_education()  # Determine who goes back to school after an interruption
+        self.graduate()          # Check if anyone achieves their education goal
+
+
+    def advance_education(self):
         '''Advance education attainment in the simulation, determine if agents have completed their educationm,
         '''
 
@@ -1025,10 +1035,7 @@ class People(fpb.BasePeople):
         # Update education
         if self.pars['education'] is not None:
             alive_now_f = self.filter(self.is_female)
-            alive_now_f.start_education()   # Check if anyone needs to start school
-            alive_now_f.update_education()  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
-            alive_now_f.resume_education()    # Determine who goes back to school after an interruption
-            alive_now_f.graduate()            # Check if anyone achieves their education goal
+            alive_now_f.update_education()
 
         # Update results
         fecund.update_age_bin_totals()
