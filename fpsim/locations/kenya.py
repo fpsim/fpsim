@@ -1190,8 +1190,6 @@ def education_dropout_probs(df):
         data[k] = {"age": None, "percent": None}
         data[k]["age"] = df["age"].unique()
         data[k]["percent"] = df["percent"][df["parity"] == k].to_numpy()
-        data[k]["age_cutoffs"] = np.hstack((data[k]["age"], data[k]["age"].max() + 1))
-
     return data
 
 
