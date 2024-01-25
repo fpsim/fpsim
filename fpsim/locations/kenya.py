@@ -1059,7 +1059,7 @@ def empowerment_regression_pars(regression_type='logistic'):
 def empowerment_distributions(seed=None, regression_type='logistic'):
     """Intial distributions of empowerment attributes based on latest DHS data <YYYY>
     TODO: perhaps split into single functions, one per attribute?
-
+    TODO: update docstring for empowerment_distributions
     NOTE: DHS data covers the age group from 15 to 49 (inclusive). In this function we
     interpolate data to reduce noise and extrapolate to cover the age range (0, 100).
     Interpolation is done using a piecewise linear approximation with an inflexion point
@@ -1085,7 +1085,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     from scipy import optimize
 
     # Load empirical data
-    empowerment_data =  pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
+    empowerment_data = pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
     mean_cols = {col: col + '.mean' for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"}
     empowerment_data.rename(columns=mean_cols, inplace=True)
     empowerment_dict = {}
@@ -1103,9 +1103,9 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     cols = ["paid_employment", "decision_wages", "decision_health", "sexual_autonomy"]
     ages_interp = empowerment_data["age"].to_numpy()
     for col in cols:
-        loc = empowerment_data[f"{col}.mean"]
+        loc   = empowerment_data[f"{col}.mean"]
         scale = empowerment_data[f"{col}.se"]
-        # Use the standard error to capture the unvertainty in the mean eastimates of each metric
+        # Use the standard error to capture the uncertainty in the mean eastimates of each metric
         data = np.random.normal(loc=loc, scale=scale)
         data_points[col] = data
         # Optimise regression parameters
@@ -1190,6 +1190,8 @@ def education_dropout_probs(df):
         data[k] = {"age": None, "percent": None}
         data[k]["age"] = df["age"].unique()
         data[k]["percent"] = df["percent"][df["parity"] == k].to_numpy()
+        data[k]["age_cutoffs"] = np.hstack((data[k]["age"], data[k]["age"].max() + 1))
+
     return data
 
 
