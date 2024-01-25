@@ -750,10 +750,9 @@ class People(fpb.BasePeople):
         woman is pregnant and towards the end of the first trimester
         '''
         # Hinder education progression if a woman is pregnant and towards the end of the first trimester
-        pregnant_students = self.filter(self.pregnant)
-        end_first_tri = pregnant_students.filter(pregnant_students.gestation == self.pars['end_first_tri'])
+        pregnant_students = self.filter(self.pregnant & (self.gestation == self.pars['end_first_tri']))
         # Disrupt education
-        end_first_tri.edu_interrupted = True
+        pregnant_students.edu_interrupted = True
 
 
     def resume_education(self):
