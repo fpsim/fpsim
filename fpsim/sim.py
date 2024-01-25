@@ -769,7 +769,7 @@ class People(fpb.BasePeople):
 
     def dropout_education(self, parity):
         dropout_dict = self.pars['education']['edu_dropout_probs'][parity]
-        age_cutoffs = dropout_dict['age_cutoffs']  # bin edges
+        age_cutoffs = dropout_dict['age']  # bin edges
         age_inds = np.searchsorted(age_cutoffs, self.age, "right") - 1  # NOTE: faster than np.digitize for large arrays
         # Decide who will dropout
         self.edu_dropout = fpu.binomial_arr(dropout_dict['percent'][age_inds])
