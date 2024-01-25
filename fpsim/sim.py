@@ -717,7 +717,7 @@ class People(fpb.BasePeople):
         '''
 
         # Filter people who have not: completed education, dropped out or had their education interrupted
-        students = self.filter((self.edu_started & ~self.edu_completed  & ~self.edu_dropout & ~self.edu_interrupted))
+        students = self.filter((self.edu_started & ~self.edu_completed & ~self.edu_dropout & ~self.edu_interrupted))
         # Advance education attainment
         students.edu_attainment += self.pars['timestep'] / fpd.mpy
         # Check who will experience an interruption
@@ -731,7 +731,6 @@ class People(fpb.BasePeople):
 
     def graduate(self):
         completed_inds = sc.findinds(self.edu_attainment >= self.edu_objective)
-        # NOTE: the two lines below were necessary because edu_completed was not being updating as expected
         tmp = self.edu_completed
         tmp[completed_inds] = True
         self.edu_completed  = tmp
@@ -765,17 +764,14 @@ class People(fpb.BasePeople):
         '''
         # Basic mechanism to resume education post-pregnancy:
         # If education was interrupted due to pregnancy, resume after 9 months pospartum
-        pospartum_students = self.filter(self.postpartum & self.edu_interrupted & ~self.edu_completed & ~self.edu_dropout)
-        resume_inds = sc.findinds(pospartum_students.postpartum_dur > 0.5 * self.pars['postpartum_dur'])
-        tmp = pospartum_students.edu_interrupted
-        tmp[resume_inds] = False
-        pospartum_students.edu_interrupted = tmp
+        pospartum_students = self.filter(self.postpartum & self.edu_interrupted & ~self.edu_completed & ~self.edu_dropout & (self.postpartum_dur > 0.5 * self.pars['postpartum_dur']))
+        pospartum_students.edu_interrupted = False
 
 
     def dropout_education(self, parity):
         dropout_dict = self.pars['education']['edu_dropout_probs'][parity]
-        age_cutoffs = np.hstack((dropout_dict['age'], dropout_dict['age'].max() + 1))
-        age_inds = np.digitize(self.age, age_cutoffs) - 1
+        age_cutoffs = dropout_dict['age_cutoffs']  # bin edges
+        age_inds = np.searchsorted(age_cutoffs, self.age, "right") - 1  # NOTE: faster than np.digitize for large arrays
         # Decide who will dropout
         self.edu_dropout = fpu.binomial_arr(dropout_dict['percent'][age_inds])
 
