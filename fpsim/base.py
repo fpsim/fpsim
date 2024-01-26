@@ -330,9 +330,10 @@ class BasePeople(sc.prettyobj):
             if inds is not None: # Unless indices are supplied directly, in which case use them
                 filtered._inds = inds
         else: # Main use case: perform filtering
-            if len(criteria) == len(self): # Main use case: a new filter applied on an already filtered object, e.g. filtered.filter(filtered.age > 5)
+            len_criteria = len(criteria)
+            if len_criteria == self.len_inds: # Main use case: a new filter applied on an already filtered object, e.g. filtered.filter(filtered.age > 5)
                 new_inds = criteria.nonzero()[0] # Criteria is already filtered, just get the indices
-            elif len(criteria) == self.len_people: # Alternative: a filter on the underlying People object is applied to the filtered object, e.g. filtered.filter(people.age > 5)
+            elif len_criteria == self.len_people: # Alternative: a filter on the underlying People object is applied to the filtered object, e.g. filtered.filter(people.age > 5)
                 new_inds = criteria[filtered.inds].nonzero()[0] # Apply filtering before getting the new indices
             else:
                 errormsg = f'"criteria" must be boolean array matching either current filter length ({self.len_inds}) or else the total number of people ({self.len_people}), not {len(criteria)}'
