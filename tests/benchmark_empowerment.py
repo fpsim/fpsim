@@ -20,9 +20,8 @@ to_profile = sc.objdict(
     edu_advance   =  ppl.advance_education,    # 63% of update_eduaction()
     edu_interrupt =  ppl.interrupt_education,  # 22% of advance_education()
     edu_dropout   =  ppl.dropout_education,    # 40% of advance_education() -- called twice
-    edu_resum     =  ppl.resume_education,     # 19% of update_education()
-    edu_done      =  ppl.graduate              #  8% of update_education()
-
+    edu_resume    =  ppl.resume_education,     # 19% of update_education()
+    edu_done      =  ppl.graduate,             #  8% of update_education()
 )
 
 
@@ -56,8 +55,7 @@ def run_without_empowerment():
 
 
 if __name__ == '__main__':
-
-    selection = 'edu_advance'
+    selection = 'ppl_education'
     if do_profile:
         sc.profile(run_with_empowerment, to_profile[selection])
         sc.profile(run_without_empowerment, to_profile[selection])
