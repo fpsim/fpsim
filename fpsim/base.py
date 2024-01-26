@@ -1,7 +1,7 @@
 '''
 Base classes for loading parameters and for running simulations with FP model
 '''
-
+import copy
 import numpy as np
 import pandas as pd
 import sciris as sc
@@ -322,7 +322,7 @@ class BasePeople(sc.prettyobj):
         # Create a new People object with the same properties as the original
         filtered = object.__new__(self.__class__) # Create a new People instance
         BasePeople.__init__(filtered) # Perform essential initialization
-        filtered.__dict__ = {k:v for k,v in self.__dict__.items()} # Copy pointers to the arrays in People
+        filtered.__dict__ = sc.cp(self.__dict__) # Copy pointers to the arrays in People
 
         # Perform the filtering
         if criteria is None: # No filtering: reset
