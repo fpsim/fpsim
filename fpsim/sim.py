@@ -1386,6 +1386,78 @@ class Sim(fpb.BaseSim):
 
         return region_dist
 
+
+    def initialize_barrier_region(self, n, barriers_region):
+        barriers_region_dict = self.pars['barriers_region']
+        barriers_by_region = pd.DataFrame({'region': barriers_region_dict['region'],
+                                       'barrier': barriers_region_dict['barrier'],
+                                       'perc': barriers_region_dict['perc']})
+        barrier_region = np.zeros(n, dtype=bool)
+        for r in barriers_by_region['region'].unique():
+            # Find indices in region array
+            f_inds = sc.findinds(barriers_region == r)
+            for b in barriers_by_region[barriers_by_region['region'] == r].itertuples(): 
+                barrier_prop = getattr(b, 'perc')
+                barrier_values = np.random.choice([True, False], size=len(f_inds), p=[barrier_prop])
+                barrier_region[f_inds] = barrier_values
+        return barrier_region
+
+    def initialize_lam_region(self, n, lam_region):
+        lam_region_dict = self.pars['lactational_amenorrhea_region']
+        lam_by_region = pd.DataFrame({'region': lam_region_dict['region'],
+                                   'month': lam_region_dict['month'],
+                                   'rate': lam_region_dict['rate']})
+        lam_values = np.zeros(n, dtype=bool)
+        for r in lam_by_region['region'].unique():
+            # Find indices in region array
+            f_inds = sc.findinds(lam_region == r)
+            for month in lam_by_region[lam_by_region['region'] == r]['month'].unique(): 
+                month_data = lam_by_region[(lam_by_region['region'] == r) & (lam_by_region['month'] == month)]
+                lam_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'rate') for row in month_data.itertuples()])
+        return lam_values
+
+    def initialize_debut_age_region(self, n, debut_age_region):
+        debut_age_dict = self.pars['debut_age_region']
+        debut_age_by_region = pd.DataFrame({'region': debut_age_dict['region'],
+                                        'age': debut_age_dict['age'],
+                                        'prob': debut_age_dict['prob']})
+        debut_age_values = np.zeros(n, dtype=bool)
+        for r in debut_age_by_region['region'].unique():
+            # Find indices in region array
+            f_inds = sc.findinds(debut_age_region == r)
+            for age in debut_age_by_region[debut_age_by_region['region'] == r]['age'].unique():
+                age_data = debut_age_by_region[(debut_age_by_region['region'] == r) & (debut_age_by_region['age'] == age)]
+                debut_age_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'prob') for row in age_data.itertuples()])    
+        return debut_age_values
+
+    def initialize_sexual_activity_region(self, n, sexual_activity_region):
+        sexual_activity_dict = self.pars['sexual_activity_region']
+        sexual_activity_by_region = pd.DataFrame({'region': sexual_activity_dict['region'],
+                                               'age': sexual_activity_dict['age'],
+                                               'perc': sexual_activity_dict['perc']})
+        sexual_activity_values = np.zeros(n, dtype=bool)
+        for r in sexual_activity_by_region['region'].unique():
+            # Find indices in region array
+            f_inds = sc.findinds(sexual_activity_region == r)
+            for age in sexual_activity_by_region[sexual_activity_by_region['region'] == r]['age'].unique():
+                age_data = sexual_activity_by_region[(sexual_activity_by_region['region'] == r) & (sexual_activity_by_region['age'] == age)] 
+                sexual_activity_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'perc') / 100 for row in age_data.itertuples()])
+        return sexual_activity_values
+
+    def initialize_sexual_activity_region_pp(self, n, sexual_activity_pp_region):
+        sexual_activity_pp_dict = self.pars['sexual_activity_pp']
+        sexual_activity_pp_by_region = pd.DataFrame({'region': sexual_activity_pp_dict['region'],
+                                                 'month': sexual_activity_pp_dict['month'],
+                                                 'perc': sexual_activity_pp_dict['perc']})
+        sexual_activity_pp_values = np.zeros(n, dtype=bool)
+        for r in sexual_activity_pp_by_region['region'].unique():
+            # Find indices in region array
+            f_inds = sc.findinds(sexual_activity_pp_region == r)
+            for month in sexual_activity_pp_by_region[sexual_activity_pp_by_region['region'] == r]['month'].unique():
+                month_data = sexual_activity_pp_by_region[(sexual_activity_pp_by_region['region'] == r) & (sexual_activity_pp_by_region['month'] == month)]        
+                sexual_activity_pp_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'perc') for row in month_data.itertuples()])
+        return sexual_activity_pp_values
+
     def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
         ''' Set up each person '''
         _age, _sex = self.get_age_sex(n)
@@ -1394,63 +1466,12 @@ class Sim(fpb.BaseSim):
         if method is None: method = np.zeros(n, dtype=np.int64)
         if self.regional == True:
             region = self.initialize_region(n)
-            urban = self.initialize_urban(n, self['urban_prop'], region)
-            #barriers by region
-            barriers_region_dict = self.pars['barriers_region']
-            barriers_by_region = pd.DataFrame({'region': barriers_region_dict['region'],
-                                               'barrier': barriers_region_dict['barrier'],
-                                               'perc': barriers_region_dict['perc']})
-            for r in barriers_by_region['region'].unique():
-                # Find indices in region array
-                f_inds = sc.findinds(region == r)
-                for b in barriers_by_region[barriers_by_region['region'] == r].itertuples(): barrier_prop = getattr(b, 'perc')
-                barrier_values = np.random.choice([True, False], size=len(f_inds),
-                                              p=[barrier_prop])
-                barrier[f_inds] = barrier_values
-            #lam by region
-            lam_region_dict = self.pars['lactational_amenorrhea_region']
-            lam_by_region = pd.DataFrame({'region': lam_region_dict['region'],
-                                         'month': lam_region_dict['month'],
-                                         'rate': lam_region_dict['rate']})
-            for r in lam_by_region['region'].unique():
-                # Find indices in region array
-                f_inds = sc.findinds(region == r)
-                for month in lam_by_region[lam_by_region['region'] == r]['month'].unique(): month_data = lam_by_region[(lam_by_region['region'] == r) & (lam_by_region['month'] == month)]
-                lam_values = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'rate') for row in month_data.itertuples()])
-                lactational_amenorrhea[f_inds] = lam_values
-            #debut age by region
-            debut_age_dict = self.pars['debut_age_region']
-            debut_age_by_region = pd.DataFrame({'region': debut_age_dict['region'],
-                                         'age': debut_age_dict['age'],
-                                         'prob': debut_age_dict['prob']})
-            for r in debut_age_by_region['region'].unique():
-                # Find indices in region array
-                f_inds = sc.findinds(region == r)
-                for age in debut_age_by_region[debut_age_by_region['region'] == r]['age'].unique(): age_data = debut_age_by_region[(debut_age_by_region['region'] == r) & (debut_age_by_region['age'] == age)]
-                debut_age_values = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'prob') for row in age_data.itertuples()])
-                debut_age[f_inds] = debut_age_values
-            #sexual activity by region
-            sexual_activity_dict = self.pars['sexual_activity_region']
-            sexual_activity_by_region = pd.DataFrame({'region': sexual_activity_dict['region'],
-                                              'age': sexual_activity_dict['age'],
-                                              'perc': sexual_activity_dict['perc']})
-            for r in sexual_activity_by_region['region'].unique():
-                # Find indices in region array
-                f_inds = sc.findinds(region == r)
-                for age in sexual_activity_by_region[sexual_activity_by_region['region'] == r]['age'].unique(): age_data = sexual_activity_by_region[(sexual_activity_by_region['region'] == r) & (sexual_activity_by_region['age'] == age)]
-                sexual_activity_values = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'perc') / 100 for row in age_data.itertuples()])
-                sexual_activity[f_inds] = sexual_activity_values
-            #postpartum sexual activity by region
-            sexual_activity_pp_dict = self.pars['sexual_activity_pp']
-            sexual_activity_pp_by_region = pd.DataFrame({'region': sexual_activity_pp_dict['region'],
-                                                 'month': sexual_activity_pp_dict['month'],
-                                                 'perc': sexual_activity_pp_dict['perc']})
-            for r in sexual_activity_pp_by_region['region'].unique():
-                # Find indices in region array
-                f_inds = sc.findinds(region == r)
-                for month in sexual_activity_pp_by_region[sexual_activity_pp_by_region['region'] == r]['month'].unique(): month_data = sexual_activity_pp_by_region[(sexual_activity_pp_by_region['region'] == r) & (sexual_activity_pp_by_region['month'] == month)]
-                sexual_activity_pp_values = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'perc') for row in month_data.itertuples()])
-                sexual_activity_pp[f_inds] = sexual_activity_pp_values
+            urban = self.initialize_urban(n, self.pars['urban_prop'], region)
+            barrier = self.initialize_barrier_region(n, region)
+            lactational_amenorrhea = self.initialize_lam_region(n, region)
+            debut_age = self.initialize_debut_age_region(n, region)
+            sexual_activity = self.initialize_sexual_activity_region(n, region)
+            sexual_activity_pp = self.initialize_sexual_activity_region_pp(n, region)
         elif self.regional == False:
             region = None
             urban = self.initialize_urban(n, self['urban_prop'])
