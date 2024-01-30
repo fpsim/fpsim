@@ -485,7 +485,6 @@ def sexual_activity_pp():
     Data is weighted.
     Limited to 23 months postpartum (can use any limit you want 0-23 max)
     Postpartum month 0 refers to the first month after delivery
-    TODO-- Add code for processing this for other countries to data_processing
     '''
 
     postpartum_sex = np.array([
@@ -586,12 +585,12 @@ def debut_age_region():
     '''
  #   Returns an additional array of weighted probabilities of sexual debut by region
     '''
-    debut_age_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'debut_age_region.csv')
-    debut_age_region['region'] = debut_age_region[:, 0] # Return region names
-    debut_age_region['age'] = debut_age_region[:, 1] # Return month postpartum
-    debut_age_region['prob'] = debut_age_region[:, 2] # Return weighted probabilities of sexual debut
-    ## MAKE DICTIONARY
-    return debut_age_region
+    debut_age_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'debut_age_region.csv')
+    debut_age_dict = {}
+    debut_age_dict['region'] = debut_age_region_data['region'] # Return region names
+    debut_age_dict['age'] = debut_age_region_data['age'] # Return month postpartum
+    debut_age_dict['prob'] = debut_age_region_data['prob'] # Return weighted probabilities of sexual debut
+    return debut_age_dict
 
 
 def exposure_age():
