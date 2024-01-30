@@ -427,17 +427,17 @@ def lactational_amenorrhea():
 
 def lactational_amenorrhea_region():
     '''
-    Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, , stratified by region
-    Uses 2016 Ethiopia DHS individual recode (v025) for region and V024 for urban to produce subnational estimates
+    Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, stratified by region
     '''
-    lactational_amenorrhea_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'lam_region.csv')
-    lactational_amenorrhea_region['region'] = lactational_amenorrhea_region[:, 0] # Return region names
-    lactational_amenorrhea_region['month'] = lactational_amenorrhea_region[:, 1] # Return month postpartum
-    lactational_amenorrhea_region['rate'] = lactational_amenorrhea_region[:, 2] # Return percent of breastfeeding women
+    lam_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'lam_region.csv')
+    lam_dict = {}
+    lam_dict['region'] = lam_region['region']  # Return region names
+    lam_dict['month'] = lam_region['month']  # Return month postpartum
+    lam_dict['rate'] = lam_region['rate']  # Return percent of breastfeeding women
     
-    return lactational_amenorrhea_region
+    return lam_dict
 
-
+    
 # %% Pregnancy exposure
 
 def sexual_activity():
@@ -467,15 +467,16 @@ def sexual_activity_region():
     '''
     Returns a linear interpolation of rates of female sexual activity, stratified by region
     '''
-
-    sexual_activity_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'urban.csv')
-    sexual_activity_region['region'] = sexual_activity_region[:, 0] # Return region names
-    sexual_activity_region[2] /= 100  # Convert from percent to rate per woman #### 
-    activity_ages_region = sexual_activity_region[1]
-    activity_interp_model_region = si.interp1d(x=activity_ages_region, y=sexual_activity_region[2])
-    activity_interp_model_region = activity_interp_model_region(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
-
-    return activity_interp
+    sexually_active_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_activity_region.csv')
+    sexually_active_region_dict = {}
+    sexually_active_region_dict['region'] = sexually_active_region_data.iloc[:, 0]  # Return region names
+    sexually_active_region_dict['age'] = sexually_active_region_data.iloc[:, 1]   # Return age
+    sexually_active_region_dict['perc'] = sexually_active_region_data.iloc[:, 2] / 100  # Return perc divide by 100 to convert to a rate
+    activity_ages_region = sexually_active_region_dict['age']
+    activity_interp_model_region = si.interp1d(x=activity_ages_region, y=sexually_active_region_dict['perc'])
+    activity_interp_region = activity_interp_model_region(fpd.spline_preg_ages) 
+    
+    return activity_interp_region
 
 def sexual_activity_pp():
     '''
@@ -484,7 +485,6 @@ def sexual_activity_pp():
     Data is weighted.
     Limited to 23 months postpartum (can use any limit you want 0-23 max)
     Postpartum month 0 refers to the first month after delivery
-    TODO-- Add code for processing this for other countries to data_processing
     '''
 
     postpartum_sex = np.array([
@@ -527,12 +527,13 @@ def sexual_activity_pp_region():
     '''
      # Returns an additional array of monthly likelihood of having resumed sexual activity by region
     '''
-    postpartum_activity_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_activity_pp_region.csv')
-    postpartum_activity_region['region'] = postpartum_activity_region[:, 0] # Return region names
-    postpartum_activity_region['month'] = postpartum_activity_region[:, 1] # Return month postpartum
-    postpartum_activity_region['perc'] = postpartum_activity_region[:, 2] # Return likelihood of resumed sexual activity
+    pp_activity_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_activity_pp_region.csv')
+    pp_activity_region_dict = {}
+    pp_activity_region_dict['region'] = pp_activity_region[:, 0] # Return region names
+    pp_activity_region_dict['month'] = pp_activity_region[:, 1] # Return month postpartum
+    pp_activity_region_dict['perc'] = pp_activity_region[:, 2] # Return likelihood of resumed sexual activity
     
-    return postpartum_activity_region
+    return pp_activity_region_dict
 
 
 def debut_age():
@@ -584,12 +585,12 @@ def debut_age_region():
     '''
  #   Returns an additional array of weighted probabilities of sexual debut by region
     '''
-    debut_age_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'debut_age_region.csv')
-    debut_age_region['region'] = debut_age_region[:, 0] # Return region names
-    debut_age_region['age'] = debut_age_region[:, 1] # Return month postpartum
-    debut_age_region['prob'] = debut_age_region[:, 2] # Return weighted probabilities of sexual debut
-    
-    return debut_age_region
+    debut_age_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'debut_age_region.csv')
+    debut_age_dict = {}
+    debut_age_dict['region'] = debut_age_region_data['region'] # Return region names
+    debut_age_dict['age'] = debut_age_region_data['age'] # Return month postpartum
+    debut_age_dict['prob'] = debut_age_region_data['prob'] # Return weighted probabilities of sexual debut
+    return debut_age_dict
 
 
 def exposure_age():
@@ -881,8 +882,8 @@ def barriers_region():
     '''
     Returns reasons for nonuse by region
     '''
-
-    barriers_region = pd.read_csv(thisdir / 'subnational' / 'ethiopia' / 'barriers_region.csv')
+    
+    reasons_region = pd.read_csv(thisdir / 'subnational' / 'ethiopia' / 'barriers_region.csv')
     barriers_region['region'] = barriers_region[:, 0] # Return region names
     barriers_region['barrier'] = barriers_region[:, 1] # Return the reason for nonuse
     barriers_region['perc'] = barriers_region[:, 2] # Return retuned the percentage   
@@ -927,8 +928,7 @@ def make_pars():
 
     # Regional parameters
     pars['urban_prop'] = urban_proportion()
-    region_dict = region_proportions() # This function returns extrapolated and raw data
-    pars['region'] = region_dict
+    pars['region'] = region_proportions() # This function returns extrapolated and raw data
     pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
     pars['sexual_activity_region'] = sexual_activity_region()
     pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
