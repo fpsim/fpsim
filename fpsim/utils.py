@@ -10,7 +10,15 @@ from . import version as fpv
 
 
 # Specify all externally visible things this file defines
-__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample']
+__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample', 'match_ages']
+
+
+@nb.jit((nb.float64[:], nb.float64, nb.float64), cache=True, nopython=True)
+def match_ages(age, age_low, age_high):
+    ''' Find ages between age low and age_high '''
+    match_low  = (age >= age_low)
+    match_high = (age <  age_high)
+    return match_low & match_high
 
 
 def set_seed(seed=None):
