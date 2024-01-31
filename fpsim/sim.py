@@ -137,9 +137,7 @@ class People(fpb.BasePeople):
 
         # Method switching depends both on agent age and also on their current method, so we need to loop over both
         for key,(age_low, age_high) in fpd.method_age_map.items():
-            match_low  = (self.age >= age_low) # CK: TODO: refactor into single method
-            match_high = (self.age <  age_high)
-            match_low_high = match_low * match_high
+            match_low_high = fpu.match_ages(self.age, age_low, age_high)
             for m in method_map.values():
                 match_m = (orig_methods == m)
                 match = match_m * match_low_high
@@ -195,12 +193,11 @@ class People(fpb.BasePeople):
         # In first time step after delivery, choice is by age but not previous method (since just gave birth)
         # All women are coming from birth and on no method to start, either will stay on no method or initiate a method
         for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low = (self.age >= age_low)
-            match_high = (self.age < age_high)
+            match_low_high = fpu.match_ages(self.age, age_low, age_high)
             low_parity = (self.parity < self.pars['high_parity'])
             high_parity = (self.parity >= self.pars['high_parity'])
-            match = (self.postpartum * postpartum1 * match_low * match_high * low_parity)
-            match_high_parity = (self.postpartum * postpartum1 * match_low * match_high * high_parity)
+            match = (self.postpartum * postpartum1 * match_low_high * low_parity)
+            match_high_parity = (self.postpartum * postpartum1 * match_low_high * high_parity)
             this_method = self.filter(match)
             this_method_high_parity = self.filter(match_high_parity)
             old_method = this_method.method.copy()
@@ -230,9 +227,8 @@ class People(fpb.BasePeople):
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
         # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
         for key,(age_low, age_high) in fpd.method_age_map.items():
-            match_low  = (self.age >= age_low)
-            match_high = (self.age <  age_high)
-            match_postpartum_age = self.postpartum * postpartum6 * match_low * match_high
+            match_low_high = fpu.match_ages(self.age, age_low, age_high)
+            match_postpartum_age = self.postpartum * postpartum6 * match_low_high
             for m in methods_map.values():
                 match_m    = (orig_methods == m)
                 match = match_m * match_postpartum_age
@@ -638,7 +634,8 @@ class People(fpb.BasePeople):
 
             live_age = live.age
             for key, (age_low, age_high) in fpd.age_bin_map.items():
-                birth_bins = np.sum((live_age >= age_low) * (live_age < age_high))
+                match_low_high = fpu.match_ages(live_age, age_low, age_high)
+                birth_bins = np.sum(match_low_high)
                 self.step_results['birth_bins'][key] += birth_bins
 
             if self.pars['track_as']:
@@ -780,7 +777,7 @@ class People(fpb.BasePeople):
         Count how many total live women in each 5-year age bin 10-50, for tabulating ASFR
         '''
         for key, (age_low, age_high) in fpd.age_bin_map.items():
-            this_age_bin = self.filter((self.age >= age_low) * (self.age < age_high))
+            this_age_bin = self.filter((fpu.match_ages(self.age, age_low, age_high)))
             self.step_results['age_bin_totals'][key] += len(this_age_bin)
         return
 
