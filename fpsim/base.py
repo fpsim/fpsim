@@ -1,7 +1,6 @@
 '''
 Base classes for loading parameters and for running simulations with FP model
 '''
-import copy
 import numpy as np
 import pandas as pd
 import sciris as sc
