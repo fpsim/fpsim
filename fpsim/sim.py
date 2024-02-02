@@ -1467,32 +1467,27 @@ class Sim(fpb.BaseSim):
         if self.regional == True:
             region = self.initialize_region(n)
             urban = self.initialize_urban(n, self.pars['urban_prop'], region)
-            barrier = self.initialize_barrier_region(n, region)
-            lactational_amenorrhea = self.initialize_lam_region(n, region)
+            # TODO: Get the debut age initialization function working, incorporating regional data
             debut_age = self.initialize_debut_age_region(n, region)
-            sexual_activity = self.initialize_sexual_activity_region(n, region)
-            sexual_activity_pp = self.initialize_sexual_activity_region_pp(n, region)
+            # TODO: Add regional logic for these three parameters where they are called in sim.py
+            #sexual_activity = self.initialize_sexual_activity_region(n, region)
+            #sexual_activity_pp = self.initialize_sexual_activity_region_pp(n, region)
+            # lactational_amenorrhea = self.initialize_lam_region(n, region)
         elif self.regional == False:
             region = None
             urban = self.initialize_urban(n, self['urban_prop'])
-            barrier = fpu.n_multinomial(self['barriers'][:], n)
-            lactational_amenorrhea = fpu.n_multinomial(self['lactational_amenorrhea'][:], n)
             debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
-            sexual_activity = self['sexual_activity']['ages'][fpu.n_multinomial(self['sexual_activity']['perc'], n)]
-            sexual_activity_pp = fpu.n_multinomial(self['sexual_activity_pp'][:], n)
-            fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
-            partnered, partnership_age = self.initialize_partnered(n, age, sex)
-            empowerment = self.initialize_empowerment(n, age, sex)
-            education   = self.initialize_education(n, age, sex, urban)
+        barrier = fpu.n_multinomial(self['barriers'][:], n)
+        fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
+        partnered, partnership_age = self.initialize_partnered(n, age, sex)
+        empowerment = self.initialize_empowerment(n, age, sex)
+        education   = self.initialize_education(n, age, sex, urban)
         data = dict(
             age=age,
             sex=sex,
             method=method,
             barrier=barrier,
             debut_age=debut_age,
-            lactational_amenorrhea=lactational_amenorrhea,
-            sexual_activity = sexual_activity,
-            sexual_activity_pp = sexual_activity_pp,
             fertile=fertile,
             urban=urban,
             partnered=partnered,

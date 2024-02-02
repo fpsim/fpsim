@@ -529,7 +529,11 @@ def empowerment_pars():
 def region_pars():
     ''' Additional regional parameters'''
     region_pars = dict(
-        region = None
+        region                        = None,
+        lactational_amenorrhea_region = None,
+        sexual_activity_region        = None,
+        sexual_activity_pp_region     = None,
+        barriers_region               = None,
     )
 
     return region_pars
