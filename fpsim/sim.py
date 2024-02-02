@@ -100,9 +100,10 @@ class People(fpb.BasePeople):
         self.partnership_age = arr(n, d['partnership_age'])     # Age at first partnership in years, initialised from data
         self.urban           = arr(n, d['urban'])               # Whether a person lives in rural or urban setting
         self.paid_employment = arr(n, d['paid_employment'])     # Whether a person has a paid job or not
-        self.decision_wages  = arr(n, d['decision_wages'])       # Decision making autonomy over major household purchases/wages
-        self.decision_health = arr(n, d['decision_health'])      # Decision making autonomy over her health
-        self.sexual_autonomy    = arr(n, d['sexual_autonomy'])   # Ability to refuse sex
+        self.decision_wages  = arr(n, d['decision_wages'])      # Decision making autonomy over major household purchases/wages
+        self.decision_health = arr(n, d['decision_health'])     # Decision making autonomy over her health
+        self.sexual_autonomy = arr(n, d['sexual_autonomy'])     # Ability to refuse sex
+        self.intent_to_use   = arr(n, d['intent_to_use'])       # Whether a woman intends to use any contraceptive method
 
         # Empowerment-education attributes
         self.edu_objective   = arr(n, d['edu_objective'])   # Highest-ideal level of education to be completed (in years), could be individualised or constant across agents

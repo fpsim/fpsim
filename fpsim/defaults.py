@@ -52,6 +52,7 @@ person_defaults = dict(
     decision_wages       = 0,
     decision_health      = 0,
     sexual_autonomy      = 0,
+    intent_to_use        = False,
     edu_objective        = 0,
     edu_attainment       = 0,
     edu_dropout          = False,
