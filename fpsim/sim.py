@@ -700,6 +700,12 @@ class People(fpb.BasePeople):
         return
 
 
+    def update_intent(self):
+        '''Update intention to use contraceptives'''
+        # Do something
+        self.intent_to_use = False
+
+
     def update_education(self):
         '''
         Step up through all the steps of education dynamics
