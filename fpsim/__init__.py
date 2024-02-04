@@ -3,6 +3,7 @@ from .settings import *
 from .utils import *
 from .defaults import *
 from .parameters import *
+from .people import *
 from .sim import *
 from .interventions import *
 from .analyzers import *
