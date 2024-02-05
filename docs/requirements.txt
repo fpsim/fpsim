@@ -10,3 +10,4 @@ optuna
 myst-parser
 readthedocs-sphinx-search
 jupyterlab
+sphinxcontrib-jquery
