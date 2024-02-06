@@ -182,7 +182,7 @@ class timeseries_recorder(Analyzer):
             self.keys = sim.people.keys()
 
         for key in self.keys:
-            if sc.isarray(sim.people[key]):
+            if sc.checktype(sim.people[key], 'arraylike'):
                 self.to_record.append(key)
         for key in self.keys:
             self.data[key] = []
