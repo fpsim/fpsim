@@ -25,7 +25,7 @@ def make_analyzer(analyzer):
     return an
 
 
-def test_calibration(n_trials=3):
+def test_calibration(n_trials=5):
     ''' Compare the current default sim against the saved baseline '''
     sc.heading('Testing calibration...')
 
