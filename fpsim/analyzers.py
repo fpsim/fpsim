@@ -178,6 +178,7 @@ class timeseries_recorder(Analyzer):
         Initializes self.keys from sim.people
         """
         super().initialize()
+        self.keys = []
         if self.keys is None:
             self.keys = sim.people.keys()
 
