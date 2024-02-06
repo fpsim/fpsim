@@ -116,13 +116,6 @@ htmlhelp_basename = 'FPsim'
 def setup(app):
     app.add_css_file("theme_overrides.css")
 
-# Skip library files we don't want to include (from https://stackoverflow.com/questions/39249466/how-to-exclude-pytest-test-functions-from-sphinx-autodoc)
-def autodoc_skip_member_handler(app, what, name, obj, skip, options):
-    reasons_to_skip = [
-        'calibrate_manual' in name,
-    ]
-    return any(reasons_to_skip)
-
 
 # Modify this to not rerun the Jupyter notebook cells -- usually set by build_docs
 nb_ex_default = ['auto', 'never'][0]
