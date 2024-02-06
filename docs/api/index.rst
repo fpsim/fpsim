@@ -12,18 +12,18 @@ This page lists FPsim's full API, including all functions and classes.
    :recursive:
    :nosignatures:
 
-   hpvsim.analyzers
-   hpvsim.base
-   hpvsim.calibration
-   hpvsim.defaults
-   hpvsim.experiment
-   hpvsim.interventions
-   hpvsim.parameters
-   hpvsim.scenarios
-   hpvsim.plotting
-   hpvsim.settings
-   hpvsim.sim
-   hpvsim.utils
-   hpvsim.locations.ethiopia
-   hpvsim.locations.kenya
-   hpvsim.locations.senegal
+   fpsim.analyzers
+   fpsim.base
+   fpsim.calibration
+   fpsim.defaults
+   fpsim.experiment
+   fpsim.interventions
+   fpsim.parameters
+   fpsim.scenarios
+   fpsim.plotting
+   fpsim.settings
+   fpsim.sim
+   fpsim.utils
+   fpsim.locations.ethiopia
+   fpsim.locations.kenya
+   fpsim.locations.senegal
