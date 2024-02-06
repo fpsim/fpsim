@@ -14,5 +14,5 @@ Full contents
 
    overview
    tutorials
-   whats-new
+   whatsnew
    api/index
