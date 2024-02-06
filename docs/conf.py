@@ -16,7 +16,7 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 # -- Project information -----------------------------------------------------
 
 project = 'FPsim'
-copyright = f'2020 - {sc.now().year}, Bill & Melinda Gates Foundation. All rights reserved.\nThese docs were built for FPsim version {fp.__version__}.\n'
+copyright = f'2020 - {sc.now().year}, Bill & Melinda Gates Foundation. All rights reserved.\nThese docs were built for FPsim version {fp.__version__}\n'
 author = 'Institute for Disease Modeling'
 
 # The short X.Y version
