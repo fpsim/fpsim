@@ -1366,41 +1366,32 @@ class Sim(fpb.BaseSim):
 
         # Initialise individual region
         # Region dictionary
-        region = {   'region': np.zeros(n, dtype=str),
-                     #'asfr_region': np.zeros(n, dtype=bool),
-                     #'tfr_region': np.zeros(n, dtype=bool),
-                     #'use_region': np.zeros(n, dtype=bool),
-                     #'methods_region': np.zeros(n, dtype=bool),
-                     #'barriers_region': np.zeros(n, dtype=bool),
-                     #'sexual_activity_region': np.zeros(n, dtype=bool),
-                     #'sexual_activity_pp_region'   : np.zeros(n, dtype=bool),
-                     #'debut_age_region': np.zeros(n, dtype=bool),
-                     #'lactational_amenorrhea_region ': np.zeros(n, dtype=bool)
-                     }
+        region = {'region': np.zeros(n, dtype=str)}
 
         if region_dict is not None:
             # Set distribution for individuals based on regional proportions
             region_names = region_dict['region']
             region_probs = region_dict['mean']
             region_dist = np.random.choice(region_names, size=n, p=region_probs)
+            region['region'] = region_dist
+        
+        return region
 
-        return region_dist
 
-
-    def initialize_barrier_region(self, n, barriers_region):
-        barriers_region_dict = self.pars['barriers_region']
-        barriers_by_region = pd.DataFrame({'region': barriers_region_dict['region'],
-                                       'barrier': barriers_region_dict['barrier'],
-                                       'perc': barriers_region_dict['perc']})
-        barrier_region = np.zeros(n, dtype=bool)
-        for r in barriers_by_region['region'].unique():
-            # Find indices in region array
-            f_inds = sc.findinds(barriers_region == r)
-            for b in barriers_by_region[barriers_by_region['region'] == r].itertuples(): 
-                barrier_prop = getattr(b, 'perc')
-                barrier_values = np.random.choice([True, False], size=len(f_inds), p=[barrier_prop])
-                barrier_region[f_inds] = barrier_values
-        return barrier_region
+#    def initialize_barrier_region(self, n, barriers_region):
+#        barriers_region_dict = self.pars['barriers_region']
+#        barriers_by_region = pd.DataFrame({'region': barriers_region_dict['region'],
+#                                       'barrier': barriers_region_dict['barrier'],
+#                                       'perc': barriers_region_dict['perc']})
+#        barrier_region = np.zeros(n, dtype=bool)
+#        for r in barriers_by_region['region'].unique():
+#            # Find indices in region array
+#            f_inds = sc.findinds(barriers_region == r)
+#            for b in barriers_by_region[barriers_by_region['region'] == r].itertuples(): 
+#                barrier_prop = getattr(b, 'perc')
+#                barrier_values = np.random.choice([True, False], size=len(f_inds), p=barrier_prop['perc'].values)
+#                barrier_region[f_inds] = barrier_values
+#        return barrier_region
 
     def initialize_lam_region(self, n, lam_region):
         lam_region_dict = self.pars['lactational_amenorrhea_region']
@@ -1413,7 +1404,7 @@ class Sim(fpb.BaseSim):
             f_inds = sc.findinds(lam_region == r)
             for month in lam_by_region[lam_by_region['region'] == r]['month'].unique(): 
                 month_data = lam_by_region[(lam_by_region['region'] == r) & (lam_by_region['month'] == month)]
-                lam_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'rate') for row in month_data.itertuples()])
+                lam_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=month_data['rate'].values)
         return lam_values
 
     def initialize_debut_age_region(self, n, debut_age_region):
@@ -1425,9 +1416,8 @@ class Sim(fpb.BaseSim):
         for r in debut_age_by_region['region'].unique():
             # Find indices in region array
             f_inds = sc.findinds(debut_age_region == r)
-            for age in debut_age_by_region[debut_age_by_region['region'] == r]['age'].unique():
-                age_data = debut_age_by_region[(debut_age_by_region['region'] == r) & (debut_age_by_region['age'] == age)]
-                debut_age_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'prob') for row in age_data.itertuples()])    
+            debut_age_dist = debut_age_by_region['age'][fpu.n_multinomial(debut_age_by_region['prob'], n)]
+            debut_age_values[f_inds] = debut_age_dist  
         return debut_age_values
 
     def initialize_sexual_activity_region(self, n, sexual_activity_region):
@@ -1441,7 +1431,7 @@ class Sim(fpb.BaseSim):
             f_inds = sc.findinds(sexual_activity_region == r)
             for age in sexual_activity_by_region[sexual_activity_by_region['region'] == r]['age'].unique():
                 age_data = sexual_activity_by_region[(sexual_activity_by_region['region'] == r) & (sexual_activity_by_region['age'] == age)] 
-                sexual_activity_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'perc') / 100 for row in age_data.itertuples()])
+                sexual_activity_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=age_data['perc'].values / 100)
         return sexual_activity_values
 
     def initialize_sexual_activity_region_pp(self, n, sexual_activity_pp_region):
@@ -1455,7 +1445,7 @@ class Sim(fpb.BaseSim):
             f_inds = sc.findinds(sexual_activity_pp_region == r)
             for month in sexual_activity_pp_by_region[sexual_activity_pp_by_region['region'] == r]['month'].unique():
                 month_data = sexual_activity_pp_by_region[(sexual_activity_pp_by_region['region'] == r) & (sexual_activity_pp_by_region['month'] == month)]        
-                sexual_activity_pp_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=[getattr(row, 'perc') for row in month_data.itertuples()])
+                sexual_activity_pp_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=month_data['perc'].values)
         return sexual_activity_pp_values
 
     def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
@@ -1468,15 +1458,15 @@ class Sim(fpb.BaseSim):
             region = self.initialize_region(n)
             urban = self.initialize_urban(n, self.pars['urban_prop'], region)
             # TODO: Get the debut age initialization function working, incorporating regional data
-            debut_age = self.initialize_debut_age_region(n, region)
+            # debut_age = self['debut_age_region']['ages'][fpu.n_multinomial(self['debut_age_region']['probs'], n)]
             # TODO: Add regional logic for these three parameters where they are called in sim.py
-            #sexual_activity = self.initialize_sexual_activity_region(n, region)
-            #sexual_activity_pp = self.initialize_sexual_activity_region_pp(n, region)
+            # sexual_activity = self.initialize_sexual_activity_region(n, region)
+            # sexual_activity_pp = self.initialize_sexual_activity_region_pp(n, region)
             # lactational_amenorrhea = self.initialize_lam_region(n, region)
         elif self.regional == False:
             region = None
             urban = self.initialize_urban(n, self['urban_prop'])
-            debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
+        debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         barrier = fpu.n_multinomial(self['barriers'][:], n)
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
         partnered, partnership_age = self.initialize_partnered(n, age, sex)
@@ -1487,6 +1477,8 @@ class Sim(fpb.BaseSim):
             sex=sex,
             method=method,
             barrier=barrier,
+            empowerment = empowerment,
+            education=education,
             debut_age=debut_age,
             fertile=fertile,
             urban=urban,
