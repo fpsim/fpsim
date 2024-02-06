@@ -534,8 +534,7 @@ def region_pars():
         sexual_activity_region        = None,
         sexual_activity_pp_region     = None,
         debut_age_region              = None,
-        barriers_region               = None,
-        debut_age_region              = None
+        barriers_region               = None
     )
 
     return region_pars

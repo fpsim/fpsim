@@ -209,6 +209,12 @@ if do_plot_methods:
 
         model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 
+        if do_save:
+                if not os.path.exists(f'./{country}/subnational/figs/method_mix/'):
+                        os.mkdir(f'./{country}/subnational/figs/method_mix/')
+                if not os.path.exists(f'./{country}/subnational/figs/method_use/'):
+                        os.mkdir(f'./{country}/subnational/figs/method_use/')
+
         for region in regions:
                 # Extract from model
                 for i in range(len(ppl)):
@@ -262,10 +268,6 @@ if do_plot_methods:
                 use_labels = list(data_methods_use.keys())
                 df_mix = pd.DataFrame({'DHS': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
                 df_use = pd.DataFrame({'DHS': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
-
-                if do_save == 1:
-                        os.mkdir(f'./{country}/subnational/figs/method_mix')
-                        os.mkdir(f'./{country}/subnational/figs/method_use')
 
                 # Plot mix
                 ax = df_mix.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
