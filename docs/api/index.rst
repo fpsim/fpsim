@@ -24,4 +24,6 @@ This page lists FPsim's full API, including all functions and classes.
    hpvsim.settings
    hpvsim.sim
    hpvsim.utils
-   hpvsim.locations
+   hpvsim.locations.ethiopia
+   hpvsim.locations.kenya
+   hpvsim.locations.senegal
