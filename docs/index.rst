@@ -10,9 +10,9 @@ Full contents
 =============
 
 .. toctree::
-   :maxdepth: 4
+   :maxdepth: 3
 
    overview
    tutorials
-   whatsnew
-   modules
+   whats-new
+   api/index
