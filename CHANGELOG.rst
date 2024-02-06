@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.26.7 (2023-10-24)
+--------------------------
+- Created two scripts in data_processing dir to scrape UN and World Bank country calibration data
+- Updated location_template.txt with logic to pull this scraped data for future contexts
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/213>`_
+
 Version 0.26.6 (2023-9-27)
 --------------------------
 - Renamed the country data filenames to be standardized across contexts
