@@ -20,7 +20,6 @@ This page lists FPsim's full API, including all functions and classes.
    fpsim.interventions
    fpsim.parameters
    fpsim.scenarios
-   fpsim.plotting
    fpsim.settings
    fpsim.sim
    fpsim.utils
