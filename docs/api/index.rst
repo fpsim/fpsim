@@ -2,7 +2,7 @@
 API reference
 =============
 
-.. currentmodule:: hpvsim
+.. currentmodule:: fpsim
 
 This page lists FPsim's full API, including all functions and classes.
 
