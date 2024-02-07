@@ -630,7 +630,7 @@ class verbose_sim(Analyzer):
         self.events = sc.ddict(dict)
         self.channels = ["Births", "Conceptions", "Miscarriages", "Deaths"]
         self.set_baseline = False
-        self.states = list(fpd.person_defaults.keys()) + ['dobs'] # states saved by timestep
+        self.states = [state.name for state in fpd.person_defaults]  # list(fpd.person_defaults.keys()) + ['dobs'] # states saved by timestep
 
     def apply(self, sim):
         """
@@ -643,7 +643,7 @@ class verbose_sim(Analyzer):
             self.events::dict
                 Dictionary of events correponding to self.channels formatted as {timestep: channel: [indices]}.
         """
-        print('Warning, needs to be refactored to not use dataframes on each step')
+        # TODO, needs to be refactored to not use dataframes on each step'
         if not self.set_baseline:
             initial_pop = sim.pars['n_agents']
             self.last_year_births = [0] * initial_pop

@@ -13,75 +13,112 @@ max_age        = 99   # Maximum age
 max_age_preg   = 50   # Maximum age to become pregnant
 max_parity     = 20   # Maximum number of children
 
+
 #%% Defaults when creating a new person
-person_defaults = dict(
+class State:
+    def __init__(self, name, val=None, dtype=None, n=None):
+        """
+        Initialize a state
+        Args:
+            name (str): name of state
+            val (list, array, float, or str): value(s) to populate array with
+            dtype (dtype): datatype. Inferred from val if not provided.
+            n (int): if provided, will return an array of length n
+        """
+        self.name = name
+        self.val = val
+        self.dtype = dtype
+
+    def new(self, n, vals=None):
+        """
+        Define an empty array with the correct value and data type
+        Args:
+            n (int): length of array to create
+        Returns:
+             array of length n with values as specified
+        """
+        if vals is None: vals = self.val  # Use default if none provided
+
+        if isinstance(vals, np.ndarray):
+            assert len(vals) == n
+            arr = vals
+        elif isinstance(vals, list):
+            arr = [[] for _ in range(n)]
+        else:
+            if self.dtype is None: dtype = object if isinstance(vals, str) else None
+            else: dtype = self.dtype
+            arr = np.full(shape=n, fill_value=vals, dtype=dtype)
+        return arr
+
+
+person_defaults = sc.autolist(
     # Basic demographics
-    uid=-1,
-    age=0,
-    age_by_group=0,
-    sex=0,
-    alive=True,
+    State('uid',                -1, int),
+    State('age',                0, float),
+    State('age_by_group',       0, float),
+    State('sex',                0, bool),
+    State('alive',              1, bool),
 
     # Contraception
-    method=0,
-    barrier=0,
+    State('method',             0, int),
+    State('barrier',            0, int),
 
     # Sexual and reproductive history
-    parity=0,
-    pregnant=False,
-    fertile=False,
-    sexually_active=False,
-    sexual_debut=False,
-    sexual_debut_age=-1,
-    fated_debut=-1,
-    first_birth_age=-1,
-    lactating=False,
-    gestation=0,
-    preg_dur=0,
-    stillbirth=0,
-    miscarriage=0,
-    abortion=0,
-    pregnancies=0,
-    months_inactive=0,
-    postpartum=False,
-    mothers=-1,
-    short_interval=0,
-    secondary_birth=0,
-    postpartum_dur=0,
-    lam=False,
-    breastfeed_dur=0,
-    breastfeed_dur_total=0,
+    State('parity',             0, int),
+    State('pregnant',           0, bool),
+    State('fertile',            0, bool),
+    State('sexually_active',    0, bool),
+    State('sexual_debut',       0, bool),
+    State('sexual_debut_age',   -1, float),
+    State('fated_debut',        -1, float),
+    State('first_birth_age',    -1, float),
+    State('lactating',          0, bool),
+    State('gestation',          0, int),
+    State('preg_dur',           0, int),
+    State('stillbirth',         0, int),
+    State('miscarriage',        0, int),
+    State('abortion',           0, int),
+    State('pregnancies',        0, int),
+    State('months_inactive',    0, int),
+    State('postpartum',         0, bool),
+    State('mothers',            -1, int),
+    State('short_interval',     0, int),
+    State('secondary_birth',    0, int),
+    State('postpartum_dur',     0, int),
+    State('lam',                0, bool),
+    State('breastfeed_dur',     0, int),
+    State('breastfeed_dur_total', 0, int),
 
     # Indices of children -- list of lists
-    children=[],
+    State('children',           [], list),
 
     # Dates
-    dobs=[],  # Dates of birth of children
-    still_dates=[],  # Dates of stillbirths -- list of lists
-    miscarriage_dates=[],  # Dates of miscarriages -- list of lists
-    abortion_dates=[],  # Dates of abortions -- list of lists
-    short_interval_dates=[],  # age of agents at short birth interval -- list of lists
+    State('dobs',               [], list),  # Dates of birth of children
+    State('still_dates',        [], list),  # Dates of stillbirths -- list of lists
+    State('miscarriage_dates',  [], list),  # Dates of miscarriages -- list of lists
+    State('abortion_dates',     [], list),  # Dates of abortions -- list of lists
+    State('short_interval_dates',[], list),  # age of agents at short birth interval -- list of lists
 
     # Fecundity
-    remainder_months=0,
-    personal_fecundity=0,
+    State('remainder_months',   0, int),
+    State('personal_fecundity', 0, int),
 
     # Empowerment - attributes will remain at these values if use_empowerment is False
-    paid_employment=False,
-    partnered=False,
-    partnership_age=-1,
-    urban=True,
-    decision_wages=0,
-    decision_health=0,
-    sexual_autonomy=0,
+    State('paid_employment',    0, bool),
+    State('partnered',          0, bool),
+    State('partnership_age',    -1, float),
+    State('urban',              1, bool),
+    State('decision_wages',     0, bool),
+    State('decision_health',    0, bool),
+    State('sexual_autonomy',    0, bool),
 
     # Education - will remain at these values if use_empowerment is False
-    edu_objective=0,
-    edu_attainment=0,
-    edu_dropout=False,
-    edu_interrupted=False,
-    edu_completed=False,
-    edu_started=False,
+    State('edu_objective',      0, int),
+    State('edu_attainment',     0, int),
+    State('edu_dropout',        0, bool),
+    State('edu_interrupted',    0, bool),
+    State('edu_completed',      0, bool),
+    State('edu_started',        0, bool)
 )
 
 # Postpartum keys to months

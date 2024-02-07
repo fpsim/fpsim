@@ -15,25 +15,6 @@ __all__ = ['People']
 
 
 # %% Define classes
-def arr(n=None, val=0, dtype=None):
-    """
-    Shortcut for defining an empty array with the correct value and data type
-    Args:
-        n (int): length of array to create
-        val (list, array, float, or str): value(s) to populate array with
-    Returns:
-         array of length n with values as specified
-    """
-    if isinstance(val, np.ndarray):
-        assert len(val) == n
-        arr = val
-    elif isinstance(val, list):
-        arr = [[] for _ in range(n)]
-    else:
-        if dtype is None: dtype = object if isinstance(val, str) else None
-        arr = np.full(shape=n, fill_value=val, dtype=dtype)
-    return arr
-
 
 class People(fpb.BasePeople):
     """
@@ -49,27 +30,24 @@ class People(fpb.BasePeople):
         if n is None:
             n = int(self.pars['n_agents'])
 
-        # Get initial states
-        init_states = dir(self)
-
         # Set default states
-        defaults = fpd.person_defaults
-        for state, val in defaults.items():
-            self[state] = arr(n, val)
+        self.states = {state.name: state for state in fpd.person_defaults}
+        for state_name, state in self.states.items():
+            self[state_name] = state.new(n)
 
         # Overwrite some states with alternative values
-        self.uid = arr(n, np.arange(n))
+        self.uid = np.arange(n)
 
         # Basic demographics
         _age, _sex = self.get_age_sex(n)
         if age is None: age = _age
         if sex is None: sex = _sex
-        self.age = arr(n, np.float64(age))  # Age of the person in years
-        self.sex = arr(n, sex)  # Female (0) or male (1)
+        self.age = self.states['age'].new(n, age)  # Age of the person in years
+        self.sex = self.states['sex'].new(n, sex)  # Female (0) or male (1)
 
         # Contraceptive use
         if method is not None:
-            self.method = arr(n, method)  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM
+            self.method = method  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM
         self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
 
         # Parameters on sexual and reproductive history
@@ -79,14 +57,13 @@ class People(fpb.BasePeople):
         # Fecundity variation
         fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
-        self.personal_fecundity = arr(n, np.random.random(n) * fac)
+        self.personal_fecundity = np.random.random(n) * fac
 
         if self.pars['use_empowerment']:
             fpemp.init_empowerment(self)
 
         # Store keys
-        final_states = dir(self)
-        self._keys = [s for s in final_states if s not in init_states]
+        self._keys = [state.name for state in fpd.person_defaults]
 
         return
 
