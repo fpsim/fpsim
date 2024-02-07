@@ -976,7 +976,7 @@ class People(fpb.BasePeople):
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
         # Update education
-        if self.pars['use_empowerment'] is not None:
+        if self.pars['use_empowerment']:
             alive_now_f = self.filter(self.is_female)
             fpemp.check_education(alive_now_f)
 
