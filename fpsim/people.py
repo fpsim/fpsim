@@ -15,7 +15,7 @@ __all__ = ['People']
 
 
 # %% Define classes
-def arr(n=None, val=0):
+def arr(n=None, val=0, dtype=None):
     """
     Shortcut for defining an empty array with the correct value and data type
     Args:
@@ -30,7 +30,7 @@ def arr(n=None, val=0):
     elif isinstance(val, list):
         arr = [[] for _ in range(n)]
     else:
-        dtype = object if isinstance(val, str) else None
+        if dtype is None: dtype = object if isinstance(val, str) else None
         arr = np.full(shape=n, fill_value=val, dtype=dtype)
     return arr
 
