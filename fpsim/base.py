@@ -311,7 +311,7 @@ class BasePeople(sc.prettyobj):
         Store indices to allow for easy filtering of the People object.
 
         Args:
-            criteria (array): a boolean array for the filtering critria
+            criteria (bool array): a boolean array for the filtering critria
             inds (array): alternatively, explicitly filter by these indices
 
         Returns:

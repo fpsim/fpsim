@@ -15,61 +15,13 @@ thisdir = sc.path(sc.thisdir())  # For loading CSV files
 
 def scalar_pars():
     scalar_pars = {
-        # Basic parameters
-        'location': 'ethiopia',
-        'n_agents': 1_000,  # Number of agents
-        'scaled_pop': None,  # Scaled population / total population size
-        'start_year': 1960,  # Start year of simulation
-        'end_year': 2020,  # End year of simulation
-        'timestep': 1,  # The simulation timestep in months
-        'method_timestep': 1,  # How many simulation timesteps to go for every method update step
-        'seed': 1,  # Random seed
-        'verbose': 1,  # How much detail to print during the simulation
-        'track_switching': 0,  # Whether to track method switching
-        'track_as': 0,  # Whether to track age-specific channels
-        'short_int': 24,  # Duration of a short birth interval between live births in months
-        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
-        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
-
-        # Age limits (in years)
-        'method_age': 15,
-        'age_limit_fecundity': 50,
-        'max_age': 99,
-
-        # Durations (in months)
-        'switch_frequency': 12,  # How frequently to check for changes to contraception
-        'end_first_tri': 3,
-        'preg_dur_low': 9,
-        'preg_dur_high': 9,
-        'postpartum_dur': 23,
-        'breastfeeding_dur_mu': 9.30485863,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'breastfeeding_dur_beta': 8.20149079, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
-        'max_lam_dur': 5,  # Duration of lactational amenorrhea
-        'short_int': 24,  # Duration of a short birth interval between live births in months
-        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
-        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
-
-        # Pregnancy outcomes
-        'abortion_prob': 0.176,
-        # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
-        'twins_prob': 0.011,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'LAM_efficacy': 0.98,  # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/   
-        'maternal_mortality_factor': 1,
-
-        # Fecundity and exposure
-        'fecundity_var_low': 0.7,
-        'fecundity_var_high': 1.1,
-        'high_parity': 4,
-        'high_parity_nonuse': 0.6,
-        'primary_infertility': 0.05,
-        'exposure_factor': 1.0,  # Overall exposure correction factor
-        'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
-                                   # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
-
-        # MCPR
-        'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
-        'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
-        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
+        'location':             'ethiopia',
+        'postpartum_dur':       23,
+        'breastfeeding_dur_mu': 9.30485863,     # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'breastfeeding_dur_beta': 8.20149079,   # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'abortion_prob':        0.176,          # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
+        'twins_prob':           0.011,          # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+        'mcpr_norm_year':       2020,           # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
@@ -939,10 +891,10 @@ def barriers():
 
 # %% Make and validate parameters
 
-def make_pars():
-    '''
+def make_pars(use_empowerment=False, **kwargs):
+    """
     Take all parameters and construct into a dictionary
-    '''
+    """
 
     # Scalar parameters and filenames
     pars = scalar_pars()
@@ -973,5 +925,10 @@ def make_pars():
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
+
+    # Empowerment metrics
+    if use_empowerment:
+        errormsg = 'Empowerment metrics not defined for Ethiopia'
+        raise ValueError(errormsg)
 
     return pars

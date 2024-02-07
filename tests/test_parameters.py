@@ -20,7 +20,7 @@ def ok(string):
 def test_null(do_plot=do_plot):
     sc.heading('Testing no births, no deaths...')
 
-    pars = fp.pars('test') # For default pars
+    pars = fp.pars('test')  # For default pars
 
     # Set things to zero
     for key in ['exposure_factor', 'high_parity_nonuse']:

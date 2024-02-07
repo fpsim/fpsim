@@ -10,3 +10,4 @@ from .analyzers import *
 from .experiment import *
 from .calibration import *
 from .scenarios import *
+from .empowerment import *

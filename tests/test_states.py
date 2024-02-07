@@ -13,7 +13,7 @@ def test_states():
     # Set up
     sim = fp.Sim(location='test', analyzers=fp.verbose_sim())
     sim.run()
-    total_results  = sim['analyzers'].total_results
+    total_results = sim['analyzers'].total_results
 
     # Checks that:
     #     no one is SA and pregnant
@@ -65,7 +65,6 @@ def test_states():
     descriptions = {0: "were breastfeeding while not lactating", 1: "were gestating while not pregnant"}
     for index, count_check in enumerate([feed_lact, gest_not_preg]):
         assert count_check == 0, f"{count_check} {descriptions[index]}"
-
 
     # Checks that no dead people are updating any parameters, specifically gestation and breastfeeding
     print('Testing dead people...')
