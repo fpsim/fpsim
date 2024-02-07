@@ -53,8 +53,8 @@ class People(fpb.BasePeople):
         init_states = dir(self)
 
         # Set default states
-        defaults = fpd.PersonDefaults()
-        for state, val in defaults.all_states.items():
+        defaults = fpd.person_defaults
+        for state, val in defaults.items():
             self[state] = arr(n, val)
 
         # Overwrite some states with alternative values

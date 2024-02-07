@@ -14,87 +14,75 @@ max_age_preg   = 50   # Maximum age to become pregnant
 max_parity     = 20   # Maximum number of children
 
 #%% Defaults when creating a new person
-class PersonDefaults:
-    def __init__(self):
-        self.person = dict(
-            uid=-1,
-            age=0,
-            age_by_group=0,
-            sex=0,
-            alive=True,
-        )
+person_defaults = dict(
+    # Basic demographics
+    uid=-1,
+    age=0,
+    age_by_group=0,
+    sex=0,
+    alive=True,
 
-        self.contraception = dict(
-            method=0,
-            barrier=0,
-        )
+    # Contraception
+    method=0,
+    barrier=0,
 
-        self.sexual_reproductive = dict(
-            parity=0,
-            pregnant=False,
-            fertile=False,
-            sexually_active=False,
-            sexual_debut=False,
-            sexual_debut_age=-1,
-            fated_debut=-1,
-            first_birth_age=-1,
-            lactating=False,
-            gestation=0,
-            preg_dur=0,
-            stillbirth=0,
-            miscarriage=0,
-            abortion=0,
-            pregnancies=0,
-            months_inactive=0,
-            postpartum=False,
-            mothers=-1,
-            short_interval=0,
-            secondary_birth=0,
-            postpartum_dur=0,
-            lam=False,
-            breastfeed_dur=0,
-            breastfeed_dur_total=0,
-        )
+    # Sexual and reproductive history
+    parity=0,
+    pregnant=False,
+    fertile=False,
+    sexually_active=False,
+    sexual_debut=False,
+    sexual_debut_age=-1,
+    fated_debut=-1,
+    first_birth_age=-1,
+    lactating=False,
+    gestation=0,
+    preg_dur=0,
+    stillbirth=0,
+    miscarriage=0,
+    abortion=0,
+    pregnancies=0,
+    months_inactive=0,
+    postpartum=False,
+    mothers=-1,
+    short_interval=0,
+    secondary_birth=0,
+    postpartum_dur=0,
+    lam=False,
+    breastfeed_dur=0,
+    breastfeed_dur_total=0,
 
-        self.children = dict(
-            children=[],  # Indices of children -- list of lists
-        )
+    # Indices of children -- list of lists
+    children=[],
 
-        self.dates = dict(
-            dobs=[],
-            still_dates=[],  # Dates of stillbirths -- list of lists
-            miscarriage_dates=[],  # Dates of miscarriages -- list of lists
-            abortion_dates=[],  # Dates of abortions -- list of lists
-            short_interval_dates=[],  # age of agents at short birth interval -- list of lists
-        )
+    # Dates
+    dobs=[],  # Dates of birth of children
+    still_dates=[],  # Dates of stillbirths -- list of lists
+    miscarriage_dates=[],  # Dates of miscarriages -- list of lists
+    abortion_dates=[],  # Dates of abortions -- list of lists
+    short_interval_dates=[],  # age of agents at short birth interval -- list of lists
 
-        self.fecundity = dict(
-            remainder_months=0,
-            personal_fecundity=0,
-        )
+    # Fecundity
+    remainder_months=0,
+    personal_fecundity=0,
 
-        self.empowerment = dict(
-            paid_employment=False,
-            partnered=False,
-            partnership_age=-1,
-            urban=True,
-            decision_wages=0,
-            decision_health=0,
-            sexual_autonomy=0,
-        )
+    # Empowerment - attributes will remain at these values if use_empowerment is False
+    paid_employment=False,
+    partnered=False,
+    partnership_age=-1,
+    urban=True,
+    decision_wages=0,
+    decision_health=0,
+    sexual_autonomy=0,
 
-        self.education = dict(
-            edu_objective=0,
-            edu_attainment=0,
-            edu_dropout=False,
-            edu_interrupted=False,
-            edu_completed=False,
-            edu_started=False,
-        )
-
-        self.all_states = sc.mergedicts(self.person, self.contraception, self.sexual_reproductive, self.children,
-                                        self.dates, self.fecundity, self.empowerment, self.education)
-
+    # Education - will remain at these values if use_empowerment is False
+    edu_objective=0,
+    edu_attainment=0,
+    edu_dropout=False,
+    edu_interrupted=False,
+    edu_completed=False,
+    edu_started=False,
+)
 
 # Postpartum keys to months
 postpartum_map = {
