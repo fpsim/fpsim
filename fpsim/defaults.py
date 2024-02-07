@@ -16,14 +16,13 @@ max_parity     = 20   # Maximum number of children
 
 #%% Defaults when creating a new person
 class State:
-    def __init__(self, name, val=None, dtype=None, n=None):
+    def __init__(self, name, val=None, dtype=None):
         """
         Initialize a state
         Args:
             name (str): name of state
             val (list, array, float, or str): value(s) to populate array with
             dtype (dtype): datatype. Inferred from val if not provided.
-            n (int): if provided, will return an array of length n
         """
         self.name = name
         self.val = val
@@ -32,10 +31,6 @@ class State:
     def new(self, n, vals=None):
         """
         Define an empty array with the correct value and data type
-        Args:
-            n (int): length of array to create
-        Returns:
-             array of length n with values as specified
         """
         if vals is None: vals = self.val  # Use default if none provided
 
