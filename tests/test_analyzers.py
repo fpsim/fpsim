@@ -2,11 +2,10 @@
 Run tests on the analyzers, including calibration.
 """
 
-import sciris as sc
-import fpsim as fp
 import os
 import numpy as np
-
+import sciris as sc
+import fpsim as fp
 
 do_plot = 1
 sc.options(backend='agg') # Turn off interactive plots
@@ -30,7 +29,7 @@ def test_calibration(n_trials=5):
     sc.heading('Testing calibration...')
 
     calib_pars = dict(
-        exposure_factor = [1.5, 1.4, 1.6],
+        exposure_factor = [1.5, 0.5, 1.5],
     )
 
     # Calculate calibration

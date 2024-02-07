@@ -178,12 +178,12 @@ class timeseries_recorder(Analyzer):
         Initializes self.keys from sim.people
         """
         super().initialize()
-        self.keys = []
         if self.keys is None:
             self.keys = sim.people.keys()
 
         for key in self.keys:
-            if sc.checktype(sim.people[key], 'arraylike'):
+            res = sim.people[key]
+            if sc.isarray(res) and sc.checktype(res, 'arraylike'):
                 self.to_record.append(key)
             self.data[key] = []
         return
@@ -509,11 +509,11 @@ class empowerment_recorder(Analyzer):
                     if key in ['urban']:
                         cmap = 'RdYlBu_r'
                 elif key in ['age']:
-                    clabel = f"proportion of agents"
+                    clabel = "proportion of agents"
                     cmap = 'Blues'
                     vmin, vmax = 0, np.nanmax(data[:])
                 else:
-                    clabel = f"average (median)"
+                    clabel = "average (median)"
                     cmap = 'coolwarm'
                     vmin, vmax = 0, 1
 
