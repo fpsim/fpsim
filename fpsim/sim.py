@@ -142,19 +142,20 @@ class People(fpb.BasePeople):
                 match_m = (orig_methods == m)
                 match = match_m * match_low_high
                 this_method = self.filter(match)
-                old_method = this_method.method.copy()
+                if len(this_method):
+                    old_method = this_method.method.copy()
 
-                matrix = annual[key]
-                choices = matrix[m]
-                choices = choices/choices.sum()
-                new_methods = fpu.n_multinomial(choices, match.sum())
-                this_method.method = new_methods
+                    matrix = annual[key]
+                    choices = matrix[m]
+                    choices = choices/choices.sum()
+                    new_methods = fpu.n_multinomial(choices, match.sum())
+                    this_method.method = new_methods
 
-                for i in range(len(old_method)):
-                    x = old_method[i]
-                    y = new_methods[i]
-                    switching_events[x, y] += 1
-                    switching_events_ages[key][x, y] += 1
+                    for i in range(len(old_method)):
+                        x = old_method[i]
+                        y = new_methods[i]
+                        switching_events[x, y] += 1
+                        switching_events_ages[key][x, y] += 1
 
         if self.pars['track_switching']:
             self.step_results_switching['annual'] += switching_events # CK: TODO: remove this extra result and combine with step_results
@@ -266,7 +267,8 @@ class People(fpb.BasePeople):
             age_diff = non_pp.ceil_age - non_pp.age
             whole_years = ((age_diff < (1/fpd.mpy)) * (age_diff > 0))
             birthdays = non_pp.filter(whole_years)
-            birthdays.update_method()
+            if len(birthdays):
+                birthdays.update_method()
 
         return
 
