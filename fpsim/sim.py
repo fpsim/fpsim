@@ -200,29 +200,30 @@ class People(fpb.BasePeople):
             match = (self.postpartum * postpartum1 * match_low_high * low_parity)
             match_high_parity = (self.postpartum * postpartum1 * match_low_high * high_parity)
             this_method = self.filter(match)
-            this_method_high_parity = self.filter(match_high_parity)
-            old_method = this_method.method.copy()
-            old_method_high_parity = sc.dcp(this_method_high_parity.method)
+            if len(this_method):
+                this_method_high_parity = self.filter(match_high_parity)
+                old_method = this_method.method.copy()
+                old_method_high_parity = sc.dcp(this_method_high_parity.method)
 
-            choices = pp0to1[key]
-            choices_high_parity = sc.dcp(choices)
-            choices_high_parity[0] *= self.pars['high_parity_nonuse']
-            choices_high_parity = choices_high_parity / choices_high_parity.sum()
-            new_methods = fpu.n_multinomial(choices, len(this_method))
-            new_methods_high_parity = fpu.n_multinomial(choices_high_parity, len(this_method_high_parity))
-            this_method.method = np.array(new_methods, dtype=np.int64)
-            this_method_high_parity.method = np.array(new_methods_high_parity, dtype=np.int64)
-            for i in range(len(old_method)):
-                x = old_method[i]
-                y = new_methods[i]
-                switching_events[x, y] += 1
-                switching_events_ages[key][x, y] += 1
+                choices = pp0to1[key]
+                choices_high_parity = sc.dcp(choices)
+                choices_high_parity[0] *= self.pars['high_parity_nonuse']
+                choices_high_parity = choices_high_parity / choices_high_parity.sum()
+                new_methods = fpu.n_multinomial(choices, len(this_method))
+                new_methods_high_parity = fpu.n_multinomial(choices_high_parity, len(this_method_high_parity))
+                this_method.method = np.array(new_methods, dtype=np.int64)
+                this_method_high_parity.method = np.array(new_methods_high_parity, dtype=np.int64)
+                for i in range(len(old_method)):
+                    x = old_method[i]
+                    y = new_methods[i]
+                    switching_events[x, y] += 1
+                    switching_events_ages[key][x, y] += 1
 
-            for i in range(len(old_method_high_parity)):
-                x = old_method_high_parity[i]
-                y = new_methods_high_parity[i]
-                switching_events[x, y] += 1
-                switching_events_ages[key][x, y] += 1
+                for i in range(len(old_method_high_parity)):
+                    x = old_method_high_parity[i]
+                    y = new_methods_high_parity[i]
+                    switching_events[x, y] += 1
+                    switching_events_ages[key][x, y] += 1
 
         # At 6 months, choice is by previous method and by age
         # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
@@ -234,17 +235,18 @@ class People(fpb.BasePeople):
                 match_m    = (orig_methods == m)
                 match = match_m * match_postpartum_age
                 this_method = self.filter(match)
-                old_method = self.method[match].copy()
+                if len(this_method):
+                    old_method = self.method[match].copy()
 
-                matrix = pp1to6[key]
-                choices = matrix[m]
-                new_methods = fpu.n_multinomial(choices, match.sum())
-                this_method.method = new_methods
-                for i in range(len(old_method)):
-                    x = old_method[i]
-                    y = new_methods[i]
-                    switching_events[x, y] += 1
-                    switching_events_ages[key][x, y] += 1
+                    matrix = pp1to6[key]
+                    choices = matrix[m]
+                    new_methods = fpu.n_multinomial(choices, match.sum())
+                    this_method.method = new_methods
+                    for i in range(len(old_method)):
+                        x = old_method[i]
+                        y = new_methods[i]
+                        switching_events[x, y] += 1
+                        switching_events_ages[key][x, y] += 1
 
         if self.pars['track_switching']:
             self.step_results_switching['postpartum'] += switching_events
@@ -262,7 +264,8 @@ class People(fpb.BasePeople):
             pp = self.filter(postpartum)
             non_pp = self.filter(~postpartum)
 
-            pp.update_method_pp() # Update method for
+            if len(pp):
+                pp.update_method_pp() # Update method for
 
             age_diff = non_pp.ceil_age - non_pp.age
             whole_years = ((age_diff < (1/fpd.mpy)) * (age_diff > 0))
