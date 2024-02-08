@@ -11,18 +11,18 @@ sim.initialize()
 
 ppl = sim.people
 to_profile = sc.objdict(
-    run =         sim.run,
-    update =      ppl.update, # 86%
+    run         = sim.run,
+    update      = ppl.update,           # 76% of sim.run() runtime is spent here
     people_init = ppl.__init__,
-    contra =      ppl.update_contraception, # 46%
-    method_pp =   ppl.get_method_postpartum, # 56%, no obvious performance improvements
-    get_method =  ppl.get_method, # 46%, could maybe be merged with previous
-    deliv      =  ppl.check_delivery
-)['method_pp']
+    methods     = ppl.update_methods,   # 61% of ppl.update() runtime is spent here
+    method_pp   = ppl.update_method_pp, # 54% of ppl.update_methods() runtime is spent here
+    method      = ppl.update_method,    # 43% of ppl.update_methods() runtime is spent here
+    filter      = ppl.filter,           # 40% of ppl.update_method() runtime is spent here
+)['update']
 
 
 def run():
-    sim = fp.Sim(n=10e1, verbose=0, method_timestep=1)
+    sim = fp.Sim(n_agents=10e1, verbose=0, method_timestep=1)
     sim.run()
     return sim
 

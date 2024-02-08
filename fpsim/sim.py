@@ -91,7 +91,7 @@ class Sim(fpb.BaseSim):
 
         # Handle location
         if location is None:
-            if pars.get('location'):
+            if pars is not None and pars.get('location'):
                 location = pars['location']
 
         # Make parameters
@@ -103,6 +103,13 @@ class Sim(fpb.BaseSim):
             errormsg = f'Key(s) {mismatches} not found; available keys are {fpp.par_keys}'
             raise sc.KeyNotFoundError(errormsg)
         super().__init__(pars, location=location, **kwargs)  # Initialize and set the parameters as attributes
+
+        # Set label
+        if label is None:
+            if location is not None:
+                label = f"{location}--{self.pars['seed']}"
+            else:
+                label = f"Sim--{self.pars['seed']}"
 
         self.initialized = False
         self.already_run = False
@@ -449,7 +456,7 @@ class Sim(fpb.BaseSim):
         # Store results of number of switching events in each age group
         if self['track_switching']:
             switch_events = r.pop('switching')
-            self.results['switching_events_<18'][i] = scale ** scale * r.switching_annual['<18']
+            self.results['switching_events_<18'][i] = scale * r.switching_annual['<18']
             self.results['switching_events_18-20'][i] = scale * r.switching_annual['18-20']
             self.results['switching_events_21-25'][i] = scale * r.switching_annual['21-25']
             self.results['switching_events_26-35'][i] = scale * r.switching_annual['26-35']

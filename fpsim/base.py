@@ -206,17 +206,10 @@ class BasePeople(sc.prettyobj):
             elif isinstance(npval, list):
                 newpeople[key] += p2val
             else:
-                import traceback;
-                traceback.print_exc();
-                import pdb;
-                pdb.set_trace()
                 errormsg = f'Not sure what to do with object of type {type(npval)}'
                 raise TypeError(errormsg)
 
-        # Validate
-        for key in keys:
-            assert len(newpeople[key]) == len(newpeople)
-        newpeople.uid[n_orig:] = max_uid + np.arange(n_new) # Reassign UIDs so they're unique
+        newpeople.uid[n_orig:] = max_uid + np.arange(n_new)  # Reassign UIDs so they're unique
 
         return newpeople
 

@@ -123,7 +123,7 @@ postpartum_map = {
     'pp12to23': [12, 24]
 }
 
-## Age bins for tracking age-specific fertility rate
+# Age bins for tracking age-specific fertility rate
 age_bin_map = {
     '10-14':   [10, 15],
     '15-19':   [15, 20],
