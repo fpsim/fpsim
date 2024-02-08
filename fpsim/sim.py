@@ -188,7 +188,6 @@ class Sim(fpb.BaseSim):
         See people.py for details of people construction.
         """
         self.people = fpppl.People(pars=self.pars)
-        # self.people.initialize()  # Fully initialize the people - time-consuming step
 
     def update_methods(self):
         """

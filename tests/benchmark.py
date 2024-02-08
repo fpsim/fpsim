@@ -12,17 +12,18 @@ sim.initialize()
 ppl = sim.people
 to_profile = sc.objdict(
     run         = sim.run,
-    update      = ppl.update,           # 76% of sim.run() runtime is spent here
+    update      = ppl.update,           # 70% of sim.run() runtime is spent here
     people_init = ppl.__init__,
-    methods     = ppl.update_methods,   # 61% of ppl.update() runtime is spent here
-    method_pp   = ppl.update_method_pp, # 54% of ppl.update_methods() runtime is spent here
-    method      = ppl.update_method,    # 43% of ppl.update_methods() runtime is spent here
-    filter      = ppl.filter,           # 40% of ppl.update_method() runtime is spent here
-)['update']
+    methods     = ppl.update_methods,   # 50% of ppl.update() runtime is spent here
+    method_pp   = ppl.update_method_pp, # 53% of ppl.update_methods() runtime is spent here
+    method      = ppl.update_method,    # 44% of ppl.update_methods() runtime is spent here
+    filter      = ppl.filter            # 58% of ppl.update_method() runtime is spent here
+)['run']
 
 
 def run():
-    sim = fp.Sim(n_agents=10e1, verbose=0, method_timestep=1)
+    pars = fp.pars(n_agents=10e1, method_timestep=1, verbose=0)
+    sim = fp.Sim(pars)
     sim.run()
     return sim
 

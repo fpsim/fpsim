@@ -113,26 +113,25 @@ class People(fpb.BasePeople):
 
         # Method switching depends both on agent age and also on their current method, so we need to loop over both
         for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low = (self.age >= age_low)  # CK: TODO: refactor into single method
-            match_high = (self.age < age_high)
-            match_low_high = match_low * match_high
+            match_low_high = fpu.match_ages(self.age, age_low, age_high)
             for m in method_map.values():
                 match_m = (orig_methods == m)
                 match = match_m * match_low_high
                 this_method = self.filter(match)
-                old_method = this_method.method.copy()
+                if len(this_method):
+                    old_method = this_method.method.copy()
 
-                matrix = annual[key]
-                choices = matrix[m]
-                choices = choices / choices.sum()
-                new_methods = fpu.n_multinomial(choices, match.sum())
-                this_method.method = new_methods
+                    matrix = annual[key]
+                    choices = matrix[m]
+                    choices = choices/choices.sum()
+                    new_methods = fpu.n_multinomial(choices, match.sum())
+                    this_method.method = new_methods
 
-                for i in range(len(old_method)):
-                    x = old_method[i]
-                    y = new_methods[i]
-                    switching_events[x, y] += 1
-                    switching_events_ages[key][x, y] += 1
+                    for i in range(len(old_method)):
+                        x = old_method[i]
+                        y = new_methods[i]
+                        switching_events[x, y] += 1
+                        switching_events_ages[key][x, y] += 1
 
         if self.pars['track_switching']:
             self.step_results_switching[
@@ -171,59 +170,59 @@ class People(fpb.BasePeople):
         # In first time step after delivery, choice is by age but not previous method (since just gave birth)
         # All women are coming from birth and on no method to start, either will stay on no method or initiate a method
         for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low = (self.age >= age_low)
-            match_high = (self.age < age_high)
+            match_low_high = fpu.match_ages(self.age, age_low, age_high)
             low_parity = (self.parity < self.pars['high_parity'])
             high_parity = (self.parity >= self.pars['high_parity'])
-            match = (self.postpartum * postpartum1 * match_low * match_high * low_parity)
-            match_high_parity = (self.postpartum * postpartum1 * match_low * match_high * high_parity)
+            match = (self.postpartum * postpartum1 * match_low_high * low_parity)
+            match_high_parity = (self.postpartum * postpartum1 * match_low_high * high_parity)
             this_method = self.filter(match)
-            this_method_high_parity = self.filter(match_high_parity)
-            old_method = this_method.method.copy()
-            old_method_high_parity = sc.dcp(this_method_high_parity.method)
+            if len(this_method):
+                this_method_high_parity = self.filter(match_high_parity)
+                old_method = this_method.method.copy()
+                old_method_high_parity = sc.dcp(this_method_high_parity.method)
 
-            choices = pp0to1[key]
-            choices_high_parity = sc.dcp(choices)
-            choices_high_parity[0] *= self.pars['high_parity_nonuse']
-            choices_high_parity = choices_high_parity / choices_high_parity.sum()
-            new_methods = fpu.n_multinomial(choices, len(this_method))
-            new_methods_high_parity = fpu.n_multinomial(choices_high_parity, len(this_method_high_parity))
-            this_method.method = np.array(new_methods, dtype=np.int64)
-            this_method_high_parity.method = np.array(new_methods_high_parity, dtype=np.int64)
-            for i in range(len(old_method)):
-                x = old_method[i]
-                y = new_methods[i]
-                switching_events[x, y] += 1
-                switching_events_ages[key][x, y] += 1
-
-            for i in range(len(old_method_high_parity)):
-                x = old_method_high_parity[i]
-                y = new_methods_high_parity[i]
-                switching_events[x, y] += 1
-                switching_events_ages[key][x, y] += 1
-
-        # At 6 months, choice is by previous method and by age
-        # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
-        # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
-        for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low = (self.age >= age_low)
-            match_high = (self.age < age_high)
-            match_postpartum_age = self.postpartum * postpartum6 * match_low * match_high
-            for m in methods_map.values():
-                match_m = (orig_methods == m)
-                match = match_m * match_postpartum_age
-                this_method = self.filter(match)
-                old_method = self.method[match].copy()
-
-                matrix = pp1to6[key]
-                choices = matrix[m]
-                new_methods = fpu.n_multinomial(choices, match.sum())
-                this_method.method = new_methods
+                choices = pp0to1[key]
+                choices_high_parity = sc.dcp(choices)
+                choices_high_parity[0] *= self.pars['high_parity_nonuse']
+                choices_high_parity = choices_high_parity / choices_high_parity.sum()
+                new_methods = fpu.n_multinomial(choices, len(this_method))
+                new_methods_high_parity = fpu.n_multinomial(choices_high_parity, len(this_method_high_parity))
+                this_method.method = np.array(new_methods, dtype=np.int64)
+                this_method_high_parity.method = np.array(new_methods_high_parity, dtype=np.int64)
                 for i in range(len(old_method)):
                     x = old_method[i]
                     y = new_methods[i]
                     switching_events[x, y] += 1
                     switching_events_ages[key][x, y] += 1
+
+                for i in range(len(old_method_high_parity)):
+                    x = old_method_high_parity[i]
+                    y = new_methods_high_parity[i]
+                    switching_events[x, y] += 1
+                    switching_events_ages[key][x, y] += 1
+
+        # At 6 months, choice is by previous method and by age
+        # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
+        # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
+        for key, (age_low, age_high) in fpd.method_age_map.items():
+            match_low_high = fpu.match_ages(self.age, age_low, age_high)
+            match_postpartum_age = self.postpartum * postpartum6 * match_low_high
+            for m in methods_map.values():
+                match_m = (orig_methods == m)
+                match = match_m * match_postpartum_age
+                this_method = self.filter(match)
+                if len(this_method):
+                    old_method = self.method[match].copy()
+
+                    matrix = pp1to6[key]
+                    choices = matrix[m]
+                    new_methods = fpu.n_multinomial(choices, match.sum())
+                    this_method.method = new_methods
+                    for i in range(len(old_method)):
+                        x = old_method[i]
+                        y = new_methods[i]
+                        switching_events[x, y] += 1
+                        switching_events_ages[key][x, y] += 1
 
         if self.pars['track_switching']:
             self.step_results_switching['postpartum'] += switching_events
@@ -247,7 +246,8 @@ class People(fpb.BasePeople):
             age_diff = non_pp.ceil_age - non_pp.age
             whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
             birthdays = non_pp.filter(whole_years)
-            birthdays.update_method()
+            if len(birthdays):
+                birthdays.update_method()
 
         return
 
@@ -621,7 +621,8 @@ class People(fpb.BasePeople):
 
             live_age = live.age
             for key, (age_low, age_high) in fpd.age_bin_map.items():
-                birth_bins = np.sum((live_age >= age_low) * (live_age < age_high))
+                match_low_high = fpu.match_ages(live_age, age_low, age_high)
+                birth_bins = np.sum(match_low_high)
                 self.step_results['birth_bins'][key] += birth_bins
 
             if self.pars['track_as']:
@@ -693,7 +694,7 @@ class People(fpb.BasePeople):
         Count how many total live women in each 5-year age bin 10-50, for tabulating ASFR
         """
         for key, (age_low, age_high) in fpd.age_bin_map.items():
-            this_age_bin = self.filter((self.age >= age_low) * (self.age < age_high))
+            this_age_bin = self.filter((fpu.match_ages(self.age, age_low, age_high)))
             self.step_results['age_bin_totals'][key] += len(this_age_bin)
         return
 
@@ -955,7 +956,7 @@ class People(fpb.BasePeople):
         # Update education
         if self.pars['use_empowerment']:
             alive_now_f = self.filter(self.is_female)
-            fpemp.check_education(alive_now_f)
+            fpemp.update_education(alive_now_f)
 
         # Update results
         fecund.update_age_bin_totals()

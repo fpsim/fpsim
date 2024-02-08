@@ -163,9 +163,9 @@ def initialize_education(ppl):
 
 # %% Methods to update education
 
-def check_education(ppl):
+def update_education(ppl):
     start_education(ppl)  # Check if anyone needs to start school
-    update_education(ppl)  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
+    advance_education(ppl)  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
     resume_education(ppl)  # Determine who goes back to school after an interruption
     graduate(ppl)  # Check if anyone achieves their education goal
 
@@ -184,21 +184,20 @@ def interrupt_education(ppl):
     woman is pregnant and towards the end of the first trimester
     """
     # Hinder education progression if a woman is pregnant and towards the end of the first trimester
-    pregnant_students = ppl.filter(ppl.pregnant)
-    end_first_tri = pregnant_students.filter(pregnant_students.gestation == ppl.pars['end_first_tri'])
+    pregnant_students = ppl.filter(ppl.pregnant & (ppl.gestation == ppl.pars['end_first_tri']))
     # Disrupt education
-    end_first_tri.edu_interrupted = True
+    pregnant_students.edu_interrupted = True
 
 
 def dropout_education(ppl, parity):
     dropout_dict = ppl.pars['education']['edu_dropout_probs'][parity]
-    age_cutoffs = np.hstack((dropout_dict['age'], dropout_dict['age'].max() + 1))
-    age_inds = np.digitize(ppl.age, age_cutoffs) - 1
+    age_cutoffs = dropout_dict['age']  # bin edges
+    age_inds = np.searchsorted(age_cutoffs, ppl.age,"right") - 1  # NOTE: faster than np.digitize for large arrays
     # Decide who will drop out
     ppl.edu_dropout = fpu.binomial_arr(dropout_dict['percent'][age_inds])
 
 
-def update_education(ppl):
+def advance_education(ppl):
     """
     Advance education attainment in the simulation, determine if agents have completed their education
     """
@@ -224,17 +223,14 @@ def resume_education(ppl):
     """
     # Basic mechanism to resume education post-pregnancy:
     # If education was interrupted due to pregnancy, resume after 9 months pospartum
-    pospartum_students = ppl.filter(
-        ppl.postpartum & ppl.edu_interrupted & ~ppl.edu_completed & ~ppl.edu_dropout)
-    resume_inds = sc.findinds(pospartum_students.postpartum_dur > 0.5 * ppl.pars['postpartum_dur'])
-    tmp = pospartum_students.edu_interrupted
-    tmp[resume_inds] = False
-    pospartum_students.edu_interrupted = tmp
+    filter_conds = (ppl.postpartum & ppl.edu_interrupted & ~ppl.edu_completed & ~ppl.edu_dropout &
+                    (ppl.postpartum_dur > 0.5 * ppl.pars['postpartum_dur']))
+    postpartum_students = ppl.filter(filter_conds)
+    postpartum_students.edu_interrupted = False
 
 
 def graduate(ppl):
     completed_inds = sc.findinds(ppl.edu_attainment >= ppl.edu_objective)
-    # NOTE: the two lines below were necessary because edu_completed was not being updating as expected
     tmp = ppl.edu_completed
     tmp[completed_inds] = True
     ppl.edu_completed = tmp
