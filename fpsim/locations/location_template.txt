@@ -10,9 +10,13 @@ Fill in values for your location then remove the comment to allow the par to be 
 import numpy as np
 import sciris as sc
 from scipy import interpolate as si
+import pandas as pd
 from .. import defaults as fpd
 
 #%% Housekeeping
+
+thisdir = sc.path(sc.thisdir())  # For loading CSV files
+pop_wwp_data = f'{thisdir}/data_processing/scraped_data/WPP2022_Population1JanuaryByAge5GroupSex_Medium.csv'
 
 def scalar_pars():
     scalar_pars = {
@@ -80,15 +84,16 @@ def filenames():
     These data files are created using code in the data processing folder '''
     files = {}
 ### context-specific    files['base'] = sc.thisdir(aspath=True) / 'senegal'
-### context-specific    files['basic_dhs']        = 'senegal-basic-dhs.yaml'
-### context-specific    files['popsize']          = 'senegal-popsize.csv'
-### context-specific    files['mcpr']             = 'senegal-mcpr.csv'
-### context-specific    files['tfr']              = 'senegal-tfr.csv'
-### context-specific    files['asfr']             = 'senegal-asfr.csv'
-### context-specific    files['ageparity']      = 'Age-paritys-All-DHS.csv'
-### context-specific    files['pregnancy_parity'] = 'SNIR80FL.obj'
-### context-specific    files['spacing']          = 'BirthSpacing.obj'
-### context-specific    files['methods']          = 'Method_v312.csv'
+### context-specific    files['basic_dhs']        = 'basic_dhs.yaml'
+### context-specific    files['popsize']          = 'popsize.csv'
+### context-specific    files['mcpr']             = 'cpr.csv'
+### context-specific    files['tfr']              = 'tfr.csv'
+### context-specific    files['asfr']             = 'asfr.csv'
+### context-specific    files['skyscrapers']      = 'skyscrapers.csv'
+### context-specific    files['spacing']          = 'birth_spacing_dhs.csv'
+### context-specific    files['methods']          = 'mix.csv'
+### context-specific    files['afb']              = 'afb.table.csv'
+### context-specific    files['use']              = 'use.csv'
     return files
 
 
@@ -96,29 +101,17 @@ def filenames():
 
 def age_pyramid():
     ''' Starting age bin, male population, female population '''
-    pyramid = np.array([
-        
-        ### context-specific -- REPLACE
-         [0,  318225,  314011], # Senegal 1962
-         [5,  249054,  244271],
-        [10,  191209,  190998],
-        [15,  157800,  159536],
-        [20,  141480,  141717],
-        [25,  125002,  124293],
-        [30,  109339,  107802],
-        [35,  93359,   92119],
-        [40,  77605,   78231],
-        [45,  63650,   66117],
-        [50,  51038,   54934],
-        [55,  39715,   44202],
-        [60,  29401,   33497],
-        [65,  19522,   23019],
-        [70,  11686,   14167],
-        [75,  5985,    7390],
-        [80,  2875,    3554],
-    ], dtype=float)
 
-    return pyramid
+    ## Context-Specific change of location column
+    df = pd.read_csv(pop_wwp_data)
+    df = df.loc[(df['Location'] == 'Senegal') & (df['Time'] == 1960) & (df['AgeGrpStart'] <= 80)]
+    df = df.filter(["AgeGrpStart", "PopMale", "PopFemale"])
+    df['PopMale'] = df['PopMale']*1000
+    df['PopFemale'] = df['PopFemale']*1000
+
+    data = df.to_numpy()
+
+    return data
 
 
 def age_mortality():
@@ -159,33 +152,12 @@ def maternal_mortality():
     expressed per 100,000 live births, for a specified time period.
     '''
 ### context-specific
-#    data = np.array([
-        [1990, 0.00278, 0.00319, 0.00364],
-        [2000, 0.00268, 0.00309, 0.00354],
-        [2001, 0.00263, 0.00304, 0.00350],
-        [2002, 0.00259, 0.00300, 0.00346],
-        [2003, 0.00255, 0.00296, 0.00341],
-        [2004, 0.00252, 0.00293, 0.00338],
-        [2005, 0.00249, 0.00290, 0.00335],
-        [2006, 0.00245, 0.00286, 0.00331],
-        [2007, 0.00242, 0.00283, 0.00329],
-        [2008, 0.00237, 0.00278, 0.00323],
-        [2009, 0.00230, 0.00271, 0.00317],
-        [2010, 0.00220, 0.00261, 0.00306],
-        [2011, 0.00207, 0.00248, 0.00293],
-        [2012, 0.00194, 0.00235, 0.00280],
-        [2013, 0.00182, 0.002228327, 0.00268338],
-        [2014, 0.00172, 0.00213, 0.00258],
-        [2015, 0.00161, 0.00202, 0.00248],
-        [2016, 0.00152, 0.00193, 0.00239],
-        [2017, 0.00143, 0.00184, 0.00230],
-        [2018, 0.00135, 0.00176, 0.00222],
-        [2019, 0.00128, 0.00169, 0.00214]
-    ])
+    mmr_data = pd.read_csv(thisdir / 'senegal' / 'maternal_mortality.csv')
+    data = mmr_data.to_numpy()
 
     maternal_mortality = {}
     maternal_mortality['year'] = data[:,0]
-    maternal_mortality['probs'] = data[:,3]
+    maternal_mortality['probs'] = data[:,1]
 
     return maternal_mortality
 
@@ -198,69 +170,9 @@ def infant_mortality():
     from Noori et al for Sub-Saharan African from 2014-2018.  Odds ratios with age 23-25 as reference group:
     https://www.medrxiv.org/content/10.1101/2021.06.10.21258227v1
     '''
-### context-specific - REPLACE
- #   data = np.array([
-        [1960, 128.3],
-        [1961, 128.2],
-        [1962, 128.3],
-        [1963, 128.6],
-        [1964, 128.8],
-        [1965, 128.9],
-        [1966, 128.6],
-        [1967, 128.2],
-        [1968, 127.7],
-        [1969, 126.7],
-        [1970, 125.4],
-        [1971, 123.6],
-        [1972, 121.4],
-        [1973, 118.7],
-        [1974, 115.6],
-        [1975, 112.2],
-        [1976, 108.4],
-        [1977, 104.6],
-        [1978, 101],
-        [1979, 97.7],
-        [1980, 94.9],
-        [1981, 92.5],
-        [1982, 90.4],
-        [1983, 88.2],
-        [1984, 85.7],
-        [1985, 82.9],
-        [1986, 79.9],
-        [1987, 77],
-        [1988, 74.4],
-        [1989, 72.4],
-        [1990, 71],
-        [1991, 70.3],
-        [1992, 70.1],
-        [1993, 70.3],
-        [1994, 70.6],
-        [1995, 71],
-        [1996, 71.2],
-        [1997, 71.1],
-        [1998, 70.6],
-        [1999, 69.4],
-        [2000, 67.5],
-        [2001, 65.1],
-        [2002, 62.2],
-        [2003, 59.2],
-        [2004, 56.1],
-        [2005, 53.2],
-        [2006, 50.6],
-        [2007, 48.2],
-        [2008, 46.2],
-        [2009, 44.3],
-        [2010, 42.6],
-        [2011, 41.1],
-        [2012, 39.8],
-        [2013, 38.6],
-        [2014, 37.5],
-        [2015, 36.4],
-        [2016, 35.4],
-        [2017, 34.4],
-        [2018, 33.6],
-        [2019, 32.7],
-    ])
+### context-specific
+    imr_data = pd.read_csv(thisdir / 'senegal' / 'infant_mortality.csv')
+    data = imr_data.to_numpy()
 
     infant_mortality = {}
     infant_mortality['year'] = data[:,0]

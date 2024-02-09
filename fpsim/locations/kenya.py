@@ -7,7 +7,7 @@ import pandas as pd
 import sciris as sc
 from scipy import interpolate as si
 from .. import defaults as fpd
-
+from .. import utils as fpu
 # %% Housekeeping
 
 thisdir = sc.path(sc.thisdir())  # For loading CSV files
@@ -89,14 +89,16 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'kenya'
-    files['basic_dhs'] = 'kenya_basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
-    files['popsize'] = 'kenya_popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
-    files['mcpr'] = 'kenya_cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+    files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
+    files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
+    files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
-    files['asfr'] = 'kenya_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-    files['ageparity'] = 'kenya_ageparity.csv' # Choose from either DHS 2014 or PMA 2022
-    #files['spacing'] = 'BirthSpacing.obj'
-    #files['methods'] = 'Method_v312.csv'
+    files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
+    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2014 or PMA 2022
+    files['spacing'] = 'birth_spacing_dhs.csv'
+    files['methods'] = 'mix.csv'
+    files['afb'] = 'afb.table.csv'
+    files['use'] = 'use.csv'
     return files
 
 
@@ -147,8 +149,8 @@ def age_mortality():
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
     data_year = 2010
-    mortality_data = pd.read_csv(thisdir / 'kenya' / 'mortality_prob_kenya.csv')
-    mortality_trend = pd.read_csv(thisdir / 'kenya' / 'mortality_trend_kenya.csv')
+    mortality_data = pd.read_csv(thisdir / 'kenya' / 'mortality_prob.csv')
+    mortality_trend = pd.read_csv(thisdir / 'kenya' / 'mortality_trend.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -621,7 +623,7 @@ def methods():
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'kenya' / 'kenya_cpr.csv')
+    cpr_data = pd.read_csv(thisdir / 'kenya' / 'cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
@@ -949,25 +951,263 @@ def barriers():
     return barriers
 
 
+def empowerment_sexual_autonomy(ages, regression_fun, regression_pars=None):
+    """
+    Interpolate data from DHS and extrapolate to cover the full range of ages
+
+    NOTE: this is a temporary implementation to illustrate different parameterisation to
+    interpolate/extrapolate DHS data.
+    """
+    arr = regression_fun(ages, *regression_pars)
+    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
+        # Set the metric to zero for ages < 5
+        arr[ages < 5] = 0.0
+        # Set the metric to zero if it goes below 0
+        arr[arr < 0] = 0.0
+        # Set metric to 1 if it goes above with this parameterisation
+        arr[arr > 1] = 1.0
+    return arr
+
+
+def empowerment_decision_wages(ages, regression_fun, regression_pars=None):
+    """
+    Interpolate data from DHS and extrapolate to cover the full range of ages
+
+    NOTE: this is a temporary implementation to illustrate different parameterisation to
+    interpolate/extrapolate DHS data.
+    """
+    arr = regression_fun(ages, *regression_pars)
+    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
+        # Set the metric to zero for ages < 5
+        arr[ages < 5] = 0.0
+        # Set other metric to zero if it goes below 0
+        arr[arr < 0] = 0.0
+        # Set metric to 1 if it goes above with this parameterisation
+        arr[arr > 1] = 1.0
+    return arr
+
+
+def empowerment_decision_health(ages, regression_fun, regression_pars=None):
+    """
+    Interpolate data from DHS and extrapolate to cover the full range of ages
+
+    NOTE: this is a temporary implementation to illustrate different parameterisation to
+    interpolate/extrapolate DHS data.
+    """
+    arr = regression_fun(ages, *regression_pars)
+    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
+        # Set other metric to zero if it goes below 0
+        arr[arr < 0] = 0.0
+        # Set metric to 1 if it goes above with this parameterisation
+        arr[arr > 1] = 1.0
+    return arr
+
+
+def empowerment_paid_employment(ages, regression_fun, regression_pars=None):
+    """
+    Interpolate data from DHS and extrapolate to cover the full range of ages
+
+    NOTE: this is a temporary implementation to illustrate different parameterisation to
+    interpolate/extrapolate DHS data.
+
+    """
+    arr = regression_fun(ages, *regression_pars)
+
+    if regression_fun.__name__ == "piecewise_linear": # piecewise linear interpolation
+        inflection_age, inflection_prob, m1, m2 = regression_pars
+        # Set other probabilities to zero in the range 5 <= age < 15
+        arr[arr < 0] = 0.0
+        # Decline probability of having paid wages above 60 -- age of retirement in Kenya
+        inflection_age_2 = 60
+        if m2 > 0:
+            m3 = -m2 # NOTE: assumption
+        else:
+            m3 = m2
+        age_inds = sc.findinds(ages >= inflection_age_2 - 5)
+        arr[age_inds] = regression_fun(ages[age_inds], inflection_age_2, arr[inflection_age_2], m2, m3)
+        arr[ages < 5] = 0.0
+    return arr
+
+
+def empowerment_regression_pars(regression_type='logistic'):
+    """
+    Return initial guesses of parameters for the corresponding regression function.
+    These parameters have been estimated from the mean estimates of each metric over the range 15-49 years old
+    """
+    if regression_type == "pwlin":
+    # Parameters for two-part piecewise lienar interpolation, p0: age, p1: val at age, p2: slope < age,  p: slope >= age
+        regression_pars = {"paid_employment": [25.0, 0.6198487     , 6.216042e-02  ,  0.0008010242],
+                           "decision_wages":  [28.0, 0.5287573     , 4.644537e-02  , -0.001145422],
+                           "decision_health": [16.0, 9.90297066e-01, 6.26846208e-02,  1.44754082e-04],
+                           "sexual_autonomy": [25.0, 0.8292142     , 0.025677      , -0.003916498]}
+        regression_fun = fpu.piecewise_linear
+    elif regression_type == 'logistic':
+        # Parameters for product of sigmoids
+        regression_pars = {"paid_employment": [-6.33459372e-01, -2.07598104e-03,  1.02375876e+01,  5.03843348e-01],
+                           "decision_wages":  [-6.33459372e-01, -2.07598104e-03,  1.02375876e+01,  5.03843348e-01],
+                           "decision_health": [-4.36694812e+00, 1.72072493e-02 ,  2.92858981e+02,  1.97195136e+01],
+                           "sexual_autonomy": [ 6.25030509    , 0.43789906     , -1.83553293    , -0.015715291]}
+        regression_fun = fpu.sigmoid_product
+    else:
+        mssg = f"Not implemented or unknown regression type [{regression_type}]."
+        raise NotImplementedError(mssg)
+
+    return regression_pars, regression_fun
+
+
 # Empowerment metrics
-def empowerment_distributions():
+def empowerment_distributions(seed=None, regression_type='logistic'):
     """Intial distributions of empowerment attributes based on latest DHS data <YYYY>
     TODO: perhaps split into single functions, one per attribute?
+
+    NOTE: DHS data covers the age group from 15 to 49 (inclusive). In this function we
+    interpolate data to reduce noise and extrapolate to cover the age range (0, 100).
+    Interpolation is done using a piecewise linear approximation with an inflexion point
+    on
+
+    Paid employment (https://github.com/fpsim/fpsim/issues/185)
+    0.6198487 at age 25
+    slope <25, 6.216042e-02 (SE 2.062729e-03)
+    slope >25, 0.0008010242 (SE 0.0592966648)
+
+    Control over wages (https://github.com/fpsim/fpsim/issues/187)
+    Parameterization:
+    0.9434381 at age 20
+    slope <20, 2.548961e-02 (SE 5.243655e-03)
+    slope >20, 0.0008366125 (SE 0.0194093421)
+
+    Sexual autonomy (https://github.com/fpsim/fpsim/issues/188)
+    Parameterization:
+    0.8292142 at age 25
+    slope <25, 0.025677 (SE 0.003474)
+    slope>25, -0.003916498 (SE 0.026119389)
     """
+    from scipy import optimize
+
+    # Load empirical data
     empowerment_data =  pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
+    mean_cols = {col: col + '.mean' for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"}
+    empowerment_data.rename(columns=mean_cols, inplace=True)
     empowerment_dict = {}
-    for col in empowerment_data.columns:
-        if not col.endswith('.se'):  # Exclude columns that end with ".se"
-            empowerment_dict[col] = empowerment_data[col].to_numpy()
-    return empowerment_dict
+
+    # TODO: Think of a better way to initialize this?
+    # Set seed
+    if seed is None:
+        seed = 42
+    fpu.set_seed(seed)
+
+    # TODO: parametrise so the users can decide which function to use?
+    regression_pars, regression_fun = empowerment_regression_pars(regression_type=regression_type)
+
+    data_points = {"paid_employment": [], "decision_wages":  [], "decision_health": [], "sexual_autonomy": []}
+    cols = ["paid_employment", "decision_wages", "decision_health", "sexual_autonomy"]
+    ages_interp = empowerment_data["age"].to_numpy()
+    for col in cols:
+        loc = empowerment_data[f"{col}.mean"]
+        scale = empowerment_data[f"{col}.se"]
+        # Use the standard error to capture the unvertainty in the mean eastimates of each metric
+        data = np.random.normal(loc=loc, scale=scale)
+        data_points[col] = data
+        # Optimise regression parameters
+        fit_pars, fit_err = optimize.curve_fit(regression_fun, ages_interp, data, p0=regression_pars[col])
+        # Update regression parameters
+        regression_pars[col]  = fit_pars
+
+    # Create vector of ages 0, 99 (inclusive) to extrapolate data
+    ages = np.arange(100.0)
+
+    # Interpolate and extrapolate data for different empowerment metrics
+    empowerment_dict["age"] = ages
+    empowerment_dict["paid_employment"] = empowerment_paid_employment(ages, regression_fun, regression_pars=regression_pars["paid_employment"])
+    empowerment_dict["decision_wages"]  = empowerment_decision_wages(ages, regression_fun, regression_pars=regression_pars["decision_wages"])
+    empowerment_dict["decision_health"] = empowerment_decision_health(ages, regression_fun, regression_pars=regression_pars["decision_health"])
+    empowerment_dict["sexual_autonomy"] = empowerment_sexual_autonomy(ages, regression_fun, regression_pars=regression_pars["sexual_autonomy"])
+    # Store the estimates of each metric and the optimised regression parameters
+    empowerment_dict["regression_pars"] = regression_pars
+    empowerment_dict["sampled_points"] = data_points
+
+    return empowerment_dict, empowerment_data
+
 
 def age_partnership():
     """ Probabilities of being partnered at age X"""
-    age_partnership_data =  pd.read_csv(thisdir / 'kenya' / 'age_partnership.csv')
+    age_partnership_data = pd.read_csv(thisdir / 'kenya' / 'age_partnership.csv')
     partnership_dict = {}
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
     return  partnership_dict
+
+
+def education_objective(df):
+    """
+    Convert education objective data to necesary numeric types and into a numpy array
+    NOTE: These values are based on the distribution of education for women over age 20 with no children,
+    stratified by urban/rural from DHS.
+    """
+    # This df has columns
+    # edu: years education, urban: geographic setting, percent:
+    # transformed to a 2d array of proportions with dimensions (n_urban, n_edu_years)
+    arr = df["percent"].to_numpy().reshape(df["urban"].nunique(), df["edu"].nunique())
+    return arr
+
+
+def education_attainment(df):
+    """
+    Convert education attainment data to necessary numeric types and into a numpy array
+    These data are the mean years of education of a woman aged X years from DHS.
+
+    NOTE: The data in education_initialization.csv have been extrapolated. Here we only
+    interpolate data for the group 15-49 (inclusive range).
+    """
+    # This df has columns
+    # age:age in years and edu: mean years of education
+    df.sort_values(by="age", ascending=True, inplace=True)
+    ages = df["age"].to_numpy()
+    arr  = df["edu"].to_numpy()
+
+    # We interpolate data from 15-49 years
+    # Get indices of those ages
+    inds = np.array(sc.findinds(ages >= 15, ages <= 55))
+    from scipy import interpolate
+    # TODO: parameterise interpolation, or provide interpolated data in csv file
+    f_interp = interpolate.interp1d(ages[inds[::4]], arr[inds[::4]], kind="quadratic")
+    arr[inds] = f_interp(ages[inds])
+    return arr, ages
+
+
+def education_dropout_probs(df):
+    """
+    Convert education dropout probability to necessary numeric types and data structure
+
+    NOTE: This df contains PMA data:
+    - Of women with a first birth before age 18, 12.6% stopped education within 1 year of that birth.
+    - Of women who had a subsequent (not first) birth before age 18, 14.1% stopped school within 1 year of that birth.
+
+    The probabilities in this df represents the prob of stopping/droppping out of education within 1 year of that birth.
+    """
+    data = {}
+    for k in df["parity"].unique():
+        data[k] = {"age": None, "percent": None}
+        data[k]["age"] = df["age"].unique()
+        data[k]["percent"] = df["percent"][df["parity"] == k].to_numpy()
+    return data
+
+
+def education_distributions():
+    # Load empirical data
+    education_data = {"edu_objective": pd.read_csv(thisdir / 'kenya' / 'edu_objective.csv'),
+                      "edu_attainment": pd.read_csv(thisdir / 'kenya' / 'edu_initialization.csv'),
+                      "edu_dropout_probs": pd.read_csv(thisdir / 'kenya' / 'edu_stop.csv')}
+
+    attainment, age = education_attainment(education_data["edu_attainment"])
+    education_dict = {"age": age,
+                      "age_start": 6.0,
+                      "edu_objective": education_objective(education_data["edu_objective"]),
+                      "edu_attainment": attainment,
+                      "edu_dropout_probs": education_dropout_probs(education_data["edu_dropout_probs"]),
+                      }
+
+    return education_dict, education_data
 
 
 # %% Make and validate parameters
@@ -1007,7 +1247,10 @@ def make_pars():
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
     pars['urban_prop'] = urban_proportion()
-    pars['empowerment'] = empowerment_distributions()
+    empowerment_dict, _ = empowerment_distributions(seed=pars['seed']) # This function returns extrapolated and raw data
+    pars['empowerment'] = empowerment_dict
+    education_dict, _ = education_distributions() # This function returns extrapolated and raw data
+    pars['education'] = education_dict
     pars['age_partnership'] = age_partnership()
 
     return pars

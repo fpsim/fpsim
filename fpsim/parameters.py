@@ -514,6 +514,18 @@ def sim_pars():
     return sim_pars
 
 
+def empowerment_pars():
+    ''' Additional empowerment parameters'''
+    empwrmnt_pars = dict(
+        urban_prop      = None,
+        empowerment     = None,
+        education       = None,
+        age_partnership = None,
+    )
+
+    return empwrmnt_pars
+
+
 def pars(location=None, validate=True, die=True, update=True, **kwargs):
     '''
     Function for getting default parameters.
@@ -550,11 +562,16 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
         pars = fplocs.kenya.make_pars()
     elif location == 'ethiopia':
         pars = fplocs.ethiopia.make_pars()
-
     # Else, error
     else:
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
+
+    # Add parameter keys related to empowerment attributes,
+    # with default values None
+    if location != 'kenya':
+        # Merge with empowerment_pars
+        pars.update(empowerment_pars())
 
     # Merge with sim_pars and kwargs and copy
     pars.update(sim_pars())

@@ -10,15 +10,16 @@ being calibrated as well as a corresponding location file (i.e. 'ethiopia.py')
 
 3. In order to run this script, the country data must be stored in the country directory mentioned above and with the
 following naming conventions:
-        {country}_ageparity.csv' # Age-parity distribution file
-        use_{country}.csv' # Dichotomous contraceptive method use
-        birth_spacing_dhs.csv'  # Birth-to-birth interval data
-        afb.table.csv'  # Ages at first birth in DHS for women age 25-50
-        {country}_cpr.csv'  # Contraceptive prevalence rate data; from UN Data Portal
-        {country}_asfr.csv'  # Age-specific data fertility rate data
-        mix_{country}.csv'  # Contraceptive method mix
-        {country}_tfr.csv'  # Total fertility rate data
-        {country}_popsize.csv'  # Population by year
+
+ageparity.csv' # Age-parity distribution file
+use.csv' # Dichotomous contraceptive method use
+birth_spacing_dhs.csv'  # Birth-to-birth interval data
+afb.table.csv'  # Ages at first birth in DHS for women age 25-50
+cpr.csv'  # Contraceptive prevalence rate data; from UN Data Portal
+asfr.csv'  # Age-specific data fertility rate data
+mix.csv'  # Contraceptive method mix
+tfr.csv'  # Total fertility rate data
+popsize.csv'  # Population by year
 
 4. Ensure that the data in the aforementioned files is formatted in the same manner as the kenya data files,
 which were used as a standard in writing this script.
@@ -62,15 +63,15 @@ if do_save == 1 and os.path.exists(f'./{country}/figs') == False:
     os.mkdir(f'./{country}/figs')
 
 # Import country data files to compare
-ageparity = pd.read_csv(f'./{country}/{country}_ageparity.csv') # Age-parity distribution file
-use = pd.read_csv(f'./{country}/use_{country}.csv') #Dichotomous contraceptive method use
+ageparity = pd.read_csv(f'./{country}/ageparity.csv') # Age-parity distribution file
+use = pd.read_csv(f'./{country}/use.csv') #Dichotomous contraceptive method use
 data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
 data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
-data_cpr = pd.read_csv(f'./{country}/{country}_cpr.csv')  # From UN Data Portal
-data_asfr = pd.read_csv(f'./{country}/{country}_asfr.csv')
-data_methods = pd.read_csv(f'./{country}/mix_{country}.csv')
-data_tfr = pd.read_csv(f'./{country}/{country}_tfr.csv')
-data_popsize = pd.read_csv(f'./{country}/{country}_popsize.csv')
+data_cpr = pd.read_csv(f'./{country}/cpr.csv')  # From UN Data Portal
+data_asfr = pd.read_csv(f'./{country}/asfr.csv')
+data_methods = pd.read_csv(f'./{country}/mix.csv')
+data_tfr = pd.read_csv(f'./{country}/tfr.csv')
+data_popsize = pd.read_csv(f'./{country}/popsize.csv')
 
 # Set up global variables
 age_bin_map = {
@@ -104,7 +105,7 @@ pars['exposure_factor'] = 1
 pars['high_parity'] = 1
 pars['high_parity_nonuse'] = 1
 
-# Last free parameter, postpartum sexual activity correction or 'birth spacing preferece'
+# Last free parameter, postpartum sexual activity correction or 'birth spacing preference'
 # Set all to 1 to reset
 spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-{country}.py'
 pars['spacing_pref']['preference'][:3] = spacing_pars['space0_6']
@@ -114,6 +115,16 @@ pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
 
 # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
 
+# Print out free params being used
+print("FREE PARAMETERS BEING USED:")
+print(f"Fecundity range: {pars['fecundity_var_low']}-{pars['fecundity_var_high']}")
+print(f"Exposure factor: {pars['exposure_factor']}")
+print(f"High parity: {pars['high_parity']}")
+print(f"High parity, nonuse: {pars['high_parity_nonuse']}")
+print(f"Birth spacing preference: {spacing_pars}")
+print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
+
+# Run the sim
 sim = fp.Sim(pars=pars)
 sim.run()
 
@@ -158,7 +169,7 @@ if do_plot_asfr:
 
         # Load data
         year = data_asfr[data_asfr['year'] == pars['end_year']]
-        asfr_data = year.drop(['year', '50-54'], axis=1).values.tolist()[0]
+        asfr_data = year.drop(['year'], axis=1).values.tolist()[0]
 
         x_labels = []
         asfr_model = []
@@ -223,20 +234,20 @@ if do_plot_methods:
         model_method_counts[:] /= model_method_counts[:].sum()
 
 
-        # Method mix from data - country PMA data (mix_{country}.csv)
+        # Method mix from data - country PMA data (mix.csv)
         data_methods_mix = {
-                'Withdrawal': data_methods.loc[data_methods['method'] == 'withdrawal', 'perc'].iloc[0],
-                'Other traditional': data_methods.loc[data_methods['method'] == 'other traditional', 'perc'].iloc[0],
-                'Condoms': data_methods.loc[data_methods['method'] == 'condoms', 'perc'].iloc[0],
-                'Pill': data_methods.loc[data_methods['method'] == 'pill', 'perc'].iloc[0],
-                'Injectables': data_methods.loc[data_methods['method'] == 'injectables', 'perc'].iloc[0],
-                'Implants': data_methods.loc[data_methods['method'] == 'implant', 'perc'].iloc[0],
-                'IUDs': data_methods.loc[data_methods['method'] == 'IUD', 'perc'].iloc[0],
-                'BTL': data_methods.loc[data_methods['method'] == 'BTL/vasectomy', 'perc'].iloc[0],
-                'Other modern': data_methods.loc[data_methods['method'] == 'other modern', 'perc'].iloc[0]
+                'Withdrawal': data_methods.loc[data_methods['method'] == 'Withdrawal', 'perc'].iloc[0],
+                'Other traditional': data_methods.loc[data_methods['method'] == 'Other traditional', 'perc'].iloc[0],
+                'Condoms': data_methods.loc[data_methods['method'] == 'Condoms', 'perc'].iloc[0],
+                'Pill': data_methods.loc[data_methods['method'] == 'Pill', 'perc'].iloc[0],
+                'Injectables': data_methods.loc[data_methods['method'] == 'Injectables', 'perc'].iloc[0],
+                'Implants': data_methods.loc[data_methods['method'] == 'Implants', 'perc'].iloc[0],
+                'IUDs': data_methods.loc[data_methods['method'] == 'IUDs', 'perc'].iloc[0],
+                'BTL': data_methods.loc[data_methods['method'] == 'BTL', 'perc'].iloc[0],
+                'Other modern': data_methods.loc[data_methods['method'] == 'Other modern', 'perc'].iloc[0]
         }
 
-        # Method use from data - country PMA data (use_{country}.csv)
+        # Method use from data - country PMA data (use.csv)
         no_use = use.loc[0, 'perc']
         any_method = use.loc[1, 'perc']
         data_methods_use = {
@@ -312,7 +323,7 @@ if do_plot_ageparity:
         proportion = 0
         age_name = ''
         for age, row in sky_raw_data.iterrows():
-                if row.age in age_keys:
+                if row.age in age_keys and row.parity <7:
                         age_ind = age_keys.index(row.age)
                         sky_arr['Data'][age_ind, row.parity] = row.percentage
 
@@ -348,8 +359,9 @@ if do_plot_ageparity:
                 pl.gca().view_init(30, 45)
                 pl.draw()
 
+
                 if do_save:
-                        pl.savefig(f'{country}/figs/ageparity_' + str(key.lower()) + '.png')
+                    sc.savefig(f'{country}/figs/ageparity_' + str(key.lower()) + '.png')
 
                 pl.show()
 
@@ -380,7 +392,7 @@ if do_plot_tfr:
         '''
 
         # Import data
-        #data_tfr = pd.read_csv(f'{country}_tfr.csv')
+        #data_tfr = pd.read_csv(f'tfr.csv')
 
         # Plot
         pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')

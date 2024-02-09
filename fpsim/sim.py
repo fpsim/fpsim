@@ -96,13 +96,21 @@ class People(fpb.BasePeople):
         self.remainder_months = arr(n, d['remainder_months'])
 
         # Empowerment-related sociodemographic attributes
-        self.paid_employment = arr(n, d['paid_employment'])
-        self.partnered    = arr(n, d['partnered'])           # Whether a person is in a relationship or not
-        self.urban        = arr(n, d['urban'])               # Whether a person lives in rural or urban setting
-        self.control_over_wages = arr(n, d['control_over_wages'])  # Decision making autonomy over major household purchases
-        self.sexual_autonomy    = arr(n, d['sexual_autonomy'])      # Ability to refuse sex
-        self.education_attainment  = arr(n, d['education_attainment'])          # Highest level of education completed by the person so far (in years)
+        self.partnered       = arr(n, d['partnered'])           # Whether a person is in a relationship or not
+        self.partnership_age = arr(n, d['partnership_age'])     # Age at first partnership in years, initialised from data
+        self.urban           = arr(n, d['urban'])               # Whether a person lives in rural or urban setting
+        self.paid_employment = arr(n, d['paid_employment'])     # Whether a person has a paid job or not
+        self.decision_wages  = arr(n, d['decision_wages'])       # Decision making autonomy over major household purchases/wages
+        self.decision_health = arr(n, d['decision_health'])      # Decision making autonomy over her health
+        self.sexual_autonomy    = arr(n, d['sexual_autonomy'])   # Ability to refuse sex
 
+        # Empowerment-education attributes
+        self.edu_objective   = arr(n, d['edu_objective'])   # Highest-ideal level of education to be completed (in years), could be individualised or constant across agents
+        self.edu_attainment  = arr(n, d['edu_attainment'])  # Current level of education achieved in years
+        self.edu_dropout     = arr(n, d['edu_dropout'])     # Whether a person has dropped out of the edu system, before reaching their goal
+        self.edu_interrupted = arr(n, d['edu_interrupted']) # Whether a person/woman has had their education temporarily interrupted, but can resume
+        self.edu_completed   = arr(n, d['edu_completed'])   # Whether a person/woman has reached their education goals
+        self.edu_started     = arr(n, d['edu_started'])     # Whether a person/woman has started thier education
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]
@@ -298,6 +306,17 @@ class People(fpb.BasePeople):
             self.step_results['deaths'] += len(died)
 
         return
+
+
+    def check_partnership(self):
+        '''
+        Decide if an agent has reached their age at first partnership. Age-based data from DHS.
+        '''
+
+        is_not_partnered = self.partnered == 0
+        reached_partnership_age = self.age >= self.partnership_age
+        first_timers = self.filter(is_not_partnered * reached_partnership_age)
+        first_timers.partnered = True
 
 
     def check_sexually_active(self):
@@ -683,6 +702,74 @@ class People(fpb.BasePeople):
         return
 
 
+    def update_education(self):
+        '''Advance education attainment in the simulation, determine if agents have completed their educationm,
+        '''
+
+        # Filter people who have not: completed education, dropped out or had their education interrupted
+        students = self.filter((self.edu_started & ~self.edu_completed  & ~self.edu_dropout & ~self.edu_interrupted))
+        # Advance education attainment
+        students.edu_attainment += self.pars['timestep'] / fpd.mpy
+        # Check who will experience an interruption
+        students.interrupt_education()
+        # Make some students dropout based on dropout | parity probabilities
+        par1 = students.filter(students.parity == 1)
+        par1.dropout_education('1')  # Women with parity 1
+        par2plus = students.filter(students.parity >= 2)
+        par2plus.dropout_education('2+') # Women with parity 2+
+
+
+    def graduate(self):
+        completed_inds = sc.findinds(self.edu_attainment >= self.edu_objective)
+        # NOTE: the two lines below were necessary because edu_completed was not being updating as expected
+        tmp = self.edu_completed
+        tmp[completed_inds] = True
+        self.edu_completed  = tmp
+
+
+    def start_education(self):
+        '''
+        Begin education
+        '''
+        new_students = self.filter(~self.edu_started & (self.age >= self.pars["education"]["age_start"]))
+        new_students.edu_started = True
+
+
+    def interrupt_education(self):
+        '''
+        Interrupt education due to pregnancy. This method hinders education progression if a
+        woman is pregnant and towards the end of the first trimester
+        '''
+        # Hinder education progression if a woman is pregnant and towards the end of the first trimester
+        pregnant_students = self.filter(self.pregnant)
+        end_first_tri = pregnant_students.filter(pregnant_students.gestation == self.pars['end_first_tri'])
+        # Disrupt education
+        end_first_tri.edu_interrupted = True
+
+
+    def resume_education(self):
+        '''
+        # Basic mechanism to resume education post-pregnancy:
+        # If education was interrupted due to pregnancy, resume after 9 months pospartum ()
+        #TODO: check if there's any evidence supporting this assumption
+        '''
+        # Basic mechanism to resume education post-pregnancy:
+        # If education was interrupted due to pregnancy, resume after 9 months pospartum
+        pospartum_students = self.filter(self.postpartum & self.edu_interrupted & ~self.edu_completed & ~self.edu_dropout)
+        resume_inds = sc.findinds(pospartum_students.postpartum_dur > 0.5 * self.pars['postpartum_dur'])
+        tmp = pospartum_students.edu_interrupted
+        tmp[resume_inds] = False
+        pospartum_students.edu_interrupted = tmp
+
+
+    def dropout_education(self, parity):
+        dropout_dict = self.pars['education']['edu_dropout_probs'][parity]
+        age_cutoffs = np.hstack((dropout_dict['age'], dropout_dict['age'].max() + 1))
+        age_inds = np.digitize(self.age, age_cutoffs) - 1
+        # Decide who will dropout
+        self.edu_dropout = fpu.binomial_arr(dropout_dict['percent'][age_inds])
+
+
     def update_age_bin_totals(self):
         '''
         Count how many total live women in each 5-year age bin 10-50, for tabulating ASFR
@@ -922,6 +1009,10 @@ class People(fpb.BasePeople):
         else:
             methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
 
+        # Check if has reached their age at first partnership and set partnered attribute to True.
+        # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
+        alive_now.check_partnership()
+
         # Update everything else
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
@@ -930,6 +1021,14 @@ class People(fpb.BasePeople):
         lact.update_breastfeeding()
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
+
+        # Update education
+        if self.pars['education'] is not None:
+            alive_now_f = self.filter(self.is_female)
+            alive_now_f.start_education()   # Check if anyone needs to start school
+            alive_now_f.update_education()  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
+            alive_now_f.resume_education()    # Determine who goes back to school after an interruption
+            alive_now_f.graduate()            # Check if anyone achieves their education goal
 
         # Update results
         fecund.update_age_bin_totals()
@@ -1077,7 +1176,6 @@ class Sim(fpb.BaseSim):
         self.results['birthday_fraction'] = []
         self.results['asfr'] = {}
         self.results['method_usage'] = []
-
         for key in fpd.age_bin_map.keys():
             self.results['asfr'][key] = []
             self.results[f"tfr_{key}"] = []
@@ -1143,70 +1241,110 @@ class Sim(fpb.BaseSim):
 
     def initialize_urban(self, n, urban_prop):
         """Get initial distribution of urban"""
-        return fpu.n_binomial(urban_prop, n)
+        urban = np.ones(n, dtype=bool)
+        if urban_prop is not None:
+            urban = fpu.n_binomial(urban_prop, n)
+        return urban
 
 
     def initialize_empowerment(self, n, ages, sexes):
-       """Get initial distribution of women's empowerment metrics/attributes"""
-       empowerment_data = self['empowerment']
+        """Get initial distribution of women's empowerment metrics/attributes"""
+        # NOTE: we assume that either probabilities or metrics in empowerment_dict are defined over all possible ages
+        # from 0 to 100 years old.
+        empowerment_dict = self['empowerment']
 
-       # Find only female agents
-       f_inds = sc.findinds(sexes == 0)
+        # Empowerment dictionary
+        empowerment = {}
+        empowerment['paid_employment'] = np.zeros(n, dtype=bool)
+        empowerment['sexual_autonomy'] = np.zeros(n, dtype=float)
+        empowerment['decision_wages'] = np.zeros(n, dtype=float)
+        empowerment['decision_health'] = np.zeros(n, dtype=float)
 
-       # Map column names in data to attribute names
-       # TODO: remove mapping by updating either data column names to match attribute names,
-       #  or change attr names to match data column names
-       mapping_dict = {'age': 'age',
-                       'paid_employment': 'paidwork',
-                       'sexual_autonomy': 'refusesex',
-                       'control_over_wages': 'decisionwages'}
-       updated_dict = {}
-       for k, v in mapping_dict.items():
-           updated_dict[k] = empowerment_data[v]
 
-       # Get ages from women
-       f_ages = ages[f_inds]
+        if empowerment_dict is not None:
+            # Find only female agents
+            f_inds = sc.findinds(sexes == 0)
 
-       # Create age bins
-       age_cutoffs = np.hstack((0, updated_dict['age'], np.max(updated_dict['age']+1)))
-       inds = np.digitize(f_ages, age_cutoffs)-1
+            # Get ages from women
+            f_ages = ages[f_inds]
 
-       # Empowerment dictionary
-       empowerment_dict = {}
-       empowerment_dict['paid_employment'] = np.zeros(n, dtype=bool)
-       empowerment_dict['sexual_autonomy'] = np.zeros(n, dtype=float)
-       empowerment_dict['control_over_wages'] = np.zeros(n, dtype=float)
+            # Create age bins
+            age_cutoffs = np.hstack((empowerment_dict['age'], empowerment_dict['age'].max()+1))
+            age_inds = np.digitize(f_ages, age_cutoffs)-1
 
-       # Set probs to 0 outside the age range in the data
-       paid_employment_probs = np.hstack((0.0, updated_dict['paid_employment'], 0.0))
-       empowerment_dict['paid_employment'][f_inds] = fpu.binomial_arr(paid_employment_probs[inds])
+            # Paid employment
+            paid_employment_probs = empowerment_dict['paid_employment']
+            empowerment['paid_employment'][f_inds] = fpu.binomial_arr(paid_employment_probs[age_inds])
 
-       # Use data values for sexual autonomy and control over wages
-       # TODO: update the assumption made for women <15 years old
-       for metric in ['control_over_wages', 'sexual_autonomy']:
-           probs = np.hstack((updated_dict[metric][0]/2, updated_dict[metric], updated_dict[metric][-1]))
-           empowerment_dict['paid_employment'][f_inds] = probs[inds]
+            for metric in ['decision_wages', 'decision_health', 'sexual_autonomy']:
+                empowerment[metric][f_inds] = empowerment_dict[metric][age_inds]
+        return empowerment
 
-       return empowerment_dict
+
+    def initialize_education(self, n, ages, sexes, urban):
+        """Get initial distribution of education goal, attainment and whether
+        a woman has reached their education goal"""
+        education_dict = self['education']
+
+        # Initialise individual education attainment - number of education years completed at start of simulation
+        # Assess whether a woman has completed her education based on the values of the two previous attributes
+        # Education dictionary
+        education = {'edu_objective': np.zeros(n, dtype=float),
+                     'edu_attainment': np.zeros(n, dtype=float),
+                     'edu_started'   : np.zeros(n, dtype=bool),
+                     'edu_completed': np.zeros(n, dtype=bool),
+                     'edu_droput': np.zeros(n, dtype=bool)}
+
+        if education_dict is not None:
+            # Initialise individual education objectives from a 2d array of probs with dimensions (urban, edu_years)
+            f_inds_urban = sc.findinds(sexes == 0, urban == True)
+            f_inds_rural = sc.findinds(sexes == 0, urban == False)
+            # Set objectives
+            probs_rural = education_dict['edu_objective'][1, :]
+            probs_urban = education_dict['edu_objective'][0, :]
+            edu_years = np.arange(len(probs_rural))
+            education['edu_objective'][f_inds_rural] = np.random.choice(edu_years, size=len(f_inds_rural), p=probs_rural)  # Probs in rural settings
+            education['edu_objective'][f_inds_urban] = np.random.choice(edu_years, size=len(f_inds_urban), p=probs_urban)  # Probs in urban settings
+
+            # Initialise education attainment - ie, current state of education at the start of the simulation
+            f_inds = sc.findinds(sexes == 0)
+
+            # Get ages for female agents and round them so we can use them as indices
+            f_ages = np.floor(ages[f_inds]).astype(int)
+            # Set the initial number of education years an agent has based on her age
+            education['edu_attainment'][f_inds] = np.floor((education_dict['edu_attainment'][f_ages]))
+
+            # Check people who started their education
+            started_inds = sc.findinds(education['edu_attainment'][f_inds] > 0.0)
+            # Check people who completed their education
+            completed_inds = sc.findinds(education['edu_objective'][f_inds]-education['edu_attainment'][f_inds] <= 0)
+            # Set attainment to edu_objective, just in case that initial edu_attainment > edu_objective
+            education['edu_attainment'][f_inds[completed_inds]] = education['edu_objective'][f_inds[completed_inds]]
+            education['edu_completed'][f_inds[completed_inds]] = True
+            education['edu_started'][f_inds[started_inds]] = True
+        return education
 
 
     def initialize_partnered(self, n, ages, sexes):
-        """Get initial distribution of whether a woman is partenered or not"""
+        """Get initial distribution of age at first partnership"""
         partnership_data = self['age_partnership']
-        # Find only female agents
-        f_inds = sc.findinds(sexes == 0)
+        partnered =  np.zeros(n, dtype=bool)
+        partnership_age = np.zeros(n, dtype=float)
 
-        # Get ages from women
-        f_ages = ages[f_inds]
+        if partnership_data is not None:
+            # Find only female agents
+            f_inds = sc.findinds(sexes == 0)
 
-        # Create age bins from age 0
-        age_cutoffs = np.hstack((0, partnership_data['age'], np.max(partnership_data['age'] + 1)))
-        probs = np.hstack((0.0, partnership_data['partnership_probs'], 0.0))
-        inds = np.digitize(f_ages, age_cutoffs) - 1
-        partnered =  np.zeros(n, dtype=float)
-        partnered[f_inds] = fpu.binomial_arr(probs[inds])
+            # Get ages from women
+            f_ages = ages[f_inds]
+            # Select age at first partnership
+            partnership_age[f_inds] = np.random.choice(partnership_data['age'], size=len(f_inds), p=partnership_data['partnership_probs'])
 
-        return partnered
+            # Check if age at first partnership => than current age to set partnered
+            p_inds = sc.findinds((f_ages >= partnership_age[f_inds]))
+            partnered[f_inds[p_inds]] = True
+
+        return partnered, partnership_age
 
 
     def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
@@ -1219,19 +1357,47 @@ class Sim(fpb.BaseSim):
         debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
         urban = self.initialize_urban(n, self['urban_prop'])
-        empowerment_dict = self.initialize_empowerment(n, age, sex)
-        partnered = self.initialize_partnered(n, age, sex)
-        data = dict(age=age, sex=sex, method=method, barrier=barrier, debut_age=debut_age, fertile=fertile,
-                    urban=urban, partnered=partnered, **empowerment_dict)
+        partnered, partnership_age = self.initialize_partnered(n, age, sex)
+        empowerment = self.initialize_empowerment(n, age, sex)
+        education   = self.initialize_education(n, age, sex, urban)
+        data = dict(
+            age=age,
+            sex=sex,
+            method=method,
+            barrier=barrier,
+            debut_age=debut_age,
+            fertile=fertile,
+            urban=urban,
+            partnered=partnered,
+            partnership_age=partnership_age,
+            **sc.mergedicts(empowerment, education)
+        )
         return data
 
 
     def init_people(self, output=False, **kwargs):
         ''' Create the people '''
         p = sc.objdict(self.make_people(n=int(self['n_agents'])))
-        self.people = People(pars=self.pars, age=p.age, sex=p.sex, method=p.method, barrier=p.barrier, debut_age=p.debut_age, fertile=p.fertile,
-                             urban=p.urban, partnered=p.partnered, paid_employment=p.paid_employment, sexual_autonomy=p.sexual_autonomy,
-                             control_over_wages=p.control_over_wages)
+        self.people = People(
+            pars=self.pars,
+            age=p.age,
+            sex=p.sex,
+            method=p.method,
+            barrier=p.barrier,
+            debut_age=p.debut_age,
+            fertile=p.fertile,
+            urban=p.urban,
+            partnered=p.partnered,
+            partnership_age=p.partnership_age,
+            paid_employment=p.paid_employment,
+            sexual_autonomy=p.sexual_autonomy,
+            decision_wages=p.decision_wages,
+            decision_health=p.decision_health,
+            edu_objective=p.edu_objective,
+            edu_attainment=p.edu_attainment,
+            edu_completed=p.edu_completed,
+            edu_started=p.edu_started,
+        )
         return
 
 
@@ -1730,65 +1896,71 @@ class Sim(fpb.BaseSim):
             # Plot everything
             if ('as_' in to_plot and not self.pars['track_as']):
                 raise ValueError(f"Age specific plot selected but sim.pars['track_as'] is False")
-            if to_plot == 'default':
-                to_plot = {
-                    'mcpr_by_year':                'Modern contraceptive prevalence rate (%)',
-                    'cum_live_births_by_year':     'Live births',
-                    'cum_stillbirths_by_year':     'Stillbirths',
-                    'cum_maternal_deaths_by_year': 'Maternal deaths',
-                    'cum_infant_deaths_by_year':   'Infant deaths',
-                    'imr':                         'Infant mortality rate',
-                }
-            elif to_plot == 'cpr':
-                to_plot = {
-                    'mcpr': 'MCPR (modern contraceptive prevalence rate)',
-                    'cpr':  'CPR (contraceptive prevalence rate)',
-                    'acpr': 'ACPR (alternative contraceptive prevalence rate',
-                }
-            elif to_plot == 'mortality':
-                to_plot = {
-                    'mmr':                         'Maternal mortality ratio',
-                    'cum_maternal_deaths_by_year': 'Maternal deaths',
-                    'cum_infant_deaths_by_year':   'Infant deaths',
-                    'imr':                         'Infant mortality rate',
+
+            if isinstance(to_plot, dict):
+                pass
+            elif isinstance(to_plot, str):
+                if to_plot == 'default':
+                    to_plot = {
+                        'mcpr_by_year':                'Modern contraceptive prevalence rate (%)',
+                        'cum_live_births_by_year':     'Live births',
+                        'cum_stillbirths_by_year':     'Stillbirths',
+                        'cum_maternal_deaths_by_year': 'Maternal deaths',
+                        'cum_infant_deaths_by_year':   'Infant deaths',
+                        'imr':                         'Infant mortality rate',
                     }
-            elif to_plot == 'apo': #adverse pregnancy outcomes
-                to_plot = {
-                    'cum_pregnancies_by_year':     'Pregnancies',
-                    'cum_stillbirths_by_year':     'Stillbirths',
-                    'cum_miscarriages_by_year':    'Miscarriages',
-                    'cum_abortions_by_year':       'Abortions',
+                elif to_plot == 'cpr':
+                    to_plot = {
+                        'mcpr': 'MCPR (modern contraceptive prevalence rate)',
+                        'cpr':  'CPR (contraceptive prevalence rate)',
+                        'acpr': 'ACPR (alternative contraceptive prevalence rate',
                     }
-            elif to_plot == 'method':
-                to_plot = {
-                    'method_usage':                 'Method usage'
-                }
-            elif to_plot == 'short-interval':
-                to_plot = {
-#                    'proportion_short_interval_by_year':     'Proportion of short birth interval'
-                    'proportion_short_interval_by_year':     f"Proportion of short birth interval [{age_group})" for age_group in agelim.split()
-                }
-            elif to_plot == 'as_cpr':
-                to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_acpr':
-                to_plot = {f"acpr_{age_group}": f"Alternative Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_mcpr':
-                to_plot = {f"mcpr_{age_group}": f"Modern Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_pregnancies':
-                to_plot = {f"pregnancies_{age_group}": f"Number of Pregnancies for ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_tfr':
-                to_plot = {f"tfr_{age_group}": f"Fertility Rate for ({age_group})" for age_group in fpd.age_bin_map}
-            elif to_plot == 'as_imr':
-                to_plot = {f"imr_{age_group}": f"Infant Mortality Rate for ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_mmr':
-                to_plot = {f"mmr_{age_group}": f"Maternal Mortality Rate for ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_stillbirths':
-                to_plot = {f"stillbirths_{age_group}": f"Stillbirths for ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_births':
-                to_plot = {f"births_{age_group}": f"Live births for ({age_group})" for age_group in method_age_groups}
-            elif to_plot is not None:
-                errormsg = f"Your to_plot value: {to_plot} is not a valid option"
-                raise ValueError(errormsg)
+                elif to_plot == 'mortality':
+                    to_plot = {
+                        'mmr':                         'Maternal mortality ratio',
+                        'cum_maternal_deaths_by_year': 'Maternal deaths',
+                        'cum_infant_deaths_by_year':   'Infant deaths',
+                        'imr':                         'Infant mortality rate',
+                        }
+                elif to_plot == 'apo': #adverse pregnancy outcomes
+                    to_plot = {
+                        'cum_pregnancies_by_year':     'Pregnancies',
+                        'cum_stillbirths_by_year':     'Stillbirths',
+                        'cum_miscarriages_by_year':    'Miscarriages',
+                        'cum_abortions_by_year':       'Abortions',
+                        }
+                elif to_plot == 'method':
+                    to_plot = {
+                        'method_usage':                 'Method usage'
+                    }
+                elif to_plot == 'short-interval':
+                    to_plot = {
+                        'proportion_short_interval_by_year':     f"Proportion of short birth interval [{age_group})" for age_group in agelim.split()
+                    }
+                elif to_plot == 'as_cpr':
+                    to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_acpr':
+                    to_plot = {f"acpr_{age_group}": f"Alternative Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_mcpr':
+                    to_plot = {f"mcpr_{age_group}": f"Modern Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_pregnancies':
+                    to_plot = {f"pregnancies_{age_group}": f"Number of Pregnancies for ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_tfr':
+                    to_plot = {f"tfr_{age_group}": f"Fertility Rate for ({age_group})" for age_group in fpd.age_bin_map}
+                elif to_plot == 'as_imr':
+                    to_plot = {f"imr_{age_group}": f"Infant Mortality Rate for ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_mmr':
+                    to_plot = {f"mmr_{age_group}": f"Maternal Mortality Rate for ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_stillbirths':
+                    to_plot = {f"stillbirths_{age_group}": f"Stillbirths for ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_births':
+                    to_plot = {f"births_{age_group}": f"Live births for ({age_group})" for age_group in method_age_groups}
+                elif to_plot is not None:
+                    errormsg = f"Your to_plot value: {to_plot} is not a valid option"
+                    raise ValueError(errormsg)
+            else:
+                errmsg = f"to_plot can be a dictionary or a string. A {type(to_plot)} is not a valid option."
+                raise TypeError(errmsg)
 
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
             if to_plot == 'cpr':

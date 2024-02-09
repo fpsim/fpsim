@@ -87,15 +87,16 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'ethiopia'
-    files['basic_dhs'] = 'ethiopia_basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
-    files['popsize'] = 'ethiopia_popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
-    files['mcpr'] = 'ethiopia_cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    files['tfr'] = 'ethiopia_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
-    files['asfr'] = 'ethiopia_asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-    files['ageparity'] = 'ethiopia_ageparity.csv' # Choose from either DHS 2016 or PMA 2022
-    #files['pregnancy_parity'] = 'SNIR80FL.obj'     ##NOT YET UPDATED FOR ETHIOPIA
-    #files['spacing'] = 'BirthSpacing.obj' .        ##NOT YET UPDATED FOR ETHIOPIA
-    #files['methods'] = 'Method_v312.csv'           ##NOT YET UPDATED FOR ETHIOPIA
+    files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
+    files['popsize'] = 'popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
+    files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+    files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
+    files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
+    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2016 or PMA 2022
+    files['spacing'] = 'birth_spacing_dhs.csv'
+    files['methods'] = 'mix.csv'
+    files['afb'] = 'afb.table.csv'
+    files['use'] = 'use.csv'
     return files
 
 
@@ -140,8 +141,8 @@ def age_mortality():
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
     data_year = 2020 # NORMED TO 2020 BASED ON ETHIOPIA PROBABILITY DATA
-    mortality_data = pd.read_csv(thisdir / 'ethiopia' / 'mortality_prob_ethiopia.csv')
-    mortality_trend = pd.read_csv(thisdir / 'ethiopia' / 'mortality_trend_ethiopia.csv')       
+    mortality_data = pd.read_csv(thisdir / 'ethiopia' / 'mortality_prob.csv')
+    mortality_trend = pd.read_csv(thisdir / 'ethiopia' / 'mortality_trend.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -608,7 +609,7 @@ def methods():
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/231/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'ethiopia' / 'ethiopia_cpr.csv')
+    cpr_data = pd.read_csv(thisdir / 'ethiopia' / 'cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
