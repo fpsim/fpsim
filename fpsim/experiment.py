@@ -273,7 +273,7 @@ class Experiment(sc.prettyobj):
         n_parity = len(parity_bins)
 
         # Load data TO NOTE: By default, the dataset that is used for comparison with the model is the last dataset (
-        # typically the most recent) in the skyscrapers file
+        # typically the most recent) in the ageparity file
         sky_raw_data = self.load_data('ageparity')
         dataset = sky_raw_data.iloc[-1]['dataset']
         sky_raw_data = sky_raw_data[sky_raw_data.dataset == dataset]
