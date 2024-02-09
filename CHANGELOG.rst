@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+
+Version 0.26.8 (2024-02-08)
+---------------------------
+- Removed unused ``timeseries_recorder`` and ``verbose_sim`` analyzers.
+- *GitHub info*: PR `257 <https://github.com/fpsim/fpsim/pull/257>`_
+
 Version 0.26.7 (2023-10-24)
 ---------------------------
 - Created two scripts in data_processing dir to scrape UN and World Bank country calibration data
