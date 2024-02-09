@@ -1968,65 +1968,71 @@ class Sim(fpb.BaseSim):
             # Plot everything
             if ('as_' in to_plot and not self.pars['track_as']):
                 raise ValueError(f"Age specific plot selected but sim.pars['track_as'] is False")
-            if to_plot == 'default':
-                to_plot = {
-                    'mcpr_by_year':                'Modern contraceptive prevalence rate (%)',
-                    'cum_live_births_by_year':     'Live births',
-                    'cum_stillbirths_by_year':     'Stillbirths',
-                    'cum_maternal_deaths_by_year': 'Maternal deaths',
-                    'cum_infant_deaths_by_year':   'Infant deaths',
-                    'imr':                         'Infant mortality rate',
-                }
-            elif to_plot == 'cpr':
-                to_plot = {
-                    'mcpr': 'MCPR (modern contraceptive prevalence rate)',
-                    'cpr':  'CPR (contraceptive prevalence rate)',
-                    'acpr': 'ACPR (alternative contraceptive prevalence rate',
-                }
-            elif to_plot == 'mortality':
-                to_plot = {
-                    'mmr':                         'Maternal mortality ratio',
-                    'cum_maternal_deaths_by_year': 'Maternal deaths',
-                    'cum_infant_deaths_by_year':   'Infant deaths',
-                    'imr':                         'Infant mortality rate',
+
+            if isinstance(to_plot, dict):
+                pass
+            elif isinstance(to_plot, str):
+                if to_plot == 'default':
+                    to_plot = {
+                        'mcpr_by_year':                'Modern contraceptive prevalence rate (%)',
+                        'cum_live_births_by_year':     'Live births',
+                        'cum_stillbirths_by_year':     'Stillbirths',
+                        'cum_maternal_deaths_by_year': 'Maternal deaths',
+                        'cum_infant_deaths_by_year':   'Infant deaths',
+                        'imr':                         'Infant mortality rate',
                     }
-            elif to_plot == 'apo': #adverse pregnancy outcomes
-                to_plot = {
-                    'cum_pregnancies_by_year':     'Pregnancies',
-                    'cum_stillbirths_by_year':     'Stillbirths',
-                    'cum_miscarriages_by_year':    'Miscarriages',
-                    'cum_abortions_by_year':       'Abortions',
+                elif to_plot == 'cpr':
+                    to_plot = {
+                        'mcpr': 'MCPR (modern contraceptive prevalence rate)',
+                        'cpr':  'CPR (contraceptive prevalence rate)',
+                        'acpr': 'ACPR (alternative contraceptive prevalence rate',
                     }
-            elif to_plot == 'method':
-                to_plot = {
-                    'method_usage':                 'Method usage'
-                }
-            elif to_plot == 'short-interval':
-                to_plot = {
-#                    'proportion_short_interval_by_year':     'Proportion of short birth interval'
-                    'proportion_short_interval_by_year':     f"Proportion of short birth interval [{age_group})" for age_group in agelim.split()
-                }
-            elif to_plot == 'as_cpr':
-                to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_acpr':
-                to_plot = {f"acpr_{age_group}": f"Alternative Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_mcpr':
-                to_plot = {f"mcpr_{age_group}": f"Modern Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_pregnancies':
-                to_plot = {f"pregnancies_{age_group}": f"Number of Pregnancies for ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_tfr':
-                to_plot = {f"tfr_{age_group}": f"Fertility Rate for ({age_group})" for age_group in fpd.age_bin_map}
-            elif to_plot == 'as_imr':
-                to_plot = {f"imr_{age_group}": f"Infant Mortality Rate for ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_mmr':
-                to_plot = {f"mmr_{age_group}": f"Maternal Mortality Rate for ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_stillbirths':
-                to_plot = {f"stillbirths_{age_group}": f"Stillbirths for ({age_group})" for age_group in method_age_groups}
-            elif to_plot == 'as_births':
-                to_plot = {f"births_{age_group}": f"Live births for ({age_group})" for age_group in method_age_groups}
-            elif to_plot is not None:
-                errormsg = f"Your to_plot value: {to_plot} is not a valid option"
-                raise ValueError(errormsg)
+                elif to_plot == 'mortality':
+                    to_plot = {
+                        'mmr':                         'Maternal mortality ratio',
+                        'cum_maternal_deaths_by_year': 'Maternal deaths',
+                        'cum_infant_deaths_by_year':   'Infant deaths',
+                        'imr':                         'Infant mortality rate',
+                        }
+                elif to_plot == 'apo': #adverse pregnancy outcomes
+                    to_plot = {
+                        'cum_pregnancies_by_year':     'Pregnancies',
+                        'cum_stillbirths_by_year':     'Stillbirths',
+                        'cum_miscarriages_by_year':    'Miscarriages',
+                        'cum_abortions_by_year':       'Abortions',
+                        }
+                elif to_plot == 'method':
+                    to_plot = {
+                        'method_usage':                 'Method usage'
+                    }
+                elif to_plot == 'short-interval':
+                    to_plot = {
+                        'proportion_short_interval_by_year':     f"Proportion of short birth interval [{age_group})" for age_group in agelim.split()
+                    }
+                elif to_plot == 'as_cpr':
+                    to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_acpr':
+                    to_plot = {f"acpr_{age_group}": f"Alternative Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_mcpr':
+                    to_plot = {f"mcpr_{age_group}": f"Modern Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_pregnancies':
+                    to_plot = {f"pregnancies_{age_group}": f"Number of Pregnancies for ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_tfr':
+                    to_plot = {f"tfr_{age_group}": f"Fertility Rate for ({age_group})" for age_group in fpd.age_bin_map}
+                elif to_plot == 'as_imr':
+                    to_plot = {f"imr_{age_group}": f"Infant Mortality Rate for ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_mmr':
+                    to_plot = {f"mmr_{age_group}": f"Maternal Mortality Rate for ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_stillbirths':
+                    to_plot = {f"stillbirths_{age_group}": f"Stillbirths for ({age_group})" for age_group in method_age_groups}
+                elif to_plot == 'as_births':
+                    to_plot = {f"births_{age_group}": f"Live births for ({age_group})" for age_group in method_age_groups}
+                elif to_plot is not None:
+                    errormsg = f"Your to_plot value: {to_plot} is not a valid option"
+                    raise ValueError(errormsg)
+            else:
+                errmsg = f"to_plot can be a dictionary or a string. A {type(to_plot)} is not a valid option."
+                raise TypeError(errmsg)
 
             rows,cols = sc.getrowscols(len(to_plot), nrows=nrows, ncols=ncols)
             if to_plot == 'cpr':
