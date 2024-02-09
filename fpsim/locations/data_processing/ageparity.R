@@ -34,4 +34,4 @@ data.result = data %>%
   group_by(dataset) %>% mutate(n = sum(wt, na.rm = T)) %>% ungroup %>%
   group_by(age, parity, dataset, n) %>% summarize(Freq = sum(wt, na.rm=T)) %>% mutate(percentage = Freq/n*100) %>% select(-n)
 
-write.table(data.result, file="locations/ethiopia/skyscraper_ethiopia_2023-01-30.csv", sep=",", row.names = F)
+write.table(data.result, file="locations/ethiopia/ageparity_2023-01-30.csv", sep=",", row.names = F)
