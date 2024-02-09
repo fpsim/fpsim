@@ -1376,7 +1376,7 @@ class Sim(fpb.BaseSim):
             region_names = region_dict['region']
             region_probs = region_dict['mean']
             region = np.random.choice(region_names, size=n, p=region_probs)
-        
+
         return region
 
     """
@@ -1411,21 +1411,20 @@ class Sim(fpb.BaseSim):
 
         return debut_age_values
 
-    def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
+    def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None, region=None):
         ''' Set up each person '''
         _age, _sex = self.get_age_sex(n)
         if age    is None: age    = _age
         if sex    is None: sex    = _sex
         if method is None: method = np.zeros(n, dtype=np.int64)
-        if self.regional == True:
-            region = self.initialize_region(n)
-            urban = self.initialize_urban(n, self.pars['urban_prop'], region)
-            debut_age = self.initialize_debut_age_region(n, region)
-        elif self.regional == False:
-            region = None
-            urban = self.initialize_urban(n, self['urban_prop'])
-            debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
         barrier = fpu.n_multinomial(self['barriers'][:], n)
+        if self.regional is True:
+            region = self.initialize_region(n)
+            debut_age = self.initialize_debut_age_region(n, region)
+            urban = self.initialize_urban(n, self.pars['urban_prop'], region)
+        else:
+            debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
+            urban = self.initialize_urban(n, self['urban_prop'])
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
         partnered, partnership_age = self.initialize_partnered(n, age, sex)
         empowerment = self.initialize_empowerment(n, age, sex)
@@ -1435,18 +1434,15 @@ class Sim(fpb.BaseSim):
             sex=sex,
             method=method,
             barrier=barrier,
-            empowerment = empowerment,
-            education=education,
             debut_age=debut_age,
             fertile=fertile,
             urban=urban,
+            region=region,
             partnered=partnered,
             partnership_age=partnership_age,
-            **sc.mergedicts(empowerment, education),
-            region=region,
+            **sc.mergedicts(empowerment, education)
         )
         return data
-
 
     def init_people(self, output=False, **kwargs):
         ''' Create the people '''
