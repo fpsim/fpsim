@@ -92,10 +92,10 @@ class Sim(fpb.BaseSim):
         # Handle location
         if location is None:
             if pars is not None and pars.get('location'):
-                location = pars['location']
+                location = pars.pop('location')
 
         # Make parameters
-        pars = fpp.pars(**sc.mergedicts(pars, kwargs))  # Update with location-specific parameters
+        pars = fpp.pars(location=location, **sc.mergedicts(pars, kwargs))  # Update with location-specific parameters
 
         # Validate and initialize
         mismatches = [key for key in kwargs.keys() if key not in fpp.par_keys]
