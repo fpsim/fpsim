@@ -447,7 +447,10 @@ class Experiment(sc.prettyobj):
     def compute_fit(self, *args, **kwargs):
         ''' Compute how good the fit is '''
         data = sc.dcp(self.data)
-        sim = sc.dcp(self.model)
+        try:
+            sim = sc.dcp(self.model, die=False) # Sometimes fails with a dict_keys copy error (!)
+        except:
+            sim = {k:self.model[k] for k in data.keys()}
         for k in data.keys():
             data[k] = sc.promotetoarray(data[k])
             data[k] = data[k].flatten()
