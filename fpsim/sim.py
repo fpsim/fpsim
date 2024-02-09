@@ -1434,6 +1434,8 @@ class Sim(fpb.BaseSim):
             sex=sex,
             method=method,
             barrier=barrier,
+            empowerment=empowerment,
+            education=education,
             debut_age=debut_age,
             fertile=fertile,
             urban=urban,
