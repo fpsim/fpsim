@@ -4,7 +4,7 @@ of free params, and then generate plots showing the discrepancies between the mo
 
 PRIOR TO RUNNING:
 1. Be sure to set the user global variables in the first section below (country, plotting options,
-save option, and skyscrapers dataset name)
+save option, and ageparity dataset name)
 
 2. Ensure that fpsim/locations contains both a directory for the country
 being calibrated as well as a corresponding location file (i.e. 'ethiopia.py')
@@ -12,7 +12,7 @@ being calibrated as well as a corresponding location file (i.e. 'ethiopia.py')
 3. In order to run this script, the country data must be stored in the country directory mentioned above and with the
 following naming conventions:
 
-skyscrapers.csv' # Age-parity distribution file
+ageparity.csv' # Age-parity distribution file
 use.csv' # Dichotomous contraceptive method use
 birth_spacing_dhs.csv'  # Birth-to-birth interval data
 afb.table.csv'  # Ages at first birth in DHS for women age 25-50
@@ -45,7 +45,7 @@ if __name__ == '__main__':
         do_plot_sim = True
         do_plot_asfr = True
         do_plot_methods = True
-        do_plot_skyscrapers = True
+        do_plot_ageparity = True
         do_plot_cpr = True
         do_plot_tfr = True
         do_plot_pop_growth = True
@@ -54,10 +54,10 @@ if __name__ == '__main__':
         # Set option to save figures
         do_save = 1
 
-        # Dataset contained in the skyscrapers csv file to which the model data will be compared (i.e. 'PMA 2022',
-        # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_skyscrapers.csv file, you will receive
+        # Dataset contained in the ageparity csv file to which the model data will be compared (i.e. 'PMA 2022',
+        # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_ageparity.csv file, you will receive
         # an error when running the script.
-        skyscrapers_dataset = 'PMA 2019'
+        ageparity_dataset = 'PMA 2019'
 
         ####################################################
 
@@ -65,7 +65,7 @@ if __name__ == '__main__':
             os.mkdir(f'./{country}/figs')
 
         # Import country data files to compare
-        skyscrapers = pd.read_csv(f'./{country}/skyscrapers.csv')  # Age-parity distribution file
+        ageparity = pd.read_csv(f'./{country}/ageparity.csv')  # Age-parity distribution file
         use = pd.read_csv(f'./{country}/use.csv')  # Dichotomous contraceptive method use
         data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
         data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
@@ -289,7 +289,7 @@ if __name__ == '__main__':
                         pl.savefig(f"{country}/figs/method_use.png", bbox_inches='tight', dpi=100)
 
 
-        if do_plot_skyscrapers:
+        if do_plot_ageparity:
                 '''
                 Plot an age-parity distribution for model vs data
                 '''
@@ -305,8 +305,8 @@ if __name__ == '__main__':
 
                 # Load data
                 data_parity_bins = pl.arange(0,7)
-                sky_raw_data = skyscrapers
-                sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == skyscrapers_dataset]
+                sky_raw_data = ageparity
+                sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == ageparity_dataset]
 
                 sky_parity = sky_raw_data['parity'].to_numpy()
                 sky_props = sky_raw_data['percentage'].to_numpy()
@@ -340,11 +340,11 @@ if __name__ == '__main__':
                 # Find diff to help visualize in plotting
                 sky_arr['Diff_data-model'] = sky_arr['Data']-sky_arr['Model']
 
-                # Plot skyscrapers
+                # Plot ageparity
                 for key in ['Data', 'Model', 'Diff_data-model']:
                         fig = pl.figure(figsize=(20, 14))
 
-                        sc.bar3d(fig=fig, data=sky_arr[key], cmap='jet')
+                        pl.pcolormesh(sky_arr[key])
                         pl.xlabel('Age', fontweight='bold')
                         pl.ylabel('Parity', fontweight='bold')
                         pl.title(f'{country.capitalize()}: Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
@@ -357,7 +357,7 @@ if __name__ == '__main__':
 
 
                         if do_save:
-                                pl.savefig(f'{country}/figs/skyscrapers_' + str(key.lower()) + '.png')
+                                pl.savefig(f'{country}/figs/ageparity_' + str(key.lower()) + '.png')
 
                         pl.show()
 
