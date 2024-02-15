@@ -521,7 +521,7 @@ default_pars = {
     'track_switching':      0,      # Whether to track method switching
     'track_as':             0,      # Whether to track age-specific channels
     'use_urban':            0,      # Whether to model urban setting state - will need to add context-specific data if using
-    'use_partneship':       0,      # Whether to model partnered states- will need to add context-specific data if using
+    'use_partnership':      0,      # Whether to model partnered states- will need to add context-specific data if using
     'use_empowerment':      0,      # Whether to model empowerment - will need to add context-specific data if using
     'use_education':        0,      # Whether to model education, requires use_urban==True for kenya - will need to add context-specific data if using
 
