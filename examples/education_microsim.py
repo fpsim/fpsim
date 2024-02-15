@@ -8,7 +8,9 @@ import matplotlib.pyplot as plt
 
 # Set options
 do_plot = True
-pars = fp.pars(location='kenya', use_empowerment=True)
+pars = fp.pars(location='kenya',
+               use_urban=True,
+               use_education=True)
 pars['n_agents'] = 50  # Small population size
 
 sc.tic()

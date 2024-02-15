@@ -8,7 +8,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 # Set options
 do_plot = True
-pars = fp.pars(location='kenya')
+pars = fp.pars(location='kenya',
+               use_partnership=True,
+               use_urban=True,
+               use_empowerment=True)
 pars['n_agents'] = 500 # Small population size
 
 
