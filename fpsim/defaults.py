@@ -115,8 +115,8 @@ person_defaults = sc.autolist(
 
 
     # Education - states will remain at these values if use_education is False
-    State('edu_objective',      0, int),
-    State('edu_attainment',     0, int),
+    State('edu_objective',      0, float),
+    State('edu_attainment',     0, float),
     State('edu_dropout',        0, bool),
     State('edu_interrupted',    0, bool),
     State('edu_completed',      0, bool),
