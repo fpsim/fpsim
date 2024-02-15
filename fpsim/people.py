@@ -59,8 +59,18 @@ class People(fpb.BasePeople):
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.personal_fecundity = np.random.random(n) * fac
 
+        # NOTE-PSL: trying to using starsim concepts
+        if self.pars['use_urban']:
+            fpemp.init_urban_states(self)
+
+        if self.pars['use_partnership']:
+            fpemp.init_partnership_states(self)
+
         if self.pars['use_empowerment']:
-            fpemp.init_empowerment(self)
+            fpemp.init_empowerment_states(self)
+
+        if self.pars['use_education']:
+            fpemp.init_education_states(self)
 
         # Store keys
         self._keys = [state.name for state in fpd.person_defaults]
