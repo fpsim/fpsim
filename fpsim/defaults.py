@@ -46,7 +46,8 @@ class State:
             arr = np.full(shape=n, fill_value=vals, dtype=dtype)
         return arr
 
-
+# Defaults states and values of any new(born) agent unless initialized with data or other strategy
+# or updated during the course of a simulation.
 person_defaults = sc.autolist(
     # Basic demographics
     State('uid',                -1, int),
@@ -99,16 +100,21 @@ person_defaults = sc.autolist(
     State('remainder_months',   0, int),
     State('personal_fecundity', 0, int),
 
-    # Empowerment - attributes will remain at these values if use_empowerment is False
+    # Empowerment - states will remain at these values if use_empowerment is False
     State('paid_employment',    0, bool),
-    State('partnered',          0, bool),
-    State('partnership_age',    -1, float),
-    State('urban',              1, bool),
     State('decision_wages',     0, bool),
     State('decision_health',    0, bool),
     State('sexual_autonomy',    0, bool),
 
-    # Education - will remain at these values if use_empowerment is False
+    # Partnership information -- states will remain at these values if use_partnership is False
+    State('partnered',    0, bool),
+    State('partnership_age', -1, float),
+
+    # Urban (bsic demographics) -- state will remain at these values if use_urban is False
+    State('urban', 1, bool),
+
+
+    # Education - states will remain at these values if use_education is False
     State('edu_objective',      0, int),
     State('edu_attainment',     0, int),
     State('edu_dropout',        0, bool),
