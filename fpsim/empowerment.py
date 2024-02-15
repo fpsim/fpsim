@@ -1,5 +1,6 @@
 """
-Methods and functions related to empowerment
+Methods and functions related to empowerment and education
+TODO: maybe move education stuff to another module, education.py
 """
 
 # %% Imports
@@ -11,26 +12,64 @@ from . import defaults as fpd
 
 # %% Initialization methods
 
-def init_empowerment(ppl):
-    """ Initialize empowerment metrics """
 
-    # Don't use this function if not modeling empowerment
-    if not ppl.pars['use_empowerment']:
-        return
+def init_urban_states(ppl):
+    """Demographics on whether a person lives in a rural or urban setting"""
+    # Get init vals and populate state in one step
+    ppl.urban = get_urban_init_vals(ppl)
 
-    # Sociodemographic attributes
-    partnered, partnership_age = initialize_partnered(ppl)
+
+def init_partnership_states(ppl):
+    """Demographics on whether a person is in a partnership, and their expected age at first partnership in a rural or urban setting"""
+
+    # Get init values for these sociodemographic states
+    partnered, partnership_age = get_partnership_init_vals(ppl)
+
+    # Populate states
     ppl.partnered = partnered
     ppl.partnership_age = partnership_age
-    ppl.urban = initialize_urban(ppl)
 
-    # Initialize empowerment-related attributes
-    emp = initialize_empowerment(ppl)
-    edu = initialize_education(ppl)
-    ppl.decision_wages = emp['decision_wages']  # Decision-making autonomy over household purchases/wages
+
+def init_empowerment_states(ppl):
+    """
+    If ppl.pars['use_empowerment'] == True, location-specific data
+    are expected to exist to populate empowerment states/attributes.
+
+    If If ppl.pars['use_empowerment'] == False, related
+    attributes will be initialized with values found in defaults.py.
+    """
+
+    # Initialize empowerment-related attributes with location-specific data
+    # TODO: check whether the corresponding data dictionary exists in ppl.pars,
+    # if it doesn't these states could be intialised with a user-defined distribution.
+    emp = get_empowerment_init_vals(ppl)
+
+    # Populate empowerment states with location-specific data
+    ppl.paid_employment = emp['paid_employment']
+    ppl.sexual_autonomy = emp['sexual_autonomy']
+    ppl.decision_wages  = emp['decision_wages']   # Decision-making autonomy over household purchases/wages
     ppl.decision_health = emp['decision_health']  # Decision-making autonomy over her health
+    return
 
-    # Empowerment-education attributes
+
+def init_education_states(ppl):
+    """
+    If ppl.pars['use_education'] == True, location-specific data
+    are expected to exist to populate education states/attributes.
+
+    If If ppl.pars['use_education'] == False, related
+    attributes will be initialized with values found in defaults.py.
+    """
+
+    # Check that people have requested to use urban/rural information
+    if not ppl.pars['use_urban']:
+        mssg = f"To use the education module, you need to set use pars['use_urban'] = True (current value: {ppl.pars['use_urban']}."
+        raise ValueError(mssg)
+
+    # Get distributions of initial values from location-specific data
+    edu = get_education_init_vals(ppl)
+
+    # Populate People's education states
     ppl.edu_objective = edu['edu_objective']  # Highest-ideal level of education to be completed (in years)
     ppl.edu_attainment = edu['edu_attainment']  # Current level of education achieved in years
     ppl.edu_dropout = edu['edu_dropout']  # Whether a person has dropped out before reaching their goal
@@ -38,10 +77,8 @@ def init_empowerment(ppl):
     ppl.edu_completed = edu['edu_completed']  # Whether a person/woman has reached their education goals
     ppl.edu_started = edu['edu_started']  # Whether a person/woman has started thier education
 
-    return
 
-
-def initialize_urban(ppl, urban_prop=None):
+def get_urban_init_vals(ppl, urban_prop=None):
     """ Get initial distribution of urban """
 
     n = len(ppl)
@@ -57,8 +94,8 @@ def initialize_urban(ppl, urban_prop=None):
     return urban
 
 
-def initialize_partnered(ppl):
-    """Get initial distribution of age at first partnership"""
+def get_partnership_init_vals(ppl):
+    """Get initial distribution of age at first partnership from location-specific data"""
     partnership_data = ppl.pars['age_partnership']
     n = len(ppl)
     partnered = np.zeros(n, dtype=bool)
@@ -79,18 +116,28 @@ def initialize_partnered(ppl):
     return partnered, partnership_age
 
 
-def initialize_empowerment(ppl):
-    """Get initial distribution of women's empowerment metrics/attributes"""
+def get_empowerment_init_vals(ppl):
+    """
+    Initialize empowerment atrtibutes with location-specific data,
+    expected to be found in ppl.pars['empowerment']
+
+    # NOTE-PSL: this function could be generally used to update empowerment states as a function of age,
+    at every time step. Probably need to rename it to get_vals_from_data() or just get_empowerment_vals(), or
+    something else.
+
+    >> subpop = ppl.filter(some_criteria)
+    >> get_empowerment()
+    """
+    empowerment_dict = ppl.pars['empowerment']
     # NOTE: we assume that either probabilities or metrics in empowerment_dict are defined over all possible ages
     # from 0 to 100 years old.
     n = len(ppl)
-    empowerment_dict = ppl.pars['empowerment']
 
     # Empowerment dictionary
     empowerment = {}
     empowerment['paid_employment'] = np.zeros(n, dtype=bool)
     empowerment['sexual_autonomy'] = np.zeros(n, dtype=float)
-    empowerment['decision_wages'] = np.zeros(n, dtype=float)
+    empowerment['decision_wages']  = np.zeros(n, dtype=float)
     empowerment['decision_health'] = np.zeros(n, dtype=float)
 
     # Get female agents indices and ages
@@ -111,9 +158,14 @@ def initialize_empowerment(ppl):
     return empowerment
 
 
-def initialize_education(ppl):
-    """Get initial distribution of education goal, attainment and whether
-    a woman has reached their education goal"""
+def get_education_init_vals(ppl):
+    """
+    Define initial values (distributions) for People's education attributes from location-specific data,
+    expected to be found in ppl.pars
+
+    Get initial distributions of education goal, attainment and whether
+    a woman has reached their education goal
+    """
     education_dict = ppl.pars['education']
     n = len(ppl)
     urban = ppl.urban
