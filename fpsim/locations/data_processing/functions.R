@@ -39,7 +39,7 @@ empower_results <- list()
 modellist <- list()
 for (i in other.outcomes) {
   print(i)
-  model <- svyglm(as.formula(paste0(i,"_3 ~ current_contra_3 + ",i,"_2  + age_3 + married_3 + school_3 + live_births_3 + urban_3")), 
+  model <- svyglm(as.formula(paste0(i,"_3 ~ current_contra_3 + ",i,"_2  + age_3 + school_3 + live_births_3 + urban_3 + wealthquintile_3")), 
                   family = quasibinomial(), design = svydes)
   modellist[[i]] <- model
   empower_results[[i]] <- as.data.frame(summary(model)$coefficients) %>% 
@@ -63,7 +63,7 @@ write.csv(empower_coef, "fpsim/locations/kenya/empower_coef.csv", row.names = F)
 
 
 # Contraception
-model <- svyglm(current_contra_3 ~ current_contra_2 + paidw_12m_3 + decide_spending_mine_3 + buy_decision_health_3 + wge_sex_eff_tell_no_3 + age_3 + married_3 + school_3 + live_births_3 + urban_3, 
+model <- svyglm(current_contra_3 ~ current_contra_2 + paidw_12m_3 + decide_spending_mine_3 + buy_decision_health_3 + wge_sex_eff_tell_no_3 + age_3 + school_3 + live_births_3 + urban_3 + wealthquintile_3, 
                 family = quasibinomial(), design = svydes)
 contra_coef <- as.data.frame(summary(model)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
