@@ -907,7 +907,7 @@ class Sim(fpb.BaseSim):
         """
 
         ppl = self.people
-        min_age = 15
+        min_age = fpd.min_age
         max_age = self['age_limit_fecundity']
 
         # filtering for women with appropriate characteristics

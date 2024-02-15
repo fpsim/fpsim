@@ -973,7 +973,7 @@ class People(fpb.BasePeople):
         self.track_mcpr()
         self.track_cpr()
         self.track_acpr()
-        age_min = self.age >= 15  # CK: TODO: remove hardcoding
+        age_min = self.age >= fpd.min_age
         age_max = self.age < self.pars['age_limit_fecundity']
 
         self.step_results['total_women_fecund'] = np.sum(self.is_female * age_min * age_max)
