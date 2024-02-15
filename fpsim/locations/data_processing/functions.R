@@ -56,9 +56,26 @@ empower_coef <- bind_rows(empower_results)  %>%
                                                                  gsub("buy_decision_health","decision_health",
                                                                       gsub("wge_sex_eff_tell_no","sexual_autonomy",
                                                                            gsub("married","partnered",
-                                                                                gsub("live_births", "parity", .)))))))))))
+                                                                                gsub("live_births", "parity", 
+                                                                                     gsub("current_contra", "contraception", .))))))))))))
 
 write.csv(empower_coef, "fpsim/locations/kenya/empower_coef.csv", row.names = F)
 
 
+# Contraception
+model <- svyglm(current_contra_3 ~ current_contra_2 + paidw_12m_3 + decide_spending_mine_3 + buy_decision_health_3 + wge_sex_eff_tell_no_3 + age_3 + married_3 + school_3 + live_births_3 + urban_3, 
+                family = quasibinomial(), design = svydes)
+contra_coef <- as.data.frame(summary(model)$coefficients) %>% 
+  mutate(rhs = rownames(.)) %>%
+  mutate(rhs = gsub("_3", "", gsub("_2", "_0", 
+                                   gsub("school","edu_attainment",
+                                        gsub("paidw_12m","paid_employment",
+                                             gsub("decide_spending_mine","decision_wages",
+                                                  gsub("buy_decision_health","decision_health",
+                                                       gsub("wge_sex_eff_tell_no","sexual_autonomy",
+                                                            gsub("married","partnered",
+                                                                 gsub("live_births", "parity", 
+                                                                      gsub("current_contra", "contraception", rhs)))))))))))
+
+write.csv(contra_coef, "fpsim/locations/kenya/contra_coef.csv", row.names = F)
 
