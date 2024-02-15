@@ -745,7 +745,7 @@ def barriers():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=False, seed=None):
+def make_pars(use_empowerment=False, use_education=False, use_urban=False, use_partnership=False, seed=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -780,9 +780,11 @@ def make_pars(use_empowerment=False, seed=None):
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
 
-    # Empowerment metrics
-    if use_empowerment:
-        errormsg = 'Empowerment metrics not defined for Senegal'
-        raise ValueError(errormsg)
+    # New People states/attributes that only exist for kenya so far
+    kwargs = locals()
+    del kwargs['seed']
+    true_args = [arg for arg, value in kwargs.items() if value is True]
+    if true_args:
+        raise NotImplementedError("These functionalities have not been implemented yet: " + ", ".join(true_args))
 
     return pars

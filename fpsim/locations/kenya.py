@@ -1165,7 +1165,7 @@ def education_distributions():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=False, seed=None):
+def make_pars(use_empowerment=False, use_education=False, use_urban=False, use_partnership=False, seed=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -1202,11 +1202,14 @@ def make_pars(use_empowerment=False, seed=None):
 
     # Empowerment metrics
     if use_empowerment:
-        pars['urban_prop'] = urban_proportion()
         empowerment_dict, _ = empowerment_distributions(seed=seed)  # This function returns extrapolated and raw data
         pars['empowerment'] = empowerment_dict
+    if use_education:
         education_dict, _ = education_distributions() # This function returns extrapolated and raw data
         pars['education'] = education_dict
+    if use_urban:
+        pars['urban_prop'] = urban_proportion()
+    if use_partnership:
         pars['age_partnership'] = age_partnership()
 
     return pars
