@@ -520,7 +520,10 @@ default_pars = {
     # Settings - what aspects are being modeled
     'track_switching':      0,      # Whether to track method switching
     'track_as':             0,      # Whether to track age-specific channels
+    'use_urban':            0,      # Whether to model urban setting state - will need to add context-specific data if using
+    'use_partneship':       0,      # Whether to model partnered states- will need to add context-specific data if using
     'use_empowerment':      0,      # Whether to model empowerment - will need to add context-specific data if using
+    'use_education':        0,      # Whether to model education, requires use_urban==True for kenya - will need to add context-specific data if using
 
     # Age limits (in years)
     'method_age':           15,
@@ -632,7 +635,11 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     pars = sc.mergedicts(default_pars, kwargs, _copy=True)  # Merge all pars with kwargs and copy
 
     # Pull out values needed for the location-specific make_pars functions
-    loc_kwargs = dict(use_empowerment=pars['use_empowerment'], seed=pars['seed'])
+    loc_kwargs = dict(use_empowerment =pars['use_empowerment'],
+                      use_education   = pars['use_education'],
+                      use_urban       = pars['use_urban'],
+                      use_partnership = pars['use_partnership'],
+                      seed            =pars['seed'])
 
    # Define valid locations
     if location in ['senegal', 'default']:
