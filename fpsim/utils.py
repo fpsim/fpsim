@@ -11,6 +11,7 @@ from . import version as fpv
 
 # Specify all externally visible things this file defines
 __all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample', 'match_ages']
+__all__ += ['ndict', 'DuplicateNameException']
 
 
 @nb.jit((nb.float64[:], nb.float64, nb.float64), cache=True, nopython=True)
