@@ -1165,7 +1165,7 @@ def education_distributions():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=False, use_education=False, use_urban=False, use_partnership=False, seed=None):
+def make_pars(use_empowerment=None, use_education=None, use_urban=None, use_partnership=None, seed=None):
     """
     Take all parameters and construct into a dictionary
     """
