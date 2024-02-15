@@ -102,7 +102,7 @@ def get_partnership_init_vals(ppl):
     partnership_age = np.zeros(n, dtype=float)
 
     # Get female agents indices and ages
-    f_inds = sc.findinds(ppl.sex == 0)
+    f_inds = sc.findinds(ppl.is_female)
     f_ages = ppl.age[f_inds]
 
     # Select age at first partnership
@@ -141,7 +141,7 @@ def get_empowerment_init_vals(ppl):
     empowerment['decision_health'] = np.zeros(n, dtype=float)
 
     # Get female agents indices and ages
-    f_inds = sc.findinds(ppl.sex == 0)
+    f_inds = sc.findinds(ppl.is_female)
     f_ages = ppl.age[f_inds]
 
     # Create age bins
@@ -152,6 +152,7 @@ def get_empowerment_init_vals(ppl):
     paid_employment_probs = empowerment_dict['paid_employment']
     empowerment['paid_employment'][f_inds] = fpu.binomial_arr(paid_employment_probs[age_inds])
 
+    # Make other metrics
     for metric in ['decision_wages', 'decision_health', 'sexual_autonomy']:
         empowerment[metric][f_inds] = empowerment_dict[metric][age_inds]
 
@@ -181,12 +182,13 @@ def get_education_init_vals(ppl):
                  'edu_dropout': np.zeros(n, dtype=bool)}
 
     # Initialise individual education objectives from a 2d array of probs with dimensions (urban, edu_years)
-    f_inds_urban = sc.findinds(ppl.sex == 0, urban == True)
-    f_inds_rural = sc.findinds(ppl.sex == 0, urban == False)
+    f_inds_urban = sc.findinds(ppl.is_female & ppl.urban)
+    f_inds_rural = sc.findinds(ppl.is_female & ~ppl.urban)
 
-    # Set objectives
-    probs_rural = education_dict['edu_objective'][1, :]
+    # Set objectives based on geo setting
     probs_urban = education_dict['edu_objective'][0, :]
+    probs_rural = education_dict['edu_objective'][1, :]
+
     edu_years = np.arange(len(probs_rural))
     education['edu_objective'][f_inds_rural] = np.random.choice(edu_years, size=len(f_inds_rural),
                                                                 p=probs_rural)  # Probs in rural settings
@@ -194,7 +196,7 @@ def get_education_init_vals(ppl):
                                                                 p=probs_urban)  # Probs in urban settings
 
     # Initialise education attainment - ie, current state of education at the start of the simulation
-    f_inds = sc.findinds(ppl.sex == 0)
+    f_inds = sc.findinds(ppl.is_female)
 
     # Get ages for female agents and round them so we can use them as indices
     f_ages = np.floor(ppl.age[f_inds]).astype(int)
@@ -204,8 +206,8 @@ def get_education_init_vals(ppl):
     # Check people who started their education
     started_inds = sc.findinds(education['edu_attainment'][f_inds] > 0.0)
     # Check people who completed their education
-    completed_inds = sc.findinds(education['edu_objective'][f_inds] - education['edu_attainment'][f_inds] <= 0)
-    # Set attainment to edu_objective, just in case that initial edu_attainment > edu_objective
+    completed_inds = sc.findinds(education['edu_objective'][f_inds] - education['edu_attainment'][f_inds] <= 0.0)
+    # Set attainment to edu_objective, for cases that initial edu_attainment > edu_objective
     education['edu_attainment'][f_inds[completed_inds]] = education['edu_objective'][f_inds[completed_inds]]
     education['edu_completed'][f_inds[completed_inds]] = True
     education['edu_started'][f_inds[started_inds]] = True
