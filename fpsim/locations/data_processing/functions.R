@@ -22,10 +22,6 @@ pma.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/Data/PMA"), "
 All_data_wide_clpm <- with_dir(pma.path, {read.csv("Kenya/All_data_wide_clpm.csv")})
 options(survey.lonely.psu="adjust")
 
-
-
-####################################################################################################################################
-
 filter_data <- All_data_wide_clpm %>%
   filter(!is.na(EA_ID)) %>%
   # refuse sex only waves 1 and 3, so set wave 2 = wave 1 but remember that coefficient is for 2 years prior
@@ -78,4 +74,40 @@ contra_coef <- as.data.frame(summary(model)$coefficients) %>%
                                                                       gsub("current_contra", "contraception", rhs)))))))))))
 
 write.csv(contra_coef, "fpsim/locations/kenya/contra_coef.csv", row.names = F)
+
+
+# Method choice arrays
+data.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "DHS"), "/")
+data.raw <- with_dir(data.path, {read_dta("KE_2014_DHS_09162022_2324_122388/KEIR72DT/KEIR72FL.DTA")}) 
+
+data <- data.raw %>%
+  mutate(wt = v005/1000000,
+         age = as.numeric(v012), 
+         parity=as.numeric(v220),
+         age_grp = case_when(age <= 18 ~ "<18",                                          
+                             age > 18 & age <= 20 ~ "18-20",
+                             age > 20 & age <= 25 ~ "20-25",
+                             age > 25 & age <= 30 ~ "25-30",
+                             age > 30 & age <= 35 ~ "30-35",
+                             age > 35 ~ ">35"),
+         curr_use = ifelse(v312 == 0, 0, ifelse(is.na(v312), NA, 1)),
+         method = factor(case_when(v312 == 7 ~ 17, # male sterilization to other modern
+                            v312 == 13 ~ NA, # LAM to missing
+                            v312 == 14 ~ 17, # female condom to other modern
+                            T ~ v312),
+                         levels = c(1,2,3,5,6,8,9,10,11,17),
+                         labels = c("Pill", "IUD", "Injectable", "Condom", "F.sterilization", "Abstinence", "Withdrawal", "Other.trad", "Implant", "Other.mod"))) 
+
+svydes1 <- svydesign(id = ~v001, strata= ~v023, weights = ~wt, data=data, nest = T)
+methods <- as.data.frame(svytable(~method+age_grp+parity, svydes1)) %>%
+  group_by(age_grp, parity) %>% mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
+write.csv(methods, "fpsim/locations/kenya/method_mix.csv", row.names = F)
+
+methods %>%
+ggplot()+
+  geom_line(aes(y = percent, x = method, group = parity, color = parity)) +
+  facet_wrap(~age_grp)
+
+
+
 
