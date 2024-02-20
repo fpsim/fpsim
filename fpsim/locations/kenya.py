@@ -47,7 +47,7 @@ def filenames():
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
     files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-    files['skyscrapers'] = 'skyscrapers.csv' # Choose from either DHS 2014 or PMA 2022
+    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2014 or PMA 2022
     files['spacing'] = 'birth_spacing_dhs.csv'
     files['methods'] = 'mix.csv'
     files['afb'] = 'afb.table.csv'
