@@ -8,7 +8,7 @@ import fpsim as fp
 import fpsim.empowerment as fpemp
 
 
-do_profile = 1
+do_profile = 0
 sim = fp.Sim()
 sim.initialize()
 

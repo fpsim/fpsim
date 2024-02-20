@@ -48,7 +48,7 @@ class State:
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
 # or updated during the course of a simulation.
-person_defaults = sc.autolist(
+person_defaults = [
     # Basic demographics
     State('uid',                -1, int),
     State('age',                0, float),
@@ -113,7 +113,6 @@ person_defaults = sc.autolist(
     # Urban (bsic demographics) -- state will remain at these values if use_urban is False
     State('urban', 1, bool),
 
-
     # Education - states will remain at these values if use_education is False
     State('edu_objective',      0, float),
     State('edu_attainment',     0, float),
@@ -121,7 +120,7 @@ person_defaults = sc.autolist(
     State('edu_interrupted',    0, bool),
     State('edu_completed',      0, bool),
     State('edu_started',        0, bool)
-)
+]
 
 # Postpartum keys to months
 postpartum_map = {
