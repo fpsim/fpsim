@@ -87,7 +87,7 @@ class Sim(fpb.BaseSim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, pars=None, location=None, label=None, track_children=False, **kwargs):
+    def __init__(self, pars=None, location=None, label=None, track_children=False, method_selector=None, **kwargs):
 
         # Handle location
         if location is None:
@@ -118,17 +118,33 @@ class Sim(fpb.BaseSim):
         self.track_children = track_children
         self.results = {}
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
+        self.method_selector = method_selector
+        self.ti = None  # The current timestep of the simulation
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
         return
 
+    # Basic properties
+    @property
+    def ty(self):
+        return self.ind2year(self.ti)  # years elapsed since beginning of sim (ie, 25.75... )
+
+    @property
+    def y(self):
+        return self.ind2calendar(self.ti)  # y is calendar year of timestep (ie, 1975.75)
+
     def initialize(self, force=False):
         """ Fully initialize the Sim with people and result storage"""
         if force or not self.initialized:
+            self.ti = 0  # The current time index
             fpu.set_seed(self['seed'])
             self.init_results()
+            self.init_methods()
             self.init_people()
         return self
+
+    def init_methods(self):
+        self.methods = fpu.ndict(fpd.method_list)
 
     def init_results(self):
         """
@@ -187,7 +203,7 @@ class Sim(fpb.BaseSim):
         Initialize people by calling the People constructor and initialization methods.
         See people.py for details of people construction.
         """
-        self.people = fpppl.People(pars=self.pars)
+        self.people = fpppl.People(pars=self.pars, method_selector=self.method_selector)
 
     def update_methods(self):
         """
@@ -323,21 +339,20 @@ class Sim(fpb.BaseSim):
 
         # Main simulation loop
 
-        for i in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
-            self.i = i  # Timestep - RS TODO, do these need to be set as attributes?
-            self.t = self.ind2year(i)  # time elapsed in years given how many timesteps have passed (ie, 25.75 years)
-            self.y = self.ind2calendar(i)  # y is calendar year of timestep (ie, 1975.75)
+        for ti in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
+
+            self.ti = ti
 
             # Print progress
             elapsed = T.toc(output=True)
             if verbose:
                 simlabel = f'"{self.label}": ' if self.label else ''
-                string = f'  Running {simlabel}{self.y:0.0f} of {self["end_year"]} ({i:2.0f}/{self.npts}) ({elapsed:0.2f} s) '
+                string = f'  Running {simlabel}{self.y:0.0f} of {self["end_year"]} ({ti:2.0f}/{self.npts}) ({elapsed:0.2f} s) '
                 if verbose >= 2:
                     sc.heading(string)
                 elif verbose > 0:
-                    if not (self.t % int(1.0 / verbose)):
-                        sc.progressbar(self.i + 1, self.npts, label=string, length=20, newline=True)
+                    if not (self.ty % int(1.0 / verbose)):
+                        sc.progressbar(self.ti + 1, self.npts, label=string, length=20, newline=True)
 
             # Update method matrices for year of sim to trend over years
             self.update_methods()
@@ -350,16 +365,17 @@ class Sim(fpb.BaseSim):
             self.apply_analyzers()
 
             # Update the people
-            self.people.i = self.i
-            self.people.t = self.t
-            step_results = self.people.update()
+            self.people.ti = self.ti
+            self.people.ty = self.ty
+            self.people.y = self.y
+            step_results = self.people.update(method_selector=self.method_selector)
             r = sc.dictobj(**step_results)
 
             # Start calculating results
             new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
 
             # Births
-            people = fpppl.People(pars=self.pars, n=new_people)
+            people = fpppl.People(pars=self.pars, n=new_people, method_selector=self.method_selector)
             self.people += people
 
             # Update mothers
@@ -367,7 +383,7 @@ class Sim(fpb.BaseSim):
                 self.update_mothers()
 
             # Results
-            self.update_results(r, i)
+            self.update_results(r, ti)
 
         if not self.track_children:
             delattr(self.people, "mothers")
@@ -391,7 +407,7 @@ class Sim(fpb.BaseSim):
 
         return self
 
-    def update_results(self, r, i):
+    def update_results(self, r, ti):
         percent0to5 = (r.pp0to5 / r.total_women_fecund) * 100
         percent6to11 = (r.pp6to11 / r.total_women_fecund) * 100
         percent12to23 = (r.pp12to23 / r.total_women_fecund) * 100
@@ -402,34 +418,34 @@ class Sim(fpb.BaseSim):
             scale = self['scaled_pop'] / self['n_agents']
         else:
             scale = 1
-        self.results['t'][i] = self.tvec[i]
-        self.results['pop_size_months'][i] = self.n * scale
-        self.results['births'][i] = r.births * scale
-        self.results['deaths'][i] = r.deaths * scale
-        self.results['stillbirths'][i] = r.stillbirths * scale
-        self.results['miscarriages'][i] = r.miscarriages * scale
-        self.results['abortions'][i] = r.abortions * scale
-        self.results['short_intervals'][i] = r.short_intervals * scale
-        self.results['secondary_births'][i] = r.secondary_births * scale
-        self.results['pregnancies'][i] = r.pregnancies * scale
-        self.results['total_births'][i] = r.total_births * scale
-        self.results['maternal_deaths'][i] = r.maternal_deaths * scale
-        self.results['infant_deaths'][i] = r.infant_deaths * scale
-        self.results['on_methods_mcpr'][i] = r.on_methods_mcpr
-        self.results['no_methods_mcpr'][i] = r.no_methods_mcpr
-        self.results['on_methods_cpr'][i] = r.on_methods_cpr
-        self.results['no_methods_cpr'][i] = r.no_methods_cpr
-        self.results['on_methods_acpr'][i] = r.on_methods_acpr
-        self.results['no_methods_acpr'][i] = r.no_methods_acpr
-        self.results['mcpr'][i] = r.on_methods_mcpr / (r.no_methods_mcpr + r.on_methods_mcpr)
-        self.results['cpr'][i] = r.on_methods_cpr / (r.no_methods_cpr + r.on_methods_cpr)
-        self.results['acpr'][i] = r.on_methods_acpr / (r.no_methods_acpr + r.on_methods_acpr)
-        self.results['pp0to5'][i] = percent0to5
-        self.results['pp6to11'][i] = percent6to11
-        self.results['pp12to23'][i] = percent12to23
-        self.results['nonpostpartum'][i] = nonpostpartum
-        self.results['total_women_fecund'][i] = r.total_women_fecund * scale
-        self.results['unintended_pregs'][i] = r.unintended_pregs * scale
+        self.results['t'][ti] = self.tvec[ti]
+        self.results['pop_size_months'][ti] = self.n * scale
+        self.results['births'][ti] = r.births * scale
+        self.results['deaths'][ti] = r.deaths * scale
+        self.results['stillbirths'][ti] = r.stillbirths * scale
+        self.results['miscarriages'][ti] = r.miscarriages * scale
+        self.results['abortions'][ti] = r.abortions * scale
+        self.results['short_intervals'][ti] = r.short_intervals * scale
+        self.results['secondary_births'][ti] = r.secondary_births * scale
+        self.results['pregnancies'][ti] = r.pregnancies * scale
+        self.results['total_births'][ti] = r.total_births * scale
+        self.results['maternal_deaths'][ti] = r.maternal_deaths * scale
+        self.results['infant_deaths'][ti] = r.infant_deaths * scale
+        self.results['on_methods_mcpr'][ti] = r.on_methods_mcpr
+        self.results['no_methods_mcpr'][ti] = r.no_methods_mcpr
+        self.results['on_methods_cpr'][ti] = r.on_methods_cpr
+        self.results['no_methods_cpr'][ti] = r.no_methods_cpr
+        self.results['on_methods_acpr'][ti] = r.on_methods_acpr
+        self.results['no_methods_acpr'][ti] = r.no_methods_acpr
+        self.results['mcpr'][ti] = r.on_methods_mcpr / (r.no_methods_mcpr + r.on_methods_mcpr)
+        self.results['cpr'][ti] = r.on_methods_cpr / (r.no_methods_cpr + r.on_methods_cpr)
+        self.results['acpr'][ti] = r.on_methods_acpr / (r.no_methods_acpr + r.on_methods_acpr)
+        self.results['pp0to5'][ti] = percent0to5
+        self.results['pp6to11'][ti] = percent6to11
+        self.results['pp12to23'][ti] = percent12to23
+        self.results['nonpostpartum'][ti] = nonpostpartum
+        self.results['total_women_fecund'][ti] = r.total_women_fecund * scale
+        self.results['unintended_pregs'][ti] = r.unintended_pregs * scale
 
         if self.pars['track_as']:
             for age_specific_channel in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator',
@@ -447,32 +463,32 @@ class Sim(fpb.BaseSim):
         for agekey in fpd.age_bin_map.keys():
             births_key = f'total_births_{agekey}'
             women_key = f'total_women_{agekey}'
-            self.results[births_key][i] = r.birth_bins[
+            self.results[births_key][ti] = r.birth_bins[
                                               agekey] * scale  # Store results of total births per age bin for ASFR
-            self.results[women_key][i] = r.age_bin_totals[
+            self.results[women_key][ti] = r.age_bin_totals[
                                              agekey] * scale  # Store results of total fecund women per age bin for ASFR
 
         # Store results of number of switching events in each age group
         if self['track_switching']:
             switch_events = r.pop('switching')
-            self.results['switching_events_<18'][i] = scale * r.switching_annual['<18']
-            self.results['switching_events_18-20'][i] = scale * r.switching_annual['18-20']
-            self.results['switching_events_21-25'][i] = scale * r.switching_annual['21-25']
-            self.results['switching_events_26-35'][i] = scale * r.switching_annual['26-35']
-            self.results['switching_events_>35'][i] = scale * r.switching_annual['>35']
-            self.results['switching_events_pp_<18'][i] = scale * r.switching_postpartum['<18']
-            self.results['switching_events_pp_18-20'][i] = scale * r.switching_postpartum['18-20']
-            self.results['switching_events_pp_21-25'][i] = scale * r.switching_postpartum['21-25']
-            self.results['switching_events_pp_26-35'][i] = scale * r.switching_postpartum['26-35']
-            self.results['switching_events_pp_>35'][i] = scale * r.switching_postpartum['>35']
-            self.results['switching_events_annual'][i] = scale * switch_events['annual']
-            self.results['switching_events_postpartum'][i] = scale * switch_events['postpartum']
+            self.results['switching_events_<18'][ti] = scale * r.switching_annual['<18']
+            self.results['switching_events_18-20'][ti] = scale * r.switching_annual['18-20']
+            self.results['switching_events_21-25'][ti] = scale * r.switching_annual['21-25']
+            self.results['switching_events_26-35'][ti] = scale * r.switching_annual['26-35']
+            self.results['switching_events_>35'][ti] = scale * r.switching_annual['>35']
+            self.results['switching_events_pp_<18'][ti] = scale * r.switching_postpartum['<18']
+            self.results['switching_events_pp_18-20'][ti] = scale * r.switching_postpartum['18-20']
+            self.results['switching_events_pp_21-25'][ti] = scale * r.switching_postpartum['21-25']
+            self.results['switching_events_pp_26-35'][ti] = scale * r.switching_postpartum['26-35']
+            self.results['switching_events_pp_>35'][ti] = scale * r.switching_postpartum['>35']
+            self.results['switching_events_annual'][ti] = scale * switch_events['annual']
+            self.results['switching_events_postpartum'][ti] = scale * switch_events['postpartum']
 
         # Calculate metrics over the last year in the model and save whole years and stats to an array
-        if i % fpd.mpy == 0:
+        if ti % fpd.mpy == 0:
             self.results['tfr_years'].append(self.y)
-            start_index = (int(self.t) - 1) * fpd.mpy
-            stop_index = int(self.t) * fpd.mpy
+            start_index = (int(self.ty) - 1) * fpd.mpy
+            stop_index = int(self.ty) * fpd.mpy
             unintended_pregs_over_year = scale * np.sum(self.results['unintended_pregs'][
                                                         start_index:stop_index])  # Grabs sum of unintended pregnancies due to method failures over the last 12 months of calendar year
             infant_deaths_over_year = scale * np.sum(self.results['infant_deaths'][start_index:stop_index])
@@ -485,10 +501,10 @@ class Sim(fpb.BaseSim):
             secondary_births_over_year = scale * np.sum(self.results['secondary_births'][start_index:stop_index])
             maternal_deaths_over_year = scale * np.sum(self.results['maternal_deaths'][start_index:stop_index])
             pregnancies_over_year = scale * np.sum(self.results['pregnancies'][start_index:stop_index])
-            self.results['method_usage'].append(self.compute_method_usage())  # only want this per year
+            # self.results['method_usage'].append(self.compute_method_usage())  # only want this per year
             self.results['pop_size'].append(scale * self.n)  # CK: TODO: replace with arrays
-            self.results['mcpr_by_year'].append(self.results['mcpr'][i])
-            self.results['cpr_by_year'].append(self.results['cpr'][i])
+            self.results['mcpr_by_year'].append(self.results['mcpr'][ti])
+            self.results['cpr_by_year'].append(self.results['cpr'][ti])
             self.results['method_failures_over_year'].append(unintended_pregs_over_year)
             self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
             self.results['total_births_over_year'].append(total_births_over_year)

@@ -513,7 +513,7 @@ default_pars = {
     'start_year':           1960,   # Start year of simulation
     'end_year':             2020,   # End year of simulation
     'timestep':             1,      # The simulation timestep in months
-    'method_timestep':      1,      # How many simulation timesteps to go for every method update step
+    # 'method_timestep':      1,      # How many simulation timesteps to go for every method update step
     'seed':                 1,      # Random seed
     'verbose':              1,      # How much detail to print during the simulation
 
@@ -556,8 +556,8 @@ default_pars = {
     'high_parity_nonuse':   0.6,
     'primary_infertility':  0.05,
     'exposure_factor':      1.0,    # Overall exposure correction factor
-    'restrict_method_use':  0,      # If 1, only allows agents to select methods when sexually active within 1 year
-                                    # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
+    # 'restrict_method_use':  0,      # If 1, only allows agents to select methods when sexually active within 1 year
+    #                                 # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
 
     # MCPR
     'mcpr_growth_rate':     0.02,   # Year-on-year change in MCPR after the end of the data
@@ -591,11 +591,11 @@ default_pars = {
     'methods':              None,
     'barriers':             None,
 
-    # Empowerment (if using, set use_empowerment to True in the pars dict or location file and provide these)
-    'urban_prop':           None,
-    'empowerment':          None,
-    'education':            None,
-    'age_partnership':      None,
+    # # Empowerment (if using, set use_empowerment to True in the pars dict or location file and provide these)
+    # 'urban_prop':           None,
+    # 'empowerment':          None,
+    # 'education':            None,
+    # 'age_partnership':      None,
 }
 
 # Shortcut for accessing default keys

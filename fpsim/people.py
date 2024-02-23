@@ -5,6 +5,7 @@ Defines the People class
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
 import sciris as sc
+from . import settings as fps
 from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
@@ -21,7 +22,7 @@ class People(fpb.BasePeople):
     Class for all the people in the simulation.
     """
 
-    def __init__(self, pars, n=None, age=None, sex=None, method=None, **kwargs):
+    def __init__(self, pars, n=None, age=None, sex=None, method=None, method_selector=None, **kwargs):
 
         # Initialization
         super().__init__()
@@ -29,6 +30,11 @@ class People(fpb.BasePeople):
         self.pars = pars  # Set parameters
         if n is None:
             n = int(self.pars['n_agents'])
+
+        # Time indexing
+        self.ti = 0  # Time index (0,1,2, ...)
+        self.ty = None  # Time in years since beginning of sim (25, 25.1, ...)
+        self.y = None   # Year (1975, 1975.1,...)
 
         # Set default states
         self.states = {state.name: state for state in fpd.person_defaults}
@@ -44,11 +50,6 @@ class People(fpb.BasePeople):
         if sex is None: sex = _sex
         self.age = self.states['age'].new(n, age)  # Age of the person in years
         self.sex = self.states['sex'].new(n, sex)  # Female (0) or male (1)
-
-        # Contraceptive use
-        if method is not None:
-            self.method = method  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM
-        self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
 
         # Parameters on sexual and reproductive history
         self.fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], n)
@@ -72,9 +73,31 @@ class People(fpb.BasePeople):
         if self.pars['use_education']:
             fpemp.init_education_states(self)
 
+        # Once all the other metric are initialized, determine initial contraceptive use
+        self.method_selector = None  # Set below
+        self.init_methods(ms=method_selector, method=method)
+        self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
+
         # Store keys
         self._keys = [state.name for state in fpd.person_defaults]
 
+        return
+
+    def init_methods(self, ms=None, method=None):
+        if ms is not None:
+            self.method_selector = ms
+
+            self.on_contra = ms.get_contra_users(self)
+            on_contra = self.filter(self.on_contra)
+            on_contra.method = ms.choose_method(on_contra)
+            on_contra.ti_contra_update = ms.set_dur_method(on_contra)
+
+            # non_users = self.filter(~self.on_contra)
+            # non_users.method = fps.INT_NAN
+            # non_users.ti_contra_update = ms.set_dur_no_method(non_users)
+
+        else:
+            self.method = method
         return
 
     def get_age_sex(self, n):
@@ -104,7 +127,38 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
-    def update_method(self):
+    def update_method(self, ms=None):
+        """ Inputs: filtered people object only including those for whom it's time to update """
+        if ms is not None:
+
+            # Non-users will be made to pick a method
+            new_users = self.filter(~self.on_contra)
+            new_users.on_contra = True
+            new_users.method = ms.choose_method(new_users)
+            ms.set_dur_method(new_users)
+
+            # Get previous users and see whether they will switch methods or stop using
+            prev_users = self.filter(self.on_contra)
+            prev_users.on_contra = ms.get_contra_users(prev_users)
+
+            # For those who keep using, determine their next method and update time
+            still_on_contra = prev_users.filter(prev_users.on_contra)
+            still_on_contra.method = ms.choose_method(still_on_contra)
+            ms.set_dur_method(still_on_contra)
+
+            # For those who stop using, determine when next to update
+            stopping_contra = prev_users.filter(~prev_users.on_contra)
+            stopping_contra.method = 0
+            ms.set_dur_method(stopping_contra)
+
+            # Validate - TODO, refactor
+            invalid_vals = (self.method > 10) * (self.method < 0)
+            if invalid_vals.any():  # TODO, better validation
+                errormsg = f'Invalid method set: ti={self.ti}, inds={invalid_vals.nonzero()[-1]}'
+                raise ValueError(errormsg)
+        return
+
+    def update_method_prev(self):
         """
         Uses a switching matrix from DHS data to decide based on a person's original method their probability of
         changing to a new method and assigns them the new method. This currently allows switching on whole calendar
@@ -245,19 +299,16 @@ class People(fpb.BasePeople):
         """
         If eligible (age 15-49 and not pregnant), choose new method or stay with current one
         """
+        # postpartum = self.postpartum * (self.postpartum_dur <= 6)
+        # pp = self.filter(postpartum)
+        # non_pp = self.filter(~postpartum)
+        # pp.update_method_pp()  # Update method for postpartum women
 
-        if not (self.i % self.pars['method_timestep']):  # Allow skipping timesteps
-            postpartum = self.postpartum * (self.postpartum_dur <= 6)
-            pp = self.filter(postpartum)
-            non_pp = self.filter(~postpartum)
-
-            pp.update_method_pp()  # Update method for postpartum women
-
-            age_diff = non_pp.ceil_age - non_pp.age
-            whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
-            birthdays = non_pp.filter(whole_years)
-            if len(birthdays):
-                birthdays.update_method()
+        # age_diff = non_pp.ceil_age - non_pp.age
+        # whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
+        # birthdays = non_pp.filter(whole_years)
+        # if len(birthdays):
+        #     birthdays.update_method()
 
         return
 
@@ -373,7 +424,18 @@ class People(fpb.BasePeople):
         pars = self.pars  # Shorten
         preg_eval_lam = pars['age_fecundity'][lam.int_age_clip] * lam.personal_fecundity
         preg_eval_nonlam = pars['age_fecundity'][nonlam.int_age_clip] * nonlam.personal_fecundity
-        method_eff = np.array(list(pars['methods']['eff'].values()))[nonlam.method]
+
+        # TODO refactor
+        method_eff = np.zeros(len(nonlam))
+        contra_use_bools = nonlam.method < len(pars['methods']['eff'])
+        contra_users = np.nonzero(contra_use_bools)[-1]
+        n_contra_users = len(contra_users)
+        if n_contra_users:
+            try:
+                method_eff[contra_users] = np.array(list(pars['methods']['eff'].values()))[1:][nonlam.method[contra_users]]
+            except:
+                import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
+            # method_eff = np.array(list(pars['methods']['eff'].values()))[nonlam.method]
         lam_eff = pars['LAM_efficacy']
 
         lam_probs = fpu.annprob2ts((1 - lam_eff) * preg_eval_lam, pars['timestep'])
@@ -609,11 +671,11 @@ class People(fpb.BasePeople):
                 all_ppl.still_dates[i].append(all_ppl.age[i])
 
             # Add age of agents at birth with short birth interval
-            # for i in live.inds: # Handle DOBs
-            # if len(all_ppl.dobs[i]) > 1:
-            # for d in range(len(all_ppl.dobs[i]) - 1):
-            # if  (all_ppl.dobs[i][d + 1] - all_ppl.dobs[i][d]) < self.pars['short_int']:
-            # short_interval_age = all_ppl.dobs[i][d+1].append(all_ppl.age[i][d+1])
+            # for ti in live.inds: # Handle DOBs
+            # if len(all_ppl.dobs[ti]) > 1:
+            # for d in range(len(all_ppl.dobs[ti]) - 1):
+            # if  (all_ppl.dobs[ti][d + 1] - all_ppl.dobs[ti][d]) < self.pars['short_int']:
+            # short_interval_age = all_ppl.dobs[ti][d+1].append(all_ppl.age[ti][d+1])
 
             # Handle twins
             is_twin = live.binomial(self.pars['twins_prob'])
@@ -925,7 +987,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def update(self):
+    def update(self, method_selector=None):
         """
         Update the person's state for the given timestep.
         t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)
@@ -945,10 +1007,13 @@ class People(fpb.BasePeople):
         fecund = alive_now.filter((alive_now.sex == 0) * (alive_now.age < alive_now.pars['age_limit_fecundity']))
         nonpreg = fecund.filter(~fecund.pregnant)
         lact = fecund.filter(fecund.lactating)
-        if self.pars['restrict_method_use'] == 1:
-            methods = nonpreg.filter((nonpreg.age >= nonpreg.fated_debut) * (nonpreg.months_inactive < 12))
-        else:
-            methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
+
+        # Figure out who to update methods for
+        methods = nonpreg.filter(nonpreg.ti_contra_update == self.ti)
+        # if self.pars['restrict_method_use'] == 1:
+        #     methods = nonpreg.filter((nonpreg.age >= nonpreg.fated_debut) * (nonpreg.months_inactive < 12))
+        # else:
+        #     methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
 
         # Check if has reached their age at first partnership and set partnered attribute to True.
         # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
@@ -957,7 +1022,8 @@ class People(fpb.BasePeople):
         # Update everything else
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
-        methods.update_methods()
+        # methods.update_methods()
+        methods.update_method(ms=method_selector)
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()

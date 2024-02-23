@@ -4,6 +4,7 @@ Define defaults for use throughout FPsim
 
 import numpy as np
 import sciris as sc
+import fpsim.settings as fps
 
 #%% Global defaults
 useSI          = True
@@ -50,14 +51,16 @@ class State:
 # or updated during the course of a simulation.
 person_defaults = [
     # Basic demographics
-    State('uid',                -1, int),
+    State('uid',                fps.INT_NAN, int),
     State('age',                0, float),
     State('age_by_group',       0, float),
     State('sex',                0, bool),
     State('alive',              1, bool),
 
     # Contraception
-    State('method',             0, int),
+    State('on_contra',          0, bool),  # whether she's on contraception
+    State('method',             0, int),  # Which method to use. 0 used for those on no method
+    State('ti_contra_update',   0, int),  # time point at which to set method
     State('barrier',            0, int),
 
     # Sexual and reproductive history
@@ -149,26 +152,55 @@ spline_parities  = np.arange(max_parity + 1)
 # Define allowable keys to select all (all ages, all methods, etc)
 none_all_keys = [None, 'all', ':', [None], ['all'], [':']]
 
+
 # Definition of contraceptive methods and corresponding numbers -- can be overwritten by locations
-method_map = {
-    'None'              : 0,
-    'Pill'              : 1,
-    'IUDs'              : 2,
-    'Injectables'       : 3,
-    'Condoms'           : 4,
-    'BTL'               : 5,
-    'Withdrawal'        : 6,
-    'Implants'          : 7,
-    'Other traditional' : 8,
-    'Other modern'      : 9,
-}
+class Method:
+    def __init__(self, name=None, label=None, idx=None, use_pars=None, csv_name=None):
+        self.name = name
+        self.label = label or name
+        self.csv_name = csv_name or label or name
+        self.idx = idx
+        self.use_dist = dict(dist='lognorm', par1=use_pars[0], par2=use_pars[1])
+
+
+method_list = [
+    Method(name='none',     label='None',               use_pars=[2, 3]),
+    Method(name='pill',     label='Pill',               use_pars=[2, 3]),
+    Method(name='iud',      label='IUDs',               use_pars=[5, 3], csv_name='IUD'),
+    Method(name='inj',      label='Injectables',        use_pars=[2, 3], csv_name='Injectable'),
+    Method(name='cond',     label='Condoms',            use_pars=[1, 3], csv_name='Condom'),
+    Method(name='btl',      label='BTL',                use_pars=[50, 3], csv_name='F.sterilization'),
+    Method(name='wdraw',    label='Withdrawal',         use_pars=[1, 3], csv_name='Withdrawal'),
+    Method(name='impl',     label='Implants',           use_pars=[2, 3], csv_name='Implant'),
+    Method(name='othtrad',  label='Other traditional',  use_pars=[1, 3], csv_name='Other.trad'),
+    Method(name='othmod',   label='Other modern',       use_pars=[1, 3], csv_name='Other.mod'),
+]
+
+idx = 0
+for method in method_list:
+    method.idx = idx
+    idx += 1
+
+method_map = {method.label:method.idx for method in method_list}
+# no_method = Method(name='none', label='None', use_pars=[2, 3])
+
 
 # Age bins for different method switching matrices -- can be overwritten by locations
 method_age_map = {
     '<18':   [ 0, 18],
     '18-20': [18, 20],
-    '21-25': [20, 25],
-    '26-35': [25, 35],
+    '20-25': [20, 25],
+    '25-30': [25, 30],
+    '30-35': [30, 35],
+    '>35':   [35, max_age+1], # +1 since we're using < rather than <=
+}
+
+immutable_method_age_map = {
+    '<18':   [ 0, 18],
+    '18-20': [18, 20],
+    '20-25': [20, 25],
+    '25-30': [25, 30],
+    '30-35': [30, 35],
     '>35':   [35, max_age+1], # +1 since we're using < rather than <=
 }
 

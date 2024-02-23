@@ -351,7 +351,7 @@ class empowerment_recorder(Analyzer):
 
     def __init__(self, bins=None):
         """
-        Initializes self.i/t/y as empty lists and self.data as empty dictionary
+        Initializes self.ti/t/y as empty lists and self.data as empty dictionary
         """
         super().__init__()
         self.bins = bins

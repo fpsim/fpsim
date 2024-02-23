@@ -6,6 +6,7 @@ import numpy as np
 import sciris as sc
 from scipy import interpolate as si
 from .. import defaults as fpd
+from .. import settings as fps
 
 
 # %% Housekeeping
@@ -541,7 +542,7 @@ def methods():
 
     # Define method data
     data = {  # Index, modern, efficacy
-        'None': [0, False, 0.000],
+        'None': [fps.INT_NAN, False, 0.000],
         'Withdrawal': [1, False, 0.866],
         'Other traditional': [2, False, 0.861],
         # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
