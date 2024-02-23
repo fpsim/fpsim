@@ -5,7 +5,6 @@ Defines the People class
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
 import sciris as sc
-from . import settings as fps
 from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
@@ -75,11 +74,13 @@ class People(fpb.BasePeople):
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.method_selector = None  # Set below
-        self.init_methods(ms=method_selector, method=method)
         self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
 
         # Store keys
         self._keys = [state.name for state in fpd.person_defaults]
+
+        # Initialize methods with method selector if provided
+        self.init_methods(ms=method_selector, method=method)
 
         return
 
@@ -88,13 +89,9 @@ class People(fpb.BasePeople):
             self.method_selector = ms
 
             self.on_contra = ms.get_contra_users(self)
-            on_contra = self.filter(self.on_contra)
-            on_contra.method = ms.choose_method(on_contra)
-            on_contra.ti_contra_update = ms.set_dur_method(on_contra)
-
-            # non_users = self.filter(~self.on_contra)
-            # non_users.method = fps.INT_NAN
-            # non_users.ti_contra_update = ms.set_dur_no_method(non_users)
+            oc = self.filter(self.on_contra)
+            oc.method = ms.choose_method(oc)
+            self.ti_contra_update = ms.set_dur_method(self)
 
         else:
             self.method = method

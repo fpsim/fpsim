@@ -22,10 +22,9 @@ __all__ = ['MethodSelector']
 class MethodSelector:
 
     def __init__(self, contra_use_file, method_choice_file=None, data=None):
+        self.methods = fpu.ndict(fpd.method_list)
         self.contra_use_pars = self.process_contra_use_pars(contra_use_file)
         self.method_choice_pars = self.process_method_pars(method_choice_file)
-        self.data = data
-        self.methods = fpu.ndict(fpd.method_list)
 
     @staticmethod
     def process_contra_use_pars(contra_use_file):
@@ -36,10 +35,24 @@ class MethodSelector:
             pars[var_name] = var_dict['Estimate']
         return pars
 
-    @staticmethod
-    def process_method_pars(method_choice_file):
-        raw_pars = pd.read_csv(method_choice_file)
-        return raw_pars
+    def process_method_pars(self, method_choice_file):
+        df = pd.read_csv(method_choice_file)
+        # Awful code to speed pandas up
+        dd = dict()
+        for akey in df.age_grp.unique():
+            dd[akey] = dict()
+            for pkey in df.parity.unique():
+                dd[akey][pkey] = dict()
+                for mlabel in df.method.unique():
+                    val = df.loc[(df.age_grp == akey) & (df.parity == pkey) & (df.method == mlabel)].percent.values[0]
+                    if mlabel != 'Abstinence':
+                        mname = [m.name for m in self.methods.values() if m.csv_name == mlabel][0]
+                        dd[akey][pkey][mname] = val
+                    else:
+                        abstinence_val = sc.dcp(val)
+                dd[akey][pkey]['othtrad'] += abstinence_val
+
+        return dd
 
     def get_prob_use(self, ppl, inds=None):
         """
@@ -85,7 +98,9 @@ class MethodSelector:
         for key, (age_low, age_high) in fpd.immutable_method_age_map.items():
             match_low_high = fpu.match_ages(ppl.age[inds], age_low, age_high)
             for parity in range(7):
-                df = mcp.loc[(mcp.age_grp == key) & (mcp.parity == parity)]
+
+                # vals = mcp[key][parity]
+                # df = mcp.loc[(mcp.age_grp == key) & (mcp.parity == parity)]  # TODO - refactor, takes 86% of runtime!
 
                 for mname, method in self.methods.items():
                     # Get people of this age & parity who are using this method
@@ -93,13 +108,16 @@ class MethodSelector:
                     switch_iinds = using_this_method.nonzero()[-1]
 
                     if len(switch_iinds):
-                        excl = [mname, 'none']
-                        other_methods_csv = [m.csv_name for m in self.methods.values() if (m.name not in excl)]
-                        these_probs = [df[df.method == other].percent.values[0] for other in other_methods_csv]
-                        these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]
-                        these_probs = np.array(these_probs)/sum(these_probs)
-                        these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))
-                        choice_array[switch_iinds] = these_choices
+
+                        # Get probability of choosing each method
+                        these_probs = [v for k, v in mcp[key][parity].items() if k != mname]  # Cannot stay on method
+                        these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                        these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
+                        these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
+
+                        # Adjust method indexing for the methods that were removed
+                        method_inds = np.array([self.methods[m].idx for m in mcp[key][parity].keys()])
+                        choice_array[switch_iinds] = method_inds[these_choices]  # Set values
 
         return choice_array.astype(int)
 
@@ -118,24 +136,22 @@ class MethodSelector:
 
         return
 
-    def set_dur_method(self, ppl, method_used=None, inds=None, return_dur=False):
+    def set_dur_method(self, ppl, method_used=None, return_dur=False):
         """ Placeholder function whereby the mean time on method scales with age """
 
-        if inds is None: inds = np.arange(len(ppl))
-        dur_method = np.empty(len(inds))
+        dur_method = np.empty(len(ppl))
         if method_used is None: method_used = ppl.method
 
         for mname, method in self.methods.items():  # TODO: refactor this so it loops over the methods used by the ppl
             users = np.nonzero(method_used == method.idx)[-1]
             n_users = len(users)
             dist_dict = sc.dcp(method.use_dist)
-            dist_dict['par1'] = dist_dict['par1'] + ppl.age[inds[users]]/100
+            dist_dict['par1'] = dist_dict['par1'] + ppl.age[users]/100
             dist_dict['par2'] = np.array([dist_dict['par2']]*n_users)
             dur_method[users] = fpu.sample(**dist_dict, size=n_users)
 
         dt = ppl.pars['timestep'] / fpd.mpy
-        ppl.ti_contra_update[inds] = ppl.ti + sc.randround(dur_method/dt)
+        ti_contra_update = ppl.ti + sc.randround(dur_method/dt)
 
-        if return_dur: return dur_method
-        else: return
+        return ti_contra_update
 
