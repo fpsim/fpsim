@@ -99,9 +99,6 @@ class MethodSelector:
             match_low_high = fpu.match_ages(ppl.age[inds], age_low, age_high)
             for parity in range(7):
 
-                # vals = mcp[key][parity]
-                # df = mcp.loc[(mcp.age_grp == key) & (mcp.parity == parity)]  # TODO - refactor, takes 86% of runtime!
-
                 for mname, method in self.methods.items():
                     # Get people of this age & parity who are using this method
                     using_this_method = match_low_high & (ppl.parity[inds] == parity) & (ppl.method[inds] == method.idx)
@@ -120,21 +117,6 @@ class MethodSelector:
                         choice_array[switch_iinds] = method_inds[these_choices]  # Set values
 
         return choice_array.astype(int)
-
-    @staticmethod
-    def set_dur_no_method(ppl, inds=None):
-        """  Set duration of time on no method """
-        if inds is None: inds = np.arange(len(ppl))
-        n_nonusers = len(inds)
-        dist_dict = sc.dcp(fpd.no_method.use_dist)
-        dist_dict['par1'] = dist_dict['par1'] + ppl.age[inds]/100
-        dist_dict['par2'] = np.array([dist_dict['par2']]*n_nonusers)
-        dur_no_method = fpu.sample(**dist_dict, size=n_nonusers)
-
-        dt = ppl.pars['timestep'] / fpd.mpy
-        ppl.ti_contra_update[inds] = ppl.ti + sc.randround(dur_no_method/dt)
-
-        return
 
     def set_dur_method(self, ppl, method_used=None, return_dur=False):
         """ Placeholder function whereby the mean time on method scales with age """
