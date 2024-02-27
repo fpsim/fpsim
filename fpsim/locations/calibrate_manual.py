@@ -41,14 +41,15 @@ import seaborn as sns
 country = 'kenya'
 
 # Set options for plotting
-do_plot_sim = True
-do_plot_asfr = True
-do_plot_methods = True
-do_plot_ageparity = True
-do_plot_cpr = True
-do_plot_tfr = True
-do_plot_pop_growth = True
-do_plot_birth_space_afb = True
+do_plot_sim = False
+do_plot_asfr = False
+do_plot_methods = False
+do_plot_ageparity = False
+do_plot_cpr = False
+do_plot_tfr = False
+do_plot_pop_growth = False
+do_plot_birth_space_afb = False
+do_plot_empowerment = True
 
 # Set option to save figures
 do_save = 1
@@ -56,7 +57,7 @@ do_save = 1
 # Dataset contained in the ageparity csv file to which the model data will be compared (i.e. 'PMA 2022',
 # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_ageparity.csv file, you will receive
 # an error when running the script.
-ageparity_dataset = 'PMA 2019'
+ageparity_dataset = 'PMA 2022'
 
 ####################################################
 
@@ -98,7 +99,7 @@ sc.tic()
 
 # Set up sim for country
 pars = fp.pars(location=country)
-pars['n_agents'] = 100_000 # Small population size
+pars['n_agents'] = 1_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -522,54 +523,71 @@ if do_plot_birth_space_afb:
         pl.show()
 
 if do_plot_empowerment:
-    # Extract paid work from data
-    data_paid_work = data_empowerment[['age', 'paid_employment']]
-    ages = data_paid_work['age'].values.tolist()
-    data_paid_emp = data_paid_work['paid_employment'].values.tolist()
+        # Extract paid work from data
+        data_paid_work = data_empowerment[['age', 'paid_employment']]
+        data_paid_work['paid_employment_age_group'] = pd.cut(data_paid_work['age'], bins=range(15, 55, 5), right=False)
+        avg_by_age_group = data_paid_work.groupby('paid_employment_age_group')['paid_employment'].mean()
+        data_paid_emp = avg_by_age_group.values.tolist()
+        age_bins = pl.arange(min_age, max_age, bin_size)
 
-    # Extract paid work from model
-    model_paid_work_dict = {}
-    # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
-    for age in ages:
-        model_paid_work_dict[age] = []
+        # Extract paid work from model
+        model_paid_work_dict = {}
+        # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
+        for age in age_bins:
+                model_paid_work_dict[age] = []
 
-    for i in range(len(ppl)):
-        if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
-            age = math.floor(ppl.age[i])
-            model_paid_work_dict[age].append(ppl.paid_employment[i])
+        for i in range(len(ppl)):
+                if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                    age = math.floor(ppl.age[i])
+                    age_bin = sc.findinds(age_bins <= age)[-1]
+                    model_paid_work_dict[age_bins[age_bin]].append(ppl.paid_employment[i])
 
-    # Calculate average # of individuals with paid work by each age using the array
-    for age in model_paid_work_dict:
-        total_ppl = len(model_paid_work_dict[age])
-        avg_paid_emp = (model_paid_work_dict[age].count(True)) / total_ppl
-        model_paid_work_dict[age] = avg_paid_emp
-    model_paid_emp = list(model_paid_work_dict.values())
+        # Calculate average # of individuals with paid work by each age using the array
+        for age in model_paid_work_dict:
+                total_ppl = len(model_paid_work_dict[age])
+                if total_ppl != 0:
+                        avg_paid_emp = (model_paid_work_dict[age].count(True)) / total_ppl
+                else:
+                        avg_paid_emp = 0
+                model_paid_work_dict[age] = avg_paid_emp
+        model_paid_emp = list(model_paid_work_dict.values())
+        """
+        # Extract education from data
+        data_edu = data_edu[['age', 'edu']].sort_values(by='age')
+        data_years_edu = data_edu['edu'].values.tolist()
 
-    # Extract education from data
-    data_edu = data_edu[['age', 'edu']].sort_values(by='age')
-    data_years_edu = data_edu['edu'].values.tolist()
+        # Extract education from model
+        model_edu_dict = {}
+        # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
+        for age in range(min_age, max_age):
+                model_edu_dict[age] = []
 
-    # Extract education from model
-    model_edu_dict = {}
-    # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
-    for age in range(min_age, max_age):
-        model_edu_dict[age] = []
+        for i in range(len(ppl)):
+                if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                    age = math.floor(ppl.age[i])
+                    model_edu_dict[age].append(ppl.edu_attainment[i])
 
-    for i in range(len(ppl)):
-        if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
-            age = math.floor(ppl.age[i])
-            model_edu_dict[age].append(ppl.edu_attainment[i])
+        # Calculate average # of years of educational attainment for each age
+        for age in model_edu_dict:
+                if len(model_edu_dict[age]) != 0:
+                    avg_edu = sum(model_edu_dict[age])/len(model_edu_dict[age])
+                    model_edu_dict[age] = avg_edu
+                else:
+                    model_edu_dict[age] = 0
+                model_edu = list(model_edu_dict.values())
 
-    # Calculate average # of years of educational attainment for each age
-    for age in model_edu_dict:
-        if len(model_edu_dict[age]) != 0:
-            avg_edu = sum(model_edu_dict[age])/len(model_edu_dict[age])
-            model_edu_dict[age] = avg_edu
-        else:
-            model_edu_dict[age] = 0
-    model_edu = list(model_edu_dict.values())
+        #TODO: Plot empowerment metrics
+        """
+        #Set up plotting
+        paid_emp_labels = list(age_bin_map.keys())[1:]
+        df_paid_emp = pd.DataFrame({'Data': data_paid_emp, 'FPsim': model_paid_emp}, index=paid_emp_labels)
 
-    #TODO: Plot empowerment metrics
+        # Plot mix
+        ax = df_paid_emp.plot.barh(color={'Data': 'black', 'FPsim': 'cornflowerblue'})
+        ax.set_xlabel('Percent with paid employment')
+        ax.set_title(f'{country.capitalize()}: Paid Employment - Model vs Data')
+        if do_save:
+                pl.savefig(f"{country}/figs/paid_employment.png", bbox_inches='tight', dpi=100)
 
 sc.toc()
 print('Done.')
