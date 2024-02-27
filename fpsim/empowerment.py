@@ -167,13 +167,12 @@ def get_education_init_vals(ppl):
     Get initial distributions of education goal, attainment and whether
     a woman has reached their education goal
     """
-    education_dict = ppl.pars['education']
+    education_data = ppl.pars['education'] # Location-specific education data
     n = len(ppl)
-    urban = ppl.urban
 
-    # Initialise individual education attainment - number of education years completed at start of simulation
-    # Assess whether a woman has completed her education based on the values of the two previous attributes
-    # Education dictionary
+    # Initialise individual education attainment (number of education years completed at start of asimulation)
+    # Assess whether a woman has completed her education based on the values of the education attainment and
+
     education = {'edu_objective': np.zeros(n, dtype=float),
                  'edu_attainment': np.zeros(n, dtype=float),
                  'edu_started': np.zeros(n, dtype=bool),
@@ -186,8 +185,8 @@ def get_education_init_vals(ppl):
     f_inds_rural = sc.findinds(ppl.is_female & ~ppl.urban)
 
     # Set objectives based on geo setting
-    probs_urban = education_dict['edu_objective'][0, :]
-    probs_rural = education_dict['edu_objective'][1, :]
+    probs_urban = education_data['edu_objective'][0, :]
+    probs_rural = education_data['edu_objective'][1, :]
 
     edu_years = np.arange(len(probs_rural))
     education['edu_objective'][f_inds_rural] = np.random.choice(edu_years, size=len(f_inds_rural),
@@ -201,7 +200,7 @@ def get_education_init_vals(ppl):
     # Get ages for female agents and round them so we can use them as indices
     f_ages = np.floor(ppl.age[f_inds]).astype(int)
     # Set the initial number of education years an agent has based on her age
-    education['edu_attainment'][f_inds] = np.floor((education_dict['edu_attainment'][f_ages]))
+    education['edu_attainment'][f_inds] = np.floor((education_data['edu_attainment'][f_ages]))
 
     # Check people who started their education
     started_inds = sc.findinds(education['edu_attainment'][f_inds] > 0.0)
@@ -213,6 +212,36 @@ def get_education_init_vals(ppl):
     education['edu_started'][f_inds[started_inds]] = True
 
     return education
+
+# %% Methods to update empowerment attributes based on an agent's age
+
+def update_decision_health(ppl):
+    pass
+
+
+def update_decision_wages(ppl):
+    pass
+
+
+def update_paid_employment(ppl):
+    pass
+
+
+def update_sexual_autonomy(ppl):
+    pass
+
+
+def update_empowerment(ppl):
+    """
+    Update empowerment metrics based on age(ing).
+    ppl is assumed to be a filtered People object, with only the agents who have had their bdays.
+    """
+    # This would update the corresponding attributes from location-specific data based on age
+    update_decision_wages(ppl)
+    update_decision_health(ppl)
+    update_paid_employment(ppl)
+    update_sexual_autonomy(ppl)
+
 
 
 # %% Methods to update education
@@ -230,6 +259,7 @@ def start_education(ppl):
     """
     new_students = ppl.filter(~ppl.edu_started & (ppl.age >= ppl.pars["education"]["age_start"]))
     new_students.edu_started = True
+    # TODO: check whether their edu_objective is zero and set it here?
 
 
 def interrupt_education(ppl):
