@@ -133,12 +133,8 @@ def get_empowerment_init_vals(ppl):
     # from 0 to 100 years old.
     n = len(ppl)
 
-    # Empowerment dictionary
-    empowerment = {}
-    empowerment['paid_employment'] = np.zeros(n, dtype=bool)
-    empowerment['sexual_autonomy'] = np.zeros(n, dtype=float)
-    empowerment['decision_wages']  = np.zeros(n, dtype=float)
-    empowerment['decision_health'] = np.zeros(n, dtype=float)
+    empwr_states = ['paid_employment', 'sexual_autonomy', 'decision_wages', 'decision_heatlh']
+    empowerment = {empwr_state: np.zeros(n, dtype=fpd.person_defaults[empwr_state].dtype) for empwr_state in empwr_states}
 
     # Get female agents indices and ages
     f_inds = sc.findinds(ppl.is_female)
