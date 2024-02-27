@@ -104,9 +104,9 @@ person_defaults = [
 
     # Empowerment - states will remain at these values if use_empowerment is False
     State('paid_employment',    0, bool),
-    State('decision_wages',     0, bool),
-    State('decision_health',    0, bool),
-    State('sexual_autonomy',    0, bool),
+    State('decision_wages',     0, float),
+    State('decision_health',    0, float),
+    State('sexual_autonomy',    0, float),
 
     # Partnership information -- states will remain at these values if use_partnership is False
     State('partnered',    0, bool),
