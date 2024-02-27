@@ -31,7 +31,7 @@ class People(fpb.BasePeople):
             n = int(self.pars['n_agents'])
 
         # Set default states
-        self.states = {state.name: state for state in fpd.person_defaults}
+        self.states = fpd.person_defaults
         for state_name, state in self.states.items():
             self[state_name] = state.new(n)
 
@@ -73,7 +73,7 @@ class People(fpb.BasePeople):
             fpemp.init_education_states(self)
 
         # Store keys
-        self._keys = [state.name for state in fpd.person_defaults]
+        self._keys = [state.name for state in fpd.person_defaults.values()]
 
         return
 
