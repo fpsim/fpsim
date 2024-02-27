@@ -172,13 +172,13 @@ def get_education_init_vals(ppl):
 
     # Initialise individual education attainment (number of education years completed at start of asimulation)
     # Assess whether a woman has completed her education based on the values of the education attainment and
-
-    education = {'edu_objective': np.zeros(n, dtype=float),
-                 'edu_attainment': np.zeros(n, dtype=float),
-                 'edu_started': np.zeros(n, dtype=bool),
-                 'edu_interrupted': np.zeros(n, dtype=bool),
-                 'edu_completed': np.zeros(n, dtype=bool),
-                 'edu_dropout': np.zeros(n, dtype=bool)}
+    edu_states = ['edu_objective',
+                  'edu_attainment',
+                  'edu_started',
+                  'edu_interrupted',
+                  'edu_completed',
+                  'edu_dropout']
+    education = {edu_state: np.zeros(n, dtype=fpd.person_defaults[edu_state].dtype) for edu_state in edu_states}
 
     # Initialise individual education objectives from a 2d array of probs with dimensions (urban, edu_years)
     f_inds_urban = sc.findinds(ppl.is_female & ppl.urban)
