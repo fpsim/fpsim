@@ -133,14 +133,14 @@ def get_empowerment_init_vals(ppl):
     # from 0 to 100 years old.
     n = len(ppl)
 
-    empwr_states = ['paid_employment', 'sexual_autonomy', 'decision_wages', 'decision_heatlh']
+    empwr_states = ['paid_employment', 'sexual_autonomy', 'decision_wages', 'decision_health']
     empowerment = {empwr_state: np.zeros(n, dtype=fpd.person_defaults[empwr_state].dtype) for empwr_state in empwr_states}
 
     # Get female agents indices and ages
     f_inds = sc.findinds(ppl.is_female)
     f_ages = ppl.age[f_inds]
 
-    # Create age bins
+    # Create age bins because ppol.age is a continous variable
     age_cutoffs = np.hstack((empowerment_dict['age'], empowerment_dict['age'].max() + 1))
     age_inds = np.digitize(f_ages, age_cutoffs) - 1
 
@@ -213,10 +213,15 @@ def get_education_init_vals(ppl):
 
 def update_decision_health(ppl):
     pass
+    # """Assumes ppl object received is only female agents"""
+    # age_inds = np.round(ppl.age).astype(int)
+    # ppl.decision_health = ppl.pars['empowerment']['decision_health'][age_inds]
 
 
 def update_decision_wages(ppl):
     pass
+    # age_inds = np.round(ppl.age).astype(int)
+    # ppl.decision_health = ppl.pars['empowerment']['decision_wages'][age_inds]
 
 
 def update_paid_employment(ppl):

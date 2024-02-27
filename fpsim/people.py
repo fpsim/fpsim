@@ -104,6 +104,14 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
+    def birthday_filter(self):
+        """
+        Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
+        annualy, but not based on a calendar year, rather every year on an agent's bday."""
+        age_diff = self.ceil_age - self.age
+        whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
+        return self.filter(whole_years)
+
     def update_method(self):
         """
         Uses a switching matrix from DHS data to decide based on a person's original method their probability of
@@ -967,6 +975,12 @@ class People(fpb.BasePeople):
         if self.pars['use_education']:
             alive_now_f = self.filter(self.is_female)
             fpemp.update_education(alive_now_f)
+
+        # Update empowerment on bdays (unless there's a different mechanism to update)
+        if self.pars['use_empowerment']:
+            birthdays = self.filter(self.is_female).birthday_filter()
+            if len(birthdays):
+               fpemp.update_empowerment(birthdays)
 
         # Update results
         fecund.update_age_bin_totals()
