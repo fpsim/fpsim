@@ -110,7 +110,11 @@ class People(fpb.BasePeople):
         self.edu_dropout     = arr(n, d['edu_dropout'])     # Whether a person has dropped out of the edu system, before reaching their goal
         self.edu_interrupted = arr(n, d['edu_interrupted']) # Whether a person/woman has had their education temporarily interrupted, but can resume
         self.edu_completed   = arr(n, d['edu_completed'])   # Whether a person/woman has reached their education goals
-        self.edu_started     = arr(n, d['edu_started'])     # Whether a person/woman has started thier education
+        self.edu_started     = arr(n, d['edu_started'])     # Whether a person/woman has started their education
+
+        # Subnational attributes
+        self.region          = arr(n, d['region'])           # Region a person lives in
+
         # Store keys
         final_states = dir(self)
         self._keys = [s for s in final_states if s not in init_states]
@@ -1114,7 +1118,7 @@ class Sim(fpb.BaseSim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Seneagl sim')
     '''
 
-    def __init__(self, pars=None, location=None, label=None, track_children=False, **kwargs):
+    def __init__(self, pars=None, location=None, label=None, track_children=False, regional=False, **kwargs):
 
         # Check parameters
         loc_pars = fpp.pars(location)
@@ -1130,6 +1134,7 @@ class Sim(fpb.BaseSim):
         self.test_mode   = False
         self.label       = label
         self.track_children  = track_children
+        self.regional        = regional
         fpu.set_metadata(self) # Set version, date, and git info
         return
 
@@ -1238,11 +1243,23 @@ class Sim(fpb.BaseSim):
         return ages, sexes
 
 
-    def initialize_urban(self, n, urban_prop):
+    def initialize_urban(self, n, urban_prop, region=None):
         """Get initial distribution of urban"""
         urban = np.ones(n, dtype=bool)
-        if urban_prop is not None:
-            urban = fpu.n_binomial(urban_prop, n)
+        if self.regional is False:
+            if urban_prop is not None:
+                urban = fpu.n_binomial(urban_prop, n)
+        elif self.regional is True:
+            region_dict = self.pars['region']
+            urban_by_region = pd.DataFrame({'region': region_dict['region'], 'urban': region_dict['urban']})
+            # For each region defined in region.csv, assign a regional distribution of urban/rural population
+            for r in urban_by_region['region']:
+                # Find indices in region array
+                f_inds = sc.findinds(region==r)
+                region_urban_prop = urban_by_region.loc[urban_by_region['region']==r, 'urban'].values[0]
+                urban_values = np.random.choice([True, False], size=len(f_inds), p=[region_urban_prop, 1-region_urban_prop])
+                urban[f_inds] = urban_values
+
         return urban
 
 
@@ -1345,17 +1362,69 @@ class Sim(fpb.BaseSim):
 
         return partnered, partnership_age
 
+    def initialize_region(self, n):
+        """Get initial distribution of region"""
+        region_dict = self['region']
 
-    def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None):
+        # Initialise individual region
+        # Region dictionary
+        region = np.zeros(n, dtype=str)
+
+        if region_dict is not None:
+            # Set distribution for individuals based on regional proportions
+            region_names = region_dict['region']
+            region_probs = region_dict['mean']
+            region = np.random.choice(region_names, size=n, p=region_probs)
+
+        return region
+
+    """
+    def initialize_lam_region(self, n, lam_region):
+        lam_region_dict = self.pars['lactational_amenorrhea_region']
+        lam_by_region = pd.DataFrame({'region': lam_region_dict['region'],
+                                   'month': lam_region_dict['month'],
+                                   'rate': lam_region_dict['rate']})
+        lam_values = np.zeros(n, dtype=bool)
+        for r in lam_by_region['region'].unique():
+            # Find indices in region array
+            f_inds = sc.findinds(lam_region == r)
+            for month in lam_by_region[lam_by_region['region'] == r]['month'].unique(): 
+                month_data = lam_by_region[(lam_by_region['region'] == r) & (lam_by_region['month'] == month)]
+                lam_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=month_data['rate'].values)
+        return lam_values
+    """
+
+    def initialize_debut_age_region(self, n, initialized_regions):
+        debut_age_dict = self.pars['debut_age_region']
+        debut_age_by_region = pd.DataFrame({'region': debut_age_dict['region'],
+                                        'age': debut_age_dict['age'],
+                                        'prob': debut_age_dict['prob']})
+        debut_age_values = np.zeros(n, dtype=int)
+        for r in debut_age_by_region['region'].unique():
+            # Find indices in region array
+            f_inds = sc.findinds(initialized_regions == r)
+            region_debut_ages = debut_age_by_region.loc[debut_age_by_region['region'] == r, 'age'].values
+            region_debut_probs = debut_age_by_region.loc[debut_age_by_region['region'] == r, 'prob'].values
+            debut_age_dist = region_debut_ages[fpu.n_multinomial(region_debut_probs, len(f_inds))]
+            debut_age_values[f_inds] = debut_age_dist
+
+        return debut_age_values
+
+    def make_people(self, n=1, age=None, sex=None, method=None, debut_age=None, region=None):
         ''' Set up each person '''
         _age, _sex = self.get_age_sex(n)
         if age    is None: age    = _age
         if sex    is None: sex    = _sex
         if method is None: method = np.zeros(n, dtype=np.int64)
         barrier = fpu.n_multinomial(self['barriers'][:], n)
-        debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
+        if self.regional is True:
+            region = self.initialize_region(n)
+            debut_age = self.initialize_debut_age_region(n, region)
+            urban = self.initialize_urban(n, self.pars['urban_prop'], region)
+        else:
+            debut_age = self['debut_age']['ages'][fpu.n_multinomial(self['debut_age']['probs'], n)]
+            urban = self.initialize_urban(n, self['urban_prop'])
         fertile = fpu.n_binomial(1 - self['primary_infertility'], n)
-        urban = self.initialize_urban(n, self['urban_prop'])
         partnered, partnership_age = self.initialize_partnered(n, age, sex)
         empowerment = self.initialize_empowerment(n, age, sex)
         education   = self.initialize_education(n, age, sex, urban)
@@ -1364,15 +1433,17 @@ class Sim(fpb.BaseSim):
             sex=sex,
             method=method,
             barrier=barrier,
+            empowerment=empowerment,
+            education=education,
             debut_age=debut_age,
             fertile=fertile,
             urban=urban,
+            region=region,
             partnered=partnered,
             partnership_age=partnership_age,
             **sc.mergedicts(empowerment, education)
         )
         return data
-
 
     def init_people(self, output=False, **kwargs):
         ''' Create the people '''
@@ -1396,6 +1467,7 @@ class Sim(fpb.BaseSim):
             edu_attainment=p.edu_attainment,
             edu_completed=p.edu_completed,
             edu_started=p.edu_started,
+            region=p.region,
         )
         return
 

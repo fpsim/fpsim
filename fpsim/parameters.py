@@ -526,6 +526,20 @@ def empowerment_pars():
     return empwrmnt_pars
 
 
+def region_pars():
+    ''' Additional regional parameters'''
+    region_pars = dict(
+        region                        = None,
+        lactational_amenorrhea_region = None,
+        sexual_activity_region        = None,
+        sexual_activity_pp_region     = None,
+        debut_age_region              = None,
+        barriers_region               = None
+    )
+
+    return region_pars
+
+
 def pars(location=None, validate=True, die=True, update=True, **kwargs):
     '''
     Function for getting default parameters.
@@ -572,6 +586,11 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     if location != 'kenya':
         # Merge with empowerment_pars
         pars.update(empowerment_pars())
+
+    # Add parameter keys related to region attributes,
+    # with default values None
+    if location != 'ethiopia':
+        pars.update(region_pars())
 
     # Merge with sim_pars and kwargs and copy
     pars.update(sim_pars())
