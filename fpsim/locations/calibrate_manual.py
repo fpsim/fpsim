@@ -524,10 +524,10 @@ if do_plot_birth_space_afb:
 
 if do_plot_empowerment:
         # Extract paid work from data
-        data_paid_work = data_empowerment[['age', 'paid_employment']]
+        data_paid_work = data_empowerment[['age', 'paid_employment']].sort_values(by='age')
         data_paid_work['paid_employment_age_group'] = pd.cut(data_paid_work['age'], bins=range(15, 55, 5), right=False)
-        avg_by_age_group = data_paid_work.groupby('paid_employment_age_group')['paid_employment'].mean()
-        data_paid_emp = avg_by_age_group.values.tolist()
+        avg_paidemp_by_age_group = data_paid_work.groupby('paid_employment_age_group', observed=False)['paid_employment'].mean()
+        data_paid_emp = avg_paidemp_by_age_group.values.tolist()
         age_bins = pl.arange(min_age, max_age, bin_size)
 
         # Extract paid work from model
@@ -551,21 +551,24 @@ if do_plot_empowerment:
                         avg_paid_emp = 0
                 model_paid_work_dict[age] = avg_paid_emp
         model_paid_emp = list(model_paid_work_dict.values())
-        """
+
         # Extract education from data
         data_edu = data_edu[['age', 'edu']].sort_values(by='age')
-        data_years_edu = data_edu['edu'].values.tolist()
+        data_edu['edu_age_group'] = pd.cut(data_edu['age'], bins=range(15, 55, 5), right=False)
+        avg_edu_by_age_group = data_edu.groupby('edu_age_group', observed=False)['edu'].mean()
+        data_years_edu = avg_edu_by_age_group.values.tolist()
 
         # Extract education from model
         model_edu_dict = {}
         # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
-        for age in range(min_age, max_age):
+        for age in age_bins:
                 model_edu_dict[age] = []
 
         for i in range(len(ppl)):
                 if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
                     age = math.floor(ppl.age[i])
-                    model_edu_dict[age].append(ppl.edu_attainment[i])
+                    age_bin = sc.findinds(age_bins <= age)[-1]
+                    model_edu_dict[age_bins[age_bin]].append(ppl.edu_attainment[i])
 
         # Calculate average # of years of educational attainment for each age
         for age in model_edu_dict:
@@ -574,20 +577,30 @@ if do_plot_empowerment:
                     model_edu_dict[age] = avg_edu
                 else:
                     model_edu_dict[age] = 0
-                model_edu = list(model_edu_dict.values())
+                model_years_edu = list(model_edu_dict.values())
 
-        #TODO: Plot empowerment metrics
-        """
         #Set up plotting
         paid_emp_labels = list(age_bin_map.keys())[1:]
+        edu_labels = list(age_bin_map.keys())[1:]
         df_paid_emp = pd.DataFrame({'Data': data_paid_emp, 'FPsim': model_paid_emp}, index=paid_emp_labels)
+        df_edu = pd.DataFrame({'Data': data_years_edu, 'FPsim': model_years_edu}, index=edu_labels)
 
-        # Plot mix
+        # Plot paid employment
         ax = df_paid_emp.plot.barh(color={'Data': 'black', 'FPsim': 'cornflowerblue'})
         ax.set_xlabel('Percent with paid employment')
         ax.set_title(f'{country.capitalize()}: Paid Employment - Model vs Data')
+
         if do_save:
                 pl.savefig(f"{country}/figs/paid_employment.png", bbox_inches='tight', dpi=100)
+        pl.show()
+
+        # Plot education
+        ax = df_edu.plot.barh(color={'Data': 'black', 'FPsim': 'cornflowerblue'})
+        ax.set_xlabel('Number of Years Edu. Attained')
+        ax.set_title(f'{country.capitalize()}: Years of Education - Model vs Data')
+        if do_save:
+                pl.savefig(f"{country}/figs/paid_employment.png", bbox_inches='tight', dpi=100)
+        pl.show()
 
 sc.toc()
 print('Done.')
