@@ -1,7 +1,7 @@
 '''
 Define classes and functions for the Experiment class (running sims and comparing them to data)
 '''
-
+import math
 
 import yaml
 import numpy as np
@@ -37,6 +37,7 @@ default_flags = sc.objdict(
     cbr           = 1, # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
     tfr           = 1, # Total fertility rate
     asfr          = 1, # Age-specific fertility rate
+    empowerment   = 1, # Empowerment metrics, i.e. paid employment and education params
 )
 
 
@@ -444,6 +445,61 @@ class Experiment(sc.prettyobj):
 
         return
 
+
+    def extract_empowerment(self):
+        # Extract paid work from data
+        data_empowerment = self.load_data('empowerment')
+        data_paid_work = data_empowerment[['age', 'paid_employment']]
+        ages = data_paid_work['age'].values.tolist()
+        self.data['paid_employment'] = data_paid_work['paid_employment'].values.tolist()
+
+        # Extract paid work from model
+        model_paid_work_dict = {}
+        # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
+        for age in ages:
+            model_paid_work_dict[age] = []
+
+        ppl = self.people
+        for i in range(len(ppl)):
+            if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                age = math.floor(ppl.age[i])
+                model_paid_work_dict[age].append(ppl.paid_employment[i])
+
+        # Calculate average # of individuals with paid work by each age using the array
+        for age in model_paid_work_dict:
+            total_ppl = len(model_paid_work_dict[age])
+            avg_paid_emp = (model_paid_work_dict[age].count(True)) / total_ppl
+            model_paid_work_dict[age] = avg_paid_emp
+        self.model['paid_employment'] = list(model_paid_work_dict.values())
+
+        # Extract education from data
+        dhs_data_education = self.load_data('education')
+        data_edu = dhs_data_education[['age', 'edu']].sort_values(by='age')
+        self.data['education'] = data_edu['edu'].values.tolist()
+
+        # Extract education from model
+        model_edu_dict = {}
+        # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
+        for age in range(min_age, max_age):
+            model_edu_dict[age] = []
+
+        for i in range(len(ppl)):
+            if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                age = math.floor(ppl.age[i])
+                model_edu_dict[age].append(ppl.edu_attainment[i])
+
+        # Calculate average # of years of educational attainment for each age
+        for age in model_edu_dict:
+            if len(model_edu_dict[age]) != 0:
+                avg_edu = sum(model_edu_dict[age]) / len(model_edu_dict[age])
+                model_edu_dict[age] = avg_edu
+            else:
+                model_edu_dict[age] = 0
+        self.model['education'] = list(model_edu_dict.values())
+
+        return
+
+
     def compute_fit(self, *args, **kwargs):
         ''' Compute how good the fit is '''
         data = sc.dcp(self.data)
@@ -466,6 +522,7 @@ class Experiment(sc.prettyobj):
         if self.flags.ageparity:   self.extract_ageparity()
         if self.flags.birth_space:   self.extract_birth_spacing()
         if self.flags.methods:       self.extract_methods()
+        if self.flags.empowerment:   self.extract_empowerment()
 
         # Remove people, they're large!
         if not keep_people:
@@ -601,7 +658,7 @@ class Experiment(sc.prettyobj):
             if key in keys:
                 keys.remove(key)
         nkeys = len(keys)
-        expected = 11
+        expected = 13
         if nkeys != expected:
             errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys} -- did you use run_model() instead of run()?'
             raise ValueError(errormsg)
