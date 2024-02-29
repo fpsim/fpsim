@@ -23,7 +23,6 @@ def scalar_pars():
         'twins_prob':           0.016,              # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
         'high_parity_nonuse':   1,                  # TODO: check whether it's correct that this should be different to the other locations
         'mcpr_norm_year':       2020,               # Year to normalize MCPR trend to 1
-        'use_empowerment':      True,               # If using Kenya empowerment estimates for modeling
     }
     return scalar_pars
 
