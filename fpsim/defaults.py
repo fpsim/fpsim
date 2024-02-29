@@ -6,6 +6,8 @@ import numpy as np
 import sciris as sc
 import fpsim.settings as fps
 
+from . import base as fpb
+
 #%% Global defaults
 useSI          = True
 mpy            = 12   # Months per year, to avoid magic numbers
@@ -124,6 +126,8 @@ person_defaults = [
     State('edu_completed',      0, bool),
     State('edu_started',        0, bool)
 ]
+
+person_defaults = fpb.ndict(person_defaults)
 
 # Postpartum keys to months
 postpartum_map = {

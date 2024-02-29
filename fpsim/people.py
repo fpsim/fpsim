@@ -38,7 +38,7 @@ class People(fpb.BasePeople):
         self.y = None   # Year (1975, 1975.1,...)
 
         # Set default states
-        self.states = {state.name: state for state in fpd.person_defaults}
+        self.states = fpd.person_defaults
         for state_name, state in self.states.items():
             self[state_name] = state.new(n)
 
@@ -76,7 +76,7 @@ class People(fpb.BasePeople):
         self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
 
         # Store keys
-        self._keys = [state.name for state in fpd.person_defaults]
+        self._keys = [state.name for state in fpd.person_defaults.values()]
 
         # Initialize methods with method selector if provided
         self.init_methods(ms=method_selector, method=method)
@@ -130,6 +130,14 @@ class People(fpb.BasePeople):
                     len(inds))  # Uniformly distribute within this age bin
 
         return ages, sexes
+
+    def birthday_filter(self):
+        """
+        Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
+        annualy, but not based on a calendar year, rather every year on an agent's bday."""
+        age_diff = self.ceil_age - self.age
+        whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
+        return self.filter(whole_years)
 
     def update_method(self):
         """ Inputs: filtered people, only includes those for whom it's time to update """

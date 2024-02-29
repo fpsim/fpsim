@@ -52,18 +52,14 @@ def get_empowerment_init_vals(ppl):
     # from 0 to 100 years old.
     n = len(ppl)
 
-    # Empowerment dictionary
-    empowerment = {}
-    empowerment['paid_employment'] = np.zeros(n, dtype=bool)
-    empowerment['sexual_autonomy'] = np.zeros(n, dtype=bool)
-    empowerment['decision_wages']  = np.zeros(n, dtype=bool)
-    empowerment['decision_health'] = np.zeros(n, dtype=bool)
+    empwr_states = ['paid_employment', 'sexual_autonomy', 'decision_wages', 'decision_health']
+    empowerment = {empwr_state: np.zeros(n, dtype=fpd.person_defaults[empwr_state].dtype) for empwr_state in empwr_states}
 
     # Get female agents indices and ages
     f_inds = sc.findinds(ppl.is_female)
     f_ages = ppl.age[f_inds]
 
-    # Create age bins
+    # Create age bins because ppol.age is a continous variable
     age_cutoffs = np.hstack((empowerment_dict['age'], empowerment_dict['age'].max() + 1))
     age_inds = np.digitize(f_ages, age_cutoffs) - 1
 
@@ -112,5 +108,3 @@ class Empowerment:
             ppl[metric] = fpu.binomial_arr(prob_1)
 
         return
-
-
