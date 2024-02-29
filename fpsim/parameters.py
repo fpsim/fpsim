@@ -637,7 +637,6 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     # Pull out values needed for the location-specific make_pars functions
     loc_kwargs = dict(use_empowerment = pars['use_empowerment'],
                       use_education   = pars['use_education'],
-                      use_urban       = pars['use_urban'],
                       use_partnership = pars['use_partnership'],
                       seed            = pars['seed'])
 
