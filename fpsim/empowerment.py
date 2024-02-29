@@ -61,11 +61,6 @@ def init_education_states(ppl):
     attributes will be initialized with values found in defaults.py.
     """
 
-    # Check that people have requested to use urban/rural information
-    if not ppl.pars['use_urban']:
-        mssg = f"To use the education module, you need to set use pars['use_urban'] = True (current value: {ppl.pars['use_urban']}."
-        raise ValueError(mssg)
-
     # Get distributions of initial values from location-specific data
     edu = get_education_init_vals(ppl)
 

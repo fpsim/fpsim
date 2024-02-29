@@ -40,10 +40,13 @@ class People(fpb.BasePeople):
 
         # Basic demographics
         _age, _sex = self.get_age_sex(n)
+        _urban = self.get_urban(n)
         if age is None: age = _age
         if sex is None: sex = _sex
+
         self.age = self.states['age'].new(n, age)  # Age of the person in years
         self.sex = self.states['sex'].new(n, sex)  # Female (0) or male (1)
+        self.urban = self.states['urban'].new(n, _urban)  # Urban (1) or rural (0)
 
         # Contraceptive use
         if method is not None:
@@ -59,9 +62,6 @@ class People(fpb.BasePeople):
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.personal_fecundity = np.random.random(n) * fac
 
-        # NOTE-PSL: trying to using starsim concepts
-        if self.pars['use_urban']:
-            fpemp.init_urban_states(self)
 
         if self.pars['use_partnership']:
             fpemp.init_partnership_states(self)
@@ -103,6 +103,15 @@ class People(fpb.BasePeople):
                     len(inds))  # Uniformly distribute within this age bin
 
         return ages, sexes
+
+    def get_urban(self, n):
+        """ Get initial distribution of urban """
+
+        urban = np.ones(n, dtype=bool)
+        urban_prop = self.pars['urban_prop']
+        urban = fpu.n_binomial(urban_prop, n)
+
+        return urban
 
     def birthday_filter(self):
         """
