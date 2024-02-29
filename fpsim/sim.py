@@ -309,6 +309,45 @@ class Sim(fpb.BaseSim):
             if isinstance(analyzer, fpa.Analyzer):
                 analyzer.finalize(self)
 
+    def finalize_people(self):
+        """Clean up and reset people's attributes at the end of a time step"""
+        if not self.track_children:
+            delattr(self.people, "mothers")
+
+    def grow_population(self, new_ppl):
+        """Expand people's size"""
+        # Births
+        people = fpppl.People(pars=self.pars, n=new_ppl)
+        self.people += people
+
+    def step(self):
+        """Update logic of a single time step"""
+        # Update method matrices for year of sim to trend over years
+        self.update_methods()
+
+        # Update mortality probabilities for year of sim
+        self.update_mortality()
+
+        # Apply interventions and analyzers
+        self.apply_interventions()
+        self.apply_analyzers()
+
+        # Update the people
+        self.people.i = self.i
+        self.people.t = self.t
+
+        step_results = self.people.update()
+        r = sc.dictobj(**step_results)
+
+        new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
+        self.grow_population(new_people)
+
+        # Update mothers
+        if self.track_children:
+            self.update_mothers()
+
+        return r
+
     def run(self, verbose=None):
         """ Run the simulation """
 
@@ -339,38 +378,14 @@ class Sim(fpb.BaseSim):
                     if not (self.t % int(1.0 / verbose)):
                         sc.progressbar(self.i + 1, self.npts, label=string, length=20, newline=True)
 
-            # Update method matrices for year of sim to trend over years
-            self.update_methods()
-
-            # Update mortality probabilities for year of sim
-            self.update_mortality()
-
-            # Apply interventions and analyzers
-            self.apply_interventions()
-            self.apply_analyzers()
-
-            # Update the people
-            self.people.i = self.i
-            self.people.t = self.t
-            step_results = self.people.update()
-            r = sc.dictobj(**step_results)
-
-            # Start calculating results
-            new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
-
-            # Births
-            people = fpppl.People(pars=self.pars, n=new_people)
-            self.people += people
-
-            # Update mothers
-            if self.track_children:
-                self.update_mothers()
+            # Actually update the model
+            res = self.step()
 
             # Results
-            self.update_results(r, i)
+            self.update_results(res, i)
 
-        if not self.track_children:
-            delattr(self.people, "mothers")
+        # Finalize people
+        self.finalize_people()
 
         # Finalize results, interventions and analyzers
         self.finalize_results()
