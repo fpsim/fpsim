@@ -896,7 +896,7 @@ def urban_proportion():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=False, use_education=False, use_urban=False, use_partnership=False, seed=None):
+def make_pars(use_empowerment=False, use_education=False, use_partnership=False, seed=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -908,6 +908,7 @@ def make_pars(use_empowerment=False, use_education=False, use_urban=False, use_p
     # Demographics and pregnancy outcome
     pars['age_pyramid'] = age_pyramid()
     pars['age_mortality'] = age_mortality()
+    pars['urban_prop'] = urban_proportion()
     pars['maternal_mortality'] = maternal_mortality()
     pars['infant_mortality'] = infant_mortality()
     pars['miscarriage_rates'] = miscarriage()
@@ -931,19 +932,11 @@ def make_pars(use_empowerment=False, use_education=False, use_urban=False, use_p
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
 
-    # Urban proportion
-    if use_urban:
-        pars['urban_prop'] = urban_proportion()
-    # New People states/attributes that only exist for kenya so far
     kwargs = locals()
-    keys_to_remove = ['seed', 'urban_prop']
-    # temporary code
-    for key in keys_to_remove:
-        if key in kwargs:
-            del kwargs[key]
+    key = ['seed']
+    del kwargs['seed']
 
     true_args = [arg for arg, value in kwargs.items() if value is True]
     if true_args:
         raise NotImplementedError("These functionalities have not been implemented yet: " + ", ".join(true_args))
-
     return pars

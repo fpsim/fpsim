@@ -1165,7 +1165,7 @@ def education_distributions():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=None, use_education=None, use_urban=None, use_partnership=None, seed=None):
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, seed=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -1177,6 +1177,7 @@ def make_pars(use_empowerment=None, use_education=None, use_urban=None, use_part
     # Demographics and pregnancy outcome
     pars['age_pyramid'] = age_pyramid()
     pars['age_mortality'] = age_mortality()
+    pars['urban_prop'] = urban_proportion()
     pars['maternal_mortality'] = maternal_mortality()
     pars['infant_mortality'] = infant_mortality()
     pars['miscarriage_rates'] = miscarriage()
@@ -1207,8 +1208,6 @@ def make_pars(use_empowerment=None, use_education=None, use_urban=None, use_part
     if use_education:
         education_dict, _ = education_distributions() # This function returns extrapolated and raw data
         pars['education'] = education_dict
-    if use_urban:
-        pars['urban_prop'] = urban_proportion()
     if use_partnership:
         pars['age_partnership'] = age_partnership()
 
