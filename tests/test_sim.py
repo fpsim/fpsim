@@ -50,9 +50,16 @@ def test_method_sandbox():
 def test_methods():
     sc.heading('Test time on method')
 
+    # Define new modules
     ms = fp.MethodSelector(contra_use_file='contra_coef.csv', method_choice_file='method_mix.csv')
-    pars = fp.pars(location='test', seed=1, verbose=1)
-    s = fp.Sim(pars, method_selector=ms)
+    emp = fp.Empowerment(empowerment_file='empower_coef.csv')
+    edu = fp.Education()
+
+    # Define pars
+    pars = fp.pars(location='kenya', n_agents=100, start_year=2000, end_year=2010, seed=1, verbose=1)
+
+    # Make and run sim
+    s = fp.Sim(pars, method_selector=ms, empowerment_module=emp, education_module=edu)
     s.run()
 
     return s
@@ -61,29 +68,4 @@ def test_methods():
 if __name__ == '__main__':
 
     # s1 = test_simple()
-    sim = test_methods()
-
-    # import pandas as pd
-    # df = pd.read_csv('method_mix.csv')
-    #
-    # dd = dict()
-    # for akey in df.age_grp.unique():
-    #     dd[akey] = dict()
-    #     for pkey in df.parity.unique():
-    #         dd[akey][pkey] = dict()
-    #         for mkey in df.method.unique():
-    #             val = df.loc[(df.age_grp == akey) & (df.parity == pkey) & (df.method == mkey)].percent.values[0]
-    #             dd[akey][pkey][mkey] = val
-    #
-    #
-    # if 1:
-    #     level1 = 'age_grp'
-    #     level2 = 'parity'
-    #     method_data = {}
-    #     for (age, parity), group in df.groupby([level1, level2]):
-    #         if age not in method_data:
-    #             method_data[age] = {}
-    #         method_data[age][parity] = group.drop(columns=[level1, level2]).to_dict(orient='index')
-    #     print(method_data)
-    #
-    #
+    s2 = test_methods()

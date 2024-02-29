@@ -513,17 +513,12 @@ default_pars = {
     'start_year':           1960,   # Start year of simulation
     'end_year':             2020,   # End year of simulation
     'timestep':             1,      # The simulation timestep in months
-    # 'method_timestep':      1,      # How many simulation timesteps to go for every method update step
     'seed':                 1,      # Random seed
     'verbose':              1,      # How much detail to print during the simulation
 
     # Settings - what aspects are being modeled
     'track_switching':      0,      # Whether to track method switching
     'track_as':             0,      # Whether to track age-specific channels
-    'use_urban':            0,      # Whether to model urban setting state - will need to add context-specific data if using
-    'use_partnership':      0,      # Whether to model partnered states- will need to add context-specific data if using
-    'use_empowerment':      0,      # Whether to model empowerment - will need to add context-specific data if using
-    'use_education':        0,      # Whether to model education, requires use_urban==True for kenya - will need to add context-specific data if using
 
     # Age limits (in years)
     'method_age':           15,
@@ -556,8 +551,6 @@ default_pars = {
     'high_parity_nonuse':   0.6,
     'primary_infertility':  0.05,
     'exposure_factor':      1.0,    # Overall exposure correction factor
-    # 'restrict_method_use':  0,      # If 1, only allows agents to select methods when sexually active within 1 year
-    #                                 # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
 
     # MCPR
     'mcpr_growth_rate':     0.02,   # Year-on-year change in MCPR after the end of the data
@@ -590,12 +583,12 @@ default_pars = {
     'spacing_pref':         None,
     'methods':              None,
     'barriers':             None,
+    'urban_prop':           None,
 
-    # # Empowerment (if using, set use_empowerment to True in the pars dict or location file and provide these)
-    # 'urban_prop':           None,
-    # 'empowerment':          None,
-    # 'education':            None,
-    # 'age_partnership':      None,
+    # Empowerment and education metrics
+    'empowerment':          None,
+    'education':            None,
+    'age_partnership':      None,
 }
 
 # Shortcut for accessing default keys
@@ -635,11 +628,7 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     pars = sc.mergedicts(default_pars, kwargs, _copy=True)  # Merge all pars with kwargs and copy
 
     # Pull out values needed for the location-specific make_pars functions
-    loc_kwargs = dict(use_empowerment = pars['use_empowerment'],
-                      use_education   = pars['use_education'],
-                      use_urban       = pars['use_urban'],
-                      use_partnership = pars['use_partnership'],
-                      seed            = pars['seed'])
+    loc_kwargs = dict(seed=pars['seed'])
 
    # Define valid locations
     if location in ['senegal', 'default']:

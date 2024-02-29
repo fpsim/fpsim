@@ -22,7 +22,8 @@ class People(fpb.BasePeople):
     Class for all the people in the simulation.
     """
 
-    def __init__(self, pars, n=None, age=None, sex=None, method=None, method_selector=None, **kwargs):
+    def __init__(self, pars, n=None, age=None, sex=None, method=None,
+                 method_selector=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Initialization
         super().__init__()
@@ -60,18 +61,15 @@ class People(fpb.BasePeople):
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.personal_fecundity = np.random.random(n) * fac
 
+        # Urban/rural
+        self.init_urban_states()
+
         # NOTE-PSL: trying to using starsim concepts
-        if self.pars['use_urban']:
-            fpedu.init_urban_states(self)
-
-        if self.pars['use_partnership']:
-            fpedu.init_partnership_states(self)
-
-        if self.pars['use_empowerment']:
-            fpemp.init_empowerment_states(self)
-
-        if self.pars['use_education']:
-            fpedu.init_education_states(self)
+        fpedu.init_partnership_states(self)  # RS TODO: move these into people & figure out if they're optional
+        fpemp.init_empowerment_states(self)  # RS TODO: move these into classes or people
+        fpedu.init_education_states(self)  # RS TODO: move these into classes or people
+        self.empowerment_module = empowerment_module
+        self.education_module = education_module
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.method_selector = None  # Set below
@@ -85,17 +83,25 @@ class People(fpb.BasePeople):
 
         return
 
+    def init_urban_states(self):
+        """ Demographics on whether a person lives in a rural or urban setting"""
+        n = len(self)
+        urban = np.ones(n, dtype=bool)
+
+        if self.pars['urban_prop'] is not None:
+            urban_prop = self.pars['urban_prop']
+            urban = fpu.n_binomial(urban_prop, n)
+
+        self.urban = urban
+
     def init_methods(self, ms=None, method=None):
         if ms is not None:
             self.method_selector = ms
-
             self.on_contra = ms.get_contra_users(self)
             oc = self.filter(self.on_contra)
             oc.method = ms.choose_method(oc)
             self.ti_contra_update = ms.set_dur_method(self)
 
-        else:
-            self.method = method
         return
 
     def get_age_sex(self, n):
@@ -125,8 +131,10 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
-    def update_method(self, ms=None):
+    def update_method(self):
         """ Inputs: filtered people, only includes those for whom it's time to update """
+        ms = self.method_selector
+
         if ms is not None:
 
             # Non-users will be made to pick a method
@@ -269,17 +277,13 @@ class People(fpb.BasePeople):
         preg_eval_lam = pars['age_fecundity'][lam.int_age_clip] * lam.personal_fecundity
         preg_eval_nonlam = pars['age_fecundity'][nonlam.int_age_clip] * nonlam.personal_fecundity
 
-        # TODO refactor
+        # TODO refactor, this will break if the ordering is different across places
         method_eff = np.zeros(len(nonlam))
         contra_use_bools = nonlam.method < len(pars['methods']['eff'])
         contra_users = np.nonzero(contra_use_bools)[-1]
         n_contra_users = len(contra_users)
         if n_contra_users:
-            try:
-                method_eff[contra_users] = np.array(list(pars['methods']['eff'].values()))[1:][nonlam.method[contra_users]]
-            except:
-                import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
-            # method_eff = np.array(list(pars['methods']['eff'].values()))[nonlam.method]
+            method_eff[contra_users] = np.array(list(pars['methods']['eff'].values()))[nonlam.method[contra_users]]
         lam_eff = pars['LAM_efficacy']
 
         lam_probs = fpu.annprob2ts((1 - lam_eff) * preg_eval_lam, pars['timestep'])
@@ -466,6 +470,7 @@ class People(fpb.BasePeople):
             deliv.postpartum = True  # Start postpartum state at time of birth
             deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
             deliv.postpartum_dur = 0
+            deliv.ti_contra_update = self.ti  # Trigger a call to re-evaluate whether to use contraception
 
             # Handle stillbirth
             still_prob = self.pars['mortality_probs']['stillbirth']
@@ -513,13 +518,6 @@ class People(fpb.BasePeople):
 
             for i in stillborn.inds:  # Handle adding dates
                 all_ppl.still_dates[i].append(all_ppl.age[i])
-
-            # Add age of agents at birth with short birth interval
-            # for ti in live.inds: # Handle DOBs
-            # if len(all_ppl.dobs[ti]) > 1:
-            # for d in range(len(all_ppl.dobs[ti]) - 1):
-            # if  (all_ppl.dobs[ti][d + 1] - all_ppl.dobs[ti][d]) < self.pars['short_int']:
-            # short_interval_age = all_ppl.dobs[ti][d+1].append(all_ppl.age[ti][d+1])
 
             # Handle twins
             is_twin = live.binomial(self.pars['twins_prob'])
@@ -831,10 +829,9 @@ class People(fpb.BasePeople):
 
         return
 
-    def update(self, method_selector=None):
+    def update(self):
         """
         Update the person's state for the given timestep.
-        t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)
         """
 
         self.init_step_results()  # Initialize outputs
@@ -852,12 +849,10 @@ class People(fpb.BasePeople):
         nonpreg = fecund.filter(~fecund.pregnant)
         lact = fecund.filter(fecund.lactating)
 
-        # Update education
-        # Doing this update before conception means that women's education will not be interrupted is she conceives
-        # on this time step. Likewise, her choice of methods will depend on her education at this time step.
-        if self.pars['use_education']:
-            alive_now_f = self.filter(self.is_female)
-            fpedu.update_education(alive_now_f)
+        # Update education and empowerment
+        alive_now_f = self.filter(self.is_female)
+        self.empowerment_module.update(alive_now_f)
+        self.education_module.update(alive_now_f)
 
         # Figure out who to update methods for
         methods = nonpreg.filter(nonpreg.ti_contra_update == self.ti)
@@ -870,7 +865,7 @@ class People(fpb.BasePeople):
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
 
-        methods.update_method(ms=method_selector)
+        methods.update_method()
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()

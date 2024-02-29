@@ -87,7 +87,8 @@ class Sim(fpb.BaseSim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, pars=None, location=None, label=None, track_children=False, method_selector=None, **kwargs):
+    def __init__(self, pars=None, location=None, label=None, track_children=False,
+                method_selector=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Handle location
         if location is None:
@@ -119,6 +120,8 @@ class Sim(fpb.BaseSim):
         self.results = {}
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
         self.method_selector = method_selector
+        self.empowerment_module = empowerment_module
+        self.education_module = education_module
         self.ti = None  # The current timestep of the simulation
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
@@ -203,7 +206,8 @@ class Sim(fpb.BaseSim):
         Initialize people by calling the People constructor and initialization methods.
         See people.py for details of people construction.
         """
-        self.people = fpppl.People(pars=self.pars, method_selector=self.method_selector)
+        self.people = fpppl.People(pars=self.pars, method_selector=self.method_selector,
+                                    empowerment_module=self.empowerment_module, education_module=self.education_module)
 
     def update_mortality(self):
         """
@@ -294,7 +298,6 @@ class Sim(fpb.BaseSim):
             raise RuntimeError(errormsg)
 
         # Main simulation loop
-
         for ti in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
 
             self.ti = ti
@@ -321,14 +324,16 @@ class Sim(fpb.BaseSim):
             self.people.ti = self.ti
             self.people.ty = self.ty
             self.people.y = self.y
-            step_results = self.people.update(method_selector=self.method_selector)
+            step_results = self.people.update()
             r = sc.dictobj(**step_results)
 
             # Start calculating results
             new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
 
             # Births
-            people = fpppl.People(pars=self.pars, n=new_people, method_selector=self.method_selector)
+            people = fpppl.People(
+                        pars=self.pars, n=new_people, method_selector=self.method_selector,
+                        education_module=self.education_module, empowerment_module=self.empowerment_module)
             self.people += people
 
             # Update mothers

@@ -6,6 +6,7 @@ We consider four empowerment metrics: paid_employment, decision_health, decision
 # %% Imports
 import numpy as np
 import sciris as sc
+import pandas as pd
 from . import utils as fpu
 from . import defaults as fpd
 
@@ -54,9 +55,9 @@ def get_empowerment_init_vals(ppl):
     # Empowerment dictionary
     empowerment = {}
     empowerment['paid_employment'] = np.zeros(n, dtype=bool)
-    empowerment['sexual_autonomy'] = np.zeros(n, dtype=float)
-    empowerment['decision_wages']  = np.zeros(n, dtype=float)
-    empowerment['decision_health'] = np.zeros(n, dtype=float)
+    empowerment['sexual_autonomy'] = np.zeros(n, dtype=bool)
+    empowerment['decision_wages']  = np.zeros(n, dtype=bool)
+    empowerment['decision_health'] = np.zeros(n, dtype=bool)
 
     # Get female agents indices and ages
     f_inds = sc.findinds(ppl.is_female)
@@ -75,3 +76,41 @@ def get_empowerment_init_vals(ppl):
         empowerment[metric][f_inds] = empowerment_dict[metric][age_inds]
 
     return empowerment
+
+
+# %% Class for updating empowerment
+
+class Empowerment:
+    def __init__(self, empowerment_file):
+        self.pars = self.process_empowerment_pars(empowerment_file)
+        self.metrics = list(self.pars.keys())
+        return
+
+    @staticmethod
+    def process_empowerment_pars(empowerment_file):
+        raw_pars = pd.read_csv(empowerment_file)
+        pars = sc.objdict()
+        metrics = raw_pars.lhs.unique()
+        for metric in metrics:
+            pars[metric] = sc.objdict()
+            thisdf = raw_pars.loc[raw_pars.lhs == metric]
+            for var_dict in thisdf.to_dict('records'):
+                var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
+                if var_name == 'contraception': var_name = 'on_contra'
+                pars[metric][var_name] = var_dict['Estimate']
+        return pars
+
+    def update(self, ppl):
+        for metric in self.metrics:
+            p = self.pars[metric]
+            rhs = p.intercept
+            for vname, vval in p.items():
+                if vname not in ['intercept', 'wealthquintile']:
+                    rhs += vval * ppl[vname]
+
+            prob_1 = 1 / (1+np.exp(-rhs))
+            ppl[metric] = fpu.binomial_arr(prob_1)
+
+        return
+
+

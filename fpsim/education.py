@@ -12,12 +12,6 @@ from . import defaults as fpd
 # %% Initialization methods
 
 
-def init_urban_states(ppl):
-    """Demographics on whether a person lives in a rural or urban setting"""
-    # Get init vals and populate state in one step
-    ppl.urban = get_urban_init_vals(ppl)
-
-
 def init_partnership_states(ppl):
     """Demographics on whether a person is in a partnership, and their expected age at first partnership in a rural or urban setting"""
 
@@ -38,11 +32,6 @@ def init_education_states(ppl):
     attributes will be initialized with values found in defaults.py.
     """
 
-    # Check that people have requested to use urban/rural information
-    if not ppl.pars['use_urban']:
-        mssg = f"To use the education module, you need to set use pars['use_urban'] = True (current value: {ppl.pars['use_urban']}."
-        raise ValueError(mssg)
-
     # Get distributions of initial values from location-specific data
     edu = get_education_init_vals(ppl)
 
@@ -53,22 +42,6 @@ def init_education_states(ppl):
     ppl.edu_interrupted = edu['edu_interrupted']  # Whether a person/woman has had their education temporarily interrupted, but can resume
     ppl.edu_completed = edu['edu_completed']  # Whether a person/woman has reached their education goals
     ppl.edu_started = edu['edu_started']  # Whether a person/woman has started thier education
-
-
-def get_urban_init_vals(ppl, urban_prop=None):
-    """ Get initial distribution of urban """
-
-    n = len(ppl)
-    urban = np.ones(n, dtype=bool)
-
-    if urban_prop is None:
-        if ppl.pars['urban_prop'] is not None:
-            urban_prop = ppl.pars['urban_prop']
-
-    if urban_prop is not None:
-        urban = fpu.n_binomial(urban_prop, n)
-
-    return urban
 
 
 def get_partnership_init_vals(ppl):
@@ -149,77 +122,82 @@ def get_education_init_vals(ppl):
     return education
 
 
-# %% Methods to update education
 
-def update_education(ppl):
-    start_education(ppl)  # Check if anyone needs to start school
-    advance_education(ppl)  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
-    resume_education(ppl)  # Determine who goes back to school after an interruption
-    graduate(ppl)  # Check if anyone achieves their education goal
+# %% Class for updating education
 
+class Education:
+    def __init__(self):
+        """ TODO: move par initialization here? """
+        return
 
-def start_education(ppl):
-    """
-    Begin education
-    """
-    new_students = ppl.filter(~ppl.edu_started & (ppl.age >= ppl.pars["education"]["age_start"]))
-    new_students.edu_started = True
+    def update(self, ppl):
+        self.start_education(ppl)  # Check if anyone needs to start school
+        self.advance_education(ppl)  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
+        self.resume_education(ppl)  # Determine who goes back to school after an interruption
+        self.graduate(ppl)  # Check if anyone achieves their education goal
 
+    @staticmethod
+    def start_education(ppl):
+        """
+        Begin education
+        """
+        new_students = ppl.filter(~ppl.edu_started & (ppl.age >= ppl.pars["education"]["age_start"]))
+        new_students.edu_started = True
 
-def interrupt_education(ppl):
-    """
-    Interrupt education due to pregnancy. This method hinders education progression if a
-    woman is pregnant and towards the end of the first trimester
-    """
-    # Hinder education progression if a woman is pregnant and towards the end of the first trimester
-    pregnant_students = ppl.filter(ppl.pregnant & (ppl.gestation == ppl.pars['end_first_tri']))
-    # Disrupt education
-    pregnant_students.edu_interrupted = True
+    @staticmethod
+    def interrupt_education(ppl):
+        """
+        Interrupt education due to pregnancy. This method hinders education progression if a
+        woman is pregnant and towards the end of the first trimester
+        """
+        # Hinder education progression if a woman is pregnant and towards the end of the first trimester
+        pregnant_students = ppl.filter(ppl.pregnant & (ppl.gestation == ppl.pars['end_first_tri']))
+        # Disrupt education
+        pregnant_students.edu_interrupted = True
 
+    @staticmethod
+    def dropout_education(ppl, parity):
+        dropout_dict = ppl.pars['education']['edu_dropout_probs'][parity]
+        age_cutoffs = dropout_dict['age']  # bin edges
+        age_inds = np.searchsorted(age_cutoffs, ppl.age,"right") - 1  # NOTE: faster than np.digitize for large arrays
+        # Decide who will drop out
+        ppl.edu_dropout = fpu.binomial_arr(dropout_dict['percent'][age_inds])
 
-def dropout_education(ppl, parity):
-    dropout_dict = ppl.pars['education']['edu_dropout_probs'][parity]
-    age_cutoffs = dropout_dict['age']  # bin edges
-    age_inds = np.searchsorted(age_cutoffs, ppl.age,"right") - 1  # NOTE: faster than np.digitize for large arrays
-    # Decide who will drop out
-    ppl.edu_dropout = fpu.binomial_arr(dropout_dict['percent'][age_inds])
+    def advance_education(self, ppl):
+        """
+        Advance education attainment in the simulation, determine if agents have completed their education
+        """
 
+        # Filter people who have not: completed education, dropped out or had their education interrupted
+        students = ppl.filter((ppl.edu_started & ~ppl.edu_completed & ~ppl.edu_dropout & ~ppl.edu_interrupted))
+        # Advance education attainment
+        students.edu_attainment += ppl.pars['timestep'] / fpd.mpy
+        # Check who will experience an interruption
+        self.interrupt_education(students)
+        # Make some students dropout based on dropout | parity probabilities
+        par1 = students.filter(students.parity == 1)
+        self.dropout_education(par1, '1')  # Women with parity 1
+        par2plus = students.filter(students.parity >= 2)
+        self.dropout_education(par2plus, '2+')  # Women with parity 2+
 
-def advance_education(ppl):
-    """
-    Advance education attainment in the simulation, determine if agents have completed their education
-    """
+    @staticmethod
+    def resume_education(ppl):
+        """
+        # Basic mechanism to resume education post-pregnancy:
+        # If education was interrupted due to pregnancy, resume after 9 months pospartum ()
+        #TODO: check if there's any evidence supporting this assumption
+        """
+        # Basic mechanism to resume education post-pregnancy:
+        # If education was interrupted due to pregnancy, resume after 9 months pospartum
+        filter_conds = (ppl.postpartum & ppl.edu_interrupted & ~ppl.edu_completed & ~ppl.edu_dropout &
+                        (ppl.postpartum_dur > 0.5 * ppl.pars['postpartum_dur']))
+        postpartum_students = ppl.filter(filter_conds)
+        postpartum_students.edu_interrupted = False
 
-    # Filter people who have not: completed education, dropped out or had their education interrupted
-    students = ppl.filter((ppl.edu_started & ~ppl.edu_completed & ~ppl.edu_dropout & ~ppl.edu_interrupted))
-    # Advance education attainment
-    students.edu_attainment += ppl.pars['timestep'] / fpd.mpy
-    # Check who will experience an interruption
-    interrupt_education(students)
-    # Make some students dropout based on dropout | parity probabilities
-    par1 = students.filter(students.parity == 1)
-    dropout_education(par1, '1')  # Women with parity 1
-    par2plus = students.filter(students.parity >= 2)
-    dropout_education(par2plus, '2+')  # Women with parity 2+
-
-
-def resume_education(ppl):
-    """
-    # Basic mechanism to resume education post-pregnancy:
-    # If education was interrupted due to pregnancy, resume after 9 months pospartum ()
-    #TODO: check if there's any evidence supporting this assumption
-    """
-    # Basic mechanism to resume education post-pregnancy:
-    # If education was interrupted due to pregnancy, resume after 9 months pospartum
-    filter_conds = (ppl.postpartum & ppl.edu_interrupted & ~ppl.edu_completed & ~ppl.edu_dropout &
-                    (ppl.postpartum_dur > 0.5 * ppl.pars['postpartum_dur']))
-    postpartum_students = ppl.filter(filter_conds)
-    postpartum_students.edu_interrupted = False
-
-
-def graduate(ppl):
-    completed_inds = sc.findinds(ppl.edu_attainment >= ppl.edu_objective)
-    tmp = ppl.edu_completed
-    tmp[completed_inds] = True
-    ppl.edu_completed = tmp
+    @staticmethod
+    def graduate(ppl):
+        completed_inds = sc.findinds(ppl.edu_attainment >= ppl.edu_objective)
+        tmp = ppl.edu_completed
+        tmp[completed_inds] = True
+        ppl.edu_completed = tmp
 

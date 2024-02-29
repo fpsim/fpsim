@@ -891,7 +891,7 @@ def barriers():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=False, use_education=False, use_urban=False, use_partnership=False, seed=None):
+def make_pars(seed=None):
     """
     Take all parameters and construct into a dictionary
     """
