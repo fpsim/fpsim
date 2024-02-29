@@ -3,10 +3,13 @@ Set the parameters for FPsim, specifically for Senegal.
 '''
 
 import numpy as np
+import pandas as pd
+
 import sciris as sc
 from scipy import interpolate as si
 from .. import defaults as fpd
 
+thisdir = sc.path(sc.thisdir())  # For loading CSV files
 
 # %% Housekeeping
 
@@ -743,6 +746,12 @@ def barriers():
     return barriers
 
 
+def urban_proportion():
+    """Load information about the proportion of people who live in an urban setting"""
+    urban_data = pd.read_csv(thisdir / 'senegal' / 'urban.csv')
+    return urban_data["mean"][0]  # Return this value as a float
+
+
 # %% Make and validate parameters
 
 def make_pars(use_empowerment=False, use_education=False, use_urban=False, use_partnership=False, seed=None):
@@ -780,9 +789,17 @@ def make_pars(use_empowerment=False, use_education=False, use_urban=False, use_p
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
 
+    # Urban proportion
+    if use_urban:
+        pars['urban_prop'] = urban_proportion()
     # New People states/attributes that only exist for kenya so far
     kwargs = locals()
-    del kwargs['seed']
+    keys_to_remove = ['seed', 'urban_prop']
+    # temporary code
+    for key in keys_to_remove:
+        if key in kwargs:
+            del kwargs[key]
+
     true_args = [arg for arg, value in kwargs.items() if value is True]
     if true_args:
         raise NotImplementedError("These functionalities have not been implemented yet: " + ", ".join(true_args))
