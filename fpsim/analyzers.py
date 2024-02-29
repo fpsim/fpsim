@@ -142,7 +142,7 @@ class snapshot(Analyzer):
                 self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
         return
 
-
+      
 class education_recorder(Analyzer):
         '''
         Analyzer records all education attributes of females + pregnancy + living status

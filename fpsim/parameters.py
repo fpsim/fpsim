@@ -595,6 +595,20 @@ default_pars = {
 par_keys = default_pars.keys()
 
 
+def region_pars():
+    ''' Additional regional parameters'''
+    region_pars = dict(
+        region                        = None,
+        lactational_amenorrhea_region = None,
+        sexual_activity_region        = None,
+        sexual_activity_pp_region     = None,
+        debut_age_region              = None,
+        barriers_region               = None
+    )
+
+    return region_pars
+
+
 def pars(location=None, validate=True, die=True, update=True, **kwargs):
     """
     Function for updating parameters.
@@ -643,7 +657,10 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
         raise NotImplementedError(errormsg)
 
     # Merge again, so that we ensure the user-defined values overwrite any location defaults
-    pars = sc.mergedicts(pars, kwargs, _copy=True)
+    # Add parameter keys related to region attributes,
+    # with default values None
+    if location != 'ethiopia':
+        pars.update(region_pars())
 
     # Convert to the class
     pars = Pars(pars)

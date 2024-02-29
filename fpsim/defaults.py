@@ -124,7 +124,10 @@ person_defaults = [
     State('edu_dropout',        0, bool),
     State('edu_interrupted',    0, bool),
     State('edu_completed',      0, bool),
-    State('edu_started',        0, bool)
+    State('edu_started',        0, bool),
+
+    # Regional
+    State('region',        0, int)
 ]
 
 person_defaults = fpb.ndict(person_defaults)
