@@ -155,25 +155,25 @@ none_all_keys = [None, 'all', ':', [None], ['all'], [':']]
 
 # Definition of contraceptive methods and corresponding numbers -- can be overwritten by locations
 class Method:
-    def __init__(self, name=None, label=None, idx=None, use_pars=None, csv_name=None):
+    def __init__(self, name=None, label=None, idx=None, dur_use_pars=None, csv_name=None):
         self.name = name
         self.label = label or name
         self.csv_name = csv_name or label or name
         self.idx = idx
-        self.use_dist = dict(dist='lognorm', par1=use_pars[0], par2=use_pars[1])
+        self.use_dist = dict(dist='lognorm', par1=dur_use_pars[0], par2=dur_use_pars[1])
 
 
 method_list = [
-    Method(name='none',     label='None',               use_pars=[2, 3]),
-    Method(name='pill',     label='Pill',               use_pars=[2, 3]),
-    Method(name='iud',      label='IUDs',               use_pars=[5, 3], csv_name='IUD'),
-    Method(name='inj',      label='Injectables',        use_pars=[2, 3], csv_name='Injectable'),
-    Method(name='cond',     label='Condoms',            use_pars=[1, 3], csv_name='Condom'),
-    Method(name='btl',      label='BTL',                use_pars=[50, 3], csv_name='F.sterilization'),
-    Method(name='wdraw',    label='Withdrawal',         use_pars=[1, 3], csv_name='Withdrawal'),
-    Method(name='impl',     label='Implants',           use_pars=[2, 3], csv_name='Implant'),
-    Method(name='othtrad',  label='Other traditional',  use_pars=[1, 3], csv_name='Other.trad'),
-    Method(name='othmod',   label='Other modern',       use_pars=[1, 3], csv_name='Other.mod'),
+    Method(name='none',     label='None',               dur_use_pars=[2, 3]),
+    Method(name='pill',     label='Pill',               dur_use_pars=[2, 3]),
+    Method(name='iud',      label='IUDs',               dur_use_pars=[5, 3], csv_name='IUD'),
+    Method(name='inj',      label='Injectables',        dur_use_pars=[2, 3], csv_name='Injectable'),
+    Method(name='cond',     label='Condoms',            dur_use_pars=[1, 3], csv_name='Condom'),
+    Method(name='btl',      label='BTL',                dur_use_pars=[50, 3], csv_name='F.sterilization'),
+    Method(name='wdraw',    label='Withdrawal',         dur_use_pars=[1, 3], csv_name='Withdrawal'),
+    Method(name='impl',     label='Implants',           dur_use_pars=[2, 3], csv_name='Implant'),
+    Method(name='othtrad',  label='Other traditional',  dur_use_pars=[1, 3], csv_name='Other.trad'),
+    Method(name='othmod',   label='Other modern',       dur_use_pars=[1, 3], csv_name='Other.mod'),
 ]
 
 idx = 0

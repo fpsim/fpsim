@@ -5,7 +5,7 @@ Education adds 7% to the runtime of a simulation.
 
 import sciris as sc
 import fpsim as fp
-import fpsim.empowerment as fpemp
+import fpsim.education as fpemp
 
 
 do_profile = 0

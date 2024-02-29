@@ -67,7 +67,7 @@ class MethodSelector:
         rhs = (p.intercept
                 + (p.age * ppl.age[inds])                           # Age
                 + (p.parity * ppl.parity[inds])                     # Parity
-                + (p.contraception * ppl.on_contra[inds])       # Whether previously using contraception
+                + (p.contraception * ppl.on_contra[inds])           # Whether previously using contraception
                 + (p.urban * ppl.urban[inds])                       # Urban/rural [optional]
                 # + (p.wealthquintile * ppl.wealthquintile[inds])     # Wealth [optional]
                 + (p.edu_attainment * ppl.edu_attainment[inds])     # Educational attainment [optional]

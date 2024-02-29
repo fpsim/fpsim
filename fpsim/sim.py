@@ -205,50 +205,6 @@ class Sim(fpb.BaseSim):
         """
         self.people = fpppl.People(pars=self.pars, method_selector=self.method_selector)
 
-    def update_methods(self):
-        """
-        Update all contraceptive method matrices to have probabilities that follow a trend closest to the
-        year the sim is on based on mCPR in that year
-        """
-
-        methods = self['methods']  # Shorten methods
-        methods['adjusted'] = sc.dcp(methods['raw'])  # Avoids needing to copy this within loops later
-
-        # Compute the trend in MCPR
-        trend_years = methods['mcpr_years']
-        trend_vals = methods['mcpr_rates']
-        ind = sc.findnearest(trend_years, self.y)  # The year of data closest to the sim year
-        norm_ind = sc.findnearest(trend_years, self['mcpr_norm_year'])  # The year we're using to normalize
-
-        nearest_val = trend_vals[ind]  # Nearest MCPR value from the data
-        norm_val = trend_vals[norm_ind]  # Normalization value
-        if self.y > max(trend_years):  # We're after the last year of data: extrapolate
-            eps = 1e-3  # Epsilon for lowest allowed MCPR value (to avoid divide by zero errors)
-            nearest_year = trend_years[ind]
-            year_diff = self.y - nearest_year
-            correction = self['mcpr_growth_rate'] * year_diff  # Project the change in MCPR
-            extrapolated_val = nearest_val * (1 + correction)  # Multiply the current value by the projection
-            trend_val = np.clip(extrapolated_val, eps, self['mcpr_max'])  # Ensure it stays within bounds
-        else:  # Otherwise, just use the nearest data point
-            trend_val = nearest_val
-        norm_trend_val = trend_val / norm_val  # Normalize so the correction factor is 1 at the normalization year
-
-        # Update annual (non-postpartum) population and postpartum switching matrices for current year mCPR - stratified by age
-        for switchkey in ['annual', 'pp1to6']:
-            for matrix in methods['adjusted'][switchkey].values():
-                matrix[0, 0] /= norm_trend_val  # Takes into account mCPR during year of sim
-                for i in range(len(matrix)):
-                    denom = matrix[i, :].sum()
-                    if denom > 0:
-                        matrix[i, :] = matrix[i, :] / denom  # Normalize so probabilities add to 1
-
-        # Update postpartum initiation matrices for current year mCPR - stratified by age
-        for matrix in methods['adjusted']['pp0to1'].values():
-            matrix[0] /= norm_trend_val  # Takes into account mCPR during year of sim
-            matrix /= matrix.sum()
-
-        return
-
     def update_mortality(self):
         """
         Update infant and maternal mortality for the sim's current year.
@@ -353,9 +309,6 @@ class Sim(fpb.BaseSim):
                 elif verbose > 0:
                     if not (self.ty % int(1.0 / verbose)):
                         sc.progressbar(self.ti + 1, self.npts, label=string, length=20, newline=True)
-
-            # Update method matrices for year of sim to trend over years
-            self.update_methods()
 
             # Update mortality probabilities for year of sim
             self.update_mortality()

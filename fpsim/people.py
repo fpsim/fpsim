@@ -8,6 +8,7 @@ import sciris as sc
 from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
+from . import education as fpedu
 from . import empowerment as fpemp
 
 # Specify all externally visible things this file defines
@@ -61,16 +62,16 @@ class People(fpb.BasePeople):
 
         # NOTE-PSL: trying to using starsim concepts
         if self.pars['use_urban']:
-            fpemp.init_urban_states(self)
+            fpedu.init_urban_states(self)
 
         if self.pars['use_partnership']:
-            fpemp.init_partnership_states(self)
+            fpedu.init_partnership_states(self)
 
         if self.pars['use_empowerment']:
             fpemp.init_empowerment_states(self)
 
         if self.pars['use_education']:
-            fpemp.init_education_states(self)
+            fpedu.init_education_states(self)
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.method_selector = None  # Set below
@@ -125,7 +126,7 @@ class People(fpb.BasePeople):
         return ages, sexes
 
     def update_method(self, ms=None):
-        """ Inputs: filtered people object only including those for whom it's time to update """
+        """ Inputs: filtered people, only includes those for whom it's time to update """
         if ms is not None:
 
             # Non-users will be made to pick a method
@@ -153,160 +154,6 @@ class People(fpb.BasePeople):
             if invalid_vals.any():  # TODO, better validation
                 errormsg = f'Invalid method set: ti={self.ti}, inds={invalid_vals.nonzero()[-1]}'
                 raise ValueError(errormsg)
-        return
-
-    def update_method_prev(self):
-        """
-        Uses a switching matrix from DHS data to decide based on a person's original method their probability of
-        changing to a new method and assigns them the new method. This currently allows switching on whole calendar
-        years to enter function. Matrix serves as an initiation, discontinuation, continuation, and switching matrix.
-        Transition probabilities are for 1 year and only for women who have not given birth within the last 6 months.
-        """
-        methods = self.pars['methods']
-        method_map = methods['map']
-        annual = methods['adjusted']['annual']
-        orig_methods = self.method
-        m = len(method_map)
-        switching_events = np.zeros((m, m), dtype=int)
-        switching_events_ages = {}
-        for key in fpd.method_age_map.keys():
-            switching_events_ages[key] = np.zeros((m, m), dtype=int)
-
-        # Method switching depends both on agent age and also on their current method, so we need to loop over both
-        for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = fpu.match_ages(self.age, age_low, age_high)
-            for m in method_map.values():
-                match_m = (orig_methods == m)
-                match = match_m * match_low_high
-                this_method = self.filter(match)
-                if len(this_method):
-                    old_method = this_method.method.copy()
-
-                    matrix = annual[key]
-                    choices = matrix[m]
-                    choices = choices/choices.sum()
-                    new_methods = fpu.n_multinomial(choices, match.sum())
-                    this_method.method = new_methods
-
-                    for i in range(len(old_method)):
-                        x = old_method[i]
-                        y = new_methods[i]
-                        switching_events[x, y] += 1
-                        switching_events_ages[key][x, y] += 1
-
-        if self.pars['track_switching']:
-            self.step_results_switching[
-                'annual'] += switching_events  # CK: TODO: remove this extra result and combine with step_results
-            for key in fpd.method_age_map.keys():
-                self.step_results['switching_annual'][key] += switching_events_ages[key]
-
-        return
-
-    def update_method_pp(self):
-        """
-        Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by
-        3 months postpartum and then initiate, continue, or discontinue a method by 6 months postpartum.
-        Next opportunity to switch methods will be on whole calendar years, whenever that falls.
-        """
-        # TODO- Probabilities need to be adjusted for postpartum women on the next annual draw in "get_method" since they may be less than one year
-
-        # Probability of initiating a postpartum method at 0-3 months postpartum
-        # Transitional probabilities are for the first 3 month time period after delivery from DHS data
-
-        methods = self.pars['methods']
-        pp0to1 = methods['adjusted']['pp0to1']
-        pp1to6 = methods['adjusted']['pp1to6']
-        methods_map = methods['map']
-        orig_methods = self.method
-
-        m = len(methods_map)
-        switching_events = np.zeros((m, m), dtype=int)
-        switching_events_ages = {}
-        for key in fpd.method_age_map.keys():
-            switching_events_ages[key] = np.zeros((m, m), dtype=int)
-
-        postpartum1 = (self.postpartum_dur == 0)
-        postpartum6 = (self.postpartum_dur == 6)
-
-        # In first time step after delivery, choice is by age but not previous method (since just gave birth)
-        # All women are coming from birth and on no method to start, either will stay on no method or initiate a method
-        for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = fpu.match_ages(self.age, age_low, age_high)
-            low_parity = (self.parity < self.pars['high_parity'])
-            high_parity = (self.parity >= self.pars['high_parity'])
-            match = (self.postpartum * postpartum1 * match_low_high * low_parity)
-            match_high_parity = (self.postpartum * postpartum1 * match_low_high * high_parity)
-            this_method = self.filter(match)
-            if len(this_method):
-                this_method_high_parity = self.filter(match_high_parity)
-                old_method = this_method.method.copy()
-                old_method_high_parity = sc.dcp(this_method_high_parity.method)
-
-                choices = pp0to1[key]
-                choices_high_parity = sc.dcp(choices)
-                choices_high_parity[0] *= self.pars['high_parity_nonuse']
-                choices_high_parity = choices_high_parity / choices_high_parity.sum()
-                new_methods = fpu.n_multinomial(choices, len(this_method))
-                new_methods_high_parity = fpu.n_multinomial(choices_high_parity, len(this_method_high_parity))
-                this_method.method = np.array(new_methods, dtype=np.int64)
-                this_method_high_parity.method = np.array(new_methods_high_parity, dtype=np.int64)
-                for i in range(len(old_method)):
-                    x = old_method[i]
-                    y = new_methods[i]
-                    switching_events[x, y] += 1
-                    switching_events_ages[key][x, y] += 1
-
-                for i in range(len(old_method_high_parity)):
-                    x = old_method_high_parity[i]
-                    y = new_methods_high_parity[i]
-                    switching_events[x, y] += 1
-                    switching_events_ages[key][x, y] += 1
-
-        # At 6 months, choice is by previous method and by age
-        # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
-        # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
-        for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = fpu.match_ages(self.age, age_low, age_high)
-            match_postpartum_age = self.postpartum * postpartum6 * match_low_high
-            for m in methods_map.values():
-                match_m = (orig_methods == m)
-                match = match_m * match_postpartum_age
-                this_method = self.filter(match)
-                if len(this_method):
-                    old_method = self.method[match].copy()
-
-                    matrix = pp1to6[key]
-                    choices = matrix[m]
-                    new_methods = fpu.n_multinomial(choices, match.sum())
-                    this_method.method = new_methods
-                    for i in range(len(old_method)):
-                        x = old_method[i]
-                        y = new_methods[i]
-                        switching_events[x, y] += 1
-                        switching_events_ages[key][x, y] += 1
-
-        if self.pars['track_switching']:
-            self.step_results_switching['postpartum'] += switching_events
-            for key in fpd.method_age_map.keys():
-                self.step_results['switching_postpartum'][key] += switching_events_ages[key]
-
-        return
-
-    def update_methods(self):
-        """
-        If eligible (age 15-49 and not pregnant), choose new method or stay with current one
-        """
-        # postpartum = self.postpartum * (self.postpartum_dur <= 6)
-        # pp = self.filter(postpartum)
-        # non_pp = self.filter(~postpartum)
-        # pp.update_method_pp()  # Update method for postpartum women
-
-        # age_diff = non_pp.ceil_age - non_pp.age
-        # whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
-        # birthdays = non_pp.filter(whole_years)
-        # if len(birthdays):
-        #     birthdays.update_method()
-
         return
 
     def check_mortality(self):
@@ -1005,31 +852,29 @@ class People(fpb.BasePeople):
         nonpreg = fecund.filter(~fecund.pregnant)
         lact = fecund.filter(fecund.lactating)
 
+        # Update education
+        # Doing this update before conception means that women's education will not be interrupted is she conceives
+        # on this time step. Likewise, her choice of methods will depend on her education at this time step.
+        if self.pars['use_education']:
+            alive_now_f = self.filter(self.is_female)
+            fpedu.update_education(alive_now_f)
+
         # Figure out who to update methods for
         methods = nonpreg.filter(nonpreg.ti_contra_update == self.ti)
-        # if self.pars['restrict_method_use'] == 1:
-        #     methods = nonpreg.filter((nonpreg.age >= nonpreg.fated_debut) * (nonpreg.months_inactive < 12))
-        # else:
-        #     methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
 
         # Check if has reached their age at first partnership and set partnered attribute to True.
         # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
         alive_now.check_partnership()
 
-        # Update everything else
+        # Complete all updates. Note that these happen in a particular order!
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
-        # methods.update_methods()
+
         methods.update_method(ms=method_selector)
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
-
-        # Update education
-        if self.pars['use_education']:
-            alive_now_f = self.filter(self.is_female)
-            fpemp.update_education(alive_now_f)
 
         # Update results
         fecund.update_age_bin_totals()
