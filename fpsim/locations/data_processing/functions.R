@@ -55,7 +55,7 @@ empower_coef <- bind_rows(empower_results)  %>%
                                                                                 gsub("live_births", "parity", 
                                                                                      gsub("current_contra", "contraception", .))))))))))))
 
-write.csv(empower_coef, "fpsim/locations/kenya/empower_coef.csv", row.names = F)
+# write.csv(empower_coef, "fpsim/locations/kenya/empower_coef.csv", row.names = F)
 
 
 # Contraception
@@ -94,14 +94,15 @@ data <- data.raw %>%
          method = factor(case_when(v312 == 7 ~ 17, # male sterilization to other modern
                             v312 == 13 ~ NA, # LAM to missing
                             v312 == 14 ~ 17, # female condom to other modern
+                            v312 == 8 ~ 10, # abstinence to other traditional
                             T ~ v312),
-                         levels = c(1,2,3,5,6,8,9,10,11,17),
-                         labels = c("Pill", "IUD", "Injectable", "Condom", "F.sterilization", "Abstinence", "Withdrawal", "Other.trad", "Implant", "Other.mod"))) 
+                         levels = c(1,2,3,5,6,9,10,11,17),
+                         labels = c("Pill", "IUD", "Injectable", "Condom", "F.sterilization", "Withdrawal", "Other.trad", "Implant", "Other.mod"))) 
 
 svydes1 <- svydesign(id = ~v001, strata= ~v023, weights = ~wt, data=data, nest = T)
 methods <- as.data.frame(svytable(~method+age_grp+parity, svydes1)) %>%
   group_by(age_grp, parity) %>% mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
-write.csv(methods, "fpsim/locations/kenya/method_mix.csv", row.names = F)
+# write.csv(methods, "fpsim/locations/kenya/method_mix.csv", row.names = F)
 
 methods %>%
 ggplot()+
