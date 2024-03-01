@@ -754,7 +754,7 @@ def urban_proportion():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=False, use_education=False, use_partnership=False, seed=None):
+def make_pars(use_empowerment=False, use_education=False, use_partnership=False, use_subnational=False, seed=None):
     """
     Take all parameters and construct into a dictionary
     """

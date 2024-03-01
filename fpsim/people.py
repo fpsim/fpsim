@@ -9,6 +9,7 @@ from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
 from . import empowerment as fpemp
+from . import subnational as fpsn
 
 # Specify all externally visible things this file defines
 __all__ = ['People']
@@ -40,7 +41,10 @@ class People(fpb.BasePeople):
 
         # Basic demographics
         _age, _sex = self.get_age_sex(n)
-        _urban = self.get_urban(n)
+        if self.pars['use_subnational']==False:
+            _urban = self.get_urban(n)
+        else:
+            _urban = fpsn.get_urban_init_vals(self)
         if age is None: age = _age
         if sex is None: sex = _sex
 
@@ -55,7 +59,11 @@ class People(fpb.BasePeople):
 
         # Parameters on sexual and reproductive history
         self.fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], n)
-        self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
+        # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
+        if self.pars['use_subnational']==False:
+            self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
+        else:
+            self.fated_debut = fpsn.get_debut_init_vals(self)
 
         # Fecundity variation
         fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
@@ -71,6 +79,9 @@ class People(fpb.BasePeople):
 
         if self.pars['use_education']:
             fpemp.init_education_states(self)
+
+        if self.pars['use_subnational']:
+            fpsn.init_regional_states(self)
 
         # Store keys
         self._keys = [state.name for state in fpd.person_defaults.values()]

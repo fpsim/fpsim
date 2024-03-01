@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.27.0 (2024-02-09)
+--------------------------
+- Builds out new regional attribute and parameters for subnational dynamics in Ethiopia
+- Creates new subnational calibration script and subfolder for regional datasets and figures 
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/241>`_
 
 Version 0.26.8 (2024-02-08)
 ---------------------------
