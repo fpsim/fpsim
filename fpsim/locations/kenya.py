@@ -1164,7 +1164,7 @@ def education_distributions():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=False, seed=None):
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -1209,5 +1209,8 @@ def make_pars(use_empowerment=None, use_education=None, use_partnership=None, us
         pars['education'] = education_dict
     if use_partnership:
         pars['age_partnership'] = age_partnership()
+    if use_subnational:
+        errmsg = f"Subnational functionality has not been implemented for {pars['location']}."
+        raise NotImplementedError(errmsg)
 
     return pars
