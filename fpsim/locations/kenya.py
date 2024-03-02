@@ -1209,8 +1209,12 @@ def make_pars(use_empowerment=None, use_education=None, use_partnership=None, us
         pars['education'] = education_dict
     if use_partnership:
         pars['age_partnership'] = age_partnership()
-    if use_subnational:
-        errmsg = f"Subnational functionality has not been implemented for {pars['location']}."
+
+    kwargs = locals()
+    not_implemented_args = ['use_subnational']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
+    if true_args:
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
         raise NotImplementedError(errmsg)
 
     return pars

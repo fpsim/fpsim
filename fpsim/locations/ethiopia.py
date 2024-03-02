@@ -989,7 +989,7 @@ def urban_proportion():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=False, use_education=False, use_partnership=False, seed=None):
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
     '''
     Take all parameters and construct into a dictionary
     '''
@@ -1035,13 +1035,10 @@ def make_pars(use_empowerment=False, use_education=False, use_partnership=False,
         pars['barriers_region'] = barriers_region()
 
     kwargs = locals()
-    key = ['seed']
-    del kwargs['seed']
-
-    true_args = [arg for arg, value in kwargs.items() if value is True]
-    emp_args = ['use_empowerment', 'use_education', 'use_partnership']
-    overlap = [x for x in true_args if x in emp_args]
-    if overlap:
-        raise NotImplementedError("These functionalities have not been implemented yet: " + ", ".join(overlap))
+    not_implemented_args = ['use_empowerment', 'use_education', 'use_partnership']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
+    if true_args:
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
+        raise NotImplementedError(errmsg)
 
     return pars

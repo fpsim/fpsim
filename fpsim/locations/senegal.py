@@ -754,7 +754,7 @@ def urban_proportion():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=False, use_education=False, use_partnership=False, use_subnational=False, seed=None):
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -790,12 +790,12 @@ def make_pars(use_empowerment=False, use_education=False, use_partnership=False,
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
 
-    # New People states/attributes that only exist for kenya so far
+    # Handle modules that have not been implemented yet
     kwargs = locals()
-    del kwargs['seed']
-
-    true_args = [arg for arg, value in kwargs.items() if value is True]
+    not_implemented_args = ['use_empowerment', 'use_education', 'use_partnership', 'use_subnational']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
     if true_args:
-        raise NotImplementedError("These functionalities have not been implemented yet: " + ", ".join(true_args))
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
+        raise NotImplementedError(errmsg)
 
     return pars
