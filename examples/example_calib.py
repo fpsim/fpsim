@@ -12,7 +12,7 @@ import pylab as pl
 do_plot = True
 do_save = True
 pars = fp.pars(location='senegal')
-pars['n'] = 500
+pars['n_agents'] = 500
 pars['verbose'] = 0
 
 # Define calibration parameters -- best, low, high
