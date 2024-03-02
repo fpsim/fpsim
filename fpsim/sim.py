@@ -104,17 +104,10 @@ class Sim(fpb.BaseSim):
             raise sc.KeyNotFoundError(errormsg)
         super().__init__(pars, location=location, **kwargs)  # Initialize and set the parameters as attributes
 
-        # Set label
-        if label is None:
-            if location is not None:
-                label = f"{location}--{self.pars['seed']}"
-            else:
-                label = f"Sim--{self.pars['seed']}"
-
         self.initialized = False
         self.already_run = False
         self.test_mode = False
-        self.label = label or location + '-sim'
+        self.label = label
         self.track_children = track_children
         self.results = {}
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
