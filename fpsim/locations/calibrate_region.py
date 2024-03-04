@@ -38,7 +38,7 @@ import seaborn as sns
 
 # Name of the country being calibrated. To note that this should match the name of the country data folder
 country = 'ethiopia'
-regions = ['Addis Ababa', 'Afar', 'Amhara', 'Benishangul-Gumuz', 'Dire Dawa', 'Gambela', 'Harari', 'Oromia', 'SNNPR', 'Somali', 'Tigray']
+#regions = ['Addis Ababa', 'Afar', 'Amhara', 'Benishangul-Gumuz', 'Dire Dawa', 'Gambela', 'Harari', 'Oromia', 'SNNPR', 'Somali', 'Tigray']
 
 # Set options for plotting
 do_plot_sim = True
@@ -82,7 +82,7 @@ mpy = 12  # months per year
 sc.tic()
 
 # Set up sim for country
-pars = fp.pars(location=country)
+pars = fp.pars(location='Amhara')
 pars['n_agents'] = 100_000 # Small population size
 pars['end_year'] = 2016 # 1961 - 2020 is the normal date range
 
