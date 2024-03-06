@@ -5,9 +5,9 @@ Set the parameters for FPsim, specifically for Ethiopia.
 import numpy as np
 import pandas as pd
 import sciris as sc
-import ethiopia as eth
+from .. import ethiopia as eth
 from scipy import interpolate as si
-from .. import defaults as fpd
+from fpsim import defaults as fpd
 
 # %% Housekeeping
 
@@ -392,8 +392,8 @@ def barriers_region(): #CHECK DATA FILE
     '''
     reasons_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'barriers_region.csv')
     reasons_region_dict = {}
-    reasons_region_dict['barrier'] = reasons_region.loc[reasons_region['region'] == 'Amhara'['barrier']] # Return the reason for nonuse
-    reasons_region_dict['perc'] = reasons_region.loc[reasons_region['region'] == 'Amhara'['perc']] # Return retuned the percentage
+    reasons_region_dict['barrier'] = reasons_region.loc(reasons_region['region'] == 'Amhara')['barrier'] # Return the reason for nonuse
+    reasons_region_dict['perc'] = reasons_region.loc(reasons_region['region'] == 'Amhara')['perc'] # Return retuned the percentage
     
     barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
 

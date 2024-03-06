@@ -38,27 +38,27 @@ import seaborn as sns
 
 # Name of the country being calibrated. To note that this should match the name of the country data folder
 country = 'ethiopia'
-#regions = ['Addis Ababa', 'Afar', 'Amhara', 'Benishangul-Gumuz', 'Dire Dawa', 'Gambela', 'Harari', 'Oromia', 'SNNPR', 'Somali', 'Tigray']
+region = 'amhara'
 
 # Set options for plotting
 do_plot_sim = True
 do_plot_asfr = False
-do_plot_methods = True
+do_plot_methods = False
 do_plot_tfr = False
 
 # Set option to save figures
-do_save = 1
+do_save = 0
 
 ####################################################
 
-if do_save == 1 and os.path.exists(f'./{country}/subnational/figs') == False:
-    os.mkdir(f'./{country}/subnational/figs')
+if do_save == 1 and os.path.exists(f'../{country}/{region}/figs') == False:
+    os.mkdir(f'./{country}/{region}/figs')
 
 # Import country data files to compare
-data_asfr = pd.read_csv(f'./{country}/subnational/asfr_region.csv')
-data_methods = pd.read_csv(f'./{country}/subnational/mix_region.csv')
-data_tfr = pd.read_csv(f'./{country}/subnational/tfr_region.csv')
-use = pd.read_csv(f'./{country}/subnational/use_region.csv') #Dichotomous contraceptive method use
+data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv')
+data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv')
+data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv')
+use = pd.read_csv(f'../{country}/subnational/use_region.csv') #Dichotomous contraceptive method use
 
 
 # Set up global variables
@@ -82,8 +82,8 @@ mpy = 12  # months per year
 sc.tic()
 
 # Set up sim for country
-pars = fp.pars(location='Amhara')
-pars['n_agents'] = 100_000 # Small population size
+pars = fp.pars(location=region)
+pars['n_agents'] = 1_000 # Small population size
 pars['end_year'] = 2016 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -113,12 +113,12 @@ print(f"Birth spacing preference: {spacing_pars}")
 print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
 
 # Run the sim
-sim = fp.Sim(pars=pars, regional=True)
+sim = fp.Sim(pars=pars)
 sim.run()
 
 # Plot results from sim run
 if do_plot_sim:
-    sim.plot(do_save=True, filename=f'{country}/subnational/figs/fpsim.png')
+    sim.plot(do_save=True, filename=f'../{country}/{region}/figs/fpsim.png')
 
 # Save results
 res = sim.results
