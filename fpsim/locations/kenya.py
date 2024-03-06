@@ -410,8 +410,6 @@ def sexual_activity_pp():
         [23, 0.72202]
     ])
 
-
-
     postpartum_activity = {}
     postpartum_activity['month'] = postpartum_sex[:, 0]
     postpartum_activity['percent_active'] = postpartum_sex[:, 1]
@@ -545,6 +543,12 @@ def barriers():
 
     barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
     return barriers
+
+
+# %% Empowerment
+
+def make_empowerment_pars():
+    return
 
 
 def empowerment_sexual_autonomy(ages, regression_fun, regression_pars=None):
@@ -725,6 +729,20 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     return empowerment_dict, empowerment_data
 
 
+def empowerment_update_pars():
+    raw_pars = pd.read_csv(thisdir / 'kenya' / 'empower_coef.csv')
+    pars = sc.objdict()
+    metrics = raw_pars.lhs.unique()
+    for metric in metrics:
+        pars[metric] = sc.objdict()
+        thisdf = raw_pars.loc[raw_pars.lhs == metric]
+        for var_dict in thisdf.to_dict('records'):
+            var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
+            if var_name == 'contraception': var_name = 'on_contra'
+            pars[metric][var_name] = var_dict['Estimate']
+    return pars
+
+
 def age_partnership():
     """ Probabilities of being partnered at age X"""
     age_partnership_data = pd.read_csv(thisdir / 'kenya' / 'age_partnership.csv')
@@ -734,6 +752,7 @@ def age_partnership():
     return  partnership_dict
 
 
+# %% Education
 def education_objective(df):
     """
     Convert education objective data to necesary numeric types and into a numpy array
@@ -846,9 +865,7 @@ def make_pars(seed=None, use_subnational=None):
     pars['urban_prop'] = urban_proportion()
     pars['age_partnership'] = age_partnership()
 
-    # Empowerment metrics
-    empowerment_dict, _ = empowerment_distributions(seed=seed)  # This function returns extrapolated and raw data
-    pars['empowerment'] = empowerment_dict
+    # # Empowerment metrics
     education_dict, _ = education_distributions() # This function returns extrapolated and raw data
     pars['education'] = education_dict
 

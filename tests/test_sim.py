@@ -32,7 +32,7 @@ def test_methods():
 
     # Define new modules
     ms = fp.EmpoweredChoice(contra_use_file='contra_coef.csv', method_choice_file='method_mix.csv')
-    emp = fp.Empowerment(empowerment_file='empower_coef.csv')
+    emp = fp.Empowerment(location='kenya')
     edu = fp.Education()
 
     # Define pars
@@ -48,5 +48,5 @@ def test_methods():
 if __name__ == '__main__':
 
     # s0 = test_simple()
-    s1 = test_random_methods()
+    # s1 = test_random_methods()
     s2 = test_methods()

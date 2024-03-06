@@ -9,40 +9,32 @@ import sciris as sc
 import pandas as pd
 from . import utils as fpu
 from . import defaults as fpd
+from . import locations as fplocs
 
 
 # %% Class for updating empowerment
 
 class Empowerment:
-    def __init__(self, empowerment_file):
-        self.pars = self.process_empowerment_pars(empowerment_file)
+    def __init__(self, location='kenya', seed=None, empowerment_file=None):
+
+        # Handle location
+        location = location.lower()
+        if location == 'kenya':
+            empowerment_dict, _ = fplocs.kenya.empowerment_distributions(seed=seed)
+            self.pars = fplocs.kenya.empowerment_update_pars()
+            self.empowerment_dict = empowerment_dict
+        else:
+            errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
+            raise NotImplementedError(errormsg)
+
         self.metrics = list(self.pars.keys())
         return
 
-    @staticmethod
-    def process_empowerment_pars(empowerment_file):
-        raw_pars = pd.read_csv(empowerment_file)
-        pars = sc.objdict()
-        metrics = raw_pars.lhs.unique()
-        for metric in metrics:
-            pars[metric] = sc.objdict()
-            thisdf = raw_pars.loc[raw_pars.lhs == metric]
-            for var_dict in thisdf.to_dict('records'):
-                var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
-                if var_name == 'contraception': var_name = 'on_contra'
-                pars[metric][var_name] = var_dict['Estimate']
-        return pars
-
-    @staticmethod
-    def initialize(ppl):
+    def initialize(self, ppl):
         """
         Initialize by setting values for people
-        TODO: I think all the empowerment pars should live here...
         """
-        empowerment_dict = ppl.pars['empowerment']
-        # NOTE: we assume that either probabilities or metrics in empowerment_dict are defined over all possible ages
-        # from 0 to 100 years old.
-        n = len(ppl)
+        empowerment_dict = self.empowerment_dict
 
         # Get female agents indices and ages
         f_inds = sc.findinds(ppl.is_female)
@@ -57,10 +49,7 @@ class Empowerment:
         ppl.paid_employment[f_inds] = fpu.binomial_arr(paid_employment_probs[age_inds])
 
         # Populate empowerment states with location-specific data
-        # try:
         ppl.sexual_autonomy[age_inds] = empowerment_dict['sexual_autonomy'][age_inds]
-        # except:
-        #     import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
         ppl.decision_wages[age_inds] = empowerment_dict['decision_wages'][age_inds]
         ppl.decision_health[age_inds] = empowerment_dict['decision_health'][age_inds]
 
