@@ -825,6 +825,35 @@ def education_distributions():
     return education_dict, education_data
 
 
+def process_contra_use_pars():
+    raw_pars = pd.read_csv(thisdir / 'kenya' / 'contra_coef.csv')
+    pars = sc.objdict()
+    for var_dict in raw_pars.to_dict('records'):
+        var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
+        pars[var_name] = var_dict['Estimate']
+    return pars
+
+
+def process_method_pars(methods):
+    df = pd.read_csv(thisdir / 'kenya' / 'method_mix.csv')
+    # Awful code to speed pandas up
+    dd = dict()
+    for akey in df.age_grp.unique():
+        dd[akey] = dict()
+        for pkey in df.parity.unique():
+            dd[akey][pkey] = dict()
+            for mlabel in df.method.unique():
+                val = df.loc[(df.age_grp == akey) & (df.parity == pkey) & (df.method == mlabel)].percent.values[0]
+                if mlabel != 'Abstinence':
+                    mname = [m.name for m in methods.values() if m.csv_name == mlabel][0]
+                    dd[akey][pkey][mname] = val
+                else:
+                    abstinence_val = sc.dcp(val)
+            dd[akey][pkey]['othtrad'] += abstinence_val
+
+    return dd
+
+
 # %% Make and validate parameters
 
 def make_pars(seed=None, use_subnational=None):

@@ -14,6 +14,7 @@ import pandas as pd
 import starsim as ss  # TODO add to dependencies
 from . import utils as fpu
 from . import defaults as fpd
+from . import locations as fplocs
 
 __all__ = ['Method', 'Methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'EmpoweredChoice']
 
@@ -130,39 +131,18 @@ class SimpleChoice(RandomChoice):
 
 class EmpoweredChoice(ContraceptiveChoice):
 
-    def __init__(self, methods=None, contra_use_file=None, method_choice_file=None, **kwargs):
+    def __init__(self, methods=None, location=None, contra_use_file=None, method_choice_file=None, **kwargs):
         super().__init__(**kwargs)
         self.methods = methods or Methods
-        self.contra_use_pars = self.process_contra_use_pars(contra_use_file)
-        self.method_choice_pars = self.process_method_pars(method_choice_file)
 
-    @staticmethod
-    def process_contra_use_pars(contra_use_file):
-        raw_pars = pd.read_csv(contra_use_file)
-        pars = sc.objdict()
-        for var_dict in raw_pars.to_dict('records'):
-            var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
-            pars[var_name] = var_dict['Estimate']
-        return pars
-
-    def process_method_pars(self, method_choice_file):
-        df = pd.read_csv(method_choice_file)
-        # Awful code to speed pandas up
-        dd = dict()
-        for akey in df.age_grp.unique():
-            dd[akey] = dict()
-            for pkey in df.parity.unique():
-                dd[akey][pkey] = dict()
-                for mlabel in df.method.unique():
-                    val = df.loc[(df.age_grp == akey) & (df.parity == pkey) & (df.method == mlabel)].percent.values[0]
-                    if mlabel != 'Abstinence':
-                        mname = [m.name for m in self.methods.values() if m.csv_name == mlabel][0]
-                        dd[akey][pkey][mname] = val
-                    else:
-                        abstinence_val = sc.dcp(val)
-                dd[akey][pkey]['othtrad'] += abstinence_val
-
-        return dd
+        # Handle location
+        location = location.lower()
+        if location == 'kenya':
+            self.contra_use_pars = fplocs.kenya.process_contra_use_pars()
+            self.method_choice_pars = fplocs.kenya.process_method_pars(self.methods)
+        else:
+            errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
+            raise NotImplementedError(errormsg)
 
     def get_prob_use(self, ppl, inds=None):
         """
