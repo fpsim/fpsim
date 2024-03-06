@@ -138,8 +138,8 @@ class snapshot(Analyzer):
         save result at snapshot[str(timestep)]
         """
         for t in self.timesteps:
-            if np.isclose(sim.i, t):
-                self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
+            if np.isclose(sim.ti, t):
+                self.snapshots[str(sim.ti)] = sc.dcp(sim.people) # Take snapshot!
         return
 
       
@@ -498,8 +498,8 @@ class age_pyramids(Analyzer):
         self.data[timestep] = list of proportions where index signifies age
         """
         ages = sim.people.age[sc.findinds(sim.people.alive)]
-        self._raw[sim.i, :] = np.histogram(ages, self.bins)[0]
-        self.data[sim.i, :] = self._raw[sim.i, :]/self._raw[sim.i, :].sum()
+        self._raw[sim.ti, :] = np.histogram(ages, self.bins)[0]
+        self.data[sim.ti, :] = self._raw[sim.ti, :]/self._raw[sim.ti, :].sum()
 
     def plot(self):
         """
