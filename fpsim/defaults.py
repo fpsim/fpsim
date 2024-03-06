@@ -236,7 +236,33 @@ by_age_results = sc.autolist(
     'stillbirths',
 )
 
-people_flows = [
+
+self.results['short_intervals'][ti] = r.short_intervals * scale
+self.results['secondary_births'][ti] = r.secondary_births * scale
+self.results['pregnancies'][ti] = r.pregnancies * scale
+self.results['total_births'][ti] = r.total_births * scale
+self.results['maternal_deaths'][ti] = r.maternal_deaths * scale
+self.results['infant_deaths'][ti] = r.infant_deaths * scale
+self.results['on_methods_mcpr'][ti] = r.on_methods_mcpr
+self.results['no_methods_mcpr'][ti] = r.no_methods_mcpr
+self.results['on_methods_cpr'][ti] = r.on_methods_cpr
+self.results['no_methods_cpr'][ti] = r.no_methods_cpr
+self.results['on_methods_acpr'][ti] = r.on_methods_acpr
+self.results['no_methods_acpr'][ti] = r.no_methods_acpr
+self.results['mcpr'][ti] = r.on_methods_mcpr / (r.no_methods_mcpr + r.on_methods_mcpr)
+self.results['cpr'][ti] = r.on_methods_cpr / (r.no_methods_cpr + r.on_methods_cpr)
+self.results['acpr'][ti] = r.on_methods_acpr / (r.no_methods_acpr + r.on_methods_acpr)
+self.results['pp0to5'][ti] = percent0to5
+self.results['pp6to11'][ti] = percent6to11
+self.results['pp12to23'][ti] = percent12to23
+self.results['nonpostpartum'][ti] = nonpostpartum
+self.results['total_women_fecund'][ti] = r.total_women_fecund * scale
+self.results['unintended_pregs'][ti] = r.unintended_pregs * scale
+
+
+array_results = sc.autolist(
+    't',
+    'pop_size_months',
     'pregnancies',
     'births',
     'deaths',
@@ -267,8 +293,7 @@ people_flows = [
     'short_intervals',
     'secondary_births',
     'proportion_short_interval'
-]
-
+)
 for age_group in age_bin_map.keys():
     array_results += 'total_births_' + age_group
     array_results += 'total_women_' + age_group
