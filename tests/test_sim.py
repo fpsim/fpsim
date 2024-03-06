@@ -11,7 +11,7 @@ par_kwargs = dict(n_agents=100, start_year=2000, end_year=2010, seed=1, verbose=
 
 def test_simple():
     sc.heading('Test simplest possible FPsim run')
-    sim = fp.Sim()
+    sim = fp.Sim(location='test')
     sim.run()
     sim.plot()
     return sim
@@ -31,7 +31,7 @@ def test_methods():
     sc.heading('Test time on method')
 
     # Define new modules
-    ms = fp.EmpoweredChoice(location='kenya')  #contra_use_file='contra_coef.csv', method_choice_file='method_mix.csv')
+    ms = fp.EmpoweredChoice(location='kenya')
     emp = fp.Empowerment(location='kenya')
     edu = fp.Education(location='kenya')
 
@@ -47,6 +47,6 @@ def test_methods():
 
 if __name__ == '__main__':
 
-    # s0 = test_simple()
-    # s1 = test_random_methods()
+    s0 = test_simple()
+    s1 = test_random_methods()
     s2 = test_methods()

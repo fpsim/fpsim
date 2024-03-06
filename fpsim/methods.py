@@ -131,7 +131,7 @@ class SimpleChoice(RandomChoice):
 
 class EmpoweredChoice(ContraceptiveChoice):
 
-    def __init__(self, methods=None, location=None, contra_use_file=None, method_choice_file=None, **kwargs):
+    def __init__(self, methods=None, location=None, **kwargs):
         super().__init__(**kwargs)
         self.methods = methods or Methods
 
@@ -154,18 +154,11 @@ class EmpoweredChoice(ContraceptiveChoice):
         """
         p = self.contra_use_pars
         if inds is None: inds = Ellipsis
-        rhs = (p.intercept
-                + (p.age * ppl.age[inds])                           # Age
-                + (p.parity * ppl.parity[inds])                     # Parity
-                + (p.contraception * ppl.on_contra[inds])           # Whether previously using contraception
-                + (p.urban * ppl.urban[inds])                       # Urban/rural [optional]
-                # + (p.wealthquintile * ppl.wealthquintile[inds])     # Wealth [optional]
-                + (p.edu_attainment * ppl.edu_attainment[inds])     # Educational attainment [optional]
-                + (p.paid_employment * ppl.paid_employment[inds])   # Paid employment [optional]
-                + (p.decision_wages * ppl.decision_wages[inds])     # Decision over wages [optional]
-                + (p.decision_health * ppl.decision_health[inds])   # Decision over wages [optional]
-                + (p.sexual_autonomy * ppl.sexual_autonomy[inds])   # Sexual autonomy [optional]
-               )
+        rhs = p.intercept
+        for vname, vval in p.items():
+            if vname not in ['intercept', 'contraception', 'wealthquintile']:
+                rhs += vval * ppl[vname]
+        rhs += p.contraception * ppl.on_contra[inds]
         prob_use = 1 / (1+np.exp(-rhs))
         return prob_use
 
