@@ -75,10 +75,17 @@ class People(fpb.BasePeople):
         # Urban/rural
         self.init_urban_states()
 
-        fpedu.init_partnership_states(self)  # RS TODO: move these into people & figure out if they're optional
-        fpedu.init_education_states(self)  # RS TODO: move these into classes or people
+        # Empowerment and education
         self.empowerment_module = empowerment_module
         self.education_module = education_module
+        if self.empowerment_module is not None:
+            self.empowerment_module.initialize(self)
+        if self.education_module is not None:
+            self.education_module.initialize(self)
+
+        # Partnership - TODO, move out of education
+        if self.pars['age_partnership'] is not None:
+            fpedu.init_partnership_states(self)
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
@@ -92,9 +99,6 @@ class People(fpb.BasePeople):
 
         if self.pars['use_subnational']:
             fpsn.init_regional_states(self)
-
-        if self.empowerment_module is not None:
-            self.empowerment_module.initialize(self)
 
         # if self.education is not None:
         #     self.empowerment.initialize(self)

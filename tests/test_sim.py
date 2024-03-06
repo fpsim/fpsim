@@ -47,6 +47,6 @@ def test_methods():
 
 if __name__ == '__main__':
 
-    # s0 = test_simple()  # NOT WORKING
+    s0 = test_simple()
     s1 = test_random_methods()
-    # s2 = test_methods()
+    s2 = test_methods()
