@@ -6,6 +6,7 @@ defined by the user by inheriting from these classes.
 import numpy as np
 import sciris as sc
 import pylab as pl
+from . import defaults as fpd
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -521,3 +522,52 @@ class age_pyramids(Analyzer):
         pl.xlabel('Timestep')
         pl.ylabel('Age (years)')
         return fig
+
+
+class track_switching(Analyzer):
+
+    def __init__(self):
+        super().__init__()
+        self.results = sc.objdict()
+
+    def initialize(self, sim):
+        n_methods = len(sim.methods)
+        keys = [
+            'switching_events_annual',
+            'switching_events_postpartum',
+            'switching_events_<18',
+            'switching_events_18-20',
+            'switching_events_21-25',
+            'switching_events_26-35',
+            'switching_events_>35',
+            'switching_events_pp_<18',
+            'switching_events_pp_18-20',
+            'switching_events_pp_21-25',
+            'switching_events_pp_26-35',
+            'switching_events_pp_>35',
+        ]
+        for key in keys:
+            self.results[key] = {}  # CK: TODO: refactor
+            for p in range(sim.npts):
+                self.results[key][p] = np.zeros((n_methods, n_methods), dtype=int)
+
+    def apply(self, sim):
+        # Store results of number of switching events in each age group
+        ti = sim.ti
+        r = sim.results
+        scale = sim['scaled_pop'] / sim['n_agents']
+        switch_events = r.pop('switching')
+        self.results['switching_events_<18'][ti] = scale * r.switching_annual['<18']
+        self.results['switching_events_18-20'][ti] = scale * r.switching_annual['18-20']
+        self.results['switching_events_21-25'][ti] = scale * r.switching_annual['21-25']
+        self.results['switching_events_26-35'][ti] = scale * r.switching_annual['26-35']
+        self.results['switching_events_>35'][ti] = scale * r.switching_annual['>35']
+        self.results['switching_events_pp_<18'][ti] = scale * r.switching_postpartum['<18']
+        self.results['switching_events_pp_18-20'][ti] = scale * r.switching_postpartum['18-20']
+        self.results['switching_events_pp_21-25'][ti] = scale * r.switching_postpartum['21-25']
+        self.results['switching_events_pp_26-35'][ti] = scale * r.switching_postpartum['26-35']
+        self.results['switching_events_pp_>35'][ti] = scale * r.switching_postpartum['>35']
+        self.results['switching_events_annual'][ti] = scale * switch_events['annual']
+        self.results['switching_events_postpartum'][ti] = scale * switch_events['postpartum']
+
+        return

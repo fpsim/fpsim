@@ -236,9 +236,7 @@ by_age_results = sc.autolist(
     'stillbirths',
 )
 
-array_results = sc.autolist(
-    't',
-    'pop_size_months',
+people_flows = [
     'pregnancies',
     'births',
     'deaths',
@@ -269,7 +267,8 @@ array_results = sc.autolist(
     'short_intervals',
     'secondary_births',
     'proportion_short_interval'
-)
+]
+
 for age_group in age_bin_map.keys():
     array_results += 'total_births_' + age_group
     array_results += 'total_women_' + age_group

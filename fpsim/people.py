@@ -100,9 +100,6 @@ class People(fpb.BasePeople):
         if self.pars['use_subnational']:
             fpsn.init_regional_states(self)
 
-        # if self.education is not None:
-        #     self.empowerment.initialize(self)
-
         return
 
     def init_urban_states(self):
@@ -162,14 +159,6 @@ class People(fpb.BasePeople):
         urban = fpu.n_binomial(urban_prop, n)
 
         return urban
-
-    def birthday_filter(self):
-        """
-        Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
-        annualy, but not based on a calendar year, rather every year on an agent's bday."""
-        age_diff = self.ceil_age - self.age
-        whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
-        return self.filter(whole_years)
 
     def update_method(self):
         """ Inputs: filtered people, only includes those for whom it's time to update """
@@ -292,13 +281,6 @@ class People(fpb.BasePeople):
         inactive.months_inactive += 1
 
         inactive_year = self.months_inactive >= 12
-        sexually_infrequent = self.filter(inactive_year)
-
-        # print (f'Age: {sexually_infrequent.age}')
-        # print (f'Debuted?: {sexually_infrequent.sexual_debut}')
-        # print (f'Debut age: {sexually_infrequent.sexual_debut_age}')
-        # print (f'Months inactive: {sexually_infrequent.months_inactive}')
-        # print (f'On method?: {sexually_infrequent.method}')
 
         return
 

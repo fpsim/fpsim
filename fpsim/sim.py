@@ -88,7 +88,7 @@ class Sim(fpb.BaseSim):
     """
 
     def __init__(self, pars=None, location=None, label=None, track_children=False, regional=False,
-                contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
+                 contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Handle location
         if location is None:
@@ -160,27 +160,6 @@ class Sim(fpb.BaseSim):
         for key in fpd.age_bin_map.keys():
             self.results['asfr'][key] = []
             self.results[f"tfr_{key}"] = []
-
-        if self['track_switching']:
-            m = len(self['methods']['map'])
-            keys = [
-                'switching_events_annual',
-                'switching_events_postpartum',
-                'switching_events_<18',
-                'switching_events_18-20',
-                'switching_events_21-25',
-                'switching_events_26-35',
-                'switching_events_>35',
-                'switching_events_pp_<18',
-                'switching_events_pp_18-20',
-                'switching_events_pp_21-25',
-                'switching_events_pp_26-35',
-                'switching_events_pp_>35',
-            ]
-            for key in keys:
-                self.results[key] = {}  # CK: TODO: refactor
-                for p in range(self.npts):
-                    self.results[key][p] = np.zeros((m, m), dtype=int)
 
         if self.pars['track_as']:
             self.results['imr_age_by_group'] = []
@@ -298,23 +277,32 @@ class Sim(fpb.BaseSim):
         # Update mortality probabilities for year of sim
         self.update_mortality()
 
-        # Apply interventions and analyzers
+        # Apply interventions
         self.apply_interventions()
-        self.apply_analyzers()
 
         # Update the people
-        self.people.i = self.i
-        self.people.t = self.t
-
+        self.people.ti = self.ti
+        self.people.ty = self.ty
+        self.people.y = self.y
         step_results = self.people.update()
-        r = sc.dictobj(**step_results)
 
-        new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
+        # Store results
+        r = sc.dictobj(**step_results)
+        self.update_results(r, self.ti)
+
+        # Add births
+        n_new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
+        new_people = fpppl.People(
+                    pars=self.pars, n=n_new_people, age=0, method_selector=self.contraception_module,
+                    education_module=self.education_module, empowerment_module=self.empowerment_module)
         self.grow_population(new_people)
 
         # Update mothers
         if self.track_children:
             self.update_mothers()
+
+        # Lastly, update analyzers. Needs to happen at the end of the sim as they report on events from this timestep
+        self.apply_analyzers()
 
         return r
 
@@ -346,35 +334,7 @@ class Sim(fpb.BaseSim):
                     if not (self.ty % int(1.0 / verbose)):
                         sc.progressbar(self.ti + 1, self.npts, label=string, length=20, newline=True)
 
-            # Update mortality probabilities for year of sim
-            self.update_mortality()
-
-            # Apply interventions and analyzers
-            self.apply_interventions()
-            self.apply_analyzers()
-
-            # Update the people
-            self.people.ti = self.ti
-            self.people.ty = self.ty
-            self.people.y = self.y
-            step_results = self.people.update()
-            r = sc.dictobj(**step_results)
-
-            # Start calculating results
-            new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
-
-            # Births
-            people = fpppl.People(
-                        pars=self.pars, n=new_people, age=0, method_selector=self.contraception_module,
-                        education_module=self.education_module, empowerment_module=self.empowerment_module)
-            self.people += people
-
-            # Update mothers
-            if self.track_children:
-                self.update_mothers()
-
-            # Results
-            self.update_results(r, ti)
+            self.step()
 
         # Finalize people
         self.finalize_people()
@@ -458,22 +418,6 @@ class Sim(fpb.BaseSim):
                                               agekey] * scale  # Store results of total births per age bin for ASFR
             self.results[women_key][ti] = r.age_bin_totals[
                                              agekey] * scale  # Store results of total fecund women per age bin for ASFR
-
-        # Store results of number of switching events in each age group
-        if self['track_switching']:
-            switch_events = r.pop('switching')
-            self.results['switching_events_<18'][ti] = scale * r.switching_annual['<18']
-            self.results['switching_events_18-20'][ti] = scale * r.switching_annual['18-20']
-            self.results['switching_events_21-25'][ti] = scale * r.switching_annual['21-25']
-            self.results['switching_events_26-35'][ti] = scale * r.switching_annual['26-35']
-            self.results['switching_events_>35'][ti] = scale * r.switching_annual['>35']
-            self.results['switching_events_pp_<18'][ti] = scale * r.switching_postpartum['<18']
-            self.results['switching_events_pp_18-20'][ti] = scale * r.switching_postpartum['18-20']
-            self.results['switching_events_pp_21-25'][ti] = scale * r.switching_postpartum['21-25']
-            self.results['switching_events_pp_26-35'][ti] = scale * r.switching_postpartum['26-35']
-            self.results['switching_events_pp_>35'][ti] = scale * r.switching_postpartum['>35']
-            self.results['switching_events_annual'][ti] = scale * switch_events['annual']
-            self.results['switching_events_postpartum'][ti] = scale * switch_events['postpartum']
 
         # Calculate metrics over the last year in the model and save whole years and stats to an array
         if ti % fpd.mpy == 0:
