@@ -22,7 +22,7 @@ def scalar_pars():
         # Scale parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'abortion_prob': 0.08,  # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
         'twins_prob': 0.015,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
+        'mcpr_norm_year': 2018,  # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
