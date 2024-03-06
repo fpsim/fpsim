@@ -24,7 +24,7 @@ class People(fpb.BasePeople):
     """
 
     def __init__(self, pars, n=None, age=None, sex=None, method=None,
-                 method_selector=None, empowerment_module=None, education_module=None, **kwargs):
+                 contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Initialization
         super().__init__()
@@ -75,25 +75,29 @@ class People(fpb.BasePeople):
         # Urban/rural
         self.init_urban_states()
 
-        # NOTE-PSL: trying to using starsim concepts
         fpedu.init_partnership_states(self)  # RS TODO: move these into people & figure out if they're optional
-        fpemp.init_empowerment_states(self)  # RS TODO: move these into classes or people
         fpedu.init_education_states(self)  # RS TODO: move these into classes or people
         self.empowerment_module = empowerment_module
         self.education_module = education_module
 
         # Once all the other metric are initialized, determine initial contraceptive use
-        self.method_selector = None  # Set below
+        self.contraception_module = None  # Set below
         self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
 
         # Store keys
         self._keys = [state.name for state in fpd.person_defaults.values()]
 
-        # Initialize methods with method selector if provided
-        self.init_methods(ms=method_selector, method=method)
+        # Initialize methods with contraception module if provided
+        self.init_methods(contraception_module=contraception_module)
 
         if self.pars['use_subnational']:
             fpsn.init_regional_states(self)
+
+        if self.empowerment_module is not None:
+            self.empowerment_module.initialize(self)
+
+        # if self.education is not None:
+        #     self.empowerment.initialize(self)
 
         return
 
@@ -108,13 +112,14 @@ class People(fpb.BasePeople):
 
         self.urban = urban
 
-    def init_methods(self, ms=None, method=None):
-        if ms is not None:
-            self.method_selector = ms
-            self.on_contra = ms.get_contra_users(self)
+    def init_methods(self, contraception_module=None):
+        if contraception_module is not None:
+
+            self.contraception_module = contraception_module
+            self.on_contra = contraception_module.get_contra_users(self)
             oc = self.filter(self.on_contra)
-            oc.method = ms.choose_method(oc)
-            self.ti_contra_update = ms.set_dur_method(self)
+            oc.method = contraception_module.choose_method(oc)
+            self.ti_contra_update = contraception_module.set_dur_method(self)
 
         return
 
@@ -164,7 +169,7 @@ class People(fpb.BasePeople):
 
     def update_method(self):
         """ Inputs: filtered people, only includes those for whom it's time to update """
-        ms = self.method_selector
+        ms = self.contraception_module
 
         if ms is not None:
 
@@ -882,8 +887,10 @@ class People(fpb.BasePeople):
 
         # Update education and empowerment
         alive_now_f = self.filter(self.is_female)
-        self.empowerment_module.update(alive_now_f)
-        self.education_module.update(alive_now_f)
+        if self.empowerment_module is not None:
+            self.empowerment_module.update(alive_now_f)
+        if self.education_module is not None:
+            self.education_module.update(alive_now_f)
 
         # Figure out who to update methods for
         methods = nonpreg.filter(nonpreg.ti_contra_update == self.ti)

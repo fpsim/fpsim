@@ -4,6 +4,7 @@ Define defaults for use throughout FPsim
 
 import numpy as np
 import sciris as sc
+import starsim as ss
 import fpsim.settings as fps
 
 from . import base as fpb
@@ -115,7 +116,7 @@ person_defaults = [
     State('partnered',    0, bool),
     State('partnership_age', -1, float),
 
-    # Urban (bsic demographics) -- state will remain at these values if use_urban is False
+    # Urban (basic demographics) -- state will remain at these values if use_urban is False
     State('urban', 1, bool),
     State('region', None, str),
 
@@ -126,12 +127,9 @@ person_defaults = [
     State('edu_interrupted',    0, bool),
     State('edu_completed',      0, bool),
     State('edu_started',        0, bool),
-
-    # Regional
-    State('region',        0, int)
 ]
 
-person_defaults = fpb.ndict(person_defaults)
+person_defaults = ss.ndict(person_defaults)
 
 # Postpartum keys to months
 postpartum_map = {
@@ -189,9 +187,8 @@ for method in method_list:
     method.idx = idx
     idx += 1
 
-method_map = {method.label:method.idx for method in method_list}
-# no_method = Method(name='none', label='None', use_pars=[2, 3])
-
+method_map = {method.label: method.idx for method in method_list}
+method_dict = ss.ndict(method_list)
 
 # Age bins for different method switching matrices -- can be overwritten by locations
 method_age_map = {

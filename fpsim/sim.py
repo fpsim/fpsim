@@ -141,7 +141,7 @@ class Sim(fpb.BaseSim):
         return self
 
     def init_methods(self):
-        self.methods = fpu.ndict(fpd.method_list)
+        self.methods = fpd.method_dict
 
     def init_results(self):
         """
@@ -200,7 +200,7 @@ class Sim(fpb.BaseSim):
         Initialize people by calling the People constructor and initialization methods.
         See people.py for details of people construction.
         """
-        self.people = fpppl.People(pars=self.pars, method_selector=self.contraception_module,
+        self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
                                     empowerment_module=self.empowerment_module, education_module=self.education_module)
 
     def update_mortality(self):
@@ -365,7 +365,7 @@ class Sim(fpb.BaseSim):
 
             # Births
             people = fpppl.People(
-                        pars=self.pars, n=new_people, method_selector=self.method_selector,
+                        pars=self.pars, n=new_people, age=0, method_selector=self.contraception_module,
                         education_module=self.education_module, empowerment_module=self.empowerment_module)
             self.people += people
 

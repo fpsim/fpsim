@@ -11,6 +11,7 @@ Idea:
 import numpy as np
 import sciris as sc
 import pandas as pd
+import starsim as ss  # TODO add to dependencies
 from . import utils as fpu
 from . import defaults as fpd
 
@@ -21,7 +22,7 @@ __all__ = ['ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'EmpoweredChoi
 
 class ContraceptiveChoice:
     def __init__(self, dur_method=1, *args):
-        self.methods = fpu.ndict(fpd.method_list)
+        self.methods = ss.ndict(fpd.method_list)
         self.dur_method = dur_method
 
     def get_prob_use(self, ppl):
@@ -39,7 +40,7 @@ class ContraceptiveChoice:
 
     def set_dur_method(self, ppl, method_used=None):
         dt = ppl.pars['timestep'] / fpd.mpy
-        ti_contra_update = ppl.ti + self.dur_method/dt
+        ti_contra_update = np.full(len(ppl), sc.randround(ppl.ti + self.dur_method/dt), dtype=int)
         return ti_contra_update
 
 
@@ -55,12 +56,13 @@ class RandomChoice(ContraceptiveChoice):
 
     def choose_method(self, ppl):
         n_methods = len(self.methods)
-        choice_arr = fpu.n_multinomial(n_methods, len(ppl))
+        choice_arr = np.random.choice(np.arange(n_methods), size=len(ppl))
         return choice_arr.astype(int)
 
 
 class SimpleChoice(RandomChoice):
     def __init__(self, coefficients=None, *args):
+        """ Args: coefficients """
         super().__init__(*args)
         self.coefficients = coefficients
         return
