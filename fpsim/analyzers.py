@@ -170,9 +170,9 @@ class education_recorder(Analyzer):
             save result at snapshot[str(timestep)]
             """
             females = sim.people.filter(sim.people.is_female)
-            self.snapshots[str(sim.i)] = {}
+            self.snapshots[str(sim.ti)] = {}
             for key in self.keys:
-                self.snapshots[str(sim.i)][key] = sc.dcp(females[key])  # Take snapshot!
+                self.snapshots[str(sim.ti)][key] = sc.dcp(females[key])  # Take snapshot!
                 self.max_agents = max(self.max_agents, len(females))
             return
 
@@ -392,13 +392,13 @@ class empowerment_recorder(Analyzer):
                 vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
             else:  # assume float
                 vals = [np.median(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
-            self.data[key][:, sim.i] = vals
+            self.data[key][:, sim.ti] = vals
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
         """
         Plot all keys in self.keys or in to_plot as a heatmaps
         """
-        fig_args  = sc.mergedicts(fig_args)
+        fig_args = sc.mergedicts(fig_args)
         pl_args = sc.mergedicts(pl_args)
         fig = pl.figure(**fig_args)
 
