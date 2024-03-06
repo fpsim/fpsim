@@ -15,15 +15,63 @@ import starsim as ss  # TODO add to dependencies
 from . import utils as fpu
 from . import defaults as fpd
 
-__all__ = ['ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'EmpoweredChoice']
+__all__ = ['Method', 'Methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'EmpoweredChoice']
+
+
+# %% Base definition of contraceptive methods -- can be overwritten by locations
+class Method:
+    def __init__(self, name=None, label=None, idx=None, efficacy=None, modern=None, dur_use=None, csv_name=None):
+        self.name = name
+        self.label = label or name
+        self.csv_name = csv_name or label or name
+        self.idx = idx
+        self.efficacy = efficacy
+        self.modern = modern
+        self.dur_use = dur_use
+
+
+# Helper function for setting lognormals
+def ln(a, b): return dict(dist='lognormal', par1=a, par2=b)
+
+
+method_list = [
+    Method(name='none',     efficacy=0,     modern=False, dur_use=ln(2, 3), label='None'),
+    Method(name='pill',     efficacy=0.945, modern=True,  dur_use=ln(2, 3), label='Pill'),
+    Method(name='iud',      efficacy=0.986, modern=True, dur_use=ln(5, 3), label='IUDs', csv_name='IUD'),
+    Method(name='inj',      efficacy=0.983, modern=True, dur_use=ln(2, 3), label='Injectables', csv_name='Injectable'),
+    Method(name='cond',     efficacy=0.946, modern=True,  dur_use=ln(1, 3), label='Condoms', csv_name='Condom'),
+    Method(name='btl',      efficacy=0.995, modern=True, dur_use=ln(50, 3), label='BTL', csv_name='F.sterilization'),
+    Method(name='wdraw',    efficacy=0.866, modern=False, dur_use=ln(1, 3), label='Withdrawal', csv_name='Withdrawal'), #     # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+    Method(name='impl',     efficacy=0.994, modern=True, dur_use=ln(2, 3), label='Implants', csv_name='Implant'),
+    Method(name='othtrad',  efficacy=0.861, modern=False, dur_use=ln(1, 3), label='Other traditional', csv_name='Other.trad'),
+    Method(name='othmod',   efficacy=0.880, modern=True, dur_use=ln(1, 3), label='Other modern', csv_name='Other.mod'),
+]
+
+idx = 0
+for method in method_list:
+    method.idx = idx
+    idx += 1
+
+method_map = {method.label: method.idx for method in method_list}
+Methods = ss.ndict(method_list, type=Method)
+SimpleMethods = sc.dcp(Methods)
+for m in SimpleMethods.values(): m.dur_use = 1
 
 
 # %% Define classes to contain information about the way women choose contraception
 
 class ContraceptiveChoice:
-    def __init__(self, dur_method=1, *args):
-        self.methods = ss.ndict(fpd.method_list)
-        self.dur_method = dur_method
+    def __init__(self, methods=None, **kwargs):
+        self.methods = methods or SimpleMethods
+        self.__dict__.update(kwargs)
+
+    @property
+    def average_dur_use(self):
+        av = 0
+        for m in self.methods.values():
+            if sc.isnumber(m.dur_use): av += m.dur_use
+            elif isinstance(m.dur_use, dict): av += m.dur_use['par1']
+        return av / len(self.methods)
 
     def get_prob_use(self, ppl):
         """ Calculate probabilities that each woman will use contraception """
@@ -40,14 +88,14 @@ class ContraceptiveChoice:
 
     def set_dur_method(self, ppl, method_used=None):
         dt = ppl.pars['timestep'] / fpd.mpy
-        ti_contra_update = np.full(len(ppl), sc.randround(ppl.ti + self.dur_method/dt), dtype=int)
+        ti_contra_update = np.full(len(ppl), sc.randround(ppl.ti + self.average_dur_use/dt), dtype=int)
         return ti_contra_update
 
 
 class RandomChoice(ContraceptiveChoice):
     """ Randomly choose a method of contraception """
-    def __init__(self, *args):
-        super().__init__(*args)
+    def __init__(self, **kwargs):
+        super().__init__(kwargs)
         return
 
     def get_prob_use(self, ppl):
@@ -61,9 +109,9 @@ class RandomChoice(ContraceptiveChoice):
 
 
 class SimpleChoice(RandomChoice):
-    def __init__(self, coefficients=None, *args):
+    def __init__(self, coefficients=None, **kwargs):
         """ Args: coefficients """
-        super().__init__(*args)
+        super().__init__(**kwargs)
         self.coefficients = coefficients
         return
 
@@ -82,8 +130,9 @@ class SimpleChoice(RandomChoice):
 
 class EmpoweredChoice(ContraceptiveChoice):
 
-    def __init__(self, contra_use_file, method_choice_file=None):
-        super().__init__(contra_use_file, method_choice_file)
+    def __init__(self, methods=None, contra_use_file=None, method_choice_file=None, **kwargs):
+        super().__init__(**kwargs)
+        self.methods = methods or Methods
         self.contra_use_pars = self.process_contra_use_pars(contra_use_file)
         self.method_choice_pars = self.process_method_pars(method_choice_file)
 
@@ -183,7 +232,7 @@ class EmpoweredChoice(ContraceptiveChoice):
         for mname, method in self.methods.items():  # TODO: refactor this so it loops over the methods used by the ppl
             users = np.nonzero(method_used == method.idx)[-1]
             n_users = len(users)
-            dist_dict = sc.dcp(method.use_dist)
+            dist_dict = sc.dcp(method.dur_use)
             dist_dict['par1'] = dist_dict['par1'] + ppl.age[users]/100
             dist_dict['par2'] = np.array([dist_dict['par2']]*n_users)
             dur_method[users] = fpu.sample(**dist_dict, size=n_users)

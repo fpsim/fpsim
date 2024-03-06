@@ -601,7 +601,6 @@ def birth_spacing_pref():
 
 def barriers():
     ''' Reasons for nonuse -- taken from Ethiopia PMA 2019. '''
-
     barriers = sc.odict({ #updated based on PMA cross-sectional data
         'No need': 58.5,
         'Opposition': 16.6,

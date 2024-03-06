@@ -23,7 +23,7 @@ class People(fpb.BasePeople):
     Class for all the people in the simulation.
     """
 
-    def __init__(self, pars, n=None, age=None, sex=None, method=None,
+    def __init__(self, pars, n=None, age=None, sex=None,
                  contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Initialization
@@ -61,8 +61,9 @@ class People(fpb.BasePeople):
 
         # Parameters on sexual and reproductive history
         self.fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], n)
+
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        if self.pars['use_subnational']==False:
+        if not self.pars['use_subnational']:
             self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
         else:
             self.fated_debut = fpsn.get_debut_init_vals(self)
@@ -299,15 +300,12 @@ class People(fpb.BasePeople):
         preg_eval_lam = pars['age_fecundity'][lam.int_age_clip] * lam.personal_fecundity
         preg_eval_nonlam = pars['age_fecundity'][nonlam.int_age_clip] * nonlam.personal_fecundity
 
-        # TODO refactor, this will break if the ordering is different across places
-        method_eff = np.zeros(len(nonlam))
-        contra_use_bools = nonlam.method < len(pars['methods']['eff'])
-        contra_users = np.nonzero(contra_use_bools)[-1]
-        n_contra_users = len(contra_users)
-        if n_contra_users:
-            method_eff[contra_users] = np.array(list(pars['methods']['eff'].values()))[nonlam.method[contra_users]]
+        # Get each woman's degree of protection against conception based on her contraception or LAM
+        eff_array = np.array([m.efficacy for m in self.contraception_module.methods.values()])
+        method_eff = eff_array[nonlam.method]
         lam_eff = pars['LAM_efficacy']
 
+        # Change to a monthly probability (!warning, not correct!) and set pregnancy probabilities
         lam_probs = fpu.annprob2ts((1 - lam_eff) * preg_eval_lam, pars['timestep'])
         nonlam_probs = fpu.annprob2ts((1 - method_eff) * preg_eval_nonlam, pars['timestep'])
         preg_probs[lam.inds] = lam_probs
@@ -713,7 +711,7 @@ class People(fpb.BasePeople):
         DHS data records only women who self-report LAM which is much lower.
         Follows the DHS definition of mCPR
         """
-        modern_methods = sc.findinds(list(self.pars['methods']['modern'].values()))
+        modern_methods = [m.name for m in self.contraception_module.methods.values() if m.modern]
         method_age = (self.pars['method_age'] <= self.age)
         fecund_age = self.age < self.pars['age_limit_fecundity']
         denominator = method_age * fecund_age * self.is_female * (self.alive)

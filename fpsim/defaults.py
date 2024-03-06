@@ -159,53 +159,6 @@ spline_parities  = np.arange(max_parity + 1)
 none_all_keys = [None, 'all', ':', [None], ['all'], [':']]
 
 
-# Definition of contraceptive methods and corresponding numbers -- can be overwritten by locations
-class Method:
-    def __init__(self, name=None, label=None, idx=None, dur_use_pars=None, csv_name=None):
-        self.name = name
-        self.label = label or name
-        self.csv_name = csv_name or label or name
-        self.idx = idx
-        self.use_dist = dict(dist='lognorm', par1=dur_use_pars[0], par2=dur_use_pars[1])
-
-
-method_list = [
-    Method(name='none',     label='None',               dur_use_pars=[2, 3]),
-    Method(name='pill',     label='Pill',               dur_use_pars=[2, 3]),
-    Method(name='iud',      label='IUDs',               dur_use_pars=[5, 3], csv_name='IUD'),
-    Method(name='inj',      label='Injectables',        dur_use_pars=[2, 3], csv_name='Injectable'),
-    Method(name='cond',     label='Condoms',            dur_use_pars=[1, 3], csv_name='Condom'),
-    Method(name='btl',      label='BTL',                dur_use_pars=[50, 3], csv_name='F.sterilization'),
-    Method(name='wdraw',    label='Withdrawal',         dur_use_pars=[1, 3], csv_name='Withdrawal'),
-    Method(name='impl',     label='Implants',           dur_use_pars=[2, 3], csv_name='Implant'),
-    Method(name='othtrad',  label='Other traditional',  dur_use_pars=[1, 3], csv_name='Other.trad'),
-    Method(name='othmod',   label='Other modern',       dur_use_pars=[1, 3], csv_name='Other.mod'),
-]
-
-# # Define method data
-# data = {  # Index, modern, efficacy
-#     'None': [0, False, 0.000],
-#     'Withdrawal': [1, False, 0.866],
-#     'Other traditional': [2, False, 0.861],
-#     # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-#     'Condoms': [3, True, 0.946],
-#     'Pill': [4, True, 0.945],
-#     'Injectables': [5, True, 0.983],
-#     'Implants': [6, True, 0.994],
-#     'IUDs': [7, True, 0.986],
-#     'BTL': [8, True, 0.995],
-#     'Other modern': [9, True, 0.880],
-#     # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
-# }
-
-idx = 0
-for method in method_list:
-    method.idx = idx
-    idx += 1
-
-method_map = {method.label: method.idx for method in method_list}
-method_dict = ss.ndict(method_list)
-
 # Age bins for different method switching matrices -- can be overwritten by locations
 method_age_map = {
     '<18':   [ 0, 18],

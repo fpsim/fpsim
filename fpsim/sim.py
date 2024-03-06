@@ -1,6 +1,6 @@
-'''
+"""
 Defines the Sim class, the core class of the FP model (FPsim).
-'''
+"""
 
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
@@ -14,6 +14,7 @@ from . import defaults as fpd
 from . import base as fpb
 from . import parameters as fpp
 from . import people as fpppl
+from . import methods as fpm
 
 # Specify all externally visible things this file defines
 __all__ = ['Sim', 'MultiSim', 'parallel']
@@ -105,20 +106,26 @@ class Sim(fpb.BaseSim):
             raise sc.KeyNotFoundError(errormsg)
         super().__init__(pars, location=location, **kwargs)  # Initialize and set the parameters as attributes
 
+        # Metadata and settings
         self.initialized = False
         self.already_run = False
         self.test_mode = False
         self.label = label
         self.track_children = track_children
-        self.results = {}
-        self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
-        self.contraception_module = contraception_module
-        self.empowerment_module = empowerment_module
-        self.education_module = education_module
         self.regional = regional
         self.ti = None  # The current timestep of the simulation
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
+
+        # People and results - intialized later
+        self.results = {}
+        self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
+
+        # Add modules, also initialized later
+        self.contraception_module = contraception_module or fpm.RandomChoice()
+        self.empowerment_module = empowerment_module
+        self.education_module = education_module
+
         return
 
     # Basic properties
@@ -136,12 +143,8 @@ class Sim(fpb.BaseSim):
             self.ti = 0  # The current time index
             fpu.set_seed(self['seed'])
             self.init_results()
-            self.init_methods()
-            self.init_people()
+            self.init_people()  # This step also initializes the contraception, empowerment, and education modules
         return self
-
-    def init_methods(self):
-        self.methods = fpd.method_dict
 
     def init_results(self):
         """
