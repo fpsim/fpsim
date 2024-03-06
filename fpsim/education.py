@@ -7,13 +7,14 @@ import numpy as np  # Needed for a few things not provided by pl
 import sciris as sc
 from . import utils as fpu
 from . import defaults as fpd
+from . import locations as fplocs
 
 
 # %% Initialization methods
 
 
 def init_partnership_states(ppl):
-    """Demographics on whether a person is in a partnership, and their expected age at first partnership in a rural or urban setting"""
+    """ Demographics on whether a person is in a partnership, and their expected age at first partnership in a rural or urban setting """
 
     # Get init values for these sociodemographic states
     partnered, partnership_age = get_partnership_init_vals(ppl)
@@ -48,14 +49,20 @@ def get_partnership_init_vals(ppl):
 # %% Class for updating education
 
 class Education:
-    def __init__(self):
-        """ TODO: move par initialization here? """
+    def __init__(self, location=None):
+        # Handle location
+        location = location.lower()
+        if location == 'kenya':
+            education_dict, _ = fplocs.kenya.education_distributions()  # This function returns extrapolated and raw data
+            self.pars = education_dict
+        else:
+            errormsg = f'Location "{location}" is not currently supported for education analyses'
+            raise NotImplementedError(errormsg)
         return
 
-    @staticmethod
-    def initialize(ppl):
+    def initialize(self, ppl):
         """ Initialize with people """
-        education_dict = ppl.pars['education']
+        education_dict = self.pars
 
         # Initialise individual education objectives from a 2d array of probs with dimensions (urban, edu_years)
         f_inds_urban = sc.findinds(ppl.is_female & ppl.urban)
@@ -96,12 +103,11 @@ class Education:
         self.resume_education(ppl)  # Determine who goes back to school after an interruption
         self.graduate(ppl)  # Check if anyone achieves their education goal
 
-    @staticmethod
-    def start_education(ppl):
+    def start_education(self, ppl):
         """
         Begin education
         """
-        new_students = ppl.filter(~ppl.edu_started & (ppl.age >= ppl.pars["education"]["age_start"]))
+        new_students = ppl.filter(~ppl.edu_started & (ppl.age >= self.pars["age_start"]))
         new_students.edu_started = True
 
     @staticmethod
@@ -115,11 +121,10 @@ class Education:
         # Disrupt education
         pregnant_students.edu_interrupted = True
 
-    @staticmethod
-    def dropout_education(ppl, parity):
-        dropout_dict = ppl.pars['education']['edu_dropout_probs'][parity]
+    def dropout_education(self, ppl, parity):
+        dropout_dict = self.pars['edu_dropout_probs'][parity]
         age_cutoffs = dropout_dict['age']  # bin edges
-        age_inds = np.searchsorted(age_cutoffs, ppl.age,"right") - 1  # NOTE: faster than np.digitize for large arrays
+        age_inds = np.searchsorted(age_cutoffs, ppl.age, "right") - 1  # NOTE: faster than np.digitize for large arrays
         # Decide who will drop out
         ppl.edu_dropout = fpu.binomial_arr(dropout_dict['percent'][age_inds])
 

@@ -252,10 +252,6 @@ default_pars = {
     'methods':              None,
     'barriers':             None,
     'urban_prop':           None,
-
-    # Empowerment and education metrics
-    'empowerment':          None,
-    'education':            None,
     'age_partnership':      None,
 
     'region':               None,

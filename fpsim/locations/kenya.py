@@ -865,10 +865,6 @@ def make_pars(seed=None, use_subnational=None):
     pars['urban_prop'] = urban_proportion()
     pars['age_partnership'] = age_partnership()
 
-    # # Empowerment metrics
-    education_dict, _ = education_distributions() # This function returns extrapolated and raw data
-    pars['education'] = education_dict
-
     kwargs = locals()
     not_implemented_args = ['use_subnational']
     true_args = [key for key in not_implemented_args if kwargs[key] is True]

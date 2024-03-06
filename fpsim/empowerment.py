@@ -6,9 +6,7 @@ We consider four empowerment metrics: paid_employment, decision_health, decision
 # %% Imports
 import numpy as np
 import sciris as sc
-import pandas as pd
 from . import utils as fpu
-from . import defaults as fpd
 from . import locations as fplocs
 
 
