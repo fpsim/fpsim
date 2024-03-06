@@ -23,15 +23,14 @@ def getval(v):
 
 
 class Pars(dict):
-    """
+    '''
     Class to hold a dictionary of parameters, and associated methods.
 
     Usually not called by the user directly -- use ``fp.pars()`` instead.
 
     Args:
         pars (dict): dictionary of parameters
-    """
-
+    '''
     def __init__(self, pars=None, *args, **kwargs):
         if pars is None:
             pars = {}
@@ -40,19 +39,19 @@ class Pars(dict):
         return
 
     def __repr__(self, *args, **kwargs):
-        """ Use odict repr, but with a custom class name and no quotes """
+        ''' Use odict repr, but with a custom class name and no quotes '''
         return sc.odict.__repr__(self, quote='', numsep='.', classname='fp.Parameters()', *args, **kwargs)
 
     def copy(self):
-        """ Shortcut for deep copying """
+        ''' Shortcut for deep copying '''
         return sc.dcp(self)
 
     def to_dict(self):
-        """ Return parameters as a new dictionary """
+        ''' Return parameters as a new dictionary '''
         return {k: v for k, v in self.items()}
 
     def to_json(self, filename, **kwargs):
-        """
+        '''
         Export parameters to a JSON file.
 
         Args:
@@ -61,11 +60,11 @@ class Pars(dict):
 
         **Example**::
             sim.pars.to_json('my_pars.json')
-        """
+        '''
         return sc.savejson(filename=filename, obj=self.to_dict(), **kwargs)
 
     def from_json(self, filename, **kwargs):
-        """
+        '''
         Import parameters from a JSON file.
 
         Args:
@@ -74,19 +73,19 @@ class Pars(dict):
 
         **Example**::
             sim.pars.from_json('my_pars.json')
-        """
+        '''
         pars = sc.loadjson(filename=filename, **kwargs)
         self.update(pars)
         return self
 
     def validate(self, die=True, update=True):
-        """
+        '''
         Perform validation on the parameters
 
         Args:
             die (bool): whether to raise an exception if an error is encountered
             update (bool): whether to update the method and age maps
-        """
+        '''
         # Check that keys are correct
         valid_keys = set(default_pars.keys())
         keys = set(self.keys())
@@ -159,12 +158,13 @@ class Pars(dict):
 
         return self
 
+
     def _as_ind(self, key, allow_none=True):
-        """
+        '''
         Take a method key and convert to an int, e.g. 'Condoms' → 7.
 
         If already an int, do validation.
-        """
+        '''
 
         mapping = self['methods']['map']
         keys = list(mapping.keys())
@@ -196,11 +196,11 @@ class Pars(dict):
         return ind
 
     def _as_key(self, ind):
-        """
+        '''
         Convert ind to key, e.g. 7 → 'Condoms'.
 
         If already a key, do validation.
-        """
+        '''
         keys = list(self['methods']['map'].keys())
         if isinstance(ind, int):  # Normal case, convert to string
             if ind < len(keys):
@@ -219,7 +219,7 @@ class Pars(dict):
         return key
 
     def update_method_eff(self, method, eff=None, verbose=False):
-        """
+        '''
         Update efficacy of one or more contraceptive methods.
 
         Args:
@@ -229,7 +229,7 @@ class Pars(dict):
         **Examples**::
             pars.update_method_eff('Injectables', 0.99)
             pars.update_method_eff({'Injectables':0.99, 'Condoms':0.50})
-        """
+        '''
 
         # Validation
         if not isinstance(method, dict):
@@ -253,7 +253,7 @@ class Pars(dict):
 
     def update_method_prob(self, source=None, dest=None, factor=None, value=None,
                            ages=None, matrix=None, copy_from=None, verbose=False):
-        """
+        '''
         Updates the probability matrices with a new value. Usually used via the
         intervention ``fp.update_methods()``.
 
@@ -266,7 +266,7 @@ class Pars(dict):
             matrix    (str):      which switching matrix to modify (default: annual)
             copy_from (str):      the existing method to copy the probability vectors from (optional)
             verbose   (bool):     how much detail to print
-        """
+        '''
 
         raw = self['methods']['raw']  # We adjust the raw matrices, so the effects are persistent
 
@@ -339,13 +339,13 @@ class Pars(dict):
         return self
 
     def reset_methods_map(self):
-        """ Refresh the methods map to be self-consistent """
+        ''' Refresh the methods map to be self-consistent '''
         methods = self['methods']
         methods['map'] = {k: i for i, k in enumerate(methods['map'].keys())}  # Reset numbering
         return self
 
     def add_method(self, name, eff, modern=True):
-        """
+        '''
         Add a new contraceptive method to the switching matrices.
 
         A new method should only be added before the sim is run, not during.
@@ -364,7 +364,7 @@ class Pars(dict):
             pars = fp.pars()
             pars.add_method('New method', 0.90)
             pars.add_method(name='Male pill', eff=0.98, modern=True)
-        """
+        '''
         # Remove from mapping and efficacy
         methods = self['methods']
         n = len(methods['map'])
@@ -395,7 +395,7 @@ class Pars(dict):
         return self
 
     def rm_method(self, name):
-        """
+        '''
         Removes a contraceptive method from the switching matrices.
 
         A method should only be removed before the sim is run, not during, since
@@ -408,7 +408,7 @@ class Pars(dict):
         **Example**::
             pars = fp.pars()
             pars.rm_method('Other modern')
-        """
+        '''
 
         # Get index of method to remove
         ind = self._as_ind(name, allow_none=False)
@@ -443,7 +443,7 @@ class Pars(dict):
         return self
 
     def reorder_methods(self, order):
-        """
+        '''
         Reorder the contraceptive method matrices.
 
         Method reordering should be done before the sim is created (or at least before it's run).
@@ -455,7 +455,7 @@ class Pars(dict):
         **Exampls**::
             pars = fp.pars()
             pars.reorder_methods([2, 6, 4, 7, 0, 8, 5, 1, 3])
-        """
+        '''
 
         # Store a copy for debugging
         methods = self['methods']
@@ -519,6 +519,7 @@ default_pars = {
     # Settings - what aspects are being modeled
     'track_switching':      0,      # Whether to track method switching
     'track_as':             0,      # Whether to track age-specific channels
+    'use_subnational':        0,    # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
 
     # Age limits (in years)
     'method_age':           15,
@@ -589,28 +590,21 @@ default_pars = {
     'empowerment':          None,
     'education':            None,
     'age_partnership':      None,
+
+    'region':               None,
+    'lactational_amenorrhea_region': None,
+    'sexual_activity_region':       None,
+    'sexual_activity_pp_region':    None,
+    'debut_age_region':             None,
+    'barriers_region':              None,
 }
 
 # Shortcut for accessing default keys
 par_keys = default_pars.keys()
 
 
-def region_pars():
-    ''' Additional regional parameters'''
-    region_pars = dict(
-        region                        = None,
-        lactational_amenorrhea_region = None,
-        sexual_activity_region        = None,
-        sexual_activity_pp_region     = None,
-        debut_age_region              = None,
-        barriers_region               = None
-    )
-
-    return region_pars
-
-
 def pars(location=None, validate=True, die=True, update=True, **kwargs):
-    """
+    '''
     Function for updating parameters.
 
     Args:
@@ -622,8 +616,8 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
 
     **Example**::
         pars = fp.pars(location='senegal')
-    """
-    from . import locations as fplocs  # Here to avoid circular import
+    '''
+    from . import locations as fplocs # Here to avoid circular import
 
     if not location:
         location = 'default'
@@ -657,10 +651,7 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
         raise NotImplementedError(errormsg)
 
     # Merge again, so that we ensure the user-defined values overwrite any location defaults
-    # Add parameter keys related to region attributes,
-    # with default values None
-    if location != 'ethiopia':
-        pars.update(region_pars())
+    pars = sc.mergedicts(pars, kwargs, _copy=True)
 
     # Convert to the class
     pars = Pars(pars)

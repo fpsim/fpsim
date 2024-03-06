@@ -1164,7 +1164,7 @@ def education_distributions():
 
 # %% Make and validate parameters
 
-def make_pars(seed=None):
+def make_pars(seed=None, use_subnational=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -1176,6 +1176,7 @@ def make_pars(seed=None):
     # Demographics and pregnancy outcome
     pars['age_pyramid'] = age_pyramid()
     pars['age_mortality'] = age_mortality()
+    pars['urban_prop'] = urban_proportion()
     pars['maternal_mortality'] = maternal_mortality()
     pars['infant_mortality'] = infant_mortality()
     pars['miscarriage_rates'] = miscarriage()
@@ -1208,5 +1209,12 @@ def make_pars(seed=None):
     pars['empowerment'] = empowerment_dict
     education_dict, _ = education_distributions() # This function returns extrapolated and raw data
     pars['education'] = education_dict
+
+    kwargs = locals()
+    not_implemented_args = ['use_subnational']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
+    if true_args:
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
+        raise NotImplementedError(errmsg)
 
     return pars

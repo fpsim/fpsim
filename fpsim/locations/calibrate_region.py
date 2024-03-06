@@ -83,7 +83,7 @@ sc.tic()
 
 # Set up sim for country
 pars = fp.pars(location=country)
-pars['n_agents'] = 100_000 # Small population size
+pars['n_agents'] = 1_000 # Small population size
 pars['end_year'] = 2016 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -113,7 +113,7 @@ print(f"Birth spacing preference: {spacing_pars}")
 print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
 
 # Run the sim
-sim = fp.Sim(pars=pars, regional=True)
+sim = fp.Sim(pars=pars)
 sim.run()
 
 # Plot results from sim run

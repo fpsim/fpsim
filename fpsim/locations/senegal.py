@@ -3,11 +3,14 @@ Set the parameters for FPsim, specifically for Senegal.
 '''
 
 import numpy as np
+import pandas as pd
+
 import sciris as sc
 from scipy import interpolate as si
 from .. import defaults as fpd
 from .. import settings as fps
 
+thisdir = sc.path(sc.thisdir())  # For loading CSV files
 
 # %% Housekeeping
 
@@ -20,7 +23,7 @@ def scalar_pars():
         # Scale parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'abortion_prob': 0.08,  # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
         'twins_prob': 0.015,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
+        'mcpr_norm_year': 2018,  # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
@@ -744,9 +747,15 @@ def barriers():
     return barriers
 
 
+def urban_proportion():
+    """Load information about the proportion of people who live in an urban setting"""
+    urban_data = pd.read_csv(thisdir / 'senegal' / 'urban.csv')
+    return urban_data["mean"][0]  # Return this value as a float
+
+
 # %% Make and validate parameters
 
-def make_pars(seed=None):
+def make_pars(seed=None, use_subnational=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -758,6 +767,7 @@ def make_pars(seed=None):
     # Demographics and pregnancy outcome
     pars['age_pyramid'] = age_pyramid()
     pars['age_mortality'] = age_mortality()
+    pars['urban_prop'] = urban_proportion()
     pars['maternal_mortality'] = maternal_mortality()
     pars['infant_mortality'] = infant_mortality()
     pars['miscarriage_rates'] = miscarriage()
@@ -781,11 +791,12 @@ def make_pars(seed=None):
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
 
-    # New People states/attributes that only exist for kenya so far
+    # Handle modules that have not been implemented yet
     kwargs = locals()
-    del kwargs['seed']
-    true_args = [arg for arg, value in kwargs.items() if value is True]
+    not_implemented_args = ['use_subnational']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
     if true_args:
-        raise NotImplementedError("These functionalities have not been implemented yet: " + ", ".join(true_args))
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
+        raise NotImplementedError(errmsg)
 
     return pars

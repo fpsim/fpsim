@@ -87,8 +87,8 @@ class Sim(fpb.BaseSim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, pars=None, location=None, label=None, track_children=False,
-                contraception_module=None, empowerment_module=None, education_module=None, regional=False, **kwargs):
+    def __init__(self, pars=None, location=None, label=None, track_children=False, regional=False,
+                contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Handle location
         if location is None:
@@ -105,17 +105,10 @@ class Sim(fpb.BaseSim):
             raise sc.KeyNotFoundError(errormsg)
         super().__init__(pars, location=location, **kwargs)  # Initialize and set the parameters as attributes
 
-        # Set label
-        if label is None:
-            if location is not None:
-                label = f"{location}--{self.pars['seed']}"
-            else:
-                label = f"Sim--{self.pars['seed']}"
-
         self.initialized = False
         self.already_run = False
         self.test_mode = False
-        self.label = label or location + '-sim'
+        self.label = label
         self.track_children = track_children
         self.results = {}
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
@@ -207,74 +200,8 @@ class Sim(fpb.BaseSim):
         Initialize people by calling the People constructor and initialization methods.
         See people.py for details of people construction.
         """
-        self.people = fpppl.People(pars=self.pars, method_selector=self.method_selector,
+        self.people = fpppl.People(pars=self.pars, method_selector=self.contraception_module,
                                     empowerment_module=self.empowerment_module, education_module=self.education_module)
-
-
-    def initialize_urban(self, n, urban_prop, region=None):
-        """Get initial distribution of urban"""
-        urban = np.ones(n, dtype=bool)
-        if self.regional is False:
-            if urban_prop is not None:
-                urban = fpu.n_binomial(urban_prop, n)
-        elif self.regional is True:
-            region_dict = self.pars['region']
-            urban_by_region = pd.DataFrame({'region': region_dict['region'], 'urban': region_dict['urban']})
-            # For each region defined in region.csv, assign a regional distribution of urban/rural population
-            for r in urban_by_region['region']:
-                # Find indices in region array
-                f_inds = sc.findinds(region==r)
-                region_urban_prop = urban_by_region.loc[urban_by_region['region']==r, 'urban'].values[0]
-                urban_values = np.random.choice([True, False], size=len(f_inds), p=[region_urban_prop, 1-region_urban_prop])
-                urban[f_inds] = urban_values
-
-        return urban
-
-    def initialize_region(self, n):
-        """Get initial distribution of region"""
-        region_dict = self['region']
-
-        # Initialise individual region
-        # Region dictionary
-        region = np.zeros(n, dtype=str)
-
-        if region_dict is not None:
-            # Set distribution for individuals based on regional proportions
-            region_names = region_dict['region']
-            region_probs = region_dict['mean']
-            region = np.random.choice(region_names, size=n, p=region_probs)
-
-        return region
-
-    def initialize_lam_region(self, n, lam_region):
-        lam_region_dict = self.pars['lactational_amenorrhea_region']
-        lam_by_region = pd.DataFrame({'region': lam_region_dict['region'],
-                                   'month': lam_region_dict['month'],
-                                   'rate': lam_region_dict['rate']})
-        lam_values = np.zeros(n, dtype=bool)
-        for r in lam_by_region['region'].unique():
-            # Find indices in region array
-            f_inds = sc.findinds(lam_region == r)
-            for month in lam_by_region[lam_by_region['region'] == r]['month'].unique(): 
-                month_data = lam_by_region[(lam_by_region['region'] == r) & (lam_by_region['month'] == month)]
-                lam_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=month_data['rate'].values)
-        return lam_values
-
-    def initialize_debut_age_region(self, n, initialized_regions):
-        debut_age_dict = self.pars['debut_age_region']
-        debut_age_by_region = pd.DataFrame({'region': debut_age_dict['region'],
-                                        'age': debut_age_dict['age'],
-                                        'prob': debut_age_dict['prob']})
-        debut_age_values = np.zeros(n, dtype=int)
-        for r in debut_age_by_region['region'].unique():
-            # Find indices in region array
-            f_inds = sc.findinds(initialized_regions == r)
-            region_debut_ages = debut_age_by_region.loc[debut_age_by_region['region'] == r, 'age'].values
-            region_debut_probs = debut_age_by_region.loc[debut_age_by_region['region'] == r, 'prob'].values
-            debut_age_dist = region_debut_ages[fpu.n_multinomial(region_debut_probs, len(f_inds))]
-            debut_age_values[f_inds] = debut_age_dist
-
-        return debut_age_values
 
     def update_mortality(self):
         """

@@ -117,6 +117,7 @@ person_defaults = [
 
     # Urban (bsic demographics) -- state will remain at these values if use_urban is False
     State('urban', 1, bool),
+    State('region', None, str),
 
     # Education - states will remain at these values if use_education is False
     State('edu_objective',      0, float),
