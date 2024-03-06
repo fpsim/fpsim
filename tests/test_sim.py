@@ -51,7 +51,7 @@ def test_methods():
     sc.heading('Test time on method')
 
     # Define new modules
-    ms = fp.MethodSelector(contra_use_file='contra_coef.csv', method_choice_file='method_mix.csv')
+    ms = fp.EmpoweredChoice(contra_use_file='contra_coef.csv', method_choice_file='method_mix.csv')
     emp = fp.Empowerment(empowerment_file='empower_coef.csv')
     edu = fp.Education()
 
@@ -59,7 +59,7 @@ def test_methods():
     pars = fp.pars(location='kenya', n_agents=100, start_year=2000, end_year=2010, seed=1, verbose=1)
 
     # Make and run sim
-    s = fp.Sim(pars, method_selector=ms, empowerment_module=emp, education_module=edu)
+    s = fp.Sim(pars, contraception_module=ms, empowerment_module=emp, education_module=edu)
     s.run()
 
     return s

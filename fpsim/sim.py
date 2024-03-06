@@ -88,7 +88,7 @@ class Sim(fpb.BaseSim):
     """
 
     def __init__(self, pars=None, location=None, label=None, track_children=False,
-                method_selector=None, empowerment_module=None, education_module=None, regional=False, **kwargs):
+                contraception_module=None, empowerment_module=None, education_module=None, regional=False, **kwargs):
 
         # Handle location
         if location is None:
@@ -119,7 +119,7 @@ class Sim(fpb.BaseSim):
         self.track_children = track_children
         self.results = {}
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
-        self.method_selector = method_selector
+        self.contraception_module = contraception_module
         self.empowerment_module = empowerment_module
         self.education_module = education_module
         self.regional = regional

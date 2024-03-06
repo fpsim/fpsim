@@ -14,15 +14,74 @@ import pandas as pd
 from . import utils as fpu
 from . import defaults as fpd
 
-__all__ = ['MethodSelector']
+__all__ = ['ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'EmpoweredChoice']
 
 
-# %% Define classes
+# %% Define classes to contain information about the way women choose contraception
 
-class MethodSelector:
-
-    def __init__(self, contra_use_file, method_choice_file=None, data=None):
+class ContraceptiveChoice:
+    def __init__(self, dur_method=1, *args):
         self.methods = fpu.ndict(fpd.method_list)
+        self.dur_method = dur_method
+
+    def get_prob_use(self, ppl):
+        """ Calculate probabilities that each woman will use contraception """
+        return
+
+    def get_contra_users(self, ppl):
+        """ Select contraction users, return boolean array """
+        prob_use = self.get_prob_use(ppl)
+        uses_contra_bool = fpu.binomial_arr(prob_use)
+        return uses_contra_bool
+
+    def choose_method(self, ppl):
+        pass
+
+    def set_dur_method(self, ppl, method_used=None):
+        dt = ppl.pars['timestep'] / fpd.mpy
+        ti_contra_update = ppl.ti + self.dur_method/dt
+        return ti_contra_update
+
+
+class RandomChoice(ContraceptiveChoice):
+    """ Randomly choose a method of contraception """
+    def __init__(self, *args):
+        super().__init__(*args)
+        return
+
+    def get_prob_use(self, ppl):
+        prob_use = np.random.random(len(ppl))
+        return prob_use
+
+    def choose_method(self, ppl):
+        n_methods = len(self.methods)
+        choice_arr = fpu.n_multinomial(n_methods, len(ppl))
+        return choice_arr.astype(int)
+
+
+class SimpleChoice(RandomChoice):
+    def __init__(self, coefficients=None, *args):
+        super().__init__(*args)
+        self.coefficients = coefficients
+        return
+
+    def get_prob_use(self, ppl):
+        """
+        Return an array of probabilities that each woman will use contraception.
+        """
+        p = self.coefficients
+        rhs = p.intercept
+        for vname, vval in p.items():
+            if vname not in ['intercept']:
+                rhs += vval * ppl[vname]
+        prob_use = 1 / (1+np.exp(-rhs))
+        return prob_use
+
+
+class EmpoweredChoice(ContraceptiveChoice):
+
+    def __init__(self, contra_use_file, method_choice_file=None):
+        super().__init__(contra_use_file, method_choice_file)
         self.contra_use_pars = self.process_contra_use_pars(contra_use_file)
         self.method_choice_pars = self.process_method_pars(method_choice_file)
 
@@ -79,11 +138,6 @@ class MethodSelector:
         prob_use = 1 / (1+np.exp(-rhs))
         return prob_use
 
-    def get_contra_users(self, ppl, inds=None):
-        prob_use = self.get_prob_use(ppl, inds=inds)
-        uses_contra_bool = fpu.binomial_arr(prob_use)
-        return uses_contra_bool
-
     def choose_method(self, ppl, inds=None, jitter=1e-4):
         """ Choose which method to use """
 
@@ -118,7 +172,7 @@ class MethodSelector:
 
         return choice_array.astype(int)
 
-    def set_dur_method(self, ppl, method_used=None, return_dur=False):
+    def set_dur_method(self, ppl, method_used=None):
         """ Placeholder function whereby the mean time on method scales with age """
 
         dur_method = np.empty(len(ppl))
