@@ -263,16 +263,16 @@ class Sim(fpb.BaseSim):
         if not self.track_children:
             delattr(self.people, "mothers")
 
-    def grow_population(self, new_ppl):
+    def grow_population(self, n_new_people):
         """Expand people's size"""
         # Births
-        people = fpppl.People(pars=self.pars, n=new_ppl)
-        self.people += people
+        new_people = fpppl.People(
+                    pars=self.pars, n=n_new_people, age=0, method_selector=self.contraception_module,
+                    education_module=self.education_module, empowerment_module=self.empowerment_module)
+        self.people += new_people
 
     def step(self):
-        """Update logic of a single time step"""
-        # Update method matrices for year of sim to trend over years
-        self.update_methods()
+        """ Update logic of a single time step """
 
         # Update mortality probabilities for year of sim
         self.update_mortality()
@@ -292,10 +292,7 @@ class Sim(fpb.BaseSim):
 
         # Add births
         n_new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
-        new_people = fpppl.People(
-                    pars=self.pars, n=n_new_people, age=0, method_selector=self.contraception_module,
-                    education_module=self.education_module, empowerment_module=self.empowerment_module)
-        self.grow_population(new_people)
+        self.grow_population(n_new_people)
 
         # Update mothers
         if self.track_children:
