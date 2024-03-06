@@ -104,58 +104,6 @@ class Pars(dict):
             else:
                 print(errormsg)
 
-        # Validate method properties
-        methods = self['methods']
-        new_method_map = methods['map']
-        new_method_age_map = methods['age_map']
-        n = len(new_method_map)
-        method_keys = list(new_method_map.keys())
-        modern_keys = list(methods['modern'].keys())
-        eff_keys = list(methods['eff'].keys())
-        if not (method_keys == eff_keys == modern_keys):
-            errormsg = f'Mismatch between method mapping keys:\n{method_keys}",\nmodern keys\n"{modern_keys}", and efficacy keys\n"{eff_keys}"'
-            if die:
-                raise ValueError(errormsg)
-            else:
-                print(errormsg)
-
-        # Validate method matrices
-        raw = methods['raw']
-        age_keys = set(new_method_age_map.keys())
-        for mkey in ['annual', 'pp0to1', 'pp1to6']:
-            m_age_keys = set(raw[mkey].keys())
-            if age_keys != m_age_keys:
-                errormsg = f'Matrix "{mkey}" has inconsistent keys: "{sc.strjoin(age_keys)}" ≠ "{sc.strjoin(m_age_keys)}"'
-                if die:
-                    raise ValueError(errormsg)
-                else:
-                    print(errormsg)
-        for k in age_keys:
-            shape = raw['pp0to1'][k].shape
-            if shape != (n,):
-                errormsg = f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'
-                if die:
-                    raise ValueError(errormsg)
-                else:
-                    print(errormsg)
-            for mkey in ['annual', 'pp1to6']:
-                shape = raw[mkey][k].shape
-                if shape != (n, n):
-                    errormsg = f'Method matrix {mkey} for ages {k} has unexpected shape: should be ({n},{n}), not {shape}'
-                    if die:
-                        raise ValueError(errormsg)
-                    else:
-                        print(errormsg)
-
-        # Copy to defaults, making use of mutable objects to preserve original object ID
-        if update:
-            for k in list(fpd.method_map.keys()):     fpd.method_map.pop(k)  # Remove all items
-            for k in list(fpd.method_age_map.keys()): fpd.method_age_map.pop(k)  # Remove all items
-            for k, v in new_method_map.items():
-                fpd.method_map[k] = v
-            for k, v in new_method_age_map.items():
-                fpd.method_age_map[k] = v
-
         return self
 
 
