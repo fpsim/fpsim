@@ -597,7 +597,7 @@ def birth_spacing_pref():
     return pref_spacing
 
 
-# %% Contraceptive method
+# %% Contraceptive methods
 
 def barriers():
     ''' Reasons for nonuse -- taken from Ethiopia PMA 2019. '''

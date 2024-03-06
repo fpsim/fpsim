@@ -182,6 +182,22 @@ method_list = [
     Method(name='othmod',   label='Other modern',       dur_use_pars=[1, 3], csv_name='Other.mod'),
 ]
 
+# # Define method data
+# data = {  # Index, modern, efficacy
+#     'None': [0, False, 0.000],
+#     'Withdrawal': [1, False, 0.866],
+#     'Other traditional': [2, False, 0.861],
+#     # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+#     'Condoms': [3, True, 0.946],
+#     'Pill': [4, True, 0.945],
+#     'Injectables': [5, True, 0.983],
+#     'Implants': [6, True, 0.994],
+#     'IUDs': [7, True, 0.986],
+#     'BTL': [8, True, 0.995],
+#     'Other modern': [9, True, 0.880],
+#     # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
+# }
+
 idx = 0
 for method in method_list:
     method.idx = idx

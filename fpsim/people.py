@@ -833,22 +833,6 @@ class People(fpb.BasePeople):
             self.step_results['birth_bins'][key] = 0
             self.step_results['age_bin_totals'][key] = 0
 
-        m = len(self.pars['methods']['map'])
-
-        def mm_zeros():
-            ''' Return an array of m x m zeros '''
-            return np.zeros((m, m), dtype=int)
-
-        if self.pars['track_switching']:
-            for key in fpd.method_age_map.keys():
-                self.step_results['switching_annual'][key] = mm_zeros()
-                self.step_results['switching_postpartum'][key] = mm_zeros()
-
-            self.step_results['switching'] = dict(
-                annual=mm_zeros(),
-                postpartum=mm_zeros(),
-            )
-
         return
 
     def update(self):
