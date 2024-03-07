@@ -19,7 +19,7 @@ calib_pars = dict(
     space27_36 = [1.2, 0.2, 2.0],
 )
 
-spacing_file = 'BirthSpacing.obj'  # Senegal DHS birth spacing data
+spacing_file = 'national_data/archived/BirthSpacing.obj'  # Senegal DHS birth spacing data
 
 do_save_figs = 1
 

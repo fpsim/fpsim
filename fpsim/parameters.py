@@ -569,17 +569,15 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
         kwargs.setdefault('start_year', 2000)
         kwargs.setdefault('end_year', 2010)
 
-    ethiopia_valid_regional_locs = ['addis ababa', 'afar', 'amhara', 'benishangul-gumuz', 'dire dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
-
     # Define valid locations
-    if location in ['senegal', 'default']:
+    valid_country_locs = ['senegal', 'kenya', 'ethiopia']
+    valid_regional_locs = ['addis ababa', 'afar', 'amhara', 'benishangul-gumuz', 'dire dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
+
+    # Call the creation of location parameters
+    if location == 'default':
         pars = fplocs.senegal.make_pars()
-    elif location == 'kenya':
-        pars = fplocs.kenya.make_pars()
-    elif location == 'ethiopia':
-        pars = fplocs.ethiopia.make_pars()
-    elif location in ethiopia_valid_regional_locs:
-        pars = eval(f"fplocs.ethiopia_regions.{location}.make_pars()")
+    elif location in valid_country_locs or valid_regional_locs:
+        pars = eval(f"fplocs.{location}.make_pars()")
     # Else, error
     else:
         errormsg = f'Location "{location}" is not currently supported'

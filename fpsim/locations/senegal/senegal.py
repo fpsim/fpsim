@@ -5,7 +5,7 @@ Set the parameters for FPsim, specifically for Senegal.
 import numpy as np
 import sciris as sc
 from scipy import interpolate as si
-from .. import defaults as fpd
+from fpsim import defaults as fpd
 
 #%% Housekeeping
 
@@ -78,7 +78,7 @@ def data2interp(data, ages, normalize=False):
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'senegal'
+    files['base'] = sc.thisdir(aspath=True) / 'national_data'
     files['basic_dhs']        = 'basic_dhs.yaml'
     files['popsize']          = 'popsize.csv'
     files['mcpr']             = 'cpr.csv'

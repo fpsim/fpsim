@@ -6,7 +6,7 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 from scipy import interpolate as si
-from .. import defaults as fpd
+from fpsim import defaults as fpd
 
 # %% Housekeeping
 
@@ -89,7 +89,7 @@ def data2interp(data, ages, normalize=False):
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'ethiopia'
+    files['base'] = sc.thisdir(aspath=True) / 'national_data'
     files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
     files['popsize'] = 'popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
@@ -101,17 +101,17 @@ def filenames():
     files['afb'] = 'afb.table.csv'
     files['use'] = 'use.csv'
     files['urban'] = 'urban.csv'
-    #subnational files
-    files['region'] = '/subnational/region.csv' ## From DHS 2016 
-    files['asfr_region'] = '/subnational/asfr_region.csv' ## From DHS 2016
-    files['tfr_region'] = '/subnational/tfr_region.csv' ## From DHS 2016
-    files['methods_region'] = '/subnational/mix_region.csv' ## From DHS 2016
-    files['use_region'] = '/subnational/use_region.csv'  ## From PMA 2019
-    files['barriers_region'] = '/subnational/barriers_region.csv' ## From PMA 2019
-    files['lactational_amenorrhea_region'] = '/subnational/lam_region.csv' ## From DHS 2016
-    files['sexual_activity_region'] = '/subnational/sexual_activity_region.csv' ## From DHS 2016
-    files['sexual_activity_pp_region'] = '/subnational/sexual_activity_pp_region.csv' ## From DHS 2016
-    files['debut_age_region'] = '/subnational/sexual_debut_region.csv' ## From DHS 2016
+    #subnational_data files
+    files['region'] = '/subnational_data/region.csv' ## From DHS 2016
+    files['asfr_region'] = '/subnational_data/asfr_region.csv' ## From DHS 2016
+    files['tfr_region'] = '/subnational_data/tfr_region.csv' ## From DHS 2016
+    files['methods_region'] = '/subnational_data/mix_region.csv' ## From DHS 2016
+    files['use_region'] = '/subnational_data/use_region.csv'  ## From PMA 2019
+    files['barriers_region'] = '/subnational_data/barriers_region.csv' ## From PMA 2019
+    files['lactational_amenorrhea_region'] = '/subnational_data/lam_region.csv' ## From DHS 2016
+    files['sexual_activity_region'] = '/subnational_data/sexual_activity_region.csv' ## From DHS 2016
+    files['sexual_activity_pp_region'] = '/subnational_data/sexual_activity_pp_region.csv' ## From DHS 2016
+    files['debut_age_region'] = '/subnational_data/sexual_debut_region.csv' ## From DHS 2016
     return files
 
 
@@ -147,18 +147,18 @@ def age_pyramid():
 def urban_proportion():
     '''
     Load information about the proportion of people who live in an urban setting
-    Uses 2016 Ethiopia DHS individual recode (v024) ### TO-DO - Add subnational preprocessing data file
+    Uses 2016 Ethiopia DHS individual recode (v024) ### TO-DO - Add subnational_data preprocessing data file
     '''
-    urban_data = pd.read_csv(thisdir / 'ethiopia' / 'urban.csv')
+    urban_data = pd.read_csv(thisdir / 'national_data' / 'urban.csv')
     return urban_data["mean"][0]  # Return this value as a float
 
 
 def region_proportions():
     '''
     Defines the proportion of the population in each region to establish the probability of living in a given region.
-    Uses 2016 Ethiopia DHS individual recode (v025) for region and V024 for urban to produce subnational estimates
+    Uses 2016 Ethiopia DHS individual recode (v025) for region and V024 for urban to produce subnational_data estimates
     '''
-    region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'region.csv')
+    region_data = pd.read_csv(thisdir / 'subnational_data' / 'region.csv')
 
     region_dict = {}
     region_dict['region'] = region_data['region'] # Return region names
@@ -179,8 +179,8 @@ def age_mortality():
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
     data_year = 2020 # Normed TO 2020 based on Ethiopia's Probability Data
-    mortality_data = pd.read_csv(thisdir / 'ethiopia' / 'mortality_prob.csv')
-    mortality_trend = pd.read_csv(thisdir / 'ethiopia' / 'mortality_trend.csv')
+    mortality_data = pd.read_csv(thisdir / 'national_data' / 'mortality_prob.csv')
+    mortality_trend = pd.read_csv(thisdir / 'national_data' / 'mortality_trend.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -429,7 +429,7 @@ def lactational_amenorrhea_region():
     '''
     Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, stratified by region
     '''
-    lam_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'lam_region.csv')
+    lam_region = pd.read_csv(thisdir / 'subnational_data' / 'lam_region.csv')
     lam_dict = {}
     lam_dict['region'] = lam_region['region']  # Return region names
     lam_dict['month'] = lam_region['month']  # Return month postpartum
@@ -467,7 +467,7 @@ def sexual_activity_region():
     '''
     Returns a linear interpolation of rates of female sexual activity, stratified by region
     '''
-    sexually_active_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_activity_region.csv')
+    sexually_active_region_data = pd.read_csv(thisdir / 'subnational_data' / 'sexual_activity_region.csv')
     sexually_active_region_dict = {}
     sexually_active_region_dict['region'] = sexually_active_region_data.iloc[:, 0]  # Return region names
     sexually_active_region_dict['age'] = sexually_active_region_data.iloc[:, 1]   # Return age
@@ -527,7 +527,7 @@ def sexual_activity_pp_region():
     '''
      # Returns an additional array of monthly likelihood of having resumed sexual activity by region
     '''
-    pp_activity_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_activity_pp_region.csv')
+    pp_activity_region = pd.read_csv(thisdir / 'subnational_data' / 'sexual_activity_pp_region.csv')
     pp_activity_region_dict = {}
     pp_activity_region_dict['region'] = pp_activity_region['region'] # Return region names
     pp_activity_region_dict['month'] = pp_activity_region['month'] # Return month postpartum
@@ -585,7 +585,7 @@ def debut_age_region():
     '''
  #   Returns an additional array of weighted probabilities of sexual debut by region
     '''
-    sexual_debut_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_debut_region.csv')
+    sexual_debut_region_data = pd.read_csv(thisdir / 'subnational_data' / 'sexual_debut_region.csv')
     debut_age_region_dict = {}
     debut_age_region_dict['region'] = sexual_debut_region_data['region'] # Return region names
     debut_age_region_dict['age'] = sexual_debut_region_data['age'] # Return month postpartum
@@ -701,7 +701,7 @@ def methods():
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/231/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'ethiopia' / 'cpr.csv')
+    cpr_data = pd.read_csv(thisdir / 'national_data' / 'cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
@@ -882,7 +882,7 @@ def barriers_region():
     '''
     Returns reasons for nonuse by region
     '''
-    reasons_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'barriers_region.csv')
+    reasons_region = pd.read_csv(thisdir / 'subnational_data' / 'barriers_region.csv')
     reasons_region_dict = {}
     reasons_region_dict['region'] = reasons_region['region'] # Return region names
     reasons_region_dict['barrier'] = reasons_region['barrier'] # Return the reason for nonuse

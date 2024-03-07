@@ -40,6 +40,8 @@ import seaborn as sns
 country = 'ethiopia'
 region = 'amhara'
 
+fig_path = f'../{country}/regions/figs/{region}'
+
 # Set options for plotting
 do_plot_sim = True
 do_plot_asfr = False
@@ -47,18 +49,18 @@ do_plot_methods = False
 do_plot_tfr = False
 
 # Set option to save figures
-do_save = 0
+do_save = 1
 
 ####################################################
 
-if do_save == 1 and os.path.exists(f'../{country}/{region}/figs') == False:
-    os.mkdir(f'./{country}/{region}/figs')
+if do_save == 1 and os.path.exists(fig_path) is False:
+    os.makedirs(fig_path, exist_ok=True)
 
 # Import country data files to compare
-data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv')
-data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv')
-data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv')
-use = pd.read_csv(f'../{country}/subnational/use_region.csv') #Dichotomous contraceptive method use
+data_asfr = pd.read_csv(f'../{country}/subnational_data/asfr_region.csv')
+data_methods = pd.read_csv(f'../{country}/subnational_data/mix_region.csv')
+data_tfr = pd.read_csv(f'../{country}/subnational_data/tfr_region.csv')
+use = pd.read_csv(f'../{country}/subnational_data/use_region.csv') #Dichotomous contraceptive method use
 
 
 # Set up global variables
@@ -118,7 +120,7 @@ sim.run()
 
 # Plot results from sim run
 if do_plot_sim:
-    sim.plot(do_save=True, filename=f'../{country}/{region}/figs/fpsim.png')
+    sim.plot(do_save=True, filename=f'{fig_path}/fpsim.png')
 
 # Save results
 res = sim.results
@@ -176,7 +178,7 @@ if do_plot_asfr:
                 sc.boxoff()
 
                 if do_save:
-                    pl.savefig(f'{country}/subnational/figs/asfr_{region}.png')
+                    pl.savefig(f'{fig_path}/asfr_{region}.png')
 
                 pl.show()
 
@@ -210,10 +212,10 @@ if do_plot_methods:
         model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 
         if do_save:
-                if not os.path.exists(f'./{country}/subnational/figs/method_mix/'):
-                        os.mkdir(f'./{country}/subnational/figs/method_mix/')
-                if not os.path.exists(f'./{country}/subnational/figs/method_use/'):
-                        os.mkdir(f'./{country}/subnational/figs/method_use/')
+                if not os.path.exists(f'{fig_path}/method_mix/'):
+                        os.mkdir(f'{fig_path}/method_mix/')
+                if not os.path.exists(f'{fig_path}/method_use/'):
+                        os.mkdir(f'{fig_path}/method_use/')
 
         for region in regions:
                 # Extract from model
@@ -281,7 +283,7 @@ if do_plot_methods:
                 ax.set_xlabel('Percent')
                 ax.set_title(f'{region.capitalize()}: Contraceptive Method Use - Model vs Data')
                 if do_save:
-                        pl.savefig(f"{country}/subnational/figs/method_use/{region}_method_use.png", bbox_inches='tight', dpi=100)
+                        pl.savefig(f"{fig_path}/method_use/{region}_method_use.png", bbox_inches='tight', dpi=100)
 
 
 if do_plot_tfr:
@@ -300,7 +302,7 @@ if do_plot_tfr:
                 pl.legend()
 
                 if do_save:
-                        pl.savefig(f'{country}/subnational/figs/tfr_{region}.png')
+                        pl.savefig(f'{fig_path}/tfr_{region}.png')
 
                 pl.show()
 

@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 from scipy import interpolate as si
-from .. import defaults as fpd
-from .. import utils as fpu
+from fpsim import defaults as fpd
+from fpsim import utils as fpu
 # %% Housekeeping
 
 thisdir = sc.path(sc.thisdir())  # For loading CSV files
@@ -88,7 +88,7 @@ def data2interp(data, ages, normalize=False):
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'kenya'
+    files['base'] = sc.thisdir(aspath=True) / 'national_data'
     files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
     files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
@@ -134,7 +134,7 @@ def age_pyramid():
 
 def urban_proportion():
     """Load information about the proportion of people who live in an urban setting"""
-    urban_data = pd.read_csv(thisdir / 'kenya' / 'urban.csv')
+    urban_data = pd.read_csv(thisdir / 'national_data' / 'urban.csv')
     return urban_data["mean"][0]  # Return this value as a float
 
 
@@ -149,8 +149,8 @@ def age_mortality():
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
     data_year = 2010
-    mortality_data = pd.read_csv(thisdir / 'kenya' / 'mortality_prob.csv')
-    mortality_trend = pd.read_csv(thisdir / 'kenya' / 'mortality_trend.csv')
+    mortality_data = pd.read_csv(thisdir / 'national_data' / 'mortality_prob.csv')
+    mortality_trend = pd.read_csv(thisdir / 'national_data' / 'mortality_trend.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -623,7 +623,7 @@ def methods():
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'kenya' / 'cpr.csv')
+    cpr_data = pd.read_csv(thisdir / 'national_data' / 'cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
@@ -1085,7 +1085,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     from scipy import optimize
 
     # Load empirical data
-    empowerment_data = pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
+    empowerment_data = pd.read_csv(thisdir / 'national_data' / 'empowerment.csv')
     mean_cols = {col: col + '.mean' for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"}
     empowerment_data.rename(columns=mean_cols, inplace=True)
     empowerment_dict = {}
@@ -1131,7 +1131,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
 
 def age_partnership():
     """ Probabilities of being partnered at age X"""
-    age_partnership_data = pd.read_csv(thisdir / 'kenya' / 'age_partnership.csv')
+    age_partnership_data = pd.read_csv(thisdir / 'national_data' / 'age_partnership.csv')
     partnership_dict = {}
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
@@ -1195,9 +1195,9 @@ def education_dropout_probs(df):
 
 def education_distributions():
     # Load empirical data
-    education_data = {"edu_objective": pd.read_csv(thisdir / 'kenya' / 'edu_objective.csv'),
-                      "edu_attainment": pd.read_csv(thisdir / 'kenya' / 'edu_initialization.csv'),
-                      "edu_dropout_probs": pd.read_csv(thisdir / 'kenya' / 'edu_stop.csv')}
+    education_data = {"edu_objective": pd.read_csv(thisdir / 'national_data' / 'edu_objective.csv'),
+                      "edu_attainment": pd.read_csv(thisdir / 'national_data' / 'edu_initialization.csv'),
+                      "edu_dropout_probs": pd.read_csv(thisdir / 'national_data' / 'edu_stop.csv')}
 
     attainment, age = education_attainment(education_data["edu_attainment"])
     education_dict = {"age": age,
