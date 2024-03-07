@@ -93,6 +93,10 @@ class ContraceptiveChoice:
         return ti_contra_update
 
 
+class OldChoice(ContraceptiveChoice):
+    pass
+
+
 class RandomChoice(ContraceptiveChoice):
     """ Randomly choose a method of contraception """
     def __init__(self, **kwargs):

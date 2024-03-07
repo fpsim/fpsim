@@ -106,17 +106,6 @@ class People(fpb.BasePeople):
         urban = fpu.n_binomial(urban_prop, n)
         return urban
 
-    def init_methods(self, contraception_module=None):
-        if contraception_module is not None:
-
-            self.contraception_module = contraception_module
-            self.on_contra = contraception_module.get_contra_users(self)
-            oc = self.filter(self.on_contra)
-            oc.method = contraception_module.choose_method(oc)
-            self.ti_contra_update = contraception_module.set_dur_method(self)
-
-        return
-
     def get_age_sex(self, n):
         """
         For a sample of n ex nihilo people, return arrays of n ages and sexes
@@ -144,31 +133,42 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
+    def init_methods(self, contraception_module=None):
+        if contraception_module is not None:
+
+            self.contraception_module = contraception_module
+            self.on_contra = contraception_module.get_contra_users(self)
+            oc = self.filter(self.on_contra)
+            oc.method = contraception_module.choose_method(oc)
+            self.ti_contra_update = contraception_module.set_dur_method(self)
+
+        return
+
     def update_method(self):
         """ Inputs: filtered people, only includes those for whom it's time to update """
-        ms = self.contraception_module
+        cm = self.contraception_module
 
-        if ms is not None:
+        if cm is not None:
 
             # Non-users will be made to pick a method
             new_users = self.filter(~self.on_contra)
             new_users.on_contra = True
-            new_users.method = ms.choose_method(new_users)
-            ms.set_dur_method(new_users)
+            new_users.method = cm.choose_method(new_users)
+            cm.set_dur_method(new_users)
 
             # Get previous users and see whether they will switch methods or stop using
             prev_users = self.filter(self.on_contra)
-            prev_users.on_contra = ms.get_contra_users(prev_users)
+            prev_users.on_contra = cm.get_contra_users(prev_users)
 
             # For those who keep using, determine their next method and update time
             still_on_contra = prev_users.filter(prev_users.on_contra)
-            still_on_contra.method = ms.choose_method(still_on_contra)
-            ms.set_dur_method(still_on_contra)
+            still_on_contra.method = cm.choose_method(still_on_contra)
+            cm.set_dur_method(still_on_contra)
 
             # For those who stop using, determine when next to update
             stopping_contra = prev_users.filter(~prev_users.on_contra)
             stopping_contra.method = 0
-            ms.set_dur_method(stopping_contra)
+            cm.set_dur_method(stopping_contra)
 
             # Validate
             n_methods = len(self.contraception_module.methods)
@@ -265,8 +265,6 @@ class People(fpb.BasePeople):
         active.months_inactive = 0
         inactive.months_inactive += 1
 
-        inactive_year = self.months_inactive >= 12
-
         return
 
     def check_conception(self):
@@ -289,7 +287,7 @@ class People(fpb.BasePeople):
         method_eff = eff_array[nonlam.method]
         lam_eff = pars['LAM_efficacy']
 
-        # Change to a monthly probability (!warning, not correct!) and set pregnancy probabilities
+        # Change to a monthly probability and set pregnancy probabilities
         lam_probs = fpu.annprob2ts((1 - lam_eff) * preg_eval_lam, pars['timestep'])
         nonlam_probs = fpu.annprob2ts((1 - method_eff) * preg_eval_nonlam, pars['timestep'])
         preg_probs[lam.inds] = lam_probs
@@ -349,6 +347,7 @@ class People(fpb.BasePeople):
         self.postpartum_dur = 0
         self.reset_breastfeeding()  # Stop lactating if becoming pregnant
         self.method = 0  # Not using contraception during pregnancy
+        self.ti_contra_update = self.ti + self.preg_dur  # Set a trigger to update contraceptive choices post delivery
         return
 
     def check_lam(self):
@@ -371,7 +370,9 @@ class People(fpb.BasePeople):
     def update_breastfeeding(self):
         """
         Track breastfeeding, and update time of breastfeeding for individual pregnancy.
-        Agents are randomly assigned a duration value based on a gumbel distribution drawn from the 2018 DHS variable for breastfeeding months. The mean (mu) and the std dev (beta) are both drawn from that distribution in the DHS data.
+        Agents are randomly assigned a duration value based on a gumbel distribution drawn
+        from the 2018 DHS variable for breastfeeding months.
+        The mean (mu) and the std dev (beta) are both drawn from that distribution in the DHS data.
         """
         mu, beta = self.pars['breastfeeding_dur_mu'], self.pars['breastfeeding_dur_beta']
         breastfeed_durs = abs(np.random.gumbel(mu, beta, size=len(self)))
@@ -415,11 +416,11 @@ class People(fpb.BasePeople):
         miscarriage = end_first_tri.binomial(miscarriage_probs, as_filter=True)
 
         # Reset states and track miscarriages
-        all_ppl = self.unfilter()
         miscarriage.pregnant = False
         miscarriage.miscarriage += 1  # Add 1 to number of miscarriages agent has had
         miscarriage.postpartum = False
         miscarriage.gestation = 0  # Reset gestation counter
+        all_ppl = self.unfilter()
         for i in miscarriage.inds:  # Handle adding dates
             all_ppl.miscarriage_dates[i].append(all_ppl.age[i])
         self.step_results['miscarriages'] = len(miscarriage)
@@ -458,6 +459,7 @@ class People(fpb.BasePeople):
         death = self.filter(is_death)
         self.step_results['infant_deaths'] += len(death)
         death.reset_breastfeeding()
+        death.ti_contra_update = self.ti  # Trigger update to contraceptive choices following infant death
         return death
 
     def check_delivery(self):

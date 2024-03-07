@@ -194,15 +194,14 @@ default_pars = {
     'max_age':              99,
 
     # Durations (in months)
-    'switch_frequency':     12,     # How frequently to check for changes to contraception
-    'end_first_tri':        3,
-    'preg_dur_low':         9,
-    'preg_dur_high':        9,
-    'max_lam_dur':          5,      # Duration of lactational amenorrhea
-    'short_int':            24,     # Duration of a short birth interval between live births in months
+    'end_first_tri':        3,      # Months
+    'preg_dur_low':         9,      # Months
+    'preg_dur_high':        9,      # Months
+    'max_lam_dur':          5,      # Duration of lactational amenorrhea (months)
+    'short_int':            24,     # Duration of a short birth interval between live births (months)
     'low_age_short_int':    0,      # age limit for tracking the age-specific short birth interval
     'high_age_short_int':   20,     # age limit for tracking the age-specific short birth interval
-    'postpartum_dur':       35,
+    'postpartum_dur':       35,     # Months
     'breastfeeding_dur_mu': None,   # CONTEXT-SPECIFIC #### - Location parameter of gumbel distribution
     'breastfeeding_dur_beta': None,  # CONTEXT-SPECIFIC #### - Scale parameter of gumbel distribution
 
