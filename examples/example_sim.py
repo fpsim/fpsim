@@ -10,7 +10,7 @@ do_plot = True
 pars = fp.pars(location='senegal')
 pars['n_agents'] = 500 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
-pars['exposure_correction'] = 1.0 # Overall scale factor on probability of becoming pregnant
+pars['exposure_factor'] = 1.0 # Overall scale factor on probability of becoming pregnant
 
 sc.tic()
 sim = fp.Sim(pars=pars)

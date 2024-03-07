@@ -14,7 +14,7 @@ baseline_filename  = sc.thisdir(__file__, 'baseline.json')
 benchmark_filename = sc.thisdir(__file__, 'benchmark.json')
 
 
-def make_exp(n_agents=1000, seed=3, do_run=False, do_plot=False):
+def make_exp(n_agents=1000, seed=1, do_run=False, do_plot=False):
     '''
     Define a default simulation for testing the baseline.
 
@@ -53,14 +53,14 @@ def test_baseline():
     sc.heading('Testing baseline...')
 
     # Load existing baseline
-    old = sc.loadjson(baseline_filename)
+    current = sc.loadjson(baseline_filename)
 
     # Calculate new baseline
     exp = make_exp(do_run=True)
     new = exp.summarize()
 
     # Compute the comparison
-    fp.diff_summaries(old, new, die=True)
+    fp.diff_summaries(current, new, die=True)
 
     return new
 

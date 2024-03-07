@@ -17,8 +17,12 @@ import pylab as pl
 import sciris as sc
 
 
-# Only the class instance is public
-__all__ = ['options']
+# Visible things
+__all__ = ['options', 'INT_NAN']
+
+# An integer value we are treating like NaN, since NaN can't be stored in an integer array.
+# From np.iinfo(np.int32).max: value to use to flag invalid content.
+INT_NAN = 2147483647
 
 
 #%% General settings
@@ -60,7 +64,7 @@ class Options(sc.objdict):
 
         - verbose:        default verbosity for simulations to use
         - style:          the plotting style to use
-        - dpi:            the overall DPI (i.e. size) of the figures
+        - dpi:            the overall DPI (ti.e. size) of the figures
         - font:           the font family/face used for the plots
         - fontsize:       the font size used for the plots
         - interactive:    convenience method to set show, close, and backend
@@ -152,7 +156,7 @@ class Options(sc.objdict):
         optdesc = sc.objdict() # Help for the options
         options = sc.objdict() # The options
 
-        optdesc.verbose = 'Set default level of verbosity (i.e. logging detail): e.g., 0.1 is an update every 10 simulated days'
+        optdesc.verbose = 'Set default level of verbosity (ti.e. logging detail): e.g., 0.1 is an update every 10 simulated days'
         options.verbose = float(os.getenv('FPSIM_VERBOSE', 1))
 
         optdesc.style = 'Set the default plotting style -- options are "fpsim" and "simple" plus those in pl.style.available; see also options.rc'
@@ -173,13 +177,13 @@ class Options(sc.objdict):
         optdesc.jupyter = 'Convenience method to set common settings for Jupyter notebooks: set to "retina" or "widget" (default) to set backend'
         options.jupyter = os.getenv('FPSIM_JUPYTER', False)
 
-        optdesc.show = 'Set whether or not to show figures (i.e. call pl.show() automatically)'
+        optdesc.show = 'Set whether or not to show figures (ti.e. call pl.show() automatically)'
         options.show = int(os.getenv('FPSIM_SHOW', True))
 
-        optdesc.save = 'Set whether or not to save figures (i.e. call pl.savefig() automatically)'
+        optdesc.save = 'Set whether or not to save figures (ti.e. call pl.savefig() automatically)'
         options.save = int(os.getenv('FPSIM_SAVE', False))
 
-        optdesc.close = 'Set whether or not to close figures (i.e. call pl.close() automatically)'
+        optdesc.close = 'Set whether or not to close figures (ti.e. call pl.close() automatically)'
         options.close = int(os.getenv('FPSIM_CLOSE', False))
 
         optdesc.returnfig = 'Set whether or not to return figures from plotting functions'

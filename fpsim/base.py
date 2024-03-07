@@ -13,6 +13,7 @@ obj_set = object.__setattr__
 
 
 __all__ = ['ParsObj', 'BasePeople', 'BaseSim']
+__all__ += ['ndict']
 
 
 class FlexPretty(sc.prettyobj):
@@ -117,8 +118,9 @@ class BasePeople(sc.prettyobj):
     Class for all the people in the simulation.
     '''
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         ''' Initialize essential attributes used for filtering '''
+        super().__init__(*args, **kwargs)
         obj_set(self, '_keys', []) # Since getattribute is overwritten
         obj_set(self, '_inds', None)
         return
@@ -208,10 +210,7 @@ class BasePeople(sc.prettyobj):
                 errormsg = f'Not sure what to do with object of type {type(npval)}'
                 raise TypeError(errormsg)
 
-        # Validate
-        for key in keys:
-            assert len(newpeople[key]) == len(newpeople)
-        newpeople.uid[n_orig:] = max_uid + np.arange(n_new) # Reassign UIDs so they're unique
+        newpeople.uid[n_orig:] = max_uid + np.arange(n_new)  # Reassign UIDs so they're unique
 
         return newpeople
 
@@ -310,7 +309,7 @@ class BasePeople(sc.prettyobj):
         Store indices to allow for easy filtering of the People object.
 
         Args:
-            criteria (array): a boolean array for the filtering critria
+            criteria (bool array): a boolean array for the filtering critria
             inds (array): alternatively, explicitly filter by these indices
 
         Returns:
@@ -553,4 +552,5 @@ class BaseSim(ParsObj):
         Same as get_intervention(), but for analyzers.
         '''
         return self._get_ia('analyzers', label=label, partial=partial, first=first, die=die, as_inds=False, as_list=False)
+
 

@@ -6,6 +6,7 @@ defined by the user by inheriting from these classes.
 import numpy as np
 import sciris as sc
 import pylab as pl
+from . import defaults as fpd
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
@@ -138,8 +139,8 @@ class snapshot(Analyzer):
         save result at snapshot[str(timestep)]
         """
         for t in self.timesteps:
-            if np.isclose(sim.i, t):
-                self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
+            if np.isclose(sim.ti, t):
+                self.snapshots[str(sim.ti)] = sc.dcp(sim.people) # Take snapshot!
         return
 
       
@@ -170,9 +171,9 @@ class education_recorder(Analyzer):
             save result at snapshot[str(timestep)]
             """
             females = sim.people.filter(sim.people.is_female)
-            self.snapshots[str(sim.i)] = {}
+            self.snapshots[str(sim.ti)] = {}
             for key in self.keys:
-                self.snapshots[str(sim.i)][key] = sc.dcp(females[key])  # Take snapshot!
+                self.snapshots[str(sim.ti)][key] = sc.dcp(females[key])  # Take snapshot!
                 self.max_agents = max(self.max_agents, len(females))
             return
 
@@ -351,7 +352,7 @@ class empowerment_recorder(Analyzer):
 
     def __init__(self, bins=None):
         """
-        Initializes self.i/t/y as empty lists and self.data as empty dictionary
+        Initializes self.ti/t/y as empty lists and self.data as empty dictionary
         """
         super().__init__()
         self.bins = bins
@@ -392,13 +393,13 @@ class empowerment_recorder(Analyzer):
                 vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
             else:  # assume float
                 vals = [np.median(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
-            self.data[key][:, sim.i] = vals
+            self.data[key][:, sim.ti] = vals
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
         """
         Plot all keys in self.keys or in to_plot as a heatmaps
         """
-        fig_args  = sc.mergedicts(fig_args)
+        fig_args = sc.mergedicts(fig_args)
         pl_args = sc.mergedicts(pl_args)
         fig = pl.figure(**fig_args)
 
@@ -498,8 +499,8 @@ class age_pyramids(Analyzer):
         self.data[timestep] = list of proportions where index signifies age
         """
         ages = sim.people.age[sc.findinds(sim.people.alive)]
-        self._raw[sim.i, :] = np.histogram(ages, self.bins)[0]
-        self.data[sim.i, :] = self._raw[sim.i, :]/self._raw[sim.i, :].sum()
+        self._raw[sim.ti, :] = np.histogram(ages, self.bins)[0]
+        self.data[sim.ti, :] = self._raw[sim.ti, :]/self._raw[sim.ti, :].sum()
 
     def plot(self):
         """
@@ -521,3 +522,52 @@ class age_pyramids(Analyzer):
         pl.xlabel('Timestep')
         pl.ylabel('Age (years)')
         return fig
+
+
+class track_switching(Analyzer):
+
+    def __init__(self):
+        super().__init__()
+        self.results = sc.objdict()
+
+    def initialize(self, sim):
+        n_methods = len(sim.methods)
+        keys = [
+            'switching_events_annual',
+            'switching_events_postpartum',
+            'switching_events_<18',
+            'switching_events_18-20',
+            'switching_events_21-25',
+            'switching_events_26-35',
+            'switching_events_>35',
+            'switching_events_pp_<18',
+            'switching_events_pp_18-20',
+            'switching_events_pp_21-25',
+            'switching_events_pp_26-35',
+            'switching_events_pp_>35',
+        ]
+        for key in keys:
+            self.results[key] = {}  # CK: TODO: refactor
+            for p in range(sim.npts):
+                self.results[key][p] = np.zeros((n_methods, n_methods), dtype=int)
+
+    def apply(self, sim):
+        # Store results of number of switching events in each age group
+        ti = sim.ti
+        r = sim.results
+        scale = sim['scaled_pop'] / sim['n_agents']
+        switch_events = r.pop('switching')
+        self.results['switching_events_<18'][ti] = scale * r.switching_annual['<18']
+        self.results['switching_events_18-20'][ti] = scale * r.switching_annual['18-20']
+        self.results['switching_events_21-25'][ti] = scale * r.switching_annual['21-25']
+        self.results['switching_events_26-35'][ti] = scale * r.switching_annual['26-35']
+        self.results['switching_events_>35'][ti] = scale * r.switching_annual['>35']
+        self.results['switching_events_pp_<18'][ti] = scale * r.switching_postpartum['<18']
+        self.results['switching_events_pp_18-20'][ti] = scale * r.switching_postpartum['18-20']
+        self.results['switching_events_pp_21-25'][ti] = scale * r.switching_postpartum['21-25']
+        self.results['switching_events_pp_26-35'][ti] = scale * r.switching_postpartum['26-35']
+        self.results['switching_events_pp_>35'][ti] = scale * r.switching_postpartum['>35']
+        self.results['switching_events_annual'][ti] = scale * switch_events['annual']
+        self.results['switching_events_postpartum'][ti] = scale * switch_events['postpartum']
+
+        return

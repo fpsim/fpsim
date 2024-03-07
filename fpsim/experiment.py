@@ -1165,7 +1165,7 @@ def diff_summaries(sim1, sim2, skip_key_diffs=False, output=False, die=False):
             if numeric and old>0:
                 this_diff  = new - old
                 this_ratio = new/old
-                abs_ratio  = max(this_ratio, 1.0/this_ratio)
+                abs_ratio  = max(this_ratio, sc.safedivide(1.0, this_ratio, np.inf))
 
                 # Set the character to use
                 if abs_ratio<small_change:

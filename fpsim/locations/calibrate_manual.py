@@ -6,7 +6,7 @@ PRIOR TO RUNNING:
 save option, and ageparity dataset name)
 
 2. Ensure that fpsim/locations contains both a directory for the country
-being calibrated as well as a corresponding location file (i.e. 'ethiopia.py')
+being calibrated as well as a corresponding location file (ti.e. 'ethiopia.py')
 
 3. In order to run this script, the country data must be stored in the country directory mentioned above and with the
 following naming conventions:
@@ -52,7 +52,7 @@ do_plot_birth_space_afb = True
 # Set option to save figures
 do_save = 1
 
-# Dataset contained in the ageparity csv file to which the model data will be compared (i.e. 'PMA 2022',
+# Dataset contained in the ageparity csv file to which the model data will be compared (ti.e. 'PMA 2022',
 # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_ageparity.csv file, you will receive
 # an error when running the script.
 ageparity_dataset = 'PMA 2019'
