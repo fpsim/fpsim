@@ -62,6 +62,10 @@ class Empowerment:
                     rhs += vval * ppl[vname]
 
             prob_1 = 1 / (1+np.exp(-rhs))
-            ppl[metric] = fpu.binomial_arr(prob_1)
+
+            new_vals = fpu.binomial_arr(prob_1)
+            changers = (new_vals != ppl[metric]).nonzero()[-1]  # People whose empowerment changes
+            ppl.ti_contra_update[changers] = ppl.ti  # Trigger update to contraceptive choices if empowerment changes
+            ppl[metric] = new_vals
 
         return
