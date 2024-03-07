@@ -39,6 +39,7 @@ import seaborn as sns
 # Name of the country being calibrated. To note that this should match the name of the country data folder
 country = 'ethiopia'
 region = 'amhara'
+region = region.capitalize()
 
 # Set options for plotting
 do_plot_sim = True
@@ -55,10 +56,10 @@ if do_save == 1 and os.path.exists(f'../{country}/{region}/figs') == False:
     os.mkdir(f'./{country}/{region}/figs')
 
 # Import country data files to compare
-data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv')
-data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv')
-data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv')
-use = pd.read_csv(f'../{country}/subnational/use_region.csv') #Dichotomous contraceptive method use
+data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv').loc[lambda df: df['region'] == region]
+data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv').loc[lambda df: df['region'] == region]
+data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv').loc[lambda df: df['region'] == region]
+use = pd.read_csv(f'../{country}/subnational/use_region.csv').loc[lambda df: df['region'] == region]
 
 
 # Set up global variables
