@@ -51,6 +51,9 @@ def get_partnership_init_vals(ppl):
 class Education:
     def __init__(self, location=None):
         # Handle location
+        if location is None:
+            print(f'Warning: location for Education module not set - using Kenya as default')
+            location = 'kenya'
         location = location.lower()
         if location == 'kenya':
             education_dict, _ = fplocs.kenya.education_distributions()  # This function returns extrapolated and raw data

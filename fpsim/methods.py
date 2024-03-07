@@ -149,8 +149,7 @@ class EmpoweredChoice(ContraceptiveChoice):
         Given an array of indices, return an array of probabilities that each woman will use contraception.
         Probabilities are a function of:
             - data: age, urban, education, wealth, parity, previous contraceptive use, empowerment metrics
-            - pars: coefficients applied to each of the above - see example csv at
-            https://github.com/fpsim/fpsim/blob/Kenya_empowerment_DHS/fpsim/locations/kenya/contra_coef.csv
+            - pars: coefficients applied to each of the above
         """
         p = self.contra_use_pars
         if inds is None: inds = Ellipsis

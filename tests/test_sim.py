@@ -17,7 +17,7 @@ def test_simple():
     return sim
 
 
-def test_random_methods():
+def test_simple_choice():
     sc.heading('Choose method annually based on age and parity')
     coefficients = sc.objdict(intercept=.1, age=2, parity=3)
     method_choice = fp.SimpleChoice(coefficients)
@@ -27,8 +27,8 @@ def test_random_methods():
     return s
 
 
-def test_methods():
-    sc.heading('Test time on method')
+def test_empowered_choice():
+    sc.heading('Test sim with empowerment')
 
     # Define new modules
     ms = fp.EmpoweredChoice(location='kenya')
@@ -48,5 +48,5 @@ def test_methods():
 if __name__ == '__main__':
 
     s0 = test_simple()
-    s1 = test_random_methods()
-    s2 = test_methods()
+    # s1 = test_simple_choice()
+    # s2 = test_empowered_choice()

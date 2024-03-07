@@ -27,14 +27,14 @@ class People(fpb.BasePeople):
                  contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Initialization
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.pars = pars  # Set parameters
         if n is None:
             n = int(self.pars['n_agents'])
 
         # Time indexing
-        self.ti = 0  # Time index (0,1,2, ...)
+        self.ti = 0     # Time index (0,1,2, ...)
         self.ty = None  # Time in years since beginning of sim (25, 25.1, ...)
         self.y = None   # Year (1975, 1975.1,...)
 
@@ -73,9 +73,6 @@ class People(fpb.BasePeople):
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.personal_fecundity = np.random.random(n) * fac
 
-        # Urban/rural
-        self.init_urban_states()
-
         # Empowerment and education
         self.empowerment_module = empowerment_module
         self.education_module = education_module
@@ -103,16 +100,13 @@ class People(fpb.BasePeople):
 
         return
 
-    def init_urban_states(self):
-        """ Demographics on whether a person lives in a rural or urban setting"""
-        n = len(self)
-        urban = np.ones(n, dtype=bool)
+    def get_urban(self, n):
+        """ Get initial distribution of urban """
 
-        if self.pars['urban_prop'] is not None:
-            urban_prop = self.pars['urban_prop']
-            urban = fpu.n_binomial(urban_prop, n)
+        urban_prop = self.pars['urban_prop']
+        urban = fpu.n_binomial(urban_prop, n)
 
-        self.urban = urban
+        return urban
 
     def init_methods(self, contraception_module=None):
         if contraception_module is not None:
@@ -152,15 +146,6 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
-    def get_urban(self, n):
-        """ Get initial distribution of urban """
-
-        urban = np.ones(n, dtype=bool)
-        urban_prop = self.pars['urban_prop']
-        urban = fpu.n_binomial(urban_prop, n)
-
-        return urban
-
     def update_method(self):
         """ Inputs: filtered people, only includes those for whom it's time to update """
         ms = self.contraception_module
@@ -187,9 +172,10 @@ class People(fpb.BasePeople):
             stopping_contra.method = 0
             ms.set_dur_method(stopping_contra)
 
-            # Validate - TODO, refactor
-            invalid_vals = (self.method > 10) * (self.method < 0)
-            if invalid_vals.any():  # TODO, better validation
+            # Validate
+            n_methods = len(self.contraception_module.methods)
+            invalid_vals = (self.method >= n_methods) * (self.method < 0)
+            if invalid_vals.any():
                 errormsg = f'Invalid method set: ti={self.ti}, inds={invalid_vals.nonzero()[-1]}'
                 raise ValueError(errormsg)
         return
@@ -835,7 +821,7 @@ class People(fpb.BasePeople):
 
     def update(self):
         """
-        Update the person's state for the given timestep.
+        Perform all updates to people on each timestep
         """
 
         self.init_step_results()  # Initialize outputs
@@ -871,7 +857,7 @@ class People(fpb.BasePeople):
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
 
-        methods.update_method()
+        if len(methods): methods.update_method()
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()

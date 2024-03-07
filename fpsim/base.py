@@ -118,8 +118,9 @@ class BasePeople(sc.prettyobj):
     Class for all the people in the simulation.
     '''
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         ''' Initialize essential attributes used for filtering '''
+        super().__init__(*args, **kwargs)
         obj_set(self, '_keys', []) # Since getattribute is overwritten
         obj_set(self, '_inds', None)
         return
