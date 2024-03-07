@@ -402,6 +402,10 @@ class People(fpb.BasePeople):
             self.step_results[key] += len(this_pp_bin)
         pp.postpartum_dur += self.pars['timestep']
 
+        # If agents are 1 or 6 months postpartum, time to reassess contraception choice
+        pp_method_updates = pp.filter(pp.postpartum_dur in [1,6])
+        pp_method_updates.ti_contra_update = self.ti
+
         return
 
     def update_pregnancy(self):
