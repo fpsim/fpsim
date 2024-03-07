@@ -102,10 +102,8 @@ class People(fpb.BasePeople):
 
     def get_urban(self, n):
         """ Get initial distribution of urban """
-
         urban_prop = self.pars['urban_prop']
         urban = fpu.n_binomial(urban_prop, n)
-
         return urban
 
     def init_methods(self, contraception_module=None):
