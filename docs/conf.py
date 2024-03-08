@@ -60,7 +60,7 @@ pygments_style = "sphinx"
 modindex_common_prefix = ["fpsim."]
 
 # List of patterns, relative to source directory, to exclude
-exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints"]
+exclude_patterns = ["_build", "Thumbs.db", ".DS_Store", "**.ipynb_checkpoints", "calibrate_**.py"]
 
 # Suppress certain warnings
 suppress_warnings = ['autosectionlabel.*']
