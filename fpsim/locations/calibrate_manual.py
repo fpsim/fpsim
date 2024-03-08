@@ -50,7 +50,7 @@ do_plot_pop_growth = True
 do_plot_birth_space_afb = True
 
 # Set option to save figures
-do_save = False
+do_save = True
 
 # Dataset contained in the ageparity csv file to which the model data will be compared (i.e. 'PMA 2022',
 # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_ageparity.csv file, you will receive
