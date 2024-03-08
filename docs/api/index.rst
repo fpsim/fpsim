@@ -23,4 +23,6 @@ This page lists FPsim's full API, including all functions and classes.
    fpsim.settings
    fpsim.sim
    fpsim.utils
-   fpsim.locations
+   fpsim.locations.ethiopia
+   fpsim.locations.kenya
+   fpsim.locations.senegal
