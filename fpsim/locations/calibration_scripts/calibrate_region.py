@@ -56,11 +56,10 @@ if do_save == 1 and os.path.exists(f'../{country}/{region}/figs') == False:
     os.mkdir(f'./{country}/{region}/figs')
 
 # Import country data files to compare
-data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv').loc[lambda df: df['region'] == region]
-data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv').loc[lambda df: df['region'] == region]
-data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv').loc[lambda df: df['region'] == region]
-use = pd.read_csv(f'../{country}/subnational/use_region.csv').loc[lambda df: df['region'] == region]
-
+data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv', index_col=0).loc[lambda df: df['region'] == region]
+data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv', index_col=0).loc[lambda df: df['region'] == region]
+data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv', index_col=0).loc[lambda df: df['region'] == region]
+data_use = pd.read_csv(f'../{country}/subnational/use_region.csv', index_col=0).loc[lambda df: df['region'] == region]
 
 # Set up global variables
 age_bin_map = {

@@ -22,8 +22,11 @@ def scalar_pars():
     return scalar_pars
 
 def data2interp(data, ages, normalize=False):
-    interp = eth.data2interp()
-    
+    ''' Convert unevenly spaced data into an even spline interpolation '''
+    model = si.interp1d(data[0], data[1])
+    interp = model(ages)
+    if normalize:
+        interp = np.minimum(1, np.maximum(0, interp))
     return interp
 
 def filenames():
@@ -32,22 +35,41 @@ def filenames():
     return files
 
 # %% Demographics and pregnancy outcome
-
+'''
+Data from 1994 Census Report for Amhara Region
+https://www.statsethiopia.gov.et/wp-content/uploads/2019/06/Population-and-Housing-Census-1994-Amhara-Region.pdf
+'''
 def age_pyramid():
-    pyramid = eth.age_pyramid()
-    
+    pyramid = np.array([[0, 1063425, 1039862], # Amhara 1994 
+                        [5, 1083627, 1072118],
+                        [10, 962649, 885335],
+                        [15, 742766, 740028],
+                        [20, 525138, 564480],
+                        [25, 481007, 531523],
+                        [30, 366492, 420412],
+                        [35, 342041, 367473],
+                        [40, 292577, 309360],
+                        [45, 248468, 211516],
+                        [50, 224383, 236333],
+                        [55, 149310, 120785],
+                        [60, 164406, 154539],
+                        [65, 109904, 78971],
+                        [70, 92528, 80203],
+                        [75, 45471, 31283],
+                        [80, 53354, 42530]
+                        ], dtype=float)    
     return pyramid
 
 def urban_proportion():
     urban_data = eth.urban_proportion()
     
-    return urban_data["mean"][0]  # Return this value as a float
+    return urban_data  # Return this value as a float
 
 def region_proportions():
     '''
     Defines the proportion of the population in the Amhara region to establish the probability of living there.
     '''
-    region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'region.csv')
+    region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'region.csv')
     region_dict = {}
     region_dict['mean'] = region_data.loc[region_data['region'] == 'Amhara']['mean'] #HOLDER FOR NOW. NEED TO CALL ON LOCATION.
     region_dict['urban'] = region_data.loc[region_data['region'] == 'Amhara']['urban']
@@ -100,7 +122,7 @@ def lactational_amenorrhea_region():
     '''
     Returns a dictionary containing the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, specifically for the Amhara region.
     '''
-    lam_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'lam_region.csv')
+    lam_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'lam_region.csv')
     lam_dict = {}
     lam_dict['month'] = lam_region.loc[lam_region['region'] == 'Amhara']['month']
     lam_dict['rate'] = lam_region.loc[lam_region['region'] == 'Amhara']['rate'] 
@@ -119,7 +141,7 @@ def sexual_activity_region(): #NEEDS UPDATING
     '''
     Returns a linear interpolation of rates of female sexual activity, stratified by region
     '''
-    sexually_active_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_activity_region.csv')
+    sexually_active_region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_activity_region.csv')
     sexually_active_region_dict = {}
     sexually_active_region_dict['age'] = sexually_active_region_data.loc[sexually_active_region_data['region']== 'Amhara']['age']   # Return age
     sexually_active_region_dict['perc'] = sexually_active_region_data.loc[sexually_active_region_data['region']== 'Amhara']['perc'] / 100  # Return age
@@ -138,7 +160,7 @@ def sexual_activity_pp_region():
     '''
      # Returns an additional array of monthly likelihood of having resumed sexual activity by region
     '''
-    pp_activity_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_activity_pp_region.csv')
+    pp_activity_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_activity_pp_region.csv')
     pp_activity_region_dict = {}
     pp_activity_region_dict['age'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['age']
     pp_activity_region_dict['perc'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['perc']
@@ -155,7 +177,7 @@ def debut_age_region():
     '''
  #   Returns an additional array of weighted probabilities of sexual debut by region
     '''
-    sexual_debut_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_debut_region.csv')
+    sexual_debut_region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_debut_region.csv')
     debut_age_region_dict = {}
     debut_age_region_dict['age'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['age']
     debut_age_region_dict['prob'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['prob']
@@ -390,7 +412,7 @@ def barriers_region(): #CHECK DATA FILE
     '''
     Returns reasons for nonuse by region
     '''
-    reasons_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'barriers_region.csv')
+    reasons_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'barriers_region.csv')
     reasons_region_dict = {}
     reasons_region_dict['barrier'] = reasons_region.loc(reasons_region['region'] == 'Amhara')['barrier'] # Return the reason for nonuse
     reasons_region_dict['perc'] = reasons_region.loc(reasons_region['region'] == 'Amhara')['perc'] # Return retuned the percentage
