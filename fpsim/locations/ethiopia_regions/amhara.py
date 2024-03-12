@@ -162,7 +162,7 @@ def sexual_activity_pp_region():
     '''
     pp_activity_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_activity_pp_region.csv')
     pp_activity_region_dict = {}
-    pp_activity_region_dict['age'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['age']
+    pp_activity_region_dict['month'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['month']
     pp_activity_region_dict['perc'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['perc']
     
     return pp_activity_region_dict
@@ -414,10 +414,11 @@ def barriers_region(): #CHECK DATA FILE
     '''
     reasons_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'barriers_region.csv')
     reasons_region_dict = {}
-    reasons_region_dict['barrier'] = reasons_region.loc(reasons_region['region'] == 'Amhara')['barrier'] # Return the reason for nonuse
-    reasons_region_dict['perc'] = reasons_region.loc(reasons_region['region'] == 'Amhara')['perc'] # Return retuned the percentage
-    
-    barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
+    reasons_region_dict['barrier'] = reasons_region.loc[reasons_region['region'] == 'Amhara']['barrier'] # Return the reason for nonuse
+    reasons_region_dict['perc'] = reasons_region.loc[reasons_region['region'] == 'Amhara']['perc'] # Return retuned the percentage
+
+    barrier_percentages = reasons_region_dict['perc'].values
+    barrier_percentages[:] /= barrier_percentages[:].sum()  # Ensure it adds to 1
 
     return reasons_region_dict   
 
