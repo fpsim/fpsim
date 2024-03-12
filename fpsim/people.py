@@ -396,15 +396,18 @@ class People(fpb.BasePeople):
         pp_done.postpartum_dur = 0
 
         # Count the state of the agent for postpartum -- # TOOD: refactor, what is this loop doing?
-        pp = self.filter(self.postpartum)
+        postpart = self.filter(self.postpartum)
         for key, (pp_low, pp_high) in fpd.postpartum_map.items():
-            this_pp_bin = pp.filter((pp.postpartum_dur >= pp_low) * (pp.postpartum_dur < pp_high))
+            this_pp_bin = postpart.filter((postpart.postpartum_dur >= pp_low) * (postpart.postpartum_dur < pp_high))
             self.step_results[key] += len(this_pp_bin)
-        pp.postpartum_dur += self.pars['timestep']
+        postpart.postpartum_dur += self.pars['timestep']
 
         # If agents are 1 or 6 months postpartum, time to reassess contraception choice
-        pp_method_updates = pp.filter(pp.postpartum_dur in [1,6])
-        pp_method_updates.ti_contra_update = self.ti
+        if len(postpart):
+            critical_pp = (postpart.postpartum_dur == 1) | (postpart.postpartum_dur == 6)
+            pp_method_updates = postpart.filter(critical_pp)
+            if len(pp_method_updates):
+                pp_method_updates.ti_contra_update = self.ti
 
         return
 
