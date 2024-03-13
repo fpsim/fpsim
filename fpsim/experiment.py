@@ -304,7 +304,6 @@ class Experiment(sc.prettyobj):
         data_spaces = self.load_data('spacing')
         data_spaces = data_spaces.sort_values(by='space_mo')
         spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
-        model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
 
         # Extract birth spaces from model
@@ -347,11 +346,11 @@ class Experiment(sc.prettyobj):
         birth_spacing_cum_weights = np.cumsum(birth_spacing_weights)
         birth_spacing_total_weight = birth_spacing_cum_weights[-1]
 
-        data_spacing_stats = np.array([np.interp((.25 * afb_total_weight), afb_cum_weights, afb_values),
+        data_age_first_stats = np.array([np.interp((.25 * afb_total_weight), afb_cum_weights, afb_values),
                                        np.interp((.50 * afb_total_weight), afb_cum_weights, afb_values),
                                        np.interp((.75 * afb_total_weight), afb_cum_weights, afb_values)])
 
-        data_age_first_stats = np.array([np.interp((.25 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values),
+        data_spacing_stats = np.array([np.interp((.25 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values),
                                        np.interp((.50 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values),
                                        np.interp((.75 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values)])
 
