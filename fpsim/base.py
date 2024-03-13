@@ -174,6 +174,7 @@ class BasePeople(sc.prettyobj):
                 return output
             else:
                 if self._is_filtered(attr):
+
                     output = output[self.inds]
         return output
 
@@ -181,9 +182,19 @@ class BasePeople(sc.prettyobj):
     def __setattr__(self, attr, value):
         ''' Ditto '''
         if self._is_filtered(attr):
-            array = obj_get(self, attr)
-            array[self.inds] = value
-        else:   # If not initialized, rely on the default behavior
+            arr = obj_get(self, attr)
+
+            if arr.ndim == 1:
+                arr[self.inds] = value
+            elif arr.ndim == 2:
+                import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
+
+                arr[self.inds, :] = value
+            else:
+                errormsg = 'Can only operate on 1D or 2D arrays'
+                raise TypeError(errormsg)
+
+        else:   # If not filtered, just set
             obj_set(self, attr, value)
         return
 

@@ -90,7 +90,7 @@ class People(fpb.BasePeople):
         self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
 
         # Store keys
-        self._keys = [state.name for state in fpd.person_defaults.values()]
+        self._keys = [s.name for s in self.states.values()]
 
         # Initialize methods with contraception module if provided
         self.init_methods(contraception_module=contraception_module)
@@ -315,13 +315,15 @@ class People(fpb.BasePeople):
         preg = conceived.filter(~is_abort)
 
         # Update states
-        all_ppl = self.unfilter()
-        abort.postpartum = False
-        abort.abortion += 1  # Add 1 to number of abortions agent has had
-        abort.postpartum_dur = 0
-        for i in abort.inds:  # Handle adding dates
-            all_ppl.abortion_dates[i].append(all_ppl.age[i])
-        self.step_results['abortions'] = len(abort)
+        n_aborts = len(abort)
+        self.step_results['abortions'] = n_aborts
+        if n_aborts:
+            all_ppl = self.unfilter()
+            for cum_aborts in np.unique(abort.abortion):
+                all_ppl.abortion_ages[abort.inds, cum_aborts] = abort.age
+            abort.postpartum = False
+            abort.abortion += 1  # Add 1 to number of abortions agent has had
+            abort.postpartum_dur = 0
 
         # Make selected agents pregnant
         preg.make_pregnant()
@@ -423,14 +425,18 @@ class People(fpb.BasePeople):
         miscarriage = end_first_tri.binomial(miscarriage_probs, as_filter=True)
 
         # Reset states and track miscarriages
-        miscarriage.pregnant = False
-        miscarriage.miscarriage += 1  # Add 1 to number of miscarriages agent has had
-        miscarriage.postpartum = False
-        miscarriage.gestation = 0  # Reset gestation counter
-        all_ppl = self.unfilter()
-        for i in miscarriage.inds:  # Handle adding dates
-            all_ppl.miscarriage_dates[i].append(all_ppl.age[i])
-        self.step_results['miscarriages'] = len(miscarriage)
+        n_miscarriages = len(miscarriage)
+        self.step_results['miscarriages'] = n_miscarriages
+
+        if n_miscarriages:
+            all_ppl = self.unfilter()
+            for cum_miscarriages in np.unique(miscarriage.miscarriage):
+                all_ppl.miscarriage_ages[miscarriage.inds, cum_miscarriages] = miscarriage.age
+            miscarriage.pregnant = False
+            miscarriage.miscarriage += 1  # Add 1 to number of miscarriages agent has had
+            miscarriage.postpartum = False
+            miscarriage.gestation = 0  # Reset gestation counter
+
         return
 
     def reset_breastfeeding(self):
@@ -508,29 +514,29 @@ class People(fpb.BasePeople):
                 self.step_results['stillbirth_ages'] = self.age_by_group
                 self.step_results['as_stillbirths'] = stillbirth_boolean
 
-            # Add dates of live births and stillbirths separately for agent to remember
+            # Record ages of agents when live births / stillbirths occur
             all_ppl = self.unfilter()
             live = deliv.filter(~is_stillborn)
-            short_interval = 0
-            secondary_birth = 0
-            for i in live.inds:  # Handle DOBs
-                all_ppl.dobs[i].append(all_ppl.age[
-                                           i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
-                if len(all_ppl.dobs[i]) == 1:
-                    all_ppl.first_birth_age[i] = all_ppl.age[i]
-                if (len(all_ppl.dobs[i]) > 1) and all_ppl.age[i] >= self.pars['low_age_short_int'] and all_ppl.age[i] < \
-                        self.pars['high_age_short_int']:
-                    secondary_birth += 1
-                    if ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int'] / fpd.mpy)):
-                        all_ppl.short_interval_dates[i].append(all_ppl.age[i])
-                        all_ppl.short_interval[i] += 1
-                        short_interval += 1
+            for parity in np.unique(live.parity):
+                all_ppl.birth_ages[live.inds, parity] = live.age
+                all_ppl.stillborn_ages[stillborn.inds, parity] = stillborn.age
+            all_ppl.first_birth_age[live.inds] = all_ppl.birth_ages[live.inds, 0]
 
-            self.step_results['short_intervals'] += short_interval
-            self.step_results['secondary_births'] += secondary_birth
+            # short_interval = 0
+            # secondary_birth = 0
+            # for i in live.inds:  # Handle DOBs
+            #     if (len(all_ppl.dobs[i]) > 1) and all_ppl.age[i] >= self.pars['low_age_short_int'] and all_ppl.age[i] < \
+            #             self.pars['high_age_short_int']:
+            #         secondary_birth += 1
+            #         if ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int'] / fpd.mpy)):
+            #             all_ppl.short_interval_dates[i].append(all_ppl.age[i])
+            #             all_ppl.short_interval[i] += 1
+            #             short_interval += 1
+            # self.step_results['short_intervals'] += short_interval
+            # self.step_results['secondary_births'] += secondary_birth
 
-            for i in stillborn.inds:  # Handle adding dates
-                all_ppl.still_dates[i].append(all_ppl.age[i])
+            # for i in stillborn.inds:  # Handle adding dates
+            #     all_ppl.still_dates[i].append(all_ppl.age[i])
 
             # Handle twins
             is_twin = live.binomial(self.pars['twins_prob'])
@@ -586,24 +592,25 @@ class People(fpb.BasePeople):
                 for key in live_births_age_split:
                     self.step_results[key] = live_births_age_split[key]
 
-            # TEMP -- update children, need to refactor
-            r = sc.dictobj(**self.step_results)
-            new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
-            children_map = sc.ddict(int)
-            for i in live.inds:
-                children_map[i] += 1
-            for i in twin.inds:
-                children_map[i] += 1
-            for i in i_death.inds:
-                children_map[i] -= 1
+            # # TEMP -- update children, need to refactor
+            # r = sc.dictobj(**self.step_results)
+            # new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
 
-            assert sum(list(children_map.values())) == new_people
-            start_ind = len(all_ppl)
-            for mother, n_children in children_map.items():
-                end_ind = start_ind + n_children
-                children = list(range(start_ind, end_ind))
-                all_ppl.children[mother] += children
-                start_ind = end_ind
+            # children_map = sc.ddict(int)
+            # for i in live.inds:
+            #     children_map[i] += 1
+            # for i in twin.inds:
+            #     children_map[i] += 1
+            # for i in i_death.inds:
+            #     children_map[i] -= 1
+
+            # assert sum(list(children_map.values())) == new_people
+            # start_ind = len(all_ppl)
+            # for mother, n_children in children_map.items():
+            #     end_ind = start_ind + n_children
+            #     children = list(range(start_ind, end_ind))
+            #     all_ppl.children[mother] += children
+            #     start_ind = end_ind
 
         return
 
