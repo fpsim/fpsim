@@ -174,6 +174,7 @@ class BasePeople(sc.prettyobj):
                 return output
             else:
                 if self._is_filtered(attr):
+
                     output = output[self.inds]
         return output
 
@@ -183,7 +184,7 @@ class BasePeople(sc.prettyobj):
         if self._is_filtered(attr):
             array = obj_get(self, attr)
             array[self.inds] = value
-        else:   # If not initialized, rely on the default behavior
+        else:   # If not filtered, just set
             obj_set(self, attr, value)
         return
 
