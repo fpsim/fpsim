@@ -307,15 +307,19 @@ class Experiment(sc.prettyobj):
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
 
-        # Extract age at first birth and birth spaces from model
+        # Extract birth spaces from model
         ppl = self.sim.people
         gt1_birth = ppl.filter(ppl.alive * ~ppl.sex * ppl.parity>1)  # Alive women with >1 birth
         birth_spaces = np.diff(gt1_birth.birth_ages)  # Birth spacings
         defined_vals = ~np.isnan(birth_spaces) * (birth_spaces>0)  # Find NaNs and twins
-        valid_spaces = birth_spaces[defined_vals]  # Remove NaNs and twins
-        model_spacing_counts, _ = np.histogram(valid_spaces, bins=np.append(spacing_bins.values(), 10))  # Bin
+        model_spacing = birth_spaces[defined_vals]  # Remove NaNs and twins
+        model_spacing_counts, _ = np.histogram(model_spacing, bins=np.append(spacing_bins.values(), 10))  # Bin
         model_spacing_counts = model_spacing_counts / model_spacing_counts[:].sum()  # Normalize
         model_spacing_counts[:] *= 100  # Percentages
+
+        # Extract age at first birth from model
+        any_births = ppl.filter(ppl.alive * ~ppl.sex * ppl.parity>0)
+        model_age_first = any_births.birth_ages[:,0]
 
         # Extract birth spaces and age at first birth from data
         for i, j in data_spaces.iterrows():
@@ -370,15 +374,15 @@ class Experiment(sc.prettyobj):
             model_age_first_stats = np.zeros(data_age_first_stats.shape)
 
         # Save arrays to dictionary
-        self.model['spacing_bins'] = np.array(model_spacing_counts.values())
+        self.model['spacing_bins'] = np.array(model_spacing_counts)
         self.model['spacing_stats'] = model_spacing_stats
         self.model['age_first_stats'] = model_age_first_stats
 
         return
 
     def extract_methods(self):
-        data_method_counts = sc.odict().make(self.method_keys, vals=0.0)
-        model_method_counts = sc.dcp(data_method_counts)
+        data_method_counts = sc.odict()
+        model_method_counts = sc.odict()
 
         # Extract from data
         data_methods = self.load_data('methods')
@@ -396,12 +400,12 @@ class Experiment(sc.prettyobj):
             data_method_counts.update({key: value})
 
         # Extract from model
-        ppl = self.people
-        for i in range(len(ppl)):
-            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-                model_method_counts[ppl.method[i]] += 1
-
-        model_method_counts[:] /= model_method_counts[:].sum()
+        ppl = self.sim.people
+        alive_f = ppl.filter(ppl.alive * ~ppl.sex)
+        model_methods = alive_f.method
+        model_method_counts,_ = np.histogram(model_methods, bins=np.arange(11))
+        model_method_counts = model_method_counts/model_method_counts.sum()
+        model_labels = [m.label for m in self.sim.contraception_module.methods.values()]
 
         # Make labels
         data_labels = data_method_counts.keys()
@@ -410,7 +414,6 @@ class Experiment(sc.prettyobj):
                 data_labels[d] = f'{data_labels[d]}: {data_method_counts[d] * 100:0.1f}%'
             else:
                 data_labels[d] = ''
-        model_labels = model_method_counts.keys()
         for d in range(len(model_labels)):
             if model_method_counts[d] > 0.01:
                 model_labels[d] = f'{model_labels[d]}: {model_method_counts[d] * 100:0.1f}%'
@@ -418,7 +421,7 @@ class Experiment(sc.prettyobj):
                 model_labels[d] = ''
 
         self.data['method_counts'] = np.array(data_method_counts.values())
-        self.model['method_counts'] = np.array(model_method_counts.values())
+        self.model['method_counts'] = np.array(model_method_counts)
 
         return
 
@@ -444,11 +447,6 @@ class Experiment(sc.prettyobj):
         if self.flags.ageparity:   self.extract_ageparity()
         if self.flags.birth_space:   self.extract_birth_spacing()
         if self.flags.methods:       self.extract_methods()
-
-        # Remove people, they're large!
-        if not keep_people:
-            del self.people
-
 
         # Compute comparison
         self.df = self.compare()
