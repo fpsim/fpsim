@@ -113,11 +113,6 @@ def fecundity_ratio_nullip():
     
     return fecundity_nullip_interp
 
-def lactational_amenorrhea():
-    lactational_amenorrhea = eth.lactational_amenorrhea()
-    
-    return lactational_amenorrhea
-
 def lactational_amenorrhea_region():
     '''
     Returns a dictionary containing the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, specifically for the Amhara region.
@@ -129,13 +124,13 @@ def lactational_amenorrhea_region():
 
     return lam_dict
 
+def lactational_amenorrhea():
+    lactational_amenorrhea = lactational_amenorrhea_region()
     
-# %% Pregnancy exposure
+    return lactational_amenorrhea
 
-def sexual_activity():
-    activity_interp = eth.sexual_activity()
-    
-    return activity_interp
+
+# %% Pregnancy exposure
 
 def sexual_activity_region(): #NEEDS UPDATING
     '''
@@ -151,8 +146,8 @@ def sexual_activity_region(): #NEEDS UPDATING
     
     return activity_interp_region
 
-def sexual_activity_pp():
-    activity_interp = eth.sexual_activity_pp()
+def sexual_activity():
+    activity_interp = sexual_activity_region()
     
     return activity_interp
 
@@ -167,11 +162,12 @@ def sexual_activity_pp_region():
     
     return pp_activity_region_dict
 
-def debut_age():
-    debut_age = eth.debut_age()
+
+def sexual_activity_pp():
+    activity_interp = sexual_activity_pp_region()
     
-    return debut_age
- 
+    return activity_interp
+
 
 def debut_age_region():
     '''
@@ -183,6 +179,12 @@ def debut_age_region():
     debut_age_region_dict['prob'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['prob']
     
     return debut_age_region_dict
+
+
+def debut_age():
+    debut_age = debut_age_region()
+    return debut_age
+ 
 
 def exposure_age():
     '''
@@ -404,11 +406,7 @@ def method_probs():
 
     return raw
 
-def barriers():
-    barriers = eth.barriers
-    return barriers
-
-def barriers_region(): #CHECK DATA FILE
+def barriers_region():
     '''
     Returns reasons for nonuse by region
     '''
@@ -421,6 +419,10 @@ def barriers_region(): #CHECK DATA FILE
     barrier_percentages[:] /= barrier_percentages[:].sum()  # Ensure it adds to 1
 
     return reasons_region_dict   
+
+def barriers():
+    barriers = barriers_region()
+    return barriers
 
 # %% Make and validate parameters
 
@@ -444,12 +446,12 @@ def make_pars():
     # Fecundity
     pars['age_fecundity'] = female_age_fecundity()
     pars['fecundity_ratio_nullip'] = fecundity_ratio_nullip()
-    pars['lactational_amenorrhea'] = lactational_amenorrhea()
+    pars['lactational_amenorrhea'] = lactational_amenorrhea_region()
 
     # Pregnancy exposure
-    pars['sexual_activity'] = sexual_activity()
-    pars['sexual_activity_pp'] = sexual_activity_pp()
-    pars['debut_age'] = debut_age()
+    pars['sexual_activity'] = sexual_activity_region()
+    pars['sexual_activity_pp'] = sexual_activity_pp_region()
+    pars['debut_age'] = debut_age_region()
     pars['exposure_age'] = exposure_age()
     pars['exposure_parity'] = exposure_parity()
     pars['spacing_pref'] = birth_spacing_pref()
@@ -457,15 +459,15 @@ def make_pars():
     # Contraceptive methods
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
-    pars['barriers'] = barriers()
+    pars['barriers'] = barriers_region
 
     # Regional parameters
     pars['urban_prop'] = urban_proportion()
     pars['region'] = region_proportions() # This function returns extrapolated and raw data
-    pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
-    pars['sexual_activity_region'] = sexual_activity_region()
-    pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
-    pars['debut_age_region'] = debut_age_region()
-    pars['barriers_region'] = barriers_region()
+    #pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
+    #pars['sexual_activity_region'] = sexual_activity_region()
+    #pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
+    #pars['debut_age_region'] = debut_age_region()
+    #pars['barriers_region'] = barriers_region()
 
     return pars
