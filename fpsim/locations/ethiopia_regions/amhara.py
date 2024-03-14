@@ -60,7 +60,7 @@ def age_pyramid():
                         ], dtype=float)    
     return pyramid
 
-def urban_proportion():
+def urban_proportion(): # TODO: Flagging this - currently this is being used for the urban ratio for amhara; I assume you'd want to use the region-specific value?
     urban_data = eth.urban_proportion()
     
     return urban_data  # Return this value as a float
@@ -124,12 +124,6 @@ def lactational_amenorrhea_region():
 
     return lam_dict
 
-def lactational_amenorrhea():
-    lactational_amenorrhea = lactational_amenorrhea_region()
-    
-    return lactational_amenorrhea
-
-
 # %% Pregnancy exposure
 
 def sexual_activity_region(): #NEEDS UPDATING
@@ -146,11 +140,6 @@ def sexual_activity_region(): #NEEDS UPDATING
     
     return activity_interp_region
 
-def sexual_activity():
-    activity_interp = sexual_activity_region()
-    
-    return activity_interp
-
 def sexual_activity_pp_region():
     '''
      # Returns an additional array of monthly likelihood of having resumed sexual activity by region
@@ -158,16 +147,9 @@ def sexual_activity_pp_region():
     pp_activity_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_activity_pp_region.csv')
     pp_activity_region_dict = {}
     pp_activity_region_dict['month'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['month']
-    pp_activity_region_dict['perc'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['perc']
+    pp_activity_region_dict['percent_active'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['perc']
     
     return pp_activity_region_dict
-
-
-def sexual_activity_pp():
-    activity_interp = sexual_activity_pp_region()
-    
-    return activity_interp
-
 
 def debut_age_region():
     '''
@@ -175,16 +157,12 @@ def debut_age_region():
     '''
     sexual_debut_region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_debut_region.csv')
     debut_age_region_dict = {}
-    debut_age_region_dict['ages'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['age']
-    debut_age_region_dict['probs'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['prob']
-    
+    debut_age_region_dict['ages'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['age'].tolist()
+    debut_age_region_dict['ages'] = np.array(debut_age_region_dict['ages'], dtype=np.float64)
+    debut_age_region_dict['probs'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['prob'].tolist()
+    debut_age_region_dict['probs'] = np.array(debut_age_region_dict['probs'], dtype=np.float64)
+
     return debut_age_region_dict
-
-
-def debut_age():
-    debut_age = debut_age_region()
-    return debut_age
- 
 
 def exposure_age():
     '''
@@ -423,10 +401,6 @@ def barriers_region():
     normalized_dict = sc.odict({key: value / perc_total for key, value in reasons_region_dict.items()})   # Ensure the perc value sum to 100
 
     return normalized_dict
-
-def barriers():
-    barriers = barriers_region()
-    return barriers
 
 # %% Make and validate parameters
 
