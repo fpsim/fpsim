@@ -175,8 +175,8 @@ def debut_age_region():
     '''
     sexual_debut_region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_debut_region.csv')
     debut_age_region_dict = {}
-    debut_age_region_dict['age'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['age']
-    debut_age_region_dict['prob'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['prob']
+    debut_age_region_dict['ages'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['age']
+    debut_age_region_dict['probs'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Amhara']['prob']
     
     return debut_age_region_dict
 
@@ -410,15 +410,19 @@ def barriers_region():
     '''
     Returns reasons for nonuse by region
     '''
+
     reasons_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'barriers_region.csv')
     reasons_region_dict = {}
-    reasons_region_dict['barrier'] = reasons_region.loc[reasons_region['region'] == 'Amhara']['barrier'] # Return the reason for nonuse
-    reasons_region_dict['perc'] = reasons_region.loc[reasons_region['region'] == 'Amhara']['perc'] # Return retuned the percentage
+    barriers = reasons_region.loc[reasons_region['region'] == 'Amhara']['barrier'].tolist() # Return the reason for nonuse
+    percs = reasons_region.loc[reasons_region['region'] == 'Amhara']['perc'].tolist() # Return the percentage
 
-    barrier_percentages = reasons_region_dict['perc'].values
-    barrier_percentages[:] /= barrier_percentages[:].sum()  # Ensure it adds to 1
+    for i in range(len(barriers)):
+        reasons_region_dict[barriers[i]] = percs[i]
 
-    return reasons_region_dict   
+    perc_total = sum(reasons_region_dict.values())
+    normalized_dict = sc.odict({key: value / perc_total for key, value in reasons_region_dict.items()})   # Ensure the perc value sum to 100
+
+    return normalized_dict
 
 def barriers():
     barriers = barriers_region()
@@ -459,15 +463,10 @@ def make_pars():
     # Contraceptive methods
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
-    pars['barriers'] = barriers_region
+    pars['barriers'] = barriers_region()
 
     # Regional parameters
     pars['urban_prop'] = urban_proportion()
     pars['region'] = region_proportions() # This function returns extrapolated and raw data
-    #pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
-    #pars['sexual_activity_region'] = sexual_activity_region()
-    #pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
-    #pars['debut_age_region'] = debut_age_region()
-    #pars['barriers_region'] = barriers_region()
 
     return pars
