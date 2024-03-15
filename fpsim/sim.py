@@ -2363,7 +2363,7 @@ class MultiSim(sc.prettyobj):
         Returns:
             msim (MultiSim): a new MultiSim object
 
-        **Examples**:
+        **Examples**::
 
             mm1 = fp.MultiSim.merge(msim1, msim2, base=True)
             mm2 = fp.MultiSim.merge([m1, m2, m3, m4], base=False)
