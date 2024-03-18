@@ -336,7 +336,7 @@ class People(fpb.BasePeople):
         pref = self.pars['spacing_pref'] # Shorten since used a lot
         spacing_bins = pp.postpartum_dur / pref['interval'] # Main calculation -- divide the duration by the interval
         spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int) # Convert to an integer and bound by longest bin
-        probs_pp = self.pars['sexual_activity_pp']['percent_active'][pp.postpartum_dur]
+        probs_pp = self.pars['sexual_activity_pp']['perc'][pp.postpartum_dur]
         probs_pp *= pref['preference'][spacing_bins] # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
 
         # Set non-postpartum probabilities

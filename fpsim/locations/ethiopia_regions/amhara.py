@@ -119,8 +119,11 @@ def lactational_amenorrhea_region():
     '''
     lam_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'lam_region.csv')
     lam_dict = {}
-    lam_dict['month'] = lam_region.loc[lam_region['region'] == 'Amhara']['month']
-    lam_dict['rate'] = lam_region.loc[lam_region['region'] == 'Amhara']['rate'] 
+    lam_dict['month'] = lam_region.loc[lam_region['region'] == 'Amhara']['month'].tolist()
+    lam_dict['month'] = np.array(lam_dict['month'], dtype=np.float64)
+    lam_dict['rate'] = lam_region.loc[lam_region['region'] == 'Amhara']['rate'].tolist()
+    lam_dict['rate'] = np.array(lam_dict['rate'], dtype=np.float64)
+ 
 
     return lam_dict
 
@@ -132,9 +135,11 @@ def sexual_activity_region(): #NEEDS UPDATING
     '''
     sexually_active_region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_activity_region.csv')
     sexually_active_region_dict = {}
-    sexually_active_region_dict['age'] = sexually_active_region_data.loc[sexually_active_region_data['region']== 'Amhara']['age']   # Return age
-    sexually_active_region_dict['perc'] = sexually_active_region_data.loc[sexually_active_region_data['region']== 'Amhara']['perc'] / 100  # Return age
-    
+    sexually_active_region_dict['age'] = sexually_active_region_data.loc[sexually_active_region_data['region']== 'Amhara']['age'].tolist()   # Return age
+    sexually_active_region_dict['age'] = np.array(sexually_active_region_dict['age'], dtype=np.float64)
+    sexually_active_region_dict['perc'] = [x / 100 for x in sexually_active_region_data.loc[sexually_active_region_data['region']== 'Amhara']['perc'].tolist()]
+    sexually_active_region_dict['perc'] = np.array(sexually_active_region_dict['perc'], dtype=np.float64)
+
     activity_interp_model_region = si.interp1d(x=sexually_active_region_dict['age'], y=sexually_active_region_dict['perc'])
     activity_interp_region = activity_interp_model_region(fpd.spline_preg_ages) 
     
@@ -146,8 +151,10 @@ def sexual_activity_pp_region():
     '''
     pp_activity_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_activity_pp_region.csv')
     pp_activity_region_dict = {}
-    pp_activity_region_dict['month'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['month']
-    pp_activity_region_dict['percent_active'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['perc']
+    pp_activity_region_dict['month'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['month'].tolist()
+    pp_activity_region_dict['month'] = np.array(pp_activity_region_dict['month'], dtype=np.float64)
+    pp_activity_region_dict['perc'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['perc'].tolist()
+    pp_activity_region_dict['perc'] = np.array(pp_activity_region_dict['perc'], dtype=np.float64)
     
     return pp_activity_region_dict
 
