@@ -183,3 +183,10 @@ stop.school %>%
   geom_point(aes(y = percent, x = age, color = parity))
 # write.csv(stop.school, "fpsim/locations/kenya/edu_stop.csv", row.names = F)
 
+
+# -- wealth quintile -- #
+table.wealth <- as.data.frame(svytable(~v190, svydes1)) %>%
+  mutate(percent = Freq/sum(Freq)) %>%
+  rename(wealth.quint = v190) %>% select(-Freq)
+# write.csv(table.wealth, "fpsim/locations/kenya/wealth.csv", row.names = F)
+# write.csv(table.wealth, "fpsim/locations/senegal/wealth.csv", row.names = F)
