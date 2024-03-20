@@ -20,6 +20,7 @@ library(withr)
 
 pma.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/Data/PMA"), "/")
 All_data_wide_clpm <- with_dir(pma.path, {read.csv("Kenya/All_data_wide_clpm.csv")})
+All_data_long <- with_dir(pma.path, {read.csv("Kenya/All_data_long.csv")})
 options(survey.lonely.psu="adjust")
 
 data.edit.1 <- All_data_wide_clpm %>%
@@ -41,7 +42,28 @@ filter_data <- data.edit.1 %>%
   filter(!is.na(EA_ID)) 
   # # refuse sex only waves 1 and 3, and no variation, so taking that one out
 
-svydes <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = filter_data, nest = T)
+
+# duplicate dataset to increase sample size... so we have a 1-2 time and 2-3 time
+data.edit.2 <- All_data_long %>%
+  filter(wave != 1) %>% mutate(wave = case_when(wave == 2 ~ 1, wave == 3 ~ 2), time = "b")
+filter_data <- All_data_long %>%
+  filter(wave != 3) %>% mutate(time = "a") %>% bind_rows(data.edit.2) %>% # a for timepoint 1-2
+  # to wide 
+  gather(var, val, -wave, -female_ID, -time) %>% unite("var", c(var, wave)) %>% spread(var, val, convert = T, drop = F, fill = NA) %>%
+  # take out no EA ID
+  mutate(FQweight = ifelse(is.na(FQweight_2), FQweight_1, FQweight_2),
+         strata = ifelse(is.na(strata_2), strata_1, strata_2),
+         EA_ID = ifelse(is.na(EA_ID_2), EA_ID_1, EA_ID_2)) %>%
+  filter(!is.na(EA_ID)) 
+  # refuse sex only waves 1 and 3, and no variation, so taking that one out
+
+filter.data.notpp <- filter_data %>% filter((pp.time_2>6 | is.na(pp.time_2)) & pregnant_2 == 0)
+filter.data.pp1 <- filter_data %>% filter(pp.time_2<2)
+filter.data.pp6 <- filter_data %>% filter(pp.time_2<6)
+
+svydes <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = filter.data.notpp , nest = T)
+svydes.pp1 <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = filter.data.pp1 , nest = T)
+svydes.pp6 <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = filter.data.pp6 , nest = T)
 other.outcomes <- c("paidw_12m", "decide_spending_mine", "buy_decision_health")
       
 # Empowerment
@@ -50,8 +72,11 @@ modellist <- list()
 for (i in other.outcomes) {
   print(i)
   model <- svyglm(as.formula(paste0(i,"_2 ~ current_contra_1 + ",i,"_1  + age_2 + school_2 + live_births_2 + urban_2 + wealthquintile_2")), 
-                  family = quasibinomial(), design = svydes)
-  modellist[[i]] <- model
+                  family = quasibinomial(), 
+                  #design = svydes)
+                  #design = svydes.pp1)
+                  design = svydes.pp6)
+modellist[[i]] <- model
   empower_results[[i]] <- as.data.frame(summary(model)$coefficients) %>% 
     mutate(lhs = i, rhs = rownames(.)) }
 empower_coef <- bind_rows(empower_results)  %>%
@@ -67,11 +92,16 @@ empower_coef <- bind_rows(empower_results)  %>%
                                                                                      gsub("current_contra", "contraception", .))))))))))))
 
 # write.csv(empower_coef, "fpsim/locations/kenya/empower_coef.csv", row.names = F)
+# write.csv(empower_coef, "fpsim/locations/kenya/empower_coef_pp1.csv", row.names = F)
+# write.csv(empower_coef, "fpsim/locations/kenya/empower_coef_pp6.csv", row.names = F)
 
 
 # Contraception
 model <- svyglm(current_contra_2 ~ current_contra_1 + paidw_12m_1 + decide_spending_mine_1 + buy_decision_health_1 + age_2 + school_2 + live_births_2 + urban_2 + wealthquintile_2, 
-                family = quasibinomial(), design = svydes)
+                family = quasibinomial(), 
+                #design = svydes)
+                design = svydes.pp1)
+                #design = svydes.pp6)
 contra_coef <- as.data.frame(summary(model)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
   mutate(rhs = gsub("_3", "", gsub("_2", "_0", 
@@ -84,6 +114,8 @@ contra_coef <- as.data.frame(summary(model)$coefficients) %>%
                                                                       gsub("current_contra", "contraception", rhs))))))))))
 
 # write.csv(contra_coef, "fpsim/locations/kenya/contra_coef.csv", row.names = F)
+# write.csv(contra_coef, "fpsim/locations/kenya/contra_coef_pp1.csv", row.names = F)
+# write.csv(contra_coef, "fpsim/locations/kenya/contra_coef_pp6.csv", row.names = F)
 
 
 # Method choice arrays
