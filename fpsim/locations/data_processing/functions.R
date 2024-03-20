@@ -22,28 +22,39 @@ pma.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/Data/PMA"), "
 All_data_wide_clpm <- with_dir(pma.path, {read.csv("Kenya/All_data_wide_clpm.csv")})
 options(survey.lonely.psu="adjust")
 
-filter_data <- All_data_wide_clpm %>%
-  filter(!is.na(EA_ID)) %>%
-  # refuse sex only waves 1 and 3, so set wave 2 = wave 1 but remember that coefficient is for 2 years prior
-  mutate(wge_sex_eff_tell_no_2 = wge_sex_eff_tell_no_3)
+data.edit.1 <- All_data_wide_clpm %>%
+  # create long verson of data
+  select(-EA_ID, -strata, -FQweight) %>%
+  mutate(id = row_number()) %>%
+  gather(var, val, -id) %>% mutate(wave = as.numeric(str_sub(var, -1)), var = str_sub(var, 1, -3)) %>% spread(var, val, convert = T, drop = F, fill = NA)
+# duplicate dataset to increase sample size... so we have a 1-2 time and 2-3 time
+data.edit.2 <- data.edit.1 %>%
+  filter(wave != 1) %>% mutate(wave = case_when(wave == 2 ~ 1, wave == 3 ~ 2), time = "b") # b for timepoint 2-3
+filter_data <- data.edit.1 %>%
+  filter(wave != 3) %>% mutate(time = "a") %>% bind_rows(data.edit.2) %>% # a for timepoint 1-2
+  # back to wide 
+  gather(var, val, -wave, -id, -time) %>% unite("var", c(var, wave)) %>% spread(var, val, convert = T, drop = F, fill = NA) %>%
+  # take out no EA ID
+  mutate(FQweight = ifelse(is.na(FQweight_2), FQweight_1, FQweight_2),
+         strata = ifelse(is.na(strata_2), strata_1, strata_2),
+         EA_ID = ifelse(is.na(EA_ID_2), EA_ID_1, EA_ID_2)) %>%
+  filter(!is.na(EA_ID)) 
+  # # refuse sex only waves 1 and 3, and no variation, so taking that one out
 
 svydes <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = filter_data, nest = T)
-other.outcomes <- c("paidw_12m", "decide_spending_mine", "buy_decision_health", "wge_sex_eff_tell_no")
+other.outcomes <- c("paidw_12m", "decide_spending_mine", "buy_decision_health")
       
 # Empowerment
 empower_results <- list()
 modellist <- list()
 for (i in other.outcomes) {
   print(i)
-  model <- svyglm(as.formula(paste0(i,"_3 ~ current_contra_2 + ",i,"_2  + age_3 + school_3 + live_births_3 + urban_3 + wealthquintile_3")), 
+  model <- svyglm(as.formula(paste0(i,"_2 ~ current_contra_1 + ",i,"_1  + age_2 + school_2 + live_births_2 + urban_2 + wealthquintile_2")), 
                   family = quasibinomial(), design = svydes)
   modellist[[i]] <- model
   empower_results[[i]] <- as.data.frame(summary(model)$coefficients) %>% 
     mutate(lhs = i, rhs = rownames(.)) }
 empower_coef <- bind_rows(empower_results)  %>%
-  # couldn't converge for sexual autonomy so replace
-  filter(lhs != "wge_sex_eff_tell_no") %>%
-  bind_rows(data.frame(lhs = "wge_sex_eff_tell_no", rhs = unique(empower_results$wge_sex_eff_tell_no$rhs)) %>% mutate(Estimate = ifelse(rhs == "wge_sex_eff_tell_no_2", 1, 0))) %>%
   # rename variables to match model
   mutate(across(c(lhs, rhs), ~gsub("_3", "", gsub("_2", "_0", 
                                                   gsub("school","edu_attainment",
@@ -59,7 +70,7 @@ empower_coef <- bind_rows(empower_results)  %>%
 
 
 # Contraception
-model <- svyglm(current_contra_3 ~ current_contra_2 + paidw_12m_2 + decide_spending_mine_2 + buy_decision_health_2 + wge_sex_eff_tell_no_2 + age_3 + school_3 + live_births_3 + urban_3 + wealthquintile_3, 
+model <- svyglm(current_contra_2 ~ current_contra_1 + paidw_12m_1 + decide_spending_mine_1 + buy_decision_health_1 + age_2 + school_2 + live_births_2 + urban_2 + wealthquintile_2, 
                 family = quasibinomial(), design = svydes)
 contra_coef <- as.data.frame(summary(model)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
@@ -68,12 +79,11 @@ contra_coef <- as.data.frame(summary(model)$coefficients) %>%
                                         gsub("paidw_12m","paid_employment",
                                              gsub("decide_spending_mine","decision_wages",
                                                   gsub("buy_decision_health","decision_health",
-                                                       gsub("wge_sex_eff_tell_no","sexual_autonomy",
                                                             gsub("married","partnered",
                                                                  gsub("live_births", "parity", 
-                                                                      gsub("current_contra", "contraception", rhs)))))))))))
+                                                                      gsub("current_contra", "contraception", rhs))))))))))
 
-write.csv(contra_coef, "fpsim/locations/kenya/contra_coef.csv", row.names = F)
+# write.csv(contra_coef, "fpsim/locations/kenya/contra_coef.csv", row.names = F)
 
 
 # Method choice arrays
