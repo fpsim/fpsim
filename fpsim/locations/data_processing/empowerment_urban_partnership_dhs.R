@@ -16,7 +16,8 @@ library(withr)
 # -- Data -- #
 
 # Kenya 2022 individual recode
-data.raw <- read_dta("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/KEIR8ADT/KEIR8AFL.DTA")
+data.raw <- read_dta("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/KEIR8ADT/KEIR8AFL.DTA") # Kenya
+data.raw <- read_dta("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/SN_2018_ContinuousDHS_10072020_1835_122388/SNIR80DT/SNIR80FL.DTA") # Senegal
 
 # -- Clean data -- #
 
@@ -106,6 +107,7 @@ table.emp.4 %>%
 
 table.urban <- as.data.frame(svymean(~urban, svydes1)) %>% rename(urban.se = urban)
 # write.csv(table.urban, "fpsim/locations/kenya/urban.csv", row.names = F)
+# write.csv(table.urban, "fpsim/locations/senegal/urban.csv", row.names = F)
 
 # -- age at partnership -- #
 
