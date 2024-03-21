@@ -114,7 +114,6 @@ if __name__ == '__main__':
         calibration.calibrate()
 
         sim = fp.Sim(pars=calibration.best_pars)
-        sim = fp.Sim(pars=pars)
         sim.run()
 
         # Plot results from sim run
