@@ -153,8 +153,8 @@ def sexual_activity_pp_region():
     pp_activity_region_dict = {}
     pp_activity_region_dict['month'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['month'].tolist()
     pp_activity_region_dict['month'] = np.array(pp_activity_region_dict['month'], dtype=np.float64)
-    pp_activity_region_dict['perc'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['perc'].tolist()
-    pp_activity_region_dict['perc'] = np.array(pp_activity_region_dict['perc'], dtype=np.float64)
+    pp_activity_region_dict['percent_active'] = pp_activity_region.loc[pp_activity_region['region'] == 'Amhara']['perc'].tolist()
+    pp_activity_region_dict['percent_active'] = np.array(pp_activity_region_dict['percent_active'], dtype=np.float64)
     
     return pp_activity_region_dict
 
