@@ -82,15 +82,18 @@ if __name__ == '__main__':
 
         # Set up sim for country
         pars = fp.pars(location=region)
-        pars['n_agents'] = 100_000 # Small population size
+        pars['n_agents'] = 1_000 # Small population size
         pars['end_year'] = 2016 # 1961 - 2020 is the normal date range
 
         # Free parameters for calibration
-        pars['fecundity_var_low'] = 0.7
-        pars['fecundity_var_high'] = 1.1
-        pars['exposure_factor'] = 1
-        pars['high_parity'] = 4
-        pars['high_parity_nonuse'] = 0.6
+        # Free parameters for calibration
+        freepars = dict(
+                fecundity_var_low = [0.95, 0.925, 0.975],
+                fecundity_var_high = [1.05, 1.025, 1.075],
+                exposure_factor = [1.0, 0.95, 1.0],
+                high_parity = [1.0, 0.95, 1.0],
+                high_parity_nonuse = [1.0, 0.95, 1.0]
+        )
         # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
 
         # Last free parameter, postpartum sexual activity correction or 'birth spacing preferece'
@@ -107,10 +110,10 @@ if __name__ == '__main__':
         data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv').loc[lambda df: df['region'] == region]
         data_use = pd.read_csv(f'../{country}/subnational/use_region.csv').loc[lambda df: (df['region'] == region) & (df['year'] == pars['end_year'])]
 
-        #calibration = fp.Calibration(pars, calib_pars=freepars)
-        #calibration.calibrate()
+        calibration = fp.Calibration(pars, calib_pars=freepars)
+        calibration.calibrate()
 
-        #sim = fp.Sim(pars=calibration.best_pars)
+        sim = fp.Sim(pars=calibration.best_pars)
         sim = fp.Sim(pars=pars)
         sim.run()
 
