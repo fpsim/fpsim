@@ -23,26 +23,6 @@ All_data_wide_clpm <- with_dir(pma.path, {read.csv("Kenya/All_data_wide_clpm.csv
 All_data_long <- with_dir(pma.path, {read.csv("Kenya/All_data_long.csv")})
 options(survey.lonely.psu="adjust")
 
-data.edit.1 <- All_data_wide_clpm %>%
-  # create long verson of data
-  select(-EA_ID, -strata, -FQweight) %>%
-  mutate(id = row_number()) %>%
-  gather(var, val, -id) %>% mutate(wave = as.numeric(str_sub(var, -1)), var = str_sub(var, 1, -3)) %>% spread(var, val, convert = T, drop = F, fill = NA)
-# duplicate dataset to increase sample size... so we have a 1-2 time and 2-3 time
-data.edit.2 <- data.edit.1 %>%
-  filter(wave != 1) %>% mutate(wave = case_when(wave == 2 ~ 1, wave == 3 ~ 2), time = "b") # b for timepoint 2-3
-filter_data <- data.edit.1 %>%
-  filter(wave != 3) %>% mutate(time = "a") %>% bind_rows(data.edit.2) %>% # a for timepoint 1-2
-  # back to wide 
-  gather(var, val, -wave, -id, -time) %>% unite("var", c(var, wave)) %>% spread(var, val, convert = T, drop = F, fill = NA) %>%
-  # take out no EA ID
-  mutate(FQweight = ifelse(is.na(FQweight_2), FQweight_1, FQweight_2),
-         strata = ifelse(is.na(strata_2), strata_1, strata_2),
-         EA_ID = ifelse(is.na(EA_ID_2), EA_ID_1, EA_ID_2)) %>%
-  filter(!is.na(EA_ID)) 
-  # # refuse sex only waves 1 and 3, and no variation, so taking that one out
-
-
 # duplicate dataset to increase sample size... so we have a 1-2 time and 2-3 time
 data.edit.2 <- All_data_long %>%
   filter(wave != 1) %>% mutate(wave = case_when(wave == 2 ~ 1, wave == 3 ~ 2), time = "b")
@@ -126,6 +106,8 @@ data <- data.raw %>%
   mutate(wt = v005/1000000,
          age = as.numeric(v012), 
          parity=as.numeric(v220),
+         pp.1 = str_detect(substr(str_squish(vcal_1), 1, 2), "B"), # postpartum in past 6 months
+         pp.6 = str_detect(substr(str_squish(vcal_1), 1, 7), "B"), # postpartum in past 6 months
          age_grp = case_when(age <= 18 ~ "<18",                                          
                              age > 18 & age <= 20 ~ "18-20",
                              age > 20 & age <= 25 ~ "20-25",
@@ -140,17 +122,29 @@ data <- data.raw %>%
                             T ~ v312),
                          levels = c(1,2,3,5,6,9,10,11,17),
                          labels = c("Pill", "IUD", "Injectable", "Condom", "F.sterilization", "Withdrawal", "Other.trad", "Implant", "Other.mod"))) 
+data.notpp <- data %>% filter(pp.1 == F & pp.6 == F)
+data.pp1 <- data %>% filter(pp.1)
+data.pp6 <- data %>% filter(pp.6)
 
-svydes1 <- svydesign(id = ~v001, strata= ~v023, weights = ~wt, data=data, nest = T)
-methods <- as.data.frame(svytable(~method+age_grp+parity, svydes1)) %>%
+svydes1 <- svydesign(id = ~v001, strata= ~v023, weights = ~wt, data=data.notpp, nest = T)
+svydes1.pp1 <- svydesign(id = ~v001, strata= ~v023, weights = ~wt, data=data.pp1, nest = T)
+svydes1.pp6 <- svydesign(id = ~v001, strata= ~v023, weights = ~wt, data=data.pp6, nest = T)
+methods.notpp <- as.data.frame(svytable(~method+age_grp+parity, svydes1)) %>%
   group_by(age_grp, parity) %>% mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
 # write.csv(methods, "fpsim/locations/kenya/method_mix.csv", row.names = F)
+# not enough pp women so have to combne age parity groups
+methods.pp1 <- as.data.frame(svytable(~method, svydes1.pp1)) %>% mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
+# write.csv(methods.pp1, "fpsim/locations/kenya/method_mix_pp1.csv", row.names = F)
+methods.pp6 <- as.data.frame(svytable(~method, svydes1.pp6)) %>% mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
+# write.csv(methods.pp1, "fpsim/locations/kenya/method_mix_pp1.csv", row.names = F)
 
 methods %>%
 ggplot()+
   geom_line(aes(y = percent, x = method, group = parity, color = parity)) +
   facet_wrap(~age_grp)
 
-
+methods.pp1 %>%
+  ggplot()+
+  geom_point(aes(y = percent, x = method))
 
 
