@@ -13,6 +13,8 @@ obj_set = object.__setattr__
 
 
 __all__ = ['ParsObj', 'BasePeople', 'BaseSim']
+__all__ += ['ndict']
+
 
 
 class FlexPretty(sc.prettyobj):
@@ -208,10 +210,7 @@ class BasePeople(sc.prettyobj):
                 errormsg = f'Not sure what to do with object of type {type(npval)}'
                 raise TypeError(errormsg)
 
-        # Validate
-        for key in keys:
-            assert len(newpeople[key]) == len(newpeople)
-        newpeople.uid[n_orig:] = max_uid + np.arange(n_new) # Reassign UIDs so they're unique
+        newpeople.uid[n_orig:] = max_uid + np.arange(n_new)  # Reassign UIDs so they're unique
 
         return newpeople
 
@@ -310,7 +309,7 @@ class BasePeople(sc.prettyobj):
         Store indices to allow for easy filtering of the People object.
 
         Args:
-            criteria (array): a boolean array for the filtering critria
+            criteria (bool array): a boolean array for the filtering critria
             inds (array): alternatively, explicitly filter by these indices
 
         Returns:
@@ -321,7 +320,7 @@ class BasePeople(sc.prettyobj):
         # Create a new People object with the same properties as the original
         filtered = object.__new__(self.__class__) # Create a new People instance
         BasePeople.__init__(filtered) # Perform essential initialization
-        filtered.__dict__ = self.__dict__.copy() # Copy pointers to the arrays in People
+        filtered.__dict__ = sc.cp(self.__dict__) # Copy pointers to the arrays in People
 
         # Perform the filtering
         if criteria is None: # No filtering: reset
@@ -554,3 +553,96 @@ class BaseSim(ParsObj):
         '''
         return self._get_ia('analyzers', label=label, partial=partial, first=first, die=die, as_inds=False, as_list=False)
 
+
+class ndict(sc.objdict):
+    """
+    A dictionary-like class that provides additional functionalities for handling named items.
+
+    Args:
+        name (str): The items' attribute to use as keys.
+        type (type): The expected type of items.
+        strict (bool): If True, only items with the specified attribute will be accepted.
+        duplicates (bool): If True, it accepts duplicated keys an renames the using enumeration. Default: False.
+
+    **Examples**::
+
+        networks = ss.ndict(ss.mf(), ss.maternal())
+        networks = ss.ndict([ss.mf(), ss.maternal()])
+        networks = ss.ndict({'mf':ss.mf(), 'maternal':ss.maternal()})
+
+    """
+
+    def __init__(self, *args, name='name', type=None, strict=True, **kwargs):
+        self.setattribute('_name', name)  # Since otherwise treated as keys
+        self.setattribute('_type', type)
+        self.setattribute('_strict', strict)
+
+        self._initialize(*args, **kwargs)
+        return
+
+    def append(self, arg, key=None):
+        valid = False
+        if arg is None:
+            return  # Nothing to do
+        elif hasattr(arg, self._name):
+            key = key or getattr(arg, self._name)
+            valid = True
+        elif isinstance(arg, dict):
+            if self._name in arg:
+                key = key or arg[self._name]
+                valid = True
+            else:
+                for k, v in arg.items():
+                    self.append(v, key=k)
+                valid = None  # Skip final processing
+        elif not self._strict:
+            key = key or f'item{len(self) + 1}'
+            valid = True
+        else:
+            valid = False
+
+        if valid is True:
+            self._check_type(arg)
+            # Check if this key already exists
+            if key in self:
+                raise fpu.DuplicateNameException(self[key])
+            self[key] = arg
+        elif valid is None:
+            pass  # Nothing to do
+        else:
+            errormsg = f'Could not interpret argument {arg}: does not have expected attribute "{self._name}"'
+            raise ValueError(errormsg)
+
+        return
+
+    def _check_type(self, arg):
+        """ Check types """
+        if self._type is not None:
+            if not isinstance(arg, self._type):
+                errormsg = f'The following item does not have the expected type {self._type}:\n{arg}'
+                raise TypeError(errormsg)
+        return
+
+    def _initialize(self, *args, **kwargs):
+        args = sc.mergelists(*args)
+        for arg in args:
+            self.append(arg)
+        for key, arg in kwargs.items():
+            self.append(arg, key=key)
+        return
+
+    def copy(self):
+        new = self.__class__.__new__(name=self._name, type=self._type, strict=self._strict)
+        new.update(self)
+        return new
+
+    def __add__(self, dict2):
+        """ Allow c = a + b """
+        new = self.copy()
+        new.append(dict2)
+        return new
+
+    def __iadd__(self, dict2):
+        """ Allow a += b """
+        self.append(dict2)
+        return self

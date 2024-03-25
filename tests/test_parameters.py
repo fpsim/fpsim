@@ -20,7 +20,7 @@ def ok(string):
 def test_null(do_plot=do_plot):
     sc.heading('Testing no births, no deaths...')
 
-    pars = fp.pars('test') # For default pars
+    pars = fp.pars('test')  # For default pars
 
     # Set things to zero
     for key in ['exposure_factor', 'high_parity_nonuse']:
@@ -87,7 +87,7 @@ def test_mcpr_growth():
     s1 = msim.sims[0]
     s2 = msim.sims[1]
 
-    mcpr_last = pars1['methods']['mcpr_rates'][-1] # Last MCPR data point
+    mcpr_last = pars1['methods']['mcpr_rates'][-1]  # Last MCPR data point
     decreasing = s1.results['mcpr'][-1]
     increasing = s2.results['mcpr'][-1]
 
