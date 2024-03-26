@@ -22,10 +22,11 @@ import sciris as sc
 import json
 
 # ISO2 COUNTRY CODES FOR REFERENCE
-# Senegal ID = SN
+# Senegal = SN
 # Kenya = KE
 # Ethiopia = ET
-# India ID = IN
+# India = IN
+# Nigeria = NG
 
 # Country name and location id(s) (per UN Data Portal); User must update these two variables prior to running.
 country = 'ethiopia'
