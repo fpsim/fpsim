@@ -44,17 +44,21 @@ fig_path = f'../{country}/regions/figs/{region}'
 
 # Set options for plotting
 do_plot_sim = True
-do_plot_asfr = False
-do_plot_methods = False
-do_plot_tfr = False
+do_plot_asfr = True
+do_plot_methods = True
+do_plot_tfr = True
 
 # Set option to save figures
 do_save = 1
 
 ####################################################
 
-if do_save == 1 and os.path.exists(fig_path) is False:
-    os.makedirs(fig_path, exist_ok=True)
+cwd = os.path.dirname(os.path.abspath(__file__))
+region_dir = os.path.abspath(os.path.join(cwd, country, region))
+figs_dir = os.path.join(region_dir, 'figs')
+
+if do_save == 1 and not os.path.exists(figs_dir):
+    os.makedirs(figs_dir, exist_ok=True)
 
 # Import country data files to compare
 data_asfr = pd.read_csv(f'../{country}/subnational_data/asfr_region.csv')
@@ -85,7 +89,7 @@ sc.tic()
 
 # Set up sim for country
 pars = fp.pars(location=region)
-pars['n_agents'] = 1_000 # Small population size
+pars['n_agents'] = 10_000 # Small population size
 pars['end_year'] = 2016 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -120,7 +124,7 @@ sim.run()
 
 # Plot results from sim run
 if do_plot_sim:
-    sim.plot(do_save=True, filename=f'{fig_path}/fpsim.png')
+    sim.plot(do_save=True, filename=os.path.join(figs_dir, "fpsim.png"))
 
 # Save results
 res = sim.results
@@ -150,37 +154,36 @@ if do_plot_asfr:
         regions = data_by_year['region']
 
         # For each region in country, plot model vs comparison data
-        for region in regions:
-                # Extract asfr values for each region
-                reg_asfr_data = data_by_year[data_by_year['region'] == region]
-                asfr_data = reg_asfr_data.drop(['year', 'region'], axis=1).values.tolist()[0]
+        # Extract asfr values for each region
+        reg_asfr_data = data_by_year[data_by_year['region'] == region]
+        asfr_data = reg_asfr_data.drop(['year', 'region'], axis=1).values.tolist()[0]
 
-                x_labels = []
-                asfr_model = []
+        x_labels = []
+        asfr_model = []
 
-                # Extract from model
-                for key in age_bin_map.keys():
-                        x_labels.append(key)
-                        # TODO: need to add to asfr ability to see asfr by region
-                        asfr_model.append(res['asfr'][key][-1])
+        # Extract from model
+        for key in age_bin_map.keys():
+                x_labels.append(key)
+                # TODO: need to add to asfr ability to see asfr by region
+                asfr_model.append(res['asfr'][key][-1])
 
-                # Plot
-                fig, ax = pl.subplots()
-                kw = dict(lw=3, alpha=0.7, markersize=10)
-                ax.plot(x, asfr_data, marker='^', color='black', label="UN data", **kw)
-                ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
-                pl.xticks(x, x_labels)
-                pl.ylim(bottom=-10)
-                ax.set_title(f'{region.capitalize()}: Age specific fertility rate per 1000 woman years')
-                ax.set_xlabel('Age')
-                ax.set_ylabel('ASFR in 2019')
-                ax.legend(frameon=False)
-                sc.boxoff()
+        # Plot
+        fig, ax = pl.subplots()
+        kw = dict(lw=3, alpha=0.7, markersize=10)
+        ax.plot(x, asfr_data, marker='^', color='black', label="UN data", **kw)
+        ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
+        pl.xticks(x, x_labels)
+        pl.ylim(bottom=-10)
+        ax.set_title(f'{region.capitalize()}: Age specific fertility rate per 1000 woman years')
+        ax.set_xlabel('Age')
+        ax.set_ylabel('ASFR in 2019')
+        ax.legend(frameon=False)
+        sc.boxoff()
 
-                if do_save:
-                    pl.savefig(f'{fig_path}/asfr_{region}.png')
+        if do_save:
+            pl.savefig(os.path.join(figs_dir, f"asfr.png"))
 
-                pl.show()
+        pl.show()
 
 if do_plot_methods:
         '''
@@ -211,100 +214,92 @@ if do_plot_methods:
 
         model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 
+        # Extract from model
+        for i in range(len(ppl)):
+                if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age and ppl.region[i]==region:
+                        model_method_counts[ppl.method[i]] += 1
+
+        model_method_counts[:] /= model_method_counts[:].sum()
+
+        region_methods = data_methods[(data_methods['year'] == pars['end_year']) & (data_methods['region'] == region)]
+        # Method mix from data - regional DHS data (mix_region.csv)
+        data_methods_mix = {
+                'Withdrawal': region_methods.loc[region_methods['method'] == 'Withdrawal', 'perc'].iloc[0],
+                'Other traditional': region_methods.loc[region_methods['method'] == 'Other traditional', 'perc'].iloc[0],
+                'Condoms': region_methods.loc[region_methods['method'] == 'Condoms', 'perc'].iloc[0],
+                'Pill': region_methods.loc[region_methods['method'] == 'Pill', 'perc'].iloc[0],
+                'Injectables': region_methods.loc[region_methods['method'] == 'Injectables', 'perc'].iloc[0],
+                'Implants': region_methods.loc[region_methods['method'] == 'Implants', 'perc'].iloc[0],
+                'IUDs': region_methods.loc[region_methods['method'] == 'IUDs', 'perc'].iloc[0],
+                'BTL': region_methods.loc[region_methods['method'] == 'BTL', 'perc'].iloc[0],
+                'Other modern': region_methods.loc[region_methods['method'] == 'Other modern', 'perc'].iloc[0]
+        }
+
+        # Method use from data - regional DHS data (use_region.csv)
+        no_use = use.loc[(use['year'] == pars['end_year']) & (use['region'] == region) & (use['var1'] == 0), 'perc'].iloc[0]
+        any_method = use.loc[(use['year'] == pars['end_year']) & (use['region'] == region) & (use['var1'] == 1), 'perc'].iloc[0]
+        data_methods_use = {
+                'No use': no_use,
+                'Any method': any_method
+        }
+
+        # Plot bar charts of method mix and use among users
+
+        # Calculate users vs non-users in model
+        model_methods_mix = sc.dcp(model_method_counts)
+        model_use = [model_methods_mix['None'], model_methods_mix[1:].sum()]
+        model_use_percent = [i * 100 for i in model_use]
+
+        # Calculate mix within users in model
+        model_methods_mix['None'] = 0.0
+        model_users_sum = model_methods_mix[:].sum()
+        model_methods_mix[:] /= model_users_sum
+        mix_model = model_methods_mix.values()[1:]
+        mix_percent_model = [i * 100 for i in mix_model]
+
+        # Set method use and mix from data
+        data_use_percent = list(data_methods_use.values())
+        mix_percent_data = (list(data_methods_mix.values()) / any_method)*100
+
+
+        # Set up plotting
+        use_labels = list(data_methods_use.keys())
+        df_mix = pd.DataFrame({'DHS': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
+        df_use = pd.DataFrame({'DHS': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
+
+        # Plot mix
+        ax = df_mix.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
+        ax.set_xlabel('Percent users')
+        ax.set_title(f'{region.capitalize()}: Contraceptive Method Mix - Model vs Data')
         if do_save:
-                if not os.path.exists(f'{fig_path}/method_mix/'):
-                        os.mkdir(f'{fig_path}/method_mix/')
-                if not os.path.exists(f'{fig_path}/method_use/'):
-                        os.mkdir(f'{fig_path}/method_use/')
+                pl.savefig(f"{figs_dir}/method_mix.png", bbox_inches='tight', dpi=100)
 
-        for region in regions:
-                # Extract from model
-                for i in range(len(ppl)):
-                        if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age and ppl.region[i]==region:
-                                model_method_counts[ppl.method[i]] += 1
-
-                model_method_counts[:] /= model_method_counts[:].sum()
-
-                region_methods = data_methods[(data_methods['year'] == pars['end_year']) & (data_methods['region'] == region)]
-                # Method mix from data - regional DHS data (mix_region.csv)
-                data_methods_mix = {
-                        'Withdrawal': region_methods.loc[region_methods['method'] == 'Withdrawal', 'perc'].iloc[0],
-                        'Other traditional': region_methods.loc[region_methods['method'] == 'Other traditional', 'perc'].iloc[0],
-                        'Condoms': region_methods.loc[region_methods['method'] == 'Condoms', 'perc'].iloc[0],
-                        'Pill': region_methods.loc[region_methods['method'] == 'Pill', 'perc'].iloc[0],
-                        'Injectables': region_methods.loc[region_methods['method'] == 'Injectables', 'perc'].iloc[0],
-                        'Implants': region_methods.loc[region_methods['method'] == 'Implants', 'perc'].iloc[0],
-                        'IUDs': region_methods.loc[region_methods['method'] == 'IUDs', 'perc'].iloc[0],
-                        'BTL': region_methods.loc[region_methods['method'] == 'BTL', 'perc'].iloc[0],
-                        'Other modern': region_methods.loc[region_methods['method'] == 'Other modern', 'perc'].iloc[0]
-                }
-
-                # Method use from data - regional DHS data (use_region.csv)
-                no_use = use.loc[(use['year'] == pars['end_year']) & (use['region'] == region) & (use['var1'] == 0), 'perc'].iloc[0]
-                any_method = use.loc[(use['year'] == pars['end_year']) & (use['region'] == region) & (use['var1'] == 1), 'perc'].iloc[0]
-                data_methods_use = {
-                        'No use': no_use,
-                        'Any method': any_method
-                }
-
-                # Plot bar charts of method mix and use among users
-
-                # Calculate users vs non-users in model
-                model_methods_mix = sc.dcp(model_method_counts)
-                model_use = [model_methods_mix['None'], model_methods_mix[1:].sum()]
-                model_use_percent = [i * 100 for i in model_use]
-
-                # Calculate mix within users in model
-                model_methods_mix['None'] = 0.0
-                model_users_sum = model_methods_mix[:].sum()
-                model_methods_mix[:] /= model_users_sum
-                mix_model = model_methods_mix.values()[1:]
-                mix_percent_model = [i * 100 for i in mix_model]
-
-                # Set method use and mix from data
-                data_use_percent = list(data_methods_use.values())
-                mix_percent_data = (list(data_methods_mix.values()) / any_method)*100
-
-
-                # Set up plotting
-                use_labels = list(data_methods_use.keys())
-                df_mix = pd.DataFrame({'DHS': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
-                df_use = pd.DataFrame({'DHS': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
-
-                # Plot mix
-                ax = df_mix.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
-                ax.set_xlabel('Percent users')
-                ax.set_title(f'{region.capitalize()}: Contraceptive Method Mix - Model vs Data')
-                if do_save:
-                        pl.savefig(f"{country}/subnational/figs/method_mix/{region}_method_mix.png", bbox_inches='tight', dpi=100)
-
-                # Plot use
-                ax = df_use.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
-                ax.set_xlabel('Percent')
-                ax.set_title(f'{region.capitalize()}: Contraceptive Method Use - Model vs Data')
-                if do_save:
-                        pl.savefig(f"{fig_path}/method_use/{region}_method_use.png", bbox_inches='tight', dpi=100)
+        # Plot use
+        ax = df_use.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
+        ax.set_xlabel('Percent')
+        ax.set_title(f'{region.capitalize()}: Contraceptive Method Use - Model vs Data')
+        if do_save:
+                pl.savefig(f"{figs_dir}/method_use.png", bbox_inches='tight', dpi=100)
 
 
 if do_plot_tfr:
         '''
         Plot total fertility rate for model vs data
         '''
-        for region in regions:
-                region_data_tfr = data_tfr[data_tfr['region'] == region]
-                # Plot
-                pl.plot(region_data_tfr['year'], region_data_tfr['tfr'], label='World Bank', color='black')
-                # TODO: Need to update sim.results to include regional tfr rates
-                pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
-                pl.xlabel('Year')
-                pl.ylabel('Rate')
-                pl.title(f'{region.capitalize()}: Total Fertility Rate - Model vs Data')
-                pl.legend()
+        region_data_tfr = data_tfr[data_tfr['region'] == region]
+        # Plot
+        pl.plot(region_data_tfr['year'], region_data_tfr['tfr'], label='World Bank', color='black')
+        # TODO: Need to update sim.results to include regional tfr rates
+        pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
+        pl.xlabel('Year')
+        pl.ylabel('Rate')
+        pl.title(f'{region.capitalize()}: Total Fertility Rate - Model vs Data')
+        pl.legend()
 
-                if do_save:
-                        pl.savefig(f'{fig_path}/tfr_{region}.png')
+        if do_save:
+                pl.savefig(f'{figs_dir}/tfr.png')
 
-                pl.show()
+        pl.show()
 
 sc.toc()
 print('Done.')
