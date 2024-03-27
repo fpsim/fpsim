@@ -13,7 +13,7 @@ import numpy as np
 
 do_plot_sim = 1
 
-spacing_file = 'national_data/archived/BirthSpacing.obj'
+spacing_file = 'data/archived/BirthSpacing.obj'
 
 min_age = 15
 max_age = 50

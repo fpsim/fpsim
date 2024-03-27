@@ -654,9 +654,9 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
 
     # Call the creation of location parameters
     if location == 'default':
-        pars = fplocs.senegal.make_pars()
+        pars = sc.mergedicts(pars, fplocs.senegal.make_pars(**loc_kwargs))
     elif location in valid_country_locs or valid_regional_locs:
-        pars = eval(f"fplocs.{location}.make_pars()")
+        pars = sc.mergedicts(pars, eval(f"fplocs.{location}.make_pars(**loc_kwargs)"))
     # Else, error
     else:
         errormsg = f'Location "{location}" is not currently supported'

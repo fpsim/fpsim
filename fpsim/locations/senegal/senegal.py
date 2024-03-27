@@ -39,7 +39,7 @@ def data2interp(data, ages, normalize=False):
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'national_data'
+    files['base'] = sc.thisdir(aspath=True) / 'data'
     files['basic_dhs']        = 'basic_dhs.yaml'
     files['popsize']          = 'popsize.csv'
     files['mcpr']             = 'cpr.csv'
@@ -748,7 +748,7 @@ def barriers():
 
 def urban_proportion():
     """Load information about the proportion of people who live in an urban setting"""
-    urban_data = pd.read_csv(thisdir / 'senegal' / 'urban.csv')
+    urban_data = pd.read_csv(thisdir / 'data' / 'urban.csv')
     return urban_data["mean"][0]  # Return this value as a float
 
 
