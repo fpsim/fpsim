@@ -279,7 +279,8 @@ class People(fpb.BasePeople):
             pp = self.filter(postpartum)
             non_pp = self.filter(~postpartum)
 
-            pp.update_method_pp()  # Update method for postpartum women
+            if len(pp):
+                pp.update_method_pp()  # Update method for postpartum women
 
             age_diff = non_pp.ceil_age - non_pp.age
             whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
