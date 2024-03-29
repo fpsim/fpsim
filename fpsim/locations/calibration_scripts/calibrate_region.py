@@ -33,6 +33,8 @@ import fpsim as fp
 import pylab as pl
 import seaborn as sns
 
+sc.options(interactive=False)
+
 if __name__ == '__main__':
         ####################################################
         # GLOBAL VARIABLES: USER MUST SET
@@ -57,8 +59,10 @@ if __name__ == '__main__':
 
         ####################################################
 
-        if do_save == 1 and os.path.exists(f'../{country}/{region}/figs') is False:
-            os.mkdir(f'./{country}/{region}/figs')
+        cwd = os.path.abspath(os.getcwd())
+        figs_dir = os.path.join(cwd, '..', country, 'regions/figs', region)
+        if do_save == 1 and os.path.exists(figs_dir) is False:
+            os.makedirs(figs_dir, exist_ok=True)
 
         # Set up global variables
         age_bin_map = {
@@ -118,7 +122,7 @@ if __name__ == '__main__':
 
         # Plot results from sim run
         if do_plot_sim:
-            sim.plot(do_save=True, filename=f'../{country}/{region}/figs/fpsim.png')
+            sim.plot(do_save=True, filename=f'{figs_dir}/fpsim.png')
 
         # Save results
         res = sim.results
@@ -181,9 +185,9 @@ if __name__ == '__main__':
                 sc.boxoff()
 
                 if do_save:
-                    pl.savefig(f'../{country}/{region}/figs/asfr.png')
+                    pl.savefig(f'{figs_dir}/asfr.png')
 
-                pl.show()
+                #pl.show()
 
         if do_plot_methods:
                 '''
@@ -271,15 +275,15 @@ if __name__ == '__main__':
                 ax.set_xlabel('Percent users')
                 ax.set_title(f'{region.capitalize()}: Contraceptive Method Mix - Model vs Data')
                 if do_save:
-                        pl.savefig(f"../{country}/{region}/figs/method_mix.png", bbox_inches='tight', dpi=100)
+                        pl.savefig(f"{figs_dir}/method_mix.png", bbox_inches='tight', dpi=100)
 
                 # Plot use
                 ax = df_use.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
                 ax.set_xlabel('Percent')
                 ax.set_title(f'{region.capitalize()}: Contraceptive Method Use - Model vs Data')
                 if do_save:
-                        pl.savefig(f"../{country}/{region}/figs/method_use.png", bbox_inches='tight', dpi=100)
-                pl.show()
+                        pl.savefig(f"{figs_dir}/method_use.png", bbox_inches='tight', dpi=100)
+                #pl.show()
 
         if do_plot_ageparity:
                 '''
@@ -391,9 +395,9 @@ if __name__ == '__main__':
                 pl.legend()
 
                 if do_save:
-                        pl.savefig(f'../{country}/{region}/figs/tfr_over_sim.png')
+                        pl.savefig(f'{figs_dir}/tfr.png')
 
-                pl.show()
+                #pl.show()
 
         if do_plot_pop_growth:
                 '''
