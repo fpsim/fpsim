@@ -61,19 +61,22 @@ if __name__ == '__main__':
 
         ####################################################
 
-        if do_save == 1 and os.path.exists(f'./{country}/figs') == False:
-            os.mkdir(f'./{country}/figs')
+        cwd = os.path.dirname(os.path.abspath(__file__))
+        country_dir = os.path.abspath(os.path.join(cwd, country))
+        figs_dir = os.path.join(country_dir, 'figs')
+        if do_save and not os.path.exists(figs_dir):
+                os.mkdir(figs_dir)
 
         # Import country data files to compare
-        ageparity = pd.read_csv(f'./{country}/ageparity.csv')  # Age-parity distribution file
-        use = pd.read_csv(f'./{country}/use.csv')  # Dichotomous contraceptive method use
-        data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
-        data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
-        data_cpr = pd.read_csv(f'./{country}/cpr.csv')  # From UN Data Portal
-        data_asfr = pd.read_csv(f'./{country}/asfr.csv')
-        data_methods = pd.read_csv(f'./{country}/mix.csv')
-        data_tfr = pd.read_csv(f'./{country}/tfr.csv')
-        data_popsize = pd.read_csv(f'./{country}/popsize.csv')
+        ageparity   = pd.read_csv(os.path.join(country_dir, 'ageparity.csv'))  # Age-parity distribution file
+        use         = pd.read_csv(os.path.join(country_dir, 'use.csv'))  # Dichotomous contraceptive method use
+        data_spaces = pd.read_csv(os.path.join(country_dir, 'birth_spacing_dhs.csv'))  # Birth-to-birth interval data
+        data_afb = pd.read_csv(os.path.join(country_dir, 'afb.table.csv'))  # Ages at first birth in DHS for women age 25-50
+        data_cpr = pd.read_csv(os.path.join(country_dir, 'cpr.csv'))  # From UN Data Portal
+        data_asfr = pd.read_csv(os.path.join(country_dir, 'asfr.csv'))
+        data_methods = pd.read_csv(os.path.join(country_dir, 'mix.csv'))
+        data_tfr     = pd.read_csv(os.path.join(country_dir, 'tfr.csv'))
+        data_popsize = pd.read_csv(os.path.join(country_dir, 'popsize.csv'))
 
         # Set up global variables
         age_bin_map = {

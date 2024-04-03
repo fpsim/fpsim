@@ -10,7 +10,7 @@ from scipy import interpolate as si
 from .. import defaults as fpd
 from .. import settings as fps
 
-thisdir = sc.path(sc.thisdir())  # For loading CSV files
+thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
 
 # %% Housekeeping
 

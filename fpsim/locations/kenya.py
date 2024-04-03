@@ -10,8 +10,7 @@ from .. import defaults as fpd
 from .. import utils as fpu
 # %% Housekeeping
 
-thisdir = sc.path(sc.thisdir())  # For loading CSV files
-
+thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
 
 def scalar_pars():
     scalar_pars = {
