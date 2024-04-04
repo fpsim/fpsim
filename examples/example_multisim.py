@@ -21,13 +21,12 @@ pars2['exposure_correction'] = 1.0 # Overall scale factor on probability of beco
 if __name__ == '__main__':
     sc.tic()
 
-    sim1 = fp.Sim(pars=pars1)
-    sim2 = fp.Sim(pars=pars2)
+    sim1 = fp.Sim(pars=pars1, label='Amhara')
+    sim2 = fp.Sim(pars=pars2, label='Somali')
 
     msim = fp.MultiSim(sims=[sim1, sim2])
 
     msim.run()
-    mm = msim.merge()
 
     if do_plot:
         msim.plot()
