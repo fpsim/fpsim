@@ -569,7 +569,7 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
         kwargs.setdefault('start_year', 2000)
         kwargs.setdefault('end_year', 2010)
 
-    ethiopia_valid_regional_locs = ['addis ababa', 'afar', 'amhara', 'benishangul-gumuz', 'dire dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
+    ethiopia_valid_regional_locs = ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
 
     # Define valid locations
     if location in ['senegal', 'default']:

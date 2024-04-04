@@ -15,7 +15,7 @@ thisdir = sc.path(sc.thisdir())  # For loading CSV files
 
 def scalar_pars():
     scalar_pars = eth.scalar_pars()
-    scalar_pars['location'] = 'dire dawa'
+    scalar_pars['location'] = 'dire_dawa'
     scalar_pars['breastfeeding_dur_mu'] = 9.25467239093859
     scalar_pars['breastfeeding_dur_beta'] = 7.8327779258538
 
