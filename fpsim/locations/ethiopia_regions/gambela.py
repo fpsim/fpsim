@@ -15,9 +15,9 @@ thisdir = sc.path(sc.thisdir())  # For loading CSV files
 
 def scalar_pars():
     scalar_pars = eth.scalar_pars()
-    scalar_pars['location'] = 'somali'
-    scalar_pars['breastfeeding_dur_mu'] = 6.26613513894357
-    scalar_pars['breastfeeding_dur_beta'] = 5.53459861844008
+    scalar_pars['location'] = 'gambela'
+    scalar_pars['breastfeeding_dur_mu'] = 11.0573172185163
+    scalar_pars['breastfeeding_dur_beta'] = 8.95650532716312
 
     return scalar_pars
 
@@ -36,45 +36,52 @@ def filenames():
 
 # %% Demographics and pregnancy outcome
 '''
-Data from 1994 Census Report for Somali Region
-https://www.statsethiopia.gov.et/wp-content/uploads/2019/06/Population-and-Housing-Census-1994-Somali-Region.pdf
+Data from 1994 Census Report for Gambela Region
+https://www.statsethiopia.gov.et/wp-content/uploads/2019/06/Population-and-Housing-Census-1994-Gambela-Region.pdf
 '''
 def age_pyramid():
-    pyramid = np.array([[0, 236849, 209061], # Somali 1994 
-                        [5, 354039, 286088],
-                        [10, 365196, 267903],
-                        [15, 248098, 173908],
-                        [20, 146947, 114943],
-                        [25, 86685, 101700],
-                        [30, 80398, 101909],
-                        [35, 57492, 78121],
-                        [40, 80933, 78380],
-                        [45, 41953, 36890],
-                        [50, 53574, 40614],
-                        [55, 19403, 11803],
-                        [60, 37735, 18706],
-                        [65, 9732, 4490],
-                        [70, 15531, 7237],
-                        [75, 2951, 1430],
-                        [80, 7901, 4565]
+    pyramid = np.array([[0, 10221, 9611], # Gambela 1994 
+                        [5, 13175, 12006],
+                        [10, 12261, 10565],
+                        [15, 10450, 10550],
+                        [20, 7267, 8777],
+                        [25, 8047, 8675],
+                        [30, 5341, 5654],
+                        [35, 5085, 4622],
+                        [40, 3849, 2652],
+                        [45, 2915, 1886],
+                        [50, 1835, 1431],
+                        [55, 1015, 633],
+                        [60, 966, 707],
+                        [65, 524, 369],
+                        [70, 322, 259],
+                        [75, 140, 102],
+                        [80, 286, 199]
                         ], dtype=float)    
     return pyramid
 
-def urban_proportion(): # TODO: Flagging this - currently this is being used for the urban ratio for somali; I assume you'd want to use the region-specific value?
+def urban_proportion(): # TODO: Flagging this - currently this is being used for the urban ratio for Gambela; I assume you'd want to use the region-specific value?
     urban_data = eth.urban_proportion()
     
     return urban_data  # Return this value as a float
 
 def region_proportions():
     '''
-    Defines the proportion of the population in the Somali region to establish the probability of living there.
+    Defines the proportion of the population in the Gambela region to establish the probability of living there.
     '''
     region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'region.csv')
     region_dict = {}
-    region_dict['mean'] = region_data.loc[region_data['region'] == 'Somali']['mean'] #HOLDER FOR NOW. NEED TO CALL ON LOCATION.
-    region_dict['urban'] = region_data.loc[region_data['region'] == 'Somali']['urban']
+    region_dict['mean'] = region_data.loc[region_data['region'] == 'Gambela']['mean'] #HOLDER FOR NOW. NEED TO CALL ON LOCATION.
+    region_dict['urban'] = region_data.loc[region_data['region'] == 'Gambela']['urban']
     
     return region_dict
+
+# Get regional_dict values
+regional_dict = region_proportions()
+
+# Print the values
+print("Mean population:", regional_dict['mean'])
+print("Urban population proportion:", regional_dict['urban'])
 
 def age_mortality():
     mortality = eth.age_mortality()
@@ -115,13 +122,13 @@ def fecundity_ratio_nullip():
 
 def lactational_amenorrhea_region():
     '''
-    Returns a dictionary containing the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, specifically for the Somali region.
+    Returns a dictionary containing the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, specifically for the Gambela region.
     '''
     lam_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'lam_region.csv')
     lam_dict = {}
-    lam_dict['month'] = lam_region.loc[lam_region['region'] == 'Somali']['month'].tolist()
+    lam_dict['month'] = lam_region.loc[lam_region['region'] == 'Gambela']['month'].tolist()
     lam_dict['month'] = np.array(lam_dict['month'], dtype=np.float64)
-    lam_dict['rate'] = lam_region.loc[lam_region['region'] == 'Somali']['rate'].tolist()
+    lam_dict['rate'] = lam_region.loc[lam_region['region'] == 'Gambela']['rate'].tolist()
     lam_dict['rate'] = np.array(lam_dict['rate'], dtype=np.float64)
  
 
@@ -135,9 +142,9 @@ def sexual_activity_region(): #NEEDS UPDATING
     '''
     sexually_active_region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_activity_region.csv')
     sexually_active_region_dict = {}
-    sexually_active_region_dict['age'] = sexually_active_region_data.loc[sexually_active_region_data['region']== 'Somali']['age'].tolist()   # Return age
+    sexually_active_region_dict['age'] = sexually_active_region_data.loc[sexually_active_region_data['region']== 'Gambela']['age'].tolist()   # Return age
     sexually_active_region_dict['age'] = np.array(sexually_active_region_dict['age'], dtype=np.float64)
-    sexually_active_region_dict['perc'] = [x / 100 for x in sexually_active_region_data.loc[sexually_active_region_data['region']== 'Somali']['perc'].tolist()]
+    sexually_active_region_dict['perc'] = [x / 100 for x in sexually_active_region_data.loc[sexually_active_region_data['region']== 'Gambela']['perc'].tolist()]
     sexually_active_region_dict['perc'] = np.array(sexually_active_region_dict['perc'], dtype=np.float64)
 
     activity_interp_model_region = si.interp1d(x=sexually_active_region_dict['age'], y=sexually_active_region_dict['perc'])
@@ -151,9 +158,9 @@ def sexual_activity_pp_region():
     '''
     pp_activity_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_activity_pp_region.csv')
     pp_activity_region_dict = {}
-    pp_activity_region_dict['month'] = pp_activity_region.loc[pp_activity_region['region'] == 'Somali']['month'].tolist()
+    pp_activity_region_dict['month'] = pp_activity_region.loc[pp_activity_region['region'] == 'Gambela']['month'].tolist()
     pp_activity_region_dict['month'] = np.array(pp_activity_region_dict['month'], dtype=np.float64)
-    pp_activity_region_dict['percent_active'] = pp_activity_region.loc[pp_activity_region['region'] == 'Somali']['perc'].tolist()
+    pp_activity_region_dict['percent_active'] = pp_activity_region.loc[pp_activity_region['region'] == 'Gambela']['perc'].tolist()
     pp_activity_region_dict['percent_active'] = np.array(pp_activity_region_dict['percent_active'], dtype=np.float64)
     
     return pp_activity_region_dict
@@ -164,9 +171,9 @@ def debut_age_region():
     '''
     sexual_debut_region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'sexual_debut_region.csv')
     debut_age_region_dict = {}
-    debut_age_region_dict['ages'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Somali']['age'].tolist()
+    debut_age_region_dict['ages'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Gambela']['age'].tolist()
     debut_age_region_dict['ages'] = np.array(debut_age_region_dict['ages'], dtype=np.float64)
-    debut_age_region_dict['probs'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Somali']['prob'].tolist()
+    debut_age_region_dict['probs'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Gambela']['prob'].tolist()
     debut_age_region_dict['probs'] = np.array(debut_age_region_dict['probs'], dtype=np.float64)
 
     return debut_age_region_dict
@@ -398,8 +405,8 @@ def barriers_region():
 
     reasons_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' / 'barriers_region.csv')
     reasons_region_dict = {}
-    barriers = reasons_region.loc[reasons_region['region'] == 'Somali']['barrier'].tolist() # Return the reason for nonuse
-    percs = reasons_region.loc[reasons_region['region'] == 'Somali']['perc'].tolist() # Return the percentage
+    barriers = reasons_region.loc[reasons_region['region'] == 'Gambela']['barrier'].tolist() # Return the reason for nonuse
+    percs = reasons_region.loc[reasons_region['region'] == 'Gambela']['perc'].tolist() # Return the percentage
 
     for i in range(len(barriers)):
         reasons_region_dict[barriers[i]] = percs[i]
