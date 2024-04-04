@@ -12,4 +12,4 @@ from .ethiopia_regions import harari
 from .ethiopia_regions import oromia
 from .ethiopia_regions import snnpr
 from .ethiopia_regions import somali
-from .ethiopia_regions import tigrary
+from .ethiopia_regions import tigray
