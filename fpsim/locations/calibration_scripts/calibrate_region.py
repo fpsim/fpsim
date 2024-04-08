@@ -41,7 +41,8 @@ if __name__ == '__main__':
 
         # Name of the country being calibrated. To note that this should match the name of the country data folder
         country = 'ethiopia'
-        region = 'amhara'
+        #Name of the region being calibrated
+        region = 'addis_ababa'
         region = region.capitalize()
 
         # Set options for plotting
@@ -108,12 +109,17 @@ if __name__ == '__main__':
         pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
         #pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
 
-        # Import country data files to compare
-        data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv').loc[lambda df: df['region'] == region]
-        data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv').loc[lambda df: (df['region'] == region) & (df['year'] == pars['end_year'])]
-        data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv').loc[lambda df: df['region'] == region]
-        data_use = pd.read_csv(f'../{country}/subnational/use_region.csv').loc[lambda df: (df['region'] == region) & (df['year'] == pars['end_year'])]
+        # Convert region name to the format used in the data
+        formatted_region = region.replace('_', ' ').title()  # Replace underscore with space and capitalize each word
+        if region == 'benishangul_gumuz':
+                formatted_region = region.replace('_', '-').title()  # Replace underscore with dash and capitalize each word
 
+        # Import country data files to compare
+        data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv').loc[lambda df: df['region'] == formatted_region]
+        data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
+        data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv').loc[lambda df: df['region'] == formatted_region]
+        data_use = pd.read_csv(f'../{country}/subnational/use_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
+        
         calibration = fp.Calibration(pars, calib_pars=freepars)
         calibration.calibrate()
 
@@ -178,7 +184,7 @@ if __name__ == '__main__':
                 ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
                 pl.xticks(x, x_labels)
                 pl.ylim(bottom=-10)
-                ax.set_title(f'{region.capitalize()}: Age specific fertility rate per 1000 woman years')
+                ax.set_title(f'{formatted_region.title()}: Age specific fertility rate per 1000 woman years')
                 ax.set_xlabel('Age')
                 ax.set_ylabel(f'ASFR in 2016')
                 ax.legend(frameon=False)
@@ -273,14 +279,14 @@ if __name__ == '__main__':
                 # Plot mix
                 ax = df_mix.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
                 ax.set_xlabel('Percent users')
-                ax.set_title(f'{region.capitalize()}: Contraceptive Method Mix - Model vs Data')
+                ax.set_title(f'{formatted_region.title()}: Contraceptive Method Mix - Model vs Data')
                 if do_save:
                         pl.savefig(f"{figs_dir}/method_mix.png", bbox_inches='tight', dpi=100)
 
                 # Plot use
                 ax = df_use.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
                 ax.set_xlabel('Percent')
-                ax.set_title(f'{region.capitalize()}: Contraceptive Method Use - Model vs Data')
+                ax.set_title(f'{formatted_region.title()}: Contraceptive Method Use - Model vs Data')
                 if do_save:
                         pl.savefig(f"{figs_dir}/method_use.png", bbox_inches='tight', dpi=100)
                 #pl.show()
@@ -382,17 +388,16 @@ if __name__ == '__main__':
                 '''
                 Plot total fertility rate for model vs data
                 '''
-
-                # Import data
-                #data_tfr = pd.read_csv(f'tfr.csv')
+                fig, ax = pl.subplots()  #Temporary solution to stop pulling data from previous figures
 
                 # Plot
-                pl.plot(data_tfr['year'], data_tfr['tfr'], label='DHS', color='black')
-                pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
-                pl.xlabel('Year')
-                pl.ylabel('Rate')
-                pl.title(f'{region.capitalize()}: Total Fertility Rate - Model vs Data')
-                pl.legend()
+                ax.plot(data_tfr['year'], data_tfr['tfr'], label='DHS', color='black')
+                ax.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
+                ax.set_xlabel('Year')  # Set x-axis label
+                ax.set_ylabel('Rate')  # Set y-axis label
+                ax.set_title(f'{formatted_region.title()}: Total Fertility Rate - Model vs Data')  # Set title
+                ax.legend()  # Show legend
+                ax.set_xlim(2000, 2016)  # Set x-axis limits
 
                 if do_save:
                         pl.savefig(f'{figs_dir}/tfr.png')
