@@ -8,9 +8,10 @@ import sciris as sc
 from scipy import interpolate as si
 from .. import defaults as fpd
 from .. import utils as fpu
+
 # %% Housekeeping
 
-thisdir = sc.path(sc.thisdir())  # For loading CSV files
+thisdir = sc.thispath(__file__)  # For loading CSV files
 
 
 def scalar_pars():
