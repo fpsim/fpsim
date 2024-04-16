@@ -8,7 +8,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 0.27.1 (2024-02-09)
+Version 0.28.1 (2024-04-11)
 ---------------------------
 - Updates regional parameters to calibrate subnationally in Ethiopia
 - Revises subnational calibration script to run for all regions and includes a new multisim script for subnational comparisons 
