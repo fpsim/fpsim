@@ -53,17 +53,17 @@ do_save = 0
 ####################################################
 
 cwd = os.path.dirname(os.path.abspath(__file__))
-country_dir = os.path.abspath(os.path.join(cwd, country, 'subnational')) # Country subnational directory
+country_dir = os.path.abspath(os.path.join(cwd, country, 'subnational_data')) # Country subnational_data directory
 figs_dir = os.path.join(country_dir, 'figs')
 
 if do_save and not os.path.exists(figs_dir):
         os.mkdir(figs_dir)
 
 # Import country data files to compare
-data_asfr = pd.read_csv(f'{country_dir}/subnational/asfr_region.csv')
-data_methods = pd.read_csv(f'{country_dir}/subnational/mix_region.csv')
-data_tfr = pd.read_csv(f'{country_dir}/subnational/tfr_region.csv')
-use = pd.read_csv(f'{country_dir}/subnational/use_region.csv') #Dichotomous contraceptive method use
+data_asfr = pd.read_csv(f'{country_dir}/subnational_data/asfr_region.csv')
+data_methods = pd.read_csv(f'{country_dir}/subnational_data/mix_region.csv')
+data_tfr = pd.read_csv(f'{country_dir}/subnational_data/tfr_region.csv')
+use = pd.read_csv(f'{country_dir}/subnational_data/use_region.csv') #Dichotomous contraceptive method use
 
 
 # Set up global variables
@@ -123,7 +123,7 @@ sim.run()
 
 # Plot results from sim run
 if do_plot_sim:
-    sim.plot(do_save=True, filename=f'{country_dir}/subnational/figs/fpsim.png')
+    sim.plot(do_save=True, filename=f'{country_dir}/subnational_data/figs/fpsim.png')
 
 # Save results
 res = sim.results
@@ -181,7 +181,7 @@ if do_plot_asfr:
                 sc.boxoff()
 
                 if do_save:
-                    pl.savefig(f'{country_dir}/subnational/figs/asfr_{region}.png')
+                    pl.savefig(f'{country_dir}/subnational_data/figs/asfr_{region}.png')
 
                 pl.show()
 

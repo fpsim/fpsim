@@ -659,7 +659,7 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     elif location == 'ethiopia':
         pars = sc.mergedicts(pars, fplocs.ethiopia.make_pars(**loc_kwargs))
     elif location in ethiopia_valid_regional_locs:
-        pars = sc.mergedicts(pars, fplocs.ethiopia_regions.ethiopia.make_pars())
+        pars = sc.mergedicts(pars, eval(f'fplocs.ethiopia_regions.{location}.make_pars()'))
     # Else, error
     else:
         errormsg = f'Location "{location}" is not currently supported'
