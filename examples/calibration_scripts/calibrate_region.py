@@ -59,9 +59,9 @@ if __name__ == '__main__':
         do_save = 1
 
         ####################################################
-
         cwd = os.path.abspath(os.getcwd())
-        figs_dir = os.path.join(cwd, '..', country, 'regions/figs', region)
+        country_dir = f'../../fpsim/locations/{country}'
+        figs_dir = os.path.join(cwd, country_dir, 'regions/figs', region)
         if do_save == 1 and os.path.exists(figs_dir) is False:
             os.makedirs(figs_dir, exist_ok=True)
 
@@ -115,10 +115,10 @@ if __name__ == '__main__':
                 formatted_region = region.replace('_', '-').title()  # Replace underscore with dash and capitalize each word
 
         # Import country data files to compare
-        data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv').loc[lambda df: df['region'] == formatted_region]
-        data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
-        data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv').loc[lambda df: df['region'] == formatted_region]
-        data_use = pd.read_csv(f'../{country}/subnational/use_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
+        data_asfr = pd.read_csv(f'{country_dir}/subnational/asfr_region.csv').loc[lambda df: df['region'] == formatted_region]
+        data_methods = pd.read_csv(f'{country_dir}/subnational/mix_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
+        data_tfr = pd.read_csv(f'{country_dir}/subnational/tfr_region.csv').loc[lambda df: df['region'] == formatted_region]
+        data_use = pd.read_csv(f'{country_dir}/subnational/use_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
         
         calibration = fp.Calibration(pars, calib_pars=freepars)
         calibration.calibrate()
@@ -193,7 +193,7 @@ if __name__ == '__main__':
                 if do_save:
                     pl.savefig(f'{figs_dir}/asfr.png')
 
-                #pl.show()
+                pl.show()
 
         if do_plot_methods:
                 '''
@@ -289,100 +289,8 @@ if __name__ == '__main__':
                 ax.set_title(f'{formatted_region.title()}: Contraceptive Method Use - Model vs Data')
                 if do_save:
                         pl.savefig(f"{figs_dir}/method_use.png", bbox_inches='tight', dpi=100)
-                #pl.show()
-
-        if do_plot_ageparity:
-                '''
-                Plot an age-parity distribution for model vs data
-                '''
-
-                # Set up
-                age_keys = list(age_bin_map.keys())[1:]
-                age_bins = pl.arange(min_age, max_age, bin_size)
-                parity_bins = pl.arange(0, 7) # Plot up to parity 6
-                n_age = len(age_bins)
-                n_parity = len(parity_bins)
-                x_age = pl.arange(n_age)
-                x_parity = pl.arange(n_parity)  # Should be the same
-
-                # Load data
-                data_parity_bins = pl.arange(0,7)
-                sky_raw_data = ageparity
-                sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == ageparity_dataset]
-
-                sky_parity = sky_raw_data['parity'].to_numpy()
-                sky_props = sky_raw_data['percentage'].to_numpy()
-
-
-                sky_arr = sc.odict()
-
-                sky_arr['Data'] = pl.zeros((len(age_keys), len(parity_bins)))
-
-                proportion = 0
-                age_name = ''
-                for age, row in sky_raw_data.iterrows():
-                        if row.age in age_keys and row.parity < n_parity:
-                                age_ind = age_keys.index(row.age)
-                                sky_arr['Data'][age_ind, row.parity] = row.percentage
-
-
-                # Extract from model
-                sky_arr['Model'] = pl.zeros((len(age_bins), len(parity_bins)))
-                for i in range(len(ppl)):
-                        if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-                                age_bin = sc.findinds(age_bins <= ppl.age[i])[-1]
-                                parity_bin = sc.findinds(parity_bins <= ppl.parity[i])[-1]
-                                sky_arr['Model'][age_bin, parity_bin] += 1
-
-
-                # Normalize
-                for key in ['Data', 'Model']:
-                        sky_arr[key] /= sky_arr[key].sum() / 100
-
-                # Find diff to help visualize in plotting
-                sky_arr['Diff_data-model'] = sky_arr['Data']-sky_arr['Model']
-
-                # Plot ageparity
-                for key in ['Data', 'Model', 'Diff_data-model']:
-                        fig = pl.figure(figsize=(20, 14))
-
-                        pl.pcolormesh(sky_arr[key])
-                        pl.xlabel('Age', fontweight='bold')
-                        pl.ylabel('Parity', fontweight='bold')
-                        pl.title(f'{country.capitalize()}: Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
-                        pl.gca().set_xticks(pl.arange(n_age))
-                        pl.gca().set_yticks(pl.arange(n_parity))
-                        pl.gca().set_xticklabels(age_bins)
-                        pl.gca().set_yticklabels(parity_bins)
-                        pl.gca().view_init(30, 45)
-                        pl.draw()
-
-
-                        if do_save:
-                                pl.savefig(f'../{country}/{region}/figs/ageparity_' + str(key.lower()) + '.png')
-
-                        pl.show()
-
-        if do_plot_cpr:
-
-                '''
-                Plot contraceptive prevalence rate for model vs data
-                '''
-                # Import data
-                data_cpr = data_cpr[data_cpr['year'] <= pars['end_year']] # Restrict years to plot
-
-                # Plot
-                pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
-                pl.plot(res['t'], res['cpr']*100, label='FPsim', color='cornflowerblue')
-                pl.xlabel('Year')
-                pl.ylabel('Percent')
-                pl.title(f'{country.capitalize()}: Contraceptive Prevalence Rate - Model vs Data')
-                pl.legend()
-
-                if do_save:
-                    pl.savefig(f'../{country}/{region}/figs/cpr_over_sim.png')
-
                 pl.show()
+
 
         if do_plot_tfr:
                 '''
@@ -402,12 +310,38 @@ if __name__ == '__main__':
                 if do_save:
                         pl.savefig(f'{figs_dir}/tfr.png')
 
-                #pl.show()
+                pl.show()
 
+        sc.toc()
+        print('Done.')
+
+
+        # Plots not currently being used
+        '''
+        if do_plot_cpr:
+
+                Plot contraceptive prevalence rate for model vs data
+                
+                # Import data
+                data_cpr = data_cpr[data_cpr['year'] <= pars['end_year']] # Restrict years to plot
+        
+                # Plot
+                pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
+                pl.plot(res['t'], res['cpr']*100, label='FPsim', color='cornflowerblue')
+                pl.xlabel('Year')
+                pl.ylabel('Percent')
+                pl.title(f'{country.capitalize()}: Contraceptive Prevalence Rate - Model vs Data')
+                pl.legend()
+        
+                if do_save:
+                    pl.savefig(f'../{country}/{region}/figs/cpr_over_sim.png')
+        
+                pl.show()
+        
         if do_plot_pop_growth:
-                '''
-                Plot annual population growth rate for model vs data
-                '''
+                
+                # Plot annual population growth rate for model vs data
+                
 
                 # Import data
                 data_popsize = data_popsize[data_popsize['year'] <= pars['end_year']]  # Restrict years to plot
@@ -434,9 +368,9 @@ if __name__ == '__main__':
                 pl.show()
 
         if do_plot_birth_space_afb:
-                '''
-                Plot birth space and age at first birth for model vs data
-                '''
+                
+                # Plot birth space and age at first birth for model vs data
+                
 
                 # Set up
                 spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
@@ -514,6 +448,76 @@ if __name__ == '__main__':
                         pl.savefig(f'{country}/figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
 
                 pl.show()
-
-        sc.toc()
-        print('Done.')
+                
+        if do_plot_ageparity:
+                
+                Plot an age-parity distribution for model vs data
+                
+        
+                # Set up
+                age_keys = list(age_bin_map.keys())[1:]
+                age_bins = pl.arange(min_age, max_age, bin_size)
+                parity_bins = pl.arange(0, 7) # Plot up to parity 6
+                n_age = len(age_bins)
+                n_parity = len(parity_bins)
+                x_age = pl.arange(n_age)
+                x_parity = pl.arange(n_parity)  # Should be the same
+        
+                # Load data
+                data_parity_bins = pl.arange(0,7)
+                sky_raw_data = ageparity
+                sky_raw_data = sky_raw_data[sky_raw_data['dataset'] == ageparity_dataset]
+        
+                sky_parity = sky_raw_data['parity'].to_numpy()
+                sky_props = sky_raw_data['percentage'].to_numpy()
+        
+        
+                sky_arr = sc.odict()
+        
+                sky_arr['Data'] = pl.zeros((len(age_keys), len(parity_bins)))
+        
+                proportion = 0
+                age_name = ''
+                for age, row in sky_raw_data.iterrows():
+                        if row.age in age_keys and row.parity < n_parity:
+                                age_ind = age_keys.index(row.age)
+                                sky_arr['Data'][age_ind, row.parity] = row.percentage
+        
+        
+                # Extract from model
+                sky_arr['Model'] = pl.zeros((len(age_bins), len(parity_bins)))
+                for i in range(len(ppl)):
+                        if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+                                age_bin = sc.findinds(age_bins <= ppl.age[i])[-1]
+                                parity_bin = sc.findinds(parity_bins <= ppl.parity[i])[-1]
+                                sky_arr['Model'][age_bin, parity_bin] += 1
+        
+        
+                # Normalize
+                for key in ['Data', 'Model']:
+                        sky_arr[key] /= sky_arr[key].sum() / 100
+        
+                # Find diff to help visualize in plotting
+                sky_arr['Diff_data-model'] = sky_arr['Data']-sky_arr['Model']
+        
+                # Plot ageparity
+                for key in ['Data', 'Model', 'Diff_data-model']:
+                        fig = pl.figure(figsize=(20, 14))
+        
+                        pl.pcolormesh(sky_arr[key])
+                        pl.xlabel('Age', fontweight='bold')
+                        pl.ylabel('Parity', fontweight='bold')
+                        pl.title(f'{country.capitalize()}: Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
+                        pl.gca().set_xticks(pl.arange(n_age))
+                        pl.gca().set_yticks(pl.arange(n_parity))
+                        pl.gca().set_xticklabels(age_bins)
+                        pl.gca().set_yticklabels(parity_bins)
+                        pl.gca().view_init(30, 45)
+                        pl.draw()
+        
+        
+                        if do_save:
+                                pl.savefig(f'../{country}/{region}/figs/ageparity_' + str(key.lower()) + '.png')
+        
+                        pl.show()
+        '''
