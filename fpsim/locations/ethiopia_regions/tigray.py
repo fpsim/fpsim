@@ -79,9 +79,6 @@ def region_proportions():
 # Get regional_dict values
 regional_dict = region_proportions()
 
-# Print the values
-print("Mean population:", regional_dict['mean'])
-print("Urban population proportion:", regional_dict['urban'])
 
 def age_mortality():
     mortality = eth.age_mortality()
