@@ -52,14 +52,19 @@ do_save = 0
 
 ####################################################
 
-if do_save == 1 and os.path.exists(f'../{country}/{region}/figs') == False:
-    os.mkdir(f'./{country}/{region}/figs')
+cwd = os.path.dirname(os.path.abspath(__file__))
+country_dir = os.path.abspath(os.path.join(cwd, country, 'subnational')) # Country subnational directory
+figs_dir = os.path.join(country_dir, 'figs')
+
+if do_save and not os.path.exists(figs_dir):
+        os.mkdir(figs_dir)
 
 # Import country data files to compare
-data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv', index_col=0).loc[lambda df: df['region'] == region]
-data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv', index_col=0).loc[lambda df: df['region'] == region]
-data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv', index_col=0).loc[lambda df: df['region'] == region]
-data_use = pd.read_csv(f'../{country}/subnational/use_region.csv', index_col=0).loc[lambda df: df['region'] == region]
+data_asfr = pd.read_csv(f'{country_dir}/subnational/asfr_region.csv')
+data_methods = pd.read_csv(f'{country_dir}/subnational/mix_region.csv')
+data_tfr = pd.read_csv(f'{country_dir}/subnational/tfr_region.csv')
+use = pd.read_csv(f'{country_dir}/subnational/use_region.csv') #Dichotomous contraceptive method use
+
 
 # Set up global variables
 age_bin_map = {
@@ -118,7 +123,7 @@ sim.run()
 
 # Plot results from sim run
 if do_plot_sim:
-    sim.plot(do_save=True, filename=f'../{country}/{region}/figs/fpsim.png')
+    sim.plot(do_save=True, filename=f'{country_dir}/subnational/figs/fpsim.png')
 
 # Save results
 res = sim.results
@@ -176,7 +181,7 @@ if do_plot_asfr:
                 sc.boxoff()
 
                 if do_save:
-                    pl.savefig(f'{country}/subnational/figs/asfr_{region}.png')
+                    pl.savefig(f'{country_dir}/subnational/figs/asfr_{region}.png')
 
                 pl.show()
 
@@ -210,10 +215,12 @@ if do_plot_methods:
         model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 
         if do_save:
-                if not os.path.exists(f'./{country}/subnational/figs/method_mix/'):
-                        os.mkdir(f'./{country}/subnational/figs/method_mix/')
-                if not os.path.exists(f'./{country}/subnational/figs/method_use/'):
-                        os.mkdir(f'./{country}/subnational/figs/method_use/')
+                m_mix_dir = os.path.join(figs_dir, 'method_mix')
+                m_use_dir = os.path.join(figs_dir, 'method_use')
+                if not os.path.exists(m_mix_dir):
+                        os.mkdir(m_mix_dir)
+                if not os.path.exists(m_use_dir):
+                        os.mkdir(m_use_dir)
 
         for region in regions:
                 # Extract from model
@@ -274,14 +281,14 @@ if do_plot_methods:
                 ax.set_xlabel('Percent users')
                 ax.set_title(f'{region.capitalize()}: Contraceptive Method Mix - Model vs Data')
                 if do_save:
-                        pl.savefig(f"{country}/subnational/figs/method_mix/{region}_method_mix.png", bbox_inches='tight', dpi=100)
+                        pl.savefig(os.path.join(m_mix_dir, f"{region}_method_mix.png"), bbox_inches='tight', dpi=100)
 
                 # Plot use
                 ax = df_use.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
                 ax.set_xlabel('Percent')
                 ax.set_title(f'{region.capitalize()}: Contraceptive Method Use - Model vs Data')
                 if do_save:
-                        pl.savefig(f"{country}/subnational/figs/method_use/{region}_method_use.png", bbox_inches='tight', dpi=100)
+                        pl.savefig(os.path.join(m_use_dir, f"{region}_method_use.png"), bbox_inches='tight', dpi=100)
 
 
 if do_plot_tfr:
@@ -300,7 +307,7 @@ if do_plot_tfr:
                 pl.legend()
 
                 if do_save:
-                        pl.savefig(f'{country}/subnational/figs/tfr_{region}.png')
+                        pl.savefig(os.path.join(figs_dir, f"tfr_{region}.png"))
 
                 pl.show()
 
