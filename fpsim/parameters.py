@@ -649,12 +649,17 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
                       seed            = pars['seed'])
 
    # Define valid locations
+    ethiopia_valid_regional_locs = ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
+
+    # Define valid locations
     if location in ['senegal', 'default']:
         pars = sc.mergedicts(pars, fplocs.senegal.make_pars(**loc_kwargs))
     elif location == 'kenya':
         pars = sc.mergedicts(pars, fplocs.kenya.make_pars(**loc_kwargs))
     elif location == 'ethiopia':
         pars = sc.mergedicts(pars, fplocs.ethiopia.make_pars(**loc_kwargs))
+    elif location in ethiopia_valid_regional_locs:
+        pars = sc.mergedicts(pars, eval(f'fplocs.ethiopia_regions.{location}.make_pars()'))
     # Else, error
     else:
         errormsg = f'Location "{location}" is not currently supported'

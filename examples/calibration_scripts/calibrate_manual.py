@@ -59,7 +59,7 @@ ageparity_dataset = 'PMA 2019'
 
 ####################################################
 cwd = os.path.dirname(os.path.abspath(__file__))
-country_dir = os.path.abspath(os.path.join(cwd, country))
+country_dir = os.path.abspath(os.path.join(cwd, '../../fpsim/locations/', country))
 figs_dir    = os.path.join(country_dir, 'figs')
 if do_save and not os.path.exists(figs_dir):
     os.mkdir(figs_dir)
@@ -97,7 +97,7 @@ sc.tic()
 
 # Set up sim for country
 pars = fp.pars(location=country)
-pars['n_agents'] = 100_000 # Small population size
+pars['n_agents'] = 1_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -384,7 +384,7 @@ if do_plot_cpr:
         pl.legend()
 
         if do_save:
-            pl.savefig(os.path.join(figs_dir, "cpr_over_sim.png"))
+            pl.savefig(os.path.join(figs_dir, "cpr.png"))
 
         pl.show()
 
@@ -405,7 +405,7 @@ if do_plot_tfr:
         pl.legend()
 
         if do_save:
-                pl.savefig(os.path.join(figs_dir, "tfr_over_sim.png"))
+                pl.savefig(os.path.join(figs_dir, "tfr.png"))
 
         pl.show()
 
@@ -434,7 +434,7 @@ if do_plot_pop_growth:
         pl.legend()
 
         if do_save:
-            pl.savefig(os.path.join(figs_dir, "popgrowth_over_sim.png"))
+            pl.savefig(os.path.join(figs_dir, "popgrowth.png"))
 
         pl.show()
 
