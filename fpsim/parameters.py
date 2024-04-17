@@ -651,13 +651,13 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     # Define valid locations
     if location == 'default':
         location = 'senegal'
-    ethiopia_valid_regional_locs = ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
-    valid_country_locs = ['senegal', 'kenya', 'nuhdss', 'ethopia']
+    valid_country_locs = dir(fplocs)
+    valid_ethiopia_regional_locs = dir(fplocs.ethiopia_regions)
 
     # Get parameters for this location
     if location in valid_country_locs:
         location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
-    elif location in ethiopia_valid_regional_locs:
+    elif location in valid_ethiopia_regional_locs:
         location_pars = getattr(fplocs.ethiopia_regions, location).make_pars(**loc_kwargs)
     else: # Else, error
         errormsg = f'Location "{location}" is not currently supported'
