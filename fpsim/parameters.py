@@ -655,7 +655,9 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     if location in ['senegal', 'default']:
         pars = sc.mergedicts(pars, fplocs.senegal.make_pars(**loc_kwargs))
     elif location == 'kenya':
-        pars = sc.mergedicts(pars, fplocs.kenya.make_pars(**loc_kwargs))
+        pars = sc.mergedicts(pars, fplocs.kenya.make_pars(**loc_kwargs))    
+    elif location == 'nuhdss':
+        pars = sc.mergedicts(pars, fplocs.nuhdss.make_pars(**loc_kwargs))
     elif location == 'ethiopia':
         pars = sc.mergedicts(pars, fplocs.ethiopia.make_pars(**loc_kwargs))
     elif location in ethiopia_valid_regional_locs:
