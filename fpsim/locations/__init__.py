@@ -1,4 +1,5 @@
 from . import kenya
+from . import nuhdss
 from . import senegal
 from . import ethiopia
 #adds regions for ethiopia

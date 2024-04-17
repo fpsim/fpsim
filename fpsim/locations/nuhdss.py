@@ -16,62 +16,14 @@ thisdir = sc.thispath(__file__)  # For loading CSV files
 
 def scalar_pars():
     scalar_pars = {
-        # Basic parameters
-        'location': 'nuhdss',
-        'n_agents': 756,  # Number of agents
-        'scaled_pop': None,  # Scaled population / total population size
-        'start_year': 2012,  # Start year of simulation
-        'end_year': 2015,  # End year of simulation
-        'timestep': 1,  # The simulation timestep in months
-        'method_timestep': 1,  # How many simulation timesteps to go for every method update step
-        'seed': 1,  # Random seed
-        'verbose': 1,  # How much detail to print during the simulation
-        'track_switching': 0,  # Whether to track method switching
-        'track_as': 0,  # Whether to track age-specific channels
-        'short_int': 24,  # Duration of a short birth interval between live births in months
-        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
-        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
-
-        # Age limits (in years)
-        'method_age': 15,
-        'age_limit_fecundity': 50,
-        'max_age': 45,
-
-        # Durations (in months)
-        'switch_frequency': 3,  # How frequently to check for changes to contraception #Changed from 12 - 3 coz we are checking every 3 months
-        'end_first_tri': 3,
-        'preg_dur_low': 9,
-        'preg_dur_high': 9,
-        'postpartum_dur': 23,
-        'breastfeeding_dur_mu': 11.4261936291137,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'breastfeeding_dur_beta': 7.5435309020483, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
-        'max_lam_dur': 5,  # Duration of lactational amenorrhea
-        'short_int': 24,  # Duration of a short birth interval between live births in months
-        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
-        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
-
-        # Pregnancy outcomes
-        'abortion_prob': 0.00102, #Culculated 
-        # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
-        'twins_prob': 0.016,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'LAM_efficacy': 0.98,  # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
-        'maternal_mortality_factor': 1,
-
-        # Fecundity and exposure
-        'fecundity_var_low': 0.7,
-        'fecundity_var_high': 1.1,
-        'high_parity': 1,
-        'high_parity_nonuse': 1,
-        'primary_infertility': 0.05,
-        'exposure_factor': 1.0,  # Overall exposure correction factor
-        'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
-                                   # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
-
-        # MCPR
-        'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
-        'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
-        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
-        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
+        'location':             'nuhdss',
+        'postpartum_dur':       48, #We used the median #We do  have. Askwhat to calculate!
+        'breastfeeding_dur_mu': 11.4261936291137,   # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R/  Not available
+        'breastfeeding_dur_beta': 7.5435309020483,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R/   NA
+        'abortion_prob':        0.0010235414534,              # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated #We calculated from the data
+        'twins_prob':           0.0145530145530,              # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239 #Calculated from the data
+        'high_parity_nonuse':   1,                  # TODO: check whether it's correct that this should be different to the other locations
+        'mcpr_norm_year':       2015,          #Taken the most recent year in our data     # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
@@ -111,6 +63,7 @@ def age_pyramid():
     Data are from World Population Prospects
     https://population.un.org/wpp/Download/Standard/Population/
      '''
+    #Use this as its from Kenya. Change it in future from the NUHDSS combining both male and female data
     pyramid = np.array([[0, 801895, 800503],  # Kenya 1960
                         [5, 620524, 625424],
                         [10, 463547, 464020],
@@ -134,7 +87,7 @@ def age_pyramid():
 
 
 def urban_proportion():
-    """Load information about the proportion of people who live in an urban setting"""
+    """Load information about the proportion of people who live in an urban setting""" #100% urban mean 1, se 0
     urban_data = pd.read_csv(thisdir / 'kenya' / 'urban.csv')
     return urban_data["mean"][0]  # Return this value as a float
 
@@ -148,6 +101,7 @@ def age_mortality():
     Mortality rate trend from crude death rate per 1000 people, also from UN Data Portal, 1950-2030:
     https://population.un.org/dataportal/data/indicators/59/locations/404/start/1950/end/2030/table/pivotbylocation
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
+    #Leave as it is.....
     '''
     data_year = 2010
     mortality_data = pd.read_csv(thisdir / 'kenya' / 'mortality_prob.csv')
@@ -305,8 +259,8 @@ def miscarriage():
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
     Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
     '''
-    miscarriage_rates = np.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
-                                  [1, 1, 0.569, 0.167, 0.112, 0.097, 0.108, 0.167, 0.332, 0.569, 0.569]])
+    miscarriage_rates = np.array([[0, 5, 10, 15, 20, 25, 30, 35, 40],
+                                  [1, 1, 0.00359, 0.00967, 0.0105, 0.0126, 0.0102, 0.0142, 0.00826]])
     miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
     return miscarriage_interp
 
@@ -318,6 +272,7 @@ def stillbirth():
 
     Age adjustments come from an extension of Noori et al., which were conducted June 2022.
     '''
+    #To calculate from our data  (Per Year of pregnancy termination ie end of pregnancy)
 
     data = np.array([
         [2000, 22.5],
@@ -341,7 +296,7 @@ def female_age_fecundity():
     Use fecundity rates from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
     Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
     45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds
-    '''
+    ''' 
     fecundity = {
         'bins': np.array([0., 5, 10, 15, 20, 25, 28, 31, 34, 37, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
         'f': np.array([0., 0, 0, 65, 70.8, 79.3, 77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
@@ -374,6 +329,8 @@ def lactational_amenorrhea():
     Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
     as those women continue to be postpartum insusceptible.
     From DHS Kenya 2014 calendar data
+
+    #Calculate consult
     '''
     data = np.array([
         [0, 0.9557236],
@@ -399,7 +356,9 @@ def lactational_amenorrhea():
 
 # %% Pregnancy exposure
 
-def sexual_activity():
+def sexual_activity(): 
+
+    #Calculate from sex debut (yes), Married and has sex partner
     '''
     Returns a linear interpolation of rates of female sexual activity, defined as
     percentage women who have had sex within the last four weeks.
@@ -424,6 +383,7 @@ def sexual_activity():
 
 def sexual_activity_pp():
     '''
+    #Use the data provided here
     Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
     Uses 2014 Kenya DHS individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
     Data is weighted.
@@ -508,7 +468,7 @@ def debut_age():
         [39.0, 6.555458199225806e-05],
         [41.0, 0.00013980442816424654],
         [44.0, 4.372731039149624e-05]])
-''' 
+        '''
     sexual_debut = pd.read_csv(thisdir / 'nuhdss' / 'sex_debut.csv')
     debut_age = {}
     debut_age['ages'] = sexual_debut[:, 0]
@@ -519,6 +479,7 @@ def debut_age():
 
 def exposure_age():
     '''
+    #Ask
     Returns an array of experimental factors to be applied to account for
     residual exposure to either pregnancy or live birth by age.  Exposure to pregnancy will
     increase factor number and residual likelihood of avoiding live birth (mostly abortion,
@@ -531,7 +492,7 @@ def exposure_age():
     return exposure_age_interp
 
 
-def exposure_parity():
+def exposure_parity(): #Consult
     '''
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
     or live birth by parity.
@@ -1214,10 +1175,10 @@ def education_distributions():
 
 # %% Make and validate parameters
 
-def make_pars():
-    '''
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
+    """
     Take all parameters and construct into a dictionary
-    '''
+    """
 
     # Scalar parameters and filenames
     pars = scalar_pars()
@@ -1226,6 +1187,7 @@ def make_pars():
     # Demographics and pregnancy outcome
     pars['age_pyramid'] = age_pyramid()
     pars['age_mortality'] = age_mortality()
+    pars['urban_prop'] = urban_proportion()
     pars['maternal_mortality'] = maternal_mortality()
     pars['infant_mortality'] = infant_mortality()
     pars['miscarriage_rates'] = miscarriage()
@@ -1248,11 +1210,22 @@ def make_pars():
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
-    pars['urban_prop'] = urban_proportion()
-    empowerment_dict, _ = empowerment_distributions(seed=pars['seed']) # This function returns extrapolated and raw data
-    pars['empowerment'] = empowerment_dict
-    education_dict, _ = education_distributions() # This function returns extrapolated and raw data
-    pars['education'] = education_dict
-    pars['age_partnership'] = age_partnership()
+
+    # Empowerment metrics
+    if use_empowerment:
+        empowerment_dict, _ = empowerment_distributions(seed=seed)  # This function returns extrapolated and raw data
+        pars['empowerment'] = empowerment_dict
+    if use_education:
+        education_dict, _ = education_distributions() # This function returns extrapolated and raw data
+        pars['education'] = education_dict
+    if use_partnership:
+        pars['age_partnership'] = age_partnership()
+
+    kwargs = locals()
+    not_implemented_args = ['use_subnational']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
+    if true_args:
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
+        raise NotImplementedError(errmsg)
 
     return pars
