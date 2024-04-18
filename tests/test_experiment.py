@@ -20,7 +20,7 @@ def test_plot():
     ''' Test Experiment plotting '''
     sc.heading('Testing Experiment plotting...')
     if do_plot:
-        pars = fp.pars(location='nuhdss')
+        pars = fp.pars(location='kenya')
         exp = fp.Experiment(pars)
         exp.run()
         exp.plot()
