@@ -17,7 +17,7 @@ thisdir = sc.thispath(__file__)  # For loading CSV files
 def scalar_pars():
     scalar_pars = {
         'location':             'nuhdss',
-        'postpartum_dur':       48, #We used the median #We do  have. Askwhat to calculate!
+        'postpartum_dur':       23, #We used the median #We do  have. Askwhat to calculate!
         'breastfeeding_dur_mu': 11.4261936291137,   # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R/  Not available
         'breastfeeding_dur_beta': 7.5435309020483,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R/   NA
         'abortion_prob':        0.0010235414534,              # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated #We calculated from the data
@@ -260,8 +260,8 @@ def miscarriage():
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
     Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
     '''
-    miscarriage_rates = np.array([[0, 5, 10, 15, 20, 25, 30, 35, 40],
-                                  [1, 1, 0.00358938, 0.0096776, 0.01051225, 0.01264532, 0.01018676, 0.01417004, 0.00826446]])
+    miscarriage_rates = np.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 50],
+                                  [1, 1, 0.00358938, 0.0096776, 0.01051225, 0.01264532, 0.01018676, 0.01417004, 0.00826446, 0.00826446]])
     miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
     return miscarriage_interp
 
@@ -276,11 +276,6 @@ def stillbirth():
     #To calculate from our data  (Per Year of pregnancy termination ie end of pregnancy)
 
     data = np.array([
-        '''
-        [2000, 22.5],
-        [2010, 20.6],
-        [2019, 19.7],
-        '''
         [2002, 7.95228628230616],
         [2003, 8.64055299539171],
         [2004, 11.8216012896292],
@@ -491,8 +486,8 @@ def debut_age():
         '''
     sexual_debut = pd.read_csv(thisdir / 'nuhdss' / 'sex_debut.csv')
     debut_age = {}
-    debut_age['ages'] = sexual_debut[:, 0]
-    debut_age['probs'] = sexual_debut[:, 1]
+    debut_age['ages'] = sexual_debut.Age_at_first_sex.values
+    debut_age['probs'] = sexual_debut.prop.values
 
     return debut_age
 
@@ -584,7 +579,7 @@ def methods():
         'IUDs': [7, True, 0.986],
         'BTL': [8, True, 0.995],
        # 'Diaphragm': [9, True, 0.81],
-        'Sterilization': [10, True, 0.99],
+        #'Sterilization': [10, True, 0.99],
         #'LAM': [11, True, 0.98],
        # 'Rhythm': [12, True, 0.75],
         'Other modern': [9, True, 0.880],
@@ -862,13 +857,13 @@ def method_probs():
                 [0,0,0,0,0,1,0,0,0,0],
                 [0,0,0,0,0,0,1,0,0,0],
                 [0,0,0,0,0,0,0,1,0,0],
-                [0,0,0,0,0,0,0,0,1,0,
+                [0,0,0,0,0,0,0,0,1,0],
                 [0,0,0,0,0,0,0,0,0,1]]),
             '18-20': np.array([
                 [0.593508634912798,0.00668776932733301,0,0,0.029008722352493,0.279592496762608,0.0912023766447683,0,0,0],
                 [0,1,0,0,0,0,0,0,0,0],
                 [0,0,1,0,0,0,0,0,0,0],
-                0,0,0,1,0,0,0,0,0,0],
+                [0,0,0,1,0,0,0,0,0,0],
                 [0,0,0,0,1,0,0,0,0,0],
                 [0,0,0,0,0,1,0,0,0,0],
                 [0,0,0,0,0,0,1,0,0,0],
@@ -879,7 +874,7 @@ def method_probs():
                 [0.672012512089745,0,0.00183222147778614,0.00432939112932932,0.0445485047706886,0.24717217137509,0.0301051991573608,0,0,0],
                 [0,1,0,0,0,0,0,0,0,0],
                 [0,0,0.549061385936689,0,0,0.450938614063311,0,0,0,0],
-                [,0,0,1,0,0,0,0,0,0 ],
+                [0,0,0,1,0,0,0,0,0,0],
                 [0,0,0,0,1,0,0,0,0,0],
                 [0,0,0,0,0.115413172849361,0.786502932545886,0.098083894604753,0,0,0],
                 [0,0,0,0,0,0,1,0,0,0],

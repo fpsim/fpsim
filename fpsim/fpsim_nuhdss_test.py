@@ -2,7 +2,7 @@ import fpsim as fp
 
 pars = dict(
     n_agents   = 756,
-    location   = 'nuhdss',
+    location   = 'kenya',
     start_year = 2012,
     end_year   = 2035,
 )
@@ -13,7 +13,7 @@ fig = sim.plot()
 
 
 
-sim.to_df()
-sim.df.to_csv(r'results.csv')
-print("Done.")
+#sim.to_df()
+#sim.df.to_csv(r'results.csv')
+#print("Done.")
 
