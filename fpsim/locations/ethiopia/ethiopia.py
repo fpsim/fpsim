@@ -7,6 +7,7 @@ import pandas as pd
 import sciris as sc
 from scipy import interpolate as si
 from fpsim import defaults as fpd
+from . import regions
 
 # %% Housekeeping
 
