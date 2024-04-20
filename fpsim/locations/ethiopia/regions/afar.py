@@ -79,10 +79,6 @@ def region_proportions():
 # Get regional_dict values
 regional_dict = region_proportions()
 
-# Print the values
-print("Mean population:", regional_dict['mean'])
-print("Urban population proportion:", regional_dict['urban'])
-
 def age_mortality():
     mortality = eth.age_mortality()
     
@@ -418,7 +414,7 @@ def barriers_region():
 
 # %% Make and validate parameters
 
-def make_pars():
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
     '''
     Take all parameters and construct into a dictionary
     '''
@@ -456,5 +452,12 @@ def make_pars():
     # Regional parameters
     pars['urban_prop'] = urban_proportion()
     pars['region'] = region_proportions() # This function returns extrapolated and raw data
+
+    kwargs = locals()
+    not_implemented_args = ['use_empowerment', 'use_education', 'use_partnership']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
+    if true_args:
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
+        raise NotImplementedError(errmsg)
 
     return pars
