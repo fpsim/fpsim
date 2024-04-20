@@ -10,7 +10,8 @@ from fpsim import defaults as fpd
 from fpsim import utils as fpu
 # %% Housekeeping
 
-thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
+thisdir = sc.thispath(__file__)  # For loading CSV files
+
 
 def scalar_pars():
     scalar_pars = {

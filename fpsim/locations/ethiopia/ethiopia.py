@@ -6,11 +6,11 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 from scipy import interpolate as si
-from ... import defaults as fpd
+from fpsim import defaults as fpd
 
 # %% Housekeeping
 
-thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
+thisdir = sc.thispath(__file__)  # For loading CSV files
 
 
 def scalar_pars():
@@ -72,7 +72,7 @@ def age_pyramid():
     Data are from World Population Prospects
     https://population.un.org/wpp/Download/Standard/Population/
      '''
-    pyramid = np.array([[0, 2018504, 1986199],  # Ethiopia 1962 
+    pyramid = np.array([[0, 2018504, 1986199],  # Ethiopia 1962
                         [5, 1508878, 1515088],
                         [10, 1349237, 1359040],
                         [15, 1227673, 1215562],
@@ -426,7 +426,6 @@ def sexual_activity_pp():
     Data is weighted.
     Limited to 23 months postpartum (can use any limit you want 0-23 max)
     Postpartum month 0 refers to the first month after delivery
-    TODO-- Add code for processing this for other countries to data_processing
     '''
 
     postpartum_sex = np.array([
@@ -973,7 +972,7 @@ def barriers_region():
     '''
     Returns reasons for nonuse by region
     '''
-    reasons_region = pd.read_csv(thisdir / 'data' / 'barriers_region.csv')
+    reasons_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'barriers_region.csv')
     reasons_region_dict = {}
     reasons_region_dict['region'] = reasons_region['region'] # Return region names
     reasons_region_dict['barrier'] = reasons_region['barrier'] # Return the reason for nonuse

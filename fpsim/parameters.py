@@ -571,7 +571,7 @@ default_pars = {
     'analyzers':            [],
 
     ###################################
-    # Context-specific data-derived parameters, all defined within location files
+    # Context-specific data-dervied parameters, all defined within location files
     ###################################
     'filenames':            None,
     'age_pyramid':          None,
@@ -649,18 +649,20 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
                       seed            = pars['seed'])
 
     # Define valid locations
-    valid_country_locs = ['senegal', 'kenya', 'ethiopia']
-    valid_regional_locs = ['addis ababa', 'afar', 'amhara', 'benishangul-gumuz', 'dire dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
-
-    # Call the creation of location parameters
     if location == 'default':
-        pars = sc.mergedicts(pars, fplocs.senegal.make_pars(**loc_kwargs))
-    elif location in valid_country_locs or valid_regional_locs:
-        pars = sc.mergedicts(pars, eval(f"fplocs.{location}.make_pars(**loc_kwargs)"))
-    # Else, error
-    else:
+        location = 'senegal'
+    valid_country_locs = dir(fplocs)
+    valid_ethiopia_regional_locs = dir(fplocs.ethiopia_regions)
+
+    # Get parameters for this location
+    if location in valid_country_locs:
+        location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
+    elif location in valid_ethiopia_regional_locs:
+        location_pars = getattr(fplocs.ethiopia_regions, location).make_pars(**loc_kwargs)
+    else: # Else, error
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
+    pars = sc.mergedicts(pars, location_pars)
 
     # Merge again, so that we ensure the user-defined values overwrite any location defaults
     pars = sc.mergedicts(pars, kwargs, _copy=True)
