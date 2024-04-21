@@ -1,0 +1,41 @@
+"""
+This script shows how to extract the mean proportion of women
+living in urban areas, as well as the standard error of the mean,
+from a DHS DTA file, Individual Women's Data - Individual Recode (IR).
+
+This dataset has one record for every eligible woman
+as defined by the household schedule.
+"""
+
+import numpy as np
+import pandas as pd
+import sciris as sc
+import fpsim.locations as fplocs
+
+home_dir = "/home/username"  # replace with your home directory
+dhs_dir = "DHS"
+country_dir = "KEIR8ADT"
+filename = "KEIR8AFL.DTA"
+
+# Path to DHS dataset stata file (.DTA)
+filepath = sc.path(home_dir, dhs_dir, country_dir, filename)
+data_raw = pd.read_stata(filepath)
+
+# Process the necessary information
+data_processed = pd.DataFrame(columns=["mean", "urban.se"])
+urban = pd.Series(np.where(data_raw["v025"] == 1, 1, 0))
+data_processed["mean"] = urban.mean()
+data_processed["urban.se"] = urban.sem()
+
+# If you want to write this DataFrame to a .csv file, in
+# the corresponding locations folder you can do:
+locations_path = sc.thisdir(fplocs)
+country = "kenya"
+output_filename = "urban.csv"
+
+# Actually save the data
+data_processed.to_csv(sc.path(locations_path, country,
+                              output_filename),
+                      index=False)
+# NOTE that this will replace the default urban.csv
+# TODO: maybe we automatically save a backup of default urban.csv?
