@@ -7,7 +7,6 @@ This dataset has one record for every eligible woman
 as defined by the household schedule.
 """
 
-import numpy as np
 import pandas as pd
 import sciris as sc
 import pathlib
@@ -27,7 +26,7 @@ data_raw = pd.read_stata(filepath)
 # Process the necessary information
 urban_var = "v025"  # DHS-8 variable name about type of place of residence
 data_processed = pd.DataFrame(columns=["mean", "urban.se"])
-urban = pd.Series(np.where(data_raw[urban_var] == 1, 1, 0))
+urban = (data_raw[urban_var] == 1).astype(float)
 data_processed["mean"] = urban.mean()
 data_processed["urban.se"] = urban.sem()
 
