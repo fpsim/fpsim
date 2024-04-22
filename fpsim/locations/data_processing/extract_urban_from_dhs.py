@@ -12,16 +12,16 @@ import sciris as sc
 import pathlib
 import fpsim.locations as fplocs
 
-# Assumes datasets are stored in /home/user/DHS/etc
-# Replace with relevant directory
+# Assumes datasets are stored in /home/user/DHS/...
+# Replace with relevant directories and filenames
 home_dir = pathlib.Path.home()
 dhs_dir = "DHS"
-country_dir = "KEIR8ADT"
-filename = "KEIR8AFL.DTA"
+country_dir = "KENYA"
+filename = "KEIR8BFL.DTA"
 
 # Path to DHS dataset stata file (.DTA)
 filepath = sc.path(home_dir, dhs_dir, country_dir, filename)
-data_raw = pd.read_stata(filepath)
+data_raw = pd.read_stata(filepath, convert_categoricals=False)
 
 # Process the necessary information
 urban_var = "v025"  # DHS-8 variable name about type of place of residence
