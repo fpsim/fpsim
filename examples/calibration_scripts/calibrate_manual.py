@@ -65,15 +65,15 @@ if do_save and not os.path.exists(figs_dir):
     os.mkdir(figs_dir)
 
 # Import country data files to compare
-ageparity    = pd.read_csv(os.path.join(country_dir, 'ageparity.csv')) # Age-parity distribution file
-use          = pd.read_csv(os.path.join(country_dir, 'use.csv'))  #Dichotomous contraceptive method use
-data_spaces  = pd.read_csv(os.path.join(country_dir, 'birth_spacing_dhs.csv'))  # Birth-to-birth interval data
-data_afb     = pd.read_csv(os.path.join(country_dir, 'afb.table.csv'))  # Ages at first birth in DHS for women age 25-50
-data_cpr     = pd.read_csv(os.path.join(country_dir, 'cpr.csv'))  # From UN Data Portal
-data_asfr    = pd.read_csv(os.path.join(country_dir, 'asfr.csv'))
-data_methods = pd.read_csv(os.path.join(country_dir, 'mix.csv'))
-data_tfr     = pd.read_csv(os.path.join(country_dir, 'tfr.csv'))
-data_popsize = pd.read_csv(os.path.join(country_dir, 'popsize.csv'))
+ageparity    = pd.read_csv(os.path.join(country_dir, 'data/ageparity.csv')) # Age-parity distribution file
+use          = pd.read_csv(os.path.join(country_dir, 'data/use.csv'))  #Dichotomous contraceptive method use
+data_spaces  = pd.read_csv(os.path.join(country_dir, 'data/birth_spacing_dhs.csv'))  # Birth-to-birth interval data
+data_afb     = pd.read_csv(os.path.join(country_dir, 'data/afb.table.csv'))  # Ages at first birth in DHS for women age 25-50
+data_cpr     = pd.read_csv(os.path.join(country_dir, 'data/cpr.csv'))  # From UN Data Portal
+data_asfr    = pd.read_csv(os.path.join(country_dir, 'data/asfr.csv'))
+data_methods = pd.read_csv(os.path.join(country_dir, 'data/mix.csv'))
+data_tfr     = pd.read_csv(os.path.join(country_dir, 'data/tfr.csv'))
+data_popsize = pd.read_csv(os.path.join(country_dir, 'data/popsize.csv'))
 
 # Set up global variables
 age_bin_map = {

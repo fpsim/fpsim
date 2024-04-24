@@ -15,9 +15,9 @@ thisdir = sc.thispath(__file__)  # For loading CSV files
 
 def scalar_pars():
     scalar_pars = eth.scalar_pars()
-    scalar_pars['location'] = 'snnpr'
-    scalar_pars['breastfeeding_dur_mu'] = 10.8948038961311
-    scalar_pars['breastfeeding_dur_beta'] = 9.14617213460201
+    scalar_pars['location'] = 'harari'
+    scalar_pars['breastfeeding_dur_mu'] = 8.03037384408415
+    scalar_pars['breastfeeding_dur_beta'] = 6.90532849979381
 
     return scalar_pars
 
@@ -36,43 +36,43 @@ def filenames():
 
 # %% Demographics and pregnancy outcome
 '''
-Data from 1994 Census Report for SNNPR Region
-https://www.statsethiopia.gov.et/wp-content/uploads/2019/06/Population-and-Housing-Census-1994-SNNPR-Region.pdf
+Data from 1994 Census Report for Harari Region
+https://www.statsethiopia.gov.et/wp-content/uploads/2019/06/Population-and-Housing-Census-1994-Harari-Region.pdf
 '''
 def age_pyramid():
-    pyramid = np.array([[0, 763492, 760552], # SNNPR 1994 
-                        [5, 911412, 894035],
-                        [10, 791413, 724175],
-                        [15, 567482, 565414],
-                        [20, 365270, 435650],
-                        [25, 363297, 435550],
-                        [30, 275582, 326932],
-                        [35, 271387, 317524],
-                        [40, 217935, 224555],
-                        [45, 169706, 156831],
-                        [50, 137902, 130372],
-                        [55, 79859, 63999],
-                        [60, 93050, 77540],
-                        [65, 48413, 35048],
-                        [70, 43511, 30689],
-                        [75, 20461, 12507],
-                        [80, 37843, 21804]
+    pyramid = np.array([[0, 7065, 6802], # Harari 1994 
+                        [5, 9115, 8538],
+                        [10, 9372, 8546],
+                        [15, 8362, 8991],
+                        [20, 5951, 6691],
+                        [25, 5040, 6071],
+                        [30, 4877, 4738],
+                        [35, 4107, 3843],
+                        [40, 3558, 2716],
+                        [45, 2079, 1727],
+                        [50, 1893, 1974],
+                        [55, 841, 927],
+                        [60, 1340, 1549],
+                        [65, 552, 610],
+                        [70, 628, 851],
+                        [75, 293, 276],
+                        [80, 477, 739]
                         ], dtype=float)    
     return pyramid
 
-def urban_proportion(): # TODO: Flagging this - currently this is being used for the urban ratio for SNNPR; I assume you'd want to use the region-specific value?
+def urban_proportion(): # TODO: Flagging this - currently this is being used for the urban ratio for Harari; I assume you'd want to use the region-specific value?
     urban_data = eth.urban_proportion()
     
     return urban_data  # Return this value as a float
 
 def region_proportions():
     '''
-    Defines the proportion of the population in the SNNPR region to establish the probability of living there.
+    Defines the proportion of the population in the Harari region to establish the probability of living there.
     '''
-    region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational_data' / 'region.csv')
+    region_data = pd.read_csv(thisdir / 'data' / 'region.csv')
     region_dict = {}
-    region_dict['mean'] = region_data.loc[region_data['region'] == 'SNNPR']['mean'] #HOLDER FOR NOW. NEED TO CALL ON LOCATION.
-    region_dict['urban'] = region_data.loc[region_data['region'] == 'SNNPR']['urban']
+    region_dict['mean'] = region_data.loc[region_data['region'] == 'Harari']['mean'] #HOLDER FOR NOW. NEED TO CALL ON LOCATION.
+    region_dict['urban'] = region_data.loc[region_data['region'] == 'Harari']['urban']
     
     return region_dict
 
@@ -118,13 +118,13 @@ def fecundity_ratio_nullip():
 
 def lactational_amenorrhea_region():
     '''
-    Returns a dictionary containing the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, specifically for the SNNPR region.
+    Returns a dictionary containing the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, specifically for the Harari region.
     '''
-    lam_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational_data' / 'lam_region.csv')
+    lam_region = pd.read_csv(thisdir / 'data' / 'lam_region.csv')
     lam_dict = {}
-    lam_dict['month'] = lam_region.loc[lam_region['region'] == 'SNNPR']['month'].tolist()
+    lam_dict['month'] = lam_region.loc[lam_region['region'] == 'Harari']['month'].tolist()
     lam_dict['month'] = np.array(lam_dict['month'], dtype=np.float64)
-    lam_dict['rate'] = lam_region.loc[lam_region['region'] == 'SNNPR']['rate'].tolist()
+    lam_dict['rate'] = lam_region.loc[lam_region['region'] == 'Harari']['rate'].tolist()
     lam_dict['rate'] = np.array(lam_dict['rate'], dtype=np.float64)
  
 
@@ -136,11 +136,11 @@ def sexual_activity_region(): #NEEDS UPDATING
     '''
     Returns a linear interpolation of rates of female sexual activity, stratified by region
     '''
-    sexually_active_region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational_data' / 'sexual_activity_region.csv')
+    sexually_active_region_data = pd.read_csv(thisdir / 'data' / 'sexual_activity_region.csv')
     sexually_active_region_dict = {}
-    sexually_active_region_dict['age'] = sexually_active_region_data.loc[sexually_active_region_data['region']== 'SNNPR']['age'].tolist()   # Return age
+    sexually_active_region_dict['age'] = sexually_active_region_data.loc[sexually_active_region_data['region']== 'Harari']['age'].tolist()   # Return age
     sexually_active_region_dict['age'] = np.array(sexually_active_region_dict['age'], dtype=np.float64)
-    sexually_active_region_dict['perc'] = [x / 100 for x in sexually_active_region_data.loc[sexually_active_region_data['region']== 'SNNPR']['perc'].tolist()]
+    sexually_active_region_dict['perc'] = [x / 100 for x in sexually_active_region_data.loc[sexually_active_region_data['region']== 'Harari']['perc'].tolist()]
     sexually_active_region_dict['perc'] = np.array(sexually_active_region_dict['perc'], dtype=np.float64)
 
     activity_interp_model_region = si.interp1d(x=sexually_active_region_dict['age'], y=sexually_active_region_dict['perc'])
@@ -152,11 +152,11 @@ def sexual_activity_pp_region():
     '''
      # Returns an additional array of monthly likelihood of having resumed sexual activity by region
     '''
-    pp_activity_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational_data' / 'sexual_activity_pp_region.csv')
+    pp_activity_region = pd.read_csv(thisdir / 'data' / 'sexual_activity_pp_region.csv')
     pp_activity_region_dict = {}
-    pp_activity_region_dict['month'] = pp_activity_region.loc[pp_activity_region['region'] == 'SNNPR']['month'].tolist()
+    pp_activity_region_dict['month'] = pp_activity_region.loc[pp_activity_region['region'] == 'Harari']['month'].tolist()
     pp_activity_region_dict['month'] = np.array(pp_activity_region_dict['month'], dtype=np.float64)
-    pp_activity_region_dict['percent_active'] = pp_activity_region.loc[pp_activity_region['region'] == 'SNNPR']['perc'].tolist()
+    pp_activity_region_dict['percent_active'] = pp_activity_region.loc[pp_activity_region['region'] == 'Harari']['perc'].tolist()
     pp_activity_region_dict['percent_active'] = np.array(pp_activity_region_dict['percent_active'], dtype=np.float64)
     
     return pp_activity_region_dict
@@ -165,11 +165,11 @@ def debut_age_region():
     '''
  #   Returns an additional array of weighted probabilities of sexual debut by region
     '''
-    sexual_debut_region_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational_data' / 'sexual_debut_region.csv')
+    sexual_debut_region_data = pd.read_csv(thisdir / 'data' / 'sexual_debut_region.csv')
     debut_age_region_dict = {}
-    debut_age_region_dict['ages'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'SNNPR']['age'].tolist()
+    debut_age_region_dict['ages'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Harari']['age'].tolist()
     debut_age_region_dict['ages'] = np.array(debut_age_region_dict['ages'], dtype=np.float64)
-    debut_age_region_dict['probs'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'SNNPR']['prob'].tolist()
+    debut_age_region_dict['probs'] = sexual_debut_region_data.loc[sexual_debut_region_data['region'] == 'Harari']['prob'].tolist()
     debut_age_region_dict['probs'] = np.array(debut_age_region_dict['probs'], dtype=np.float64)
 
     return debut_age_region_dict
@@ -399,10 +399,10 @@ def barriers_region():
     Returns reasons for nonuse by region
     '''
 
-    reasons_region = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational_data' / 'barriers_region.csv')
+    reasons_region = pd.read_csv(thisdir / 'data' / 'barriers_region.csv')
     reasons_region_dict = {}
-    barriers = reasons_region.loc[reasons_region['region'] == 'SNNPR']['barrier'].tolist() # Return the reason for nonuse
-    percs = reasons_region.loc[reasons_region['region'] == 'SNNPR']['perc'].tolist() # Return the percentage
+    barriers = reasons_region.loc[reasons_region['region'] == 'Harari']['barrier'].tolist() # Return the reason for nonuse
+    percs = reasons_region.loc[reasons_region['region'] == 'Harari']['perc'].tolist() # Return the percentage
 
     for i in range(len(barriers)):
         reasons_region_dict[barriers[i]] = percs[i]
@@ -414,7 +414,7 @@ def barriers_region():
 
 # %% Make and validate parameters
 
-def make_pars():
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
     '''
     Take all parameters and construct into a dictionary
     '''
@@ -452,5 +452,12 @@ def make_pars():
     # Regional parameters
     pars['urban_prop'] = urban_proportion()
     pars['region'] = region_proportions() # This function returns extrapolated and raw data
+
+    kwargs = locals()
+    not_implemented_args = ['use_empowerment', 'use_education', 'use_partnership']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
+    if true_args:
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
+        raise NotImplementedError(errmsg)
 
     return pars

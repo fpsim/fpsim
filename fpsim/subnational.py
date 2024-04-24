@@ -28,7 +28,7 @@ def init_regional_states(ppl):
 
 
 def get_region_init_vals(ppl):
-    """Get initial distribution of regions"""
+    """Get initial distribution of region_scripts"""
 
     region_dict = ppl.pars['region']
     n = len(ppl)

@@ -61,7 +61,7 @@ if __name__ == '__main__':
         ####################################################
         cwd = os.path.abspath(os.getcwd())
         country_dir = f'../../fpsim/locations/{country}'
-        figs_dir = os.path.join(cwd, country_dir, 'subnational_data/figs', region)
+        figs_dir = os.path.join(cwd, country_dir, 'regions/figs', region)
         if do_save == 1 and os.path.exists(figs_dir) is False:
             os.makedirs(figs_dir, exist_ok=True)
 
@@ -115,10 +115,10 @@ if __name__ == '__main__':
                 formatted_region = region.replace('_', '-').title()  # Replace underscore with dash and capitalize each word
 
         # Import country data files to compare
-        data_asfr = pd.read_csv(f'{country_dir}/subnational_data/asfr_region.csv').loc[lambda df: df['region'] == formatted_region]
-        data_methods = pd.read_csv(f'{country_dir}/subnational_data/mix_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
-        data_tfr = pd.read_csv(f'{country_dir}/subnational_data/tfr_region.csv').loc[lambda df: df['region'] == formatted_region]
-        data_use = pd.read_csv(f'{country_dir}/subnational_data/use_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
+        data_asfr = pd.read_csv(f'{country_dir}/regions/data/asfr_region.csv').loc[lambda df: df['region'] == formatted_region]
+        data_methods = pd.read_csv(f'{country_dir}/regions/data/mix_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
+        data_tfr = pd.read_csv(f'{country_dir}/regions/data/tfr_region.csv').loc[lambda df: df['region'] == formatted_region]
+        data_use = pd.read_csv(f'{country_dir}/regions/data/use_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
         
         calibration = fp.Calibration(pars, calib_pars=freepars)
         calibration.calibrate()
