@@ -10,7 +10,16 @@ from . import version as fpv
 
 
 # Specify all externally visible things this file defines
-__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample']
+__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample', 'match_ages']
+__all__ += ['DuplicateNameException']
+
+
+@nb.jit((nb.float64[:], nb.float64, nb.float64), cache=True, nopython=True)
+def match_ages(age, age_low, age_high):
+    ''' Find ages between age low and age_high '''
+    match_low  = (age >= age_low)
+    match_high = (age <  age_high)
+    return match_low & match_high
 
 
 def set_seed(seed=None):
@@ -287,8 +296,10 @@ def sigmoid_product(x, a1, b1, a2, b2):
 
     Current form produces  0 <= f(x) <= 1
     '''
-
-    return (1.0 / (1.0 + np.exp(a1 - b1*x))) * (1.0 / (1.0 + np.exp(a2 - b2*x)))
+    max_exp = 709
+    x1 = np.clip(a1 - b1*x, -max_exp, max_exp)
+    x2 = np.clip(a2 - b2*x, -max_exp, max_exp)
+    return (1.0 / (1.0 + np.exp(x1))) * (1.0 / (1.0 + np.exp(x2)))
 
 
 def gompertz(x, a, b, c):
@@ -334,3 +345,17 @@ def gompertz_dfun(x, a, b, c):
     ndarray: An array of derivative values corresponding to the input x values.
     '''
     return a*b*c*np.exp(-(b/np.exp(c*x)) - c*x)
+
+
+#% Exceptions
+
+class DuplicateNameException(Exception):
+    """
+    Raised when either multiple instances of Module or State, or of any other type
+    passed to ndict have duplicate names."""
+
+
+    def __init__(self, obj):
+        msg = f"A {type(obj)} with name `{obj.name}` has already been added."
+        super().__init__(msg)
+        return

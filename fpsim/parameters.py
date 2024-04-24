@@ -7,17 +7,17 @@ import sciris as sc
 from . import utils as fpu
 from . import defaults as fpd
 
-__all__ = ['Pars', 'pars']
+__all__ = ['Pars', 'pars', 'default_pars']
 
 
-#%% Pars (parameters) class
+# %% Pars (parameters) class
 
 def getval(v):
-    ''' Handle different ways of supplying a value -- number, distribution, function '''
+    """ Handle different ways of supplying a value -- number, distribution, function """
     if sc.isnumber(v):
         return v
     elif isinstance(v, dict):
-        return fpu.sample(**v)[0] # [0] since returns an array
+        return fpu.sample(**v)[0]  # [0] since returns an array
     elif callable(v):
         return v()
 
@@ -38,21 +38,17 @@ class Pars(dict):
         self.update(pars)
         return
 
-
     def __repr__(self, *args, **kwargs):
         ''' Use odict repr, but with a custom class name and no quotes '''
         return sc.odict.__repr__(self, quote='', numsep='.', classname='fp.Parameters()', *args, **kwargs)
-
 
     def copy(self):
         ''' Shortcut for deep copying '''
         return sc.dcp(self)
 
-
     def to_dict(self):
         ''' Return parameters as a new dictionary '''
-        return {k:v for k,v in self.items()}
-
+        return {k: v for k, v in self.items()}
 
     def to_json(self, filename, **kwargs):
         '''
@@ -66,7 +62,6 @@ class Pars(dict):
             sim.pars.to_json('my_pars.json')
         '''
         return sc.savejson(filename=filename, obj=self.to_dict(), **kwargs)
-
 
     def from_json(self, filename, **kwargs):
         '''
@@ -82,7 +77,6 @@ class Pars(dict):
         pars = sc.loadjson(filename=filename, **kwargs)
         self.update(pars)
         return self
-
 
     def validate(self, die=True, update=True):
         '''
@@ -105,8 +99,10 @@ class Pars(dict):
             if diff2:
                 errormsg += 'The parameter set is not valid since the following keys are not recognized:\n'
                 errormsg += f'{sc.strjoin(diff2)}\n'
-            if die: raise ValueError(errormsg)
-            else:   print(errormsg)
+            if die:
+                raise ValueError(errormsg)
+            else:
+                print(errormsg)
 
         # Validate method properties
         methods = self['methods']
@@ -118,8 +114,10 @@ class Pars(dict):
         eff_keys = list(methods['eff'].keys())
         if not (method_keys == eff_keys == modern_keys):
             errormsg = f'Mismatch between method mapping keys:\n{method_keys}",\nmodern keys\n"{modern_keys}", and efficacy keys\n"{eff_keys}"'
-            if die: raise ValueError(errormsg)
-            else:   print(errormsg)
+            if die:
+                raise ValueError(errormsg)
+            else:
+                print(errormsg)
 
         # Validate method matrices
         raw = methods['raw']
@@ -128,28 +126,34 @@ class Pars(dict):
             m_age_keys = set(raw[mkey].keys())
             if age_keys != m_age_keys:
                 errormsg = f'Matrix "{mkey}" has inconsistent keys: "{sc.strjoin(age_keys)}" ≠ "{sc.strjoin(m_age_keys)}"'
-                if die: raise ValueError(errormsg)
-                else:   print(errormsg)
+                if die:
+                    raise ValueError(errormsg)
+                else:
+                    print(errormsg)
         for k in age_keys:
             shape = raw['pp0to1'][k].shape
             if shape != (n,):
                 errormsg = f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'
-                if die: raise ValueError(errormsg)
-                else:   print(errormsg)
+                if die:
+                    raise ValueError(errormsg)
+                else:
+                    print(errormsg)
             for mkey in ['annual', 'pp1to6']:
                 shape = raw[mkey][k].shape
-                if shape != (n,n):
+                if shape != (n, n):
                     errormsg = f'Method matrix {mkey} for ages {k} has unexpected shape: should be ({n},{n}), not {shape}'
-                    if die: raise ValueError(errormsg)
-                    else:   print(errormsg)
+                    if die:
+                        raise ValueError(errormsg)
+                    else:
+                        print(errormsg)
 
         # Copy to defaults, making use of mutable objects to preserve original object ID
         if update:
-            for k in list(fpd.method_map.keys()):     fpd.method_map.pop(k) # Remove all items
-            for k in list(fpd.method_age_map.keys()): fpd.method_age_map.pop(k) # Remove all items
-            for k,v in new_method_map.items():
+            for k in list(fpd.method_map.keys()):     fpd.method_map.pop(k)  # Remove all items
+            for k in list(fpd.method_age_map.keys()): fpd.method_age_map.pop(k)  # Remove all items
+            for k, v in new_method_map.items():
                 fpd.method_map[k] = v
-            for k,v in new_method_age_map.items():
+            for k, v in new_method_age_map.items():
                 fpd.method_age_map[k] = v
 
         return self
@@ -172,14 +176,14 @@ class Pars(dict):
 
         # Handle options
         if key in fpd.none_all_keys:
-            ind = slice(None) # This is equivalent to ":" in matrix[:,:]
-        elif isinstance(key, str): # Normal case, convert from key to index
+            ind = slice(None)  # This is equivalent to ":" in matrix[:,:]
+        elif isinstance(key, str):  # Normal case, convert from key to index
             try:
                 ind = mapping[key]
             except KeyError as E:
                 errormsg = f'Key "{key}" is not a valid method'
                 raise sc.KeyNotFoundError(errormsg) from E
-        elif isinstance(key, int): # Already an int, do nothing
+        elif isinstance(key, int):  # Already an int, do nothing
             ind = key
             if ind < len(keys):
                 key = keys[ind]
@@ -191,7 +195,6 @@ class Pars(dict):
             raise TypeError(errormsg)
         return ind
 
-
     def _as_key(self, ind):
         '''
         Convert ind to key, e.g. 7 → 'Condoms'.
@@ -199,13 +202,13 @@ class Pars(dict):
         If already a key, do validation.
         '''
         keys = list(self['methods']['map'].keys())
-        if isinstance(ind, int): # Normal case, convert to string
+        if isinstance(ind, int):  # Normal case, convert to string
             if ind < len(keys):
                 key = keys[ind]
             else:
                 errormsg = f'Method index {ind} is out of bounds for methods {sc.strjoin(keys)}'
                 raise IndexError(errormsg)
-        elif isinstance(ind, str): # Already a string, do nothing
+        elif isinstance(ind, str):  # Already a string, do nothing
             key = ind
             if key not in keys:
                 errormsg = f'Name "{key}" is not a valid method: choices are {sc.strjoin(keys)}'
@@ -214,7 +217,6 @@ class Pars(dict):
             errormsg = f'Could not process index of type {type(ind)}: must be int or str'
             raise TypeError(errormsg)
         return key
-
 
     def update_method_eff(self, method, eff=None, verbose=False):
         '''
@@ -235,10 +237,10 @@ class Pars(dict):
                 errormsg = 'Must supply a value to update the contraceptive efficacy to'
                 raise ValueError(errormsg)
             else:
-                method = {method:eff}
+                method = {method: eff}
 
         # Perform updates
-        for k,rawval in method.items():
+        for k, rawval in method.items():
             k = self._as_key(k)
             v = getval(rawval)
             effs = self['methods']['eff']
@@ -248,7 +250,6 @@ class Pars(dict):
                 print(f'Efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
 
         return self
-
 
     def update_method_prob(self, source=None, dest=None, factor=None, value=None,
                            ages=None, matrix=None, copy_from=None, verbose=False):
@@ -267,15 +268,15 @@ class Pars(dict):
             verbose   (bool):     how much detail to print
         '''
 
-        raw = self['methods']['raw'] # We adjust the raw matrices, so the effects are persistent
+        raw = self['methods']['raw']  # We adjust the raw matrices, so the effects are persistent
 
         # Convert from strings to indices
         if copy_from:
             copy_from = self._as_ind(copy_from, allow_none=False)
-            if source is None: # We need a source, but it's not always used
+            if source is None:  # We need a source, but it's not always used
                 source = copy_from
         source = self._as_ind(source, allow_none=False)
-        dest   = self._as_ind(dest, allow_none=False)
+        dest = self._as_ind(dest, allow_none=False)
 
         # Replace age keys with all ages if so asked
         if ages in fpd.none_all_keys:
@@ -291,8 +292,8 @@ class Pars(dict):
         # Actually loop over the matrices and apply the changes
         for k in ages:
             arr = raw[matrix][k]
-            if matrix == 'pp0to1': # Handle the postpartum initialization *vector*
-                orig = arr[dest] # Pull out before being overwritten
+            if matrix == 'pp0to1':  # Handle the postpartum initialization *vector*
+                orig = arr[dest]  # Pull out before being overwritten
 
                 # Handle copy from
                 if copy_from is not None:
@@ -304,24 +305,24 @@ class Pars(dict):
                 elif value is not None:
                     val = getval(value)
                     arr[dest] = 0
-                    arr *= (1-val)/arr.sum()
+                    arr *= (1 - val) / arr.sum()
                     arr[dest] = val
                     assert np.isclose(arr.sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {arr.sum()}'
                 if verbose:
                     print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[dest]}')
 
-            else: # Handle annual switching *matrices*
+            else:  # Handle annual switching *matrices*
                 orig = sc.dcp(arr[source, dest])
 
                 # Handle copy from
                 if copy_from is not None:
-                    arr[:,dest] = arr[:, copy_from]
-                    arr[dest,:] = arr[copy_from, :]
+                    arr[:, dest] = arr[:, copy_from]
+                    arr[dest, :] = arr[copy_from, :]
                     median_init = np.median(arr[:, copy_from])
                     median_discont = np.median(arr[copy_from, :])
-                    arr[dest,dest] = arr[copy_from, copy_from] # Replace diagonal element with correct version
+                    arr[dest, dest] = arr[copy_from, copy_from]  # Replace diagonal element with correct version
                     arr[copy_from, dest] = median_init
-                    arr[dest,copy_from] = median_discont
+                    arr[dest, copy_from] = median_discont
 
                 # Handle modifications
                 if factor is not None:
@@ -329,7 +330,7 @@ class Pars(dict):
                 elif value is not None:
                     val = getval(value)
                     arr[source, dest] = 0
-                    arr[source, :] *= (1-val)/arr[source, :].sum()
+                    arr[source, :] *= (1 - val) / arr[source, :].sum()
                     arr[source, dest] = val
                     assert np.isclose(arr[source, :].sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {arr.sum()}'
                 if verbose:
@@ -337,13 +338,11 @@ class Pars(dict):
 
         return self
 
-
     def reset_methods_map(self):
         ''' Refresh the methods map to be self-consistent '''
         methods = self['methods']
-        methods['map'] = {k:i for i,k in enumerate(methods['map'].keys())} # Reset numbering
+        methods['map'] = {k: i for i, k in enumerate(methods['map'].keys())}  # Reset numbering
         return self
-
 
     def add_method(self, name, eff, modern=True):
         '''
@@ -369,9 +368,9 @@ class Pars(dict):
         # Remove from mapping and efficacy
         methods = self['methods']
         n = len(methods['map'])
-        methods['map'][name]    = n # Can't use reset_methods_map since need to define the new entry
+        methods['map'][name] = n  # Can't use reset_methods_map since need to define the new entry
         methods['modern'][name] = modern
-        methods['eff'][name]    = eff
+        methods['eff'][name] = eff
 
         # Modify method matrices
         raw = methods['raw']
@@ -379,22 +378,21 @@ class Pars(dict):
         for k in age_keys:
             # Handle the initiation matrix
             pp0to1 = raw['pp0to1']
-            pp0to1[k] = np.append(pp0to1[k], 0) # Append a zero to the end
+            pp0to1[k] = np.append(pp0to1[k], 0)  # Append a zero to the end
 
             # Handle the other matrices
             for mkey in ['annual', 'pp1to6']:
                 matrix = raw[mkey]
-                zeros_row = np.zeros((1,n))
-                zeros_col = np.zeros((n+1,1))
-                matrix[k] = np.append(matrix[k], zeros_row, axis=0) # Append row to bottom
-                matrix[k] = np.append(matrix[k], zeros_col, axis=1) # Append column to right
-                matrix[k][n,n] = 1.0 # Set everything to zero except continuation
+                zeros_row = np.zeros((1, n))
+                zeros_col = np.zeros((n + 1, 1))
+                matrix[k] = np.append(matrix[k], zeros_row, axis=0)  # Append row to bottom
+                matrix[k] = np.append(matrix[k], zeros_col, axis=1)  # Append column to right
+                matrix[k][n, n] = 1.0  # Set everything to zero except continuation
 
         # Validate
         self.validate()
 
         return self
-
 
     def rm_method(self, name):
         '''
@@ -436,14 +434,13 @@ class Pars(dict):
             # Handle the other matrices
             for mkey in ['annual', 'pp1to6']:
                 matrix = raw[mkey]
-                for axis in [0,1]:
+                for axis in [0, 1]:
                     matrix[k] = np.delete(matrix[k], ind, axis=axis)
 
         # Validate
         self.validate()
 
         return self
-
 
     def reorder_methods(self, order):
         '''
@@ -467,10 +464,10 @@ class Pars(dict):
         methods['map_orig'] = orig
 
         # Reorder mapping and efficacy
-        if isinstance(order[0], str): # If strings are supplied, convert to ints
+        if isinstance(order[0], str):  # If strings are supplied, convert to ints
             order = [orig_keys.index(k) for k in order]
         order_set = sorted(set(order))
-        orig_set  = sorted(set(np.arange(len(orig_keys))))
+        orig_set = sorted(set(np.arange(len(orig_keys))))
 
         # Validation
         if order_set != orig_set:
@@ -480,8 +477,8 @@ class Pars(dict):
         # Reorder map and efficacy -- TODO: think about how to implement rename as well
         new_keys = [orig_keys[k] for k in order]
         for parkey in ['map', 'modern', 'eff']:
-            methods[parkey] = {k:methods[parkey][k] for k in new_keys}
-        self.reset_methods_map() # Restore ordering
+            methods[parkey] = {k: methods[parkey][k] for k in new_keys}
+        self.reset_methods_map()  # Restore ordering
 
         # Modify method matrices
         raw = methods['raw']
@@ -494,7 +491,7 @@ class Pars(dict):
             # Handle the other matrices
             for mkey in ['annual', 'pp1to6']:
                 matrix = raw[mkey]
-                matrix[k] = matrix[k][:,order][order]
+                matrix[k] = matrix[k][:, order][order]
 
         # Validate
         self.validate()
@@ -502,33 +499,120 @@ class Pars(dict):
         return self
 
 
-#%% Parameter creation functions
+# %% Parameter creation functions
 
-def sim_pars():
-    ''' Additional parameters used in the sim '''
-    sim_pars = dict(
-        mortality_probs = {}, # CK: TODO: rethink implementation
-        interventions   = [],
-        analyzers       = [],
-    )
-    return sim_pars
+# Dictionary with all parameters used within an FPsim.
+# All parameters that don't vary across geographies are defined explicitly here.
+# Keys for all location-specific parameters are also defined here with None values.
 
+default_pars = {
+    # Basic parameters
+    'location':             None,   # CONTEXT-SPECIFIC ####
+    'n_agents':             1_000,  # Number of agents
+    'scaled_pop':           None,   # Scaled population / total population size
+    'start_year':           1960,   # Start year of simulation
+    'end_year':             2020,   # End year of simulation
+    'timestep':             1,      # The simulation timestep in months
+    'method_timestep':      1,      # How many simulation timesteps to go for every method update step
+    'seed':                 1,      # Random seed
+    'verbose':              1,      # How much detail to print during the simulation
 
-def empowerment_pars():
-    ''' Additional empowerment parameters'''
-    empwrmnt_pars = dict(
-        urban_prop      = None,
-        empowerment     = None,
-        education       = None,
-        age_partnership = None,
-    )
+    # Settings - what aspects are being modeled
+    'track_switching':      0,      # Whether to track method switching
+    'track_as':             0,      # Whether to track age-specific channels
+    'use_urban':            0,      # Whether to model urban setting state - will need to add context-specific data if using
+    'use_partnership':      0,      # Whether to model partnered states- will need to add context-specific data if using
+    'use_empowerment':      0,      # Whether to model empowerment - will need to add context-specific data if using
+    'use_education':        0,      # Whether to model education, requires use_urban==True for kenya - will need to add context-specific data if using
+    'use_subnational':        0,    # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
 
-    return empwrmnt_pars
+    # Age limits (in years)
+    'method_age':           15,
+    'age_limit_fecundity':  50,
+    'max_age':              99,
+
+    # Durations (in months)
+    'switch_frequency':     12,     # How frequently to check for changes to contraception
+    'end_first_tri':        3,
+    'preg_dur_low':         9,
+    'preg_dur_high':        9,
+    'max_lam_dur':          5,      # Duration of lactational amenorrhea
+    'short_int':            24,     # Duration of a short birth interval between live births in months
+    'low_age_short_int':    0,      # age limit for tracking the age-specific short birth interval
+    'high_age_short_int':   20,     # age limit for tracking the age-specific short birth interval
+    'postpartum_dur':       35,
+    'breastfeeding_dur_mu': None,   # CONTEXT-SPECIFIC #### - Location parameter of gumbel distribution
+    'breastfeeding_dur_beta': None,  # CONTEXT-SPECIFIC #### - Scale parameter of gumbel distribution
+
+    # Pregnancy outcomes
+    'abortion_prob':        None,   # CONTEXT-SPECIFIC ####
+    'twins_prob':           None,   # CONTEXT-SPECIFIC ####
+    'LAM_efficacy':         0.98,   # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
+    'maternal_mortality_factor': 1,
+
+    # Fecundity and exposure
+    'fecundity_var_low':    0.7,
+    'fecundity_var_high':   1.1,
+    'high_parity':          4,
+    'high_parity_nonuse':   0.6,
+    'primary_infertility':  0.05,
+    'exposure_factor':      1.0,    # Overall exposure correction factor
+    'restrict_method_use':  0,      # If 1, only allows agents to select methods when sexually active within 1 year
+                                    # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
+
+    # MCPR
+    'mcpr_growth_rate':     0.02,   # Year-on-year change in MCPR after the end of the data
+    'mcpr_max':             0.9,    # Do not allow MCPR to increase beyond this
+    'mcpr_norm_year':       None,   # CONTEXT-SPECIFIC #### - year to normalize MCPR trend to 1
+
+    # Other sim parameters
+    'mortality_probs':      {},
+    'interventions':        [],
+    'analyzers':            [],
+
+    ###################################
+    # Context-specific data-dervied parameters, all defined within location files
+    ###################################
+    'filenames':            None,
+    'age_pyramid':          None,
+    'age_mortality':        None,
+    'maternal_mortality':   None,
+    'infant_mortality':     None,
+    'miscarriage_rates':    None,
+    'stillbirth_rate':      None,
+    'age_fecundity':        None,
+    'fecundity_ratio_nullip': None,
+    'lactational_amenorrhea': None,
+    'sexual_activity':      None,
+    'sexual_activity_pp':   None,
+    'debut_age':            None,
+    'exposure_age':         None,
+    'exposure_parity':      None,
+    'spacing_pref':         None,
+    'methods':              None,
+    'barriers':             None,
+
+    # Empowerment (if using, set use_empowerment to True in the pars dict or location file and provide these)
+    'urban_prop':           None,
+    'empowerment':          None,
+    'education':            None,
+    'age_partnership':      None,
+
+    'region':               None,
+    'lactational_amenorrhea_region': None,
+    'sexual_activity_region':       None,
+    'sexual_activity_pp_region':    None,
+    'debut_age_region':             None,
+    'barriers_region':              None,
+}
+
+# Shortcut for accessing default keys
+par_keys = default_pars.keys()
 
 
 def pars(location=None, validate=True, die=True, update=True, **kwargs):
     '''
-    Function for getting default parameters.
+    Function for updating parameters.
 
     Args:
         location (str): the location to use for the parameters; use 'test' for a simple test set of parameters
@@ -545,7 +629,7 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     if not location:
         location = 'default'
 
-    location = location.lower() # Ensure it's lowercase
+    location = location.lower()  # Ensure it's lowercase
 
     # Set test parameters
     if location == 'test':
@@ -555,26 +639,32 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
         kwargs.setdefault('start_year', 2000)
         kwargs.setdefault('end_year', 2010)
 
+    # Initialize parameter dict, which will be updated with location data
+    pars = sc.mergedicts(default_pars, kwargs, _copy=True)  # Merge all pars with kwargs and copy
+
+    # Pull out values needed for the location-specific make_pars functions
+    loc_kwargs = dict(use_empowerment = pars['use_empowerment'],
+                      use_education   = pars['use_education'],
+                      use_partnership = pars['use_partnership'],
+                      seed            = pars['seed'])
+
     # Define valid locations
-    if location in ['senegal', 'default']:
-        pars = fplocs.senegal.make_pars()
-    elif location == 'kenya':
-        pars = fplocs.kenya.make_pars()
-    elif location == 'ethiopia':
-        pars = fplocs.ethiopia.make_pars()
-    # Else, error
-    else:
+    if location == 'default':
+        location = 'senegal'
+    valid_country_locs = dir(fplocs)
+    valid_ethiopia_regional_locs = dir(fplocs.ethiopia_regions)
+
+    # Get parameters for this location
+    if location in valid_country_locs:
+        location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
+    elif location in valid_ethiopia_regional_locs:
+        location_pars = getattr(fplocs.ethiopia_regions, location).make_pars(**loc_kwargs)
+    else: # Else, error
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
+    pars = sc.mergedicts(pars, location_pars)
 
-    # Add parameter keys related to empowerment attributes,
-    # with default values None
-    if location != 'kenya':
-        # Merge with empowerment_pars
-        pars.update(empowerment_pars())
-
-    # Merge with sim_pars and kwargs and copy
-    pars.update(sim_pars())
+    # Merge again, so that we ensure the user-defined values overwrite any location defaults
     pars = sc.mergedicts(pars, kwargs, _copy=True)
 
     # Convert to the class
@@ -586,7 +676,3 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
 
     return pars
 
-
-# Finally, create default parameters to use for accessing keys etc
-default_pars = pars(validate=False) # Do not validate since default parameters are used for validation
-par_keys = default_pars.keys()

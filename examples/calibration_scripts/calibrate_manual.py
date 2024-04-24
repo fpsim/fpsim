@@ -25,7 +25,6 @@ popsize.csv'  # Population by year
 which were used as a standard in writing this script.
 
 '''
-import math
 import os
 import numpy as np
 import pandas as pd
@@ -38,55 +37,54 @@ import seaborn as sns
 # GLOBAL VARIABLES: USER MUST SET
 
 # Name of the country being calibrated. To note that this should match the name of the country data folder
-country = 'kenya'
+country = 'ethiopia'
 
 # Set options for plotting
-do_plot_sim = False
-do_plot_asfr = False
-do_plot_methods = False
-do_plot_ageparity = False
-do_plot_cpr = False
-do_plot_tfr = False
-do_plot_pop_growth = False
-do_plot_birth_space_afb = False
-do_plot_empowerment = True
+do_plot_sim = True
+do_plot_asfr = True
+do_plot_methods = True
+do_plot_ageparity = True
+do_plot_cpr = True
+do_plot_tfr = True
+do_plot_pop_growth = True
+do_plot_birth_space_afb = True
 
 # Set option to save figures
-do_save = 1
+do_save = True
 
 # Dataset contained in the ageparity csv file to which the model data will be compared (i.e. 'PMA 2022',
 # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_ageparity.csv file, you will receive
 # an error when running the script.
-ageparity_dataset = 'PMA 2022'
+ageparity_dataset = 'PMA 2019'
 
 ####################################################
-
-if do_save == 1 and os.path.exists(f'./{country}/figs') == False:
-    os.mkdir(f'./{country}/figs')
+cwd = os.path.dirname(os.path.abspath(__file__))
+country_dir = os.path.abspath(os.path.join(cwd, '../../fpsim/locations/', country))
+figs_dir    = os.path.join(country_dir, 'figs')
+if do_save and not os.path.exists(figs_dir):
+    os.mkdir(figs_dir)
 
 # Import country data files to compare
-ageparity = pd.read_csv(f'./{country}/ageparity.csv') # Age-parity distribution file
-use = pd.read_csv(f'./{country}/use.csv') #Dichotomous contraceptive method use
-data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
-data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
-data_cpr = pd.read_csv(f'./{country}/cpr.csv')  # From UN Data Portal
-data_asfr = pd.read_csv(f'./{country}/asfr.csv')
-data_methods = pd.read_csv(f'./{country}/mix.csv')
-data_tfr = pd.read_csv(f'./{country}/tfr.csv')
-data_popsize = pd.read_csv(f'./{country}/popsize.csv')
-data_empowerment = pd.read_csv(f'./{country}/empowerment.csv')
-data_edu = pd.read_csv(f'./{country}/edu_initialization.csv')
+ageparity    = pd.read_csv(os.path.join(country_dir, 'ageparity.csv')) # Age-parity distribution file
+use          = pd.read_csv(os.path.join(country_dir, 'use.csv'))  #Dichotomous contraceptive method use
+data_spaces  = pd.read_csv(os.path.join(country_dir, 'birth_spacing_dhs.csv'))  # Birth-to-birth interval data
+data_afb     = pd.read_csv(os.path.join(country_dir, 'afb.table.csv'))  # Ages at first birth in DHS for women age 25-50
+data_cpr     = pd.read_csv(os.path.join(country_dir, 'cpr.csv'))  # From UN Data Portal
+data_asfr    = pd.read_csv(os.path.join(country_dir, 'asfr.csv'))
+data_methods = pd.read_csv(os.path.join(country_dir, 'mix.csv'))
+data_tfr     = pd.read_csv(os.path.join(country_dir, 'tfr.csv'))
+data_popsize = pd.read_csv(os.path.join(country_dir, 'popsize.csv'))
 
 # Set up global variables
 age_bin_map = {
-    '10-14': [10, 15],
-    '15-19': [15, 20],
-    '20-24': [20, 25],
-    '25-29': [25, 30],
-    '30-34': [30, 35],
-    '35-39': [35, 40],
-    '40-44': [40, 45],
-    '45-49': [45, 50]
+        '10-14': [10, 15],
+        '15-19': [15, 20],
+        '20-24': [20, 25],
+        '25-29': [25, 30],
+        '30-34': [30, 35],
+        '35-39': [35, 40],
+        '40-44': [40, 45],
+        '45-49': [45, 50]
 }
 
 min_age = 15
@@ -197,7 +195,7 @@ if do_plot_asfr:
         sc.boxoff()
 
         if do_save:
-            pl.savefig(f'{country}/figs/asfr.png')
+            pl.savefig(os.path.join(figs_dir, 'asfr.png'))
 
         pl.show()
 
@@ -287,14 +285,14 @@ if do_plot_methods:
         ax.set_xlabel('Percent users')
         ax.set_title(f'{country.capitalize()}: Contraceptive Method Mix - Model vs Data')
         if do_save:
-                pl.savefig(f"{country}/figs/method_mix.png", bbox_inches='tight', dpi=100)
+                pl.savefig(os.path.join(figs_dir, "method_mix.png"), bbox_inches='tight', dpi=100)
 
         # Plot use
         ax = df_use.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
         ax.set_xlabel('Percent')
         ax.set_title(f'{country.capitalize()}: Contraceptive Method Use - Model vs Data')
         if do_save:
-                pl.savefig(f"{country}/figs/method_use.png", bbox_inches='tight', dpi=100)
+                pl.savefig(os.path.join(figs_dir, "method_use.png"), bbox_inches='tight', dpi=100)
 
 
 if do_plot_ageparity:
@@ -360,12 +358,12 @@ if do_plot_ageparity:
                 pl.gca().set_yticks(pl.arange(n_parity))
                 pl.gca().set_xticklabels(age_bins)
                 pl.gca().set_yticklabels(parity_bins)
-                pl.gca().view_init(30, 45)
+                #pl.gca().view_init(30, 45)
                 pl.draw()
 
 
                 if do_save:
-                    sc.savefig(f'{country}/figs/ageparity_' + str(key.lower()) + '.png')
+                    sc.savefig(os.path.join(figs_dir, f"ageparity_{key.lower()}.png"))
 
                 pl.show()
 
@@ -386,7 +384,7 @@ if do_plot_cpr:
         pl.legend()
 
         if do_save:
-            pl.savefig(f'{country}/figs/cpr_over_sim.png')
+            pl.savefig(os.path.join(figs_dir, "cpr.png"))
 
         pl.show()
 
@@ -407,7 +405,7 @@ if do_plot_tfr:
         pl.legend()
 
         if do_save:
-                pl.savefig(f'{country}/figs/tfr_over_sim.png')
+                pl.savefig(os.path.join(figs_dir, "tfr.png"))
 
         pl.show()
 
@@ -436,7 +434,7 @@ if do_plot_pop_growth:
         pl.legend()
 
         if do_save:
-            pl.savefig(f'{country}/figs//popgrowth_over_sim.png')
+            pl.savefig(os.path.join(figs_dir, "popgrowth.png"))
 
         pl.show()
 
@@ -493,7 +491,7 @@ if do_plot_birth_space_afb:
         pl.legend()
 
         if do_save:
-            pl.savefig(f'{country}/figs/age_first_birth.png', bbox_inches='tight', dpi=100)
+            pl.savefig(os.path.join(figs_dir, "age_first_birth.png"), bbox_inches='tight', dpi=100)
 
         pl.show()
 
@@ -518,88 +516,8 @@ if do_plot_birth_space_afb:
         ax.set_title(f'{country.capitalize()}: Birth Space Bins - Model vs Data')
 
         if do_save:
-                pl.savefig(f'{country}/figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
+                pl.savefig(os.path.join(figs_dir, f"birth_space_bins_{country}.png"), bbox_inches='tight', dpi=100)
 
-        pl.show()
-
-if do_plot_empowerment:
-        # Extract paid work from data
-        data_paid_work = data_empowerment[['age', 'paid_employment']].sort_values(by='age')
-        data_paid_work['paid_employment_age_group'] = pd.cut(data_paid_work['age'], bins=range(15, 55, 5), right=False)
-        avg_paidemp_by_age_group = data_paid_work.groupby('paid_employment_age_group', observed=False)['paid_employment'].mean()
-        data_paid_emp = avg_paidemp_by_age_group.values.tolist()
-        age_bins = pl.arange(min_age, max_age, bin_size)
-
-        # Extract paid work from model
-        model_paid_work_dict = {}
-        # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
-        for age in age_bins:
-                model_paid_work_dict[age] = []
-
-        for i in range(len(ppl)):
-                if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
-                    age = math.floor(ppl.age[i])
-                    age_bin = sc.findinds(age_bins <= age)[-1]
-                    model_paid_work_dict[age_bins[age_bin]].append(ppl.paid_employment[i])
-
-        # Calculate average # of individuals with paid work by each age using the array
-        for age in model_paid_work_dict:
-                total_ppl = len(model_paid_work_dict[age])
-                if total_ppl != 0:
-                        avg_paid_emp = (model_paid_work_dict[age].count(True)) / total_ppl
-                else:
-                        avg_paid_emp = 0
-                model_paid_work_dict[age] = avg_paid_emp
-        model_paid_emp = list(model_paid_work_dict.values())
-
-        # Extract education from data
-        data_edu = data_edu[['age', 'edu']].sort_values(by='age')
-        data_edu['edu_age_group'] = pd.cut(data_edu['age'], bins=range(15, 55, 5), right=False)
-        avg_edu_by_age_group = data_edu.groupby('edu_age_group', observed=False)['edu'].mean()
-        data_years_edu = avg_edu_by_age_group.values.tolist()
-
-        # Extract education from model
-        model_edu_dict = {}
-        # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
-        for age in age_bins:
-                model_edu_dict[age] = []
-
-        for i in range(len(ppl)):
-                if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
-                    age = math.floor(ppl.age[i])
-                    age_bin = sc.findinds(age_bins <= age)[-1]
-                    model_edu_dict[age_bins[age_bin]].append(ppl.edu_attainment[i])
-
-        # Calculate average # of years of educational attainment for each age
-        for age in model_edu_dict:
-                if len(model_edu_dict[age]) != 0:
-                    avg_edu = sum(model_edu_dict[age])/len(model_edu_dict[age])
-                    model_edu_dict[age] = avg_edu
-                else:
-                    model_edu_dict[age] = 0
-                model_years_edu = list(model_edu_dict.values())
-
-        #Set up plotting
-        paid_emp_labels = list(age_bin_map.keys())[1:]
-        edu_labels = list(age_bin_map.keys())[1:]
-        df_paid_emp = pd.DataFrame({'Data': data_paid_emp, 'FPsim': model_paid_emp}, index=paid_emp_labels)
-        df_edu = pd.DataFrame({'Data': data_years_edu, 'FPsim': model_years_edu}, index=edu_labels)
-
-        # Plot paid employment
-        ax = df_paid_emp.plot.barh(color={'Data': 'black', 'FPsim': 'cornflowerblue'})
-        ax.set_xlabel('Percent with paid employment')
-        ax.set_title(f'{country.capitalize()}: Paid Employment - Model vs Data')
-
-        if do_save:
-                pl.savefig(f"{country}/figs/paid_employment.png", bbox_inches='tight', dpi=100)
-        pl.show()
-
-        # Plot education
-        ax = df_edu.plot.barh(color={'Data': 'black', 'FPsim': 'cornflowerblue'})
-        ax.set_xlabel('Number of Years Edu. Attained')
-        ax.set_title(f'{country.capitalize()}: Years of Education - Model vs Data')
-        if do_save:
-                pl.savefig(f"{country}/figs/paid_employment.png", bbox_inches='tight', dpi=100)
         pl.show()
 
 sc.toc()

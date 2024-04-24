@@ -61,19 +61,22 @@ if __name__ == '__main__':
 
         ####################################################
 
-        if do_save == 1 and os.path.exists(f'./{country}/figs') == False:
-            os.mkdir(f'./{country}/figs')
+        cwd = os.path.abspath(os.getcwd())
+        country_dir = f'../../fpsim/locations/{country}'
+        figs_dir = os.path.join(country_dir, 'figs')
+        if do_save and not os.path.exists(figs_dir):
+                os.makedirs(figs_dir, exist_ok=True)
 
         # Import country data files to compare
-        ageparity = pd.read_csv(f'./{country}/ageparity.csv')  # Age-parity distribution file
-        use = pd.read_csv(f'./{country}/use.csv')  # Dichotomous contraceptive method use
-        data_spaces = pd.read_csv(f'./{country}/birth_spacing_dhs.csv')  # Birth-to-birth interval data
-        data_afb = pd.read_csv(f'./{country}/afb.table.csv')  # Ages at first birth in DHS for women age 25-50
-        data_cpr = pd.read_csv(f'./{country}/cpr.csv')  # From UN Data Portal
-        data_asfr = pd.read_csv(f'./{country}/asfr.csv')
-        data_methods = pd.read_csv(f'./{country}/mix.csv')
-        data_tfr = pd.read_csv(f'./{country}/tfr.csv')
-        data_popsize = pd.read_csv(f'./{country}/popsize.csv')
+        ageparity   = pd.read_csv(os.path.join(country_dir, 'ageparity.csv'))  # Age-parity distribution file
+        use         = pd.read_csv(os.path.join(country_dir, 'use.csv'))  # Dichotomous contraceptive method use
+        data_spaces = pd.read_csv(os.path.join(country_dir, 'birth_spacing_dhs.csv'))  # Birth-to-birth interval data
+        data_afb = pd.read_csv(os.path.join(country_dir, 'afb.table.csv'))  # Ages at first birth in DHS for women age 25-50
+        data_cpr = pd.read_csv(os.path.join(country_dir, 'cpr.csv'))  # From UN Data Portal
+        data_asfr = pd.read_csv(os.path.join(country_dir, 'asfr.csv'))
+        data_methods = pd.read_csv(os.path.join(country_dir, 'mix.csv'))
+        data_tfr     = pd.read_csv(os.path.join(country_dir, 'tfr.csv'))
+        data_popsize = pd.read_csv(os.path.join(country_dir, 'popsize.csv'))
 
         # Set up global variables
         age_bin_map = {
@@ -189,7 +192,7 @@ if __name__ == '__main__':
                 sc.boxoff()
 
                 if do_save:
-                    pl.savefig(f'{country}/figs/asfr.png')
+                    pl.savefig(f'{figs_dir}/asfr.png')
 
                 pl.show()
 
@@ -279,14 +282,14 @@ if __name__ == '__main__':
                 ax.set_xlabel('Percent users')
                 ax.set_title(f'{country.capitalize()}: Contraceptive Method Mix - Model vs Data')
                 if do_save:
-                        pl.savefig(f"{country}/figs/method_mix.png", bbox_inches='tight', dpi=100)
+                        pl.savefig(f"{figs_dir}/method_mix.png", bbox_inches='tight', dpi=100)
 
                 # Plot use
                 ax = df_use.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
                 ax.set_xlabel('Percent')
                 ax.set_title(f'{country.capitalize()}: Contraceptive Method Use - Model vs Data')
                 if do_save:
-                        pl.savefig(f"{country}/figs/method_use.png", bbox_inches='tight', dpi=100)
+                        pl.savefig(f"{figs_dir}/method_use.png", bbox_inches='tight', dpi=100)
 
 
         if do_plot_ageparity:
@@ -357,7 +360,7 @@ if __name__ == '__main__':
 
 
                         if do_save:
-                                pl.savefig(f'{country}/figs/ageparity_' + str(key.lower()) + '.png')
+                                pl.savefig(f'{figs_dir}/ageparity_' + str(key.lower()) + '.png')
 
                         pl.show()
 
@@ -378,7 +381,7 @@ if __name__ == '__main__':
                 pl.legend()
 
                 if do_save:
-                    pl.savefig(f'{country}/figs/cpr_over_sim.png')
+                    pl.savefig(f'{figs_dir}/cpr.png')
 
                 pl.show()
 
@@ -399,7 +402,7 @@ if __name__ == '__main__':
                 pl.legend()
 
                 if do_save:
-                        pl.savefig(f'{country}/figs/tfr_over_sim.png')
+                        pl.savefig(f'{figs_dir}/tfr.png')
 
                 pl.show()
 
@@ -428,7 +431,7 @@ if __name__ == '__main__':
                 pl.legend()
 
                 if do_save:
-                    pl.savefig(f'{country}/figs//popgrowth_over_sim.png')
+                    pl.savefig(f'{figs_dir}/popgrowth.png')
 
                 pl.show()
 
@@ -485,7 +488,7 @@ if __name__ == '__main__':
                 pl.legend()
 
                 if do_save:
-                    pl.savefig(f'{country}/figs/age_first_birth.png', bbox_inches='tight', dpi=100)
+                    pl.savefig(f'{figs_dir}/age_first_birth.png', bbox_inches='tight', dpi=100)
 
                 pl.show()
 
@@ -510,7 +513,7 @@ if __name__ == '__main__':
                 ax.set_title(f'{country.capitalize()}: Birth Space Bins - Model vs Data')
 
                 if do_save:
-                        pl.savefig(f'{country}/figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
+                        pl.savefig(f'{figs_dir}/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
 
                 pl.show()
 

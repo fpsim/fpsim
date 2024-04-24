@@ -10,66 +10,18 @@ from .. import defaults as fpd
 
 # %% Housekeeping
 
-thisdir = sc.path(sc.thisdir())  # For loading CSV files
+thisdir = sc.thispath(__file__)  # For loading CSV files
 
 
 def scalar_pars():
     scalar_pars = {
-        # Basic parameters
-        'location': 'ethiopia',
-        'n_agents': 1_000,  # Number of agents
-        'scaled_pop': None,  # Scaled population / total population size
-        'start_year': 1960,  # Start year of simulation
-        'end_year': 2020,  # End year of simulation
-        'timestep': 1,  # The simulation timestep in months
-        'method_timestep': 1,  # How many simulation timesteps to go for every method update step
-        'seed': 1,  # Random seed
-        'verbose': 1,  # How much detail to print during the simulation
-        'track_switching': 0,  # Whether to track method switching
-        'track_as': 0,  # Whether to track age-specific channels
-        'short_int': 24,  # Duration of a short birth interval between live births in months
-        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
-        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
-
-        # Age limits (in years)
-        'method_age': 15,
-        'age_limit_fecundity': 50,
-        'max_age': 99,
-
-        # Durations (in months)
-        'switch_frequency': 12,  # How frequently to check for changes to contraception
-        'end_first_tri': 3,
-        'preg_dur_low': 9,
-        'preg_dur_high': 9,
-        'postpartum_dur': 23,
-        'breastfeeding_dur_mu': 9.30485863,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'breastfeeding_dur_beta': 8.20149079, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
-        'max_lam_dur': 5,  # Duration of lactational amenorrhea
-        'short_int': 24,  # Duration of a short birth interval between live births in months
-        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
-        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
-
-        # Pregnancy outcomes
-        'abortion_prob': 0.176,
-        # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
-        'twins_prob': 0.011,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'LAM_efficacy': 0.98,  # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/   
-        'maternal_mortality_factor': 1,
-
-        # Fecundity and exposure
-        'fecundity_var_low': 0.7,
-        'fecundity_var_high': 1.1,
-        'high_parity': 4,
-        'high_parity_nonuse': 0.6,
-        'primary_infertility': 0.05,
-        'exposure_factor': 1.0,  # Overall exposure correction factor
-        'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
-                                   # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
-
-        # MCPR
-        'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
-        'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
-        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
+        'location':             'ethiopia',
+        'postpartum_dur':       23,
+        'breastfeeding_dur_mu': 9.30485863,     # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'breastfeeding_dur_beta': 8.20149079,   # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'abortion_prob':        0.176,          # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
+        'twins_prob':           0.011,          # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+        'mcpr_norm_year':       2020,           # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
@@ -97,6 +49,18 @@ def filenames():
     files['methods'] = 'mix.csv'
     files['afb'] = 'afb.table.csv'
     files['use'] = 'use.csv'
+    files['urban'] = 'urban.csv'
+    #subnational_data files
+    files['region'] = '/subnational_data/region.csv' ## From DHS 2016
+    files['asfr_region'] = '/subnational_data/asfr_region.csv' ## From DHS 2016
+    files['tfr_region'] = '/subnational_data/tfr_region.csv' ## From DHS 2016
+    files['methods_region'] = '/subnational_data/mix_region.csv' ## From DHS 2016
+    files['use_region'] = '/subnational_data/use_region.csv'  ## From PMA 2019
+    files['barriers_region'] = '/subnational_data/barriers_region.csv' ## From PMA 2019
+    files['lactational_amenorrhea_region'] = '/subnational_data/lam_region.csv' ## From DHS 2016
+    files['sexual_activity_region'] = '/subnational_data/sexual_activity_region.csv' ## From DHS 2016
+    files['sexual_activity_pp_region'] = '/subnational_data/sexual_activity_pp_region.csv' ## From DHS 2016
+    files['debut_age_region'] = '/subnational_data/sexual_debut_region.csv' ## From DHS 2016
     return files
 
 
@@ -108,26 +72,41 @@ def age_pyramid():
     Data are from World Population Prospects
     https://population.un.org/wpp/Download/Standard/Population/
      '''
-    pyramid = np.array([[0, 2081014, 2059245],  # Ethiopia 1962 
-                        [5, 1593445, 1598968],
-                        [10, 1399939, 1383499],
-                        [15, 1230342, 1207218],
-                        [20, 1033903, 1026122],
-                        [25, 871410, 869670],
-                        [30, 734635, 735269],
-                        [35, 616805, 620278],
-                        [40, 513096, 518738],
-                        [45, 423949, 431205],
-                        [50, 344289, 356727],
-                        [55, 273144, 292624],
-                        [60, 180126, 218849],
-                        [65, 113574, 155562],
-                        [70, 74792, 105071],
-                        [75, 39508,	60379],
-                        [80, 21143,	36845],
+    pyramid = np.array([[0, 2018504, 1986199],  # Ethiopia 1962
+                        [5, 1508878, 1515088],
+                        [10, 1349237, 1359040],
+                        [15, 1227673, 1215562],
+                        [20, 1021618, 1018324],
+                        [25, 862087, 864220],
+                        [30, 727361, 732051],
+                        [35, 612416, 620469],
+                        [40, 510553, 521148],
+                        [45, 423644, 434699],
+                        [50, 345374, 360522],
+                        [55, 276116, 297462],
+                        [60, 182129, 224203],
+                        [65, 117217, 162750],
+                        [70, 77018, 111877],
+                        [75, 40877,	66069],
+                        [80, 21275,	40506],
                         ], dtype=float)
 
     return pyramid
+
+
+def region_proportions():
+    '''
+    Defines the proportion of the population in each region to establish the probability of living in a given region.
+    Uses 2016 Ethiopia DHS individual recode (v025) for region and V024 for urban to produce subnational estimates
+    '''
+    region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational_data' / 'region.csv')
+
+    region_dict = {}
+    region_dict['region'] = region_data['region'] # Return region names
+    region_dict['mean'] = region_data['mean'] # Return proportion living in each region
+    region_dict['urban'] = region_data['urban'] # Return proportion living in an urban area by region
+
+    return region_dict
 
 
 def age_mortality():
@@ -178,24 +157,27 @@ def maternal_mortality():
     '''
 
     data = np.array([
-        [2000, 1030],
-        [2001, 988],
-        [2002, 985],
-        [2003, 972],
-        [2004, 929],
-        [2005, 865],
-        [2006, 795],
-        [2007, 731],
-        [2008, 681],
-        [2009, 638],
-        [2010, 597],
-        [2011, 558],
-        [2012, 527],
+        [2000, 953],
+        [2001, 955],
+        [2002, 960],
+        [2003, 906],
+        [2004, 900],
+        [2005, 880],
+        [2006, 814],
+        [2007, 780],
+        [2008, 725],
+        [2009, 684],
+        [2010, 635],
+        [2011, 603],
+        [2012, 543],
         [2013, 498],
-        [2014, 472],
-        [2015, 446],
-        [2016, 422],
-        [2017, 401],
+        [2014, 447],
+        [2015, 399],
+        [2016, 365],
+        [2017, 348],
+        [2018, 312],
+        [2019, 294],
+        [2020, 267],
 
     ])
 
@@ -384,6 +366,19 @@ def lactational_amenorrhea():
     return lactational_amenorrhea
 
 
+def lactational_amenorrhea_region():
+    '''
+    Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, stratified by region
+    '''
+    lam_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational_data' / 'lam_region.csv')
+    lam_dict = {}
+    lam_dict['region'] = lam_region['region']  # Return region names
+    lam_dict['month'] = lam_region['month']  # Return month postpartum
+    lam_dict['rate'] = lam_region['rate']  # Return percent of breastfeeding women
+
+    return lam_dict
+
+
 # %% Pregnancy exposure
 
 def sexual_activity():
@@ -409,6 +404,20 @@ def sexual_activity():
 
     return activity_interp
 
+def sexual_activity_region():
+    '''
+    Returns a linear interpolation of rates of female sexual activity, stratified by region
+    '''
+    sexually_active_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational_data' / 'sexual_activity_region.csv')
+    sexually_active_region_dict = {}
+    sexually_active_region_dict['region'] = sexually_active_region_data.iloc[:, 0]  # Return region names
+    sexually_active_region_dict['age'] = sexually_active_region_data.iloc[:, 1]   # Return age
+    sexually_active_region_dict['perc'] = sexually_active_region_data.iloc[:, 2] / 100  # Return perc divide by 100 to convert to a rate
+    activity_ages_region = sexually_active_region_dict['age']
+    activity_interp_model_region = si.interp1d(x=activity_ages_region, y=sexually_active_region_dict['perc'])
+    activity_interp_region = activity_interp_model_region(fpd.spline_preg_ages)
+
+    return activity_interp_region
 
 def sexual_activity_pp():
     '''
@@ -417,7 +426,6 @@ def sexual_activity_pp():
     Data is weighted.
     Limited to 23 months postpartum (can use any limit you want 0-23 max)
     Postpartum month 0 refers to the first month after delivery
-    TODO-- Add code for processing this for other countries to data_processing
     '''
 
     postpartum_sex = np.array([
@@ -454,6 +462,19 @@ def sexual_activity_pp():
     postpartum_activity['percent_active'] = postpartum_sex[:, 1]
 
     return postpartum_activity
+
+
+def sexual_activity_pp_region():
+    '''
+     # Returns an additional array of monthly likelihood of having resumed sexual activity by region
+    '''
+    pp_activity_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational_data' / 'sexual_activity_pp_region.csv')
+    pp_activity_region_dict = {}
+    pp_activity_region_dict['region'] = pp_activity_region['region'] # Return region names
+    pp_activity_region_dict['month'] = pp_activity_region['month'] # Return month postpartum
+    pp_activity_region_dict['perc'] = pp_activity_region['perc'] # Return likelihood of resumed sexual activity
+
+    return pp_activity_region_dict
 
 
 def debut_age():
@@ -499,6 +520,17 @@ def debut_age():
     debut_age['probs'] = sexual_debut[:, 1]
 
     return debut_age
+
+def debut_age_region():
+    '''
+ #   Returns an additional array of weighted probabilities of sexual debut by region
+    '''
+    sexual_debut_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational_data' / 'sexual_debut_region.csv')
+    debut_age_region_dict = {}
+    debut_age_region_dict['region'] = sexual_debut_region_data['region'] # Return region names
+    debut_age_region_dict['age'] = sexual_debut_region_data['age'] # Return month postpartum
+    debut_age_region_dict['prob'] = sexual_debut_region_data['prob'] # Return weighted probabilities of sexual debut
+    return debut_age_region_dict
 
 
 def exposure_age():
@@ -923,23 +955,40 @@ def method_probs():
 
 
 def barriers():
-    ''' Reasons for nonuse -- taken from Ethiopia DHS 2005. '''
+    ''' Reasons for nonuse -- taken from Ethiopia PMA 2019. '''
 
-    barriers = sc.odict({
-        'No need': 45.9,
-        'Opposition': 25.0,
-        'Knowledge': 11.9,
-        'Access': 0.5,
-        'Health': 13.7,
+    barriers = sc.odict({ #updated based on PMA cross-sectional data
+        'No need': 58.5,
+        'Opposition': 16.6,
+        'Knowledge': 1.28,
+        'Access': 2.73,
+        'Health': 20.9,
     })
 
     barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
     return barriers
 
+def barriers_region():
+    '''
+    Returns reasons for nonuse by region
+    '''
+    reasons_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational_data' / 'barriers_region.csv')
+    reasons_region_dict = {}
+    reasons_region_dict['region'] = reasons_region['region'] # Return region names
+    reasons_region_dict['barrier'] = reasons_region['barrier'] # Return the reason for nonuse
+    reasons_region_dict['perc'] = reasons_region['perc'] # Return retuned the percentage
+
+    return reasons_region_dict
+
+
+def urban_proportion():
+    """Load information about the proportion of people who live in an urban setting"""
+    urban_data = pd.read_csv(thisdir / 'ethiopia' / 'urban.csv')
+    return urban_data["mean"][0]  # Return this value as a float
 
 # %% Make and validate parameters
 
-def make_pars():
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
     '''
     Take all parameters and construct into a dictionary
     '''
@@ -951,6 +1000,7 @@ def make_pars():
     # Demographics and pregnancy outcome
     pars['age_pyramid'] = age_pyramid()
     pars['age_mortality'] = age_mortality()
+    pars['urban_prop'] = urban_proportion()
     pars['maternal_mortality'] = maternal_mortality()
     pars['infant_mortality'] = infant_mortality()
     pars['miscarriage_rates'] = miscarriage()
@@ -973,5 +1023,21 @@ def make_pars():
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
+
+    # Regional parameters
+    if use_subnational:
+        pars['region'] = region_proportions()  # This function returns extrapolated and raw data
+        pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
+        pars['sexual_activity_region'] = sexual_activity_region()
+        pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
+        pars['debut_age_region'] = debut_age_region()
+        pars['barriers_region'] = barriers_region()
+
+    kwargs = locals()
+    not_implemented_args = ['use_empowerment', 'use_education', 'use_partnership']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
+    if true_args:
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
+        raise NotImplementedError(errmsg)
 
     return pars

@@ -10,67 +10,19 @@ from .. import defaults as fpd
 from .. import utils as fpu
 # %% Housekeeping
 
-thisdir = sc.path(sc.thisdir())  # For loading CSV files
+thisdir = sc.thispath(__file__)  # For loading CSV files
 
 
 def scalar_pars():
     scalar_pars = {
-        # Basic parameters
-        'location': 'kenya',
-        'n_agents': 1_000,  # Number of agents
-        'scaled_pop': None,  # Scaled population / total population size
-        'start_year': 1960,  # Start year of simulation
-        'end_year': 2020,  # End year of simulation
-        'timestep': 1,  # The simulation timestep in months
-        'method_timestep': 1,  # How many simulation timesteps to go for every method update step
-        'seed': 1,  # Random seed
-        'verbose': 1,  # How much detail to print during the simulation
-        'track_switching': 0,  # Whether to track method switching
-        'track_as': 0,  # Whether to track age-specific channels
-        'short_int': 24,  # Duration of a short birth interval between live births in months
-        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
-        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
-
-        # Age limits (in years)
-        'method_age': 15,
-        'age_limit_fecundity': 50,
-        'max_age': 99,
-
-        # Durations (in months)
-        'switch_frequency': 12,  # How frequently to check for changes to contraception
-        'end_first_tri': 3,
-        'preg_dur_low': 9,
-        'preg_dur_high': 9,
-        'postpartum_dur': 23,
-        'breastfeeding_dur_mu': 11.4261936291137,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'breastfeeding_dur_beta': 7.5435309020483, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
-        'max_lam_dur': 5,  # Duration of lactational amenorrhea
-        'short_int': 24,  # Duration of a short birth interval between live births in months
-        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
-        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
-
-        # Pregnancy outcomes
-        'abortion_prob': 0.201,
-        # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
-        'twins_prob': 0.016,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'LAM_efficacy': 0.98,  # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
-        'maternal_mortality_factor': 1,
-
-        # Fecundity and exposure
-        'fecundity_var_low': 0.7,
-        'fecundity_var_high': 1.1,
-        'high_parity': 1,
-        'high_parity_nonuse': 1,
-        'primary_infertility': 0.05,
-        'exposure_factor': 1.0,  # Overall exposure correction factor
-        'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
-                                   # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
-
-        # MCPR
-        'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
-        'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
-        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
-        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
+        'location':             'kenya',
+        'postpartum_dur':       23,
+        'breastfeeding_dur_mu': 11.4261936291137,   # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'breastfeeding_dur_beta': 7.5435309020483,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'abortion_prob':        0.201,              # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
+        'twins_prob':           0.016,              # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+        'high_parity_nonuse':   1,                  # TODO: check whether it's correct that this should be different to the other locations
+        'mcpr_norm_year':       2020,               # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
@@ -1061,7 +1013,7 @@ def empowerment_regression_pars(regression_type='logistic'):
 def empowerment_distributions(seed=None, regression_type='logistic'):
     """Intial distributions of empowerment attributes based on latest DHS data <YYYY>
     TODO: perhaps split into single functions, one per attribute?
-
+    TODO: update docstring for empowerment_distributions
     NOTE: DHS data covers the age group from 15 to 49 (inclusive). In this function we
     interpolate data to reduce noise and extrapolate to cover the age range (0, 100).
     Interpolation is done using a piecewise linear approximation with an inflexion point
@@ -1087,7 +1039,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     from scipy import optimize
 
     # Load empirical data
-    empowerment_data =  pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
+    empowerment_data = pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
     mean_cols = {col: col + '.mean' for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"}
     empowerment_data.rename(columns=mean_cols, inplace=True)
     empowerment_dict = {}
@@ -1105,9 +1057,9 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     cols = ["paid_employment", "decision_wages", "decision_health", "sexual_autonomy"]
     ages_interp = empowerment_data["age"].to_numpy()
     for col in cols:
-        loc = empowerment_data[f"{col}.mean"]
+        loc   = empowerment_data[f"{col}.mean"]
         scale = empowerment_data[f"{col}.se"]
-        # Use the standard error to capture the unvertainty in the mean eastimates of each metric
+        # Use the standard error to capture the uncertainty in the mean eastimates of each metric
         data = np.random.normal(loc=loc, scale=scale)
         data_points[col] = data
         # Optimise regression parameters
@@ -1214,10 +1166,10 @@ def education_distributions():
 
 # %% Make and validate parameters
 
-def make_pars():
-    '''
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
+    """
     Take all parameters and construct into a dictionary
-    '''
+    """
 
     # Scalar parameters and filenames
     pars = scalar_pars()
@@ -1226,6 +1178,7 @@ def make_pars():
     # Demographics and pregnancy outcome
     pars['age_pyramid'] = age_pyramid()
     pars['age_mortality'] = age_mortality()
+    pars['urban_prop'] = urban_proportion()
     pars['maternal_mortality'] = maternal_mortality()
     pars['infant_mortality'] = infant_mortality()
     pars['miscarriage_rates'] = miscarriage()
@@ -1248,11 +1201,22 @@ def make_pars():
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
-    pars['urban_prop'] = urban_proportion()
-    empowerment_dict, _ = empowerment_distributions(seed=pars['seed']) # This function returns extrapolated and raw data
-    pars['empowerment'] = empowerment_dict
-    education_dict, _ = education_distributions() # This function returns extrapolated and raw data
-    pars['education'] = education_dict
-    pars['age_partnership'] = age_partnership()
+
+    # Empowerment metrics
+    if use_empowerment:
+        empowerment_dict, _ = empowerment_distributions(seed=seed)  # This function returns extrapolated and raw data
+        pars['empowerment'] = empowerment_dict
+    if use_education:
+        education_dict, _ = education_distributions() # This function returns extrapolated and raw data
+        pars['education'] = education_dict
+    if use_partnership:
+        pars['age_partnership'] = age_partnership()
+
+    kwargs = locals()
+    not_implemented_args = ['use_subnational']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
+    if true_args:
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
+        raise NotImplementedError(errmsg)
 
     return pars
