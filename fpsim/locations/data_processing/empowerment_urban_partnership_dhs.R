@@ -31,7 +31,6 @@ data <- data.raw %>%
          decisionhealth = case_when(v743a %in% c(1,2,3) ~ 1, v739 %in% c(4,5) ~ 0), # health, 1 she decides with or without someone else, 0 someone else decides
          decisionfamily = case_when(v743d %in% c(1,2,3) ~ 1, v739 %in% c(4,5) ~ 0), # visiting family, 1 she decides with or without someone else, 0 someone else decides
          urban = ifelse(v025 == 1, 1, 0), # 1 if urban
-         age_partner = v511) # age at first cohabitation
 svydes1 = svydesign(id = data$v001, strata=data$v023, weights = data$v005/1000000, data=data)
 
 
@@ -107,11 +106,6 @@ table.emp.4 %>%
 table.urban <- as.data.frame(svymean(~urban, svydes1)) %>% rename(urban.se = urban)
 # write.csv(table.urban, "fpsim/locations/kenya/urban.csv", row.names = F)
 
-# -- age at partnership -- #
-
-table.partner <- as.data.frame(svytable(~age_partner, svydes1)) %>%
-  mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
-# write.csv(table.partner, "fpsim/locations/kenya/age_partnership.csv", row.names = F)
 
 # -- education -- #
 
