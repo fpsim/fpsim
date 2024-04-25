@@ -671,7 +671,7 @@ class Experiment(sc.prettyobj):
             if key in keys:
                 keys.remove(key)
         nkeys = len(keys)
-        expected = 13
+        expected = 11
         if nkeys != expected:
             errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys} -- did you use run_model() instead of run()?'
             raise ValueError(errormsg)
