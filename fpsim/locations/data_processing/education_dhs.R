@@ -1,14 +1,16 @@
 ################################################################################
 # -- Extract education data from DHS and PMA data datasets
-# From DHS we extract: 
-# - education objective (expressed in percentage of women that will aim to 
-#                        complete X years of education, sratified by type of 
+# From DHS we extract:
+# - education objective (expressed in percentage of women that will aim to
+#                        complete X years of education, sratified by type of
 #                        residential setting).
 # - education initialization (expressed in (edu) number of years a woman aged (age)
 #                             will have likely completed).
-# 
-# From PMS we extract: 
-# 
+#
+# From PMS we extract:
+# - education stopping criteria (expressed in percentage of women aged (age)
+#                                years old and a given parity that would dropout
+#                                from their education if they got pregnant.
 ###############################################################################
 
 # -- Libraries -- #
@@ -48,7 +50,7 @@ svydesign_obj_1 = svydesign(
 
 # -- Preprocess education data -- #
 table.edu.mean <-
-  as.data.frame(svyby( ~ edu, ~ age, svydesign_obj_1, svymean))
+  as.data.frame(svyby(~ edu, ~ age, svydesign_obj_1, svymean))
 
 # Define some age-related constants
 dhs_min_age <- 15
@@ -119,14 +121,15 @@ svydesign_obj_2 = svydesign(
 )
 
 table.edu.20 <-
-  as.data.frame(svytable( ~ edu + urban, svydesign_obj_2)) %>% group_by(urban) %>% mutate(percent = Freq /
-                                                                                            sum(Freq)) %>% select(-Freq)
+  as.data.frame(svytable(~ edu + urban, svydesign_obj_2)) %>% group_by(urban) %>% mutate(percent = Freq /
+                                                                                           sum(Freq)) %>% select(-Freq)
 current_levels_num <- sort(as.numeric(levels(table.edu.20$edu)))
 
 # -- Fill out missing edu level values, edu=22 and edu=23 are not found
 # in the data but fpsim needs a continuous range of edu values
-all_levels <- expand.grid(edu = as.character(min(current_levels_num):max(current_levels_num)),
-                          urban = unique(table.edu.20$urban))
+all_levels <-
+  expand.grid(edu = as.character(min(current_levels_num):max(current_levels_num)),
+              urban = unique(table.edu.20$urban))
 
 table.edu.20 <-
   right_join(table.edu.20, all_levels, by = c("edu", "urban"))
@@ -152,11 +155,91 @@ table.edu.20 %>%
   ylab("Percent of women") +
   theme_bw(base_size = 13)
 
+# -- PMA DATA for education interruption following pregnancy
+# We use PMA data because it has age at stopping education (DHS doesn't)
+
+pma_dir <- "PMA"
+survey_dir <- "Kenya/PMA2019_KEP1_HQFQ_v3.0_21Oct2021"
+file1 <- "PMA2019_KEP1_HQFQ_v3.0_21Oct2022.DTA"
+file2 <- "PMA2021_KEP2_HQFQ_v3.0_21Oct2022.DTA"
+file3 <- "PMA2022_KEP3_HQFQ_v3.0_21Oct2022.DTA"
+file1_path <- file.path(home_dir, pma_dir, survey_dir, filename)
+
+data.raw.pma <- read_dta(file.path(home_dir, pma_dir, survey_dir, file1)) %>%
+ mutate(wave = 1) %>% mutate_at(c("RE_ID", "county"), list( ~ as.character(.))) %>%
+ bind_rows(read_dta(file.path(home_dir, pma_dir, survey_dir, file2))) %>%
+  mutate(wave = 2) %>% mutate_at(c("RE_ID", "county"), list( ~ as.character(.)))) %>%
+ bind_rows(read_dta(file.path(home_dir, pma_dir, survey_dir, file3))) %>%
+   mutate(wave = 3) %>% mutate_at(c("doi_corrected", "county"), list( ~ as.character(.))))
+
+# recode data for school and birth timing
+weeks_in_a_year <- 52
+data.pma <- data.raw.pma %>% filter(!is.na(FQweight)) %>%
+  mutate(
+    birthage1 = floor(as.numeric(
+      difftime(
+        parse_date_time(first_birth, "Y-m-d"),
+        parse_date_time(birthdateSIF, "Y-m-d"),
+        units = "weeks"
+      ) / weeks_in_a_year
+    )),
+    # age at first birth
+    school_birth1 = ifelse(between(
+      school_left_age, birthage1 - 1, birthage1 + 1
+    ), 1, 0),
+    # stop school within one year of first birth
+    school_birth1 = ifelse(is.na(school_birth1), 0, school_birth1),
+    # replace NA with no
+    birthage2 = floor(as.numeric(
+      difftime(
+        parse_date_time(recent_birthSIF, "Y-m-d"),
+        parse_date_time(birthdateSIF, "Y-m-d"),
+        units = "weeks"
+      ) / weeks_in_a_year
+    )),
+    # age at most recent (but not first) birth
+    school_birth2 = ifelse(between(
+      school_left_age, birthage2 - 1, birthage2 + 1
+    ), 1, 0),
+    # stopped school within one year of recent birth
+    school_birth2 = ifelse(is.na(school_birth2), 0, school_birth2),
+    # replace NA with no
+    recentbyoung = ifelse(recent_birthSIF != first_birthSIF &
+                            birthage2 <= 22, 1, 0)
+  ) %>% # was recent birth at age 22 or younger
+  filter(birth_events > 0) # only use data for women who have had a birth
+
+svydesign_obj_3 <-
+  svydesign(
+    id = ~ EA_ID,
+    strata = ~ strata,
+    weights =  ~ FQweight,
+    data = data.pma,
+    nest = T
+  )
+
+# table of probability of stopping school by age and parity
+stop.school <-
+  as.data.frame(prop.table(svytable( ~ school_birth1 + birthage1, svydes3), margin = 2)) %>%
+  filter(school_birth1 == 1) %>% rename(`1` = Freq, age = birthage1) %>% select(-school_birth1) %>%
+  left_join(
+    stop.school2 <-
+      as.data.frame(prop.table(
+        svytable( ~ school_birth2 + birthage2, svydes3), margin = 2
+      )) %>% filter(school_birth2 == 1) %>% rename(`2+` = Freq, age = birthage2) %>% select(-school_birth2)
+  ) %>%
+  gather(parity, percent,-age)
+stop.school %>%
+  ggplot() +
+  geom_point(aes(y = percent, x = age, color = parity))
+
+
 # -- Write files -- #
 fpsim_dir <- "fpsim" # path to root directory of fpsim
 locations_dir <- "fpsim/locations"
 country_dir <- "kenya"
-country_path <- file.path(home_dir, fpsim_dir, locations_dir, country_dir)
+country_path <-
+  file.path(home_dir, fpsim_dir, locations_dir, country_dir)
 
 write.csv(table.edu.inital,
           file.path(country_path, 'edu_initialization.csv'),
@@ -164,4 +247,4 @@ write.csv(table.edu.inital,
 write.csv(table.edu.20,
           file.path(country_path, 'edu_objective.csv'),
           row.names = F)
-#write.csv(stop.school, file.path(country_path, 'edu_stop_.csv'), row.names = F)
+write.csv(stop.school, file.path(country_path, 'edu_stop_.csv'), row.names = F)
