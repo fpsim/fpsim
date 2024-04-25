@@ -39,20 +39,21 @@ if __name__ == '__main__':
         # GLOBAL VARIABLES: USER MUST SET
 
         # Name of the country being calibrated. To note that this should match the name of the country data folder
-        country = 'ethiopia'
+        country = 'kenya'
 
         # Set options for plotting
         do_plot_sim = True
-        do_plot_asfr = True
-        do_plot_methods = True
-        do_plot_ageparity = True
-        do_plot_cpr = True
-        do_plot_tfr = True
-        do_plot_pop_growth = True
-        do_plot_birth_space_afb = True
+        do_plot_empowerment = True
+        do_plot_asfr = False
+        do_plot_methods = False
+        do_plot_ageparity = False
+        do_plot_cpr = False
+        do_plot_tfr = False
+        do_plot_pop_growth = False
+        do_plot_birth_space_afb = False
 
         # Set option to save figures
-        do_save = 1
+        do_save = 0
 
         # Dataset contained in the ageparity csv file to which the model data will be compared (i.e. 'PMA 2022',
         # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_ageparity.csv file, you will receive
@@ -77,6 +78,7 @@ if __name__ == '__main__':
         data_methods = pd.read_csv(os.path.join(country_dir, 'mix.csv'))
         data_tfr     = pd.read_csv(os.path.join(country_dir, 'tfr.csv'))
         data_popsize = pd.read_csv(os.path.join(country_dir, 'popsize.csv'))
+        data_empowerment = pd.read_csv(os.path.join(country_dir, 'empowerment.csv'))
 
         # Set up global variables
         age_bin_map = {
@@ -155,7 +157,7 @@ if __name__ == '__main__':
 
                 return growth_rate
 
-        # Start series of options for plotting data to model comparisons
+        # Start series of options for plotting data to model comaprisons
         if do_plot_asfr:
                 '''
                 Plot age-specific fertility rate between model and data

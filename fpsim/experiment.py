@@ -37,7 +37,7 @@ default_flags = sc.objdict(
     cbr           = 1, # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
     tfr           = 1, # Total fertility rate
     asfr          = 1, # Age-specific fertility rate
-    empowerment   = 1, # Empowerment metrics, i.e. paid employment and education params
+    empowerment   = 0, # Empowerment metrics, i.e. paid employment and education params
 )
 
 
@@ -446,56 +446,67 @@ class Experiment(sc.prettyobj):
         return
 
 
-    def extract_empowerment(self):
+    def extract_employment(self):
         # Extract paid work from data
         data_empowerment = self.load_data('empowerment')
-        data_paid_work = data_empowerment[['age', 'paid_employment']]
-        ages = data_paid_work['age'].values.tolist()
-        self.data['paid_employment'] = data_paid_work['paid_employment'].values.tolist()
+        data_empowerment = data_empowerment.iloc[1:-1]
+        data_paid_work = data_empowerment[['age', 'paid_employment']].copy()
+        age_bins = pl.arange(min_age, max_age, bin_size)
+        data_paid_work['age_group'] = pd.cut(data_paid_work['age'], bins=age_bins, right=False)
+        self.data['paid_employment'] = data_paid_work.groupby('age_group', observed=False)['paid_employment'].mean()
 
         # Extract paid work from model
-        model_paid_work_dict = {}
-        # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
-        for age in ages:
-            model_paid_work_dict[age] = []
+        # Initialize dictionaries to store counts of employed and total people in each age bin
+        employed_counts = {age_bin: 0 for age_bin in age_bins}
+        total_counts = {age_bin: 0 for age_bin in age_bins}
 
+        # Count the number of employed and total people in each age bin
         ppl = self.people
         for i in range(len(ppl)):
             if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
-                age = math.floor(ppl.age[i])
-                model_paid_work_dict[age].append(ppl.paid_employment[i])
+                age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
+                total_counts[age_bin] += 1
+                if ppl.paid_employment[i]:
+                    employed_counts[age_bins[age_bin]] += 1
 
-        # Calculate average # of individuals with paid work by each age using the array
-        for age in model_paid_work_dict:
-            total_ppl = len(model_paid_work_dict[age])
-            avg_paid_emp = (model_paid_work_dict[age].count(True)) / total_ppl
-            model_paid_work_dict[age] = avg_paid_emp
-        self.model['paid_employment'] = list(model_paid_work_dict.values())
+        # Calculate the percentage of employed people in each age bin
+        percentage_employed = {}
+        for age_bin in age_bins:
+            total_ppl = total_counts[age_bin]
+            if total_ppl != 0:
+                percentage_employed[age_bin] = employed_counts[age_bin] / total_ppl
+            else:
+                percentage_employed[age_bin] = 0
 
+        self.model['paid_employment'] = list(percentage_employed.values())
+
+
+    def extract_education(self):
         # Extract education from data
         dhs_data_education = self.load_data('education')
         data_edu = dhs_data_education[['age', 'edu']].sort_values(by='age')
-        self.data['education'] = data_edu['edu'].values.tolist()
+        data_edu = data_edu.query(f"{min_age} <= age < {max_age}").copy()
+        age_bins = pl.arange(min_age, max_age, bin_size)
+        data_edu['age_group'] = pd.cut(data_edu['age'], bins=age_bins, right=False)
+        self.data['education'] = data_edu.groupby('age_group', observed=False)['edu'].mean()
 
         # Extract education from model
-        model_edu_dict = {}
-        # Create a dictionary using each age in empowerment.csv as keys and an array persons' paid work as values.
-        for age in range(min_age, max_age):
-            model_edu_dict[age] = []
-
+        # Initialize dictionary to store years of education for each person in each age group
+        model_edu_years = {age_bin: [] for age_bin in age_bins}
+        ppl = self.people
         for i in range(len(ppl)):
             if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
-                age = math.floor(ppl.age[i])
-                model_edu_dict[age].append(ppl.edu_attainment[i])
+                age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
+                model_edu_years[age_bin].append(ppl.edu_attainment[i])
 
         # Calculate average # of years of educational attainment for each age
-        for age in model_edu_dict:
-            if len(model_edu_dict[age]) != 0:
-                avg_edu = sum(model_edu_dict[age]) / len(model_edu_dict[age])
-                model_edu_dict[age] = avg_edu
+        for age_group in model_edu_years:
+            if len(model_edu_years[age_group]) != 0:
+                avg_edu = sum(model_edu_years[age_group]) / len(model_edu_years[age_group])
+                model_edu_years[age_group] = avg_edu
             else:
-                model_edu_dict[age] = 0
-        self.model['education'] = list(model_edu_dict.values())
+                model_edu_years[age_group] = 0
+        self.model['education'] = list(model_edu_years.values())
 
         return
 
@@ -522,7 +533,9 @@ class Experiment(sc.prettyobj):
         if self.flags.ageparity:   self.extract_ageparity()
         if self.flags.birth_space:   self.extract_birth_spacing()
         if self.flags.methods:       self.extract_methods()
-        if self.flags.empowerment:   self.extract_empowerment()
+        if self.flags.empowerment:
+            self.extract_employment()
+            self.extract_education()
 
         # Remove people, they're large!
         if not keep_people:
