@@ -50,15 +50,18 @@ table.emp <- as.data.frame(svyby(~paidwork, ~age, svydesign_obj, svymean)) %>% r
   left_join(as.data.frame(svyby(~decisionhealth, ~age, svydesign_obj, svymean, na.rm = T)) %>% rename(decisionhealth.se = se))
 
 
-# TODO: Add low and upper age bounds: 0 and 100 years old to table, fpsim uses this information to interpolate the
-# data across all possible ages.
-
-
+# Add low and upper age bounds: 0 and 100 years old to table.emp; 
+# fpsim uses this information to interpolate the data across all possible ages.
+table.emp <- add_row(table.emp, age = 0, .before=1)
+table.emp <- add_row(table.emp, age = 100)
+# Replace NA values in multiple columns with zero
+table.emp.filled <- table.emp %>% mutate(across(where(is.numeric), ~replace_na(., 0)))
+         
 # -- Write table with empowerment data  -- #
-fpsim_dir <- "fpsim"  # path to root directory of fpsim
+fpsim_dir <- "fpsim"   # path to root directory of fpsim
 locations_dir <- "fpsim/locations"
 country_dir <- "kenya"
 country_path <-
   file.path(home_dir, fpsim_dir, locations_dir, country_dir)
 
-write.csv(stop.school, file.path(country_path, 'empowerment_.csv'), row.names = F)
+write.csv(table.emp.filled, file.path(country_path, 'empowerment.csv'), row.names = F)
