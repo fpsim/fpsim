@@ -1136,13 +1136,22 @@ def education_attainment(df):
 
 def education_dropout_probs(df):
     """
-    Convert education dropout probability to necessary numeric types and data structure
+    Transforms education dropout probabilities (from edu_stop.csv) from a DataFrame
+    into a dictionary. The dataframe will be used as the probability that a woman aged 'age'
+    and with 'parity' number of children, would drop out of school if she is enrolled in
+    education and becomes pregnant.
 
-    NOTE: This df contains PMA data:
-    - Of women with a first birth before age 18, 12.6% stopped education within 1 year of that birth.
-    - Of women who had a subsequent (not first) birth before age 18, 14.1% stopped school within 1 year of that birth.
+    The data comes from PMA Datalab and 'percent' represents the probability of stopping/droppping
+    out of education within 1 year of the birth represented in 'parity'.
+        - Of women with a first birth before age 18, 12.6% stopped education within 1 year of that birth.
+        - Of women who had a subsequent (not first) birth before age 18, 14.1% stopped school within 1 year of that birth.
 
-    The probabilities in this df represents the prob of stopping/droppping out of education within 1 year of that birth.
+    Args:
+        df (pd.DataFrame): Contains 'age', 'parity' and 'percent' columns.
+
+    Returns:
+       data (dictionary): Dictionary with keys '1' and '2+' indicating a woman's parity. The values are dictionaries,
+           each with keys 'age' and 'percent'.
     """
     data = {}
     for k in df["parity"].unique():
