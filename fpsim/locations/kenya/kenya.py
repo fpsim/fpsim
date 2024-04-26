@@ -1129,10 +1129,8 @@ def education_attainment(df):
     arr  = df["edu"].to_numpy()
 
     # Get indices of those ages
-    inds = np.array(sc.findinds(ages >= fpd.min_age, ages < fpd.max_age_preg))
-    from scipy import interpolate
-    f_interp = interpolate.interp1d(ages[inds[::4]], arr[inds[::4]], kind="quadratic")
-    arr[inds] = f_interp(ages[inds])
+    inds = np.array(sc.findinds(ages >= fpd.min_age, ages < fpd.max_age_preg+5)) # interpolate beyond DHS max age to avoid discontinuities
+    arr[inds] = sc.smooth(arr[inds], 3)
     return arr, ages
 
 
@@ -1155,19 +1153,35 @@ def education_dropout_probs(df):
 
 
 def education_distributions():
+    """
+    Loads and processes all education-related data files. Performs additional interpolation
+    to reduce noise from empirical data.
+
+    Returns:
+        Tuple[dict, dict]: A tuple of two dictionaries:
+            education_data (dict): Contains the unmodified empirical data from CSV files.
+            education_dict (dict): Contains the processed empirical data to use in simulations.
+    """
+
     # Load empirical data
-    education_data = {"edu_objective": pd.read_csv(thisdir / 'data' / 'edu_objective.csv'),
-                      "edu_attainment": pd.read_csv(thisdir / 'data' / 'edu_initialization.csv'),
-                      "edu_dropout_probs": pd.read_csv(thisdir / 'data' / 'edu_stop.csv')}
+    data_path = thisdir / "data"
 
-    attainment, age = education_attainment(education_data["edu_attainment"])
-    education_dict = {"age": age,
-                      "age_start": 6.0,
-                      "edu_objective": education_objective(education_data["edu_objective"]),
-                      "edu_attainment": attainment,
-                      "edu_dropout_probs": education_dropout_probs(education_data["edu_dropout_probs"]),
-                      }
+    education ={"edu_objective":
+                    {"data_file": "edu_objective.csv",
+                     "process_function": education_objective},
+                "edu_attainment":
+                    {"data_file": "edu_initialization.csv",
+                     "process_function": education_attainment},
+                "edu_dropout_probs":
+                    {"data_file": "edu_stop.csv",
+                     "process_function": education_dropout_probs}}
 
+    education_data = dict()
+    education_dict = dict()
+    for edu_key in education.keys():
+        education_data[edu_key] = pd.read_csv(data_path / education[edu_key]["data_file"])
+        education_dict[edu_key] = education[edu_key]["process_function"](education_data[edu_key])
+    education_dict.update({"age_start": 6.0})
     return education_dict, education_data
 
 
