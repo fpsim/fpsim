@@ -1,9 +1,9 @@
-#########################################
-# -- Empowerment data from DHS       - ##
-# -- DHS data
-# -- Marita Zimmermann
-# -- August 2023
-#########################################
+################################################################################
+# -- Extract empowerment data from DHS datasets
+# From DHS we extract:
+#
+# Base on original analysis by Marita Zimmermann, August 2023
+###############################################################################
 
 rm(list=ls())
 
@@ -47,10 +47,10 @@ svydesign_obj = svydesign(id = data$v001,
 # -- Empowerment metrics -- #
 
 # Table of the three empowerment outcomes by age
-table.emp <- as.data.frame(svyby(~paidwork, ~age, svydes1, svymean)) %>% rename(paidwork.se = se) %>%
-  left_join(as.data.frame(svyby(~decisionwages, ~age, svydes1, svymean, na.rm = T)) %>% rename(decisionwages.se = se)) %>%
-  left_join(as.data.frame(svyby(~refusesex, ~age, svydes1, svymean, na.rm = T)) %>% rename(refusesex.se = se)) %>%
-  left_join(as.data.frame(svyby(~decisionhealth, ~age, svydes1, svymean, na.rm = T)) %>% rename(decisionhealth.se = se))
+table.emp <- as.data.frame(svyby(~paidwork, ~age, svydesign_obj, svymean)) %>% rename(paidwork.se = se) %>%
+  left_join(as.data.frame(svyby(~decisionwages, ~age, svydesign_obj, svymean, na.rm = T)) %>% rename(decisionwages.se = se)) %>%
+  left_join(as.data.frame(svyby(~refusesex, ~age, svydesign_obj, svymean, na.rm = T)) %>% rename(refusesex.se = se)) %>%
+  left_join(as.data.frame(svyby(~decisionhealth, ~age, svydesign_obj, svymean, na.rm = T)) %>% rename(decisionhealth.se = se))
 
 
 # TODO: Add low and upper age bounds: 0 and 100 years old to table, fpsim uses this information to interpolate the

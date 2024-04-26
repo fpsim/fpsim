@@ -11,6 +11,7 @@
 # - education stopping criteria (expressed in percentage of women aged (age)
 #                                years old and a given parity that would dropout
 #                                from their education if they got pregnant.
+# Base on original analysis by Marita Zimmermann, August 2023
 ###############################################################################
 
 # -- Libraries -- #
