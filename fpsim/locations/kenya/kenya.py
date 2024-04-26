@@ -1009,30 +1009,19 @@ def empowerment_regression_pars(regression_type='logistic'):
 
 # Empowerment metrics
 def empowerment_distributions(seed=None, regression_type='logistic'):
-    """Intial distributions of empowerment attributes based on latest DHS data <YYYY>
-    TODO: perhaps split into single functions, one per attribute?
-    TODO: update docstring for empowerment_distributions
-    NOTE: DHS data covers the age group from 15 to 49 (inclusive). In this function we
-    interpolate data to reduce noise and extrapolate to cover the age range (0, 100).
-    Interpolation is done using a piecewise linear approximation with an inflexion point
-    on
+    """
+    Produce intial distributions of empowerment attributes
+    based on latest DHS-8 IR 2022 dataset.
 
-    Paid employment (https://github.com/fpsim/fpsim/issues/185)
-    0.6198487 at age 25
-    slope <25, 6.216042e-02 (SE 2.062729e-03)
-    slope >25, 0.0008010242 (SE 0.0592966648)
+    Because DHS data covers the age group from 15 to 49 (inclusive range),
+    in this function we:
+    - (1) interpolate data to reduce noise; and
+    - (2) extrapolate to cover the age range (0, 100) needed
+          to populate the corresponding attributes of each individual agent
+          at the start of a simulation.
 
-    Control over wages (https://github.com/fpsim/fpsim/issues/187)
-    Parameterization:
-    0.9434381 at age 20
-    slope <20, 2.548961e-02 (SE 5.243655e-03)
-    slope >20, 0.0008366125 (SE 0.0194093421)
-
-    Sexual autonomy (https://github.com/fpsim/fpsim/issues/188)
-    Parameterization:
-    0.8292142 at age 25
-    slope <25, 0.025677 (SE 0.003474)
-    slope>25, -0.003916498 (SE 0.026119389)
+    By default, interpolation and extrapolation use
+    a nonlinear logistic-based function (a product of sigmoids).
     """
     from scipy import optimize
 
@@ -1046,7 +1035,6 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
         seed = 42
     fpu.set_seed(seed)
 
-    # TODO: parametrise so the users can decide which function to use?
     regression_pars, regression_fun = empowerment_regression_pars(regression_type=regression_type)
 
     data_points = {"paid_employment": [], "decision_wages":  [], "decision_health": [], "sexual_autonomy": []}
@@ -1063,8 +1051,8 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
         # Update regression parameters
         regression_pars[col]  = fit_pars
 
-    # Create vector of ages 0, 99 (inclusive) to extrapolate data
-    ages = np.arange(100.0)
+    # Creates a vector of ages [0, 99] (inclusive range) to extrapolate data
+    ages = np.arange(fpd.max_age + 1)
 
     # Interpolate and extrapolate data for different empowerment metrics
     empowerment_dict["age"] = ages
