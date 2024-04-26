@@ -51,11 +51,14 @@ data_processed = pd.DataFrame({
 # If you want to write this DataFrame to a .csv file, in
 # the corresponding locations folder you can do:
 locations_path = sc.thisdir(fplocs)
-country = "kenya"
-output_filename = "urban_.csv"
+country_dir = "kenya"
+data_dir = "data"
+output_filename = "urban.csv"
 
 # Actually save the data
 # NOTE that this will replace the default urban.csv
-data_processed.to_csv(sc.path(locations_path, country,
+data_processed.to_csv(sc.path(locations_path,
+                              country_dir,
+                              data_dir,
                               output_filename),
                       index=False)

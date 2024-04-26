@@ -28,12 +28,13 @@ svydesign_obj = svydesign(id = data$v001, strata=data$v023, weights = data$v005/
 # -- Compute proportion of women living in an urban setting -- #
 table.urban <- as.data.frame(svymean(~urban, svydesign_obj)) %>% rename(urban.se = urban)
 
-home_dir <- path.expand("~")   # replace with your own path to the DTA file
-fpsim_dir <- "fpsim"           # path to root directory of fpsim
+home_dir <- path.expand("~")   #
+fpsim_dir <- "fpsim"           # replace with your path to root directory of fpsim
 locations_dir <- "fpsim/locations"
 country_dir <- "kenya"
-filename <- "urban.csv"
-filepath <- file.path(home_dir, fpsim_dir, locations, country_dir, filename)
+data_dir <- "data"
+filename <- "urban_.csv"
+filepath <- file.path(home_dir, fpsim_dir, locations_dir,  country_dir, data_dir, filename)
 
 # -- Save file --# Note that this will replace the default urban.csv for the specified country
 write.csv(table.urban, filepath, row.names = F)
