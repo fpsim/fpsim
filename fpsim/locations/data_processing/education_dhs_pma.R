@@ -239,13 +239,14 @@ stop.school %>%
 fpsim_dir <- "fpsim" # path to root directory of fpsim
 locations_dir <- "fpsim/locations"
 country_dir <- "kenya"
-country_path <-
-  file.path(home_dir, fpsim_dir, locations_dir, country_dir)
+data_dir <- "data"
+country_data_path <-
+  file.path(home_dir, fpsim_dir, locations_dir, country_dir, data_dir)
 
 write.csv(table.edu.inital,
-          file.path(country_path, 'edu_initialization.csv'),
+          file.path(country_data_path, 'edu_initialization.csv'),
           row.names = F)
 write.csv(table.edu.20,
-          file.path(country_path, 'edu_objective.csv'),
+          file.path(country_data_path, 'edu_objective.csv'),
           row.names = F)
-write.csv(stop.school, file.path(country_path, 'edu_stop_.csv'), row.names = F)
+write.csv(stop.school, file.path(country_data_path, 'edu_stop.csv'), row.names = F)

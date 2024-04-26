@@ -61,7 +61,8 @@ table.emp.filled <- table.emp %>% mutate(across(where(is.numeric), ~replace_na(.
 fpsim_dir <- "fpsim"   # path to root directory of fpsim
 locations_dir <- "fpsim/locations"
 country_dir <- "kenya"
-country_path <-
-  file.path(home_dir, fpsim_dir, locations_dir, country_dir)
+data_dir <- "data"
+country_data_path <-
+  file.path(home_dir, fpsim_dir, locations_dir, country_dir, data_dir)
 
-write.csv(table.emp.filled, file.path(country_path, 'empowerment.csv'), row.names = F)
+write.csv(table.emp.filled, file.path(country_data_path, 'empowerment.csv'), row.names = F)

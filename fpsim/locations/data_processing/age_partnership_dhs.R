@@ -35,8 +35,9 @@ home_dir <- path.expand("~")   # replace with your own path to the DTA file
 fpsim_dir <- "fpsim"           # path to root directory of fpsim
 locations_dir <- "fpsim/locations"
 country_dir <- "kenya"
+data_dir <- "data"
 filename <- "age_partnership.csv"
-filepath <- file.path(home_dir, fpsim_dir, locations, country_dir, filename)
+country_data_path <- file.path(home_dir, fpsim_dir, locations, country_dir, data_dir, filename)
 
 # -- Save file --# Note that this will replace the default *.csv file for the specified country
-write.csv(table.partnerership, filepath, row.names = F)
+write.csv(table.partnerership, country_data_path, row.names = F)
