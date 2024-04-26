@@ -1042,8 +1042,6 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     empowerment_data.rename(columns=mean_cols, inplace=True)
     empowerment_dict = {}
 
-    # TODO: Think of a better way to initialize this?
-    # Set seed
     if seed is None:
         seed = 42
     fpu.set_seed(seed)
