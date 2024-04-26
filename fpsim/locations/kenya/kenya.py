@@ -1053,13 +1053,22 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
 
     # Creates a vector of ages [0, 99] (inclusive range) to extrapolate data
     ages = np.arange(fpd.max_age + 1)
+    empowerment_dict["age"] = ages
 
     # Interpolate and extrapolate data for different empowerment metrics
-    empowerment_dict["age"] = ages
-    empowerment_dict["paid_employment"] = empowerment_paid_employment(ages, regression_fun, regression_pars=regression_pars["paid_employment"])
-    empowerment_dict["decision_wages"]  = empowerment_decision_wages(ages, regression_fun, regression_pars=regression_pars["decision_wages"])
-    empowerment_dict["decision_health"] = empowerment_decision_health(ages, regression_fun, regression_pars=regression_pars["decision_health"])
-    empowerment_dict["sexual_autonomy"] = empowerment_sexual_autonomy(ages, regression_fun, regression_pars=regression_pars["sexual_autonomy"])
+    empowerment_functions = {
+        "paid_employment": empowerment_paid_employment,
+        "decision_wages": empowerment_decision_wages,
+        "decision_health": empowerment_decision_health,
+        "sexual_autonomy": empowerment_sexual_autonomy,
+    }
+    for metric in empowerment_functions.keys():
+        empowerment_dict[metric] = empowerment_functions[metric](
+            ages,
+            regression_fun,
+            regression_pars=regression_pars[metric]
+        )
+
     # Store the estimates of each metric and the optimised regression parameters
     empowerment_dict["regression_pars"] = regression_pars
     empowerment_dict["sampled_points"] = data_points
