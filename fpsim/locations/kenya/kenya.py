@@ -1099,8 +1099,8 @@ def education_objective(df):
                            0 to a maximum value representing years of education.
 
     Returns:
-        np.array: A 2D array of shape (2, n_edu_objective_years) containing proportions. The first
-                  row corresponds to 'rural' women and the second row to 'urban' women.
+        arr (np.array): A 2D array of shape (2, n_edu_objective_years) containing proportions. The first
+                        row corresponds to 'rural' women and the second row to 'urban' women.
     """
     arr = df["percent"].to_numpy().reshape(df["urban"].nunique(), df["edu"].nunique())
     return arr
@@ -1108,11 +1108,19 @@ def education_objective(df):
 
 def education_attainment(df):
     """
-    Convert education attainment data to necessary numeric types and into a numpy array
-    These data are the mean years of education of a woman aged X years from DHS.
+    Transforms education attainment data (from education_initialization.csv) from a DataFrame
+    into a numpy array. The DataFrame represents the average (mean) number of years of
+    education 'edu', a woman aged 'age' has attained/completed.
 
-    NOTE: The data in education_initialization.csv have been extrapolated. Here we only
-    interpolate data for the group 15-49 (inclusive range).
+    Args:
+        df (pd.DataFrame): Contains 'age', 'edu' columns.
+
+    Returns:
+        arr (np.array): A 1D with array with interpolated values of 'edu' years attained.
+        ages (np.array): A 1D with array with the ages
+
+    NOTE: The data in education_initialization.csv have been extrapolated to cover the age range
+    [0, 99], inclusive range. Here we only interpolate data for the group 15-49 (inclusive range).
     """
     # This df has columns
     # age:age in years and edu: mean years of education
@@ -1120,11 +1128,9 @@ def education_attainment(df):
     ages = df["age"].to_numpy()
     arr  = df["edu"].to_numpy()
 
-    # We interpolate data from 15-49 years
     # Get indices of those ages
-    inds = np.array(sc.findinds(ages >= 15, ages <= 55))
+    inds = np.array(sc.findinds(ages >= fpd.min_age, ages < fpd.max_age_preg))
     from scipy import interpolate
-    # TODO: parameterise interpolation, or provide interpolated data in csv file
     f_interp = interpolate.interp1d(ages[inds[::4]], arr[inds[::4]], kind="quadratic")
     arr[inds] = f_interp(ages[inds])
     return arr, ages
