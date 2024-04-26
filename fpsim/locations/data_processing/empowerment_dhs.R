@@ -1,6 +1,6 @@
 ################################################################################
 # -- Extract empowerment data from DHS datasets
-# From DHS we extract:
+# From DHS (https://dhsprogram.com/) we extract:
 #
 # Base on original analysis by Marita Zimmermann, August 2023
 ###############################################################################

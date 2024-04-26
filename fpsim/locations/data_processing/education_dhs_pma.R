@@ -1,13 +1,13 @@
 ################################################################################
 # -- Extract education data from DHS and PMA data datasets
-# From DHS we extract:
+# From DHS (https://dhsprogram.com/) we extract:
 # - education objective (expressed in percentage of women that will aim to
 #                        complete X years of education, sratified by type of
 #                        residential setting).
 # - education initialization (expressed in (edu) number of years a woman aged (age)
 #                             will have likely completed).
 #
-# From PMS we extract:
+# From PMA (https://datalab.pmadata.org/) we extract:
 # - education stopping criteria (expressed in percentage of women aged (age)
 #                                years old and a given parity that would dropout
 #                                from their education if they got pregnant.
