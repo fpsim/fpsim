@@ -451,9 +451,9 @@ class Experiment(sc.prettyobj):
         data_empowerment = self.load_data('empowerment')
         data_empowerment = data_empowerment.iloc[1:-1]
         data_paid_work = data_empowerment[['age', 'paid_employment']].copy()
-        age_bins = pl.arange(min_age, max_age, bin_size)
+        age_bins = pl.arange(min_age, max_age+1, bin_size)
         data_paid_work['age_group'] = pd.cut(data_paid_work['age'], bins=age_bins, right=False)
-        self.data['paid_employment'] = data_paid_work.groupby('age_group', observed=False)['paid_employment'].mean()
+        self.data['paid_employment'] = data_paid_work.groupby('age_group', observed=False)['paid_employment'].mean().tolist()
 
         # Extract paid work from model
         # Initialize dictionaries to store counts of employed and total people in each age bin
@@ -471,6 +471,7 @@ class Experiment(sc.prettyobj):
 
         # Calculate the percentage of employed people in each age bin
         percentage_employed = {}
+        age_bins = np.arange(min_age, max_age, bin_size)
         for age_bin in age_bins:
             total_ppl = total_counts[age_bin]
             if total_ppl != 0:
@@ -486,13 +487,13 @@ class Experiment(sc.prettyobj):
         dhs_data_education = self.load_data('education')
         data_edu = dhs_data_education[['age', 'edu']].sort_values(by='age')
         data_edu = data_edu.query(f"{min_age} <= age < {max_age}").copy()
-        age_bins = pl.arange(min_age, max_age, bin_size)
+        age_bins = np.arange(min_age, max_age+1, bin_size)
         data_edu['age_group'] = pd.cut(data_edu['age'], bins=age_bins, right=False)
-        self.data['education'] = data_edu.groupby('age_group', observed=False)['edu'].mean()
+        self.data['education'] = data_edu.groupby('age_group', observed=False)['edu'].mean().tolist()
 
         # Extract education from model
         # Initialize dictionary to store years of education for each person in each age group
-        model_edu_years = {age_bin: [] for age_bin in age_bins}
+        model_edu_years = {age_bin: [] for age_bin in np.arange(min_age, max_age, bin_size)}
         ppl = self.people
         for i in range(len(ppl)):
             if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
