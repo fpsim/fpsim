@@ -297,9 +297,14 @@ def advance_education(ppl):
 
 def resume_education(ppl):
     """
-    # Basic mechanism to resume education post-pregnancy:
-    # If education was interrupted due to pregnancy, resume after 9 months pospartum ()
-    #TODO: check if there's any evidence supporting this assumption
+    Basic mechanism to resume education post-pregnancy:
+    If education was interrupted due to pregnancy, resume after 9 months pospartum.
+    This re-entry criterion is partially justified for learners aged < 18 by
+    Kenya’s National School Re-entry Guidelines that states (p.20 - Early Pregnancy):
+          The school, the learner and parents/guardians shall sign a committal letter
+          for the pregnant learner to re-enter school six (6) months after delivery,
+          which provides time to nurse the baby. The learner shall re-enter school
+          at the beginning of the next calendar year.
     """
     # Basic mechanism to resume education post-pregnancy:
     # If education was interrupted due to pregnancy, resume after 9 months pospartum
