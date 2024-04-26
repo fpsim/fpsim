@@ -5,8 +5,6 @@
 # Base on original analysis by Marita Zimmermann, August 2023
 ###############################################################################
 
-rm(list=ls())
-
 # -- Libraries -- #
 library(tidyverse)      
 library(haven)   
@@ -14,7 +12,6 @@ library(survey)
 library(withr)
 
 # -- Data -- #
-
 # Kenya 2022 individual recode
 home_dir <- path.expand("~")
 dhs_dir <- "DHS"
@@ -65,4 +62,3 @@ country_path <-
   file.path(home_dir, fpsim_dir, locations_dir, country_dir)
 
 write.csv(stop.school, file.path(country_path, 'empowerment_.csv'), row.names = F)
-
