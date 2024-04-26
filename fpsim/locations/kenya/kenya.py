@@ -1117,7 +1117,6 @@ def education_attainment(df):
 
     Returns:
         arr (np.array): A 1D with array with interpolated values of 'edu' years attained.
-        ages (np.array): A 1D with array with the ages
 
     NOTE: The data in education_initialization.csv have been extrapolated to cover the age range
     [0, 99], inclusive range. Here we only interpolate data for the group 15-49 (inclusive range).
@@ -1131,7 +1130,7 @@ def education_attainment(df):
     # Get indices of those ages
     inds = np.array(sc.findinds(ages >= fpd.min_age, ages < fpd.max_age_preg+5)) # interpolate beyond DHS max age to avoid discontinuities
     arr[inds] = sc.smooth(arr[inds], 3)
-    return arr, ages
+    return arr
 
 
 def education_dropout_probs(df):
