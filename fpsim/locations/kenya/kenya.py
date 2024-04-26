@@ -1087,13 +1087,21 @@ def age_partnership():
 
 def education_objective(df):
     """
-    Convert education objective data to necesary numeric types and into a numpy array
-    NOTE: These values are based on the distribution of education for women over age 20 with no children,
-    stratified by urban/rural from DHS.
+    Transforms education objective data from a DataFrame into a numpy array. The DataFrame represents
+    the proportion of women with different education objectives, stratified by urban/rural residence.
+
+    The 'percent' column represents the proportion of women aiming for 'edu' years of education. The data
+    is based on education completed by women over 20 with no children, stratified by urban/rural residence
+    from the Demographic and Health Surveys (DHS).
+
+    Args:
+        df (pd.DataFrame): Contains 'urban', 'edu' and 'percent' columns, with 'edu' ranging from
+                           0 to a maximum value representing years of education.
+
+    Returns:
+        np.array: A 2D array of shape (2, n_edu_objective_years) containing proportions. The first
+                  row corresponds to 'rural' women and the second row to 'urban' women.
     """
-    # This df has columns
-    # edu: years education, urban: geographic setting, percent:
-    # transformed to a 2d array of proportions with dimensions (n_urban, n_edu_years)
     arr = df["percent"].to_numpy().reshape(df["urban"].nunique(), df["edu"].nunique())
     return arr
 
