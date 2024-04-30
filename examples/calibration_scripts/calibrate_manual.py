@@ -59,21 +59,21 @@ ageparity_dataset = 'PMA 2019'
 
 ####################################################
 cwd = os.path.dirname(os.path.abspath(__file__))
-country_dir = os.path.abspath(os.path.join(cwd, country))
+country_dir = os.path.abspath(os.path.join(cwd, '../../fpsim/locations/', country))
 figs_dir    = os.path.join(country_dir, 'figs')
 if do_save and not os.path.exists(figs_dir):
     os.mkdir(figs_dir)
 
 # Import country data files to compare
-ageparity    = pd.read_csv(os.path.join(country_dir, 'ageparity.csv')) # Age-parity distribution file
-use          = pd.read_csv(os.path.join(country_dir, 'use.csv'))  #Dichotomous contraceptive method use
-data_spaces  = pd.read_csv(os.path.join(country_dir, 'birth_spacing_dhs.csv'))  # Birth-to-birth interval data
-data_afb     = pd.read_csv(os.path.join(country_dir, 'afb.table.csv'))  # Ages at first birth in DHS for women age 25-50
-data_cpr     = pd.read_csv(os.path.join(country_dir, 'cpr.csv'))  # From UN Data Portal
-data_asfr    = pd.read_csv(os.path.join(country_dir, 'asfr.csv'))
-data_methods = pd.read_csv(os.path.join(country_dir, 'mix.csv'))
-data_tfr     = pd.read_csv(os.path.join(country_dir, 'tfr.csv'))
-data_popsize = pd.read_csv(os.path.join(country_dir, 'popsize.csv'))
+ageparity    = pd.read_csv(os.path.join(country_dir, 'data/ageparity.csv')) # Age-parity distribution file
+use          = pd.read_csv(os.path.join(country_dir, 'data/use.csv'))  #Dichotomous contraceptive method use
+data_spaces  = pd.read_csv(os.path.join(country_dir, 'data/birth_spacing_dhs.csv'))  # Birth-to-birth interval data
+data_afb     = pd.read_csv(os.path.join(country_dir, 'data/afb.table.csv'))  # Ages at first birth in DHS for women age 25-50
+data_cpr     = pd.read_csv(os.path.join(country_dir, 'data/cpr.csv'))  # From UN Data Portal
+data_asfr    = pd.read_csv(os.path.join(country_dir, 'data/asfr.csv'))
+data_methods = pd.read_csv(os.path.join(country_dir, 'data/mix.csv'))
+data_tfr     = pd.read_csv(os.path.join(country_dir, 'data/tfr.csv'))
+data_popsize = pd.read_csv(os.path.join(country_dir, 'data/popsize.csv'))
 
 # Set up global variables
 age_bin_map = {
@@ -97,7 +97,7 @@ sc.tic()
 
 # Set up sim for country
 pars = fp.pars(location=country)
-pars['n_agents'] = 100_000 # Small population size
+pars['n_agents'] = 1_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
@@ -384,7 +384,7 @@ if do_plot_cpr:
         pl.legend()
 
         if do_save:
-            pl.savefig(os.path.join(figs_dir, "cpr_over_sim.png"))
+            pl.savefig(os.path.join(figs_dir, "cpr.png"))
 
         pl.show()
 
@@ -405,7 +405,7 @@ if do_plot_tfr:
         pl.legend()
 
         if do_save:
-                pl.savefig(os.path.join(figs_dir, "tfr_over_sim.png"))
+                pl.savefig(os.path.join(figs_dir, "tfr.png"))
 
         pl.show()
 
@@ -434,7 +434,7 @@ if do_plot_pop_growth:
         pl.legend()
 
         if do_save:
-            pl.savefig(os.path.join(figs_dir, "popgrowth_over_sim.png"))
+            pl.savefig(os.path.join(figs_dir, "popgrowth.png"))
 
         pl.show()
 

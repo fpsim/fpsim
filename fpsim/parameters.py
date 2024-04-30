@@ -301,17 +301,21 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     # Pull out values needed for the location-specific make_pars functions
     loc_kwargs = dict(seed=pars['seed'])
 
-   # Define valid locations
-    if location in ['senegal', 'default']:
-        pars = sc.mergedicts(pars, fplocs.senegal.make_pars(**loc_kwargs))
-    elif location == 'kenya':
-        pars = sc.mergedicts(pars, fplocs.kenya.make_pars(**loc_kwargs))
-    elif location == 'ethiopia':
-        pars = sc.mergedicts(pars, fplocs.ethiopia.make_pars(**loc_kwargs))
-    # Else, error
-    else:
+    # Define valid locations
+    if location == 'default':
+        location = 'senegal'
+    valid_country_locs = dir(fplocs)
+    valid_ethiopia_regional_locs = dir(fplocs.ethiopia.regions)
+
+    # Get parameters for this location
+    if location in valid_country_locs:
+        location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
+    elif location in valid_ethiopia_regional_locs:
+        location_pars = getattr(fplocs.ethiopia.regions, location).make_pars(**loc_kwargs)
+    else: # Else, error
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
+    pars = sc.mergedicts(pars, location_pars)
 
     # Merge again, so that we ensure the user-defined values overwrite any location defaults
     pars = sc.mergedicts(pars, kwargs, _copy=True)
