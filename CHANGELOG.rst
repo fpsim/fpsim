@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 0.27.2 (2024-04-30)
+--------------------------
+- Creates subnational tutorial for Ethiopia
+- Updates regional scripts to improve subnationals calibrations for Ethiopia
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/334>`_
+
 Version 0.27.1 (2024-02-09)
 --------------------------
 - Updates regional parameters to calibrate subnationally in Ethiopia
