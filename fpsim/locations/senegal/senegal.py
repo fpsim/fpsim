@@ -7,12 +7,8 @@ import pandas as pd
 
 import sciris as sc
 from scipy import interpolate as si
-<<<<<<< HEAD:fpsim/locations/senegal.py
 from .. import defaults as fpd
 from .. import settings as fps
-=======
-from fpsim import defaults as fpd
->>>>>>> main:fpsim/locations/senegal/senegal.py
 
 thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
 
