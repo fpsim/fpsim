@@ -729,7 +729,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
 
 
 def empowerment_update_pars():
-    raw_pars = pd.read_csv(thisdir / 'kenya' / 'empower_coef.csv')
+    raw_pars = pd.read_csv(thisdir / 'data' / 'empower_coef.csv')
     pars = sc.objdict()
     metrics = raw_pars.lhs.unique()
     for metric in metrics:
@@ -825,7 +825,7 @@ def education_distributions():
 
 
 def process_contra_use_pars():
-    raw_pars = pd.read_csv(thisdir / 'kenya' / 'contra_coef.csv')
+    raw_pars = pd.read_csv(thisdir / 'data' / 'contra_coef.csv')
     pars = sc.objdict()
     for var_dict in raw_pars.to_dict('records'):
         var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
@@ -834,7 +834,7 @@ def process_contra_use_pars():
 
 
 def process_method_pars(methods):
-    df = pd.read_csv(thisdir / 'kenya' / 'method_mix.csv')
+    df = pd.read_csv(thisdir / 'data' / 'method_mix.csv')
     # Awful code to speed pandas up
     dd = dict()
     for akey in df.age_grp.unique():
