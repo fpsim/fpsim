@@ -16,22 +16,29 @@ eps            = 1e-9 # To avoid divide-by-zero
 min_age        = 15   # Minimum age to be considered eligible to use contraceptive methods
 max_age        = 99   # Maximum age
 max_age_preg   = 50   # Maximum age to become pregnant
-max_parity     = 20   # Maximum number of children
+max_parity     = 8    # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
+max_parity_spline = 20   # Used for parity splines
 
 
 #%% Defaults when creating a new person
 class State:
-    def __init__(self, name, val=None, dtype=None):
+    def __init__(self, name, val=None, dtype=None, ncols=None):
         """
         Initialize a state
         Args:
             name (str): name of state
             val (list, array, float, or str): value(s) to populate array with
             dtype (dtype): datatype. Inferred from val if not provided.
+            ncols (int): number of cols, needed for 2d states like birth_ages (n_agents * n_births)
         """
         self.name = name
         self.val = val
         self.dtype = dtype
+        self.ncols = ncols
+
+    @property
+    def ndim(self):
+        return 1 if self.ncols is None else 2
 
     def new(self, n, vals=None):
         """
@@ -42,13 +49,13 @@ class State:
         if isinstance(vals, np.ndarray):
             assert len(vals) == n
             arr = vals
-        elif isinstance(vals, list):
-            arr = [[] for _ in range(n)]
         else:
             if self.dtype is None: dtype = object if isinstance(vals, str) else None
             else: dtype = self.dtype
-            arr = np.full(shape=n, fill_value=vals, dtype=dtype)
+            shape = n if self.ncols is None else (n, self.ncols)
+            arr = np.full(shape=shape, fill_value=vals, dtype=dtype)
         return arr
+
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
 # or updated during the course of a simulation.
@@ -92,16 +99,6 @@ person_defaults = [
     State('breastfeed_dur',     0, int),
     State('breastfeed_dur_total', 0, int),
 
-    # Indices of children -- list of lists
-    State('children',           [], list),
-
-    # Dates
-    State('dobs',               [], list),  # Dates of birth of children
-    State('still_dates',        [], list),  # Dates of stillbirths -- list of lists
-    State('miscarriage_dates',  [], list),  # Dates of miscarriages -- list of lists
-    State('abortion_dates',     [], list),  # Dates of abortions -- list of lists
-    State('short_interval_dates',[], list),  # age of agents at short birth interval -- list of lists
-
     # Fecundity
     State('remainder_months',   0, int),
     State('personal_fecundity', 0, int),
@@ -127,6 +124,13 @@ person_defaults = [
     State('edu_interrupted',    0, bool),
     State('edu_completed',      0, bool),
     State('edu_started',        0, bool),
+
+    State('child_inds',         -1,     int,    ncols=max_parity),
+    State('birth_ages',         np.nan, float,  ncols=max_parity),  # Ages at time of live births
+    State('stillborn_ages',     np.nan, float,  ncols=max_parity),  # Ages at time of stillbirths
+    State('miscarriage_ages',   np.nan, float,  ncols=max_parity),  # Ages at time of miscarriages
+    State('abortion_ages',      np.nan, float,  ncols=max_parity),  #  Ages at time of abortions
+    # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
 ]
 
 person_defaults = ss.ndict(person_defaults)
@@ -153,7 +157,7 @@ age_bin_map = {
 # Age and parity splines
 spline_ages      = np.arange(max_age + 1)
 spline_preg_ages = np.arange(max_age_preg + 1)
-spline_parities  = np.arange(max_parity + 1)
+spline_parities  = np.arange(max_parity_spline + 1)
 
 # Define allowable keys to select all (all ages, all methods, etc)
 none_all_keys = [None, 'all', ':', [None], ['all'], [':']]
