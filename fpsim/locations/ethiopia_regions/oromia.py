@@ -1,5 +1,5 @@
 '''
-Set the parameters for FPsim, specifically for Ethiopia.
+Set the parameters for FPsim, specifically for Oromia.
 '''
 
 import numpy as np
@@ -16,9 +16,21 @@ thisdir = sc.path(sc.thisdir())  # For loading CSV files
 def scalar_pars():
     scalar_pars = eth.scalar_pars()
     scalar_pars['location'] = 'oromia'
+    # durations
     scalar_pars['breastfeeding_dur_mu'] = 9.09671867673669
     scalar_pars['breastfeeding_dur_beta'] = 8.12282272074618
-
+    # basic parameters
+    scalar_pars['end_year'] =  2016  # End year of simulation
+    # fecunditity and exposure
+    scalar_pars['fecundity_var_low'] = 0.958
+    scalar_pars['fecundity_var_high'] = 1.024
+    scalar_pars['exposure_factor'] = 1.308  # Overall exposure correction factor
+    scalar_pars['high_parity'] = 1.963
+    scalar_pars['high_parity_nonuse'] = 0.946
+    # mcpr
+    scalar_pars['mcpr_growth_rate'] = 0.5,  # The year-on-year change in MCPR after the end of the data
+    scalar_pars['mcpr_max'] = 0.80,  # Do not allow MCPR to increase beyond this
+    scalar_pars['mcpr_norm_year'] = 2016,  # Year to normalize MCPR trend to 1
     return scalar_pars
 
 def data2interp(data, ages, normalize=False):
@@ -31,7 +43,6 @@ def data2interp(data, ages, normalize=False):
 
 def filenames():
     files = eth.filenames()
-    
     return files
 
 # %% Demographics and pregnancy outcome
@@ -130,7 +141,6 @@ def lactational_amenorrhea_region():
     lam_dict['month'] = np.array(lam_dict['month'], dtype=np.float64)
     lam_dict['rate'] = lam_region.loc[lam_region['region'] == 'Oromia']['rate'].tolist()
     lam_dict['rate'] = np.array(lam_dict['rate'], dtype=np.float64)
- 
 
     return lam_dict
 

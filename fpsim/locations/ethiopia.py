@@ -57,12 +57,12 @@ def scalar_pars():
         'maternal_mortality_factor': 1,
 
         # Fecundity and exposure
-        'fecundity_var_low': 0.7,
+        'fecundity_var_low': 0.85,
         'fecundity_var_high': 1.1,
-        'high_parity': 4,
+        'high_parity': 5,
         'high_parity_nonuse': 0.6,
         'primary_infertility': 0.05,
-        'exposure_factor': 1.0,  # Overall exposure correction factor
+        'exposure_factor': 0.9,  # Overall exposure correction factor
         'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
                                    # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
 

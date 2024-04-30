@@ -16,8 +16,21 @@ thisdir = sc.path(sc.thisdir())  # For loading CSV files
 def scalar_pars():
     scalar_pars = eth.scalar_pars()
     scalar_pars['location'] = 'harari'
+    # durations
     scalar_pars['breastfeeding_dur_mu'] = 8.03037384408415
     scalar_pars['breastfeeding_dur_beta'] = 6.90532849979381
+    # basic parameters
+    scalar_pars['end_year'] =  2016  # End year of simulation
+    # fecunditity and exposure
+    scalar_pars['fecundity_var_low'] = 0.99
+    scalar_pars['fecundity_var_high'] = 1.38
+    scalar_pars['exposure_factor'] = 1.35
+    scalar_pars['high_parity'] = 0.98
+    scalar_pars['high_parity_nonuse'] = 0.5
+    # mcpr
+    scalar_pars['mcpr_growth_rate'] = 0.2,  # The year-on-year change in MCPR after the end of the data
+    scalar_pars['mcpr_max'] = 0.90,  # Do not allow MCPR to increase beyond this
+    scalar_pars['mcpr_norm_year'] = 2016,  # Year to normalize MCPR trend to 1
 
     return scalar_pars
 
@@ -30,7 +43,29 @@ def data2interp(data, ages, normalize=False):
     return interp
 
 def filenames():
-    files = eth.filenames()
+    ''' Data files for use with calibration, etc -- not needed for running a sim '''
+    files = {}
+    files['base'] = sc.thisdir(aspath=True) / 'ethiopia'
+    #national files
+    files['afb'] = 'afb.table.csv' #need to add data file
+    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2016 or PMA 2022 #need to add data file
+    files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
+    files['popsize'] = 'popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
+    files['spacing'] = 'birth_spacing_dhs.csv' #need to be fixed
+    files['urban'] = 'urban.csv'
+    #subnational files
+    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2016 or PMA 2022 #need to add data file
+    files['asfr'] = '/subnational/asfr_region.csv' ## From DHS 2016
+    files['barriers'] = '/subnational/barriers_region.csv' ## From PMA 2019
+    files['debut_age'] = '/subnational/sexual_debut_region.csv' ## From DHS 2016
+    files['lactational_amenorrhea'] = '/subnational/lam_region.csv' ## From DHS 2016
+    files['mcpr'] = '/subnational/cpr_region.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+    files['methods'] = '/subnational/mix_region.csv' ## From DHS 2016
+    files['region'] = '/subnational/region.csv' ## From DHS 2016 
+    files['sexual_activity'] = '/subnational/sexual_activity_region.csv' ## From DHS 2016
+    files['sexual_activity_pp'] = '/subnational/sexual_activity_pp_region.csv' ## From DHS 2016
+    files['tfr'] = '/subnational/tfr_region.csv' ## From DHS 2016
+    files['use'] = '/subnational/use_region.csv'  ## From PMA 2019
     
     return files
 
@@ -241,7 +276,53 @@ def birth_spacing_pref():
 # %% Contraceptive methods
 
 def methods():
-    methods = eth.methods()
+    '''
+    Names, indices, modern/traditional flag, and efficacies of contraceptive methods -- see also parameters.py
+    Efficacy from Guttmacher, fp_prerelease/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
+    BTL failure rate from general published data
+    Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
+    '''
+
+    # Define method data
+    data = {  # Index, modern, efficacy
+        'None': [0, False, 0.000],
+        'Withdrawal': [1, False, 0.866],
+        'Other traditional': [2, False, 0.861],
+        # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+        'Condoms': [3, True, 0.946],
+        'Pill': [4, True, 0.945],
+        'Injectables': [5, True, 0.983],
+        'Implants': [6, True, 0.994],
+        'IUDs': [7, True, 0.986],
+        'BTL': [8, True, 0.995],
+        'Other modern': [9, True, 0.880],
+        # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
+    }
+
+    keys = data.keys()
+    methods = {}
+    methods['map'] = {k: data[k][0] for k in keys}
+    methods['modern'] = {k: data[k][1] for k in keys}
+    methods['eff'] = {k: data[k][2] for k in keys}
+
+    # Age bins for different method switching matrices -- duplicated in defaults.py
+    methods['age_map'] = {
+        '<18': [0, 18],
+        '18-20': [18, 20],
+        '21-25': [20, 25],
+        '26-35': [25, 35],
+        '>35': [35, fpd.max_age + 1],  # +1 since we're using < rather than <=
+    }
+
+    # Data on trend in CPR over time in from Ethiopia, in %.
+    # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+    # https://population.un.org/dataportal/data/indicators/1/locations/231/start/1950/end/2040/table/pivotbylocation
+    # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
+    cpr_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' /  'cpr_region.csv')
+    region_cpr_data = cpr_data.loc[cpr_data['region'] == 'Addis Ababa']
+    methods['mcpr_years'] = region_cpr_data['year'].to_numpy()
+    methods['mcpr_rates'] = region_cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
+
     return methods
 
 # Define methods region based on empowerment work (self, region)
