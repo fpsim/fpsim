@@ -7,8 +7,7 @@ import pandas as pd
 
 import sciris as sc
 from scipy import interpolate as si
-from .. import defaults as fpd
-from .. import settings as fps
+from ... import defaults as fpd
 
 thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
 
