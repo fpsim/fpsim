@@ -112,7 +112,7 @@ def get_UN_data(label='', file_stem=None, outfile=None, columns=None, force=None
     if force or not os.path.exists(local_csv):
         print(f'\nDownloading from {url}, this may take a while...')
         sc.download(url, filename=local_zip)
-        zip_file_object = zipfile.ZipFile(local_zip, 'res')
+        zip_file_object = zipfile.ZipFile(local_zip, 'r')
         zip_file_object.extractall(filesdir)
         zip_file_object.close()
 

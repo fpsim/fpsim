@@ -199,7 +199,7 @@ if __name__ == "__main__":
 
     parser.add_argument('-n', '--new', help='Create a new baseline file', required=False, action='store_true')
     parser.add_argument('-c', '--compare', help='Create table with both baseline (baseline_results.csv) and new results ', action='store_true')
-    parser.add_argument('-res', '--replace', help='Replace the baseline file with the new results input', action='store_true')
+    parser.add_argument('-r', '--replace', help='Replace the baseline file with the new results input', action='store_true')
 
     if not os.path.exists("comparison_data"):
         os.mkdir("comparison_data")

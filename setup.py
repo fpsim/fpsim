@@ -8,7 +8,7 @@ versionpath = os.path.join(cwd, 'fpsim', 'version.py')
 version = runpy.run_path(versionpath)['__version__']
 
 # Get the documentation
-with open(os.path.join(cwd, 'README.rst'), "res") as f:
+with open(os.path.join(cwd, 'README.rst'), "r") as f:
     long_description = f.read()
 
 CLASSIFIERS = [

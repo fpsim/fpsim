@@ -176,7 +176,7 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
         function assumes the user wants to specify the mean and std of the lognormal distribution.
 
         Negative binomial distributions are parameterized with reference to the mean and dispersion parameter k
-        (see: https://en.wikipedia.org/wiki/Negative_binomial_distribution). The res parameter of the underlying
+        (see: https://en.wikipedia.org/wiki/Negative_binomial_distribution). The r parameter of the underlying
         distribution is then calculated from the desired mean and k. For a small mean (~1), a dispersion parameter
         of ∞ corresponds to the variance and standard deviation being equal to the mean (ti.e., Poisson). For a
         large mean (e.g. >100), a dispersion parameter of 1 corresponds to the standard deviation being equal to
