@@ -187,19 +187,17 @@ class Experiment(sc.prettyobj):
         '''
         maternal_deaths = np.sum(sres['maternal_deaths'][-mpy * 3:])
         births_last_3_years = np.sum(sres['births'][-mpy * 3:])
-        self.model['maternal_mortality_ratio'] = (maternal_deaths / births_last_3_years) * 100000
+        self.model['maternal_mortality_ratio'] = sc.safedivide(maternal_deaths, births_last_3_years) * 100000
 
         return
-
 
     def model_infant_mortality_rate(self, sres=None):
 
         infant_deaths = np.sum(sres['infant_deaths'][-mpy:])
         births_last_year = np.sum(sres['births'][-mpy:])
-        self.model['infant_mortality_rate'] = (infant_deaths / births_last_year) * 1000
+        self.model['infant_mortality_rate'] = sc.safedivide(infant_deaths, births_last_year) * 1000
 
         return
-
 
     def model_crude_death_rate(self, sres=None):
         total_deaths = np.sum(sres['deaths'][-mpy:]) + \
@@ -207,7 +205,6 @@ class Experiment(sc.prettyobj):
                        np.sum(sres['maternal_deaths'][-mpy:])
         self.model['crude_death_rate'] = (total_deaths / sres['pop_size'][-1]) * 1000
         return
-
 
     def model_crude_birth_rate(self, sres=None):
         births_last_year = np.sum(sres['births'][-mpy:])

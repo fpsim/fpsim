@@ -196,7 +196,6 @@ class Calibration(sc.prettyobj):
         output = op.create_study(storage=self.g.storage, study_name=self.g.name)
         return output
 
-
     def calibrate(self, calib_pars=None, weights=None, verbose=None, **kwargs):
         ''' Actually perform calibration '''
 
@@ -237,7 +236,6 @@ class Calibration(sc.prettyobj):
             self.summarize()
 
         return
-
 
     def summarize(self):
         try:

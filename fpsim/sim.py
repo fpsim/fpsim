@@ -358,11 +358,11 @@ class Sim(fpb.BaseSim):
 
         return self
 
-    def update_results(self, r, ti):
-        percent0to5 = (r.pp0to5 / r.total_women_fecund) * 100
-        percent6to11 = (r.pp6to11 / r.total_women_fecund) * 100
-        percent12to23 = (r.pp12to23 / r.total_women_fecund) * 100
-        nonpostpartum = ((r.total_women_fecund - r.pp0to5 - r.pp6to11 - r.pp12to23) / r.total_women_fecund) * 100
+    def update_results(self, res, ti):
+        percent0to5 = (res.pp0to5 / res.total_women_fecund) * 100
+        percent6to11 = (res.pp6to11 / res.total_women_fecund) * 100
+        percent12to23 = (res.pp12to23 / res.total_women_fecund) * 100
+        nonpostpartum = ((res.total_women_fecund - res.pp0to5 - res.pp6to11 - res.pp12to23) / res.total_women_fecund) * 100
 
         # Store results
         if self['scaled_pop']:
@@ -371,52 +371,52 @@ class Sim(fpb.BaseSim):
             scale = 1
         self.results['t'][ti] = self.tvec[ti]
         self.results['pop_size_months'][ti] = self.n * scale
-        self.results['births'][ti] = r.births * scale
-        self.results['deaths'][ti] = r.deaths * scale
-        self.results['stillbirths'][ti] = r.stillbirths * scale
-        self.results['miscarriages'][ti] = r.miscarriages * scale
-        self.results['abortions'][ti] = r.abortions * scale
-        self.results['short_intervals'][ti] = r.short_intervals * scale
-        self.results['secondary_births'][ti] = r.secondary_births * scale
-        self.results['pregnancies'][ti] = r.pregnancies * scale
-        self.results['total_births'][ti] = r.total_births * scale
-        self.results['maternal_deaths'][ti] = r.maternal_deaths * scale
-        self.results['infant_deaths'][ti] = r.infant_deaths * scale
-        self.results['on_methods_mcpr'][ti] = r.on_methods_mcpr
-        self.results['no_methods_mcpr'][ti] = r.no_methods_mcpr
-        self.results['on_methods_cpr'][ti] = r.on_methods_cpr
-        self.results['no_methods_cpr'][ti] = r.no_methods_cpr
-        self.results['on_methods_acpr'][ti] = r.on_methods_acpr
-        self.results['no_methods_acpr'][ti] = r.no_methods_acpr
-        self.results['mcpr'][ti] = r.on_methods_mcpr / (r.no_methods_mcpr + r.on_methods_mcpr)
-        self.results['cpr'][ti] = r.on_methods_cpr / (r.no_methods_cpr + r.on_methods_cpr)
-        self.results['acpr'][ti] = r.on_methods_acpr / (r.no_methods_acpr + r.on_methods_acpr)
+        self.results['births'][ti] = res.births * scale
+        self.results['deaths'][ti] = res.deaths * scale
+        self.results['stillbirths'][ti] = res.stillbirths * scale
+        self.results['miscarriages'][ti] = res.miscarriages * scale
+        self.results['abortions'][ti] = res.abortions * scale
+        self.results['short_intervals'][ti] = res.short_intervals * scale
+        self.results['secondary_births'][ti] = res.secondary_births * scale
+        self.results['pregnancies'][ti] = res.pregnancies * scale
+        self.results['total_births'][ti] = res.total_births * scale
+        self.results['maternal_deaths'][ti] = res.maternal_deaths * scale
+        self.results['infant_deaths'][ti] = res.infant_deaths * scale
+        self.results['on_methods_mcpr'][ti] = res.on_methods_mcpr
+        self.results['no_methods_mcpr'][ti] = res.no_methods_mcpr
+        self.results['on_methods_cpr'][ti] = res.on_methods_cpr
+        self.results['no_methods_cpr'][ti] = res.no_methods_cpr
+        self.results['on_methods_acpr'][ti] = res.on_methods_acpr
+        self.results['no_methods_acpr'][ti] = res.no_methods_acpr
+        self.results['mcpr'][ti] = sc.safedivide(res.on_methods_mcpr, (res.no_methods_mcpr + res.on_methods_mcpr))
+        self.results['cpr'][ti] = sc.safedivide(res.on_methods_cpr, (res.no_methods_cpr + res.on_methods_cpr))
+        self.results['acpr'][ti] = sc.safedivide(res.on_methods_acpr, (res.no_methods_acpr + res.on_methods_acpr))
         self.results['pp0to5'][ti] = percent0to5
         self.results['pp6to11'][ti] = percent6to11
         self.results['pp12to23'][ti] = percent12to23
         self.results['nonpostpartum'][ti] = nonpostpartum
-        self.results['total_women_fecund'][ti] = r.total_women_fecund * scale
-        self.results['unintended_pregs'][ti] = r.unintended_pregs * scale
+        self.results['total_women_fecund'][ti] = res.total_women_fecund * scale
+        self.results['unintended_pregs'][ti] = res.unintended_pregs * scale
 
         if self.pars['track_as']:
             for age_specific_channel in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator',
                                          'as_stillbirths', 'imr_age_by_group', 'mmr_age_by_group',
                                          'stillbirth_ages']:
-                self.results[f"{age_specific_channel}"].append(getattr(r, f"{age_specific_channel}"))
+                self.results[f"{age_specific_channel}"].append(getattr(res, f"{age_specific_channel}"))
                 if len(self.results[f"{age_specific_channel}"]) > 12:
                     self.results[f"{age_specific_channel}"] = self.results[f"{age_specific_channel}"][1:]
 
             for age_specific_channel in ['acpr', 'cpr', 'mcpr', 'pregnancies', 'births']:
                 for method_agekey in fpd.age_specific_channel_bins:
                     self.results[f"{age_specific_channel}_{method_agekey}"].append(
-                        getattr(r, f"{age_specific_channel}_{method_agekey}"))
+                        getattr(res, f"{age_specific_channel}_{method_agekey}"))
 
         for agekey in fpd.age_bin_map.keys():
             births_key = f'total_births_{agekey}'
             women_key = f'total_women_{agekey}'
-            self.results[births_key][ti] = r.birth_bins[
+            self.results[births_key][ti] = res.birth_bins[
                                               agekey] * scale  # Store results of total births per age bin for ASFR
-            self.results[women_key][ti] = r.age_bin_totals[
+            self.results[women_key][ti] = res.age_bin_totals[
                                              agekey] * scale  # Store results of total fecund women per age bin for ASFR
 
         # Calculate metrics over the last year in the model and save whole years and stats to an array

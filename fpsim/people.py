@@ -593,8 +593,8 @@ class People(fpb.BasePeople):
                     self.step_results[key] = live_births_age_split[key]
 
             # # TEMP -- update children, need to refactor
-            # r = sc.dictobj(**self.step_results)
-            # new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
+            # res = sc.dictobj(**self.step_results)
+            # new_people = res.births - res.infant_deaths  # Do not add agents who died before age 1 to population
 
             # children_map = sc.ddict(int)
             # for i in live.inds:
