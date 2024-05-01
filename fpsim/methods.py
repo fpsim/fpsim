@@ -65,6 +65,8 @@ class ContraceptiveChoice:
     def __init__(self, methods=None, **kwargs):
         self.methods = methods or SimpleMethods
         self.__dict__.update(kwargs)
+        self.n_options = len(self.methods)
+        self.n_methods = len([m for m in self.methods if m != 'none'])
 
     @property
     def average_dur_use(self):
@@ -76,13 +78,31 @@ class ContraceptiveChoice:
 
     def get_prob_use(self, ppl):
         """ Calculate probabilities that each woman will use contraception """
-        return
+        prob_use = np.random.random(len(ppl))
+        return prob_use
+
+    def get_method_by_label(self, method_label):
+        """ Extract method according to its label / long name """
+        return_val = None
+        for method_name, method in self.methods.items():
+            if method.label == method_label:
+                return_val = method
+        if return_val is None:
+            errormsg = f'No method matching {method_label} found.'
+            raise ValueError(errormsg)
+        return return_val
+
+    def update_efficacy(self, method_label=None, new_efficacy=None):
+        method = self.get_method_by_label(method_label)
+        method.efficacy = new_efficacy
+
+    def update_duration(self, method_label=None, new_duration=None):
+        method = self.get_method_by_label(method_label)
+        method.dur_use = new_duration
 
     def get_contra_users(self, ppl):
         """ Select contraction users, return boolean array """
-        prob_use = self.get_prob_use(ppl)
-        uses_contra_bool = fpu.binomial_arr(prob_use)
-        return uses_contra_bool
+        pass
 
     def choose_method(self, ppl):
         pass
@@ -99,17 +119,24 @@ class OldChoice(ContraceptiveChoice):
 
 class RandomChoice(ContraceptiveChoice):
     """ Randomly choose a method of contraception """
-    def __init__(self, **kwargs):
+    def __init__(self, pars=None, **kwargs):
         super().__init__(kwargs)
+        default_pars = dict(
+            p_use=0.5,
+            method_mix=np.array([1/self.n_methods]*self.n_methods),
+        )
+        self.pars = sc.mergedicts(default_pars, pars)
+
         return
 
-    def get_prob_use(self, ppl):
-        prob_use = np.random.random(len(ppl))
-        return prob_use
+    def get_contra_users(self, ppl):
+        """ Select contraction users, return boolean array """
+        prob_use = self.get_prob_use(ppl)
+        uses_contra_bool = self.pars['p_use'] < prob_use
+        return uses_contra_bool
 
     def choose_method(self, ppl):
-        n_methods = len(self.methods)
-        choice_arr = np.random.choice(np.arange(n_methods), size=len(ppl))
+        choice_arr = np.random.choice(np.arange(self.n_methods), size=len(ppl), p=self.pars['method_mix'])
         return choice_arr.astype(int)
 
 
