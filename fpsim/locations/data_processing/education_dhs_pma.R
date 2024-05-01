@@ -56,6 +56,7 @@ table.edu.mean <-
 # Define some age-related constants
 dhs_min_age <- 15
 dhs_max_age <- 49
+fpsim_max_age_pregnant <- 50  # Maximum age to become pregnant
 fpsim_max_age <- 99
 
 # Create projections for older and younger women by slope
@@ -159,19 +160,27 @@ table.edu.20 %>%
 # -- PMA DATA for education interruption following pregnancy
 # We use PMA data because it has age at stopping education (DHS doesn't)
 
-pma_dir <- "PMA"
-survey_dir <- "Kenya/PMA2019_KEP1_HQFQ_v3.0_21Oct2021"
-file1 <- "PMA2019_KEP1_HQFQ_v3.0_21Oct2022.DTA"
-file2 <- "PMA2021_KEP2_HQFQ_v3.0_21Oct2022.DTA"
-file3 <- "PMA2022_KEP3_HQFQ_v3.0_21Oct2022.DTA"
-file1_path <- file.path(home_dir, pma_dir, survey_dir, filename)
+pma_dir <- "PMA"  # Replace with your own data directory structure
+survey_dir <- "Kenya/PMA2019_KEPX_HQFQ_v3.0_21Oct2021"  # Replace with your own data directory structure
+file1 <- "PMA2019_KEP1_HQFQ_v3.0_21Oct2022.dta"
+file2 <- "PMA2021_KEP2_HQFQ_v3.0_21Oct2022.dta"
+file3 <- "PMA2022_KEP3_HQFQ_v4.0_12Jul2023.dta"
+file1_path <- file.path(home_dir, pma_dir, survey_dir, file1)
+file2_path <- file.path(home_dir, pma_dir, survey_dir, file2)
+file3_path <- file.path(home_dir, pma_dir, survey_dir, file3)
 
-data.raw.pma <- read_dta(file.path(home_dir, pma_dir, survey_dir, file1)) %>%
- mutate(wave = 1) %>% mutate_at(c("RE_ID", "county"), list( ~ as.character(.))) %>%
- bind_rows(read_dta(file.path(home_dir, pma_dir, survey_dir, file2))) %>%
-  mutate(wave = 2) %>% mutate_at(c("RE_ID", "county"), list( ~ as.character(.)))) %>%
- bind_rows(read_dta(file.path(home_dir, pma_dir, survey_dir, file3))) %>%
-   mutate(wave = 3) %>% mutate_at(c("doi_corrected", "county"), list( ~ as.character(.))))
+# Load multiple datasets and add a column wave to each of them
+data1 <- read_dta(file1_path)
+data1 <- data1 %>% mutate(wave = 1, RE_ID = as.character(RE_ID), county = as.character(county))
+
+data2 <- read_dta(file2_path)
+data2 <- data2 %>% mutate(wave = 2, RE_ID = as.character(RE_ID), county = as.character(county))
+
+data3 <- read_dta(file3_path)
+data3 <- data3 %>% mutate(wave = 3, RE_ID = as.character(doi_corrected), county = as.character(county))
+
+data.raw.pma <- bind_rows(data1, data2, data3)
+
 
 # recode data for school and birth timing
 weeks_in_a_year <- 52
@@ -221,12 +230,12 @@ svydesign_obj_3 <-
 
 # table of probability of stopping school by age and parity
 stop.school <-
-  as.data.frame(prop.table(svytable( ~ school_birth1 + birthage1, svydes3), margin = 2)) %>%
+  as.data.frame(prop.table(svytable( ~ school_birth1 + birthage1, svydesign_obj_3), margin = 2)) %>%
   filter(school_birth1 == 1) %>% rename(`1` = Freq, age = birthage1) %>% select(-school_birth1) %>%
   left_join(
     stop.school2 <-
       as.data.frame(prop.table(
-        svytable( ~ school_birth2 + birthage2, svydes3), margin = 2
+        svytable( ~ school_birth2 + birthage2, svydesign_obj_3), margin = 2
       )) %>% filter(school_birth2 == 1) %>% rename(`2+` = Freq, age = birthage2) %>% select(-school_birth2)
   ) %>%
   gather(parity, percent,-age)
@@ -235,8 +244,31 @@ stop.school %>%
   geom_point(aes(y = percent, x = age, color = parity))
 
 
+# -- Fill out missing percent values, age=40 and age=45 are not found, and we also have
+# age 59 and 60, though their percent is NA. fpsim's max age to become pregnant is 50.
+# Here we preprocess data to cover  the range between the minimum age present in the data and
+# fpsim_max_age_pregnant
+age_num <- sort(as.numeric(levels(stop.school$age)))
+
+all_levels <-
+  expand.grid(age = as.character(min(age_num):max(age_num)),
+              parity = unique(stop.school$parity))
+
+stop.school <-
+  right_join(stop.school, all_levels, by = c("age", "parity"))
+stop.school$percent[is.na(stop.school$percent)] <- 0
+
+stop.school$age <- as.numeric(as.character(stop.school$age))
+stop.school <- stop.school %>% filter(age <= fpsim_max_age_pregnant)
+
+stop.school <- stop.school %>%
+  arrange(parity, age)
+
+stop.school$age <- as.factor(stop.school$age)
+stop.school$parity <- as.factor(stop.school$parity)
+
 # -- Write files -- #
-fpsim_dir <- "fpsim" # path to root directory of fpsim
+fpsim_dir <- "fpsim" # replace with path to your root directory of fpsim
 locations_dir <- "fpsim/locations"
 country_dir <- "kenya"
 data_dir <- "data"
@@ -249,4 +281,5 @@ write.csv(table.edu.inital,
 write.csv(table.edu.20,
           file.path(country_data_path, 'edu_objective.csv'),
           row.names = F)
-write.csv(stop.school, file.path(country_data_path, 'edu_stop.csv'), row.names = F)
+write.csv(stop.school, file.path(country_data_path, 'edu_stop.csv'),
+          row.names = F)
