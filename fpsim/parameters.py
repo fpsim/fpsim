@@ -248,7 +248,6 @@ default_pars = {
     'exposure_age':         None,
     'exposure_parity':      None,
     'spacing_pref':         None,
-    'methods':              None,
     'barriers':             None,
     'urban_prop':           None,
     'age_partnership':      None,

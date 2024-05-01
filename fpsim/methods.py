@@ -104,6 +104,13 @@ class ContraceptiveChoice:
         method = self.get_method_by_label(method_label)
         method.dur_use = new_duration
 
+    def add_method(self, method):
+        self.methods[method.name] = method
+
+    def remove_method(self, method_label):
+        method = self.get_method_by_label(method_label)
+        del self.methods[method.name]
+
     def get_contra_users(self, ppl):
         """ Select contraction users, return boolean array """
         prob_use = self.get_prob_use(ppl)
@@ -125,14 +132,13 @@ class OldChoice(ContraceptiveChoice):
 
 class RandomChoice(ContraceptiveChoice):
     """ Randomly choose a method of contraception """
-    def __init__(self, pars=None, **kwargs):
-        super().__init__(kwargs)
+    def __init__(self, pars=None, methods=None, **kwargs):
+        super().__init__(methods=methods, **kwargs)
         default_pars = dict(
             p_use=0.5,
             method_mix=np.array([1/self.n_methods]*self.n_methods),
         )
         self.pars = sc.mergedicts(default_pars, pars)
-
         return
 
     def choose_method(self, ppl):

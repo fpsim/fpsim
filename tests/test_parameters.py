@@ -47,35 +47,6 @@ def test_null(do_plot=do_plot):
     return sim
 
 
-def test_mcpr_growth():
-    sc.heading('Test MCPR growth assumptions')
-
-    pars = dict(
-        n_agents = 500,
-        start_year = 2010,
-        end_year   = 2030, # Should be after last MCPR data year
-    )
-
-    pars1 = fp.pars(location='test', mcpr_growth_rate=-0.10, **pars)
-    pars2 = fp.pars(location='test', mcpr_growth_rate=0.10, **pars)
-    sim1 = fp.Sim(pars1)
-    sim2 = fp.Sim(pars2)
-
-    msim = fp.MultiSim([sim1, sim2]).run()
-    s1 = msim.sims[0]
-    s2 = msim.sims[1]
-
-    mcpr_last = pars1['methods']['mcpr_rates'][-1]  # Last MCPR data point
-    decreasing = s1.results['mcpr'][-1]
-    increasing = s2.results['mcpr'][-1]
-
-    assert mcpr_last > decreasing, f'Negative MCPR growth did not reduce MCPR ({decreasing:0.3f} ≥ {mcpr_last:0.3f})'
-    assert mcpr_last < increasing, f'Positive MCPR growth did not increase MCPR ({increasing:0.3f} ≤ {mcpr_last:0.3f})'
-    ok(f'MCPR changed as expected: {decreasing:0.3f} < {mcpr_last:0.3f} < {increasing:0.3f}')
-
-    return [s1, s2]
-
-
 def test_scale():
     sc.heading('Test scale factor')
 
@@ -101,63 +72,40 @@ def test_scale():
     return [s1, s2]
 
 
-def test_matrix_methods():
-    sc.heading('Test matrix methods')
+def test_method_changes():
+    sc.heading('Test changing methods')
 
-    pars = fp.pars('test')
-    n = len(pars['methods']['map'])
-
-    # Test add method
-    p1 = pars.copy()
-    name = 'New method'
-    p1.add_method(name=name, eff=1.0)
-    s1 = fp.Sim(pars=p1)
+    # Test adding method
+    choice = fp.RandomChoice()
+    n = len(choice.methods)
+    new_method = fp.Method(
+        name='new',
+        efficacy=1,
+        modern=True,
+        dur_use=dict(dist='lognormal', par1=10, par2=3),
+        label='New method')
+    choice.add_method(new_method)
+    s1 = fp.Sim(location='test', contraception_module=choice)
     s1.run()
-    assert s1.pars['methods']['map'][name] == n, 'Last entry does not have expected shape'
-    ok(f'Matrix had expected shape after addition ({n})')
+    assert len(s1.contraception_module.methods) == n+1, 'Method was not added'
+    ok(f'Methods had expected length after addition ({n+1})')
 
     # Test remove method
-    p2 = pars.copy()
-    p2.rm_method(name='Injectables')
-    s2 = fp.Sim(pars=p2)
+    choice.remove_method('Injectables')
+    s2 = fp.Sim(location='test', contraception_module=choice)
     s2.run()
-    assert len(s2.pars['methods']['map']) == n-1, 'Methods do not have expected shape'
-    ok(f'Methods have expected shape after removal ({n-1})')
+    assert len(s2.contraception_module.methods) == n, 'Methods was not removed'
+    ok(f'Methods have expected length after removal ({n})')
 
-    # Test reorder methods
-    p3 = pars.copy()
-    reverse = list(p3['methods']['map'].values())[::-1]
-    p3.reorder_methods(reverse)
-    s3 = fp.Sim(pars=p3)
+    # Test method efficacy
+    methods = sc.dcp(fp.Methods)
+    for method in methods.values():
+        if method.name != 0: method.efficacy = 1  # Make all methods totally effective
+    choice = fp.RandomChoice(pars=dict(p_use=1), methods=methods)
+    s3 = fp.Sim(location='test', contraception_module=choice)
     s3.run()
-
-    # Test copy method
-    p4 = pars.copy()
-    new_name = 'New method'
-    orig_name = 'Injectables'
-    p4.add_method(name=new_name, eff=1.0)
-    p4.update_method_prob(dest=new_name, copy_from=orig_name, matrix='annual')
-
-    # Do tests
-    new_ind = fp.defaults.method_map[new_name]
-    orig_ind = fp.defaults.method_map[orig_name]
-    nestkeys = ['methods', 'raw', 'annual', '>35']
-    pars_arr = sc.getnested(pars, nestkeys)
-    p4_arr = sc.getnested(p4, nestkeys)
-    new_rate = p4_arr[0, new_ind]
-    assert new_rate == pars_arr[0, orig_ind], 'Copied method has different initiation rate'
-    ok(f'New method initiation rate is {new_rate:0.4f} as expected')
-
-    if do_plot:
-        pl.figure()
-        pl.subplot(2,1,1)
-        pl.pcolor(pars['methods']['raw']['annual']['>35'])
-        pl.title('Original')
-        pl.subplot(2,1,2)
-        pl.pcolor(p4['methods']['raw']['annual']['>35'])
-        pl.title('With new method')
-
-    return [s1, s2, s3, p4]
+    assert s3.results.births.sum() == 0, f'Expecting births to be 0, not {n}'
+    ok(f'No births with completely effective contraception, as expected')
 
 
 def test_validation():
@@ -184,21 +132,6 @@ def test_validation():
         p.validate()
     ok('Missing parameter was caught by validation')
 
-    # Wrong matrix keys
-    with pytest.raises(ValueError):
-        p = sc.dcp(pars)
-        p['methods']['raw']['annual'].pop('<18')
-        p.validate()
-    ok('Missing matrix was caught by validation')
-
-    # Wrong matrix shape
-    with pytest.raises(ValueError):
-        p = sc.dcp(pars)
-        matrix = p['methods']['raw']['annual']['<18']
-        np.insert(matrix, (0,0), matrix[:,0])
-        p.validate()
-    ok('Wrong matrix shape was caught by validation')
-
     return pars
 
 
@@ -222,8 +155,7 @@ if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
         null    = test_null(do_plot=do_plot)
-        mcpr    = test_mcpr_growth()
         scale   = test_scale()
-        meths   = test_matrix_methods()
+        meths   = test_method_changes()
         pars    = test_validation()
         p2      = test_save_load()
