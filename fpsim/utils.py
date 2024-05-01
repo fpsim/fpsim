@@ -11,6 +11,7 @@ from . import version as fpv
 
 # Specify all externally visible things this file defines
 __all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample', 'match_ages']
+__all__ += ['DuplicateNameException']
 
 
 @nb.jit((nb.float64[:], nb.float64, nb.float64), cache=True, nopython=True)
@@ -344,3 +345,17 @@ def gompertz_dfun(x, a, b, c):
     ndarray: An array of derivative values corresponding to the input x values.
     '''
     return a*b*c*np.exp(-(b/np.exp(c*x)) - c*x)
+
+
+#% Exceptions
+
+class DuplicateNameException(Exception):
+    """
+    Raised when either multiple instances of Module or State, or of any other type
+    passed to ndict have duplicate names."""
+
+
+    def __init__(self, obj):
+        msg = f"A {type(obj)} with name `{obj.name}` has already been added."
+        super().__init__(msg)
+        return

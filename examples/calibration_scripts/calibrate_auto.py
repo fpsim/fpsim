@@ -1,5 +1,6 @@
 '''
-A script for running plotting to compare the model to data.
+A sample script for using the Calibration class to generate the optimal set of free parameters, run a sim with that set
+of free params, and then generate plots showing the discrepancies between the model vs data.
 
 PRIOR TO RUNNING:
 1. Be sure to set the user global variables in the first section below (country, plotting options,
@@ -33,37 +34,49 @@ import fpsim as fp
 import pylab as pl
 import seaborn as sns
 
-sc.options(interactive=False)
-
 if __name__ == '__main__':
         ####################################################
         # GLOBAL VARIABLES: USER MUST SET
 
         # Name of the country being calibrated. To note that this should match the name of the country data folder
         country = 'ethiopia'
-        #Name of the region being calibrated
-        region = 'addis_ababa'
-        region = region.capitalize()
 
         # Set options for plotting
         do_plot_sim = True
         do_plot_asfr = True
         do_plot_methods = True
+        do_plot_ageparity = True
+        do_plot_cpr = True
         do_plot_tfr = True
-        do_plot_ageparity = False
-        do_plot_cpr = False
-        do_plot_pop_growth = False
-        do_plot_birth_space_afb = False
+        do_plot_pop_growth = True
+        do_plot_birth_space_afb = True
 
         # Set option to save figures
         do_save = 1
 
+        # Dataset contained in the ageparity csv file to which the model data will be compared (i.e. 'PMA 2022',
+        # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_ageparity.csv file, you will receive
+        # an error when running the script.
+        ageparity_dataset = 'PMA 2019'
+
         ####################################################
 
         cwd = os.path.abspath(os.getcwd())
-        figs_dir = os.path.join(cwd, '..', country, 'regions/figs', region)
-        if do_save == 1 and os.path.exists(figs_dir) is False:
-            os.makedirs(figs_dir, exist_ok=True)
+        country_dir = f'../../fpsim/locations/{country}'
+        figs_dir = os.path.join(country_dir, 'figs')
+        if do_save and not os.path.exists(figs_dir):
+                os.makedirs(figs_dir, exist_ok=True)
+
+        # Import country data files to compare
+        ageparity   = pd.read_csv(os.path.join(country_dir, 'data/ageparity.csv'))  # Age-parity distribution file
+        use         = pd.read_csv(os.path.join(country_dir, 'data/use.csv'))  # Dichotomous contraceptive method use
+        data_spaces = pd.read_csv(os.path.join(country_dir, 'data/birth_spacing_dhs.csv'))  # Birth-to-birth interval data
+        data_afb = pd.read_csv(os.path.join(country_dir, 'data/afb.table.csv'))  # Ages at first birth in DHS for women age 25-50
+        data_cpr = pd.read_csv(os.path.join(country_dir, 'data/cpr.csv'))  # From UN Data Portal
+        data_asfr = pd.read_csv(os.path.join(country_dir, 'data/asfr.csv'))
+        data_methods = pd.read_csv(os.path.join(country_dir, 'data/mix.csv'))
+        data_tfr     = pd.read_csv(os.path.join(country_dir, 'data/tfr.csv'))
+        data_popsize = pd.read_csv(os.path.join(country_dir, 'data/popsize.csv'))
 
         # Set up global variables
         age_bin_map = {
@@ -86,11 +99,10 @@ if __name__ == '__main__':
         sc.tic()
 
         # Set up sim for country
-        pars = fp.pars(location=region)
+        pars = fp.pars(location=country)
         pars['n_agents'] = 1_000 # Small population size
-        pars['end_year'] = 2016 # 1961 - 2020 is the normal date range
+        pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
-        # Free parameters for calibration
         # Free parameters for calibration
         freepars = dict(
                 fecundity_var_low = [0.95, 0.925, 0.975],
@@ -109,26 +121,15 @@ if __name__ == '__main__':
         pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
         #pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
 
-        # Convert region name to the format used in the data
-        formatted_region = region.replace('_', ' ').title()  # Replace underscore with space and capitalize each word
-        if region == 'benishangul_gumuz':
-                formatted_region = region.replace('_', '-').title()  # Replace underscore with dash and capitalize each word
-
-        # Import country data files to compare
-        data_asfr = pd.read_csv(f'../{country}/subnational/asfr_region.csv').loc[lambda df: df['region'] == formatted_region]
-        data_methods = pd.read_csv(f'../{country}/subnational/mix_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
-        data_tfr = pd.read_csv(f'../{country}/subnational/tfr_region.csv').loc[lambda df: df['region'] == formatted_region]
-        data_use = pd.read_csv(f'../{country}/subnational/use_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
-        
         calibration = fp.Calibration(pars, calib_pars=freepars)
         calibration.calibrate()
-        pars.update(calibration.best_pars)
-        sim = fp.Sim(pars=pars)
+
+        sim = fp.Sim(pars=calibration.best_pars)
         sim.run()
 
         # Plot results from sim run
         if do_plot_sim:
-            sim.plot(do_save=True, filename=f'{figs_dir}/fpsim.png')
+            sim.plot()
 
         # Save results
         res = sim.results
@@ -167,7 +168,7 @@ if __name__ == '__main__':
 
                 # Load data
                 year = data_asfr[data_asfr['year'] == pars['end_year']]
-                asfr_data = year.drop(['year', 'region'], axis=1).values.tolist()[0]
+                asfr_data = year.drop(['year'], axis=1).values.tolist()[0]
 
                 x_labels = []
                 asfr_model = []
@@ -180,20 +181,20 @@ if __name__ == '__main__':
                 # Plot
                 fig, ax = pl.subplots()
                 kw = dict(lw=3, alpha=0.7, markersize=10)
-                ax.plot(x, asfr_data, marker='^', color='black', label="DHS Data", **kw)
+                ax.plot(x, asfr_data, marker='^', color='black', label="UN data", **kw)
                 ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
                 pl.xticks(x, x_labels)
                 pl.ylim(bottom=-10)
-                ax.set_title(f'{formatted_region.title()}: Age specific fertility rate per 1000 woman years')
+                ax.set_title(f'{country.capitalize()}: Age specific fertility rate per 1000 woman years')
                 ax.set_xlabel('Age')
-                ax.set_ylabel(f'ASFR in 2016')
+                ax.set_ylabel('ASFR in 2019')
                 ax.legend(frameon=False)
                 sc.boxoff()
 
                 if do_save:
                     pl.savefig(f'{figs_dir}/asfr.png')
 
-                #pl.show()
+                pl.show()
 
         if do_plot_methods:
                 '''
@@ -232,7 +233,7 @@ if __name__ == '__main__':
                 model_method_counts[:] /= model_method_counts[:].sum()
 
 
-                # Method mix from data - region DHS data (mix_region.csv)
+                # Method mix from data - country PMA data (mix.csv)
                 data_methods_mix = {
                         'Withdrawal': data_methods.loc[data_methods['method'] == 'Withdrawal', 'perc'].iloc[0],
                         'Other traditional': data_methods.loc[data_methods['method'] == 'Other traditional', 'perc'].iloc[0],
@@ -246,8 +247,8 @@ if __name__ == '__main__':
                 }
 
                 # Method use from data - country PMA data (use.csv)
-                no_use = data_use.loc[data_use['use'] == 'No current method']['perc'].iloc[0]
-                any_method = data_use.loc[data_use['use'] == 'Any current method']['perc'].iloc[0]
+                no_use = use.loc[0, 'perc']
+                any_method = use.loc[1, 'perc']
                 data_methods_use = {
                         'No use': no_use,
                         'Any method': any_method
@@ -268,28 +269,28 @@ if __name__ == '__main__':
                 mix_percent_model = [i * 100 for i in mix_model]
 
                 # Set method use and mix from data
-                mix_percent_data = (list(data_methods_mix.values()) / any_method)*100
+                mix_percent_data = list(data_methods_mix.values())
                 data_use_percent = list(data_methods_use.values())
 
                 # Set up plotting
                 use_labels = list(data_methods_use.keys())
-                df_mix = pd.DataFrame({'DHS': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
-                df_use = pd.DataFrame({'DHS': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
+                df_mix = pd.DataFrame({'PMA': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
+                df_use = pd.DataFrame({'PMA': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
 
                 # Plot mix
-                ax = df_mix.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
+                ax = df_mix.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
                 ax.set_xlabel('Percent users')
-                ax.set_title(f'{formatted_region.title()}: Contraceptive Method Mix - Model vs Data')
+                ax.set_title(f'{country.capitalize()}: Contraceptive Method Mix - Model vs Data')
                 if do_save:
                         pl.savefig(f"{figs_dir}/method_mix.png", bbox_inches='tight', dpi=100)
 
                 # Plot use
-                ax = df_use.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
+                ax = df_use.plot.barh(color={'PMA':'black', 'FPsim':'cornflowerblue'})
                 ax.set_xlabel('Percent')
-                ax.set_title(f'{formatted_region.title()}: Contraceptive Method Use - Model vs Data')
+                ax.set_title(f'{country.capitalize()}: Contraceptive Method Use - Model vs Data')
                 if do_save:
                         pl.savefig(f"{figs_dir}/method_use.png", bbox_inches='tight', dpi=100)
-                #pl.show()
+
 
         if do_plot_ageparity:
                 '''
@@ -359,7 +360,7 @@ if __name__ == '__main__':
 
 
                         if do_save:
-                                pl.savefig(f'../{country}/{region}/figs/ageparity_' + str(key.lower()) + '.png')
+                                pl.savefig(f'{figs_dir}/ageparity_' + str(key.lower()) + '.png')
 
                         pl.show()
 
@@ -380,7 +381,7 @@ if __name__ == '__main__':
                 pl.legend()
 
                 if do_save:
-                    pl.savefig(f'../{country}/{region}/figs/cpr_over_sim.png')
+                    pl.savefig(f'{figs_dir}/cpr.png')
 
                 pl.show()
 
@@ -388,21 +389,22 @@ if __name__ == '__main__':
                 '''
                 Plot total fertility rate for model vs data
                 '''
-                fig, ax = pl.subplots()  #Temporary solution to stop pulling data from previous figures
+
+                # Import data
+                #data_tfr = pd.read_csv(f'tfr.csv')
 
                 # Plot
-                ax.plot(data_tfr['year'], data_tfr['tfr'], label='DHS', color='black')
-                ax.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
-                ax.set_xlabel('Year')  # Set x-axis label
-                ax.set_ylabel('Rate')  # Set y-axis label
-                ax.set_title(f'{formatted_region.title()}: Total Fertility Rate - Model vs Data')  # Set title
-                ax.legend()  # Show legend
-                ax.set_xlim(2000, 2016)  # Set x-axis limits
+                pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
+                pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
+                pl.xlabel('Year')
+                pl.ylabel('Rate')
+                pl.title(f'{country.capitalize()}: Total Fertility Rate - Model vs Data')
+                pl.legend()
 
                 if do_save:
                         pl.savefig(f'{figs_dir}/tfr.png')
 
-                #pl.show()
+                pl.show()
 
         if do_plot_pop_growth:
                 '''
@@ -429,7 +431,7 @@ if __name__ == '__main__':
                 pl.legend()
 
                 if do_save:
-                    pl.savefig(f'../{country}/{region}/figs/popgrowth_over_sim.png')
+                    pl.savefig(f'{figs_dir}/popgrowth.png')
 
                 pl.show()
 
@@ -486,7 +488,7 @@ if __name__ == '__main__':
                 pl.legend()
 
                 if do_save:
-                    pl.savefig(f'../{country}/{region}/figs/age_first_birth.png', bbox_inches='tight', dpi=100)
+                    pl.savefig(f'{figs_dir}/age_first_birth.png', bbox_inches='tight', dpi=100)
 
                 pl.show()
 
@@ -511,9 +513,34 @@ if __name__ == '__main__':
                 ax.set_title(f'{country.capitalize()}: Birth Space Bins - Model vs Data')
 
                 if do_save:
-                        pl.savefig(f'{country}/figs/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
+                        pl.savefig(f'{figs_dir}/birth_space_bins_{country}.png', bbox_inches='tight', dpi=100)
 
                 pl.show()
 
         sc.toc()
         print('Done.')
+
+
+        '''
+        Leaving code here in case we want to plot age-parity distribution differently with colormesh
+        
+        
+                fig, axs = pl.subplots(3)
+        
+                fig.suptitle('Age Parity Distribution')
+        
+                axs[0].pcolormesh(age_bins, parity_bins, sky_arr.Data.transpose(), shading='nearest', cmap='turbo')
+                axs[0].set_aspect(1. / ax.get_data_ratio())  # Make square
+                axs[0].set_title('Age-parity plot: Kenya PMA 2022')
+                axs[0].set_xlabel('Age')
+                ax[0].set_ylabel('Parity')
+        
+                axs[1].pcolormesh(age_bins, parity_bins, sky_arr.Model.transpose(), shading='nearest', cmap='turbo')
+                axs[1].set_aspect(1. / ax.get_data_ratio())  # Make square
+                axs[1].set_title('Age-parity plot: Kenya PMA 2022')
+                axs[1].set_xlabel('Age')
+                axs[1].set_ylabel('Parity')
+        
+                pl.show()
+        
+        '''

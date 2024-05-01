@@ -6,73 +6,23 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 from scipy import interpolate as si
-from .. import defaults as fpd
+from fpsim import defaults as fpd
+from . import regions
 
 # %% Housekeeping
 
-thisdir = sc.path(sc.thisdir())  # For loading CSV files
+thisdir = sc.thispath(__file__)  # For loading CSV files
 
 
 def scalar_pars():
     scalar_pars = {
-        # Basic parameters
-        'location': 'ethiopia',
-        'n_agents': 1_000,  # Number of agents
-        'scaled_pop': None,  # Scaled population / total population size
-        'start_year': 1960,  # Start year of simulation
-        'end_year': 2019,  # End year of simulation
-        'timestep': 1,  # The simulation timestep in months
-        'method_timestep': 1,  # How many simulation timesteps to go for every method update step
-        'seed': 1,  # Random seed
-        'verbose': 1,  # How much detail to print during the simulation
-        'track_switching': 0,  # Whether to track method switching
-        'track_as': 0,  # Whether to track age-specific channels
-        'short_int': 24,  # Duration of a short birth interval between live births in months
-        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
-        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
-
-        # Age limits (in years)
-        'method_age': 15,
-        'age_limit_fecundity': 50,
-        'max_age': 99,
-
-        # Durations (in months)
-        'switch_frequency': 12,  # How frequently to check for changes to contraception
-        'end_first_tri': 3,
-        'preg_dur_low': 9,
-        'preg_dur_high': 9,
-        'postpartum_dur': 23,
-        'breastfeeding_dur_mu': 9.30485863,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'breastfeeding_dur_beta': 8.20149079, # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R 
-        'max_lam_dur': 5,  # Duration of lactational amenorrhea
-        'short_int': 24,  # Duration of a short birth interval between live births in months
-        'low_age_short_int': 0,  # age limit for tracking the age-specific short birth interval
-        'high_age_short_int': 20,  # age limit for tracking the age-specific short birth interval
-
-        # Pregnancy outcomes
-        'abortion_prob': 0.176,
-        # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
-        'twins_prob': 0.011,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'LAM_efficacy': 0.98,  # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/   
-        'maternal_mortality_factor': 1,
-
-        # Fecundity and exposure
-        'fecundity_var_low': 0.85,
-        'fecundity_var_high': 1.1,
-        'high_parity': 5,
-        'high_parity_nonuse': 0.6,
-        'primary_infertility': 0.05,
-        'exposure_factor': 0.9,  # Overall exposure correction factor
-        'restrict_method_use': 0, # If 1, only allows agents to select methods when sexually active within 12 months
-                                   # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
-
-        # MCPR
-        'mcpr_growth_rate': 0.02,  # The year-on-year change in MCPR after the end of the data
-        'mcpr_max': 0.90,  # Do not allow MCPR to increase beyond this
-        'mcpr_norm_year': 2020,  # Year to normalize MCPR trend to 1
-        
-        #Subnational
-        # move defined regions here
+        'location':             'ethiopia',
+        'postpartum_dur':       23,
+        'breastfeeding_dur_mu': 9.30485863,     # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'breastfeeding_dur_beta': 8.20149079,   # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'abortion_prob':        0.176,          # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
+        'twins_prob':           0.011,          # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+        'mcpr_norm_year':       2020,           # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
@@ -89,7 +39,7 @@ def data2interp(data, ages, normalize=False):
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'ethiopia'
+    files['base'] = sc.thisdir(aspath=True) / 'data'
     files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
     files['popsize'] = 'popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
@@ -101,17 +51,17 @@ def filenames():
     files['afb'] = 'afb.table.csv'
     files['use'] = 'use.csv'
     files['urban'] = 'urban.csv'
-    #subnational files
-    files['region'] = '/subnational/region.csv' ## From DHS 2016 
-    files['asfr_region'] = '/subnational/asfr_region.csv' ## From DHS 2016
-    files['tfr_region'] = '/subnational/tfr_region.csv' ## From DHS 2016
-    files['methods_region'] = '/subnational/mix_region.csv' ## From DHS 2016
-    files['use_region'] = '/subnational/use_region.csv'  ## From PMA 2019
-    files['barriers_region'] = '/subnational/barriers_region.csv' ## From PMA 2019
-    files['lactational_amenorrhea_region'] = '/subnational/lam_region.csv' ## From DHS 2016
-    files['sexual_activity_region'] = '/subnational/sexual_activity_region.csv' ## From DHS 2016
-    files['sexual_activity_pp_region'] = '/subnational/sexual_activity_pp_region.csv' ## From DHS 2016
-    files['debut_age_region'] = '/subnational/sexual_debut_region.csv' ## From DHS 2016
+    #data files
+    files['region'] = '/data/region.csv' ## From DHS 2016
+    files['asfr_region'] = '/data/asfr_region.csv' ## From DHS 2016
+    files['tfr_region'] = '/data/tfr_region.csv' ## From DHS 2016
+    files['methods_region'] = '/data/mix_region.csv' ## From DHS 2016
+    files['use_region'] = '/data/use_region.csv'  ## From PMA 2019
+    files['barriers_region'] = '/data/barriers_region.csv' ## From PMA 2019
+    files['lactational_amenorrhea_region'] = '/data/lam_region.csv' ## From DHS 2016
+    files['sexual_activity_region'] = '/data/sexual_activity_region.csv' ## From DHS 2016
+    files['sexual_activity_pp_region'] = '/data/sexual_activity_pp_region.csv' ## From DHS 2016
+    files['debut_age_region'] = '/data/sexual_debut_region.csv' ## From DHS 2016
     return files
 
 
@@ -123,7 +73,7 @@ def age_pyramid():
     Data are from World Population Prospects
     https://population.un.org/wpp/Download/Standard/Population/
      '''
-    pyramid = np.array([[0, 2018504, 1986199],  # Ethiopia 1962 
+    pyramid = np.array([[0, 2018504, 1986199],  # Ethiopia 1962
                         [5, 1508878, 1515088],
                         [10, 1349237, 1359040],
                         [15, 1227673, 1215562],
@@ -144,27 +94,19 @@ def age_pyramid():
 
     return pyramid
 
-def urban_proportion():
-    '''
-    Load information about the proportion of people who live in an urban setting
-    Uses 2016 Ethiopia DHS individual recode (v024) ### TO-DO - Add subnational preprocessing data file
-    '''
-    urban_data = pd.read_csv(thisdir / 'ethiopia' / 'urban.csv')
-    return urban_data["mean"][0]  # Return this value as a float
-
 
 def region_proportions():
     '''
     Defines the proportion of the population in each region to establish the probability of living in a given region.
     Uses 2016 Ethiopia DHS individual recode (v025) for region and V024 for urban to produce subnational estimates
     '''
-    region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'region.csv')
+    region_data = pd.read_csv(thisdir / 'data' / 'region.csv')
 
     region_dict = {}
     region_dict['region'] = region_data['region'] # Return region names
     region_dict['mean'] = region_data['mean'] # Return proportion living in each region
     region_dict['urban'] = region_data['urban'] # Return proportion living in an urban area by region
-    
+
     return region_dict
 
 
@@ -178,9 +120,9 @@ def age_mortality():
     https://population.un.org/dataportal/data/indicators/59/locations/231/start/1950/end/2030/table/pivotbylocation
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
-    data_year = 2020 # Normed TO 2020 based on Ethiopia's Probability Data
-    mortality_data = pd.read_csv(thisdir / 'ethiopia' / 'mortality_prob.csv')
-    mortality_trend = pd.read_csv(thisdir / 'ethiopia' / 'mortality_trend.csv')
+    data_year = 2020 # NORMED TO 2020 BASED ON ETHIOPIA PROBABILITY DATA
+    mortality_data = pd.read_csv(thisdir / 'data' / 'mortality_prob.csv')
+    mortality_trend = pd.read_csv(thisdir / 'data' / 'mortality_trend.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -429,15 +371,15 @@ def lactational_amenorrhea_region():
     '''
     Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM, stratified by region
     '''
-    lam_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'lam_region.csv')
+    lam_region = pd.read_csv(thisdir / 'data' / 'lam_region.csv')
     lam_dict = {}
     lam_dict['region'] = lam_region['region']  # Return region names
     lam_dict['month'] = lam_region['month']  # Return month postpartum
     lam_dict['rate'] = lam_region['rate']  # Return percent of breastfeeding women
-    
+
     return lam_dict
 
-    
+
 # %% Pregnancy exposure
 
 def sexual_activity():
@@ -467,15 +409,15 @@ def sexual_activity_region():
     '''
     Returns a linear interpolation of rates of female sexual activity, stratified by region
     '''
-    sexually_active_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_activity_region.csv')
+    sexually_active_region_data = pd.read_csv(thisdir / 'data' / 'sexual_activity_region.csv')
     sexually_active_region_dict = {}
     sexually_active_region_dict['region'] = sexually_active_region_data.iloc[:, 0]  # Return region names
     sexually_active_region_dict['age'] = sexually_active_region_data.iloc[:, 1]   # Return age
     sexually_active_region_dict['perc'] = sexually_active_region_data.iloc[:, 2] / 100  # Return perc divide by 100 to convert to a rate
     activity_ages_region = sexually_active_region_dict['age']
     activity_interp_model_region = si.interp1d(x=activity_ages_region, y=sexually_active_region_dict['perc'])
-    activity_interp_region = activity_interp_model_region(fpd.spline_preg_ages) 
-    
+    activity_interp_region = activity_interp_model_region(fpd.spline_preg_ages)
+
     return activity_interp_region
 
 def sexual_activity_pp():
@@ -527,12 +469,12 @@ def sexual_activity_pp_region():
     '''
      # Returns an additional array of monthly likelihood of having resumed sexual activity by region
     '''
-    pp_activity_region = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_activity_pp_region.csv')
+    pp_activity_region = pd.read_csv(thisdir / 'data' / 'sexual_activity_pp_region.csv')
     pp_activity_region_dict = {}
     pp_activity_region_dict['region'] = pp_activity_region['region'] # Return region names
     pp_activity_region_dict['month'] = pp_activity_region['month'] # Return month postpartum
     pp_activity_region_dict['perc'] = pp_activity_region['perc'] # Return likelihood of resumed sexual activity
-    
+
     return pp_activity_region_dict
 
 
@@ -579,13 +521,12 @@ def debut_age():
     debut_age['probs'] = sexual_debut[:, 1]
 
     return debut_age
- 
 
 def debut_age_region():
     '''
  #   Returns an additional array of weighted probabilities of sexual debut by region
     '''
-    sexual_debut_region_data = pd.read_csv(thisdir / 'ethiopia' / 'subnational' / 'sexual_debut_region.csv')
+    sexual_debut_region_data = pd.read_csv(thisdir / 'data' / 'sexual_debut_region.csv')
     debut_age_region_dict = {}
     debut_age_region_dict['region'] = sexual_debut_region_data['region'] # Return region names
     debut_age_region_dict['age'] = sexual_debut_region_data['age'] # Return month postpartum
@@ -701,16 +642,166 @@ def methods():
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/231/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'ethiopia' / 'cpr.csv')
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
     return methods
 
-# Define methods region based on empowerment work (self, region)
-# Anything that is definied for the an individual person would be done in sim.py
-# 
 
+'''
+For reference
+def method_probs_senegal():
+    
+    It does leave Senegal matrices in place in the Ethiopia file for now. 
+    We may want to test with these as we work through scenarios and calibration. 
+    
+    Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
+    from 2018 DHS Senegal contraceptive calendar data.
+
+    Probabilities in this function are annual probabilities of initiating (top row), discontinuing (first column),
+    continuing (diagonal), or switching methods (all other entries).
+
+    Probabilities at postpartum month 1 are 1 month transitional probabilities
+    for starting a method after delivery.
+
+    Probabilities at postpartum month 6 are 5 month transitional probabilities
+    for starting or changing methods over the first 6 months postpartum.
+
+    Data from Senegal DHS contraceptive calendars, 2017 and 2018 combined
+    
+
+    raw = {
+
+        # Main switching matrix: all non-postpartum women
+        'annual': {
+            '<18': np.array([
+                [0.9953, 0., 0.0002, 0.0012, 0.0002, 0.0017, 0.0014, 0.0001, 0., 0.],
+                [0., 1.0000, 0., 0., 0., 0., 0., 0., 0., 0.],
+                [0.0525, 0., 0.9475, 0., 0., 0., 0., 0., 0., 0.],
+                [0.307, 0., 0., 0.693, 0., 0., 0., 0., 0., 0.],
+                [0.5358, 0., 0., 0., 0.3957, 0.0685, 0., 0., 0., 0.],
+                [0.3779, 0., 0., 0., 0.0358, 0.5647, 0.0216, 0., 0., 0.],
+                [0.2003, 0., 0., 0., 0., 0., 0.7997, 0., 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 1.0000, 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]]),
+            '18-20': np.array([
+                [0.9774, 0., 0.0014, 0.0027, 0.0027, 0.0104, 0.0048, 0.0003, 0., 0.0003],
+                [0., 1.0000, 0., 0., 0., 0., 0., 0., 0., 0.],
+                [0.3216, 0., 0.6784, 0., 0., 0., 0., 0., 0., 0.],
+                [0.182, 0., 0., 0.818, 0., 0., 0., 0., 0., 0.],
+                [0.4549, 0., 0., 0., 0.4754, 0.0463, 0.0234, 0., 0., 0.],
+                [0.4389, 0., 0.0049, 0.0099, 0.0196, 0.5218, 0.0049, 0., 0., 0.],
+                [0.17, 0., 0., 0., 0., 0.0196, 0.8103, 0., 0., 0.],
+                [0.1607, 0., 0., 0., 0., 0., 0., 0.8393, 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
+                [0.4773, 0., 0., 0.4773, 0., 0., 0., 0., 0., 0.0453]]),
+            '21-25': np.array([
+                [0.9581, 0.0001, 0.0011, 0.0024, 0.0081, 0.0184, 0.0108, 0.0006, 0., 0.0004],
+                [0.4472, 0.5528, 0., 0., 0., 0., 0., 0., 0., 0.],
+                [0.2376, 0., 0.7624, 0., 0., 0., 0., 0., 0., 0.],
+                [0.1896, 0., 0.0094, 0.754, 0.0094, 0., 0.0188, 0., 0., 0.0188],
+                [0.3715, 0.003, 0.003, 0., 0.5703, 0.0435, 0.0088, 0., 0., 0.],
+                [0.3777, 0., 0.0036, 0.0036, 0.0258, 0.5835, 0.0036, 0.0024, 0., 0.],
+                [0.137, 0., 0., 0.003, 0.0045, 0.0045, 0.848, 0.003, 0., 0.],
+                [0.1079, 0., 0., 0., 0.0445, 0., 0.0225, 0.8251, 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
+                [0.3342, 0., 0., 0.1826, 0., 0., 0., 0., 0., 0.4831]]),
+            '26-35': np.array([
+                [0.9462, 0.0001, 0.0018, 0.0013, 0.0124, 0.0209, 0.0139, 0.003, 0.0001, 0.0002],
+                [0.0939, 0.8581, 0., 0., 0., 0.048, 0., 0., 0., 0.],
+                [0.1061, 0., 0.8762, 0.0051, 0.0025, 0.0025, 0.0051, 0.0025, 0., 0.],
+                [0.1549, 0., 0., 0.8077, 0.0042, 0.0125, 0.0083, 0.0083, 0., 0.0042],
+                [0.3031, 0.0016, 0.0021, 0.0021, 0.6589, 0.0211, 0.0053, 0.0053, 0., 0.0005],
+                [0.2746, 0., 0.0028, 0.002, 0.0173, 0.691, 0.0073, 0.0048, 0., 0.0003],
+                [0.1115, 0.0003, 0.0009, 0.0003, 0.0059, 0.0068, 0.8714, 0.0025, 0.0003, 0.],
+                [0.0775, 0., 0.0015, 0., 0.0058, 0.0044, 0.0044, 0.905, 0., 0.0015],
+                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
+                [0.1581, 0., 0.0121, 0., 0., 0., 0., 0., 0., 0.8297]]),
+            '>35': np.array([
+                [0.9462, 0.0001, 0.0018, 0.0013, 0.0124, 0.0209, 0.0139, 0.003, 0.0001, 0.0002],
+                [0.0939, 0.8581, 0., 0., 0., 0.048, 0., 0., 0., 0.],
+                [0.1061, 0., 0.8762, 0.0051, 0.0025, 0.0025, 0.0051, 0.0025, 0., 0.],
+                [0.1549, 0., 0., 0.8077, 0.0042, 0.0125, 0.0083, 0.0083, 0., 0.0042],
+                [0.3031, 0.0016, 0.0021, 0.0021, 0.6589, 0.0211, 0.0053, 0.0053, 0., 0.0005],
+                [0.2746, 0., 0.0028, 0.002, 0.0173, 0.691, 0.0073, 0.0048, 0., 0.0003],
+                [0.1115, 0.0003, 0.0009, 0.0003, 0.0059, 0.0068, 0.8714, 0.0025, 0.0003, 0.],
+                [0.0775, 0., 0.0015, 0., 0.0058, 0.0044, 0.0044, 0.905, 0., 0.0015],
+                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
+                [0.1581, 0., 0.0121, 0., 0., 0., 0., 0., 0., 0.8297]])
+        },
+
+        # Postpartum switching matrix, 1 to 6 months
+        'pp1to6': {
+            '<18': np.array([
+                [0.9014, 0., 0.0063, 0.001, 0.0126, 0.051, 0.0272, 0.0005, 0., 0.],
+                [0., 0.5, 0., 0., 0., 0., 0.5, 0., 0., 0.],
+                [0., 0., 1.0000, 0., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 0., 1.0000, 0., 0., 0., 0., 0., 0.],
+                [0.4, 0., 0., 0., 0.6, 0., 0., 0., 0., 0.],
+                [0.0714, 0., 0., 0., 0., 0.9286, 0., 0., 0., 0.],
+                [0., 0., 0., 0., 0., 0., 1.0000, 0., 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 1.0000, 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]]),
+            '18-20': np.array([
+                [0.8775, 0.0007, 0.0026, 0.0033, 0.0191, 0.0586, 0.0329, 0.0046, 0., 0.0007],
+                [0., 1.0000, 0., 0., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 1.0000, 0., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 0., 1.0000, 0., 0., 0., 0., 0., 0.],
+                [0., 0., 0., 0., 0.75, 0.25, 0., 0., 0., 0.],
+                [0.0278, 0., 0., 0., 0., 0.9722, 0., 0., 0., 0.],
+                [0.0312, 0., 0., 0., 0., 0., 0.9688, 0., 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 1.0000, 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]]),
+            '21-25': np.array([
+                [0.8538, 0.0004, 0.0055, 0.0037, 0.0279, 0.0721, 0.0343, 0.0022, 0., 0.],
+                [0., 1.0000, 0., 0., 0., 0., 0., 0., 0., 0.],
+                [0., 0., 0.9583, 0., 0., 0.0417, 0., 0., 0., 0.],
+                [0., 0., 0., 0.5, 0.25, 0.25, 0., 0., 0., 0.],
+                [0.0244, 0., 0., 0., 0.9512, 0.0244, 0., 0., 0., 0.],
+                [0.0672, 0., 0., 0., 0., 0.9328, 0., 0., 0., 0.],
+                [0.0247, 0., 0., 0., 0., 0.0123, 0.963, 0., 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 1.0000, 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]]),
+            '26-35': np.array([
+                [0.8433, 0.0008, 0.0065, 0.004, 0.029, 0.0692, 0.039, 0.0071, 0.0001, 0.001],
+                [0., 0.5, 0., 0., 0., 0., 0.5, 0., 0., 0.],
+                [0.027, 0., 0.9189, 0., 0., 0.027, 0.027, 0., 0., 0.],
+                [0.1667, 0., 0., 0.6667, 0., 0., 0.1667, 0., 0., 0.],
+                [0.0673, 0., 0., 0., 0.8654, 0.0288, 0.0385, 0., 0., 0.],
+                [0.0272, 0., 0.0039, 0., 0.0078, 0.9533, 0.0078, 0., 0., 0.],
+                [0.0109, 0., 0., 0., 0.0036, 0., 0.9855, 0., 0., 0.],
+                [0.0256, 0., 0., 0., 0., 0.0256, 0., 0.9487, 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]]),
+            '>35': np.array([
+                [0.8433, 0.0008, 0.0065, 0.004, 0.029, 0.0692, 0.039, 0.0071, 0.0001, 0.001],
+                [0., 0.5, 0., 0., 0., 0., 0.5, 0., 0., 0.],
+                [0.027, 0., 0.9189, 0., 0., 0.027, 0.027, 0., 0., 0.],
+                [0.1667, 0., 0., 0.6667, 0., 0., 0.1667, 0., 0., 0.],
+                [0.0673, 0., 0., 0., 0.8654, 0.0288, 0.0385, 0., 0., 0.],
+                [0.0272, 0., 0.0039, 0., 0.0078, 0.9533, 0.0078, 0., 0., 0.],
+                [0.0109, 0., 0., 0., 0.0036, 0., 0.9855, 0., 0., 0.],
+                [0.0256, 0., 0., 0., 0., 0.0256, 0., 0.9487, 0., 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
+                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]])
+        },
+
+        # Postpartum initiation vectors, 0 to 1 month
+        'pp0to1': {
+            '<18': np.array([0.9607, 0.0009, 0.0017, 0.0009, 0.0021, 0.0128, 0.0205, 0.0004, 0., 0.]),
+            '18-20': np.array([0.9525, 0.0006, 0.0017, 0.0006, 0.0028, 0.0215, 0.0198, 0.0006, 0., 0.]),
+            '21-25': np.array([0.9379, 0., 0.0053, 0.0009, 0.0083, 0.0285, 0.0177, 0.0013, 0., 0.]),
+            '26-35': np.array([0.9254, 0.0002, 0.0036, 0.0007, 0.0102, 0.0265, 0.0268, 0.004, 0.0022, 0.0004]),
+            '>35': np.array([0.9254, 0.0002, 0.0036, 0.0007, 0.0102, 0.0265, 0.0268, 0.004, 0.0022, 0.0004]),
+        }
+    }
+    return raw
+    '''
 
 def method_probs():
     '''
@@ -887,13 +978,18 @@ def barriers_region():
     reasons_region_dict['region'] = reasons_region['region'] # Return region names
     reasons_region_dict['barrier'] = reasons_region['barrier'] # Return the reason for nonuse
     reasons_region_dict['perc'] = reasons_region['perc'] # Return retuned the percentage
-    
-    return reasons_region_dict   
 
+    return reasons_region_dict
+
+
+def urban_proportion():
+    """Load information about the proportion of people who live in an urban setting"""
+    urban_data = pd.read_csv(thisdir / 'data' / 'urban.csv')
+    return urban_data["mean"][0]  # Return this value as a float
 
 # %% Make and validate parameters
 
-def make_pars():
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
     '''
     Take all parameters and construct into a dictionary
     '''
@@ -905,6 +1001,7 @@ def make_pars():
     # Demographics and pregnancy outcome
     pars['age_pyramid'] = age_pyramid()
     pars['age_mortality'] = age_mortality()
+    pars['urban_prop'] = urban_proportion()
     pars['maternal_mortality'] = maternal_mortality()
     pars['infant_mortality'] = infant_mortality()
     pars['miscarriage_rates'] = miscarriage()
@@ -929,11 +1026,19 @@ def make_pars():
     pars['barriers'] = barriers()
 
     # Regional parameters
-    pars['urban_prop'] = urban_proportion()
-    pars['region'] = region_proportions() # This function returns extrapolated and raw data
-    pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
-    pars['sexual_activity_region'] = sexual_activity_region()
-    pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
-    pars['debut_age_region'] = debut_age_region()
-    pars['barriers_region'] = barriers_region()
+    if use_subnational:
+        pars['region'] = region_proportions()  # This function returns extrapolated and raw data
+        pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
+        pars['sexual_activity_region'] = sexual_activity_region()
+        pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
+        pars['debut_age_region'] = debut_age_region()
+        pars['barriers_region'] = barriers_region()
+
+    kwargs = locals()
+    not_implemented_args = ['use_empowerment', 'use_education', 'use_partnership']
+    true_args = [key for key in not_implemented_args if kwargs[key] is True]
+    if true_args:
+        errmsg = f"{true_args} not implemented yet for {pars['location']}"
+        raise NotImplementedError(errmsg)
+
     return pars

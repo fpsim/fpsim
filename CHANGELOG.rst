@@ -8,20 +8,26 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 0.27.2 (2024-04-30)
+Version 0.28.3 (2024-04-30)
 --------------------------
 - Creates subnational tutorial for Ethiopia
 - Updates regional scripts to improve subnationals calibrations for Ethiopia
 - *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/334>`_
 
-Version 0.27.1 (2024-02-09)
---------------------------
+Version 0.28.2 (2024-04-20)
+---------------------------
+- Refactoring of location directory, such that there is a country folder under locations/ dir containing the data, model script(s), and figs pertaining to that location only
+- Modifies these new paths accordingly in all relevant files
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/316>`_
+
+Version 0.28.1 (2024-04-11)
+---------------------------
 - Updates regional parameters to calibrate subnationally in Ethiopia
 - Revises subnational calibration script to run for all regions and includes a new multisim script for subnational comparisons 
 - *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/319>`_
 
 Version 0.27.0 (2024-02-09)
---------------------------
+---------------------------
 - Builds out new regional attribute and parameters for subnational dynamics in Ethiopia
 - Creates new subnational calibration script and subfolder for regional datasets and figures 
 - *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/241>`_
