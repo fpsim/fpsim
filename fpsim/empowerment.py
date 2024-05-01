@@ -26,6 +26,7 @@ class Empowerment:
             raise NotImplementedError(errormsg)
 
         self.metrics = list(self.pars.keys())
+
         return
 
     def initialize(self, ppl):

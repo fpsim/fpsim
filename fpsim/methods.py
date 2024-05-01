@@ -62,11 +62,15 @@ for m in SimpleMethods.values(): m.dur_use = 1
 # %% Define classes to contain information about the way women choose contraception
 
 class ContraceptiveChoice:
-    def __init__(self, methods=None, **kwargs):
+    def __init__(self, methods=None, pars=None, **kwargs):
         self.methods = methods or SimpleMethods
         self.__dict__.update(kwargs)
         self.n_options = len(self.methods)
         self.n_methods = len([m for m in self.methods if m != 'none'])
+        default_pars = dict(
+            p_use=0.5,
+        )
+        self.pars = sc.mergedicts(default_pars, pars)
 
     @property
     def average_dur_use(self):
@@ -102,7 +106,9 @@ class ContraceptiveChoice:
 
     def get_contra_users(self, ppl):
         """ Select contraction users, return boolean array """
-        pass
+        prob_use = self.get_prob_use(ppl)
+        uses_contra_bool = self.pars['p_use'] < prob_use
+        return uses_contra_bool
 
     def choose_method(self, ppl):
         pass
@@ -128,12 +134,6 @@ class RandomChoice(ContraceptiveChoice):
         self.pars = sc.mergedicts(default_pars, pars)
 
         return
-
-    def get_contra_users(self, ppl):
-        """ Select contraction users, return boolean array """
-        prob_use = self.get_prob_use(ppl)
-        uses_contra_bool = self.pars['p_use'] < prob_use
-        return uses_contra_bool
 
     def choose_method(self, ppl):
         choice_arr = np.random.choice(np.arange(self.n_methods), size=len(ppl), p=self.pars['method_mix'])
