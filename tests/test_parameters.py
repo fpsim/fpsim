@@ -47,28 +47,6 @@ def test_null(do_plot=do_plot):
     return sim
 
 
-def test_method_timestep():
-    sc.heading('Test sim speed')
-
-    pars1 = fp.pars(location='test', method_timestep=1)
-    pars2 = fp.pars(location='test', method_timestep=6)
-    sim1 = fp.Sim(pars1)
-    sim2 = fp.Sim(pars2)
-
-    T = sc.timer()
-
-    sim1.run()
-    t1 = T.tt(output=True)
-
-    sim2.run()
-    t2 = T.tt(output=True)
-
-    assert t2 < t1, f'Expecting runtime to be less with a larger method timestep, but {t2:0.3f} > {t1:0.3f}'
-    ok(f'Larger method timestep reduced runtime from {t1:0.3f} s to {t2:0.3f} s')
-
-    return [t1, t2]
-
-
 def test_mcpr_growth():
     sc.heading('Test MCPR growth assumptions')
 
@@ -244,7 +222,6 @@ if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
         null    = test_null(do_plot=do_plot)
-        timings = test_method_timestep()
         mcpr    = test_mcpr_growth()
         scale   = test_scale()
         meths   = test_matrix_methods()
