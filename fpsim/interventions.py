@@ -64,7 +64,7 @@ class Intervention:
 
     def _store_args(self):
         ''' Store the user-supplied arguments for later use in to_json '''
-        f0 = inspect.currentframe() # This "frame", ti.e. Intervention.__init__()
+        f0 = inspect.currentframe() # This "frame", i.e. Intervention.__init__()
         f1 = inspect.getouterframes(f0) # The list of outer frames
         parent = f1[2].frame # The parent frame, e.g. change_beta.__init__()
         _,_,_,values = inspect.getargvalues(parent) # Get the values of the arguments
