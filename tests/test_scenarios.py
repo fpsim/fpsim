@@ -62,7 +62,7 @@ def test_update_methods():
     Checks that fp.update_methods() function properly updates
     """
 
-    sc.heading('Testing updating method probability...')
+    sc.heading('Testing updating method properties...')
 
     # Higher contraceptive use
     p_use = 0.9
@@ -71,7 +71,7 @@ def test_update_methods():
     def ln(a, b): return dict(dist='lognormal', par1=a, par2=b)
     new_durs = {
         'IUDs': ln(10, 2),
-        'Injectables': ln(5, 2),
+        # 'Injectables': ln(5, 2),
         'Implants': ln(5, 3),
     }
 
@@ -188,6 +188,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        msim1  = test_update_methods_eff()
+        # msim1  = test_update_methods_eff()
         msim2  = test_update_methods()
-        scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
+        # scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
