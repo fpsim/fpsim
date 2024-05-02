@@ -16,7 +16,7 @@ eps            = 1e-9 # To avoid divide-by-zero
 min_age        = 15   # Minimum age to be considered eligible to use contraceptive methods
 max_age        = 99   # Maximum age
 max_age_preg   = 50   # Maximum age to become pregnant
-max_parity     = 8    # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
+max_parity     = 10   # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
 max_parity_spline = 20   # Used for parity splines
 
 
