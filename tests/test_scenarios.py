@@ -121,14 +121,14 @@ def test_scenarios():
 
     '''Tests that Scenarios repeats sims corresponding to scenarios added as expected'''
     high_inj_eff = 0.99
-    scen = fp.make_scen(label='More effective injectables', year=int_year, eff={'Injectables': high_inj_eff})
+    scen = fp.make_scen(label='More effective pill', year=int_year, eff={'Pill': high_inj_eff})
     scens_repeat = fp.Scenarios(location='test', repeats=2, scens=scen, start_year=int_year)
     scens_repeat.run(serial=serial)
 
     assert len(scens_repeat.msim.sims) == 2, f"Should be {2} sims in scens object but found {len(scens.msim.sims)}"
 
-    eff1 = scens_repeat.msim.sims[0].contraception_module.methods['inj'].efficacy
-    eff2 = scens_repeat.msim.sims[1].contraception_module.methods['inj'].efficacy
+    eff1 = scens_repeat.msim.sims[0].contraception_module.methods['pill'].efficacy
+    eff2 = scens_repeat.msim.sims[1].contraception_module.methods['pill'].efficacy
     output['Repeated'] = scens_repeat
 
     for efficacy in [eff1, eff2]:
@@ -136,18 +136,18 @@ def test_scenarios():
 
     '''Checks that inputting scenarios as list has same result as adding them separately'''
     low_inj_eff = 0.9
-    scen1 = fp.make_scen(label='More effective injectables', year=int_year, eff={'Injectables':high_inj_eff})
-    scen2 = fp.make_scen(label='Less effective injectables', year=int_year, eff={'Injectables':low_inj_eff})
+    scen1 = fp.make_scen(label='More effective pill', year=int_year, eff={'Pill':high_inj_eff})
+    scen2 = fp.make_scen(label='Less effective pill', year=int_year, eff={'Pill':low_inj_eff})
     
     scens_scenario_list = run_scenario([scen1, scen2])
 
-    eff1 = scens_scenario_list.msim.sims[0].contraception_module.methods['inj'].efficacy
-    eff2 = scens_scenario_list.msim.sims[1].contraception_module.methods['inj'].efficacy
+    eff1 = scens_scenario_list.msim.sims[0].contraception_module.methods['pill'].efficacy
+    eff2 = scens_scenario_list.msim.sims[1].contraception_module.methods['pill'].efficacy
 
     output['Scenario_list'] = scens_scenario_list
 
-    assert eff1 == high_inj_eff, f"Efficacy of Injectables using scenarios list should be {high_inj_eff}, not {eff1}"
-    assert eff2 == low_inj_eff, f"Efficacy of Injectables using scenarios list should be {low_inj_eff}, not {eff2}"
+    assert eff1 == high_inj_eff, f"Efficacy of pill using scenarios list should be {high_inj_eff}, not {eff1}"
+    assert eff2 == low_inj_eff, f"Efficacy of pill using scenarios list should be {low_inj_eff}, not {eff2}"
 
     '''Checks that we can't add invalid scenarios'''
     invalid_scen1 = dict(invalid_key='Should fail')
@@ -189,6 +189,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        msim1  = test_update_methods_eff()
-        msim2  = test_update_methods()
+        # msim1  = test_update_methods_eff()
+        # msim2  = test_update_methods()
         scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
