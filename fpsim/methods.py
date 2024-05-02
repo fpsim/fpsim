@@ -114,7 +114,7 @@ class ContraceptiveChoice:
     def get_contra_users(self, ppl):
         """ Select contraction users, return boolean array """
         prob_use = self.get_prob_use(ppl)
-        uses_contra_bool = self.pars['p_use'] < prob_use
+        uses_contra_bool = self.pars['p_use'] > prob_use
         return uses_contra_bool
 
     def choose_method(self, ppl):

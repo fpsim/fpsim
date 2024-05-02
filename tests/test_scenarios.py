@@ -78,11 +78,11 @@ def test_update_methods():
     method_mix=[0.05, 0.3, 0.3, 0.05, 0, 0, 0.3, 0, 0]
 
     # Make interventions
-    no_contr = fp.update_methods(2000, p_use=0.0)
+    no_contra = fp.update_methods(2000, p_use=0.0)
     hi_contr = fp.update_methods(int_year, p_use=p_use, dur_use=new_durs, method_mix=method_mix)
 
-    # Make and runs ims
-    simlist = make_sims([no_contr, hi_contr])
+    # Make and run sims
+    simlist = make_sims([no_contra, hi_contr])
     msim = fp.MultiSim(sims=simlist)
     msim.run(serial=serial)
 
@@ -190,6 +190,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # msim1  = test_update_methods_eff()
+        msim1  = test_update_methods_eff()
         msim2  = test_update_methods()
-        # scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
+        scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}

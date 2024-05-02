@@ -361,8 +361,8 @@ class update_methods(Intervention):
 
             # Change in probability of use
             if self.p_use is not None:
-                if sim.contraception_module.pars.get('p_use'):
-                    sim.contraception_module.pars['p_use'] = self.p_use
+                if sim.people.contraception_module.pars.get('p_use'):
+                    sim.people.contraception_module.pars['p_use'] = self.p_use
                 else:
                     errormsg = (f"Contraceptive module does not have a p_use parameter. This may be because it's an "
                                 f"EmpoweredChoice or SimpleChoice module. For these modules, the probability of "
@@ -371,8 +371,8 @@ class update_methods(Intervention):
 
             # Change in method mix
             if self.method_mix is not None:
-                if sim.contraception_module.pars.get('method_mix') is not None:
-                    sim.contraception_module.pars['method_mix'] = self.method_mix
+                if sim.people.contraception_module.pars.get('method_mix') is not None:
+                    sim.people.contraception_module.pars['method_mix'] = self.method_mix
                 else:
                     errormsg = (f"Contraceptive module does not have method_mix parameter. This may be because it's an "
                                 f"EmpoweredChoice or SimpleChoice module. For these modules, the probability of "
