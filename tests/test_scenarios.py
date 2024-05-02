@@ -65,13 +65,12 @@ def test_update_methods():
     sc.heading('Testing updating method properties...')
 
     # Higher contraceptive use
-    p_use = 0.9
+    p_use = 0.99
 
     # Make new durations representing longer-lasting IUDs, injectables, and implants
     def ln(a, b): return dict(dist='lognormal', par1=a, par2=b)
     new_durs = {
         'IUDs': ln(10, 2),
-        # 'Injectables': ln(5, 2),
         'Implants': ln(5, 3),
     }
 
@@ -79,7 +78,7 @@ def test_update_methods():
     method_mix=[0.05, 0.3, 0.3, 0.05, 0, 0, 0.3, 0, 0]
 
     # Make interventions
-    scen = fp.update_methods(int_year, p_use=0.9, dur_use=new_durs, method_mix=method_mix)
+    scen = fp.update_methods(int_year, p_use=p_use, dur_use=new_durs, method_mix=method_mix)
 
     # Make and runs ims
     simlist = make_sims([None, scen])
@@ -93,9 +92,11 @@ def test_update_methods():
     ok('Parameters updated correctly')
 
     # Test that there are fewer births with the new method parameters
-    msg = 'Expected more births with default methods'
-    assert msim.sims[0].results.births.sum() > msim.sims[1].results.births.sum(), msg
-    ok('Changes to method parameters resulted in fewer births, as expected.')
+    baseline_births = msim.sims[0].results.births.sum()
+    scenario_births = msim.sims[1].results.births.sum()
+    msg = f'Expected more births with default methods but ({scenario_births} > {baseline_births})'
+    assert baseline_births > scenario_births, msg
+    ok(f'Changes to method parameters resulted in fewer births, as expected ({scenario_births} < {baseline_births})')
 
     return msim
 
