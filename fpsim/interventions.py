@@ -314,14 +314,9 @@ class update_methods(Intervention):
                     Where method is the method to be changed, and dur_use is a dict representing a distribution, e.g.
                     dur_use = {'Injectables: dict(dist='lognormal', par1=a, par2=b)}
 
+        p_use (float): probability of using any form of contraception
+        method_mix (list/arr): probabilities of selecting each form of contraception
 
-        probs (list): A list of dictionaries where each dictionary has the following keys:
-
-            source (str): the source method to be changed.
-            dest   (str): the destination method to be changed.
-            factor (float): the factor by which to multiply existing probability; OR
-            value  (float): the value to replace the switching probability value.
-            keys   (list): a list of strings representing age groups to affect.
     """
 
     def __init__(self, year, eff=None, dur_use=None, p_use=None, method_mix=None, verbose=False):
@@ -359,15 +354,10 @@ class update_methods(Intervention):
                 for k, rawval in self.eff.items():
                     sim.contraception_module.update_efficacy(method_label=k, new_efficacy=rawval)
 
-            # Implement changes in durtion of use
+            # Implement changes in duration of use
             if self.dur_use is not None:
                 for k, rawval in self.dur_use.items():
-                    sim.contraception_module.update_durations(method_label=k, new_duration=rawval)
-
-            # Implement a shift in the
-            if self.dur_use is not None:
-                for k, rawval in self.dur_use.items():
-                    sim.contraception_module.update_durations(method_label=k, new_duration=rawval)
+                    sim.contraception_module.update_duration(method_label=k, new_duration=rawval)
 
             # Change in probability of use
             if self.p_use is not None:
