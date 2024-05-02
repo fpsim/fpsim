@@ -148,7 +148,7 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
     - 'uniform'       : uniform distribution from low=par1 to high=par2; mean is equal to (par1+par2)/2
     - 'normal'        : normal distribution with mean=par1 and std=par2
     - 'lognormal'     : lognormal distribution with mean=par1 and std=par2 (parameters are for the lognormal distribution, *not* the underlying normal distribution)
-    - 'normal_pos'    : right-sided normal distribution (ti.e. only positive values), with mean=par1 and std=par2 *of the underlying normal distribution*
+    - 'normal_pos'    : right-sided normal distribution (i.e. only positive values), with mean=par1 and std=par2 *of the underlying normal distribution*
     - 'normal_int'    : normal distribution with mean=par1 and std=par2, returns only integer values
     - 'lognormal_int' : lognormal distribution with mean=par1 and std=par2, returns only integer values
     - 'poisson'       : Poisson distribution with rate=par1 (par2 is not used); mean and variance are equal to par1
@@ -178,7 +178,7 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
         Negative binomial distributions are parameterized with reference to the mean and dispersion parameter k
         (see: https://en.wikipedia.org/wiki/Negative_binomial_distribution). The r parameter of the underlying
         distribution is then calculated from the desired mean and k. For a small mean (~1), a dispersion parameter
-        of ∞ corresponds to the variance and standard deviation being equal to the mean (ti.e., Poisson). For a
+        of ∞ corresponds to the variance and standard deviation being equal to the mean (i.e., Poisson). For a
         large mean (e.g. >100), a dispersion parameter of 1 corresponds to the standard deviation being equal to
         the mean.
     '''
