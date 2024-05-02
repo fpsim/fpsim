@@ -129,10 +129,6 @@ class Scenario(sc.prettyobj, sc.dictobj):
                     'year': year
                 })
                 check_not_none(contraceptive_spec, 'year')
-            # try:
-            #     check_not_none(contraceptive_spec, 'year')
-            # except:
-            #     import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
 
         # It's a parameter change scenario
         if par is not None:

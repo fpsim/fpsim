@@ -18,11 +18,7 @@ import sciris as sc
 
 
 # Visible things
-__all__ = ['options', 'INT_NAN']
-
-# An integer value we are treating like NaN, since NaN can't be stored in an integer array.
-# From np.iinfo(np.int32).max: value to use to flag invalid content.
-INT_NAN = 2147483647
+__all__ = ['options']
 
 
 #%% General settings

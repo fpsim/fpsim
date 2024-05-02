@@ -518,10 +518,7 @@ class People(fpb.BasePeople):
             all_ppl = self.unfilter()
             live = deliv.filter(~is_stillborn)
             for parity in np.unique(live.parity):
-                try:
-                    all_ppl.birth_ages[live.inds, parity] = live.age
-                except:
-                    import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
+                all_ppl.birth_ages[live.inds, parity] = live.age
                 all_ppl.stillborn_ages[stillborn.inds, parity] = stillborn.age
             all_ppl.first_birth_age[live.inds] = all_ppl.birth_ages[live.inds, 0]
 

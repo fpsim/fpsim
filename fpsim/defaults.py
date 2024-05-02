@@ -61,7 +61,7 @@ class State:
 # or updated during the course of a simulation.
 person_defaults = [
     # Basic demographics
-    State('uid',                fps.INT_NAN, int),
+    State('uid',                -1, int),
     State('age',                0, float),
     State('age_by_group',       0, float),
     State('sex',                0, bool),

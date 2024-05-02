@@ -65,7 +65,7 @@ class Calibration(sc.prettyobj):
         g.name      = 'fpsim_calibration'
         g.db_name   = f'{g.name}.db'
         g.storage   = f'sqlite:///{g.db_name}'
-        g.n_trials  = 20  # Define the number of trials, ti.e. sim runs, per worker
+        g.n_trials  = 20  # Define the number of trials, i.e. sim runs, per worker
         g.n_workers = sc.cpu_count()
         self.g = g
         return
