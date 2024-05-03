@@ -1,0 +1,5 @@
+import fpsim as fp
+
+sim = fp.Sim()
+sim.run()
+fig = sim.plot()
