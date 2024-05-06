@@ -311,7 +311,7 @@ def methods():
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/231/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / '..' / 'ethiopia' / 'subnational' /  'cpr_region.csv')
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr_region.csv')
     region_cpr_data = cpr_data.loc[cpr_data['region'] == 'Somali']
     methods['mcpr_years'] = region_cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = region_cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate

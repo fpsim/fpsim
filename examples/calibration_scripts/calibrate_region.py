@@ -31,9 +31,6 @@ import pandas as pd
 import sciris as sc
 import fpsim as fp
 import pylab as pl
-import seaborn as sns
-
-sc.options(interactive=False)
 
 if __name__ == '__main__':
         ####################################################
@@ -42,8 +39,7 @@ if __name__ == '__main__':
         # Name of the country being calibrated. To note that this should match the name of the country data folder
         country = 'ethiopia'
         #Name of the region being calibrated
-        region = 'addis_ababa'
-        region = region.capitalize()
+        region = 'somali'
 
         # Set options for plotting
         do_plot_sim = True
@@ -87,10 +83,9 @@ if __name__ == '__main__':
 
         # Set up sim for country
         pars = fp.pars(location=region)
-        pars['n_agents'] = 1_000 # Small population size
+        pars['n_agents'] = 10_000 # Small population size
         pars['end_year'] = 2016 # 1961 - 2020 is the normal date range
 
-        # Free parameters for calibration
         # Free parameters for calibration
         freepars = dict(
                 fecundity_var_low = [0.95, 0.925, 0.975],
@@ -110,9 +105,12 @@ if __name__ == '__main__':
         #pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
 
         # Convert region name to the format used in the data
-        formatted_region = region.replace('_', ' ').title()  # Replace underscore with space and capitalize each word
         if region == 'benishangul_gumuz':
                 formatted_region = region.replace('_', '-').title()  # Replace underscore with dash and capitalize each word
+        elif region == 'snnpr':
+                formatted_region = 'SNNPR'
+        else:
+                formatted_region = region.replace('_', ' ').title()  # Replace underscore with space and capitalize each word
 
         # Import country data files to compare
         data_asfr = pd.read_csv(f'{country_dir}/regions/data/asfr_region.csv').loc[lambda df: df['region'] == formatted_region]
