@@ -103,8 +103,11 @@ if __name__ == '__main__':
         sc.tic()
 
         # Set up sim for country
-        pars = fp.pars(location=country)
-        pars['n_agents'] = 1_000 # Small population size
+        pars = fp.pars(location=country,
+                        use_partnership=True,
+                        use_empowerment=True,
+                        use_education=True)
+        pars['n_agents'] = 10_000 # Small population size
         pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
         # Free parameters for calibration
@@ -179,7 +182,7 @@ if __name__ == '__main__':
                                 age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
                                 total_counts[age_bin] += 1
                                 if ppl.paid_employment[i]:
-                                        employed_counts[age_bins[age_bin]] += 1
+                                        employed_counts[age_bin] += 1
 
                 # Calculate the percentage of employed people in each age bin
                 percentage_employed = {}
