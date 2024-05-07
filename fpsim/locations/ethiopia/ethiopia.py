@@ -52,16 +52,16 @@ def filenames():
     files['use'] = 'use.csv'
     files['urban'] = 'urban.csv'
     #data files
-    files['region'] = 'region.csv' ## From DHS 2016
-    files['asfr_region'] = 'asfr_region.csv' ## From DHS 2016
-    files['tfr_region'] = 'tfr_region.csv' ## From DHS 2016
-    files['methods_region'] = 'mix_region.csv' ## From DHS 2016
-    files['use_region'] = 'use_region.csv'  ## From PMA 2019
-    files['barriers_region'] = 'barriers_region.csv' ## From PMA 2019
-    files['lactational_amenorrhea_region'] = 'lam_region.csv' ## From DHS 2016
-    files['sexual_activity_region'] = 'sexual_activity_region.csv' ## From DHS 2016
-    files['sexual_activity_pp_region'] = 'sexual_activity_pp_region.csv' ## From DHS 2016
-    files['debut_age_region'] = 'sexual_debut_region.csv' ## From DHS 2016
+    files['region'] = '../regions/data/region.csv' ## From DHS 2016
+    files['asfr_region'] = '../regions/data/asfr_region.csv' ## From DHS 2016
+    files['tfr_region'] = '../regions/data/tfr_region.csv' ## From DHS 2016
+    files['methods_region'] = '../regions/data/mix_region.csv' ## From DHS 2016
+    files['use_region'] = '../regions/data/use_region.csv'  ## From PMA 2019
+    files['barriers_region'] = '../regions/data/barriers_region.csv' ## From PMA 2019
+    files['lactational_amenorrhea_region'] = '../regions/data/lam_region.csv' ## From DHS 2016
+    files['sexual_activity_region'] = '../regions/data/sexual_activity_region.csv' ## From DHS 2016
+    files['sexual_activity_pp_region'] = '../regions/data/sexual_activity_pp_region.csv' ## From DHS 2016
+    files['debut_age_region'] = '../regions/data/sexual_debut_region.csv' ## From DHS 2016
     return files
 
 

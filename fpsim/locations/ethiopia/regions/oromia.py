@@ -42,7 +42,20 @@ def data2interp(data, ages, normalize=False):
     return interp
 
 def filenames():
+    ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = eth.filenames()
+
+    files['asfr'] = '../regions/data/asfr_region.csv' ## From DHS 2016
+    files['tfr'] = '../regions/data/tfr_region.csv' ## From DHS 2016
+    files['methods'] = '../regions/data/mix_region.csv' ## From DHS 2016
+    files['use'] = '../regions/data/use_region.csv'  ## From PMA 2019
+    files['barriers'] = '../regions/data/barriers_region.csv' ## From PMA 2019
+    files['lactational_amenorrhea'] = '../regions/data/lam_region.csv' ## From DHS 2016
+    files['sexual_activity'] = '../regions/data/sexual_activity_region.csv' ## From DHS 2016
+    files['sexual_activity_pp'] = '../regions/data/sexual_activity_pp_region.csv' ## From DHS 2016
+    files['debut_age'] = '../regions/data/sexual_debut_region.csv' ## From DHS 2016
+    files['mcpr'] = '../regions/data/cpr_region.csv'
+
     return files
 
 # %% Demographics and pregnancy outcome

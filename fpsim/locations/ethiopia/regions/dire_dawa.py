@@ -44,28 +44,18 @@ def data2interp(data, ages, normalize=False):
 
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
-    files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'ethiopia'
-    #national files
-    files['afb'] = 'afb.table.csv' #need to add data file
-    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2016 or PMA 2022 #need to add data file
-    files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
-    files['popsize'] = 'popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
-    files['spacing'] = 'birth_spacing_dhs.csv' #need to be fixed
-    files['urban'] = 'urban.csv'
-    #subnational files
-    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2016 or PMA 2022 #need to add data file
-    files['asfr'] = '/subnational/asfr_region.csv' ## From DHS 2016
-    files['barriers'] = '/subnational/barriers_region.csv' ## From PMA 2019
-    files['debut_age'] = '/subnational/sexual_debut_region.csv' ## From DHS 2016
-    files['lactational_amenorrhea'] = '/subnational/lam_region.csv' ## From DHS 2016
-    files['mcpr'] = '/subnational/cpr_region.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    files['methods'] = '/subnational/mix_region.csv' ## From DHS 2016
-    files['region'] = '/subnational/region.csv' ## From DHS 2016 
-    files['sexual_activity'] = '/subnational/sexual_activity_region.csv' ## From DHS 2016
-    files['sexual_activity_pp'] = '/subnational/sexual_activity_pp_region.csv' ## From DHS 2016
-    files['tfr'] = '/subnational/tfr_region.csv' ## From DHS 2016
-    files['use'] = '/subnational/use_region.csv'  ## From PMA 2019
+    files = eth.filenames()
+
+    files['asfr'] = '../regions/data/asfr_region.csv' ## From DHS 2016
+    files['tfr'] = '../regions/data/tfr_region.csv' ## From DHS 2016
+    files['methods'] = '../regions/data/mix_region.csv' ## From DHS 2016
+    files['use'] = '../regions/data/use_region.csv'  ## From PMA 2019
+    files['barriers'] = '../regions/data/barriers_region.csv' ## From PMA 2019
+    files['lactational_amenorrhea'] = '../regions/data/lam_region.csv' ## From DHS 2016
+    files['sexual_activity'] = '../regions/data/sexual_activity_region.csv' ## From DHS 2016
+    files['sexual_activity_pp'] = '../regions/data/sexual_activity_pp_region.csv' ## From DHS 2016
+    files['debut_age'] = '../regions/data/sexual_debut_region.csv' ## From DHS 2016
+    files['mcpr'] = '../regions/data/cpr_region.csv'
 
     return files
 
