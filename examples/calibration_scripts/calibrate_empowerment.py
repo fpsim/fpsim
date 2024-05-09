@@ -45,13 +45,13 @@ if __name__ == '__main__':
         do_plot_sim = True
         do_plot_paid_work = True
         do_plot_education = True
-        do_plot_asfr = False
-        do_plot_methods = False
-        do_plot_ageparity = False
-        do_plot_cpr = False
-        do_plot_tfr = False
-        do_plot_pop_growth = False
-        do_plot_birth_space_afb = False
+        do_plot_asfr = True
+        do_plot_methods = True
+        do_plot_ageparity = True
+        do_plot_cpr = True
+        do_plot_tfr = True
+        do_plot_pop_growth = True
+        do_plot_birth_space_afb = True
 
         # Set option to save figures
         do_save = 1
@@ -59,7 +59,7 @@ if __name__ == '__main__':
         # Dataset contained in the ageparity csv file to which the model data will be compared (i.e. 'PMA 2022',
         # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_ageparity.csv file, you will receive
         # an error when running the script.
-        ageparity_dataset = 'PMA 2019'
+        ageparity_dataset = 'PMA 2022'
 
         ####################################################
 
@@ -104,7 +104,6 @@ if __name__ == '__main__':
 
         # Set up sim for country
         pars = fp.pars(location=country,
-                        use_partnership=True,
                         use_empowerment=True,
                         use_education=True)
         pars['n_agents'] = 10_000 # Small population size
@@ -163,6 +162,9 @@ if __name__ == '__main__':
                 return growth_rate
 
         if do_plot_paid_work:
+                '''
+                Plot rates of paid employment between model and data
+                '''
                 # Extract paid work from data
                 data_empowerment = data_empowerment.iloc[1:-1]
                 data_paid_work = data_empowerment[['age', 'paid_employment']].copy()
@@ -211,6 +213,11 @@ if __name__ == '__main__':
 
 
         if do_plot_education:
+                '''
+                Plot years of educational attainment between model and data
+                '''
+                pl.clf()
+
                 # Extract education from data
                 data_edu = data_education[['age', 'edu']].sort_values(by='age')
                 data_edu = data_edu.query(f"{min_age} <= age < {max_age}").copy()
@@ -254,6 +261,8 @@ if __name__ == '__main__':
                 '''
                 Plot age-specific fertility rate between model and data
                 '''
+                pl.clf()
+
                 # Print ASFR form model in output
                 for key in age_bin_map.keys():
                     print(f'ASFR (annual) for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
@@ -294,6 +303,7 @@ if __name__ == '__main__':
                 '''
                 Plots both dichotomous method use and non-use and contraceptive mix
                 '''
+                pl.clf()
 
                 # Pull method definitions from parameters file
                 # Method map; this remains constant across locations. True indicates modern method,
@@ -390,6 +400,7 @@ if __name__ == '__main__':
                 '''
                 Plot an age-parity distribution for model vs data
                 '''
+                pl.clf()
 
                 # Set up
                 age_keys = list(age_bin_map.keys())[1:]
@@ -440,16 +451,15 @@ if __name__ == '__main__':
                 # Plot ageparity
                 for key in ['Data', 'Model', 'Diff_data-model']:
                         fig = pl.figure(figsize=(20, 14))
+                        ax = fig.add_subplot(111)
 
-                        pl.pcolormesh(sky_arr[key])
+                        im = ax.pcolormesh(sky_arr[key], cmap='parula')
                         pl.xlabel('Age', fontweight='bold')
                         pl.ylabel('Parity', fontweight='bold')
                         pl.title(f'{country.capitalize()}: Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
-                        pl.gca().set_xticks(pl.arange(n_age))
-                        pl.gca().set_yticks(pl.arange(n_parity))
-                        pl.gca().set_xticklabels(age_bins)
-                        pl.gca().set_yticklabels(parity_bins)
-                        pl.gca().view_init(30, 45)
+                        pl.xticks(pl.arange(n_age), age_bins)
+                        pl.yticks(pl.arange(n_parity), parity_bins)
+                        pl.colorbar(im, label='Percentage')
                         pl.draw()
 
 
@@ -463,6 +473,8 @@ if __name__ == '__main__':
                 '''
                 Plot contraceptive prevalence rate for model vs data
                 '''
+                pl.clf()
+
                 # Import data
                 data_cpr = data_cpr[data_cpr['year'] <= pars['end_year']] # Restrict years to plot
 
@@ -483,9 +495,7 @@ if __name__ == '__main__':
                 '''
                 Plot total fertility rate for model vs data
                 '''
-
-                # Import data
-                #data_tfr = pd.read_csv(f'tfr.csv')
+                pl.clf()
 
                 # Plot
                 pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
@@ -504,6 +514,7 @@ if __name__ == '__main__':
                 '''
                 Plot annual population growth rate for model vs data
                 '''
+                pl.clf()
 
                 # Import data
                 data_popsize = data_popsize[data_popsize['year'] <= pars['end_year']]  # Restrict years to plot
@@ -533,6 +544,7 @@ if __name__ == '__main__':
                 '''
                 Plot birth space and age at first birth for model vs data
                 '''
+                pl.clf()
 
                 # Set up
                 spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
