@@ -34,7 +34,8 @@ All_data_long <- All_data_long %>% # recode from highest level ever attended
                                school == 5 ~ 8 + 4) + # university
             ifelse(highest_grade>0 & highest_grade<9, highest_grade, 0), # add plus year within that level
          # define age groups
-         age_grp = cut(age, c(0,18,20,25,35,50)))
+         age_grp = cut(age, c(0,18,20,25,35,50)),
+         intent_cat = factor(ifelse(current_contra == 1, "User", ifelse(intent_contra == 1, "intent", "no_intent")))) # create factor variable for intent to use contraception
   
 
 # duplicate dataset to increase sample size... so we have a 1-2 time and 2-3 time
@@ -76,8 +77,7 @@ modellist <- list()
 for (i in other.outcomes) {
   print(i)
   num.spline = case_when(i %in% c("paidw_12m", "decide_spending_mine") ~ 3, T ~1) # df for spline
-  model <- svyglm(as.formula(paste0(i,"_2 ~ current_contra_1 + ",i,"_1  + ns(age_2,",num.spline,") + school_2 + live_births_2 + urban_2 + wealthquintile_2")),
-                  na.action = na.exclude,
+  model <- svyglm(as.formula(paste0(i,"_2 ~ current_contra_1 + ",i,"_1  + ns(age_2,",num.spline,") + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2")),
                   family = quasibinomial(), 
                   design = svydes)
                   #design = svydes.pp1)
