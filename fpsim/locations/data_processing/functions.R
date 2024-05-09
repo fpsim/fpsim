@@ -127,11 +127,11 @@ predicted.p <- predict(model.simple, newdata = data.frame(age_grp_2 = unique(All
 
 
 # Contraception full function
-model.full <- svyglm(current_contra_2 ~ current_contra_1 + paidw_12m_1 + decide_spending_mine_1 + buy_decision_health_1 + ns(age_2,3) + school_2 + live_births_2 + urban_2 + wealthquintile_2, 
+model.full <- svyglm(current_contra_2 ~ intent_cat_1 + paidw_12m_1 + decide_spending_mine_1 + buy_decision_health_1 + ns(age_2,3) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
                 family = quasibinomial(), 
-                design = svydes)
+                #design = svydes)
                 #design = svydes.pp1)
-                #design = svydes.pp6)
+                design = svydes.pp6)
 contra_coef <- as.data.frame(summary(model.full)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
   mutate(rhs = gsub("_3", "", gsub("_2", "_0", 
