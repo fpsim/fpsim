@@ -83,6 +83,7 @@ matrices <- data %>%
   spread(To, Freq, fill = 0) %>% filter(rowSums(.[5:14], na.rm = T) > 0) %>%                                # spread to wide format by each method, for missing fill with 0, for some reason adding columns with 0 for everything so filtered those out
   filter(!(From == "F.sterilization" & F.sterilization == 0)) %>%                                           # one woman in <18 is going from sterilization to none and there's no other women in that category so filter her out)
   mutate(group = paste0("grp", postpartum, age_grp)) %>% as.data.table()                                    # create a group variable and make into a data table for matrix manipulation
+# write.csv(matrices, "fpsim/locations/kenya/method_mix_matrix.csv", row.names = F) 
 
 
 npdata <- matrices[postpartum == "No"]
