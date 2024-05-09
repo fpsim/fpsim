@@ -163,16 +163,17 @@ Other.mod_predict <- pred_df(x=Other.mod.aft.logN,name='logN')
 
 
 # Combine all coefficients
-method_time_coefficients <- as.data.frame(inj.aft.coef) %>%
-  cbind(as.data.frame(none.aft.coef)) %>%
-  cbind(as.data.frame(Condom.aft.coef)) %>%
-  cbind(as.data.frame(Implant.aft.coef)) %>%
-  cbind(as.data.frame(IUD.aft.coef)) %>%
-  cbind(as.data.frame(pill.aft.coef)) %>%
-  cbind(as.data.frame(Withdrawal.aft.coef)) %>%
-  cbind(as.data.frame(Other.trad.aft.coef)) %>%
-  cbind(as.data.frame(Other.mod.aft.coef)) 
-write.csv(method_time_coefficients, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/Kenya/method_time_coefficients.csv", row.names = T)
+method_time_coefficients <- data.frame(coef = inj.aft.coef) %>% mutate(method = "Injectable", functionform = "gamma") %>% tibble::rownames_to_column() %>%
+  rbind(data.frame(coef = none.aft.coef) %>% mutate(method = "None", functionform = "lnorm") %>% tibble::rownames_to_column()) %>%
+  rbind(data.frame(coef = Condom.aft.coef) %>% mutate(method = "Condom", functionform = "lnorm") %>% tibble::rownames_to_column()) %>%
+  rbind(data.frame(coef = Implant.aft.coef) %>% mutate(method = "Implant", functionform = "gompertz") %>% tibble::rownames_to_column()) %>%
+  rbind(data.frame(coef = IUD.aft.coef) %>% mutate(method = "IUD", functionform = "gompertz") %>% tibble::rownames_to_column()) %>%
+  rbind(data.frame(coef = pill.aft.coef) %>% mutate(method = "Pill", functionform = "lnorm") %>% tibble::rownames_to_column()) %>%
+  rbind(data.frame(coef = Withdrawal.aft.coef) %>% mutate(method = "Withdrawal", functionform = "llogis") %>% tibble::rownames_to_column()) %>%
+  rbind(data.frame(coef = Other.trad.aft.coef) %>% mutate(method = "Other.trad", functionform = "gamma") %>% tibble::rownames_to_column()) %>%
+  rbind(data.frame(coef = Other.mod.aft.coef) %>% mutate(method = "Other.mod", functionform = "lnorm") %>% tibble::rownames_to_column()) %>%
+  rename(estimate = rowname)
+write.csv(method_time_coefficients, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/Kenya/method_time_coefficients.csv", row.names = F)
 
 # combine all predictions
 method_time_predictions <- inj_predict %>% mutate(method = "Injectable") %>%
