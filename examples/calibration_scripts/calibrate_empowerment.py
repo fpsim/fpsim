@@ -167,13 +167,16 @@ if __name__ == '__main__':
                 '''
                 # Extract paid work from data
                 data_empowerment = data_empowerment.iloc[1:-1]
-                data_paid_work = data_empowerment[['age', 'paid_employment']].copy()
+                data_paid_work = data_empowerment[['age', 'paid_employment', 'paid_employment.se']].copy()
                 age_bins = np.arange(min_age, max_age+1, bin_size)
                 data_paid_work['age_group'] = pd.cut(data_paid_work['age'], bins=age_bins, right=False)
-                employment_data = data_paid_work.groupby('age_group', observed=False)['paid_employment'].mean().tolist()
+
+                # Calculate mean and standard error for each age bin
+                employment_data_grouped = data_paid_work.groupby('age_group', observed=False)['paid_employment']
+                employment_data_mean = employment_data_grouped.mean().tolist()
+                employment_data_se = data_paid_work.groupby('age_group', observed=False)['paid_employment.se'].apply(lambda x: np.sqrt(np.sum(x ** 2)) / len(x)).tolist()
 
                 # Extract paid work from model
-                # Initialize dictionaries to store counts of employed and total people in each age bin
                 employed_counts = {age_bin: 0 for age_bin in age_bins}
                 total_counts = {age_bin: 0 for age_bin in age_bins}
 
@@ -186,31 +189,51 @@ if __name__ == '__main__':
                                 if ppl.paid_employment[i]:
                                         employed_counts[age_bin] += 1
 
-                # Calculate the percentage of employed people in each age bin
+                # Calculate the percentage of employed people in each age bin and their standard errors
                 percentage_employed = {}
+                percentage_employed_se = {}
                 age_bins = np.arange(min_age, max_age, bin_size)
                 for age_bin in age_bins:
                         total_ppl = total_counts[age_bin]
                         if total_ppl != 0:
-                                percentage_employed[age_bin] = employed_counts[age_bin] / total_ppl
+                                employed_ratio = employed_counts[age_bin] / total_ppl
+                                percentage_employed[age_bin] = employed_ratio
+                                percentage_employed_se[age_bin] = (employed_ratio * (
+                                                1 - employed_ratio) / total_ppl) ** 0.5
                         else:
                                 percentage_employed[age_bin] = 0
+                                percentage_employed_se[age_bin] = 0
 
                 employment_model = list(percentage_employed.values())
+                employment_model_se = list(percentage_employed_se.values())
 
                 # Set up plotting
-                labels = list(age_bin_map.keys())
-                df_employment = pd.DataFrame({'DHS': employment_data, 'FPsim': employment_model}, index=labels[1:])
+                labels = list(age_bin_map.keys())[1:]
+                x_pos = np.arange(len(labels))
+                fig, ax = pl.subplots()
+                width = 0.35
 
-                # Plot mix
-                ax = df_employment.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
+                # Plot Data
+                ax.barh(x_pos - width / 2, employment_data_mean, width, label='DHS', color='black')
+                ax.errorbar(employment_data_mean, x_pos - width / 2, xerr=employment_data_se, fmt='none', ecolor='gray',
+                            capsize=5)
+
+                # Plot Model
+                ax.barh(x_pos + width / 2, employment_model, width, label='FPsim', color='cornflowerblue')
+                ax.errorbar(employment_model, x_pos + width / 2, xerr=employment_model_se, fmt='none', ecolor='gray',
+                            capsize=5)
+
+                # Set labels and title
                 ax.set_xlabel('Percent Women with Paid Work')
                 ax.set_ylabel('Age Bin')
                 ax.set_title(f'{country.capitalize()}: Paid Employment - Model vs Data')
+                ax.set_yticks(x_pos)
+                ax.set_yticklabels(labels)
+                ax.legend()
+
                 if do_save:
                         pl.savefig(f"{figs_dir}/paid_employment.png", bbox_inches='tight', dpi=100)
                 pl.show()
-
 
         if do_plot_education:
                 '''
@@ -219,14 +242,17 @@ if __name__ == '__main__':
                 pl.clf()
 
                 # Extract education from data
-                data_edu = data_education[['age', 'edu']].sort_values(by='age')
+                data_edu = data_education[['age', 'edu', 'se']].sort_values(by='age')
                 data_edu = data_edu.query(f"{min_age} <= age < {max_age}").copy()
                 age_bins = np.arange(min_age, max_age+1, bin_size)
                 data_edu['age_group'] = pd.cut(data_edu['age'], bins=age_bins, right=False)
-                education_data = data_edu.groupby('age_group', observed=False)['edu'].mean().tolist()
+
+                # Calculate mean and standard error for each age bin
+                education_data_grouped = data_edu.groupby('age_group', observed=False)['edu']
+                education_data_mean = education_data_grouped.mean().tolist()
+                education_data_se = data_edu.groupby('age_group', observed=False)['se'].apply(lambda x: np.sqrt(np.sum(x ** 2)) / len(x)).tolist()
 
                 # Extract education from model
-                # Initialize dictionary to store years of education for each person in each age group
                 model_edu_years = {age_bin: [] for age_bin in np.arange(min_age, max_age, bin_size)}
                 ppl = sim.people
                 for i in range(len(ppl)):
@@ -235,23 +261,41 @@ if __name__ == '__main__':
                                 model_edu_years[age_bin].append(ppl.edu_attainment[i])
 
                 # Calculate average # of years of educational attainment for each age
+                model_edu_mean = []
+                model_edu_se = []
                 for age_group in model_edu_years:
                         if len(model_edu_years[age_group]) != 0:
                                 avg_edu = sum(model_edu_years[age_group]) / len(model_edu_years[age_group])
-                                model_edu_years[age_group] = avg_edu
+                                se_edu = np.std(model_edu_years[age_group], ddof=1) / np.sqrt(len(model_edu_years[age_group]))
+                                model_edu_mean.append(avg_edu)
+                                model_edu_se.append(se_edu)
                         else:
                                 model_edu_years[age_group] = 0
-                education_model = list(model_edu_years.values())
+                                model_edu_se.append(0)
 
                 # Set up plotting
-                labels = list(age_bin_map.keys())
-                df_education = pd.DataFrame({'DHS': education_data, 'FPsim': education_model}, index=labels[1:])
+                labels = list(age_bin_map.keys())[1:]
+                x_pos = np.arange(len(labels))
+                fig, ax = pl.subplots()
+                width = 0.35
 
-                # Plot mix
-                ax = df_education.plot.barh(color={'DHS':'black', 'FPsim':'cornflowerblue'})
+                # Plot DHS data
+                ax.barh(x_pos - width / 2, education_data_mean, width, label='DHS', color='black')
+                ax.errorbar(education_data_mean, x_pos - width / 2, xerr=education_data_se, fmt='none', ecolor='gray',
+                            capsize=5)
+
+                # Plot FPsim data
+                ax.barh(x_pos + width / 2, model_edu_mean, width, label='FPsim', color='cornflowerblue')
+                ax.errorbar(model_edu_mean, x_pos + width / 2, xerr=model_edu_se, fmt='none', ecolor='gray', capsize=5)
+
+                # Set labels and title
                 ax.set_xlabel('Avg Years of Education Attainment')
                 ax.set_ylabel('Age Bin')
                 ax.set_title(f'{country.capitalize()}: Years of Education - Model vs Data')
+                ax.set_yticks(x_pos)
+                ax.set_yticklabels(labels)
+                ax.legend()
+
                 if do_save:
                         pl.savefig(f"{figs_dir}/education.png", bbox_inches='tight', dpi=100)
                 pl.show()
