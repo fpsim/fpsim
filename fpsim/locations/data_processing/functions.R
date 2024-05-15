@@ -43,6 +43,7 @@ filter.data.pp1 <- filter_data %>% filter(pp.time_2<2)
 filter.data.pp6 <- filter_data %>% filter(pp.time_2<6)
 
 # create survey objects
+svydes.full <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = filter_data , nest = T)
 svydes <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = filter.data.notpp , nest = T)
 svydes.pp1 <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = filter.data.pp1 , nest = T)
 svydes.pp6 <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = filter.data.pp6 , nest = T)
@@ -56,7 +57,7 @@ other.outcomes <- c("paidw_12m", "decide_spending_mine", "buy_decision_health")
 
 
 
-# Empowerment function
+# -- Empowerment function -- #
 empower_results <- list()
 modellist <- list()
 for (i in other.outcomes) {
@@ -64,34 +65,28 @@ for (i in other.outcomes) {
   num.spline = case_when(i %in% c("paidw_12m", "decide_spending_mine") ~ 3, T ~1) # df for spline
   model <- svyglm(as.formula(paste0(i,"_2 ~ current_contra_1 + ",i,"_1  + ns(age_2,",num.spline,") + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2")),
                   family = quasibinomial(), 
-                  design = svydes)
-                  #design = svydes.pp1)
-                  #design = svydes.pp6)
+                  design = svydes.full)
 modellist[[i]] <- model
   empower_results[[i]] <- as.data.frame(summary(model)$coefficients) %>% 
     mutate(lhs = i, rhs = rownames(.)) }
 empower_coef <- bind_rows(empower_results)  %>%
   # rename variables to match model
-  mutate(across(c(lhs, rhs), ~gsub("_3", "", gsub("_2", "_0", 
-                                                  gsub("school","edu_attainment",
+  mutate(across(c(lhs, rhs), ~gsub("_2", "", gsub("_1", "_0", 
+                                                  gsub("yrs.edu","edu_attainment",
                                                        gsub("paidw_12m","paid_employment",
                                                             gsub("decide_spending_mine","decision_wages",
                                                                  gsub("buy_decision_health","decision_health",
-                                                                      gsub("wge_sex_eff_tell_no","sexual_autonomy",
-                                                                           gsub("married","partnered",
                                                                                 gsub("live_births", "parity", 
-                                                                                     gsub("current_contra", "contraception", .))))))))))))
+                                                                                     gsub("current_contra", "contraception", .))))))))))
 
 # write.csv(empower_coef, "fpsim/locations/kenya/empower_coef.csv", row.names = F)
-# write.csv(empower_coef, "fpsim/locations/kenya/empower_coef_pp1.csv", row.names = F)
-# write.csv(empower_coef, "fpsim/locations/kenya/empower_coef_pp6.csv", row.names = F)
 
 
 
 
 
 
-
+# contraception functions (3 levels of complexity) -- #
 
 # Contraception simple function
 model.simple <- svyglm(current_contra_2 ~ age_grp_2, 
@@ -120,10 +115,9 @@ model.mid <- svyglm(current_contra_2 ~ ns(age_2,3) + yrs.edu_2 + live_births_2 +
                      #design = svydes.pp6)
 contra_coef.mid <- as.data.frame(summary(model.mid)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
-  mutate(rhs = gsub("_3", "", gsub("_2", "_0", 
-                                   gsub("married","partnered",
-                                        gsub("live_births", "parity", 
-                                             gsub("current_contra", "contraception", rhs))))))
+  mutate(rhs = gsub("_2", "", gsub("live_births", "parity",                                                   
+                                   gsub("yrs.edu","edu_attainment",
+                                        gsub("current_contra", "contraception", rhs)))))
 
 # write.csv(contra_coef.mid, "fpsim/locations/kenya/contra_coef_mid.csv", row.names = F)
 # write.csv(contra_coef.mid, "fpsim/locations/kenya/contra_coef_mid_pp1.csv", row.names = F)
@@ -139,18 +133,25 @@ model.full <- svyglm(current_contra_2 ~ intent_cat_1 + paidw_12m_1 + decide_spen
                 design = svydes.pp6)
 contra_coef <- as.data.frame(summary(model.full)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
-  mutate(rhs = gsub("_3", "", gsub("_2", "_0", 
-                                   gsub("school","edu_attainment",
+  mutate(rhs = gsub("_2", "", gsub("_1", "_0", 
+                                   gsub("yrs.edu","edu_attainment",
                                         gsub("paidw_12m","paid_employment",
                                              gsub("decide_spending_mine","decision_wages",
                                                   gsub("buy_decision_health","decision_health",
-                                                            gsub("married","partnered",
-                                                                 gsub("live_births", "parity", 
-                                                                      gsub("current_contra", "contraception", rhs))))))))))
+                                                       gsub("live_births", "parity", 
+                                                            gsub("current_contra", "contraception", rhs)))))))))
 
 # write.csv(contra_coef, "fpsim/locations/kenya/contra_coef.csv", row.names = F)
 # write.csv(contra_coef, "fpsim/locations/kenya/contra_coef_pp1.csv", row.names = F)
 # write.csv(contra_coef, "fpsim/locations/kenya/contra_coef_pp6.csv", row.names = F)
+
+
+
+
+
+
+
+
 
 # Look at work over age to assess need for spline
 i = "buy_decision_health" # set i here then then run model line above
@@ -166,6 +167,31 @@ predicted.age %>% left_join(data.age) %>%
   #geom_point(aes(y = dec.hlth, x = age_2)) + # use 1 df
   geom_point(aes(y = contra, x = age_2)) + # use 3 df
   geom_line(aes(x= age_2, y = fit))
+
+
+
+
+
+
+
+
+
+# -- intent to use contraception function -- #
+model.intent <- svyglm(intent_contra_2 ~ fertility_intent_2 + ns(age_2,3) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
+                     family = quasibinomial(), 
+                     design = svydes.full)
+intent_coef <- as.data.frame(summary(model.intent)$coefficients) %>% 
+  mutate(rhs = rownames(.)) %>%
+  mutate(rhs = gsub("_2", "", gsub("yrs.edu","edu_attainment",
+                                   gsub("live_births", "parity", rhs))))
+
+# write.csv(intent_coef, "fpsim/locations/kenya/intent_coef.csv", row.names = F)
+
+
+
+
+
+
 
 
 
