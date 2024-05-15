@@ -126,6 +126,25 @@ predicted.p <- predict(model.simple, newdata = data.frame(age_grp_2 = unique(All
 
 
 
+# Contraception mid function (only demographics, no empowerment or history)
+model.mid <- svyglm(current_contra_2 ~ ns(age_2,3) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
+                     family = quasibinomial(), 
+                     design = svydes)
+                     #design = svydes.pp1)
+                     #design = svydes.pp6)
+contra_coef.mid <- as.data.frame(summary(model.mid)$coefficients) %>% 
+  mutate(rhs = rownames(.)) %>%
+  mutate(rhs = gsub("_3", "", gsub("_2", "_0", 
+                                   gsub("married","partnered",
+                                        gsub("live_births", "parity", 
+                                             gsub("current_contra", "contraception", rhs))))))
+
+# write.csv(contra_coef.mid, "fpsim/locations/kenya/contra_coef_mid.csv", row.names = F)
+# write.csv(contra_coef.mid, "fpsim/locations/kenya/contra_coef_mid_pp1.csv", row.names = F)
+# write.csv(contra_coef.mid, "fpsim/locations/kenya/contra_coef_mid_pp6.csv", row.names = F)
+
+
+
 # Contraception full function
 model.full <- svyglm(current_contra_2 ~ intent_cat_1 + paidw_12m_1 + decide_spending_mine_1 + buy_decision_health_1 + ns(age_2,3) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
                 family = quasibinomial(), 
