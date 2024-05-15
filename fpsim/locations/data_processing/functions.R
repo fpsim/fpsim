@@ -19,31 +19,16 @@ library(haven)
 library(withr)  
 library(splines)
 
-pma.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/Data/PMA"), "/")
-All_data_wide_clpm <- with_dir(pma.path, {read.csv("Kenya/All_data_wide_clpm.csv")})
-All_data_long <- with_dir(pma.path, {read.csv("Kenya/All_data_long.csv")})
+# -- To get formatted PMA dataset, run PMA_recode in data processing folder
+
 options(survey.lonely.psu="adjust")
 
-# create variable for years of edu
-All_data_long <- All_data_long %>% # recode from highest level ever attended 
-  mutate(yrs.edu = case_when(school == 0 ~ 0, # never
-                               school == 1 ~ 0, # Primary, 8 years
-                               school == 2 ~ 8, # post-primary
-                               school == 3 ~ 8, # secondary, 4 years
-                               school == 4 ~ 8 + 4, # college
-                               school == 5 ~ 8 + 4) + # university
-            ifelse(highest_grade>0 & highest_grade<9, highest_grade, 0), # add plus year within that level
-         # define age groups
-         age_grp = cut(age, c(0,18,20,25,35,50)),
-         intent_cat = factor(ifelse(current_contra == 1, "User", ifelse(intent_contra == 1, "intent", "no_intent")))) # create factor variable for intent to use contraception
-  
-
 # duplicate dataset to increase sample size... so we have a 1-2 time and 2-3 time
-data.edit.2 <- All_data_long %>% # filtered dataset from just wave 2-3 and rename to 1-2 and label time b
+data.edit <- All_data %>% # filtered dataset from just wave 2-3 and rename to 1-2 and label time b
   filter(wave != 1) %>% mutate(wave = case_when(wave == 2 ~ 1, wave == 3 ~ 2), time = "b")
-filter_data <- All_data_long %>%
+filter_data <- All_data %>%
   filter(wave != 3) %>% mutate(time = "a") %>% # filter to timepoint 102 and label a
-  bind_rows(data.edit.2) %>% # add back in other timepoint
+  bind_rows(data.edit) %>% # add back in other timepoint
   # to wide 
   gather(var, val, -wave, -female_ID, -time) %>% unite("var", c(var, wave)) %>% spread(var, val, convert = T, drop = F, fill = NA) %>%
   mutate(FQweight = ifelse(is.na(FQweight_2), FQweight_1, FQweight_2),
@@ -121,12 +106,13 @@ contra_coef.simple <- as.data.frame(summary(model.simple)$coefficients) %>%
 # write.csv(contra_coef.simple, "fpsim/locations/kenya/contra_coef_simple_pp1.csv", row.names = F)
 # write.csv(contra_coef.simple, "fpsim/locations/kenya/contra_coef_simple_pp6.csv", row.names = F)
 
-
+# look at predicted probabilites of contrceptive use for model validation purposes
 predicted.p <- predict(model.simple, newdata = data.frame(age_grp_2 = unique(All_data_long$age_grp)), type = "response")
 
 
 
-# Contraception mid function (only demographics, no empowerment or history)
+
+# Contraception mid function (only demographics, no empowerment or history)... no longitudinal or empowerment data needed, could be done with DHS
 model.mid <- svyglm(current_contra_2 ~ ns(age_2,3) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
                      family = quasibinomial(), 
                      design = svydes)
