@@ -110,9 +110,9 @@ filter_data %>% group_by(age_2) %>% summarise(contra = mean(current_contra_2, na
 # Contraception simple function
 model.simple <- svyglm(current_contra_2 ~ age_grp_2, 
                 family = quasibinomial(), 
-                #design = svydes)
+                design = svydes)
                 #design = svydes.pp1)
-                design = svydes.pp6)
+                #design = svydes.pp6)
 contra_coef.simple <- as.data.frame(summary(model.simple)$coefficients) %>% 
   mutate(rhs = gsub("_2", "", rownames(.)))
 
@@ -127,7 +127,7 @@ predicted.p <- predict(model.simple, newdata = data.frame(age_grp_2 = unique(All
 
 
 # Contraception mid function (only demographics, no empowerment or history)... no longitudinal or empowerment data needed, could be done with DHS
-model.mid <- svyglm(current_contra_2 ~ ns(age_2, knots = c(24,40)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
+model.mid <- svyglm(current_contra_2 ~ ns(age_2, knots = c(25,40)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
                      family = quasibinomial(), 
                      #design = svydes)
                      #design = svydes.pp1)
@@ -145,11 +145,11 @@ contra_coef.mid <- as.data.frame(summary(model.mid)$coefficients) %>%
 
 
 # Contraception full function
-model.full <- svyglm(current_contra_2 ~ intent_cat_1 + paidw_12m_1 + decide_spending_mine_1 + buy_decision_health_1 + ns(age_2, knots = c(24,40)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
+model.full <- svyglm(current_contra_2 ~ intent_cat_1 + paidw_12m_1 + decide_spending_mine_1 + buy_decision_health_1 + ns(age_2, knots = c(25,40)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
                 family = quasibinomial(), 
-                design = svydes)
+                #design = svydes)
                 #design = svydes.pp1)
-                #design = svydes.pp6)
+                design = svydes.pp6)
 contra_coef <- as.data.frame(summary(model.full)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
   mutate(rhs = gsub("_2", "", gsub("_1", "_0", 
