@@ -62,8 +62,7 @@ empower_results <- list()
 modellist <- list()
 for (i in other.outcomes) {
   print(i)
-  num.spline = case_when(i %in% c("paidw_12m", "decide_spending_mine") ~ 3, T ~1) # df for spline
-  model <- svyglm(as.formula(paste0(i,"_2 ~ current_contra_1 + ",i,"_1  + ns(age_2,",num.spline,") + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2")),
+  model <- svyglm(as.formula(paste0(i,"_2 ~ current_contra_1 + ",i,"_1  + ns(age_2,knots = c(25)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2")),
                   family = quasibinomial(), 
                   design = svydes.full)
 modellist[[i]] <- model
@@ -83,10 +82,30 @@ empower_coef <- bind_rows(empower_results)  %>%
 
 
 
+# Look at each over age to assess spline#
+i = "paidw_12m" # set i here then then run model line above
+new.frame = expand.grid(current_contra_1 = c(0,1), paidw_12m_1 = c(0,1), decide_spending_mine_1 = c(0,1), buy_decision_health_1 = c(0,1), age_2 = 15:49, yrs.edu_2 = 0:5, live_births_2 = 0:15, urban_2 = c(0,1), wealthquintile_2 = 1:5)
+predicted <- new.frame %>% cbind(as.data.frame(predict(model, new.frame, type = "response"))) # create df of predicted work with predictor values
+predicted.age <- predicted %>% group_by(age_2) %>% summarise(fit = mean(response, na.rm = T)) # summarize predicted work by age
+data.age <- filter_data %>% group_by(age_2) %>% 
+  summarise(work = mean(paidw_12m_2), dec.hers = mean(decide_spending_mine_2, na.rm = T), dec.hlth = mean(buy_decision_health_2, na.rm = T), contra = mean(current_contra_2, na.rm = T)) # summarize data by age
+predicted.age %>% left_join(data.age) %>%
+  ggplot() +
+  geom_point(aes(y = work, x = age_2)) + 
+  #geom_point(aes(y = dec.hers, x = age_2)) + 
+  #geom_point(aes(y = dec.hlth, x = age_2)) + 
+  geom_line(aes(x= age_2, y = fit))
+
+
+
 
 
 
 # contraception functions (3 levels of complexity) -- #
+
+# Visualize contraception by age
+filter_data %>% group_by(age_2) %>% summarise(contra = mean(current_contra_2, na.rm = T)) %>% # summarize data by age
+  ggplot() + geom_point(aes(y = contra, x = age_2)) 
 
 # Contraception simple function
 model.simple <- svyglm(current_contra_2 ~ age_grp_2, 
@@ -108,11 +127,11 @@ predicted.p <- predict(model.simple, newdata = data.frame(age_grp_2 = unique(All
 
 
 # Contraception mid function (only demographics, no empowerment or history)... no longitudinal or empowerment data needed, could be done with DHS
-model.mid <- svyglm(current_contra_2 ~ ns(age_2,3) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
+model.mid <- svyglm(current_contra_2 ~ ns(age_2, knots = c(24,40)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
                      family = quasibinomial(), 
-                     design = svydes)
+                     #design = svydes)
                      #design = svydes.pp1)
-                     #design = svydes.pp6)
+                     design = svydes.pp6)
 contra_coef.mid <- as.data.frame(summary(model.mid)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
   mutate(rhs = gsub("_2", "", gsub("live_births", "parity",                                                   
@@ -126,11 +145,11 @@ contra_coef.mid <- as.data.frame(summary(model.mid)$coefficients) %>%
 
 
 # Contraception full function
-model.full <- svyglm(current_contra_2 ~ intent_cat_1 + paidw_12m_1 + decide_spending_mine_1 + buy_decision_health_1 + ns(age_2,3) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
+model.full <- svyglm(current_contra_2 ~ intent_cat_1 + paidw_12m_1 + decide_spending_mine_1 + buy_decision_health_1 + ns(age_2, knots = c(24,40)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
                 family = quasibinomial(), 
-                #design = svydes)
+                design = svydes)
                 #design = svydes.pp1)
-                design = svydes.pp6)
+                #design = svydes.pp6)
 contra_coef <- as.data.frame(summary(model.full)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
   mutate(rhs = gsub("_2", "", gsub("_1", "_0", 
@@ -153,20 +172,6 @@ contra_coef <- as.data.frame(summary(model.full)$coefficients) %>%
 
 
 
-# Look at work over age to assess need for spline
-i = "buy_decision_health" # set i here then then run model line above
-new.frame = expand.grid(current_contra_1 = c(0,1), paidw_12m_1 = c(0,1), decide_spending_mine_1 = c(0,1), buy_decision_health_1 = c(0,1), age_2 = 15:49, school_2 = 0:5, live_births_2 = 0:15, urban_2 = c(0,1), wealthquintile_2 = 1:5)
-predicted <- new.frame %>% cbind(as.data.frame(predict(model, new.frame, type = "response"))) # create df of predicted work with predictor values
-predicted.age <- predicted %>% group_by(age_2) %>% summarise(fit = mean(response, na.rm = T)) # summarize predicted work by age
-data.age <- filter.data.notpp %>% group_by(age_2) %>% 
-  summarise(work = mean(paidw_12m_2), dec.hers = mean(decide_spending_mine_2, na.rm = T), dec.hlth = mean(buy_decision_health_2, na.rm = T), contra = mean(current_contra_2, na.rm = T)) # summarize data by age
-predicted.age %>% left_join(data.age) %>%
-  ggplot() +
-  #geom_point(aes(y = work, x = age_2)) + # use 3 df
-  #geom_point(aes(y = dec.hers, x = age_2)) + # use 3 df
-  #geom_point(aes(y = dec.hlth, x = age_2)) + # use 1 df
-  geom_point(aes(y = contra, x = age_2)) + # use 3 df
-  geom_line(aes(x= age_2, y = fit))
 
 
 
@@ -177,7 +182,14 @@ predicted.age %>% left_join(data.age) %>%
 
 
 # -- intent to use contraception function -- #
-model.intent <- svyglm(intent_contra_2 ~ fertility_intent_2 + ns(age_2,3) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
+
+# visualize intent by age
+# Visualize contraception by age
+filter_data %>% group_by(age_2) %>% summarise(intent = mean(intent_contra_2, na.rm = T)) %>% # summarize data by age
+  ggplot() + geom_point(aes(y = intent, x = age_2)) 
+
+# Model
+model.intent <- svyglm(intent_contra_2 ~ fertility_intent_2 + ns(age_2, knots = c(25,40)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
                      family = quasibinomial(), 
                      design = svydes.full)
 intent_coef <- as.data.frame(summary(model.intent)$coefficients) %>% 
