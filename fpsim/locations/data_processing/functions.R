@@ -1,5 +1,5 @@
 #############################################
-# -- Longitudinal analysis on PMA data
+# -- Analysis on PMA data
 # -- For empowerment implementation in FPsim
 # -- Marita Zimmermann
 # -- October 2023
