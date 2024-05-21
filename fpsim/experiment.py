@@ -55,6 +55,7 @@ class Experiment(sc.prettyobj):
 
     def __init__(self, pars=None, flags=None, label=None, **kwargs):
         self.flags = sc.mergedicts(default_flags, flags, _copy=True) # Set flags for what gets run
+        self.flags['empowerment'] = 1 if pars['use_empowerment'] else 0
         self.pars = pars if pars else fpp.pars(**kwargs)
         self.model = sc.objdict()
         self.data = sc.objdict()
@@ -451,12 +452,14 @@ class Experiment(sc.prettyobj):
         data_empowerment = self.load_data('empowerment')
         data_empowerment = data_empowerment.iloc[1:-1]
         data_paid_work = data_empowerment[['age', 'paid_employment']].copy()
-        age_bins = pl.arange(min_age, max_age+1, bin_size)
+        age_bins = np.arange(min_age, max_age+1, bin_size)
         data_paid_work['age_group'] = pd.cut(data_paid_work['age'], bins=age_bins, right=False)
-        self.data['paid_employment'] = data_paid_work.groupby('age_group', observed=False)['paid_employment'].mean().tolist()
+
+        # Calculate mean and standard error for each age bin
+        employment_data_grouped = data_paid_work.groupby('age_group', observed=False)['paid_employment']
+        self.data['paid_employment'] = employment_data_grouped.mean().tolist()
 
         # Extract paid work from model
-        # Initialize dictionaries to store counts of employed and total people in each age bin
         employed_counts = {age_bin: 0 for age_bin in age_bins}
         total_counts = {age_bin: 0 for age_bin in age_bins}
 
@@ -467,7 +470,7 @@ class Experiment(sc.prettyobj):
                 age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
                 total_counts[age_bin] += 1
                 if ppl.paid_employment[i]:
-                    employed_counts[age_bins[age_bin]] += 1
+                    employed_counts[age_bin] += 1
 
         # Calculate the percentage of employed people in each age bin
         percentage_employed = {}
@@ -475,11 +478,13 @@ class Experiment(sc.prettyobj):
         for age_bin in age_bins:
             total_ppl = total_counts[age_bin]
             if total_ppl != 0:
-                percentage_employed[age_bin] = employed_counts[age_bin] / total_ppl
+                employed_ratio = employed_counts[age_bin] / total_ppl
+                percentage_employed[age_bin] = employed_ratio
             else:
                 percentage_employed[age_bin] = 0
 
         self.model['paid_employment'] = list(percentage_employed.values())
+        return
 
 
     def extract_education(self):
@@ -487,12 +492,14 @@ class Experiment(sc.prettyobj):
         dhs_data_education = self.load_data('education')
         data_edu = dhs_data_education[['age', 'edu']].sort_values(by='age')
         data_edu = data_edu.query(f"{min_age} <= age < {max_age}").copy()
-        age_bins = np.arange(min_age, max_age+1, bin_size)
+        age_bins = np.arange(min_age, max_age + 1, bin_size)
         data_edu['age_group'] = pd.cut(data_edu['age'], bins=age_bins, right=False)
-        self.data['education'] = data_edu.groupby('age_group', observed=False)['edu'].mean().tolist()
+
+        # Calculate mean for each age bin
+        education_data_grouped = data_edu.groupby('age_group', observed=False)['edu']
+        self.data['education'] = education_data_grouped.mean().tolist()
 
         # Extract education from model
-        # Initialize dictionary to store years of education for each person in each age group
         model_edu_years = {age_bin: [] for age_bin in np.arange(min_age, max_age, bin_size)}
         ppl = self.people
         for i in range(len(ppl)):
@@ -501,13 +508,14 @@ class Experiment(sc.prettyobj):
                 model_edu_years[age_bin].append(ppl.edu_attainment[i])
 
         # Calculate average # of years of educational attainment for each age
+        model_edu_mean = []
         for age_group in model_edu_years:
             if len(model_edu_years[age_group]) != 0:
                 avg_edu = sum(model_edu_years[age_group]) / len(model_edu_years[age_group])
-                model_edu_years[age_group] = avg_edu
+                model_edu_mean.append(avg_edu)
             else:
                 model_edu_years[age_group] = 0
-        self.model['education'] = list(model_edu_years.values())
+        self.model['education'] = model_edu_mean
 
         return
 
