@@ -346,16 +346,15 @@ if __name__ == '__main__':
                 # Plot ageparity
                 for key in ['Data', 'Model', 'Diff_data-model']:
                         fig = pl.figure(figsize=(20, 14))
+                        ax = fig.add_subplot(111)
 
-                        pl.pcolormesh(sky_arr[key])
+                        im = ax.pcolormesh(sky_arr[key], cmap='parula')
                         pl.xlabel('Age', fontweight='bold')
                         pl.ylabel('Parity', fontweight='bold')
                         pl.title(f'{country.capitalize()}: Age-parity plot for the {key.lower()}\n\n', fontweight='bold')
-                        pl.gca().set_xticks(pl.arange(n_age))
-                        pl.gca().set_yticks(pl.arange(n_parity))
-                        pl.gca().set_xticklabels(age_bins)
-                        pl.gca().set_yticklabels(parity_bins)
-                        pl.gca().view_init(30, 45)
+                        pl.xticks(pl.arange(n_age), age_bins)
+                        pl.yticks(pl.arange(n_parity), parity_bins)
+                        pl.colorbar(im, label='Percentage')
                         pl.draw()
 
 

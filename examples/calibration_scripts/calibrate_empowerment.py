@@ -43,8 +43,8 @@ if __name__ == '__main__':
 
         # Set options for plotting
         do_plot_sim = True
-        do_plot_paid_work = True
-        do_plot_education = True
+        do_plot_paid_work = False
+        do_plot_education = False
         do_plot_asfr = True
         do_plot_methods = True
         do_plot_ageparity = True
@@ -104,8 +104,8 @@ if __name__ == '__main__':
 
         # Set up sim for country
         pars = fp.pars(location=country,
-                        use_empowerment=True,
-                        use_education=True)
+                        use_empowerment=False,
+                        use_education=False)
         pars['n_agents'] = 10_000 # Small population size
         pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 

@@ -27,6 +27,17 @@ def test_plot():
         ok('Plotting succeeded')
     return exp
 
+def test_regional_exp():
+    ''' Test Experiment using a region as location'''
+    sc.heading('Testing regional Experiment')
+    if do_plot:
+        pars = fp.pars(location='amhara')
+        exp = fp.Experiment(pars)
+        exp.run()
+        exp.plot()
+        ok('Regional experiment succeeded')
+    return exp
+
 def test_emp():
     ''' Test Experiment with Empowerment Module'''
     sc.heading('Testing Experiment with empowerment...')
@@ -41,4 +52,5 @@ if __name__ == '__main__':
 
     with sc.timer():
         exp = test_plot()
+        exp_reg = test_regional_exp()
         exp_emp = test_emp()

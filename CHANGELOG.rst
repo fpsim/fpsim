@@ -8,10 +8,17 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 0.28.3 (2024-05-21)
+Version 0.28.4 (2024-05-21)
 ---------------------------
--
+- Adds empowerment metrics (paid work and education attainment) to calibration targets
+- Creates script for empowerment calibration
 - *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/240>`_
+
+Version 0.28.3 (2024-04-30)
+--------------------------
+- Creates subnational tutorial for Ethiopia
+- Updates regional scripts to improve subnationals calibrations for Ethiopia
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/334>`_
 
 Version 0.28.2 (2024-04-20)
 ---------------------------
