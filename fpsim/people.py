@@ -9,6 +9,8 @@ from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
 from . import empowerment as fpemp
+from . import education as fpedu
+from . import demographics as fpdmg
 from . import subnational as fpsn
 
 # Specify all externally visible things this file defines
@@ -41,7 +43,7 @@ class People(fpb.BasePeople):
 
         # Basic demographics
         _age, _sex = self.get_age_sex(n)
-        if self.pars['use_subnational']==False:
+        if not self.pars['use_subnational']:
             _urban = self.get_urban(n)
         else:
             _urban = fpsn.get_urban_init_vals(self)
@@ -72,13 +74,13 @@ class People(fpb.BasePeople):
 
 
         if self.pars['use_partnership']:
-            fpemp.init_partnership_states(self)
+            fpdmg.init_partnership_states(self)
 
         if self.pars['use_empowerment']:
             fpemp.init_empowerment_states(self)
 
         if self.pars['use_education']:
-            fpemp.init_education_states(self)
+            fpedu.init_education_states(self)
 
         if self.pars['use_subnational']:
             fpsn.init_regional_states(self)
@@ -995,7 +997,7 @@ class People(fpb.BasePeople):
         # Update education
         if self.pars['use_education']:
             alive_now_f = self.filter(self.is_female)
-            fpemp.update_education(alive_now_f)
+            fpedu.update_education(alive_now_f)
 
         # Update empowerment on bdays (unless there's a different mechanism to update)
         if self.pars['use_empowerment']:
