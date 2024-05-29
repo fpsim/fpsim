@@ -14,7 +14,6 @@ library(survey)
 options(survey.lonely.psu="adjust")
 svydes <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = All_data , nest = T)
 
-fertility_intent <- as.data.frame(prop.table(svytable(~fertility_intent+age, svydes), 2)) %>%
-  filter(fertility_intent == 1) %>% select(-fertility_intent)
+fertility_intent <- as.data.frame(prop.table(svytable(~fertility_intent+age, svydes), 2)) 
 
 write.csv(fertility_intent, "fpsim/locations/data_processing/fertility_intent.csv", row.names = F)
