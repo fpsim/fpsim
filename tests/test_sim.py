@@ -20,6 +20,7 @@ def test_simple():
 
 def test_simple_choice(location='kenya'):
     sc.heading('Choose method annually based on age and parity')
+
     # Read in data
     coef_df = pd.read_csv(f'../fpsim/locations/{location}/data/contra_coef_simple.csv')
     coef = sc.objdict(
@@ -39,7 +40,24 @@ def test_simple_choice(location='kenya'):
         age_bin_vals=coef_pp6_df.Estimate[1:].values,
         age_bin_edges=[18, 20, 25, 35],
     )
-    method_choice = fp.SimpleChoice(coef=coef, coef_pp1=coef_pp1, coef_pp6=coef_pp6)
+
+    methods = fp.Methods
+
+    # Read in duration estimates
+    dur_raw = pd.read_csv(f'../fpsim/locations/{location}/data/method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+    for method in methods.values():
+        mlabel = method.csv_name
+        if mlabel != 'F.sterilization':
+            thisdf = dur_raw.loc[dur_raw.method==mlabel]
+            dist = thisdf.functionform.iloc[0]
+            if dist == 'lognormal':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='meanlog'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='sdlog'].values[0]
+                method.dur_use['age_bin_vals'] = thisdf.coef.values[2:]
+                method.dur_use['age_bin_edges'] = [18, 20, 25, 35]
+
+    method_choice = fp.SimpleChoice(methods=methods, coef=coef, coef_pp1=coef_pp1, coef_pp6=coef_pp6)
     pars = fp.pars(location=location, **par_kwargs)
     s = fp.Sim(pars, contraception_module=method_choice)
     s.run()

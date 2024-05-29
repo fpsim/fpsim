@@ -170,6 +170,32 @@ class SimpleChoice(RandomChoice):
         prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
         return prob_use
 
+    def set_dur_method(self, ppl, method_used=None):
+        """ Placeholder function whereby the mean time on method scales with age """
+
+        dur_method = np.empty(len(ppl))
+        if method_used is None: method_used = ppl.method
+        age_bins = np.digitize(ppl.age, self.coef.age_bin_edges)
+
+        for mname, method in self.methods.items():
+            users = np.nonzero(method_used == method.idx)[-1]
+            n_users = len(users)
+            par1 = np.zeros(n_users)
+            dist_dict = sc.dcp(method.dur_use)
+
+            for ab in range(1, self.n_age_bins):
+                par1[age_bins[users]==ab] = method.dur_use['par1'] + method.dur_use['age_bin_vals'][ab-1]
+            par1[par1==0] = 1e-3
+
+            dist_dict = dict(dist=method.dur_use['dist'], par1=par1, par2=method.dur_use['par1'])
+            dur_method[users] = fpu.sample(**dist_dict, size=n_users)
+
+        dt = ppl.pars['timestep'] / fpd.mpy
+        ti_contra_update = ppl.ti + sc.randround(dur_method/dt)
+
+        return ti_contra_update
+
+
 
 class EmpoweredChoice(ContraceptiveChoice):
 

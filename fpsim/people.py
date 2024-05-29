@@ -154,7 +154,7 @@ class People(fpb.BasePeople):
                 new_users = self.filter(~self.on_contra)
                 new_users.on_contra = True
                 new_users.method = cm.choose_method(new_users)
-                cm.set_dur_method(new_users)
+                new_users.ti_contra = cm.set_dur_method(new_users)
 
                 # Get previous users and see whether they will switch methods or stop using
                 prev_users = self.filter(self.on_contra)
@@ -163,12 +163,12 @@ class People(fpb.BasePeople):
                 # For those who keep using, determine their next method and update time
                 still_on_contra = prev_users.filter(prev_users.on_contra)
                 still_on_contra.method = cm.choose_method(still_on_contra)
-                cm.set_dur_method(still_on_contra)
+                still_on_contra.ti_contra = cm.set_dur_method(still_on_contra)
 
                 # For those who stop using, determine when next to update
                 stopping_contra = prev_users.filter(~prev_users.on_contra)
                 stopping_contra.method = 0
-                cm.set_dur_method(stopping_contra)
+                stopping_contra.ti_contra = cm.set_dur_method(stopping_contra)
 
                 # Validate
                 n_methods = len(self.contraception_module.methods)
@@ -181,7 +181,7 @@ class People(fpb.BasePeople):
                 self.on_contra = cm.get_contra_users(self, event=event)
                 on_contra = self.filter(self.on_contra)
                 on_contra.method = cm.choose_method(on_contra)
-                cm.set_dur_method(on_contra)
+                on_contra.ti_contra = cm.set_dur_method(on_contra)
 
         return
 
