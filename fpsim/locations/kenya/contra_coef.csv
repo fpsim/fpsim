@@ -1,14 +1,46 @@
-"Estimate","Std. Error","t value","Pr(>|t|)","rhs"
-0.0355479536948051,0.470182332695904,0.0756046138334938,0.939788636296604,"(Intercept)"
--1.39227132837766,0.119357404339279,-11.6647252517328,8.20880328914645e-26,"intent_cat_0no_intent"
-1.71682296308294,0.0924144370515944,18.5774324646316,1.7808456855407e-50,"intent_cat_0User"
--0.0522247973544704,0.19221374515521,-0.271701679358569,0.78605526995242,"paid_employment_0"
-0.0119811191544282,0.202036130499208,0.0593018641013577,0.952754746689396,"decision_wages_0"
-0.0497234657194759,0.104681262253918,0.474998721345805,0.635164904056222,"decision_health_0"
--0.468115834996751,0.29022302359887,-1.61295209867207,0.107901847123823,"ns(age, knots = c(25, 40))1"
--1.91927664551903,0.963409211011526,-1.99217178285425,0.0473408324693928,"ns(age, knots = c(25, 40))2"
--1.39742389162558,0.20267354288756,-6.89494973895456,3.68926339155542e-11,"ns(age, knots = c(25, 40))3"
-0.0421096919055076,0.0108433870390649,3.88344451358246,0.000129051759992515,"edu_attainment"
-0.124030636839482,0.0262624598307211,4.72273494710478,3.71387756335575e-06,"parity"
-0.0274703090173944,0.102882185503613,0.267007440432238,0.789663551563753,"urban"
-0.0941866241515795,0.0355288990251916,2.65098628822686,0.0084911006331745,"wealthquintile"
+"rhs","Estimate"
+"(Intercept)",0.0342163588373487
+"intent_cat_0no_intent",-0.328940130984638
+"intent_cat_0User",1.41360097161606
+"buy_decision_daily_0",-0.0107539947314419
+"ns(age, knots = c(25, 40))3",-0.022967825259313
+"intent_cat_0no_intent:buy_decision_major_0",-0.0298341915697136
+"intent_cat_0no_intent:buy_decision_clothes_0",-0.146389088950786
+"intent_cat_0User:buy_decision_clothes_0",0.214263176272952
+"intent_cat_0no_intent:ns(age, knots = c(25, 40))1",-0.214886653845275
+"intent_cat_0no_intent:ns(age, knots = c(25, 40))2",-1.87434029475724
+"intent_cat_0User:ns(age, knots = c(25, 40))2",0.0704848915470239
+"intent_cat_0no_intent:ns(age, knots = c(25, 40))3",-0.367147973026328
+"intent_cat_0no_intent:parity",-0.00612414840758051
+"intent_cat_0no_intent:urban",-0.410633108373523
+"intent_cat_0User:wealthquintile",0.00906846669938202
+"paid_employment_0:savings_0",-0.0749370670859143
+"paid_employment_0:ns(age, knots = c(25, 40))1",-0.14472585065532
+"decision_wages_0:decision_health_0",0.00354241776621362
+"decision_wages_0:decide_spending_partner_0",0.0701154794775964
+"buy_decision_major_0:ns(age, knots = c(25, 40))1",-0.0606689561801877
+"buy_decision_major_0:ns(age, knots = c(25, 40))2",-0.537426716777529
+"decide_spending_partner_0:financial_goals_0",0.0285801328294718
+"decide_spending_partner_0:financial.autonomy_0",0.0136187274194567
+"decide_spending_partner_0:ns(age, knots = c(25, 40))1",-0.134100613798284
+"decide_spending_partner_0:ns(age, knots = c(25, 40))3",-0.0407181613887985
+"decide_spending_partner_0:urban",0.0245207419902271
+"buy_decision_clothes_0:ns(age, knots = c(25, 40))1",-0.0704525684563949
+"buy_decision_clothes_0:ns(age, knots = c(25, 40))3",-0.0887721938235271
+"buy_decision_clothes_0:edu_attainment",0.0103093018290566
+"buy_decision_clothes_0:wealthquintile",0.0275606156528573
+"savings_0:financial_goals_0",-0.0212789871287666
+"savings_0:ns(age, knots = c(25, 40))2",-0.198700130867136
+"savings_0:edu_attainment",-0.000293207784850648
+"financial_info_0:ns(age, knots = c(25, 40))1",0.138479280281074
+"financial_info_0:ns(age, knots = c(25, 40))3",-0.0336623027280729
+"financial_info_0:parity",0.00629924755544967
+"financial_goals_0:ns(age, knots = c(25, 40))3",-0.280105060904631
+"ns(age, knots = c(25, 40))1:edu_attainment",-0.0223354589596962
+"ns(age, knots = c(25, 40))3:edu_attainment",-0.00387318399984689
+"ns(age, knots = c(25, 40))3:parity",-0.133151208686943
+"ns(age, knots = c(25, 40))3:wealthquintile",-0.0388437879621241
+"edu_attainment:parity",0.0108845933066734
+"parity:urban",0.0133152697316375
+"parity:wealthquintile",0.0118582801027163
+"urban:wealthquintile",0.0146439043635287
