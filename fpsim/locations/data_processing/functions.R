@@ -184,9 +184,9 @@ lasso.vars <- c("intent_cat_1", "paidw_12m_1",
                 "savings_1", "financial_info_1", "financial_goals_1",
                 "decision.making_1", "financial.autonomy_1",
                 "age_2", "yrs.edu_2", "live_births_2", "urban_2", "wealthquintile_2")
-#lasso.data <- filter.data.notpp %>%
+lasso.data <- filter.data.notpp %>%
 #lasso.data <- filter.data.pp1 %>%
-lasso.data <- filter.data.pp6 %>%
+#lasso.data <- filter.data.pp6 %>%
   select(EA_ID, strata, FQweight, current_contra_2, all_of(lasso.vars)) %>%
   na.omit
 svydes.lasso <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = lasso.data , nest = T)
@@ -240,8 +240,8 @@ print(coef_se)
 # Format and save coefficients
 contra_coef <- data.frame(
   rhs = rownames(lasso_coefs)[as.vector(lasso_coefs) != 0],
-  Estimate = lasso_coefs[as.vector(lasso_coefs) != 0]) %>%
-  #`Std. Error` = coef_se[as.vector(lasso_coefs) != 0]) %>%
+  Estimate = lasso_coefs[as.vector(lasso_coefs) != 0],
+  `Std. Error` = coef_se[as.vector(lasso_coefs) != 0]) %>%
   mutate(rhs = gsub("_2", "", gsub("_1", "_0", 
                                    gsub("yrs.edu","edu_attainment",
                                         gsub("paidw_12m","paid_employment",
