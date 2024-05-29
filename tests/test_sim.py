@@ -56,6 +56,12 @@ def test_simple_choice(location='kenya'):
                 method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='sdlog'].values[0]
                 method.dur_use['age_bin_vals'] = thisdf.coef.values[2:]
                 method.dur_use['age_bin_edges'] = [18, 20, 25, 35]
+            elif dist == 'gamma':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='rate'].values[0]
+                method.dur_use['age_bin_vals'] = thisdf.coef.values[2:]
+                method.dur_use['age_bin_edges'] = [18, 20, 25, 35]
 
     method_choice = fp.SimpleChoice(methods=methods, coef=coef, coef_pp1=coef_pp1, coef_pp6=coef_pp6)
     pars = fp.pars(location=location, **par_kwargs)

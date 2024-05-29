@@ -5,6 +5,7 @@ File for storing utilities and probability calculators needed to run FP model
 import numpy as np
 import sciris as sc
 import numba as nb
+import scipy.stats as sps
 from . import defaults as fpd
 from . import version as fpv
 
@@ -191,6 +192,7 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
         'normal_int',
         'lognormal',
         'lognormal_int',
+        'gamma',
     ]
 
     # Ensure it's an integer
@@ -215,6 +217,8 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
 
         if '_int' in dist:
             samples = np.round(samples)
+    elif dist == 'gamma':
+        samples = sps.gamma(a=par1, scale=1/par2).rvs(size=size)
     else:
         errormsg = f'The selected distribution "{dist}" is not implemented; choices are: {sc.newlinejoin(choices)}'
         raise NotImplementedError(errormsg)

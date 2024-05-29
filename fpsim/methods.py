@@ -180,15 +180,18 @@ class SimpleChoice(RandomChoice):
         for mname, method in self.methods.items():
             users = np.nonzero(method_used == method.idx)[-1]
             n_users = len(users)
-            par1 = np.zeros(n_users)
-            dist_dict = sc.dcp(method.dur_use)
 
-            for ab in range(1, self.n_age_bins):
-                par1[age_bins[users]==ab] = method.dur_use['par1'] + method.dur_use['age_bin_vals'][ab-1]
-            par1[par1==0] = 1e-3
+            if mname in ['none', 'pill', 'inj', 'cond', 'othtrad', 'othmod']:
+                par1 = np.zeros(n_users)
+                for ab in range(1, self.n_age_bins):
+                    par1[age_bins[users]==ab] = method.dur_use['par1'] + method.dur_use['age_bin_vals'][ab-1]
+                par1[par1==0] = 1e-3
+            else:
+                par1 = method.dur_use['par1']
 
             dist_dict = dict(dist=method.dur_use['dist'], par1=par1, par2=method.dur_use['par1'])
-            dur_method[users] = fpu.sample(**dist_dict, size=n_users)
+            if method.dur_use['dist'] == 'gamma':
+                dur_method[users] = fpu.sample(**dist_dict, size=n_users)
 
         dt = ppl.pars['timestep'] / fpd.mpy
         ti_contra_update = ppl.ti + sc.randround(dur_method/dt)
