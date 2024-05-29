@@ -111,14 +111,16 @@ All_data <- data.raw %>%
          intent_cat = factor(ifelse(current_contra == 1, "User", ifelse(intent_contra == 1, "intent", "no_intent"))), # create factor variable for intent to use contraception
          
          # fertility intention in next 12 months
-         fertility_intent = case_when(more_children == 0 | more_children_pregnant == 0 ~ 0, # Do not want more children
+         fertility_intent = factor(case_when(more_children == 2 | more_children_pregnant == 2 ~ 0, # Do not want more children
                                       wait_birth == 1 & wait_birth_value <= 12 ~ 1, # says want to wait 12 moths or less
                                       wait_birth == 1 & wait_birth_value > 12 ~ 0, # says want to more than 12 months
                                       wait_birth_pregnant == 1 & wait_birth_value + 9 - months_pregnant <= 12 ~ 1, # less that 12 months including current pregnancy time
                                       wait_birth == 2 | wait_birth_pregnant == 2 ~ 0, # says want to wait 1 year or more
                                       wait_birth == 3 | wait_birth_pregnant == 3 ~ 1, # says want to get pregnant soon/now
                                       wait_birth == 1 & wait_birth_value > 12 ~ 0, # says want to more than 12 months
-                                      wait_birth_pregnant == 1 & wait_birth_value + 9 - months_pregnant > 12 ~ 0), # more than 12 months including current pregnancy time
+                                      wait_birth_pregnant == 1 & wait_birth_value + 9 - months_pregnant > 12 ~ 0, # more than 12 months including current pregnancy time
+                                      more_children == 3 | wait_birth == 4 ~ 2), # says she can't get pregnant
+                                   labels = c("No", "Yes", "Can't get pregnant")),
          
          # Empowerment
          wge_preg_eff_start = ifelse(is.na(wge_preg_eff_decide_start_none), wge_preg_eff_decide_start, wge_preg_eff_decide_start_none),
@@ -145,10 +147,15 @@ All_data <- data.raw %>%
                                               wge_preg_eff_stop %in% c(4,5) ~ 1),
          buy_decision_health =      case_when(buy_decision_medical %in% c(1,3) ~ 1,       # Who usually makes decisions about getting medical treatment for yourself: you, your husband/partner, you and your husband/partner jointly, or someone else?
                                               buy_decision_medical %in% c(2,96) ~ 0),
+         buy_decision_clothes =     case_when(buy_decision_clothes %in% c(1,3) ~ 1,       # Who usually makes decisions about buying clothes for yourself: you, your husband/partner, you and your husband/partner jointly, or someone else?
+                                              buy_decision_clothes %in% c(2,96) ~ 0),
          buy_decision_major =       case_when(buy_decision_major %in% c(1,3) ~ 1,         # Who usually makes decisions about making large household purchases: you, your husband/partner, you and your husband/partner jointly, or someone else?
                                               buy_decision_major %in% c(2,96) ~ 0),
          buy_decision_daily =       case_when(buy_decision_daily %in% c(1,3) ~ 1,         # Who usually makes decisions about making household purchases for daily needs: you, your husband/partner, you and your husband/partner jointly, or someone else?
-                                              buy_decision_daily %in% c(2,96) ~ 0)) %>%
+                                              buy_decision_daily %in% c(2,96) ~ 0),
+         savings =                  savings_yn,                                           # Do you currently have any savings for the future, such as a bank account, savings group, or cash?)
+         financial_info =           money_knowledge_where_yn,                             # Do you know where to go for financial information or advice?
+         financial_goals =          financial_goal_yn) %>%                                # Do you have financial goals toward which you are working? PROBE: These are specific financial goals you have setup for yourself.
   
   # create variable for years since first observation
   group_by(female_ID) %>% arrange(wave) %>%
