@@ -120,7 +120,7 @@ All_data <- data.raw %>%
                                       wait_birth == 1 & wait_birth_value > 12 ~ 0, # says want to more than 12 months
                                       wait_birth_pregnant == 1 & wait_birth_value + 9 - months_pregnant > 12 ~ 0, # more than 12 months including current pregnancy time
                                       more_children == 3 | wait_birth == 4 ~ 2), # says she can't get pregnant
-                                   labels = c("No", "Yes", "Can't get pregnant")),
+                                   levels = c(0, 1, 2), labels = c("No", "Yes", "Can't get pregnant")),
          
          # Empowerment
          wge_preg_eff_start = ifelse(is.na(wge_preg_eff_decide_start_none), wge_preg_eff_decide_start, wge_preg_eff_decide_start_none),

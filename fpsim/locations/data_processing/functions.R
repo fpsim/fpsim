@@ -33,6 +33,8 @@ All_data <- All_data %>%
   mutate(decision.making = buy_decision_major*CFA.load["buy_decision_major"] + buy_decision_daily*CFA.load["buy_decision_daily"] + buy_decision_health*CFA.load["buy_decision_health"] + buy_decision_clothes*CFA.load["buy_decision_clothes"],
          financial.autonomy = savings*CFA.load["savings"] + financial_info*CFA.load["financial_info"] + financial_goals*CFA.load["financial_goals"])
 
+  
+
 
 
 
