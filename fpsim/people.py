@@ -140,42 +140,49 @@ class People(fpb.BasePeople):
             self.on_contra = contraception_module.get_contra_users(self)
             oc = self.filter(self.on_contra)
             oc.method = contraception_module.choose_method(oc)
-            self.ti_contra_update = contraception_module.set_dur_method(self)
+            self.ti_contra = contraception_module.set_dur_method(self)
 
         return
 
-    def update_method(self):
+    def update_method(self, event=None):
         """ Inputs: filtered people, only includes those for whom it's time to update """
         cm = self.contraception_module
-
         if cm is not None:
+            if event is None:
 
-            # Non-users will be made to pick a method
-            new_users = self.filter(~self.on_contra)
-            new_users.on_contra = True
-            new_users.method = cm.choose_method(new_users)
-            cm.set_dur_method(new_users)
+                # Non-users will be made to pick a method
+                new_users = self.filter(~self.on_contra)
+                new_users.on_contra = True
+                new_users.method = cm.choose_method(new_users)
+                cm.set_dur_method(new_users)
 
-            # Get previous users and see whether they will switch methods or stop using
-            prev_users = self.filter(self.on_contra)
-            prev_users.on_contra = cm.get_contra_users(prev_users)
+                # Get previous users and see whether they will switch methods or stop using
+                prev_users = self.filter(self.on_contra)
+                prev_users.on_contra = cm.get_contra_users(prev_users)
 
-            # For those who keep using, determine their next method and update time
-            still_on_contra = prev_users.filter(prev_users.on_contra)
-            still_on_contra.method = cm.choose_method(still_on_contra)
-            cm.set_dur_method(still_on_contra)
+                # For those who keep using, determine their next method and update time
+                still_on_contra = prev_users.filter(prev_users.on_contra)
+                still_on_contra.method = cm.choose_method(still_on_contra)
+                cm.set_dur_method(still_on_contra)
 
-            # For those who stop using, determine when next to update
-            stopping_contra = prev_users.filter(~prev_users.on_contra)
-            stopping_contra.method = 0
-            cm.set_dur_method(stopping_contra)
+                # For those who stop using, determine when next to update
+                stopping_contra = prev_users.filter(~prev_users.on_contra)
+                stopping_contra.method = 0
+                cm.set_dur_method(stopping_contra)
 
-            # Validate
-            n_methods = len(self.contraception_module.methods)
-            invalid_vals = (self.method >= n_methods) * (self.method < 0)
-            if invalid_vals.any():
-                errormsg = f'Invalid method set: ti={self.ti}, inds={invalid_vals.nonzero()[-1]}'
-                raise ValueError(errormsg)
+                # Validate
+                n_methods = len(self.contraception_module.methods)
+                invalid_vals = (self.method >= n_methods) * (self.method < 0)
+                if invalid_vals.any():
+                    errormsg = f'Invalid method set: ti={self.ti}, inds={invalid_vals.nonzero()[-1]}'
+                    raise ValueError(errormsg)
+
+            if event in ['pp1', 'pp6']:
+                self.on_contra = cm.get_contra_users(self, event=event)
+                on_contra = self.filter(self.on_contra)
+                on_contra.method = cm.choose_method(on_contra)
+                cm.set_dur_method(on_contra)
+
         return
 
     def check_mortality(self):
@@ -349,7 +356,7 @@ class People(fpb.BasePeople):
         self.postpartum_dur = 0
         self.reset_breastfeeding()  # Stop lactating if becoming pregnant
         self.method = 0  # Not using contraception during pregnancy
-        self.ti_contra_update = self.ti + self.preg_dur  # Set a trigger to update contraceptive choices post delivery
+        self.ti_contra_pp1 = self.ti + self.preg_dur  # Set a trigger to update contraceptive choices post delivery
         return
 
     def check_lam(self):
@@ -406,10 +413,11 @@ class People(fpb.BasePeople):
 
         # If agents are 1 or 6 months postpartum, time to reassess contraception choice
         if len(postpart):
-            critical_pp = (postpart.postpartum_dur == 1) | (postpart.postpartum_dur == 6)
-            pp_method_updates = postpart.filter(critical_pp)
-            if len(pp_method_updates):
-                pp_method_updates.ti_contra_update = self.ti
+            for pp_dur in [1, 6]:
+                critical_pp = postpart.filter(postpart.postpartum_dur == pp_dur)
+                if len(critical_pp):
+                    if pp_dur == 1: critical_pp.ti_contra_pp1 = self.ti
+                    if pp_dur == 6: critical_pp.ti_contra_pp6 = self.ti
 
         return
 
@@ -472,7 +480,7 @@ class People(fpb.BasePeople):
         death = self.filter(is_death)
         self.step_results['infant_deaths'] += len(death)
         death.reset_breastfeeding()
-        death.ti_contra_update = self.ti  # Trigger update to contraceptive choices following infant death
+        death.ti_contra = self.ti  # Trigger update to contraceptive choices following infant death
         return death
 
     def check_delivery(self):
@@ -489,7 +497,7 @@ class People(fpb.BasePeople):
             deliv.postpartum = True  # Start postpartum state at time of birth
             deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
             deliv.postpartum_dur = 0
-            deliv.ti_contra_update = self.ti  # Trigger a call to re-evaluate whether to use contraception
+            # deliv.ti_contra = self.ti  # Trigger a call to re-evaluate whether to use contraception
 
             # Handle stillbirth
             still_prob = self.pars['mortality_probs']['stillbirth']
@@ -861,7 +869,9 @@ class People(fpb.BasePeople):
             self.education_module.update(alive_now_f)
 
         # Figure out who to update methods for
-        methods = nonpreg.filter(nonpreg.ti_contra_update == self.ti)
+        methods = nonpreg.filter(nonpreg.ti_contra == self.ti)
+        methods_pp1 = nonpreg.filter(nonpreg.ti_contra_pp1 == self.ti)
+        methods_pp6 = nonpreg.filter(nonpreg.ti_contra_pp6 == self.ti)
 
         # Check if has reached their age at first partnership and set partnered attribute to True.
         # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
@@ -872,6 +882,8 @@ class People(fpb.BasePeople):
         nonpreg.check_sexually_active()
 
         if len(methods): methods.update_method()
+        if len(methods_pp1): methods.update_method(event='pp1')
+        if len(methods_pp6): methods.update_method(event='pp6')
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()

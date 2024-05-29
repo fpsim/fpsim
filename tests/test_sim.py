@@ -5,6 +5,7 @@ Test running sims
 import fpsim as fp
 import sciris as sc
 import numpy as np
+import pandas as pd
 
 par_kwargs = dict(n_agents=100, start_year=2000, end_year=2010, seed=1, verbose=1)
 
@@ -17,11 +18,29 @@ def test_simple():
     return sim
 
 
-def test_simple_choice():
+def test_simple_choice(location='kenya'):
     sc.heading('Choose method annually based on age and parity')
-    coefficients = sc.objdict(intercept=.1, age=2, parity=3)
-    method_choice = fp.SimpleChoice(coefficients)
-    pars = fp.pars(location='kenya', **par_kwargs)
+    # Read in data
+    coef_df = pd.read_csv(f'../fpsim/locations/{location}/data/contra_coef_simple.csv')
+    coef = sc.objdict(
+        intercept=coef_df.Estimate[0],
+        age_bin_vals=coef_df.Estimate[1:].values,
+        age_bin_edges=[18, 20, 25, 35, 50],
+    )
+    coef_pp1_df = pd.read_csv(f'../fpsim/locations/{location}/data/contra_coef_simple_pp1.csv')
+    coef_pp1 = sc.objdict(
+        intercept=coef_pp1_df.Estimate[0],
+        age_bin_vals=coef_pp1_df.Estimate[1:].values,
+        age_bin_edges=[18, 20, 25, 35],
+    )
+    coef_pp6_df = pd.read_csv(f'../fpsim/locations/{location}/data/contra_coef_simple_pp6.csv')
+    coef_pp6 = sc.objdict(
+        intercept=coef_pp6_df.Estimate[0],
+        age_bin_vals=coef_pp6_df.Estimate[1:].values,
+        age_bin_edges=[18, 20, 25, 35],
+    )
+    method_choice = fp.SimpleChoice(coef=coef, coef_pp1=coef_pp1, coef_pp6=coef_pp6)
+    pars = fp.pars(location=location, **par_kwargs)
     s = fp.Sim(pars, contraception_module=method_choice)
     s.run()
     return s
@@ -47,6 +66,6 @@ def test_empowered_choice():
 
 if __name__ == '__main__':
 
-    s0 = test_simple()
+    # s0 = test_simple()
     s1 = test_simple_choice()
-    s2 = test_empowered_choice()
+    # s2 = test_empowered_choice()

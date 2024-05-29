@@ -80,7 +80,7 @@ class ContraceptiveChoice:
             elif isinstance(m.dur_use, dict): av += m.dur_use['par1']
         return av / len(self.methods)
 
-    def get_prob_use(self, ppl):
+    def get_prob_use(self, ppl, event=None):
         """ Calculate probabilities that each woman will use contraception """
         prob_use = np.random.random(len(ppl))
         return prob_use
@@ -111,9 +111,9 @@ class ContraceptiveChoice:
         method = self.get_method_by_label(method_label)
         del self.methods[method.name]
 
-    def get_contra_users(self, ppl):
+    def get_contra_users(self, ppl, event=None):
         """ Select contraction users, return boolean array """
-        prob_use = self.get_prob_use(ppl)
+        prob_use = self.get_prob_use(ppl, event=event)
         uses_contra_bool = self.pars['p_use'] > prob_use
         return uses_contra_bool
 
@@ -124,10 +124,6 @@ class ContraceptiveChoice:
         dt = ppl.pars['timestep'] / fpd.mpy
         ti_contra_update = np.full(len(ppl), sc.randround(ppl.ti + self.average_dur_use/dt), dtype=int)
         return ti_contra_update
-
-
-class OldChoice(ContraceptiveChoice):
-    pass
 
 
 class RandomChoice(ContraceptiveChoice):
@@ -147,22 +143,31 @@ class RandomChoice(ContraceptiveChoice):
 
 
 class SimpleChoice(RandomChoice):
-    def __init__(self, coefficients=None, **kwargs):
+    def __init__(self, coef=None, coef_pp1=None, coef_pp6=None, **kwargs):
         """ Args: coefficients """
         super().__init__(**kwargs)
-        self.coefficients = coefficients
+        self.coef = coef
+        self.coef_pp1 = coef_pp1 or coef
+        self.coef_pp6 = coef_pp6 or coef
+        self.n_age_bins = len(coef.age_bin_edges)
         return
 
-    def get_prob_use(self, ppl):
+    def get_prob_use(self, ppl, event=None):
         """
         Return an array of probabilities that each woman will use contraception.
         """
-        p = self.coefficients
-        rhs = p.intercept
-        for vname, vval in p.items():
-            if vname not in ['intercept']:
-                rhs += vval * ppl[vname]
+        # Figure out which coefficients to use
+        if event is None : p = self.coef
+        if event == 'pp1': p = self.coef_pp1
+        if event == 'pp6': p = self.coef_pp6
+
+        # Calculate probability of use
+        rhs = np.full_like(ppl.age, fill_value=p.intercept)
+        age_bins = np.digitize(ppl.age, self.coef.age_bin_edges)
+        for ab in range(1, self.n_age_bins):
+            rhs[age_bins==ab] += self.coef.age_bin_vals[ab-1]
         prob_use = 1 / (1+np.exp(-rhs))
+        prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
         return prob_use
 
 
@@ -181,7 +186,7 @@ class EmpoweredChoice(ContraceptiveChoice):
             errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
             raise NotImplementedError(errormsg)
 
-    def get_prob_use(self, ppl, inds=None):
+    def get_prob_use(self, ppl, inds=None, event=None):
         """
         Given an array of indices, return an array of probabilities that each woman will use contraception.
         Probabilities are a function of:
