@@ -89,10 +89,9 @@ if __name__ == '__main__':
 
         ax.set_xlabel('Duration of use')
         ax.set_ylabel('Density')
-        ax.set_title(method.label)
+        ax.set_title(method.label+' - ' + method.dur_use['dist'])
 
     sc.figlayout()
-    # pl.show()
     sc.savefig('duration_dists.png')
 
 
