@@ -77,6 +77,7 @@ if __name__ == '__main__':
                 sigma, scale = lognorm_params(par1, par2)
                 rv = sps.lognorm(sigma, 0, scale)
             if method.dur_use['dist'] == 'gamma':
+                import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
                 rv = sps.gamma(par1, scale=-1/par2)
             if method.dur_use['dist'] == 'gompertz':
                 rv = sps.gompertz(par1, scale=-1/par2)
