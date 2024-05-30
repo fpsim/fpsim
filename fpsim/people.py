@@ -879,17 +879,6 @@ class People(fpb.BasePeople):
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
-        # Update education
-        if self.pars['use_education']:
-            alive_now_f = self.filter(self.is_female)
-            fpedu.update_education(alive_now_f)
-
-        # Update empowerment on bdays (unless there's a different mechanism to update)
-        if self.pars['use_empowerment']:
-            birthdays = self.filter(self.is_female).birthday_filter()
-            if len(birthdays):
-               fpemp.update_empowerment(birthdays)
-
         # Update results
         fecund.update_age_bin_totals()
         self.track_mcpr()

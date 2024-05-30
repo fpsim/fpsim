@@ -186,7 +186,8 @@ default_pars = {
 
     # Settings - what aspects are being modeled
     'track_as':             0,      # Whether to track age-specific channels
-    'use_subnational':      0,      # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
+    'use_subnational':      0,      # Whether to model partnered states- will need to add context-specific data if using
+    'use_partnership':      0,      # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
 
     # Age limits (in years)
     'method_age':           15,
