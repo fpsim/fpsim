@@ -16,4 +16,4 @@ svydes <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, data = 
 
 fertility_intent <- as.data.frame(prop.table(svytable(~fertility_intent+age, svydes), 2)) 
 
-write.csv(fertility_intent, "fpsim/locations/data_processing/fertility_intent.csv", row.names = F)
+write.csv(fertility_intent, "fpsim/locations/kenya/fertility_intent.csv", row.names = F)
