@@ -10,6 +10,8 @@ from . import defaults as fpd
 from . import base as fpb
 from . import education as fpedu
 from . import empowerment as fpemp
+from . import education as fpedu
+from . import demographics as fpdmg
 from . import subnational as fpsn
 
 # Specify all externally visible things this file defines
@@ -48,7 +50,7 @@ class People(fpb.BasePeople):
 
         # Basic demographics
         _age, _sex = self.get_age_sex(n)
-        if self.pars['use_subnational']==False:
+        if not self.pars['use_subnational']:
             _urban = self.get_urban(n)
         else:
             _urban = fpsn.get_urban_init_vals(self)
@@ -85,15 +87,25 @@ class People(fpb.BasePeople):
         if self.pars['age_partnership'] is not None:
             fpedu.init_partnership_states(self)
 
+<<<<<<< HEAD
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
         self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
+=======
+        if self.pars['use_partnership']:
+            fpdmg.init_partnership_states(self)
+>>>>>>> main
 
         # Store keys
         self._keys = [s.name for s in self.states.values()]
 
+<<<<<<< HEAD
         # Initialize methods with contraception module if provided
         self.init_methods(contraception_module=contraception_module)
+=======
+        if self.pars['use_education']:
+            fpedu.init_education_states(self)
+>>>>>>> main
 
         if self.pars['use_subnational']:
             fpsn.init_regional_states(self)
@@ -877,6 +889,20 @@ class People(fpb.BasePeople):
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
+<<<<<<< HEAD
+=======
+        # Update education
+        if self.pars['use_education']:
+            alive_now_f = self.filter(self.is_female)
+            fpedu.update_education(alive_now_f)
+
+        # Update empowerment on bdays (unless there's a different mechanism to update)
+        if self.pars['use_empowerment']:
+            birthdays = self.filter(self.is_female).birthday_filter()
+            if len(birthdays):
+               fpemp.update_empowerment(birthdays)
+
+>>>>>>> main
         # Update results
         fecund.update_age_bin_totals()
         self.track_mcpr()

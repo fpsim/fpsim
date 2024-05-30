@@ -27,6 +27,17 @@ def test_plot():
         ok('Plotting succeeded')
     return exp
 
+def test_regional_exp():
+    ''' Test Experiment using a region as location'''
+    sc.heading('Testing regional Experiment')
+    if do_plot:
+        pars = fp.pars(location='amhara')
+        exp = fp.Experiment(pars)
+        exp.run()
+        exp.plot()
+        ok('Regional experiment succeeded')
+    return exp
+
 if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
 
