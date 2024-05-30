@@ -8,7 +8,6 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-<<<<<<< HEAD
 
 Version 1.0.0 (2024-05-02)
 ---------------------------
@@ -23,13 +22,12 @@ To support this new feature, this PR also introduces several new items:
  - `Education` and `Empowerment` modules have been added
  
  *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/280>`_
-=======
+
 Version 0.28.3 (2024-04-30)
 --------------------------
 - Creates subnational tutorial for Ethiopia
 - Updates regional scripts to improve subnationals calibrations for Ethiopia
 - *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/334>`_
->>>>>>> main
 
 Version 0.28.2 (2024-04-20)
 ---------------------------

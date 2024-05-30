@@ -84,28 +84,18 @@ class People(fpb.BasePeople):
             self.education_module.initialize(self)
 
         # Partnership - TODO, move out of education
-        if self.pars['age_partnership'] is not None:
-            fpedu.init_partnership_states(self)
+        if self.pars['use_partnership']:
+            fpdmg.init_partnership_states(self)
 
-<<<<<<< HEAD
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
         self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
-=======
-        if self.pars['use_partnership']:
-            fpdmg.init_partnership_states(self)
->>>>>>> main
 
         # Store keys
         self._keys = [s.name for s in self.states.values()]
 
-<<<<<<< HEAD
         # Initialize methods with contraception module if provided
         self.init_methods(contraception_module=contraception_module)
-=======
-        if self.pars['use_education']:
-            fpedu.init_education_states(self)
->>>>>>> main
 
         if self.pars['use_subnational']:
             fpsn.init_regional_states(self)
@@ -889,8 +879,6 @@ class People(fpb.BasePeople):
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
-<<<<<<< HEAD
-=======
         # Update education
         if self.pars['use_education']:
             alive_now_f = self.filter(self.is_female)
@@ -902,7 +890,6 @@ class People(fpb.BasePeople):
             if len(birthdays):
                fpemp.update_empowerment(birthdays)
 
->>>>>>> main
         # Update results
         fecund.update_age_bin_totals()
         self.track_mcpr()
