@@ -189,9 +189,12 @@ class SimpleChoice(RandomChoice):
             else:
                 par1 = method.dur_use['par1']
 
-            dist_dict = dict(dist=method.dur_use['dist'], par1=par1, par2=method.dur_use['par1'])
-            if method.dur_use['dist'] == 'gamma':
-                dur_method[users] = fpu.sample(**dist_dict, size=n_users)
+            dist_dict = dict(dist=method.dur_use['dist'], par1=par1, par2=method.dur_use['par2'])
+            if (dist_dict['dist'] == 'gamma'):
+                dist_dict['par1'][dist_dict['par1'] < 0] = -dist_dict['par1'][dist_dict['par1'] < 0]
+                if dist_dict['par2'] < 0:
+                    dist_dict['par2'] = -dist_dict['par2']
+            dur_method[users] = fpu.sample(**dist_dict, size=n_users)
 
         dt = ppl.pars['timestep'] / fpd.mpy
         ti_contra_update = ppl.ti + sc.randround(dur_method/dt)
