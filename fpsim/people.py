@@ -10,6 +10,8 @@ from . import defaults as fpd
 from . import base as fpb
 from . import education as fpedu
 from . import empowerment as fpemp
+from . import education as fpedu
+from . import demographics as fpdmg
 from . import subnational as fpsn
 
 # Specify all externally visible things this file defines
@@ -48,7 +50,7 @@ class People(fpb.BasePeople):
 
         # Basic demographics
         _age, _sex = self.get_age_sex(n)
-        if self.pars['use_subnational']==False:
+        if not self.pars['use_subnational']:
             _urban = self.get_urban(n)
         else:
             _urban = fpsn.get_urban_init_vals(self)
@@ -82,8 +84,8 @@ class People(fpb.BasePeople):
             self.education_module.initialize(self)
 
         # Partnership - TODO, move out of education
-        if self.pars['age_partnership'] is not None:
-            fpedu.init_partnership_states(self)
+        if self.pars['use_partnership']:
+            fpdmg.init_partnership_states(self)
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below

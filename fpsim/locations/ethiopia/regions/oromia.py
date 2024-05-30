@@ -1,5 +1,5 @@
 '''
-Set the parameters for FPsim, specifically for Ethiopia.
+Set the parameters for FPsim, specifically for Oromia.
 '''
 
 import numpy as np
@@ -16,9 +16,21 @@ thisdir = sc.thispath(__file__)  # For loading CSV files
 def scalar_pars():
     scalar_pars = eth.scalar_pars()
     scalar_pars['location'] = 'oromia'
+    # durations
     scalar_pars['breastfeeding_dur_mu'] = 9.09671867673669
     scalar_pars['breastfeeding_dur_beta'] = 8.12282272074618
-
+    # basic parameters
+    scalar_pars['end_year'] =  2016  # End year of simulation
+    # fecunditity and exposure
+    scalar_pars['fecundity_var_low'] = 0.958
+    scalar_pars['fecundity_var_high'] = 1.024
+    scalar_pars['exposure_factor'] = 1.308  # Overall exposure correction factor
+    scalar_pars['high_parity'] = 1.963
+    scalar_pars['high_parity_nonuse'] = 0.946
+    # mcpr
+    scalar_pars['mcpr_growth_rate'] = 0.5,  # The year-on-year change in MCPR after the end of the data
+    scalar_pars['mcpr_max'] = 0.80,  # Do not allow MCPR to increase beyond this
+    scalar_pars['mcpr_norm_year'] = 2016,  # Year to normalize MCPR trend to 1
     return scalar_pars
 
 def data2interp(data, ages, normalize=False):
@@ -30,8 +42,20 @@ def data2interp(data, ages, normalize=False):
     return interp
 
 def filenames():
+    ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = eth.filenames()
-    
+
+    files['asfr'] = '../regions/data/asfr_region.csv' ## From DHS 2016
+    files['tfr'] = '../regions/data/tfr_region.csv' ## From DHS 2016
+    files['methods'] = '../regions/data/mix_region.csv' ## From DHS 2016
+    files['use'] = '../regions/data/use_region.csv'  ## From PMA 2019
+    files['barriers'] = '../regions/data/barriers_region.csv' ## From PMA 2019
+    files['lactational_amenorrhea'] = '../regions/data/lam_region.csv' ## From DHS 2016
+    files['sexual_activity'] = '../regions/data/sexual_activity_region.csv' ## From DHS 2016
+    files['sexual_activity_pp'] = '../regions/data/sexual_activity_pp_region.csv' ## From DHS 2016
+    files['debut_age'] = '../regions/data/sexual_debut_region.csv' ## From DHS 2016
+    files['mcpr'] = '../regions/data/cpr_region.csv'
+
     return files
 
 # %% Demographics and pregnancy outcome
@@ -126,7 +150,6 @@ def lactational_amenorrhea_region():
     lam_dict['month'] = np.array(lam_dict['month'], dtype=np.float64)
     lam_dict['rate'] = lam_region.loc[lam_region['region'] == 'Oromia']['rate'].tolist()
     lam_dict['rate'] = np.array(lam_dict['rate'], dtype=np.float64)
- 
 
     return lam_dict
 
@@ -238,6 +261,12 @@ def birth_spacing_pref():
 
 def methods():
     methods = eth.methods()
+
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr_region.csv')
+    region_cpr_data = cpr_data.loc[cpr_data['region'] == 'Oromia']
+    methods['mcpr_years'] = region_cpr_data['year'].to_numpy()
+    methods['mcpr_rates'] = region_cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
+
     return methods
 
 # Define methods region based on empowerment work (self, region)

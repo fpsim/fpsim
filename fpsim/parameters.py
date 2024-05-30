@@ -186,7 +186,8 @@ default_pars = {
 
     # Settings - what aspects are being modeled
     'track_as':             0,      # Whether to track age-specific channels
-    'use_subnational':      0,      # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
+    'use_subnational':      0,      # Whether to model partnered states- will need to add context-specific data if using
+    'use_partnership':      0,      # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
 
     # Age limits (in years)
     'method_age':           15,
@@ -303,14 +304,15 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     # Define valid locations
     if location == 'default':
         location = 'senegal'
-    valid_country_locs = dir(fplocs)
+    valid_country_locs = ['senegal', 'kenya', 'ethiopia']  # Hardcoding for now
     valid_ethiopia_regional_locs = dir(fplocs.ethiopia.regions)
 
     # Get parameters for this location
     if location in valid_country_locs:
         location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
-    elif location in valid_ethiopia_regional_locs:
-        location_pars = getattr(fplocs.ethiopia.regions, location).make_pars(**loc_kwargs)
+    # TODO: regional locations not supported yet
+    # elif location in valid_ethiopia_regional_locs:
+    #     location_pars = getattr(fplocs.ethiopia.regions, location).make_pars(**loc_kwargs)
     else: # Else, error
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
