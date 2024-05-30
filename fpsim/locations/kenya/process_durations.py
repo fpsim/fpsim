@@ -62,7 +62,7 @@ if __name__ == '__main__':
 
     fig, axes = pl.subplots(3, 3, figsize=(12,10))
     axes = axes.ravel()
-    x = np.linspace(0, 5, 101) # x axis
+    x = np.arange(0,15*12+0.5,0.5) # x axis
     age_bins = [18, 20, 25, 35, 50]
     age_bin_labels = ['<18', '18-20', '20-25', '25-35', '35-50']
     colors = sc.vectocolor(age_bins)
@@ -77,14 +77,13 @@ if __name__ == '__main__':
                 sigma, scale = lognorm_params(par1, par2)
                 rv = sps.lognorm(sigma, 0, scale)
             if method.dur_use['dist'] == 'gamma':
-                import traceback; traceback.print_exc(); import pdb; pdb.set_trace()
-                rv = sps.gamma(par1, scale=-1/par2)
+                rv = sps.gamma(par1, scale=1/par2)
             if method.dur_use['dist'] == 'gompertz':
-                rv = sps.gompertz(par1, scale=-1/par2)
+                rv = sps.gompertz(par1, scale=1/par2)
             if method.dur_use['dist'] == 'llogis':
                 rv = sps.fisk(c=par1, scale=par2)
 
-            ax.plot(x, rv.pdf(x), color=colors[ai], lw=2, label=age_bin_labels[ai])
+            ax.plot(x/12, rv.pdf(x), color=colors[ai], lw=2, label=age_bin_labels[ai])
 
         if pn==6: ax.legend(loc='best', frameon=False)
 
