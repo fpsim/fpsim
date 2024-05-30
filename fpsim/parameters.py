@@ -304,14 +304,15 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     # Define valid locations
     if location == 'default':
         location = 'senegal'
-    valid_country_locs = dir(fplocs)
+    valid_country_locs = ['senegal', 'kenya', 'ethiopia']  # Hardcoding for now
     valid_ethiopia_regional_locs = dir(fplocs.ethiopia.regions)
 
     # Get parameters for this location
     if location in valid_country_locs:
         location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
-    elif location in valid_ethiopia_regional_locs:
-        location_pars = getattr(fplocs.ethiopia.regions, location).make_pars(**loc_kwargs)
+    # TODO: regional locations not supported yet
+    # elif location in valid_ethiopia_regional_locs:
+    #     location_pars = getattr(fplocs.ethiopia.regions, location).make_pars(**loc_kwargs)
     else: # Else, error
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
