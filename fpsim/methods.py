@@ -117,7 +117,7 @@ class ContraceptiveChoice:
         uses_contra_bool = prob_use > self.pars['p_use']
         return uses_contra_bool
 
-    def choose_method(self, ppl):
+    def choose_method(self, ppl, event=None):
         pass
 
     def set_dur_method(self, ppl, method_used=None):
@@ -137,7 +137,7 @@ class RandomChoice(ContraceptiveChoice):
         self.pars = sc.mergedicts(default_pars, pars)
         return
 
-    def choose_method(self, ppl):
+    def choose_method(self, ppl, event=None):
         choice_arr = np.random.choice(np.arange(self.n_methods), size=len(ppl), p=self.pars['method_mix'])
         return choice_arr.astype(int)
 
@@ -288,7 +288,7 @@ class EmpoweredChoice(ContraceptiveChoice):
         prob_use = 1 / (1+np.exp(-rhs))
         return prob_use
 
-    def choose_method(self, ppl, inds=None, jitter=1e-4):
+    def choose_method(self, ppl, inds=None, event=None, jitter=1e-4):
         """ Choose which method to use """
 
         # Initialize arrays and get parameters
