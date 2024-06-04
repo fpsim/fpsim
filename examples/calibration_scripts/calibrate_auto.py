@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
         calibration = fp.Calibration(pars, calib_pars=freepars)
         calibration.calibrate()
-
+        pars.update(calibration.best_pars)
         sim = fp.Sim(pars=calibration.best_pars)
         sim.run()
 
@@ -355,7 +355,6 @@ if __name__ == '__main__':
                         pl.gca().set_yticks(pl.arange(n_parity))
                         pl.gca().set_xticklabels(age_bins)
                         pl.gca().set_yticklabels(parity_bins)
-                        pl.gca().view_init(30, 45)
                         pl.draw()
 
 
@@ -365,7 +364,6 @@ if __name__ == '__main__':
                         pl.show()
 
         if do_plot_cpr:
-
                 '''
                 Plot contraceptive prevalence rate for model vs data
                 '''
