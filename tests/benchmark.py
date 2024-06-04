@@ -9,21 +9,25 @@ do_profile = 1
 sim = fp.Sim()
 sim.initialize()
 
+coefficients = sc.objdict(intercept=.1, age=2, parity=3)
+method_choice = fp.SimpleChoice(coefficients)
 ppl = sim.people
+
 to_profile = sc.objdict(
     run         = sim.run,
     update      = ppl.update,           # 70% of sim.run() runtime is spent here
     people_init = ppl.__init__,
-    methods     = ppl.update_methods,   # 50% of ppl.update() runtime is spent here
-    method_pp   = ppl.update_method_pp, # 53% of ppl.update_methods() runtime is spent here
     method      = ppl.update_method,    # 44% of ppl.update_methods() runtime is spent here
+    choose_method = method_choice.choose_method,    # 44% of ppl.update_methods() runtime is spent here
     filter      = ppl.filter            # 58% of ppl.update_method() runtime is spent here
-)['run']
+)['choose_method']
 
 
 def run():
-    pars = fp.pars(n_agents=10e1, method_timestep=1, verbose=0)
-    sim = fp.Sim(pars)
+    coefficients = sc.objdict(intercept=.1, age=2, parity=3)
+    method_choice = fp.SimpleChoice(coefficients)
+    pars = fp.pars(location='test', verbose=1)
+    sim = fp.Sim(pars, contraception_module=method_choice)
     sim.run()
     return sim
 

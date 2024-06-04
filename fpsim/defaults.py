@@ -4,6 +4,8 @@ Define defaults for use throughout FPsim
 
 import numpy as np
 import sciris as sc
+import starsim as ss
+import fpsim.settings as fps
 
 from . import base as fpb
 
@@ -14,22 +16,29 @@ eps            = 1e-9 # To avoid divide-by-zero
 min_age        = 15   # Minimum age to be considered eligible to use contraceptive methods
 max_age        = 99   # Maximum age (inclusive)
 max_age_preg   = 50   # Maximum age to become pregnant
-max_parity     = 20   # Maximum number of children
+max_parity     = 20   # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
+max_parity_spline = 20   # Used for parity splines
 
 
 #%% Defaults when creating a new person
 class State:
-    def __init__(self, name, val=None, dtype=None):
+    def __init__(self, name, val=None, dtype=None, ncols=None):
         """
         Initialize a state
         Args:
             name (str): name of state
             val (list, array, float, or str): value(s) to populate array with
             dtype (dtype): datatype. Inferred from val if not provided.
+            ncols (int): number of cols, needed for 2d states like birth_ages (n_agents * n_births)
         """
         self.name = name
         self.val = val
         self.dtype = dtype
+        self.ncols = ncols
+
+    @property
+    def ndim(self):
+        return 1 if self.ncols is None else 2
 
     def new(self, n, vals=None):
         """
@@ -40,13 +49,13 @@ class State:
         if isinstance(vals, np.ndarray):
             assert len(vals) == n
             arr = vals
-        elif isinstance(vals, list):
-            arr = [[] for _ in range(n)]
         else:
             if self.dtype is None: dtype = object if isinstance(vals, str) else None
             else: dtype = self.dtype
-            arr = np.full(shape=n, fill_value=vals, dtype=dtype)
+            shape = n if self.ncols is None else (n, self.ncols)
+            arr = np.full(shape=shape, fill_value=vals, dtype=dtype)
         return arr
+
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
 # or updated during the course of a simulation.
@@ -59,7 +68,11 @@ person_defaults = [
     State('alive',              1, bool),
 
     # Contraception
-    State('method',             0, int),
+    State('on_contra',          0, bool),  # whether she's on contraception
+    State('method',             0, int),  # Which method to use. 0 used for those on no method
+    State('ti_contra',          0, int),  # time point at which to set method
+    State('ti_contra_pp1',     -1, int),  #
+    State('ti_contra_pp6',     -1, int),  #
     State('barrier',            0, int),
 
     # Sexual and reproductive history
@@ -88,31 +101,21 @@ person_defaults = [
     State('breastfeed_dur',     0, int),
     State('breastfeed_dur_total', 0, int),
 
-    # Indices of children -- list of lists
-    State('children',           [], list),
-
-    # Dates
-    State('dobs',               [], list),  # Dates of birth of children
-    State('still_dates',        [], list),  # Dates of stillbirths -- list of lists
-    State('miscarriage_dates',  [], list),  # Dates of miscarriages -- list of lists
-    State('abortion_dates',     [], list),  # Dates of abortions -- list of lists
-    State('short_interval_dates',[], list),  # age of agents at short birth interval -- list of lists
-
     # Fecundity
     State('remainder_months',   0, int),
     State('personal_fecundity', 0, int),
 
     # Empowerment - states will remain at these values if use_empowerment is False
     State('paid_employment',    0, bool),
-    State('decision_wages',     0, float),
-    State('decision_health',    0, float),
-    State('sexual_autonomy',    0, float),
+    State('decision_wages',     0, bool),
+    State('decision_health',    0, bool),
+    State('sexual_autonomy',    0, bool),
 
     # Partnership information -- states will remain at these values if use_partnership is False
     State('partnered',    0, bool),
     State('partnership_age', -1, float),
 
-    # Urban (bsic demographics) -- state will remain at these values if use_urban is False
+    # Urban (basic demographics) -- state will remain at these values if use_urban is False
     State('urban', 1, bool),
     State('region', None, str),
 
@@ -122,10 +125,17 @@ person_defaults = [
     State('edu_dropout',        0, bool),
     State('edu_interrupted',    0, bool),
     State('edu_completed',      0, bool),
-    State('edu_started',        0, bool)
+    State('edu_started',        0, bool),
+
+    State('child_inds',         -1,     int,    ncols=max_parity),
+    State('birth_ages',         np.nan, float,  ncols=max_parity),  # Ages at time of live births
+    State('stillborn_ages',     np.nan, float,  ncols=max_parity),  # Ages at time of stillbirths
+    State('miscarriage_ages',   np.nan, float,  ncols=max_parity),  # Ages at time of miscarriages
+    State('abortion_ages',      np.nan, float,  ncols=max_parity),  #  Ages at time of abortions
+    # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
 ]
 
-person_defaults = fpb.ndict(person_defaults)
+person_defaults = ss.ndict(person_defaults)
 
 # Postpartum keys to months
 postpartum_map = {
@@ -149,31 +159,27 @@ age_bin_map = {
 # Age and parity splines
 spline_ages      = np.arange(max_age + 1)
 spline_preg_ages = np.arange(max_age_preg + 1)
-spline_parities  = np.arange(max_parity + 1)
+spline_parities  = np.arange(max_parity_spline + 1)
 
 # Define allowable keys to select all (all ages, all methods, etc)
 none_all_keys = [None, 'all', ':', [None], ['all'], [':']]
 
-# Definition of contraceptive methods and corresponding numbers -- can be overwritten by locations
-method_map = {
-    'None'              : 0,
-    'Pill'              : 1,
-    'IUDs'              : 2,
-    'Injectables'       : 3,
-    'Condoms'           : 4,
-    'BTL'               : 5,
-    'Withdrawal'        : 6,
-    'Implants'          : 7,
-    'Other traditional' : 8,
-    'Other modern'      : 9,
-}
 
 # Age bins for different method switching matrices -- can be overwritten by locations
 method_age_map = {
     '<18':   [ 0, 18],
     '18-20': [18, 20],
-    '21-25': [20, 25],
-    '26-35': [25, 35],
+    '20-25': [20, 25],
+    '25-35': [25, 35],
+    '>35':   [35, max_age+1], # +1 since we're using < rather than <=
+}
+
+immutable_method_age_map = {
+    '<18':   [ 0, 18],
+    '18-20': [18, 20],
+    '20-25': [20, 25],
+    '25-30': [25, 30],
+    '30-35': [30, 35],
     '>35':   [35, max_age+1], # +1 since we're using < rather than <=
 }
 

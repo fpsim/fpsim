@@ -39,7 +39,7 @@ if __name__ == '__main__':
         # GLOBAL VARIABLES: USER MUST SET
 
         # Name of the country being calibrated. To note that this should match the name of the country data folder
-        country = 'ethiopia'
+        country = 'kenya'
 
         # Set options for plotting
         do_plot_sim = True
@@ -49,7 +49,7 @@ if __name__ == '__main__':
         do_plot_cpr = True
         do_plot_tfr = True
         do_plot_pop_growth = True
-        do_plot_birth_space_afb = True
+        do_plot_birth_space_afb = False
 
         # Set option to save figures
         do_save = 1
@@ -57,7 +57,7 @@ if __name__ == '__main__':
         # Dataset contained in the ageparity csv file to which the model data will be compared (i.e. 'PMA 2022',
         # 'DHS 2014', etc). If this is set to a dataset not included in the {country}_ageparity.csv file, you will receive
         # an error when running the script.
-        ageparity_dataset = 'PMA 2019'
+        ageparity_dataset = 'PMA 2022'
 
         ####################################################
 
@@ -100,7 +100,7 @@ if __name__ == '__main__':
 
         # Set up sim for country
         pars = fp.pars(location=country)
-        pars['n_agents'] = 1_000 # Small population size
+        pars['n_agents'] = 10_000 # Small population size
         pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
         # Free parameters for calibration
@@ -123,7 +123,7 @@ if __name__ == '__main__':
 
         calibration = fp.Calibration(pars, calib_pars=freepars)
         calibration.calibrate()
-
+        pars.update(calibration.best_pars)
         sim = fp.Sim(pars=calibration.best_pars)
         sim.run()
 
@@ -355,7 +355,6 @@ if __name__ == '__main__':
                         pl.gca().set_yticks(pl.arange(n_parity))
                         pl.gca().set_xticklabels(age_bins)
                         pl.gca().set_yticklabels(parity_bins)
-                        pl.gca().view_init(30, 45)
                         pl.draw()
 
 
@@ -365,7 +364,6 @@ if __name__ == '__main__':
                         pl.show()
 
         if do_plot_cpr:
-
                 '''
                 Plot contraceptive prevalence rate for model vs data
                 '''

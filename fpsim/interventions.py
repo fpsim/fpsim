@@ -273,7 +273,7 @@ class change_par(Intervention):
     def apply(self, sim):
         if len(self.inds) > self.counter:
             ind = self.inds[self.counter] # Find the current index
-            if sim.i == ind: # Check if the current timestep matches
+            if sim.ti == ind: # Check if the current timestep matches
                 curr_val = sc.dcp(sim[self.par])
                 val = self.vals[self.counter]
                 if val == 'reset':
@@ -305,45 +305,40 @@ class update_methods(Intervention):
 
         eff (dict):
             An optional key for changing efficacy; its value is a dictionary with the following schema:
-
                 {method: efficacy}
-                    Where method is the method to be changed, and efficacy is the new efficacy (can include multiple keys).
+                    Where method is the method to be changed, and efficacy is the new efficacy
 
+        dur_use (dict):
+            Optional key for changing the duration of use; its value is a dictionary with the following schema:
+                {method: dur_use}
+                    Where method is the method to be changed, and dur_use is a dict representing a distribution, e.g.
+                    dur_use = {'Injectables: dict(dist='lognormal', par1=a, par2=b)}
 
-        probs (list): A list of dictionaries where each dictionary has the following keys:
+        p_use (float): probability of using any form of contraception
+        method_mix (list/arr): probabilities of selecting each form of contraception
 
-            source (str): the source method to be changed.
-            dest   (str): the destination method to be changed.
-            factor (float): the factor by which to multiply existing probability; OR
-            value  (float): the value to replace the switching probability value.
-            keys   (list): a list of strings representing age groups to affect.
-            matrix (str): one of ['probs', 'probs1', 'probs1to6'] where:
-
-                probs:     Changes the specified uptake at the corresponding year regardless of state.
-                probs1:    Changes the specified uptake for all individuals in their first month postpartum.
-                probs1to6: Changes the specified uptake for all individuals that are in the first 6 months postpartum.
     """
 
-    def __init__(self, year, eff=None, probs=None, matrix=None, verbose=False):
+    def __init__(self, year, eff=None, dur_use=None, p_use=None, method_mix=None, verbose=False):
         super().__init__()
         self.year    = year
         self.eff     = eff
-        self.probs   = probs
-        self.matrix  = matrix
+        self.dur_use = dur_use
+        self.p_use = p_use
+        self.method_mix = method_mix
         self.verbose = verbose
 
         # Validation
         if self.year is None:
             errormsg = 'A year must be supplied'
             raise ValueError(errormsg)
-        if self.eff is None and self.probs is None:
-            errormsg = 'Either efficacy or probabilities must be supplied'
+        if self.eff is None and self.dur_use is None and self.p_use is None and self.method_mix is None:
+            errormsg = 'Either efficacy, durations of use, probability of use, or method mix must be supplied'
             raise ValueError(errormsg)
 
         self.applied = False
 
         return
-
 
     def apply(self, sim):
         """
@@ -356,78 +351,32 @@ class update_methods(Intervention):
 
             # Implement efficacy
             if self.eff is not None:
-                for k,rawval in self.eff.items():
-                    sim.pars.update_method_eff(method=k, eff=rawval)
+                for k, rawval in self.eff.items():
+                    sim.contraception_module.update_efficacy(method_label=k, new_efficacy=rawval)
 
-            # Implement method mix shift
-            if self.probs is not None:
-                probs = sc.tolist(self.probs)
-                for entry in probs:
-                    entry = sc.dcp(entry)
-                    matrix    = entry.pop('matrix', self.matrix) # Switching matrix
-                    ages      = entry.pop('ages', None)
-                    source    = entry.pop('source', None)
-                    dest      = entry.pop('dest', None)
-                    method    = entry.pop('method', None)
-                    factor    = entry.pop('factor', None)
-                    value     = entry.pop('value', None)
-                    i_factor  = entry.pop('init_factor', None)
-                    d_factor  = entry.pop('discont_factor', None)
-                    i_value   = entry.pop('init_value', None)
-                    d_value   = entry.pop('discont_value', None)
-                    copy_from = entry.pop('copy_from', None)
+            # Implement changes in duration of use
+            if self.dur_use is not None:
+                for k, rawval in self.dur_use.items():
+                    sim.contraception_module.update_duration(method_label=k, new_duration=rawval)
 
-                    # Supply default matrix
-                    if matrix is None:
-                        matrix = 'annual'
+            # Change in probability of use
+            if self.p_use is not None:
+                if sim.people.contraception_module.pars.get('p_use'):
+                    sim.people.contraception_module.pars['p_use'] = self.p_use
+                else:
+                    errormsg = (f"Contraceptive module does not have a p_use parameter. This may be because it's an "
+                                f"EmpoweredChoice or SimpleChoice module. For these modules, the probability of "
+                                f"contraceptive use depends on people attributes and can't be reset using this method.")
+                    raise ValueError(errormsg)
 
-                    # Validation # CK: TODO: move validation to initialization
-                    if len(entry) != 0:
-                        errormsg = f'Keys "{sc.strjoin(entry.keys())}" not valid entries; see fp.make_scen() for valid args'
-                        raise ValueError(errormsg)
-
-                    # Validate method/source/dest
-                    if method is not None:
-                        if (source is not None or dest is not None):
-                            errormsg = 'You can supply "method" as an alternative to "source" and "dest", but not both'
-                            raise ValueError(errormsg)
-                        else:
-                            source = method
-                            dest = method
-
-                    # Ensure correct number of inputs are given
-                    n_vals = len(sc.mergelists(copy_from, factor, value, i_factor, d_factor, i_value, d_value))
-                    if n_vals != 1:
-                        errormsg = f'Must supply one and only one of copy_from, factor, value, or initiation/discontinuation factors/values; you supplied {n_vals}'
-                        raise ValueError(errormsg)
-
-                    # Check nothing strange has happened
-                    is_switch  = len(sc.mergelists(factor, value))
-                    is_init    = len(sc.mergelists(i_value, i_factor))
-                    is_discont = len(sc.mergelists(d_value, d_factor))
-                    is_copy    = (copy_from is not None)
-                    if is_switch + is_init + is_discont + is_copy != 1:
-                        errormsg = f'Could not figure out what to do: switching={is_switch}, initiation={is_init}, discontinuation={is_discont}, but only one should happen'
-                        raise ValueError(errormsg)
-
-                    if is_init: # It's initiation
-                        source = 'None'
-                        dest = method
-                    elif is_discont: # It's discontinuation
-                        source = method
-                        dest = 'None'
-                    elif not is_copy and (source is None) and (dest is None):
-                        errormsg = 'Must supply a source or a destination'
-                        raise ValueError(errormsg)
-
-                    # Decide if it's a factor or a value modification
-                    factor = sc.mergelists(factor, i_factor, d_factor)
-                    value  = sc.mergelists(value, i_value, d_value)
-                    factor = factor[0] if factor else None
-                    value  = value[0]  if value  else None
-
-                    # Actually update the values and check the matrix is valid
-                    kw = dict(source=source, dest=dest, factor=factor, value=value, ages=ages, matrix=matrix, copy_from=copy_from)
-                    sim.pars.update_method_prob(**kw)
+            # Change in method mix
+            if self.method_mix is not None:
+                if sim.people.contraception_module.pars.get('method_mix') is not None:
+                    sim.people.contraception_module.pars['method_mix'] = self.method_mix
+                else:
+                    errormsg = (f"Contraceptive module does not have method_mix parameter. This may be because it's an "
+                                f"EmpoweredChoice or SimpleChoice module. For these modules, the probability of "
+                                f"contraceptive use depends on people attributes and can't be reset using this method.")
+                    raise ValueError(errormsg)
 
         return
