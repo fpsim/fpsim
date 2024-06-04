@@ -236,7 +236,7 @@ class SimpleChoice(RandomChoice):
 
         return choice_array.astype(int)
 
-    def choose_method_post_birth(self):
+    def choose_method_post_birth(self, jitter=1e-4):
         mcp = self.method_choice_pars[1]
         jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
         choice_array = np.zeros(len(ppl))
