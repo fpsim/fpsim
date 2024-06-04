@@ -65,7 +65,7 @@ def test_update_methods():
     sc.heading('Testing updating method properties...')
 
     # Higher contraceptive use
-    p_use = 0.01  # Counterintuitive, need to fix!
+    p_use = 0.99  # Counterintuitive, need to fix!
 
     # Make new durations representing longer-lasting IUDs, injectables, and implants
     new_durs = {
