@@ -143,80 +143,59 @@ class RandomChoice(ContraceptiveChoice):
 
 
 class SimpleChoice(RandomChoice):
-    def __init__(self, coef=None, coef_pp1=None, coef_pp6=None, dur_use=None, **kwargs):
+    def __init__(self, location=None, **kwargs):
         """ Args: coefficients """
         super().__init__(**kwargs)
-        self.coef = coef
-        self.coef_pp1 = coef_pp1 or coef
-        self.coef_pp6 = coef_pp6 or coef
-        self.n_age_bins = len(coef.age_bin_edges)
 
-        if dur_use is not None: self.process_durs(dur_use)
+        # Handle location
+        location = location.lower()
+        if location == 'kenya':
+            self.contra_use_pars = fplocs.kenya.process_contra_use_simple()  # Set probability of use
+            self.method_choice_pars = fplocs.kenya.process_markovian_method_choice(self.methods)  # Set choice of method
+            self.methods = fplocs.kenya.process_dur_use(self.methods)  # Reset duration of use
 
+            # Handle age bins -- find a more robust way to do this
+            method_choice_age_labels = self.method_choice_pars[0].keys()
+            self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys()])
+
+        else:
+            errormsg = f'Location "{location}" is not currently supported for method-time analyses'
+            raise NotImplementedError(errormsg)
         return
-
-    def process_durs(self, dur_raw):
-        for method in self.methods.values():
-            if method.name == 'btl':
-                method.dur_use = dict(dist='normal', par1=100, par2=1, age_bin_vals=[0], age_bin_edges=[100])
-            else:
-                mlabel = method.csv_name
-
-                thisdf = dur_raw.loc[dur_raw.method==mlabel]
-                dist = thisdf.functionform.iloc[0]
-                method.dur_use = dict()
-                method.dur_use['age_bin_edges'] = [18, 20, 25, 35, 50, 100]  # Make this more robust
-                method.dur_use['age_bin_vals'] = np.append(thisdf.coef.values[2:], 0)
-
-                if dist == 'lognormal':
-                    method.dur_use['dist'] = dist
-                    method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='meanlog'].values[0]
-                    method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='sdlog'].values[0]
-                elif dist in ['gamma', 'gompertz']:
-                    method.dur_use['dist'] = dist
-                    method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
-                    method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='rate'].values[0]
-                elif dist == 'llogis':
-                    method.dur_use['dist'] = dist
-                    method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
-                    method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='scale'].values[0]
-
-        return
-
 
     def get_prob_use(self, ppl, event=None):
         """
         Return an array of probabilities that each woman will use contraception.
         """
         # Figure out which coefficients to use
-        if event is None : p = self.coef
-        if event == 'pp1': p = self.coef_pp1
-        if event == 'pp6': p = self.coef_pp6
+        if event is None : p = self.contra_use_pars[0]
+        if event == 'pp1': p = self.contra_use_pars[1]
+        if event == 'pp6': p = self.contra_use_pars[6]
 
         # Calculate probability of use
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
-        age_bins = np.digitize(ppl.age, self.coef.age_bin_edges)
-        for ab in range(1, self.n_age_bins):
-            rhs[age_bins==ab] += self.coef.age_bin_vals[ab-1]
+        age_bins = np.digitize(ppl.age, self.age_bins)
+        for ai, ab in enumerate(self.age_bins):
+            rhs[age_bins==ai] += p.age_factors[ai]
         prob_use = 1 / (1+np.exp(-rhs))
-        prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
+        # prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
         return prob_use
 
     def set_dur_method(self, ppl, method_used=None):
-        """ Placeholder function whereby the mean time on method scales with age """
+        """ Time on method depends on age and method """
 
         dur_method = np.empty(len(ppl))
         if method_used is None: method_used = ppl.method
 
         for mname, method in self.methods.items():
             dur_use = method.dur_use
-            age_bins = np.digitize(ppl.age, dur_use['age_bin_edges'])
+            age_bins = np.digitize(ppl.age, self.age_bins)
             users = np.nonzero(method_used == method.idx)[-1]
             n_users = len(users)
             par1 = np.zeros(n_users)
 
-            for ai, ab in enumerate(dur_use['age_bin_edges']):
-                par1[age_bins[users]==ai] = np.exp(dur_use['par1'] + dur_use['age_bin_vals'][ai])
+            for ai, ab in enumerate(self.age_bins):
+                par1[age_bins[users]==ai] = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
 
             dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=np.exp(method.dur_use['par2']))
             dur_method[users] = fpu.sample(**dist_dict, size=n_users)
@@ -226,11 +205,55 @@ class SimpleChoice(RandomChoice):
 
         return ti_contra_update
 
-    def choose_method(self, ppl):
-        choice_array = np.zeros(len(ppl))
-        
+    def choose_method(self, ppl, event=None, jitter=1e-4):
+        if event == 'pp1': return self.choose_method_post_birth()
+
+        else:
+            if event==None:  mcp = self.method_choice_pars[0]
+            if event=='pp6': mcp = self.method_choice_pars[6]
+
+            # Initialize arrays and get parameters
+            jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
+            choice_array = np.zeros(len(ppl))
+
+            # Loop over age groups and methods
+            for key, (age_low, age_high) in fpd.method_age_map.items():
+                match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
+
+                for mname, method in self.methods.items():
+                    # Get people of this age who are using this method
+                    using_this_method = match_low_high & (ppl.method == method.idx)
+                    switch_iinds = using_this_method.nonzero()[-1]
+
+                    if len(switch_iinds):
+
+                        # Get probability of choosing each method
+                        these_probs = mcp[key][mname]  # Cannot stay on method
+                        these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                        these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
+                        these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
+                        choice_array[switch_iinds] = these_choices  # Set values
+
         return choice_array.astype(int)
 
+    def choose_method_post_birth(self):
+        mcp = self.method_choice_pars[1]
+        jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
+        choice_array = np.zeros(len(ppl))
+
+        # Loop over age groups and methods
+        for key, (age_low, age_high) in fpd.method_age_map.items():
+            match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
+            switch_iinds = match_low_high.nonzero()[-1]
+
+            if len(switch_iinds):
+                these_probs = mcp[key]
+                these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
+                these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
+                choice_array[switch_iinds] = these_choices  # Set values
+
+        return choice_array
 
 
 class EmpoweredChoice(ContraceptiveChoice):

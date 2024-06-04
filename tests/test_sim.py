@@ -19,31 +19,9 @@ def test_simple():
 
 
 def test_simple_choice(location='kenya'):
-    sc.heading('Choose method annually based on age and parity')
+    sc.heading('Method choice is based on age & previous method')
 
-    # Read in data
-    coef_df = pd.read_csv(f'../fpsim/locations/{location}/data/contra_coef_simple.csv')
-    coef = sc.objdict(
-        intercept=coef_df.Estimate[0],
-        age_bin_vals=coef_df.Estimate[1:].values,
-        age_bin_edges=[18, 20, 25, 35, 50],
-    )
-    coef_pp1_df = pd.read_csv(f'../fpsim/locations/{location}/data/contra_coef_simple_pp1.csv')
-    coef_pp1 = sc.objdict(
-        intercept=coef_pp1_df.Estimate[0],
-        age_bin_vals=coef_pp1_df.Estimate[1:].values,
-        age_bin_edges=[18, 20, 25, 35],
-    )
-    coef_pp6_df = pd.read_csv(f'../fpsim/locations/{location}/data/contra_coef_simple_pp6.csv')
-    coef_pp6 = sc.objdict(
-        intercept=coef_pp6_df.Estimate[0],
-        age_bin_vals=coef_pp6_df.Estimate[1:].values,
-        age_bin_edges=[18, 20, 25, 35],
-    )
-
-    dur_raw = pd.read_csv(f'../fpsim/locations/{location}/data/method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
-
-    method_choice = fp.SimpleChoice(coef=coef, coef_pp1=coef_pp1, coef_pp6=coef_pp6, dur_use=dur_raw)
+    method_choice = fp.SimpleChoice(location='kenya')
     pars = fp.pars(location=location, **par_kwargs)
     s = fp.Sim(pars, contraception_module=method_choice)
     s.run()
@@ -70,6 +48,6 @@ def test_empowered_choice():
 
 if __name__ == '__main__':
 
-    # s0 = test_simple()
-    s1 = test_simple_choice()
+    s0 = test_simple()
+    # s1 = test_simple_choice()
     # s2 = test_empowered_choice()
