@@ -206,7 +206,7 @@ class SimpleChoice(RandomChoice):
         return ti_contra_update
 
     def choose_method(self, ppl, event=None, jitter=1e-4):
-        if event == 'pp1': return self.choose_method_post_birth()
+        if event == 'pp1': return self.choose_method_post_birth(ppl)
 
         else:
             if event==None:  mcp = self.method_choice_pars[0]
@@ -236,7 +236,7 @@ class SimpleChoice(RandomChoice):
 
         return choice_array.astype(int)
 
-    def choose_method_post_birth(self, jitter=1e-4):
+    def choose_method_post_birth(self, ppl, jitter=1e-4):
         mcp = self.method_choice_pars[1]
         jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
         choice_array = np.zeros(len(ppl))
