@@ -266,7 +266,7 @@ class EmpoweredChoice(ContraceptiveChoice):
         location = location.lower()
         if location == 'kenya':
             self.contra_use_pars = fplocs.kenya.process_contra_use_pars()
-            self.method_choice_pars = fplocs.kenya.process_method_pars(self.methods)
+            self.method_choice_pars = fplocs.kenya.process_simple_method_pars(self.methods)
         else:
             errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
             raise NotImplementedError(errormsg)
