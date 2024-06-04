@@ -864,7 +864,25 @@ def process_contra_use_pars():
     return pars
 
 
-def process_method_pars(methods):
+def process_contra_use_simple():
+    # Read in data
+    alldfs = [
+        pd.read_csv(thisdir / 'data' / 'contra_coef_simple.csv'),
+        pd.read_csv(thisdir / 'data' / 'contra_coef_simple_pp1.csv'),
+        pd.read_csv(thisdir / 'data' / 'contra_coef_simple_pp6.csv'),
+    ]
+
+    contra_use_pars = dict()
+    for di, df in enumerate(alldfs):
+        contra_use_pars[di] = sc.objdict(
+            intercept=df.Estimate[0],
+            age_factors=df.Estimate[1:].values,
+        )
+    return contra_use_pars
+
+
+def process_simple_method_pars(methods):
+    """ Choice of method is based on age and parity """
     df = pd.read_csv(thisdir / 'data' / 'method_mix.csv')
     # Awful code to speed pandas up
     dd = dict()
@@ -882,6 +900,60 @@ def process_method_pars(methods):
             dd[akey][pkey]['othtrad'] += abstinence_val
 
     return dd
+
+
+def process_markovian_method_choice(methods):
+    """ Choice of method is age and previous method """
+    df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix.csv', keep_default_na=False, na_values=['NaN'])
+    csv_map = {method.csv_name:method.name for method in methods.values()}
+
+    mc = dict()  # This one is a dict because it will be keyed with numbers
+    for pp in df.postpartum.unique():
+        mc[pp] = sc.objdict()
+        for akey in df.age_grp.unique():
+            mc[pp][akey] = sc.objdict()
+            thisdf = df.loc[(df.age_grp == akey) & (df.postpartum == pp)]
+            if pp == 1:  # Different logic for immediately postpartum
+                mc[pp][akey] = thisdf.values[0][4:14]  # If this is going to be standard practice, should make it more robust
+            else:
+                from_methods = thisdf.From.unique()
+                for from_method in from_methods:
+                    from_mname = csv_map[from_method]
+                    row = thisdf.loc[thisdf.From == from_method]
+                    mc[pp][akey][from_mname] = row.values[0][4:14]  # If this is going to be standard practice, should make it more robust
+
+    return mc
+
+
+def process_dur_use(methods):
+    """ Process duration of use parameters"""
+    df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+    for method in methods.values():
+        if method.name == 'btl':
+            method.dur_use = dict(dist='normal', par1=100, par2=1, age_factors=[0, 0, 0, 0, 0, 0])
+        else:
+            mlabel = method.csv_name
+
+            thisdf = df.loc[df.method==mlabel]
+            dist = thisdf.functionform.iloc[0]
+            method.dur_use = dict()
+            method.dur_use['age_factors'] = np.append(thisdf.coef.values[2:], 0)
+
+            if dist == 'lognormal':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='meanlog'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='sdlog'].values[0]
+            elif dist in ['gamma', 'gompertz']:
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='rate'].values[0]
+            elif dist == 'llogis':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='scale'].values[0]
+
+    return methods
+
 
 
 # %% Make and validate parameters
