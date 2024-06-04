@@ -114,7 +114,7 @@ class ContraceptiveChoice:
     def get_contra_users(self, ppl, event=None):
         """ Select contraction users, return boolean array """
         prob_use = self.get_prob_use(ppl, event=event)
-        uses_contra_bool = self.pars['p_use'] > prob_use
+        uses_contra_bool = prob_use > self.pars['p_use']
         return uses_contra_bool
 
     def choose_method(self, ppl):
@@ -143,14 +143,46 @@ class RandomChoice(ContraceptiveChoice):
 
 
 class SimpleChoice(RandomChoice):
-    def __init__(self, coef=None, coef_pp1=None, coef_pp6=None, **kwargs):
+    def __init__(self, coef=None, coef_pp1=None, coef_pp6=None, dur_use=None, **kwargs):
         """ Args: coefficients """
         super().__init__(**kwargs)
         self.coef = coef
         self.coef_pp1 = coef_pp1 or coef
         self.coef_pp6 = coef_pp6 or coef
         self.n_age_bins = len(coef.age_bin_edges)
+
+        if dur_use is not None: self.process_durs(dur_use)
+
         return
+
+    def process_durs(self, dur_raw):
+        for method in self.methods.values():
+            if method.name == 'btl':
+                method.dur_use = dict(dist='normal', par1=100, par2=1, age_bin_vals=[0], age_bin_edges=[100])
+            else:
+                mlabel = method.csv_name
+
+                thisdf = dur_raw.loc[dur_raw.method==mlabel]
+                dist = thisdf.functionform.iloc[0]
+                method.dur_use = dict()
+                method.dur_use['age_bin_edges'] = [18, 20, 25, 35, 50, 100]  # Make this more robust
+                method.dur_use['age_bin_vals'] = np.append(thisdf.coef.values[2:], 0)
+
+                if dist == 'lognormal':
+                    method.dur_use['dist'] = dist
+                    method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='meanlog'].values[0]
+                    method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='sdlog'].values[0]
+                elif dist in ['gamma', 'gompertz']:
+                    method.dur_use['dist'] = dist
+                    method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
+                    method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='rate'].values[0]
+                elif dist == 'llogis':
+                    method.dur_use['dist'] = dist
+                    method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
+                    method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='scale'].values[0]
+
+        return
+
 
     def get_prob_use(self, ppl, event=None):
         """
@@ -175,31 +207,29 @@ class SimpleChoice(RandomChoice):
 
         dur_method = np.empty(len(ppl))
         if method_used is None: method_used = ppl.method
-        age_bins = np.digitize(ppl.age, self.coef.age_bin_edges)
 
         for mname, method in self.methods.items():
+            dur_use = method.dur_use
+            age_bins = np.digitize(ppl.age, dur_use['age_bin_edges'])
             users = np.nonzero(method_used == method.idx)[-1]
             n_users = len(users)
+            par1 = np.zeros(n_users)
 
-            if mname in ['none', 'pill', 'inj', 'cond', 'othtrad', 'othmod']:
-                par1 = np.zeros(n_users)
-                for ab in range(1, self.n_age_bins):
-                    par1[age_bins[users]==ab] = method.dur_use['par1'] + method.dur_use['age_bin_vals'][ab-1]
-                par1[par1==0] = 1e-3
-            else:
-                par1 = method.dur_use['par1']
+            for ai, ab in enumerate(dur_use['age_bin_edges']):
+                par1[age_bins[users]==ai] = np.exp(dur_use['par1'] + dur_use['age_bin_vals'][ai])
 
-            dist_dict = dict(dist=method.dur_use['dist'], par1=par1, par2=method.dur_use['par2'])
-            if (dist_dict['dist'] == 'gamma'):
-                dist_dict['par1'][dist_dict['par1'] < 0] = -dist_dict['par1'][dist_dict['par1'] < 0]
-                if dist_dict['par2'] < 0:
-                    dist_dict['par2'] = -dist_dict['par2']
+            dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=np.exp(method.dur_use['par2']))
             dur_method[users] = fpu.sample(**dist_dict, size=n_users)
 
         dt = ppl.pars['timestep'] / fpd.mpy
         ti_contra_update = ppl.ti + sc.randround(dur_method/dt)
 
         return ti_contra_update
+
+    def choose_method(self, ppl):
+        choice_array = np.zeros(len(ppl))
+        
+        return choice_array.astype(int)
 
 
 

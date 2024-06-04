@@ -41,8 +41,9 @@ def test_simple_choice(location='kenya'):
         age_bin_edges=[18, 20, 25, 35],
     )
 
+    dur_raw = pd.read_csv(f'../fpsim/locations/{location}/data/method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
 
-    method_choice = fp.SimpleChoice(methods=methods, coef=coef, coef_pp1=coef_pp1, coef_pp6=coef_pp6)
+    method_choice = fp.SimpleChoice(coef=coef, coef_pp1=coef_pp1, coef_pp6=coef_pp6, dur_use=dur_raw)
     pars = fp.pars(location=location, **par_kwargs)
     s = fp.Sim(pars, contraception_module=method_choice)
     s.run()
@@ -69,6 +70,6 @@ def test_empowered_choice():
 
 if __name__ == '__main__':
 
-    s0 = test_simple()
-    # s1 = test_simple_choice()
+    # s0 = test_simple()
+    s1 = test_simple_choice()
     # s2 = test_empowered_choice()

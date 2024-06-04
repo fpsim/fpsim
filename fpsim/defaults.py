@@ -16,7 +16,7 @@ eps            = 1e-9 # To avoid divide-by-zero
 min_age        = 15   # Minimum age to be considered eligible to use contraceptive methods
 max_age        = 99   # Maximum age (inclusive)
 max_age_preg   = 50   # Maximum age to become pregnant
-max_parity     = 10   # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
+max_parity     = 20   # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
 max_parity_spline = 20   # Used for parity splines
 
 
@@ -71,8 +71,8 @@ person_defaults = [
     State('on_contra',          0, bool),  # whether she's on contraception
     State('method',             0, int),  # Which method to use. 0 used for those on no method
     State('ti_contra',          0, int),  # time point at which to set method
-    State('ti_contra_pp1',      0, int),  #
-    State('ti_contra_pp6',      0, int),  #
+    State('ti_contra_pp1',     -1, int),  #
+    State('ti_contra_pp6',     -1, int),  #
     State('barrier',            0, int),
 
     # Sexual and reproductive history

@@ -154,13 +154,18 @@ class People(fpb.BasePeople):
 
                 # Non-users will be made to pick a method
                 new_users = self.filter(~self.on_contra)
-                new_users.on_contra = True
-                new_users.method = cm.choose_method(new_users)
-                new_users.ti_contra = cm.set_dur_method(new_users)
+                if len(new_users):
+                    new_users.on_contra = True
+                    new_users.method = cm.choose_method(new_users)
+                    new_users.ti_contra = cm.set_dur_method(new_users)
 
                 # Get previous users and see whether they will switch methods or stop using
                 prev_users = self.filter(self.on_contra)
-                prev_users.on_contra = cm.get_contra_users(prev_users)
+                if len(prev_users):
+                    if self.ti==14:
+                        print('hi')
+
+                    prev_users.on_contra = cm.get_contra_users(prev_users)
 
                 # For those who keep using, determine their next method and update time
                 still_on_contra = prev_users.filter(prev_users.on_contra)
@@ -883,7 +888,9 @@ class People(fpb.BasePeople):
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
 
-        if len(methods): methods.update_method()
+        if len(methods):
+            methods.update_method()
+
         if len(methods_pp1): methods.update_method(event='pp1')
         if len(methods_pp6): methods.update_method(event='pp6')
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
