@@ -65,13 +65,12 @@ def test_update_methods():
     sc.heading('Testing updating method properties...')
 
     # Higher contraceptive use
-    p_use = 0.99
+    p_use = 0.99  # Counterintuitive, need to fix!
 
     # Make new durations representing longer-lasting IUDs, injectables, and implants
-    def ln(a, b): return dict(dist='lognormal', par1=a, par2=b)
     new_durs = {
-        'IUDs': ln(10, 2),
-        'Implants': ln(5, 3),
+        'IUDs': 10,
+        'Implants': 10,
     }
 
     # Change the method mix
@@ -88,7 +87,7 @@ def test_update_methods():
 
     # Test that all the parameters were correctly updated
     assert msim.sims[1].contraception_module.pars['p_use'] == p_use
-    assert msim.sims[1].contraception_module.methods['iud'].dur_use['par1'] == 10
+    assert msim.sims[1].contraception_module.methods['iud'].dur_use == 10
     assert msim.sims[1].contraception_module.pars['method_mix'] == method_mix
     ok('Parameters updated correctly')
 

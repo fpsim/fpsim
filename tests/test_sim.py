@@ -5,6 +5,7 @@ Test running sims
 import fpsim as fp
 import sciris as sc
 import numpy as np
+import pandas as pd
 
 par_kwargs = dict(n_agents=100, start_year=2000, end_year=2010, seed=1, verbose=1)
 
@@ -17,11 +18,11 @@ def test_simple():
     return sim
 
 
-def test_simple_choice():
-    sc.heading('Choose method annually based on age and parity')
-    coefficients = sc.objdict(intercept=.1, age=2, parity=3)
-    method_choice = fp.SimpleChoice(coefficients)
-    pars = fp.pars(location='kenya', **par_kwargs)
+def test_simple_choice(location='kenya'):
+    sc.heading('Method choice is based on age & previous method')
+
+    method_choice = fp.SimpleChoice(location='kenya')
+    pars = fp.pars(location=location, **par_kwargs)
     s = fp.Sim(pars, contraception_module=method_choice)
     s.run()
     return s
