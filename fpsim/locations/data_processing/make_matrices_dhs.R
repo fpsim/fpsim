@@ -85,6 +85,20 @@ matrices <- data %>%
   mutate(group = paste0("grp", postpartum, age_grp)) %>% as.data.table()                                    # create a group variable and make into a data table for matrix manipulation
 # write.csv(matrices, "fpsim/locations/kenya/method_mix_matrix.csv", row.names = F) 
 
+matrices_switch <- data %>%
+  mutate(postpartum = case_when(month.a == "Birth" ~ "1", pp.6 == F & termination == F ~ "No"), From = month.a, To = month.b) %>%
+  filter(!is.na(postpartum)) %>%                                                                            # Not using months 1-5 postpartum
+  bind_rows(data %>% filter(month.a == "Birth" & !is.na(month.6) & month.6 != "Lac.Am" & month.6 != "Termination" & month.6 != "Pregnant") %>%  # Duplicate pp rows so we can have 6 month pp timepoint
+              mutate(postpartum = "6", age_grp = age_grp.6, From = month.b, To = month.6)) %>%              # For the 6 month pp matrices, replace age group with age group at the 6 month point
+  filter(!(postpartum == "No" & sex.active > 311)) %>%                                                      # Filter out women in the non-postartum matrix who have not has sex in the past year+
+  filter(!(postpartum == 6 & From != "None")) %>%                                                           # Only want from none for 6 mo pp
+  filter(From != To) %>%                                                                                    # Take out same to same
+  filter(To != "None") %>%                                                                                  # Don't want discontinuation in here
+  group_by(postpartum, From, age_grp) %>% mutate(n = sum(wt)) %>% ungroup %>%                               # sum total in 'from' each method
+  group_by(postpartum, From, To, n, age_grp) %>% summarise(Freq = sum(wt)) %>% mutate(Freq = Freq/n) %>% ungroup %>%
+  spread(To, Freq, fill = 0)  %>%                                                                           # spread to wide format by each method, for missing fill with 0
+  mutate(group = paste0("grp", postpartum, age_grp)) %>% as.data.table()                                    # create a group variable and make into a data table for matrix manipulation
+# write.csv(matrices_switch, "fpsim/locations/kenya/method_mix_matrix_switch.csv", row.names = F) 
 
 npdata <- matrices[postpartum == "No"]
 groups <- unique(npdata[, group])
