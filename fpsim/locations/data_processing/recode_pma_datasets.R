@@ -1,20 +1,38 @@
-#########################################
-# -- PMA data recode for empowerment            
-# -- Marita Zimmermann
-# -- March 2023
-#########################################
+################################################################################
+# -Recode Household/Female survey datasets from PMA to
+# produce fpsim empowerment variables.
+#
+# -You can request PMA datasets at: https://datalab.pmadata.org/:
+#
+# Original analysis by Marita Zimmermann, March 2023
+###############################################################################
 
 library(tidyverse)      
 library(haven)  
 library(withr)  
 
-pma.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/Data/PMA"), "/")
+# pma.path <- normalizePath(file.path(Sys.getenv("ONEDRIVE"), "WRICH/Data/PMA"), "/")
+#
+# data1.raw <- with_dir(pma.path, {read_dta("Kenya/PMA2019_KEP1_HQFQ_v3.0_21Oct2021/PMA2019_KEP1_HQFQ_v3.0_21Oct2022.DTA")})
+# data2.raw <- with_dir(pma.path, {read_dta("Kenya/PMA2020_KEP2_HQFQ_v3.0_21Oct2022/PMA2021_KEP2_HQFQ_v3.0_21Oct2022.DTA")})
+# data3.raw <- with_dir(pma.path, {read_dta("Kenya/PMA2022_KEP3_HQFQ_v3.0_21Oct2022/PMA2022_KEP3_HQFQ_v3.0_21Oct2022.DTA")})
 
-# -- Raw data
 
-data1.raw <- with_dir(pma.path, {read_dta("Kenya/PMA2019_KEP1_HQFQ_v3.0_21Oct2021/PMA2019_KEP1_HQFQ_v3.0_21Oct2022.DTA")})
-data2.raw <- with_dir(pma.path, {read_dta("Kenya/PMA2020_KEP2_HQFQ_v3.0_21Oct2022/PMA2021_KEP2_HQFQ_v3.0_21Oct2022.DTA")})
-data3.raw <- with_dir(pma.path, {read_dta("Kenya/PMA2022_KEP3_HQFQ_v3.0_21Oct2022/PMA2022_KEP3_HQFQ_v3.0_21Oct2022.DTA")})
+home_dir <-path.expand("~")   # replace with your own path to the DTA file
+pma_dir <- "PMA"  # Replace with your own data directory structure
+survey_dir <- "Kenya"  # Replace with your own data directory structure
+file1 <- "PMA2019_KEP1_HQFQ_v3.0_21Oct2021/PMA2019_KEP1_HQFQ_v3.0_21Oct2022.dta"
+file2 <- "PMA2020_KEP2_HQFQ_v3.0_21Oct2022/PMA2021_KEP2_HQFQ_v3.0_21Oct2022.dta"
+file3 <- "PMA2022_KEP3_HQFQ_v4.0_2Jul2023/PMA2022_KEP3_HQFQ_v4.0_12Jul2023.dta"
+
+file1_path <- file.path(home_dir, pma_dir, survey_dir, file1)
+file2_path <- file.path(home_dir, pma_dir, survey_dir, file2)
+file3_path <- file.path(home_dir, pma_dir, survey_dir, file3)
+
+data1.raw <- read_dta(file1_path)
+data2.raw <- read_dta(file2_path)
+data3.raw <- read_dta(file3_path)
+
 
 data.raw <- data1.raw %>% mutate(wave = 1) %>% mutate_at(c("RE_ID", "county"), list(~as.character(.))) %>%
   bind_rows(data2.raw %>% mutate(wave = 2) %>% mutate_at(c("RE_ID", "county"), list(~as.character(.)))) %>%
