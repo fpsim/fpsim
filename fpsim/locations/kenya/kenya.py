@@ -658,7 +658,8 @@ def empowerment_regression_pars(regression_type='logistic'):
 def empowerment_distributions(seed=None, regression_type='logistic'):
     """
     Produce intial distributions of empowerment attributes
-    based on latest DHS-8 IR 2022 dataset.
+    based on latest DHS-8 IR 2022 dataset and PMA Household/Female surveys
+    from 2019, 2020 and 2022.
 
     Because DHS data covers the age group from 15 to 49 (inclusive range),
     in this function we:
@@ -667,8 +668,23 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
           to populate the corresponding attributes of each individual agent
           at the start of a simulation.
 
+
     By default, interpolation and extrapolation use
     a nonlinear logistic-based function (a product of sigmoids).
+
+    Arguments:
+        seed (int): random seed used to generate a new 'empirical' dataset
+        using the standard error of the mean (se) specified in the csv files.
+
+        regression_type (str): specifies the function to use to peform
+        regression on the empirical data, usually done to extrapolate ages beyond
+        the 15-49 range.
+
+    Returns:
+        empowerment_dict (dict): A dictionary with the processed data ready
+            for fpsim simulations.
+        empowerment_data (dict): A dictionary with the preprocessed data loaded
+            from the csv files in thisdir/data
     """
     from scipy import optimize
 
@@ -684,8 +700,13 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
 
     regression_pars, regression_fun = empowerment_regression_pars(regression_type=regression_type)
 
-    data_points = {"paid_employment": [], "decision_wages":  [], "decision_health": [], "sexual_autonomy": []}
-    cols = ["paid_employment", "decision_wages", "decision_health", "sexual_autonomy"]
+    cols = ["paid_employment",
+            "decision_wages",
+            "decision_health",
+            "sexual_autonomy"]
+
+    data_points = {col: [] for col in cols}
+
     ages_interp = empowerment_data["age"].to_numpy()
     for col in cols:
         loc   = empowerment_data[f"{col}.mean"]
@@ -705,7 +726,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     # Interpolate and extrapolate data for different empowerment metrics
     empowerment_functions = {
         "paid_employment": empowerment_paid_employment,
-        "decision_wages": empowerment_decision_wages,
+        "decision_wages":  empowerment_decision_wages,
         "decision_health": empowerment_decision_health,
         "sexual_autonomy": empowerment_sexual_autonomy,
     }
@@ -719,8 +740,6 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     # Store the estimates of each metric and the optimised regression parameters
     empowerment_dict["regression_pars"] = regression_pars
     empowerment_dict["sampled_points"] = data_points
-
-    return empowerment_dict, empowerment_data
 
 
 def empowerment_update_pars():
