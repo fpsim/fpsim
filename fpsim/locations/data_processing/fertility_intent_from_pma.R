@@ -20,7 +20,7 @@ fertility.intent <- as.data.frame(prop.table(svytable(~fertility_intent + age,
 names(fertility.intent)[names(fertility.intent) == 'Freq'] <- 'freq'
 
 # Transform age to numeric values
-fertility.intent$age <- as.numeric(fertility.intent$age)
+fertility.intent$age <- as.numeric(as.character(fertility.intent$age))
 
 #-----------------------------------------------------------------------------#
 
