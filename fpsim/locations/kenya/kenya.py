@@ -905,13 +905,19 @@ def process_simple_method_pars(methods):
 def process_markovian_method_choice(methods):
     """ Choice of method is age and previous method """
     df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
-    csv_map = {method.csv_name:method.name for method in methods.values()}
+    csv_map = {method.csv_name: method.name for method in methods.values()}
+    idx_map = {method.csv_name: method.idx for method in methods.values()}
+    idx_df = {}
+    for col in df.columns:
+        if col in csv_map.keys():
+            idx_df[col] = idx_map[col]
 
     mc = dict()  # This one is a dict because it will be keyed with numbers
     init_dist = sc.objdict()  # Initiali distribution of method choice
 
     for pp in df.postpartum.unique():
         mc[pp] = sc.objdict()
+        mc[pp].method_idx = idx_df.values()
         for akey in df.age_grp.unique():
             mc[pp][akey] = sc.objdict()
             thisdf = df.loc[(df.age_grp == akey) & (df.postpartum == pp)]
@@ -927,6 +933,7 @@ def process_markovian_method_choice(methods):
             # Set initial distributions by age
             if pp == 0:
                 init_dist[akey] = thisdf.loc[thisdf.From == 'None'].values[0][4:13].astype(float)
+                init_dist.method_idx = idx_df.values()
 
     return mc, init_dist
 

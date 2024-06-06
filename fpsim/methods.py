@@ -165,7 +165,7 @@ class SimpleChoice(RandomChoice):
             self.methods = fplocs.kenya.process_dur_use(self.methods)  # Reset duration of use
 
             # Handle age bins -- find a more robust way to do this
-            self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys()])
+            self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
 
         else:
             errormsg = f'Location "{location}" is not currently supported for method-time analyses'
@@ -178,13 +178,14 @@ class SimpleChoice(RandomChoice):
 
             # Loop over age groups and methods
             for key, (age_low, age_high) in fpd.method_age_map.items():
-                ppl_this_age = fpu.match_ages(ppl.age, age_low, age_high)
-                inds_to_set = ppl_this_age.nonzero()[-1]
-                if len(inds_to_set) > 0:
+                this_age_bools = fpu.match_ages(ppl.age, age_low, age_high)
+                ppl_this_age = this_age_bools.nonzero()[-1]
+                if len(ppl_this_age) > 0:
                     these_probs = self.init_dist[key]
                     these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
-                    these_choices = fpu.n_multinomial(these_probs, len(inds_to_set))  # Choose
-                    choice_array[ppl_this_age] = these_choices  # Set values
+                    these_choices = fpu.n_multinomial(these_probs, len(ppl_this_age))  # Choose
+                    # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
+                    choice_array[this_age_bools] = np.array(list(self.init_dist.method_idx))[these_choices]
 
         return choice_array.astype(int)
 
@@ -258,6 +259,9 @@ class SimpleChoice(RandomChoice):
                         these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                         these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
                         choice_array[switch_iinds] = these_choices  # Set values
+
+                        # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
+                        choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
 
         return choice_array.astype(int)
 
