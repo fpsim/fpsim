@@ -55,118 +55,118 @@ data.raw <- bind_rows(data1.raw, data2.raw, data3.raw)
 
 # -- Data recode
 recoded.datasets <- data.raw %>%
+  
   # All women sample
   filter((HHQ_result == 1 |
             HHQ_result_cc == 1) &
-           (FRS_result == 1 | 
+           (FRS_result == 1 |
               FRS_result_cc == 1) & last_night == 1 & !is.na(FQweight)
   ) %>%
   filter(female_ID != "") %>%
   
   # Select relevant variables
   select(
+    state = country,
+    age = FQ_age,
+    married_cat = FQmarital_status,
     wave,
-    EC,
     EA_ID,
+    FQweight,
+    strata,
+    female_ID,
     FQdoi_corrected,
     FQdoi_correctedSIF,
-    FQmarital_status,
-    FQweight,
-    IUD,
-    LAM,
-    activity_30d,
-    age = FQ_age,
-    birth_events,
-    buy_decision_clothes,
-    buy_decision_daily,
-    buy_decision_major,
-    buy_decision_medical,
-    current_contra = current_user,
-    decide_spending_mine,
-    decide_spending_partner,
-    diaphragm,
-    ever_birth,
-    female_ID,
-    femalecondoms,
-    femalester,
-    financial_goal_yn,
-    foamjelly,
-    fp_ever_user,
-    future_user_not_current,
-    future_user_pregnant,
-    highest_grade,
-    implant,
-    injectables,
-    malecondoms,
-    malester,
-    mar_decision,
-    mobile_money_yn,
-    money_knowledge,
-    money_knowledge_where_yn,
-    months_pregnant,
     more_children,
     more_children_pregnant,
-    othertrad,
-    own_land_yn,
-    partner_overall,
-    pill,
-    pregnant,
-    recent_birth,
-    recent_birthSIF,
-    reliant_finance,
-    rhythm,
-    savings_yn,
     school,
+    highest_grade,
     school_12m_yn,
     school_left_age,
-    state = country,
-    starts_with("activity_30d"),
+    recent_birth,
+    recent_birthSIF,
+    pregnant,
+    future_user_not_current,
+    future_user_pregnant,
+    fp_ever_user,
+    mar_decision,
     starts_with("wait_birth"),
-    strata,
-    stndrddays,
-    ur,
-    wealthquintile,
-    who_earns_more,
+    months_pregnant,
+    partner_overall,
     why_not_decision,
-    withdrawal,
-    work_12mo,
-    work_7d,
-    work_paid,
+    starts_with("activity_30d"),
+    wealthquintile,
+    wge_fp_eff_switch,
     wge_fp_eff_confident_switch,
     wge_fp_eff_discuss_fp,
-    wge_fp_eff_switch,
-    wge_preg_eff_decide_another,
-    wge_preg_eff_decide_start,
     wge_preg_eff_decide_start_none,
-    wge_preg_eff_nego_stop,
-    wge_preg_eff_nego_stop_none,
+    wge_preg_eff_decide_start,
     wge_preg_eff_ptnr_disc_start,
-    wge_sex_aut_avoid,
+    wge_preg_eff_decide_another,
+    wge_preg_eff_nego_stop_none,
+    wge_preg_eff_nego_stop,
+    wge_sex_aut_stop_support,
     wge_sex_aut_force,
     wge_sex_aut_hurt,
     wge_sex_aut_promiscuous,
-    wge_sex_aut_stop_support,
-    wge_sex_eff_avoid,
     wge_sex_eff_confident,
     wge_sex_eff_decide,
-    wge_sex_eff_tell_no
+    wge_sex_eff_tell_no,
+    wge_sex_eff_avoid,
+    current_contra = current_user,
+    ever_birth,
+    birth_events,
+    work_12mo,
+    work_paid,
+    work_7d,
+    ur,
+    buy_decision_major,
+    buy_decision_daily,
+    buy_decision_medical,
+    buy_decision_clothes,
+    decide_spending_mine,
+    decide_spending_partner,
+    own_land_yn,
+    who_earns_more,
+    reliant_finance,
+    activity_30d,
+    savings_yn,
+    mobile_money_yn,
+    money_knowledge,
+    money_knowledge_where_yn,
+    financial_goal_yn,
+    femalester,
+    malester,
+    implant,
+    IUD,
+    pill,
+    injectables,
+    EC,
+    malecondoms,
+    femalecondoms,
+    diaphragm,
+    foamjelly,
+    stndrddays,
+    LAM,
+    withdrawal,
+    rhythm,
+    othertrad
   ) %>%
   
   # Replace missing with NA
   mutate_at(
     vars(
-      "current_contra",
       "work_paid",
+      "current_contra",
       "work_12mo",
-      "work_7d",
-      "financial_goal_yn",
       "ever_birth",
-      "fp_ever_user",
+      "work_7d",
       "birth_events",
-      "savings_yn",
       "money_knowledge",
+      "savings_yn",
       "money_knowledge_where_yn",
+      "financial_goal_yn",
       "who_earns_more",
+      "fp_ever_user",
       "mar_decision",
       "partner_overall",
       "why_not_decision",
@@ -181,7 +181,7 @@ recoded.datasets <- data.raw %>%
       "more_children_pregnant",
       (starts_with("wge_"))
     ),
-    list(~ ifelse(. == -99 | . == 96 | . == -88, NA, .))
+    list( ~ ifelse(. == -99 | . == 96 | . == -88, NA, .))
   ) %>%
   
   # demographics
@@ -278,7 +278,7 @@ recoded.datasets <- data.raw %>%
                                        rhythm == 1,
                                        "other traditional",
                                        ifelse(othertrad == 1,
-                                              "other traditional", NA)
+                                       "other traditional", NA)
                                      )
                                    )
                                  )
@@ -313,9 +313,7 @@ recoded.datasets <- data.raw %>%
       0
     ),
     # yes/no short acting method
-    method.longshort = case_when(method.long == 1 ~ "Long", 
-                                 method.short == 1 ~ "Short", 
-                                 .default = "None"),
+    method.longshort = case_when(method.long == 1 ~ "Long", method.short == 1 ~ "Short", .default = "None"),
     # modern vs traditional
     method.trad  = ifelse(withdrawal == 1 |
                             rhythm == 1 | othertrad == 1, 1, 0),
@@ -365,11 +363,11 @@ recoded.datasets <- data.raw %>%
       method.nonhormonal == 1 ~ "Non-hormonal",
       .default = "None"
     ),
-    # Indicator for intention to use contraception (assumed yes if currently using)
+    # indicator for intention to use contraception (assumed yes if currently using)
     intent_contra = case_when(
       future_user_not_current == 1 |
         future_user_pregnant == 1 | current_contra == 1 ~ 1,
-      TRUE ~ 0
+      T ~ 0
     ),
     # Indicator for who decides about using contraception: 1 her, 2 partner, 3 joint, 96 other
     FP_who = ifelse(is.na(why_not_decision), partner_overall, why_not_decision),
@@ -383,32 +381,39 @@ recoded.datasets <- data.raw %>%
     # create factor variable for intent to use contraception
     
     # fertility intention in next 12 months
-    fertility_intent = case_when(
-      more_children == 0 |
-        more_children_pregnant == 0 ~ 0,
-      # Do not want more children
-      wait_birth == 1 &
-        wait_birth_value <= 12 ~ 1,
-      # says want to wait 12 moths or less
-      wait_birth == 1 &
-        wait_birth_value > 12 ~ 0,
-      # says want to more than 12 months
-      wait_birth_pregnant == 1 &
-        wait_birth_value + 9 - months_pregnant <= 12 ~ 1,
-      # less that 12 months including current pregnancy time
-      wait_birth == 2 |
-        wait_birth_pregnant == 2 ~ 0,
-      # says want to wait 1 year or more
-      wait_birth == 3 |
-        wait_birth_pregnant == 3 ~ 1,
-      # says want to get pregnant soon/now
-      wait_birth == 1 &
-        wait_birth_value > 12 ~ 0,
-      # says want to more than 12 months
-      wait_birth_pregnant == 1 &
-        wait_birth_value + 9 - months_pregnant > 12 ~ 0
+    fertility_intent = factor(
+      case_when(
+        more_children == 2 |
+          more_children_pregnant == 2 ~ 0,
+        # Do not want more children
+        wait_birth == 1 &
+          wait_birth_value <= 12 ~ 1,
+        # says want to wait 12 moths or less
+        wait_birth == 1 &
+          wait_birth_value > 12 ~ 0,
+        # says want to more than 12 months
+        wait_birth_pregnant == 1 &
+          wait_birth_value + 9 - months_pregnant <= 12 ~ 1,
+        # less that 12 months including current pregnancy time
+        wait_birth == 2 |
+          wait_birth_pregnant == 2 ~ 0,
+        # says want to wait 1 year or more
+        wait_birth == 3 |
+          wait_birth_pregnant == 3 ~ 1,
+        # says want to get pregnant soon/now
+        wait_birth == 1 &
+          wait_birth_value > 12 ~ 0,
+        # says want to more than 12 months
+        wait_birth_pregnant == 1 &
+          wait_birth_value + 9 - months_pregnant > 12 ~ 0,
+        # more than 12 months including current pregnancy time
+        more_children == 3 |
+          wait_birth == 4 ~ 2
+      ),
+      # says she can't get pregnant
+      levels = c(0, 1, 2),
+      labels = c("no", "yes", "cannot-get-pregnant")
     ),
-    # more than 12 months including current pregnancy time
     
     # Empowerment
     wge_preg_eff_start = ifelse(
@@ -473,6 +478,11 @@ recoded.datasets <- data.raw %>%
       # Who usually makes decisions about getting medical treatment for yourself: you, your husband/partner, you and your husband/partner jointly, or someone else?
       buy_decision_medical %in% c(2, 96) ~ 0
     ),
+    buy_decision_clothes =     case_when(
+      buy_decision_clothes %in% c(1, 3) ~ 1,
+      # Who usually makes decisions about buying clothes for yourself: you, your husband/partner, you and your husband/partner jointly, or someone else?
+      buy_decision_clothes %in% c(2, 96) ~ 0
+    ),
     buy_decision_major =       case_when(
       buy_decision_major %in% c(1, 3) ~ 1,
       # Who usually makes decisions about making large household purchases: you, your husband/partner, you and your husband/partner jointly, or someone else?
@@ -482,14 +492,18 @@ recoded.datasets <- data.raw %>%
       buy_decision_daily %in% c(1, 3) ~ 1,
       # Who usually makes decisions about making household purchases for daily needs: you, your husband/partner, you and your husband/partner jointly, or someone else?
       buy_decision_daily %in% c(2, 96) ~ 0
-    )
-  ) %>%
+    ),
+    savings =                  savings_yn,
+    # Do you currently have any savings for the future, such as a bank account, savings group, or cash?)
+    financial_info =           money_knowledge_where_yn,
+    # Do you know where to go for financial information or advice?
+    financial_goals =          financial_goal_yn
+  ) %>%                                # Do you have financial goals toward which you are working? PROBE: These are specific financial goals you have setup for yourself.
   
   # create variable for years since first observation
-  group_by(female_ID) %>% 
-  arrange(wave) %>%
+  group_by(female_ID) %>% arrange(wave) %>%
   mutate(
-    start_date = min(date, na.rm = TRUE),
+    start_date = min(date, na.rm = T),
     years = interval(start_date, date) %/% months(1) / 12
   )
 
