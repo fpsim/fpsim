@@ -717,7 +717,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
         # Optimise regression parameters
         fit_pars, fit_err = optimize.curve_fit(regression_fun, ages_interp, data, p0=regression_pars[col])
         # Update regression parameters
-        regression_pars[col]  = fit_pars
+        regression_pars[col] = fit_pars
 
     # Creates a vector of ages [0, 99] (inclusive range) to extrapolate data
     ages = np.arange(fpd.max_age + 1)
@@ -740,6 +740,24 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     # Store the estimates of each metric and the optimised regression parameters
     empowerment_dict["regression_pars"] = regression_pars
     empowerment_dict["sampled_points"] = data_points
+
+    # Fertility intent
+    empowerment_dict["fertility_intent"] = fertility_intent_dist()
+
+    return empowerment_dict, empowerment_data
+
+
+def fertility_intent_dist():
+    """Add additional metrics from PMA Household/Female surveys"""
+    df = pd.read_csv(thisdir / 'data' / 'fertility_intent.csv')
+
+    data = {}
+    for row in df.itertuples(index=False):
+        intent = row.fertility_intent
+        age = row.age
+        freq = row.freq
+        data.setdefault(intent, {})[age] = freq
+    return data
 
 
 def empowerment_update_pars():
