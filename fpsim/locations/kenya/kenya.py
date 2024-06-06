@@ -756,7 +756,7 @@ def fertility_intent_dist():
         intent = row.fertility_intent
         age = row.age
         freq = row.freq
-        data.setdefault(intent, {})[age] = freq
+        data.setdefault(age, {})[intent] = freq
     return data
 
 
