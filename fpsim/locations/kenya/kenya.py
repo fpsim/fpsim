@@ -904,25 +904,31 @@ def process_simple_method_pars(methods):
 
 def process_markovian_method_choice(methods):
     """ Choice of method is age and previous method """
-    df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix.csv', keep_default_na=False, na_values=['NaN'])
+    df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
     csv_map = {method.csv_name:method.name for method in methods.values()}
 
     mc = dict()  # This one is a dict because it will be keyed with numbers
+    init_dist = sc.objdict()  # Initiali distribution of method choice
+
     for pp in df.postpartum.unique():
         mc[pp] = sc.objdict()
         for akey in df.age_grp.unique():
             mc[pp][akey] = sc.objdict()
             thisdf = df.loc[(df.age_grp == akey) & (df.postpartum == pp)]
             if pp == 1:  # Different logic for immediately postpartum
-                mc[pp][akey] = thisdf.values[0][4:14]  # If this is going to be standard practice, should make it more robust
+                mc[pp][akey] = thisdf.values[0][4:13].astype(float)  # If this is going to be standard practice, should make it more robust
             else:
                 from_methods = thisdf.From.unique()
                 for from_method in from_methods:
                     from_mname = csv_map[from_method]
                     row = thisdf.loc[thisdf.From == from_method]
-                    mc[pp][akey][from_mname] = row.values[0][4:14]  # If this is going to be standard practice, should make it more robust
+                    mc[pp][akey][from_mname] = row.values[0][4:13].astype(float)
 
-    return mc
+            # Set initial distributions by age
+            if pp == 0:
+                init_dist[akey] = thisdf.loc[thisdf.From == 'None'].values[0][4:13].astype(float)
+
+    return mc, init_dist
 
 
 def process_dur_use(methods):

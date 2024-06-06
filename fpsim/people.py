@@ -137,11 +137,10 @@ class People(fpb.BasePeople):
 
     def init_methods(self, contraception_module=None):
         if contraception_module is not None:
-
             self.contraception_module = contraception_module
             self.on_contra = contraception_module.get_contra_users(self)
             oc = self.filter(self.on_contra)
-            oc.method = contraception_module.choose_method(oc)
+            oc.method = contraception_module.init_method_dist(oc)
             self.ti_contra = contraception_module.set_dur_method(self)
 
         return

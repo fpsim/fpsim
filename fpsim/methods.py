@@ -67,6 +67,7 @@ class ContraceptiveChoice:
         self.__dict__.update(kwargs)
         self.n_options = len(self.methods)
         self.n_methods = len([m for m in self.methods if m != 'none'])
+        self.init_dist = None
         default_pars = dict(
             p_use=0.5,
         )
@@ -79,6 +80,9 @@ class ContraceptiveChoice:
             if sc.isnumber(m.dur_use): av += m.dur_use
             elif isinstance(m.dur_use, dict): av += m.dur_use['par1']
         return av / len(self.methods)
+
+    def init_method_dist(self, ppl):
+        pass
 
     def get_prob_use(self, ppl, event=None):
         """ Calculate probabilities that each woman will use contraception """
@@ -135,7 +139,11 @@ class RandomChoice(ContraceptiveChoice):
             method_mix=np.array([1/self.n_methods]*self.n_methods),
         )
         self.pars = sc.mergedicts(default_pars, pars)
+        self.init_dist = self.pars['method_mix']
         return
+
+    def init_method_dist(self, ppl):
+        return self.choose_method(ppl)
 
     def choose_method(self, ppl, event=None):
         choice_arr = np.random.choice(np.arange(self.n_methods), size=len(ppl), p=self.pars['method_mix'])
@@ -151,17 +159,34 @@ class SimpleChoice(RandomChoice):
         location = location.lower()
         if location == 'kenya':
             self.contra_use_pars = fplocs.kenya.process_contra_use_simple()  # Set probability of use
-            self.method_choice_pars = fplocs.kenya.process_markovian_method_choice(self.methods)  # Set choice of method
+            method_choice_pars, init_dist = fplocs.kenya.process_markovian_method_choice(self.methods)  # Method choice
+            self.method_choice_pars = method_choice_pars
+            self.init_dist = init_dist
             self.methods = fplocs.kenya.process_dur_use(self.methods)  # Reset duration of use
 
             # Handle age bins -- find a more robust way to do this
-            method_choice_age_labels = self.method_choice_pars[0].keys()
             self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys()])
 
         else:
             errormsg = f'Location "{location}" is not currently supported for method-time analyses'
             raise NotImplementedError(errormsg)
         return
+
+    def init_method_dist(self, ppl):
+        if self.init_dist is not None:
+            choice_array = np.zeros(len(ppl))
+
+            # Loop over age groups and methods
+            for key, (age_low, age_high) in fpd.method_age_map.items():
+                ppl_this_age = fpu.match_ages(ppl.age, age_low, age_high)
+                inds_to_set = ppl_this_age.nonzero()[-1]
+                if len(inds_to_set) > 0:
+                    these_probs = self.init_dist[key]
+                    these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
+                    these_choices = fpu.n_multinomial(these_probs, len(inds_to_set))  # Choose
+                    choice_array[ppl_this_age] = these_choices  # Set values
+
+        return choice_array.astype(int)
 
     def get_prob_use(self, ppl, event=None):
         """
@@ -176,7 +201,7 @@ class SimpleChoice(RandomChoice):
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
         age_bins = np.digitize(ppl.age, self.age_bins)
         for ai, ab in enumerate(self.age_bins):
-            rhs[age_bins==ai] += p.age_factors[ai]
+            rhs[age_bins == ai] += p.age_factors[ai]
         prob_use = 1 / (1+np.exp(-rhs))
         # prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
         return prob_use
@@ -270,6 +295,10 @@ class EmpoweredChoice(ContraceptiveChoice):
         else:
             errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
             raise NotImplementedError(errormsg)
+
+    def init_method_dist(self, ppl):
+        # TODO look for initial values
+        return self.choose_method(ppl)
 
     def get_prob_use(self, ppl, inds=None, event=None):
         """
