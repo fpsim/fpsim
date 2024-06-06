@@ -23,6 +23,17 @@ def match_ages(age, age_low, age_high):
     return match_low & match_high
 
 
+@nb.jit((nb.float64[:], ), cache=True, nopython=True)
+def digitize_ages_1yr(ages):
+    """
+    Return the indices of the 1-year bins to which each value in ages array belongs.
+    The bin index is used as an integer representation of the agent's age.
+    """
+    # Create age bins because ppl.age is a continous variable
+    age_cutoffs = np.arange(0, fpd.max_age + 1)
+    return np.digitize(ages, age_cutoffs) - 1
+
+
 def set_seed(seed=None):
     ''' Reset the random seed -- complicated because of Numba '''
 
