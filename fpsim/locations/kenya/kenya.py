@@ -881,6 +881,16 @@ def process_contra_use_simple():
     return contra_use_pars
 
 
+def mcpr():
+
+    mcpr = {}
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
+    mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
+    mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
+
+    return mcpr
+
+
 def process_simple_method_pars(methods):
     """ Choice of method is based on age and parity """
     df = pd.read_csv(thisdir / 'data' / 'method_mix.csv')
@@ -913,7 +923,7 @@ def process_markovian_method_choice(methods):
             idx_df[col] = idx_map[col]
 
     mc = dict()  # This one is a dict because it will be keyed with numbers
-    init_dist = sc.objdict()  # Initiali distribution of method choice
+    init_dist = sc.objdict()  # Initial distribution of method choice
 
     for pp in df.postpartum.unique():
         mc[pp] = sc.objdict()
@@ -1004,6 +1014,7 @@ def make_pars(seed=None, use_subnational=None):
 
     # Contraceptive methods
     pars['barriers'] = barriers()
+    pars['mcpr'] = mcpr()
 
     # Demographics: geography and partnership status
     pars['urban_prop'] = urban_proportion()

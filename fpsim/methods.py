@@ -62,7 +62,7 @@ for m in SimpleMethods.values(): m.dur_use = 1
 # %% Define classes to contain information about the way women choose contraception
 
 class ContraceptiveChoice:
-    def __init__(self, methods=None, pars=None, **kwargs):
+    def __init__(self, methods=None, pars=None, mcpr_adj=None, **kwargs):
         self.methods = methods or SimpleMethods
         self.__dict__.update(kwargs)
         self.n_options = len(self.methods)
@@ -72,6 +72,7 @@ class ContraceptiveChoice:
             p_use=0.5,
         )
         self.pars = sc.mergedicts(default_pars, pars)
+        self.mcpr_adj = mcpr_adj
 
     @property
     def average_dur_use(self):
@@ -87,6 +88,8 @@ class ContraceptiveChoice:
     def get_prob_use(self, ppl, event=None):
         """ Calculate probabilities that each woman will use contraception """
         prob_use = np.random.random(len(ppl))
+        #if self.mcpr_adj is not None:
+        #    prob_use *= self.mcpr_adj
         return prob_use
 
     def get_method_by_label(self, method_label):
@@ -205,6 +208,8 @@ class SimpleChoice(RandomChoice):
             rhs[age_bins == ai] += p.age_factors[ai]
         prob_use = 1 / (1+np.exp(-rhs))
         # prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
+        #if self.mcpr_adj is not None:
+        #    prob_use *= self.mcpr_adj
         return prob_use
 
     def set_dur_method(self, ppl, method_used=None):
@@ -319,6 +324,8 @@ class EmpoweredChoice(ContraceptiveChoice):
                 rhs += vval * ppl[vname]
         rhs += p.contraception * ppl.on_contra[inds]
         prob_use = 1 / (1+np.exp(-rhs))
+        #if self.mcpr_adj is not None:
+        #    prob_use *= self.mcpr_adj
         return prob_use
 
     def choose_method(self, ppl, inds=None, event=None, jitter=1e-4):

@@ -549,6 +549,16 @@ def barriers():
     return barriers
 
 
+def mcpr():
+
+    mcpr = {}
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
+    mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
+    mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
+
+    return mcpr
+
+
 def urban_proportion():
     """Load information about the proportion of people who live in an urban setting"""
     urban_data = pd.read_csv(thisdir / 'data' / 'urban.csv')
@@ -590,6 +600,7 @@ def make_pars(seed=None, use_subnational=None):
 
     # Contraceptive methods
     pars['barriers'] = barriers()
+    pars['mcpr'] = mcpr()
 
     # Handle modules that have not been implemented yet
     kwargs = locals()

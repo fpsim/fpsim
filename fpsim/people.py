@@ -145,9 +145,10 @@ class People(fpb.BasePeople):
 
         return
 
-    def update_method(self, event=None):
+    def update_method(self, event=None, mcpr_adj=None):
         """ Inputs: filtered people, only includes those for whom it's time to update """
         cm = self.contraception_module
+        cm.mcpr_adj = mcpr_adj
         if cm is not None:
             if event is None:
 
@@ -844,7 +845,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def update(self):
+    def update(self, mcpr_adj):
         """
         Perform all updates to people on each timestep
         """
@@ -885,10 +886,10 @@ class People(fpb.BasePeople):
         nonpreg.check_sexually_active()
 
         if len(methods):
-            methods.update_method()
+            methods.update_method(mcpr_adj=mcpr_adj)
 
-        if len(methods_pp1): methods.update_method(event='pp1')
-        if len(methods_pp6): methods.update_method(event='pp6')
+        if len(methods_pp1): methods.update_method(event='pp1', mcpr_adj=mcpr_adj)
+        if len(methods_pp6): methods.update_method(event='pp6', mcpr_adj=mcpr_adj)
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()

@@ -252,6 +252,7 @@ default_pars = {
     'barriers':             None,
     'urban_prop':           None,
     'age_partnership':      None,
+    'mcpr':                 None,
 
     'region':               None,
     'lactational_amenorrhea_region': None,
