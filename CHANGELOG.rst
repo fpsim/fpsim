@@ -12,7 +12,7 @@ Version 1.0.0 (2024-06-07)
 --------------------------
 - Releases FPsim1.0 to pypi
 - Adds FPsim New User Instructions to tutorials
-- *GitHub nfo*: PR 
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/349>`_
 
 Version 0.28.3 (2024-04-30)
 --------------------------
