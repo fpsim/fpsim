@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 1.0.0 (2024-06-07)
+--------------------------
+- Releases FPsim1.0 to pypi
+- Adds FPsim New User Instructions to tutorials
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/349>`_
+
 Version 0.28.3 (2024-04-30)
 --------------------------
 - Creates subnational tutorial for Ethiopia
