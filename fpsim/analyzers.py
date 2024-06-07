@@ -384,7 +384,10 @@ class empowerment_recorder(Analyzer):
         super().__init__()
         self.bins = bins
         self.data = sc.objdict()
-        self.keys = ['partnered', 'urban', 'paid_employment', 'decision_wages', 'decision_health', 'sexual_autonomy', 'age']
+        self.keys = ['age', 'paid_employment', 'decision_wages', 'decision_health', 'decision_purchase',
+                     'buy_decision_major', 'buy_decision_daily', 'buy_decision_clothes',
+                     'decide_spending_partner', 'has_savings', 'has_fin_knowl', 'has_fin_goals',
+                     'sexual_autonomy', 'financial_autonomy', 'decision_making']
         self.nbins = None
         return
 
@@ -416,11 +419,11 @@ class empowerment_recorder(Analyzer):
                 # Count how many living females we have in this age group
                 temp = np.histogram(ages, self.bins)[0]
                 vals = temp / temp.sum()  # Transform to density
-            elif key in ['partnered', 'urban', 'paid_employment']:
+            elif key in ['financial_autonomy', 'decision_making']:
                 vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
-            else:  # assume float
-                vals = [np.median(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
-            self.data[key][:, sim.ti] = vals
+            else: # boolean states, expressed as proportion
+                vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
+            self.data[key][:, sim.i] = vals
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
         """
@@ -442,18 +445,17 @@ class empowerment_recorder(Analyzer):
             try:
                 data = np.array(self.data[key], dtype=float)
                 label = f'metric: {key}'
-                if key in ['partnered', 'urban', 'paid_employment']:
-                    clabel = f"proportion of {key}"
-                    cmap = 'RdPu'
-                    vmin, vmax = 0, 1
-                    if key in ['urban']:
-                        cmap = 'RdYlBu_r'
-                elif key in ['age']:
+                if key in ['age']:
                     clabel = "proportion of agents"
                     cmap = 'Blues'
                     vmin, vmax = 0, np.nanmax(data[:])
+                # Composite measures
+                elif key in ['financial_autonomy', 'decision_making']:
+                    clabel = f"Median of composite:\n{key}"
+                    cmap = 'RdPu'
+                    vmin, vmax = 0, 3.5
                 else:
-                    clabel = "average (median)"
+                    clabel = f"proportion of {key}"
                     cmap = 'coolwarm'
                     vmin, vmax = 0, 1
 

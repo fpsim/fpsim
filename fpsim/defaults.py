@@ -109,7 +109,19 @@ person_defaults = [
     State('paid_employment',    0, bool),
     State('decision_wages',     0, bool),
     State('decision_health',    0, bool),
-    State('sexual_autonomy',    0, bool),
+    State('decision_purchase',  0, bool),
+    State('buy_decision_major', 0, bool),       # whether she has decision making ability over major purchases
+    State('buy_decision_daily', 0, bool),       # whether she has decision making over daily household purchases
+    State('buy_decision_clothes', 0, bool),     # whether she has decision making over clothing purchases
+    State('decide_spending_partner', 0, bool),  # whether she has decision makking over her partner's wages
+    State('has_savings', 0, bool),              # whether she has savings
+    State('has_fin_knowl', 0, bool),            # whether she knows where to get financial info
+    State('has_fin_goals', 0, bool),            # whether she has financial goals
+    State('sexual_autonomy',    0, bool),       # whether she has ability to refuse sex
+
+     # Composite empowerment attributes
+    State('financial_autonomy',    0, float),
+    State('decision_making', 0, float),
 
     # Empowerment - fertility intent
     State('fertility_intent', 0, bool),

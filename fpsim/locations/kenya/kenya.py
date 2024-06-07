@@ -544,118 +544,74 @@ def barriers():
     return barriers
 
 
-# %% Empowerment
-
-def make_empowerment_pars():
-    return
-
-
-def empowerment_sexual_autonomy(ages, regression_fun, regression_pars=None):
+def _check_age_endpoints(df):
     """
-    Interpolate data from DHS and extrapolate to cover the full range of ages
+    Add 'age endpoints' 0 and fpd.max_age+1 if they are not present in the
+    add rows of the dataframe. This is needed for extrapolation if we want to
+    have a complete representation of the probabilities across all possible
+    ages.
 
-    NOTE: this is a temporary implementation to illustrate different parameterisation to
-    interpolate/extrapolate DHS data.
-    """
-    arr = regression_fun(ages, *regression_pars)
-    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
-        # Set the metric to zero for ages < 5
-        arr[ages < 5] = 0.0
-        # Set the metric to zero if it goes below 0
-        arr[arr < 0] = 0.0
-        # Set metric to 1 if it goes above with this parameterisation
-        arr[arr > 1] = 1.0
-    return arr
+    TODO:PSL: remove after we decide whether we want to have full arrays of
+    data, meaning arrays that have data/probs/metric every age represented
+    in the range [0-fpd.max_age],
+    as opposed to arrays that have a subset of ages represented. The
+    difference between the two approaches is how to correctly index
+    into the data array.
 
+    Pseudo-code:
+    A: with age extrapolation
+    age = ppl.age
+    empwr_data[int(age)][empwr_metric]
 
-def empowerment_decision_wages(ages, regression_fun, regression_pars=None):
-    """
-    Interpolate data from DHS and extrapolate to cover the full range of ages
+    B: without age extrapolation, we don't need this function _check_age_endpoints()
+    age = ppl.age
+    age_cutofs = np.hstack(empwr_min_age, empwr_max_age) ## assumes contignuous age range between min, max age
+    empwr_age_index = np.digitize(age, age_cuttofs)
+    empwr_data[empwr_age_index][empwr_metric]
 
-    NOTE: this is a temporary implementation to illustrate different parameterisation to
-    interpolate/extrapolate DHS data.
-    """
-    arr = regression_fun(ages, *regression_pars)
-    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
-        # Set the metric to zero for ages < 5
-        arr[ages < 5] = 0.0
-        # Set other metric to zero if it goes below 0
-        arr[arr < 0] = 0.0
-        # Set metric to 1 if it goes above with this parameterisation
-        arr[arr > 1] = 1.0
-    return arr
+    A: can be faster than B as we don't have to digitize the agents ages each
+    time we want to access the data, we only need to cast ages into integers.
+    continous ages - > integer ages > index empowerment data
 
+    B: removes the need for extrapolation and choosing the extrapolation function.
+    But we won't be able to directly index using an integer version of the agent ages.
 
-def empowerment_decision_health(ages, regression_fun, regression_pars=None):
-    """
-    Interpolate data from DHS and extrapolate to cover the full range of ages
-
-    NOTE: this is a temporary implementation to illustrate different parameterisation to
-    interpolate/extrapolate DHS data.
-    """
-    arr = regression_fun(ages, *regression_pars)
-    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
-        # Set other metric to zero if it goes below 0
-        arr[arr < 0] = 0.0
-        # Set metric to 1 if it goes above with this parameterisation
-        arr[arr > 1] = 1.0
-    return arr
-
-
-def empowerment_paid_employment(ages, regression_fun, regression_pars=None):
-    """
-    Interpolate data from DHS and extrapolate to cover the full range of ages
-
-    NOTE: this is a temporary implementation to illustrate different parameterisation to
-    interpolate/extrapolate DHS data.
+    continuous ages -> binned ages > bin indices -> index empowerment probs
 
     """
-    arr = regression_fun(ages, *regression_pars)
 
-    if regression_fun.__name__ == "piecewise_linear": # piecewise linear interpolation
-        inflection_age, inflection_prob, m1, m2 = regression_pars
-        # Set other probabilities to zero in the range 5 <= age < 15
-        arr[arr < 0] = 0.0
-        # Decline probability of having paid wages above 60 -- age of retirement in Kenya
-        inflection_age_2 = 60
-        if m2 > 0:
-            m3 = -m2 # NOTE: assumption
-        else:
-            m3 = m2
-        age_inds = sc.findinds(ages >= inflection_age_2 - 5)
-        arr[age_inds] = regression_fun(ages[age_inds], inflection_age_2, arr[inflection_age_2], m2, m3)
-        arr[ages < 5] = 0.0
-    return arr
+    rows_to_add = []
+    for age in [0, fpd.max_age+1]:
+        if age not in df['age'].values:
+            new_row = pd.Series([0.0] * len(df.columns), index=df.columns)
+            new_row['age'] = age
+            rows_to_add.append(new_row)
+
+    df = pd.concat([df, pd.DataFrame(rows_to_add)], ignore_index=True)
+    df.sort_values('age', inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    return df
 
 
-def empowerment_regression_pars(regression_type='logistic'):
+def get_empowerment_loadings():
     """
-    Return initial guesses of parameters for the corresponding regression function.
-    These parameters have been estimated from the mean estimates of each metric over the range 15-49 years old
-    """
-    if regression_type == "pwlin":
-    # Parameters for two-part piecewise lienar interpolation, p0: age, p1: val at age, p2: slope < age,  p: slope >= age
-        regression_pars = {"paid_employment": [25.0, 0.6198487     , 6.216042e-02  ,  0.0008010242],
-                           "decision_wages":  [28.0, 0.5287573     , 4.644537e-02  , -0.001145422],
-                           "decision_health": [16.0, 9.90297066e-01, 6.26846208e-02,  1.44754082e-04],
-                           "sexual_autonomy": [25.0, 0.8292142     , 0.025677      , -0.003916498]}
-        regression_fun = fpu.piecewise_linear
-    elif regression_type == 'logistic':
-        # Parameters for product of sigmoids
-        regression_pars = {"paid_employment": [-6.33459372e-01, -2.07598104e-03,  1.02375876e+01,  5.03843348e-01],
-                           "decision_wages":  [-6.33459372e-01, -2.07598104e-03,  1.02375876e+01,  5.03843348e-01],
-                           "decision_health": [-4.36694812e+00, 1.72072493e-02 ,  2.92858981e+02,  1.97195136e+01],
-                           "sexual_autonomy": [ 6.25030509    , 0.43789906     , -1.83553293    , -0.015715291]}
-        regression_fun = fpu.sigmoid_product
-    else:
-        mssg = f"Not implemented or unknown regression type [{regression_type}]."
-        raise NotImplementedError(mssg)
+    Loading coefficients to estimate composite measures for:
+     - (1) decision making and
+     - (2) financial autonomy
 
-    return regression_pars, regression_fun
+    Bilbiographic ref:
+    https://www.tandfonline.com/doi/full/10.1080/13545701.2024.2339979?src=
+
+
+    """
+
+    df = pd.read_csv(thisdir / 'data' / 'empower_cfa_loadings.csv')
+    loadings = df.set_index('empowerment_var')['loading_coef'].to_dict()
+    return loadings
 
 
 # Empowerment metrics
-def empowerment_distributions(seed=None, regression_type='logistic'):
+def make_empowerment_pars(seed=None, return_data=False):
     """
     Produce intial distributions of empowerment attributes
     based on latest DHS-8 IR 2022 dataset and PMA Household/Female surveys
@@ -690,58 +646,33 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
 
     # Load empirical data
     empowerment_data = pd.read_csv(thisdir / 'data' / 'empowerment.csv')
-    mean_cols = {col: col + '.mean' for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"}
+    empwr_cols = [col for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"]
+    mean_cols = {col: col + '.mean' for col in empwr_cols}
     empowerment_data.rename(columns=mean_cols, inplace=True)
-    empowerment_dict = {}
+    # Output dict
+    empowerment_pars = {}
 
     if seed is None:
         seed = 42
     fpu.set_seed(seed)
 
-    regression_pars, regression_fun = empowerment_regression_pars(regression_type=regression_type)
-
-    cols = ["paid_employment",
-            "decision_wages",
-            "decision_health",
-            "sexual_autonomy"]
-
-    data_points = {col: [] for col in cols}
-
-    ages_interp = empowerment_data["age"].to_numpy()
-    for col in cols:
+    data_points = {col: [] for col in empwr_cols}
+    ages = empowerment_data["age"].to_numpy()
+    for col in empwr_cols:
         loc   = empowerment_data[f"{col}.mean"]
         scale = empowerment_data[f"{col}.se"]
-        # Use the standard error to capture the uncertainty in the mean eastimates of each metric
-        data = np.random.normal(loc=loc, scale=scale)
-        data_points[col] = data
-        # Optimise regression parameters
-        fit_pars, fit_err = optimize.curve_fit(regression_fun, ages_interp, data, p0=regression_pars[col])
-        # Update regression parameters
-        regression_pars[col] = fit_pars
+        # Use the standard error to capture the uncertainty in the mean eastimates of each metric for each age
+        empowerment_pars[col] = np.random.normal(loc=loc, scale=scale)
 
-    # Creates a vector of ages [0, 99] (inclusive range) to extrapolate data
-    ages = np.arange(fpd.max_age + 1)
-    empowerment_dict["age"] = ages
+    empowerment_pars["avail_ages"] = ages           # available ages in empowerment data
+    empowerment_pars["avail_metrics"] = empwr_cols  # empowerment metrics available in the csv file, does not include the composite metrics
 
-    # Interpolate and extrapolate data for different empowerment metrics
-    empowerment_functions = {
-        "paid_employment": empowerment_paid_employment,
-        "decision_wages":  empowerment_decision_wages,
-        "decision_health": empowerment_decision_health,
-        "sexual_autonomy": empowerment_sexual_autonomy,
-    }
-    for metric in empowerment_functions.keys():
-        empowerment_dict[metric] = empowerment_functions[metric](
-            ages,
-            regression_fun,
-            regression_pars=regression_pars[metric]
-        )
-
-    # Store the estimates of each metric and the optimised regression parameters
-    empowerment_dict["regression_pars"] = regression_pars
-    empowerment_dict["sampled_points"] = data_points
-
-    return empowerment_dict, empowerment_data
+    # Estimate composites for decision making (dm) and financial autonomy (fa)
+    # and add them to the empowerment pars
+    empowerment_pars["loadings"] = get_empowerment_loadings()
+    if return_data:
+        return empowerment_pars, empowerment_data
+    return empowerment_pars
 
 
 def fertility_intent_dist():
