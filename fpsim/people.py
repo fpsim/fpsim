@@ -142,7 +142,6 @@ class People(fpb.BasePeople):
     def get_fertility_intent(self, n):
         if self.pars['fertility_intent'] is None:
             return
-
         self.update_fertility_intent_by_age()
         return
 
