@@ -67,7 +67,7 @@ class People(fpb.BasePeople):
         # Fertility intent
         has_intent = "fertility_intent"
         self.fertility_intent   = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
-        self.categorical_intent = self.states["categorical_update"].new(n, "no")
+        self.categorical_intent = self.states["categorical_intent"].new(n, "no")
         # Update distribution of fertility intent if it is present in self.pars
         self.get_fertility_intent(n)
 
