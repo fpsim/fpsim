@@ -156,7 +156,9 @@ class People(fpb.BasePeople):
                 new_users = self.filter(~self.on_contra)
                 if len(new_users):
                     new_users.on_contra = True
+                    self.step_results['contra_access'] += len(new_users)
                     new_users.method = cm.choose_method(new_users)
+                    self.step_results['new_users'] += np.count_nonzero(new_users.method)
                     new_users.ti_contra = cm.set_dur_method(new_users)
 
                 # Get previous users and see whether they will switch methods or stop using
@@ -166,6 +168,7 @@ class People(fpb.BasePeople):
 
                     # For those who keep using, determine their next method and update time
                     still_on_contra = prev_users.filter(prev_users.on_contra)
+                    self.step_results['contra_access'] += len(still_on_contra)
                     still_on_contra.method = cm.choose_method(still_on_contra)
                     still_on_contra.ti_contra = cm.set_dur_method(still_on_contra)
 
@@ -184,6 +187,7 @@ class People(fpb.BasePeople):
             if event in ['pp1', 'pp6']:
                 self.on_contra = cm.get_contra_users(self, event=event)
                 on_contra = self.filter(self.on_contra)
+                self.step_results['contra_access'] += len(on_contra)
                 on_contra.method = cm.choose_method(on_contra, event=event)
                 on_contra.ti_contra = cm.set_dur_method(on_contra)
 
@@ -800,6 +804,8 @@ class People(fpb.BasePeople):
             no_methods_cpr=0,
             on_methods_acpr=0,
             no_methods_acpr=0,
+            contra_access=0,
+            new_users=0,
             as_stillbirths=[],
             imr_numerator=[],
             imr_denominator=[],

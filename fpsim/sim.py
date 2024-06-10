@@ -414,6 +414,8 @@ class Sim(fpb.BaseSim):
         self.results['no_methods_cpr'][ti] = res.no_methods_cpr
         self.results['on_methods_acpr'][ti] = res.on_methods_acpr
         self.results['no_methods_acpr'][ti] = res.no_methods_acpr
+        self.results['contra_access'][ti] = res.contra_access
+        self.results['new_users'][ti] = res.new_users
         self.results['mcpr'][ti] = sc.safedivide(res.on_methods_mcpr, (res.no_methods_mcpr + res.on_methods_mcpr))
         self.results['cpr'][ti] = sc.safedivide(res.on_methods_cpr, (res.no_methods_cpr + res.on_methods_cpr))
         self.results['acpr'][ti] = sc.safedivide(res.on_methods_acpr, (res.no_methods_acpr + res.on_methods_acpr))
@@ -462,10 +464,14 @@ class Sim(fpb.BaseSim):
             secondary_births_over_year = scale * np.sum(self.results['secondary_births'][start_index:stop_index])
             maternal_deaths_over_year = scale * np.sum(self.results['maternal_deaths'][start_index:stop_index])
             pregnancies_over_year = scale * np.sum(self.results['pregnancies'][start_index:stop_index])
+            contra_access_by_year = scale * np.sum(self.results['contra_access'][start_index:stop_index])
+            new_users_by_year = scale * np.sum(self.results['new_users'][start_index:stop_index])
             # self.results['method_usage'].append(self.compute_method_usage())  # only want this per year
             self.results['pop_size'].append(scale * self.n)  # CK: TODO: replace with arrays
             self.results['mcpr_by_year'].append(self.results['mcpr'][ti])
             self.results['cpr_by_year'].append(self.results['cpr'][ti])
+            self.results['contra_access_by_year'].append(contra_access_by_year)
+            self.results['new_users_by_year'].append(new_users_by_year)
             self.results['method_failures_over_year'].append(unintended_pregs_over_year)
             self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
             self.results['total_births_over_year'].append(total_births_over_year)
