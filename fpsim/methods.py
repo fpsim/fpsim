@@ -88,8 +88,6 @@ class ContraceptiveChoice:
     def get_prob_use(self, ppl, event=None):
         """ Calculate probabilities that each woman will use contraception """
         prob_use = np.random.random(len(ppl))
-        #if self.mcpr_adj is not None:
-        #    prob_use *= self.mcpr_adj
         return prob_use
 
     def get_method_by_label(self, method_label):
@@ -185,6 +183,7 @@ class SimpleChoice(RandomChoice):
                 ppl_this_age = this_age_bools.nonzero()[-1]
                 if len(ppl_this_age) > 0:
                     these_probs = self.init_dist[key]
+                    #if self.mcpr_adj is not None: these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                     these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                     these_choices = fpu.n_multinomial(these_probs, len(ppl_this_age))  # Choose
                     # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
@@ -208,8 +207,6 @@ class SimpleChoice(RandomChoice):
             rhs[age_bins == ai] += p.age_factors[ai]
         prob_use = 1 / (1+np.exp(-rhs))
         # prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
-        #if self.mcpr_adj is not None:
-        #    prob_use *= self.mcpr_adj
         return prob_use
 
     def set_dur_method(self, ppl, method_used=None):
@@ -261,6 +258,7 @@ class SimpleChoice(RandomChoice):
                         # Get probability of choosing each method
                         these_probs = mcp[key][mname]  # Cannot stay on method
                         these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                        #these_probs = np.array(these_probs)/self.mcpr_adj   # MCPR Adjustment
                         these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                         these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
                         choice_array[switch_iinds] = these_choices  # Set values
@@ -283,6 +281,7 @@ class SimpleChoice(RandomChoice):
             if len(switch_iinds):
                 these_probs = mcp[key]
                 these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                #these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                 these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                 these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
                 choice_array[switch_iinds] = these_choices  # Set values
@@ -324,8 +323,6 @@ class EmpoweredChoice(ContraceptiveChoice):
                 rhs += vval * ppl[vname]
         rhs += p.contraception * ppl.on_contra[inds]
         prob_use = 1 / (1+np.exp(-rhs))
-        #if self.mcpr_adj is not None:
-        #    prob_use *= self.mcpr_adj
         return prob_use
 
     def choose_method(self, ppl, inds=None, event=None, jitter=1e-4):
@@ -353,6 +350,7 @@ class EmpoweredChoice(ContraceptiveChoice):
                         # Get probability of choosing each method
                         these_probs = [v for k, v in mcp[key][parity].items() if k != mname]  # Cannot stay on method
                         these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                        #these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                         these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                         these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
 
