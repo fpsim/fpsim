@@ -127,7 +127,7 @@ class ContraceptiveChoice:
 
     def set_dur_method(self, ppl, method_used=None):
         dt = ppl.pars['timestep'] / fpd.mpy
-        ti_contra_update = np.full(len(ppl), sc.randround(ppl.ti + self.average_dur_use/dt), dtype=int)
+        ti_contra_update = np.full(len(ppl), np.round(self.average_dur_use/dt), dtype=int)
         return ti_contra_update
 
 
