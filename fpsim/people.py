@@ -879,7 +879,7 @@ class People(fpb.BasePeople):
             self.education_module.update(alive_now_f)
 
         # Figure out who to update methods for
-        methods = nonpreg.filter(nonpreg.ti_contra == self.ti)
+        methods = nonpreg.filter(nonpreg.ti_contra <= self.ti)
         methods_pp1 = nonpreg.filter(nonpreg.ti_contra_pp1 == self.ti)
         methods_pp6 = nonpreg.filter(nonpreg.ti_contra_pp6 == self.ti)
 

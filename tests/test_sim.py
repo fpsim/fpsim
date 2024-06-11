@@ -21,19 +21,27 @@ def test_simple_choice(location='kenya'):
     sc.heading('Method choice is based on age & previous method')
 
     # Make & run sim
-    par_kwargs = dict(n_agents=1000, start_year=1960, end_year=2020, seed=1, verbose=1)
+    par_kwargs = dict(n_agents=1000, start_year=1960, end_year=2010, seed=1, verbose=1)
     method_choice = fp.SimpleChoice(location=location, methods=sc.dcp(fp.Methods))
     pars = fp.pars(location=location, **par_kwargs)
-    sim = fp.Sim(pars, contraception_module=method_choice)
+    sim = fp.Sim(pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
     sim.run()
 
     # Plots
     fig, axes = pl.subplots(2, 1, figsize=(5, 7))
     axes = axes.ravel()
+    age_bins = [18, 20, 25, 35, 50]
+    colors = sc.vectocolor(age_bins)
+    cind = 0
 
     # mCPR
     ax = axes[0]
     ax.plot(sim.results.t, sim.results.cpr)
+    # for alabel, ares in sim['analyzers'].results.items():
+    #     ax.plot(sim.results.t, ares, label=alabel, color=colors[cind])
+    #     cind += 1
+    # ax.legend(loc='best', frameon=False)
+
     ax.set_ylim([0, 1])
     ax.set_ylabel('CPR')
     ax.set_title('CPR')

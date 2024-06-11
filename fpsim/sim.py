@@ -290,7 +290,7 @@ class Sim(fpb.BaseSim):
             delattr(self.people, "mothers")
 
     def grow_population(self, n_new_people):
-        """Expand people's size"""
+        """Expand population size"""
         # Births
         new_people = fpppl.People(
                     pars=self.pars, n=n_new_people, age=0, method_selector=self.contraception_module,
@@ -321,7 +321,7 @@ class Sim(fpb.BaseSim):
 
         # Add births
         n_new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
-        self.grow_population(n_new_people)
+        if n_new_people > 0: self.grow_population(n_new_people)
 
         # Update mothers
         if self.track_children:
