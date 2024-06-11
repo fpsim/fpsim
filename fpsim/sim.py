@@ -143,7 +143,8 @@ class Sim(fpb.BaseSim):
             self.ti = 0  # The current time index
             fpu.set_seed(self['seed'])
             self.init_results()
-            self.init_people()  # This step also initializes the contraception, empowerment, and education modules
+            self.init_people()  # This step also initializes the empowerment and education modules if provided
+            self.init_methods()
         return self
 
     def init_results(self):
@@ -184,6 +185,34 @@ class Sim(fpb.BaseSim):
         """
         self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
                                     empowerment_module=self.empowerment_module, education_module=self.education_module)
+
+    def update_mcpr_adj(self):
+        mcpr = self['mcpr']  # Shorten variable
+
+        # Compute the trend in MCPR
+        trend_years = mcpr['mcpr_years']
+        trend_vals = mcpr['mcpr_rates']
+        ind = sc.findnearest(trend_years, self.y)  # The year of data closest to the sim year
+        norm_ind = sc.findnearest(trend_years, self['mcpr_norm_year'])  # The year we're using to normalize
+
+        nearest_val = trend_vals[ind]  # Nearest MCPR value from the data
+        norm_val = trend_vals[norm_ind]  # Normalization value
+        if self.y > max(trend_years):  # We're after the last year of data: extrapolate
+            eps = 1e-3  # Epsilon for lowest allowed MCPR value (to avoid divide by zero errors)
+            nearest_year = trend_years[ind]
+            year_diff = self.y - nearest_year
+            correction = self['mcpr_growth_rate'] * year_diff  # Project the change in MCPR
+            extrapolated_val = nearest_val * (1 + correction)  # Multiply the current value by the projection
+            trend_val = np.clip(extrapolated_val, eps, self['mcpr_max'])  # Ensure it stays within bounds
+        else:  # Otherwise, just use the nearest data point
+            trend_val = nearest_val
+        norm_trend_val = trend_val / norm_val  # Normalize so the correction factor is 1 at the normalization year
+        return norm_trend_val
+
+    def init_methods(self):
+        if self.contraception_module is not None:
+            self.people.init_methods(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
+        return
 
     def update_mortality(self):
         """
@@ -267,7 +296,7 @@ class Sim(fpb.BaseSim):
             delattr(self.people, "mothers")
 
     def grow_population(self, n_new_people):
-        """Expand people's size"""
+        """Expand population size"""
         # Births
         new_people = fpppl.People(
                     pars=self.pars, n=n_new_people, age=0, method_selector=self.contraception_module,
@@ -276,6 +305,9 @@ class Sim(fpb.BaseSim):
 
     def step(self):
         """ Update logic of a single time step """
+
+        # Update MCPR adjustment value
+        mcpr_adj = self.update_mcpr_adj()
 
         # Update mortality probabilities for year of sim
         self.update_mortality()
@@ -287,7 +319,7 @@ class Sim(fpb.BaseSim):
         self.people.ti = self.ti
         self.people.ty = self.ty
         self.people.y = self.y
-        step_results = self.people.update()
+        step_results = self.people.update(mcpr_adj)
 
         # Store results
         r = sc.dictobj(**step_results)
@@ -295,7 +327,7 @@ class Sim(fpb.BaseSim):
 
         # Add births
         n_new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
-        self.grow_population(n_new_people)
+        if n_new_people > 0: self.grow_population(n_new_people)
 
         # Update mothers
         if self.track_children:
@@ -388,6 +420,8 @@ class Sim(fpb.BaseSim):
         self.results['no_methods_cpr'][ti] = res.no_methods_cpr
         self.results['on_methods_acpr'][ti] = res.on_methods_acpr
         self.results['no_methods_acpr'][ti] = res.no_methods_acpr
+        self.results['contra_access'][ti] = res.contra_access
+        self.results['new_users'][ti] = res.new_users
         self.results['mcpr'][ti] = sc.safedivide(res.on_methods_mcpr, (res.no_methods_mcpr + res.on_methods_mcpr))
         self.results['cpr'][ti] = sc.safedivide(res.on_methods_cpr, (res.no_methods_cpr + res.on_methods_cpr))
         self.results['acpr'][ti] = sc.safedivide(res.on_methods_acpr, (res.no_methods_acpr + res.on_methods_acpr))
@@ -436,10 +470,14 @@ class Sim(fpb.BaseSim):
             secondary_births_over_year = scale * np.sum(self.results['secondary_births'][start_index:stop_index])
             maternal_deaths_over_year = scale * np.sum(self.results['maternal_deaths'][start_index:stop_index])
             pregnancies_over_year = scale * np.sum(self.results['pregnancies'][start_index:stop_index])
+            contra_access_by_year = scale * np.sum(self.results['contra_access'][start_index:stop_index])
+            new_users_by_year = scale * np.sum(self.results['new_users'][start_index:stop_index])
             # self.results['method_usage'].append(self.compute_method_usage())  # only want this per year
             self.results['pop_size'].append(scale * self.n)  # CK: TODO: replace with arrays
             self.results['mcpr_by_year'].append(self.results['mcpr'][ti])
             self.results['cpr_by_year'].append(self.results['cpr'][ti])
+            self.results['contra_access_by_year'].append(contra_access_by_year)
+            self.results['new_users_by_year'].append(new_users_by_year)
             self.results['method_failures_over_year'].append(unintended_pregs_over_year)
             self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
             self.results['total_births_over_year'].append(total_births_over_year)

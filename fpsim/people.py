@@ -35,10 +35,10 @@ class People(fpb.BasePeople):
         if n is None:
             n = int(self.pars['n_agents'])
 
-        # Time indexing
-        self.ti = 0     # Time index (0,1,2, ...)
-        self.ty = None  # Time in years since beginning of sim (25, 25.1, ...)
-        self.y = None   # Year (1975, 1975.1,...)
+        # # Time indexing
+        # self.ti = 0     # Time index (0,1,2, ...)
+        # self.ty = None  # Time in years since beginning of sim (25, 25.1, ...)
+        # self.y = None   # Year (1975, 1975.1,...)
 
         # Set default states
         self.states = fpd.person_defaults
@@ -94,9 +94,6 @@ class People(fpb.BasePeople):
         # Store keys
         self._keys = [s.name for s in self.states.values()]
 
-        # Initialize methods with contraception module if provided
-        self.init_methods(contraception_module=contraception_module)
-
         if self.pars['use_subnational']:
             fpsn.init_regional_states(self)
 
@@ -135,20 +132,22 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
-    def init_methods(self, contraception_module=None):
+    def init_methods(self, ti=None, year=None, contraception_module=None):
         if contraception_module is not None:
-
             self.contraception_module = contraception_module
-            self.on_contra = contraception_module.get_contra_users(self)
+            self.on_contra = contraception_module.get_contra_users(self, year=year)
             oc = self.filter(self.on_contra)
-            oc.method = contraception_module.choose_method(oc)
-            self.ti_contra = contraception_module.set_dur_method(self)
+            oc.method = contraception_module.init_method_dist(oc)
+            self.ti_contra = ti + contraception_module.set_dur_method(self)
 
         return
 
-    def update_method(self, event=None):
+    def update_method(self, year=None, ti=None, event=None, mcpr_adj=None):
         """ Inputs: filtered people, only includes those for whom it's time to update """
         cm = self.contraception_module
+        if year is None: year = self.y
+        if ti is None: ti = self.ti
+        cm.mcpr_adj = mcpr_adj
         if cm is not None:
             if event is None:
 
@@ -156,23 +155,26 @@ class People(fpb.BasePeople):
                 new_users = self.filter(~self.on_contra)
                 if len(new_users):
                     new_users.on_contra = True
+                    self.step_results['contra_access'] += len(new_users)
                     new_users.method = cm.choose_method(new_users)
-                    new_users.ti_contra = cm.set_dur_method(new_users)
+                    self.step_results['new_users'] += np.count_nonzero(new_users.method)
+                    new_users.ti_contra = ti + cm.set_dur_method(new_users)
 
                 # Get previous users and see whether they will switch methods or stop using
                 prev_users = self.filter(self.on_contra)
                 if len(prev_users):
-                    prev_users.on_contra = cm.get_contra_users(prev_users)
+                    prev_users.on_contra = cm.get_contra_users(prev_users, year=year)
 
                     # For those who keep using, determine their next method and update time
                     still_on_contra = prev_users.filter(prev_users.on_contra)
+                    self.step_results['contra_access'] += len(still_on_contra)
                     still_on_contra.method = cm.choose_method(still_on_contra)
-                    still_on_contra.ti_contra = cm.set_dur_method(still_on_contra)
+                    still_on_contra.ti_contra = ti + cm.set_dur_method(still_on_contra)
 
                     # For those who stop using, determine when next to update
                     stopping_contra = prev_users.filter(~prev_users.on_contra)
                     stopping_contra.method = 0
-                    stopping_contra.ti_contra = cm.set_dur_method(stopping_contra)
+                    stopping_contra.ti_contra = ti + cm.set_dur_method(stopping_contra)
 
                 # Validate
                 n_methods = len(self.contraception_module.methods)
@@ -182,10 +184,11 @@ class People(fpb.BasePeople):
                     raise ValueError(errormsg)
 
             if event in ['pp1', 'pp6']:
-                self.on_contra = cm.get_contra_users(self, event=event)
+                self.on_contra = cm.get_contra_users(self, year=year, event=event)
                 on_contra = self.filter(self.on_contra)
+                self.step_results['contra_access'] += len(on_contra)
                 on_contra.method = cm.choose_method(on_contra, event=event)
-                on_contra.ti_contra = cm.set_dur_method(on_contra)
+                on_contra.ti_contra = ti + cm.set_dur_method(on_contra)
 
         return
 
@@ -800,6 +803,8 @@ class People(fpb.BasePeople):
             no_methods_cpr=0,
             on_methods_acpr=0,
             no_methods_acpr=0,
+            contra_access=0,
+            new_users=0,
             as_stillbirths=[],
             imr_numerator=[],
             imr_denominator=[],
@@ -845,7 +850,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def update(self):
+    def update(self, mcpr_adj):
         """
         Perform all updates to people on each timestep
         """
@@ -873,7 +878,7 @@ class People(fpb.BasePeople):
             self.education_module.update(alive_now_f)
 
         # Figure out who to update methods for
-        methods = nonpreg.filter(nonpreg.ti_contra == self.ti)
+        methods = nonpreg.filter(nonpreg.ti_contra <= self.ti)
         methods_pp1 = nonpreg.filter(nonpreg.ti_contra_pp1 == self.ti)
         methods_pp6 = nonpreg.filter(nonpreg.ti_contra_pp6 == self.ti)
 
@@ -886,10 +891,10 @@ class People(fpb.BasePeople):
         nonpreg.check_sexually_active()
 
         if len(methods):
-            methods.update_method()
+            methods.update_method(mcpr_adj=mcpr_adj)
 
-        if len(methods_pp1): methods.update_method(event='pp1')
-        if len(methods_pp6): methods.update_method(event='pp6')
+        if len(methods_pp1): methods.update_method(event='pp1', mcpr_adj=mcpr_adj)
+        if len(methods_pp6): methods.update_method(event='pp6', mcpr_adj=mcpr_adj)
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()
@@ -911,5 +916,11 @@ class People(fpb.BasePeople):
         # Storing ages by method age group
         age_bins = [0] + [max(fpd.age_specific_channel_bins[key]) for key in fpd.age_specific_channel_bins]
         self.age_by_group = np.digitize(self.age, age_bins) - 1
+
+        # Add check for ti contra
+        if (self.ti_contra < 0).any():
+            errormsg = 'Invalid values for ti_contra'
+            raise ValueError(errormsg)
+
 
         return self.step_results

@@ -4,8 +4,7 @@ Test running sims
 
 import fpsim as fp
 import sciris as sc
-import numpy as np
-import pandas as pd
+import pylab as pl
 
 par_kwargs = dict(n_agents=100, start_year=2000, end_year=2010, seed=1, verbose=1)
 
@@ -21,11 +20,43 @@ def test_simple():
 def test_simple_choice(location='kenya'):
     sc.heading('Method choice is based on age & previous method')
 
-    method_choice = fp.SimpleChoice(location='kenya')
+    # Make & run sim
     pars = fp.pars(location=location, **par_kwargs)
-    s = fp.Sim(pars, contraception_module=method_choice)
-    s.run()
-    return s
+    method_choice = fp.SimpleChoice(pars=dict(prob_use_trend_par=0.1), location=location, methods=sc.dcp(fp.Methods))
+    sim = fp.Sim(pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
+    sim.run()
+
+    # Plots
+    fig, axes = pl.subplots(2, 1, figsize=(5, 7))
+    axes = axes.ravel()
+    age_bins = [18, 20, 25, 35, 50]
+    colors = sc.vectocolor(age_bins)
+    cind = 0
+
+    # mCPR
+    ax = axes[0]
+    for alabel, ares in sim['analyzers'].results.items():
+        ax.plot(sim.results.t, ares, label=alabel, color=colors[cind])
+        cind += 1
+    ax.legend(loc='best', frameon=False)
+
+    ax.set_ylim([0, 1])
+    ax.set_ylabel('CPR')
+    ax.set_title('CPR')
+
+    # Plot method mix
+    ax = axes[1]
+    oc = sim.people.filter(sim.people.on_contra)
+    method_props = [len(oc.filter(oc.method == i))/len(oc) for i in range(1, 10)]
+    method_labels = [m.name for m in sim.contraception_module.methods.values() if m.label != 'None']
+    ax.bar(method_labels, method_props)
+    ax.set_ylabel('Proportion among all users')
+    ax.set_title('Contraceptive mix')
+
+    sc.figlayout()
+    pl.show()
+
+    return sim
 
 
 def test_empowered_choice():

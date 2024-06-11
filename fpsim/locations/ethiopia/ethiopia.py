@@ -611,6 +611,17 @@ def barriers():
     barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
     return barriers
 
+
+def mcpr():
+
+    mcpr = {}
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
+    mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
+    mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
+
+    return mcpr
+
+
 def barriers_region():
     '''
     Returns reasons for nonuse by region
@@ -664,6 +675,7 @@ def make_pars(seed=None, use_subnational=None):
 
     # Contraceptive methods
     pars['barriers'] = barriers()
+    pars['mcpr'] = mcpr()
 
     # Regional parameters
     if use_subnational:

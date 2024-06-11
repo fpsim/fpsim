@@ -881,6 +881,16 @@ def process_contra_use_simple():
     return contra_use_pars
 
 
+def mcpr():
+
+    mcpr = {}
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
+    mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
+    mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
+
+    return mcpr
+
+
 def process_simple_method_pars(methods):
     """ Choice of method is based on age and parity """
     df = pd.read_csv(thisdir / 'data' / 'method_mix.csv')
@@ -904,25 +914,38 @@ def process_simple_method_pars(methods):
 
 def process_markovian_method_choice(methods):
     """ Choice of method is age and previous method """
-    df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix.csv', keep_default_na=False, na_values=['NaN'])
-    csv_map = {method.csv_name:method.name for method in methods.values()}
+    df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+    csv_map = {method.csv_name: method.name for method in methods.values()}
+    idx_map = {method.csv_name: method.idx for method in methods.values()}
+    idx_df = {}
+    for col in df.columns:
+        if col in csv_map.keys():
+            idx_df[col] = idx_map[col]
 
     mc = dict()  # This one is a dict because it will be keyed with numbers
+    init_dist = sc.objdict()  # Initial distribution of method choice
+
     for pp in df.postpartum.unique():
         mc[pp] = sc.objdict()
+        mc[pp].method_idx = idx_df.values()
         for akey in df.age_grp.unique():
             mc[pp][akey] = sc.objdict()
             thisdf = df.loc[(df.age_grp == akey) & (df.postpartum == pp)]
             if pp == 1:  # Different logic for immediately postpartum
-                mc[pp][akey] = thisdf.values[0][4:14]  # If this is going to be standard practice, should make it more robust
+                mc[pp][akey] = thisdf.values[0][4:13].astype(float)  # If this is going to be standard practice, should make it more robust
             else:
                 from_methods = thisdf.From.unique()
                 for from_method in from_methods:
                     from_mname = csv_map[from_method]
                     row = thisdf.loc[thisdf.From == from_method]
-                    mc[pp][akey][from_mname] = row.values[0][4:14]  # If this is going to be standard practice, should make it more robust
+                    mc[pp][akey][from_mname] = row.values[0][4:13].astype(float)
 
-    return mc
+            # Set initial distributions by age
+            if pp == 0:
+                init_dist[akey] = thisdf.loc[thisdf.From == 'None'].values[0][4:13].astype(float)
+                init_dist.method_idx = idx_df.values()
+
+    return mc, init_dist
 
 
 def process_dur_use(methods):
@@ -991,6 +1014,7 @@ def make_pars(seed=None, use_subnational=None):
 
     # Contraceptive methods
     pars['barriers'] = barriers()
+    pars['mcpr'] = mcpr()
 
     # Demographics: geography and partnership status
     pars['urban_prop'] = urban_proportion()

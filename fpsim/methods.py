@@ -62,15 +62,17 @@ for m in SimpleMethods.values(): m.dur_use = 1
 # %% Define classes to contain information about the way women choose contraception
 
 class ContraceptiveChoice:
-    def __init__(self, methods=None, pars=None, **kwargs):
+    def __init__(self, methods=None, pars=None, mcpr_adj=None, **kwargs):
         self.methods = methods or SimpleMethods
         self.__dict__.update(kwargs)
         self.n_options = len(self.methods)
         self.n_methods = len([m for m in self.methods if m != 'none'])
+        self.init_dist = None
         default_pars = dict(
             p_use=0.5,
         )
         self.pars = sc.mergedicts(default_pars, pars)
+        self.mcpr_adj = mcpr_adj
 
     @property
     def average_dur_use(self):
@@ -80,9 +82,12 @@ class ContraceptiveChoice:
             elif isinstance(m.dur_use, dict): av += m.dur_use['par1']
         return av / len(self.methods)
 
-    def get_prob_use(self, ppl, event=None):
-        """ Calculate probabilities that each woman will use contraception """
-        prob_use = np.random.random(len(ppl))
+    def init_method_dist(self, ppl):
+        pass
+
+    def get_prob_use(self, ppl, year=None, event=None):
+        """ Assign probabilities that each woman will use contraception """
+        prob_use = np.full(len(ppl), fill_value=self.pars['p_use'], dtype=float)
         return prob_use
 
     def get_method_by_label(self, method_label):
@@ -111,10 +116,10 @@ class ContraceptiveChoice:
         method = self.get_method_by_label(method_label)
         del self.methods[method.name]
 
-    def get_contra_users(self, ppl, event=None):
+    def get_contra_users(self, ppl, year=None, event=None):
         """ Select contraction users, return boolean array """
-        prob_use = self.get_prob_use(ppl, event=event)
-        uses_contra_bool = prob_use > 1-self.pars['p_use']
+        prob_use = self.get_prob_use(ppl, event=event, year=year)
+        uses_contra_bool = fpu.binomial_arr(prob_use)
         return uses_contra_bool
 
     def choose_method(self, ppl, event=None):
@@ -122,8 +127,8 @@ class ContraceptiveChoice:
 
     def set_dur_method(self, ppl, method_used=None):
         dt = ppl.pars['timestep'] / fpd.mpy
-        ti_contra_update = np.full(len(ppl), sc.randround(ppl.ti + self.average_dur_use/dt), dtype=int)
-        return ti_contra_update
+        timesteps_til_update = np.full(len(ppl), np.round(self.average_dur_use/dt), dtype=int)
+        return timesteps_til_update
 
 
 class RandomChoice(ContraceptiveChoice):
@@ -135,7 +140,11 @@ class RandomChoice(ContraceptiveChoice):
             method_mix=np.array([1/self.n_methods]*self.n_methods),
         )
         self.pars = sc.mergedicts(default_pars, pars)
+        self.init_dist = self.pars['method_mix']
         return
+
+    def init_method_dist(self, ppl):
+        return self.choose_method(ppl)
 
     def choose_method(self, ppl, event=None):
         choice_arr = np.random.choice(np.arange(self.n_methods), size=len(ppl), p=self.pars['method_mix'])
@@ -143,27 +152,52 @@ class RandomChoice(ContraceptiveChoice):
 
 
 class SimpleChoice(RandomChoice):
-    def __init__(self, location=None, **kwargs):
+    def __init__(self, pars=None, location=None, **kwargs):
         """ Args: coefficients """
         super().__init__(**kwargs)
+        default_pars = dict(
+            prob_use_year=2000,
+            prob_use_trend_par=0.1,
+        )
+        updated_pars = sc.mergedicts(default_pars, pars)
+        self.pars = sc.mergedicts(self.pars, updated_pars)
 
         # Handle location
         location = location.lower()
         if location == 'kenya':
             self.contra_use_pars = fplocs.kenya.process_contra_use_simple()  # Set probability of use
-            self.method_choice_pars = fplocs.kenya.process_markovian_method_choice(self.methods)  # Set choice of method
+            method_choice_pars, init_dist = fplocs.kenya.process_markovian_method_choice(self.methods)  # Method choice
+            self.method_choice_pars = method_choice_pars
+            self.init_dist = init_dist
             self.methods = fplocs.kenya.process_dur_use(self.methods)  # Reset duration of use
 
             # Handle age bins -- find a more robust way to do this
-            method_choice_age_labels = self.method_choice_pars[0].keys()
-            self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys()])
+            self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
 
         else:
             errormsg = f'Location "{location}" is not currently supported for method-time analyses'
             raise NotImplementedError(errormsg)
         return
 
-    def get_prob_use(self, ppl, event=None):
+    def init_method_dist(self, ppl):
+        if self.init_dist is not None:
+            choice_array = np.zeros(len(ppl))
+
+            # Loop over age groups and methods
+            for key, (age_low, age_high) in fpd.method_age_map.items():
+                this_age_bools = fpu.match_ages(ppl.age, age_low, age_high)
+                ppl_this_age = this_age_bools.nonzero()[-1]
+                if len(ppl_this_age) > 0:
+                    these_probs = self.init_dist[key]
+                    #if self.mcpr_adj is not None: these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
+                    these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
+                    these_choices = fpu.n_multinomial(these_probs, len(ppl_this_age))  # Choose
+                    # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
+                    choice_array[this_age_bools] = np.array(list(self.init_dist.method_idx))[these_choices]
+
+        return choice_array.astype(int)
+
+    def get_prob_use(self, ppl, year=None, event=None):
         """
         Return an array of probabilities that each woman will use contraception.
         """
@@ -176,34 +210,49 @@ class SimpleChoice(RandomChoice):
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
         age_bins = np.digitize(ppl.age, self.age_bins)
         for ai, ab in enumerate(self.age_bins):
-            rhs[age_bins==ai] += p.age_factors[ai]
+            rhs[age_bins == ai] += p.age_factors[ai]
+        rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
         prob_use = 1 / (1+np.exp(-rhs))
+
         # prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
         return prob_use
 
     def set_dur_method(self, ppl, method_used=None):
         """ Time on method depends on age and method """
 
-        dur_method = np.empty(len(ppl))
+        dur_method = np.zeros(len(ppl), dtype=float)
         if method_used is None: method_used = ppl.method
 
         for mname, method in self.methods.items():
             dur_use = method.dur_use
-            age_bins = np.digitize(ppl.age, self.age_bins)
             users = np.nonzero(method_used == method.idx)[-1]
             n_users = len(users)
-            par1 = np.zeros(n_users)
 
-            for ai, ab in enumerate(self.age_bins):
-                par1[age_bins[users]==ai] = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
+            if sc.isnumber(dur_use):
+                dur_method[users] = dur_use
 
-            dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=np.exp(method.dur_use['par2']))
-            dur_method[users] = fpu.sample(**dist_dict, size=n_users)
+            elif isinstance(dur_use, dict):
+                if 'age_factors' in dur_use.keys():
+                    age_bins = np.digitize(ppl.age, self.age_bins)
+                    par1 = np.zeros(n_users)
+                    for ai, ab in enumerate(self.age_bins):
+                        par1[age_bins[users] == ai] = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
+                        par2 = np.exp(method.dur_use['par2'])
+                else:
+                    par1 = dur_use['par1']
+                    par2 = dur_use['par2']
+
+                dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
+                dur_method[users] = fpu.sample(**dist_dict, size=n_users)
+
+            else:
+                errormsg = 'Unrecognized type for duration of use: expecting a distribution dict or a number'
+                raise ValueError(errormsg)
 
         dt = ppl.pars['timestep'] / fpd.mpy
-        ti_contra_update = ppl.ti + sc.randround(dur_method/dt)
+        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, None)
 
-        return ti_contra_update
+        return timesteps_til_update
 
     def choose_method(self, ppl, event=None, jitter=1e-4):
         if event == 'pp1': return self.choose_method_post_birth(ppl)
@@ -228,11 +277,18 @@ class SimpleChoice(RandomChoice):
                     if len(switch_iinds):
 
                         # Get probability of choosing each method
-                        these_probs = mcp[key][mname]  # Cannot stay on method
-                        these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                        these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
-                        these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
-                        choice_array[switch_iinds] = these_choices  # Set values
+                        if mname == 'btl':
+                            choice_array[switch_iinds] = method.idx  # Con't
+                        else:
+                            these_probs = mcp[key][mname]  # Cannot stay on method
+                            these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                            #these_probs = np.array(these_probs)/self.mcpr_adj   # MCPR Adjustment
+                            these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
+                            these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
+                            choice_array[switch_iinds] = these_choices  # Set values
+
+                            # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
+                            choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
 
         return choice_array.astype(int)
 
@@ -249,6 +305,7 @@ class SimpleChoice(RandomChoice):
             if len(switch_iinds):
                 these_probs = mcp[key]
                 these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                #these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                 these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                 these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
                 choice_array[switch_iinds] = these_choices  # Set values
@@ -271,7 +328,11 @@ class EmpoweredChoice(ContraceptiveChoice):
             errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
             raise NotImplementedError(errormsg)
 
-    def get_prob_use(self, ppl, inds=None, event=None):
+    def init_method_dist(self, ppl):
+        # TODO look for initial values
+        return self.choose_method(ppl)
+
+    def get_prob_use(self, ppl, year=None, inds=None, event=None):
         """
         Given an array of indices, return an array of probabilities that each woman will use contraception.
         Probabilities are a function of:
@@ -313,6 +374,7 @@ class EmpoweredChoice(ContraceptiveChoice):
                         # Get probability of choosing each method
                         these_probs = [v for k, v in mcp[key][parity].items() if k != mname]  # Cannot stay on method
                         these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                        #these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                         these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                         these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
 
@@ -337,7 +399,7 @@ class EmpoweredChoice(ContraceptiveChoice):
             dur_method[users] = fpu.sample(**dist_dict, size=n_users)
 
         dt = ppl.pars['timestep'] / fpd.mpy
-        ti_contra_update = ppl.ti + sc.randround(dur_method/dt)
+        timesteps_til_update = np.round(dur_method/dt)
 
-        return ti_contra_update
+        return timesteps_til_update
 
