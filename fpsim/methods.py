@@ -127,8 +127,8 @@ class ContraceptiveChoice:
 
     def set_dur_method(self, ppl, method_used=None):
         dt = ppl.pars['timestep'] / fpd.mpy
-        ti_contra_update = np.full(len(ppl), np.round(self.average_dur_use/dt), dtype=int)
-        return ti_contra_update
+        timesteps_til_update = np.full(len(ppl), np.round(self.average_dur_use/dt), dtype=int)
+        return timesteps_til_update
 
 
 class RandomChoice(ContraceptiveChoice):
@@ -399,7 +399,7 @@ class EmpoweredChoice(ContraceptiveChoice):
             dur_method[users] = fpu.sample(**dist_dict, size=n_users)
 
         dt = ppl.pars['timestep'] / fpd.mpy
-        ti_contra_update = ppl.ti + sc.randround(dur_method/dt)
+        timesteps_til_update = np.round(dur_method/dt)
 
-        return ti_contra_update
+        return timesteps_til_update
 
