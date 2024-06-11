@@ -208,33 +208,14 @@ if do_plot_methods:
         '''
         pl.clf()
 
-        # Pull method definitions from parameters file
-        # Method map; this remains constant across locations. True indicates modern method,
-        # and False indicates traditional method
-        methods_map_model = {  # Index, modern, efficacy
-        'None': [0, False],
-        'Withdrawal': [1, False],
-        'Other traditional': [2, False],
-        # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-        'Condoms': [3, True],
-        'Pill': [4, True],
-        'Injectables': [5, True],
-        'Implants': [6, True],
-        'IUDs': [7, True],
-        'BTL': [8, True],
-        'Other modern': [9, True],
-        }
-
         # Setup
-        model_labels_all = list(methods_map_model.keys())
+        model_labels_all = [m.label for m in sim.contraception_module.methods.values()]
         model_labels_methods = sc.dcp(model_labels_all)
-        model_labels_methods = model_labels_methods[1:]
-
         model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 
         # Extract from model
         for i in range(len(ppl)):
-                if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+                if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age and ppl.on_contra[i]:
                         model_method_counts[ppl.method[i]] += 1
 
         model_method_counts[:] /= model_method_counts[:].sum()
@@ -281,7 +262,7 @@ if do_plot_methods:
 
         # Set up plotting
         use_labels = list(data_methods_use.keys())
-        df_mix = pd.DataFrame({'PMA': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods)
+        df_mix = pd.DataFrame({'PMA': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods[1:])
         df_use = pd.DataFrame({'PMA': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
 
         # Plot mix
