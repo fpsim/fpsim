@@ -16,8 +16,10 @@ def lognorm_params(par1, par2):
     returns the shape and scale parameters for scipy's parameterization of the
     distribution.
     """
-    mean = np.log(par1 ** 2 / np.sqrt(par2 ** 2 + par1 ** 2))  # Computes the mean of the underlying normal distribution
-    sigma = np.sqrt(np.log(par2 ** 2 / par1 ** 2 + 1))  # Computes sigma for the underlying normal distribution
+    # mean = np.log(par1 ** 2 / np.sqrt(par2 ** 2 + par1 ** 2))  # Computes the mean of the underlying normal distribution
+    # sigma = np.sqrt(np.log(par2 ** 2 / par1 ** 2 + 1))  # Computes sigma for the underlying normal distribution
+    mean = par1
+    sigma = par2
     scale = np.exp(mean)
     shape = sigma
     return shape, scale
@@ -70,15 +72,18 @@ if __name__ == '__main__':
     for pn, method in enumerate(methods.values()):
         ax = axes[pn]
         for ai, ab in enumerate(method.age_bin_edges):
-            par1 = np.exp(method.dur_use['par1']) + np.exp(method.age_bin_vals[ai])
+            par1 = np.exp(method.dur_use['par1'] + method.age_bin_vals[ai])
             par2 = np.exp(method.dur_use['par2'])
 
             if method.dur_use['dist'] == 'lognormal':
+                par1 = method.dur_use['par1'] + method.age_bin_vals[ai]
+                par2 = method.dur_use['par2']
                 sigma, scale = lognorm_params(par1, par2)
                 rv = sps.lognorm(sigma, 0, scale)
             if method.dur_use['dist'] == 'gamma':
                 rv = sps.gamma(par1, scale=1/par2)
             if method.dur_use['dist'] == 'gompertz':
+                par1 = method.dur_use['par1'] + method.age_bin_vals[ai]
                 rv = sps.gompertz(par1, scale=1/par2)
             if method.dur_use['dist'] == 'llogis':
                 rv = sps.fisk(c=par1, scale=par2)
