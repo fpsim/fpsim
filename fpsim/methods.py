@@ -269,7 +269,10 @@ class SimpleChoice(RandomChoice):
                     if len(switch_iinds):
 
                         # Get probability of choosing each method
-                        these_probs = mcp[key][mname]  # Cannot stay on method
+                        try:
+                            these_probs = mcp[key][mname]  # Cannot stay on method
+                        except:
+                            print('hi')
                         these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
                         #these_probs = np.array(these_probs)/self.mcpr_adj   # MCPR Adjustment
                         these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
