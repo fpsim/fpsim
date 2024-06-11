@@ -85,7 +85,7 @@ class ContraceptiveChoice:
     def init_method_dist(self, ppl):
         pass
 
-    def get_prob_use(self, ppl, event=None):
+    def get_prob_use(self, ppl, year=None, event=None):
         """ Assign probabilities that each woman will use contraception """
         prob_use = np.full(len(ppl), fill_value=self.pars['p_use'], dtype=float)
         return prob_use
@@ -116,9 +116,9 @@ class ContraceptiveChoice:
         method = self.get_method_by_label(method_label)
         del self.methods[method.name]
 
-    def get_contra_users(self, ppl, event=None):
+    def get_contra_users(self, ppl, year=None, event=None):
         """ Select contraction users, return boolean array """
-        prob_use = self.get_prob_use(ppl, event=event)
+        prob_use = self.get_prob_use(ppl, event=event, year=year)
         uses_contra_bool = fpu.binomial_arr(prob_use)
         return uses_contra_bool
 
@@ -152,9 +152,15 @@ class RandomChoice(ContraceptiveChoice):
 
 
 class SimpleChoice(RandomChoice):
-    def __init__(self, location=None, **kwargs):
+    def __init__(self, pars=None, location=None, **kwargs):
         """ Args: coefficients """
         super().__init__(**kwargs)
+        default_pars = dict(
+            prob_use_year=2000,
+            prob_use_trend_par=0.1,
+        )
+        updated_pars = sc.mergedicts(default_pars, pars)
+        self.pars = sc.mergedicts(self.pars, updated_pars)
 
         # Handle location
         location = location.lower()
@@ -191,7 +197,7 @@ class SimpleChoice(RandomChoice):
 
         return choice_array.astype(int)
 
-    def get_prob_use(self, ppl, event=None):
+    def get_prob_use(self, ppl, year=None, event=None):
         """
         Return an array of probabilities that each woman will use contraception.
         """
@@ -205,7 +211,9 @@ class SimpleChoice(RandomChoice):
         age_bins = np.digitize(ppl.age, self.age_bins)
         for ai, ab in enumerate(self.age_bins):
             rhs[age_bins == ai] += p.age_factors[ai]
+        rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
         prob_use = 1 / (1+np.exp(-rhs))
+
         # prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
         return prob_use
 
@@ -242,9 +250,9 @@ class SimpleChoice(RandomChoice):
                 raise ValueError(errormsg)
 
         dt = ppl.pars['timestep'] / fpd.mpy
-        ti_contra_update = ppl.ti + sc.randround(dur_method/dt)
+        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, None)
 
-        return ti_contra_update
+        return timesteps_til_update
 
     def choose_method(self, ppl, event=None, jitter=1e-4):
         if event == 'pp1': return self.choose_method_post_birth(ppl)
@@ -324,7 +332,7 @@ class EmpoweredChoice(ContraceptiveChoice):
         # TODO look for initial values
         return self.choose_method(ppl)
 
-    def get_prob_use(self, ppl, inds=None, event=None):
+    def get_prob_use(self, ppl, year=None, inds=None, event=None):
         """
         Given an array of indices, return an array of probabilities that each woman will use contraception.
         Probabilities are a function of:

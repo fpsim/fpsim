@@ -143,7 +143,8 @@ class Sim(fpb.BaseSim):
             self.ti = 0  # The current time index
             fpu.set_seed(self['seed'])
             self.init_results()
-            self.init_people()  # This step also initializes the contraception, empowerment, and education modules
+            self.init_people()  # This step also initializes the empowerment and education modules if provided
+            self.init_methods()
         return self
 
     def init_results(self):
@@ -207,6 +208,11 @@ class Sim(fpb.BaseSim):
             trend_val = nearest_val
         norm_trend_val = trend_val / norm_val  # Normalize so the correction factor is 1 at the normalization year
         return norm_trend_val
+
+    def init_methods(self):
+        if self.contraception_module is not None:
+            self.people.init_methods(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
+        return
 
     def update_mortality(self):
         """
