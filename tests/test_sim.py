@@ -36,7 +36,7 @@ def test_simple_choice(location='kenya'):
 
     # mCPR
     ax = axes[0]
-    ax.plot(sim.results.t, sim.results.cpr)
+    # ax.plot(sim.results.t, sim.results.cpr)
     for alabel, ares in sim['analyzers'].results.items():
         ax.plot(sim.results.t, ares, label=alabel, color=colors[cind])
         cind += 1

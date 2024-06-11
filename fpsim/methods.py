@@ -86,8 +86,8 @@ class ContraceptiveChoice:
         pass
 
     def get_prob_use(self, ppl, event=None):
-        """ Calculate probabilities that each woman will use contraception """
-        prob_use = np.random.random(len(ppl))
+        """ Assign probabilities that each woman will use contraception """
+        prob_use = np.full(len(ppl), fill_value=self.pars['p_use'], dtype=float)
         return prob_use
 
     def get_method_by_label(self, method_label):
@@ -119,7 +119,7 @@ class ContraceptiveChoice:
     def get_contra_users(self, ppl, event=None):
         """ Select contraction users, return boolean array """
         prob_use = self.get_prob_use(ppl, event=event)
-        uses_contra_bool = prob_use > 1-self.pars['p_use']
+        uses_contra_bool = fpu.binomial_arr(prob_use)
         return uses_contra_bool
 
     def choose_method(self, ppl, event=None):
