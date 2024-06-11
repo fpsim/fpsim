@@ -918,4 +918,10 @@ class People(fpb.BasePeople):
         age_bins = [0] + [max(fpd.age_specific_channel_bins[key]) for key in fpd.age_specific_channel_bins]
         self.age_by_group = np.digitize(self.age, age_bins) - 1
 
+        # Add check for ti contra
+        if (self.ti_contra < 0).any():
+            errormsg = 'Invalid values for ti_contra'
+            raise ValueError(errormsg)
+
+
         return self.step_results

@@ -212,7 +212,7 @@ class SimpleChoice(RandomChoice):
     def set_dur_method(self, ppl, method_used=None):
         """ Time on method depends on age and method """
 
-        dur_method = np.empty(len(ppl))
+        dur_method = np.zeros(len(ppl), dtype=float)
         if method_used is None: method_used = ppl.method
 
         for mname, method in self.methods.items():
@@ -269,18 +269,18 @@ class SimpleChoice(RandomChoice):
                     if len(switch_iinds):
 
                         # Get probability of choosing each method
-                        try:
+                        if mname == 'btl':
+                            choice_array[switch_iinds] = method.idx  # Con't
+                        else:
                             these_probs = mcp[key][mname]  # Cannot stay on method
-                        except:
-                            print('hi')
-                        these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                        #these_probs = np.array(these_probs)/self.mcpr_adj   # MCPR Adjustment
-                        these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
-                        these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
-                        choice_array[switch_iinds] = these_choices  # Set values
+                            these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                            #these_probs = np.array(these_probs)/self.mcpr_adj   # MCPR Adjustment
+                            these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
+                            these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
+                            choice_array[switch_iinds] = these_choices  # Set values
 
-                        # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
-                        choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
+                            # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
+                            choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
 
         return choice_array.astype(int)
 
