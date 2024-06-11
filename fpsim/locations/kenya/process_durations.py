@@ -70,7 +70,7 @@ if __name__ == '__main__':
     for pn, method in enumerate(methods.values()):
         ax = axes[pn]
         for ai, ab in enumerate(method.age_bin_edges):
-            par1 = np.exp(method.dur_use['par1'] + method.age_bin_vals[ai])
+            par1 = np.exp(method.dur_use['par1']) + np.exp(method.age_bin_vals[ai])
             par2 = np.exp(method.dur_use['par2'])
 
             if method.dur_use['dist'] == 'lognormal':

@@ -163,7 +163,7 @@ class SimpleChoice(RandomChoice):
             method_choice_pars, init_dist = fplocs.kenya.process_markovian_method_choice(self.methods)  # Method choice
             self.method_choice_pars = method_choice_pars
             self.init_dist = init_dist
-            self.methods = fplocs.kenya.process_dur_use(self.methods)  # Reset duration of use
+            # self.methods = fplocs.kenya.process_dur_use(self.methods)  # Reset duration of use
 
             # Handle age bins -- find a more robust way to do this
             self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
@@ -217,15 +217,20 @@ class SimpleChoice(RandomChoice):
 
         for mname, method in self.methods.items():
             dur_use = method.dur_use
-            age_bins = np.digitize(ppl.age, self.age_bins)
             users = np.nonzero(method_used == method.idx)[-1]
             n_users = len(users)
-            par1 = np.zeros(n_users)
 
-            for ai, ab in enumerate(self.age_bins):
-                par1[age_bins[users]==ai] = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
+            if dur_use.get('age_factors'):
+                age_bins = np.digitize(ppl.age, self.age_bins)
+                par1 = np.zeros(n_users)
+                for ai, ab in enumerate(self.age_bins):
+                    par1[age_bins[users] == ai] = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
+                    par2 = np.exp(method.dur_use['par2'])
+            else:
+                par1 = dur_use['par1']
+                par2 = dur_use['par2']
 
-            dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=np.exp(method.dur_use['par2']))
+            dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
             dur_method[users] = fpu.sample(**dist_dict, size=n_users)
 
         dt = ppl.pars['timestep'] / fpd.mpy
