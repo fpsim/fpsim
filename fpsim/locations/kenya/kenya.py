@@ -741,9 +741,6 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
     empowerment_dict["regression_pars"] = regression_pars
     empowerment_dict["sampled_points"] = data_points
 
-    # Fertility intent
-    empowerment_dict["fertility_intent"] = fertility_intent_dist()
-
     return empowerment_dict, empowerment_data
 
 
@@ -1015,7 +1012,6 @@ def process_dur_use(methods):
     return methods
 
 
-
 # %% Make and validate parameters
 
 def make_pars(seed=None, use_subnational=None):
@@ -1056,6 +1052,7 @@ def make_pars(seed=None, use_subnational=None):
     # Demographics: geography and partnership status
     pars['urban_prop'] = urban_proportion()
     pars['age_partnership'] = age_partnership()
+    pars['fertility_intent'] = fertility_intent_dist()
 
     kwargs = locals()
     not_implemented_args = ['use_subnational']

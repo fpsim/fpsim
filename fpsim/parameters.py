@@ -254,6 +254,9 @@ default_pars = {
     'age_partnership':      None,
     'mcpr':                 None,
 
+    # Newer parameters, associated with empowerment, but that are not empowerment metrics
+    'fertility_intent':     None,
+
     'region':               None,
     'lactational_amenorrhea_region': None,
     'sexual_activity_region':       None,
