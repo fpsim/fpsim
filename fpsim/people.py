@@ -64,6 +64,13 @@ class People(fpb.BasePeople):
         # Parameters on sexual and reproductive history
         self.fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], n)
 
+        # Fertility intent
+        has_intent = "fertility_intent"
+        self.fertility_intent   = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        self.categorical_intent = self.states["categorical_update"].new(n, "no")
+        # Update distribution of fertility intent if it is present in self.pars
+        self.get_fertility_intent(n)
+
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
         if not self.pars['use_subnational']:
             self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
@@ -132,6 +139,13 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
+    def get_fertility_intent(self, n):
+        if self.pars['fertility_intent'] is None:
+            return
+
+        self.update_fertility_intent_by_age()
+        return
+
     def init_methods(self, ti=None, year=None, contraception_module=None):
         if contraception_module is not None:
             self.contraception_module = contraception_module
@@ -140,6 +154,26 @@ class People(fpb.BasePeople):
             oc.method = contraception_module.init_method_dist(oc)
             self.ti_contra = ti + contraception_module.set_dur_method(self)
 
+    def update_fertility_intent_by_age(self):
+        """
+        In the absence of other factors, fertilty intent changes as a function of age
+        """
+        intent_pars = self.pars['fertility_intent']
+
+        f_inds = sc.findinds(self.is_female)
+        f_ages = self.age[f_inds]
+        age_inds = fpu.digitize_ages_1yr(f_ages)
+
+        for age in intent_pars.keys():
+            aged_x_inds = f_inds[age_inds == age]
+            fi_cats = list(intent_pars[age].keys())  # all ages have the same intent categories
+            probs = np.array(list(intent_pars[age].values()))
+            ci = np.random.choice(fi_cats, aged_x_inds.size, p=probs)
+            self.categorical_intent[aged_x_inds] = ci
+
+        self.fertility_intent[sc.findinds(self.categorical_intent == "yes")] = True
+        self.fertility_intent[sc.findinds((self.categorical_intent == "no") |
+                                          (self.categorical_intent == "cannot"))] = False
         return
 
     def update_method(self, year=None, ti=None, event=None, mcpr_adj=None):
