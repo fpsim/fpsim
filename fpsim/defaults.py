@@ -111,6 +111,12 @@ person_defaults = [
     State('decision_health',    0, bool),
     State('sexual_autonomy',    0, bool),
 
+    # Empowerment - fertility intent
+    State('fertility_intent', 0, bool),
+    # NOTE: I'm not sure if we want to track this separately, but we want to distinguish between those that have 0 fertility intent
+    # bcause they do not want to, and those who can't get pregnant
+    State('categorical_intent', None, str),
+
     # Partnership information -- states will remain at these values if use_partnership is False
     State('partnered',    0, bool),
     State('partnership_age', -1, float),
