@@ -111,6 +111,10 @@ person_defaults = [
     State('decision_health',    0, bool),
     State('sexual_autonomy',    0, bool),
 
+    # Empowerment - fertility intent
+    State('fertility_intent', 0, bool),
+    State('categorical_intent', "cannot", "<U6"),
+
     # Partnership information -- states will remain at these values if use_partnership is False
     State('partnered',    0, bool),
     State('partnership_age', -1, float),
