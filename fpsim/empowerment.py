@@ -64,17 +64,18 @@ class Empowerment:
         Returns:
             None
         """
-
         # Fitler female agents that are outside the inclusive range 15-49
         eligible_inds = sc.findinds(ppl.age >= fpd.min_age,
                                     ppl.age <  fpd.max_age_preg)
 
-        # Find right data-indices for each agent
-        data_inds = ppl.age[eligible_inds] - fpd.min_age
+        # Tranform ages to integers
+        ages = fpu.digitize_ages_1yr(ppl.age[eligible_inds])
+        # Transform to indices of available ages in pars
+        data_inds = ages - fpd.min_age
 
         for empwr_state in self.metrics:
-            probs = self.empowerment_pars[empwr_state]  # empirical probabilities per age 15-49
-            new_vals = fpu.binomial_arr(probs[data_inds])
+            probs = self.empowerment_pars[empwr_state][data_inds]  # empirical probabilities per age 15-49
+            new_vals = fpu.binomial_arr(probs)
             ppl[empwr_state][eligible_inds] = new_vals
 
         return
@@ -104,8 +105,8 @@ class Empowerment:
         ppl["decision_making"] = 0.0
 
         for metric in self.fa_metrics:
-            ppl["financial_autonomy"] += ppl[metric] * self.empowerment_pars["loadings"][metric]
+            ppl["financial_autonomy"] += ppl[metric].astype(float) * self.empowerment_pars["loadings"][metric]
 
         for metric in self.dm_metrics:
-            ppl["decision_making"] += ppl[metric] * self.empowerment_pars["loadings"][metric]
+            ppl["decision_making"] += ppl[metric].astype(float) * self.empowerment_pars["loadings"][metric]
         return
