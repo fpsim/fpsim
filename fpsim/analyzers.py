@@ -423,7 +423,7 @@ class empowerment_recorder(Analyzer):
                 vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
             else: # boolean states, expressed as proportion
                 vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
-            self.data[key][:, sim.i] = vals
+            self.data[key][:, sim.ti] = vals
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
         """
