@@ -453,7 +453,7 @@ class empowerment_recorder(Analyzer):
                 elif key in ['financial_autonomy', 'decision_making']:
                     clabel = f"Median of composite:\n{key}"
                     cmap = 'RdPu'
-                    vmin, vmax = 0, 3.5
+                    vmin, vmax = 0, 4.0
                 else:
                     clabel = f"proportion of {key}"
                     cmap = 'coolwarm'
