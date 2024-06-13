@@ -52,7 +52,7 @@ class Empowerment:
     def initialize(self, ppl):
         self.prob2state(ppl)
         self.update_composite_measures(ppl)
-        pass
+        return
 
     def prob2state(self, ppl):
         """
@@ -106,11 +106,13 @@ class Empowerment:
 
     def update_composite_measures(self, ppl):
         # Reset composite measures
-        ppl.finacial_autonomy = 0.0
-        ppl.decision_making = 0.0
-
+        temp_fa = 0.0
+        temp_dm = 0.0
         for metric in self.fa_metrics:
-            ppl.financial_autonomy += ppl[metric] * self.empowerment_pars["loadings"][metric]
+            temp_fa += ppl[metric] * self.empowerment_pars["loadings"][metric]
         for metric in self.dm_metrics:
-            ppl.decision_making += ppl[metric] * self.empowerment_pars["loadings"][metric]
+            temp_dm += ppl[metric] * self.empowerment_pars["loadings"][metric]
+
+        ppl.financial_autonomy = temp_fa
+        ppl.decision_making = temp_dm
         return
