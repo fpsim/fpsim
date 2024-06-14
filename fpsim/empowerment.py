@@ -84,24 +84,25 @@ class Empowerment:
 
     def update(self, ppl):
         """ Update empowerment probs and re-calculate empowerment states"""
-        for metric in self.update_pars.keys():
+        for metric in self.up_metrics:
             p = self.update_pars[metric]
             rhs = p.intercept
             for vname, vval in p.items():
-                # TODO: update the bit below; this temporary fix because ppl does not have all the
-                # states in p.items()
-                # keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
+                 # TODO: update the bit below; this temporary fix because ppl does not have all the
+                 # states in p.items()
+                 # keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
                 if vname in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban"]:
-                     rhs += vval * ppl[vname]   # People
+                    rhs += vval * ppl[vname]
 
             prob_1 = 1 / (1+np.exp(-rhs))
-            # empowerment states are boolean, we do not currently track probs,
-            # but we could
+            #empowerment states are boolean, we do not currently track probs,
             new_vals = fpu.binomial_arr(prob_1)
+
             changers = sc.findinds(new_vals != ppl[metric])  # People whose empowerment changes
             ppl.ti_contra[changers] = ppl.ti  # Trigger update to contraceptive choices if empowerment changes
-            ppl[metric] = new_vals
-            self.update_composite_measures(ppl)
+            #ppl[metric] = new_vals
+
+        self.update_composite_measures(ppl)
         return
 
     def update_composite_measures(self, ppl):
