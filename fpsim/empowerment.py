@@ -33,7 +33,8 @@ class Empowerment:
         # List only empowerment metrics that are defined in empowerment.csv
         self.metrics = list(self.empowerment_pars["avail_metrics"])
         # Metrics that will be updated using value from empower_coef.csv
-        self.up_metrics = list(set(self.update_pars.keys()) & set(self.metrics))
+        self.up_metrics = sorted(list(self.update_pars.keys()))
+        self.cm_metrics = ["financial_autonomy", "decision_making"]
 
         return
 
@@ -51,7 +52,7 @@ class Empowerment:
 
     def initialize(self, ppl):
         self.prob2state(ppl)
-        self.update_composite_measures(ppl)
+        self.calculate_composite_measures(ppl)
         return
 
     def prob2state(self, ppl):
@@ -84,29 +85,30 @@ class Empowerment:
 
     def update(self, ppl):
         """ Update empowerment probs and re-calculate empowerment states"""
-        for metric in self.up_metrics:
+        for mi, metric in enumerate(self.up_metrics):
             p = self.update_pars[metric]
-            rhs = p.intercept
+            rhs = p.intercept * np.ones(len(ppl[metric]))
+
             for vname, vval in p.items():
-                 # TODO: update the bit below; this temporary fix because ppl does not have all the
+                 # TODO: update the bit below; this is a temporary fix because ppl does not have all the
                  # states in p.items()
                  # keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
                 if vname in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban"]:
                     rhs += vval * ppl[vname]
 
             prob_1 = 1 / (1+np.exp(-rhs))
-            #empowerment states are boolean, we do not currently track probs,
-            new_vals = fpu.binomial_arr(prob_1)
-
+            if metric in self.cm_metrics:  #not probabilities
+                new_vals = prob_1
+            else:  # probabilities
+                # base empowerment states are boolean, we do not currently track probs,
+                new_vals = fpu.binomial_arr(prob_1)
             changers = sc.findinds(new_vals != ppl[metric])  # People whose empowerment changes
             ppl.ti_contra[changers] = ppl.ti  # Trigger update to contraceptive choices if empowerment changes
-            #ppl[metric] = new_vals
+            ppl[metric] = new_vals
 
-        self.update_composite_measures(ppl)
         return
 
-    def update_composite_measures(self, ppl):
-        # Reset composite measures
+    def calculate_composite_measures(self, ppl):
         temp_fa = 0.0
         temp_dm = 0.0
         for metric in self.fa_metrics:
