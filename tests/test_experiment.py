@@ -38,8 +38,19 @@ def test_regional_exp():
         ok('Regional experiment succeeded')
     return exp
 
+def test_emp():
+    ''' Test Experiment with Empowerment Module'''
+    sc.heading('Testing Experiment with empowerment...')
+    pars = fp.pars(location='kenya', use_empowerment=True)
+    exp_emp = fp.Experiment(pars)
+    exp_emp.run()
+    ok('Experiment with empowerment module succeeded')
+    return exp_emp
+
 if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
 
     with sc.timer():
         exp = test_plot()
+        exp_reg = test_regional_exp()
+        exp_emp = test_emp()

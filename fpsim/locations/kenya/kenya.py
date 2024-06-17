@@ -44,13 +44,15 @@ def filenames():
     files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
     files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
+    files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
     files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2014 or PMA 2022
     files['spacing'] = 'birth_spacing_dhs.csv'
     files['methods'] = 'mix.csv'
     files['afb'] = 'afb.table.csv'
     files['use'] = 'use.csv'
+    files['empowerment'] = 'empowerment.csv'
+    files['education'] = 'edu_initialization.csv'
     return files
 
 
