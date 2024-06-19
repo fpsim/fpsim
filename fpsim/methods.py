@@ -248,7 +248,8 @@ class SimpleChoice(RandomChoice):
                             par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
                             par2 = np.exp(dur_use['par2'])
                             rv = sps.fisk(c=par1, scale=par2)
-                        dur_method[users] = rv.rvs(n_users)
+
+                    dur_method[users] = rv.rvs(n_users)
 
                 else:
                     par1 = dur_use['par1']
