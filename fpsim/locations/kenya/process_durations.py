@@ -31,7 +31,7 @@ def process_data():
     del methods['btl']
 
     # Read in duration estimates
-    dur_raw = pd.read_csv('data/method_time_coefficients_all.csv', keep_default_na=False, na_values=['NaN'])
+    dur_raw = pd.read_csv('data/method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
 
     for method in methods.values():
         mlabel = method.csv_name
