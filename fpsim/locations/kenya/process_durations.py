@@ -36,7 +36,7 @@ def process_data():
     for method in methods.values():
         mlabel = method.csv_name
 
-        thisdf = dur_raw.loc[(dur_raw.method == mlabel) & (dur_raw.functionform == 'lnorm')]
+        thisdf = dur_raw.loc[(dur_raw.method == mlabel)]
         dist = thisdf.functionform.iloc[0]
 
         method.age_bin_vals = thisdf.coef.values[2:]
