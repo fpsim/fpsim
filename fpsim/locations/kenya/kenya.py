@@ -987,7 +987,7 @@ def process_dur_use(methods):
     df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
     for method in methods.values():
         if method.name == 'btl':
-            method.dur_use = dict(dist='normal', par1=100, par2=1, age_factors=[0, 0, 0, 0, 0, 0])
+            method.dur_use = dict(dist='lognormal', par1=100, par2=1, age_factors=[0, 0, 0, 0, 0, 0])
         else:
             mlabel = method.csv_name
 
