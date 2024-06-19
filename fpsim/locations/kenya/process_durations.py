@@ -31,12 +31,12 @@ def process_data():
     del methods['btl']
 
     # Read in duration estimates
-    dur_raw = pd.read_csv('data/method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+    dur_raw = pd.read_csv('data/method_time_coefficients_all.csv', keep_default_na=False, na_values=['NaN'])
 
     for method in methods.values():
         mlabel = method.csv_name
 
-        thisdf = dur_raw.loc[dur_raw.method==mlabel]
+        thisdf = dur_raw.loc[(dur_raw.method == mlabel) & (dur_raw.functionform == 'lnorm')]
         dist = thisdf.functionform.iloc[0]
 
         method.age_bin_vals = thisdf.coef.values[2:]
@@ -82,9 +82,9 @@ if __name__ == '__main__':
                 rv = sps.lognorm(sigma, 0, scale)
             if method.dur_use['dist'] == 'gamma':
                 rv = sps.gamma(par1, scale=1/par2)
-            if method.dur_use['dist'] == 'gompertz':
-                par1 = method.dur_use['par1'] + method.age_bin_vals[ai]
-                rv = sps.gompertz(par1, scale=1/par2)
+            # if method.dur_use['dist'] == 'gompertz':
+            #     par1 = method.dur_use['par1'] + method.age_bin_vals[ai]
+            #     rv = sps.gompertz(par1, scale=1/par2)
             if method.dur_use['dist'] == 'llogis':
                 rv = sps.fisk(c=par1, scale=par2)
 
