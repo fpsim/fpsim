@@ -11,6 +11,7 @@ Idea:
 import numpy as np
 import sciris as sc
 import pandas as pd
+import scipy.stats as sps  # For sampling durations
 import starsim as ss  # TODO add to dependencies
 from . import utils as fpu
 from . import defaults as fpd
@@ -189,7 +190,6 @@ class SimpleChoice(RandomChoice):
                 ppl_this_age = this_age_bools.nonzero()[-1]
                 if len(ppl_this_age) > 0:
                     these_probs = self.init_dist[key]
-                    #if self.mcpr_adj is not None: these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                     these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                     these_choices = fpu.n_multinomial(these_probs, len(ppl_this_age))  # Choose
                     # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
@@ -236,14 +236,26 @@ class SimpleChoice(RandomChoice):
                     age_bins = np.digitize(ppl.age, self.age_bins)
                     par1 = np.zeros(n_users)
                     for ai, ab in enumerate(self.age_bins):
-                        par1[age_bins[users] == ai] = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
-                        par2 = np.exp(method.dur_use['par2'])
+                        if dur_use['dist'] == 'lognormal':
+                            par1[age_bins[users] == ai] = dur_use['par1'] + dur_use['age_factors'][ai]
+                            par2 = np.exp(dur_use['par2'])
+                            rv = sps.lognorm(par2, 0, np.exp(par1))
+                        elif dur_use['dist'] == 'gamma':
+                            par1[age_bins[users] == ai] = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
+                            par2 = np.exp(method.dur_use['par2'])
+                            rv = sps.gamma(par1, scale=1/par2)
+                        elif dur_use['dist'] == 'llogis':
+                            par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
+                            par2 = np.exp(dur_use['par2'])
+                            rv = sps.fisk(c=par1, scale=par2)
+
+                    dur_method[users] = rv.rvs(n_users)
+
                 else:
                     par1 = dur_use['par1']
                     par2 = dur_use['par2']
-
-                dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
-                dur_method[users] = fpu.sample(**dist_dict, size=n_users)
+                    dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
+                    dur_method[users] = fpu.sample(**dist_dict, size=n_users)
 
             else:
                 errormsg = 'Unrecognized type for duration of use: expecting a distribution dict or a number'

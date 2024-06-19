@@ -987,27 +987,27 @@ def process_dur_use(methods):
     df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
     for method in methods.values():
         if method.name == 'btl':
-            method.dur_use = dict(dist='normal', par1=100, par2=1, age_factors=[0, 0, 0, 0, 0, 0])
+            method.dur_use = dict(dist='lognormal', par1=100, par2=1, age_factors=[0, 0, 0, 0, 0, 0])
         else:
             mlabel = method.csv_name
 
-            thisdf = df.loc[df.method==mlabel]
+            thisdf = df.loc[df.method == mlabel]
             dist = thisdf.functionform.iloc[0]
             method.dur_use = dict()
             method.dur_use['age_factors'] = np.append(thisdf.coef.values[2:], 0)
 
             if dist == 'lognormal':
                 method.dur_use['dist'] = dist
-                method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='meanlog'].values[0]
-                method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='sdlog'].values[0]
-            elif dist in ['gamma', 'gompertz']:
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'meanlog'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'sdlog'].values[0]
+            elif dist in ['gamma']:
                 method.dur_use['dist'] = dist
-                method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
-                method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='rate'].values[0]
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'rate'].values[0]
             elif dist == 'llogis':
                 method.dur_use['dist'] = dist
-                method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
-                method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='scale'].values[0]
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'scale'].values[0]
 
     return methods
 

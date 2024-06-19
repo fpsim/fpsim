@@ -36,7 +36,7 @@ def process_data():
     for method in methods.values():
         mlabel = method.csv_name
 
-        thisdf = dur_raw.loc[dur_raw.method==mlabel]
+        thisdf = dur_raw.loc[(dur_raw.method == mlabel)]
         dist = thisdf.functionform.iloc[0]
 
         method.age_bin_vals = thisdf.coef.values[2:]
@@ -44,16 +44,16 @@ def process_data():
 
         if dist == 'lognormal':
             method.dur_use['dist'] = dist
-            method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='meanlog'].values[0]
-            method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='sdlog'].values[0]
-        elif dist in ['gamma', 'gompertz']:
+            method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'meanlog'].values[0]
+            method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'sdlog'].values[0]
+        elif dist in ['gamma']:
             method.dur_use['dist'] = dist
-            method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
-            method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='rate'].values[0]
+            method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+            method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'rate'].values[0]
         elif dist == 'llogis':
             method.dur_use['dist'] = dist
-            method.dur_use['par1'] = thisdf.coef[thisdf.estimate=='shape'].values[0]
-            method.dur_use['par2'] = thisdf.coef[thisdf.estimate=='scale'].values[0]
+            method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+            method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'scale'].values[0]
 
     return methods
 
@@ -77,15 +77,15 @@ if __name__ == '__main__':
 
             if method.dur_use['dist'] == 'lognormal':
                 par1 = method.dur_use['par1'] + method.age_bin_vals[ai]
-                par2 = method.dur_use['par2']
-                sigma, scale = lognorm_params(par1, par2)
-                rv = sps.lognorm(sigma, 0, scale)
+                par2 = np.exp(method.dur_use['par2'])
+                rv = sps.lognorm(par2, 0, np.exp(par1))
             if method.dur_use['dist'] == 'gamma':
+                par1 = np.exp(method.dur_use['par1'] + method.age_bin_vals[ai])
+                par2 = np.exp(method.dur_use['par2'])
                 rv = sps.gamma(par1, scale=1/par2)
-            if method.dur_use['dist'] == 'gompertz':
-                par1 = method.dur_use['par1'] + method.age_bin_vals[ai]
-                rv = sps.gompertz(par1, scale=1/par2)
             if method.dur_use['dist'] == 'llogis':
+                par1 = np.exp(method.dur_use['par1'] + method.age_bin_vals[ai])
+                par2 = np.exp(method.dur_use['par2'])
                 rv = sps.fisk(c=par1, scale=par2)
 
             ax.plot(x/12, rv.pdf(x), color=colors[ai], lw=2, label=age_bin_labels[ai])
