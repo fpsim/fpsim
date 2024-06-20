@@ -48,7 +48,7 @@ do_plot_cpr = True
 do_plot_tfr = True
 do_plot_pop_growth = False
 do_plot_birth_space_afb = False
-do_plot_contra_analysis = True
+do_plot_contra_analysis = False
 
 # Set option to save figures
 do_save = True
@@ -102,11 +102,19 @@ pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
 '''
 # Free parameters for calibration
-pars['fecundity_var_low'] = 0.95
-pars['fecundity_var_high'] = 1.05
-pars['exposure_factor'] = 1
-pars['high_parity'] = 1
-pars['high_parity_nonuse'] = 1
+pars['fecundity_var_low'] = .95
+pars['fecundity_var_high'] = 1.1
+pars['exposure_factor'] = 2.1
+pars['high_parity'] = 1.1
+pars['high_parity_nonuse'] = .8
+'''
+freepars = dict(
+        fecundity_var_low=[0.95, 0.925, 1.0],
+        fecundity_var_high=[1.1, 1.025, 1.3],
+        exposure_factor=[2.0, 0.9, 2.2],
+        high_parity=[1.0, 0.95, 1.2],
+        high_parity_nonuse=[.8, 0.7, 1.0]
+)
 
 # Last free parameter, postpartum sexual activity correction or 'birth spacing preference'
 # Set all to 1 to reset
@@ -117,7 +125,7 @@ pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
 #pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
 
 # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
-'''
+
 # Print out free params being used
 print("FREE PARAMETERS BEING USED:")
 print(f"Fecundity range: {pars['fecundity_var_low']}-{pars['fecundity_var_high']}")
@@ -126,6 +134,10 @@ print(f"High parity: {pars['high_parity']}")
 print(f"High parity, nonuse: {pars['high_parity_nonuse']}")
 #print(f"Birth spacing preference: {spacing_pars}")
 print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
+
+calibration = fp.Calibration(pars, calib_pars=freepars)
+calibration.calibrate()
+pars.update(calibration.best_pars)
 
 # Run the sim
 method_choice = fp.SimpleChoice(location='kenya')
@@ -215,7 +227,7 @@ if do_plot_methods:
 
         # Extract from model
         for i in range(len(ppl)):
-                if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age and ppl.on_contra[i]:
+                if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
                         model_method_counts[ppl.method[i]] += 1
 
         model_method_counts[:] /= model_method_counts[:].sum()
@@ -223,14 +235,14 @@ if do_plot_methods:
 
         # Method mix from data - country PMA data (mix.csv)
         data_methods_mix = {
-                'Withdrawal': data_methods.loc[data_methods['method'] == 'Withdrawal', 'perc'].iloc[0],
-                'Other traditional': data_methods.loc[data_methods['method'] == 'Other traditional', 'perc'].iloc[0],
-                'Condoms': data_methods.loc[data_methods['method'] == 'Condoms', 'perc'].iloc[0],
                 'Pill': data_methods.loc[data_methods['method'] == 'Pill', 'perc'].iloc[0],
-                'Injectables': data_methods.loc[data_methods['method'] == 'Injectables', 'perc'].iloc[0],
-                'Implants': data_methods.loc[data_methods['method'] == 'Implants', 'perc'].iloc[0],
                 'IUDs': data_methods.loc[data_methods['method'] == 'IUDs', 'perc'].iloc[0],
+                'Injectables': data_methods.loc[data_methods['method'] == 'Injectables', 'perc'].iloc[0],
+                'Condoms': data_methods.loc[data_methods['method'] == 'Condoms', 'perc'].iloc[0],
                 'BTL': data_methods.loc[data_methods['method'] == 'BTL', 'perc'].iloc[0],
+                'Withdrawal': data_methods.loc[data_methods['method'] == 'Withdrawal', 'perc'].iloc[0],
+                'Implants': data_methods.loc[data_methods['method'] == 'Implants', 'perc'].iloc[0],
+                'Other traditional': data_methods.loc[data_methods['method'] == 'Other traditional', 'perc'].iloc[0],
                 'Other modern': data_methods.loc[data_methods['method'] == 'Other modern', 'perc'].iloc[0]
         }
 
@@ -279,6 +291,7 @@ if do_plot_methods:
         if do_save:
                 pl.savefig(os.path.join(figs_dir, "method_use.png"), bbox_inches='tight', dpi=100)
 
+        pl.show()
 
 if do_plot_ageparity:
         '''
