@@ -1,11 +1,2 @@
 "rhs","Estimate"
-"(Intercept)",-1.24300271469779
-"ns(age, knots = c(25, 40))1",-0.0157788570200145
-"intent_cat_0no_intent:decide_spending_partner_0",-0.0403743386133586
-"intent_cat_0User:financial_info_0",0.218635373263921
-"buy_decision_major_0:ns(age, knots = c(25, 40))2",-0.778762863302288
-"buy_decision_major_0:urban",-0.0475793335314741
-"buy_decision_daily_0:ns(age, knots = c(25, 40))1",-0.461831323461046
-"buy_decision_daily_0:edu_attainment",0.0721518011440415
-"decision.making_0:ns(age, knots = c(25, 40))1",-0.440165540945367
-"parity:wealthquintile",-0.0314372334289983
+"(Intercept)",-1.34899934100112
