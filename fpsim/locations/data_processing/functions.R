@@ -26,6 +26,7 @@ library(boot)
 # Coefficients for two economic empowerment scales, household decision making and financial autonomy. From Cardona et al. 2023 PMA analysis
 CFA.load <- (c(buy_decision_major = 0.720, buy_decision_daily= 0.776, buy_decision_health = 0.799, buy_decision_clothes = 0.763, 
                savings = 0.747, financial_info = 0.730, financial_goals = 0.750))
+
 # write.csv(CFA.load, "fpsim/locations/kenya/CFA.loadings.csv", row.names = T, col.names = F)
 
 # add these coefficients to dataframe and calculate scores
@@ -89,6 +90,7 @@ modellist[[i]] <- model
   empower_results[[i]] <- as.data.frame(summary(model)$coefficients) %>% 
     mutate(lhs = i, rhs = rownames(.)) }
 
+# Don't actually need this one because it's calucalted based on loadings
 for (i in c("decision.making", "financial.autonomy")) {
   print(i)
   model <- svyglm(as.formula(paste0(i,"_2 ~ current_contra_1 + ",i,"_1  + ns(age_2,knots = c(25)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2")),
@@ -138,11 +140,11 @@ filter_data %>% group_by(age_2) %>% summarise(contra = mean(current_contra_2, na
   ggplot() + geom_point(aes(y = contra, x = age_2)) 
 
 # Contraception simple function
-model.simple <- svyglm(current_contra_2 ~ age_grp_2, 
+model.simple <- svyglm(current_contra_2 ~ age_grp_2 + fp_ever_user_2, 
                 family = quasibinomial(), 
-                design = svydes)
+                #design = svydes)
                 #design = svydes.pp1)
-                #design = svydes.pp6)
+                design = svydes.pp6)
 contra_coef.simple <- as.data.frame(summary(model.simple)$coefficients) %>% 
   mutate(rhs = gsub("_2", "", rownames(.)))
 
