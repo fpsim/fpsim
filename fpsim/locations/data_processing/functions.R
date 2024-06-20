@@ -278,13 +278,14 @@ filter_data %>% group_by(age_2) %>% summarise(intent = mean(intent_contra_2, na.
   ggplot() + geom_point(aes(y = intent, x = age_2)) 
 
 # Model
-model.intent <- svyglm(intent_contra_2 ~ fertility_intent_2 + ns(age_2, knots = c(25,40)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
+model.intent <- svyglm(intent_contra_2 ~ intent_contra_1 +fertility_intent_2 + ns(age_2, knots = c(25,40)) + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
                      family = quasibinomial(), 
                      design = svydes.full)
 intent_coef <- as.data.frame(summary(model.intent)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
   mutate(rhs = gsub("_2", "", gsub("yrs.edu","edu_attainment",
-                                   gsub("live_births", "parity", rhs))))
+                                   gsub("live_births", "parity",
+                                        gsub("_1", "_0", rhs)))))
 
 # write.csv(intent_coef, "fpsim/locations/kenya/intent_coef.csv", row.names = F)
 
