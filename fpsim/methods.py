@@ -204,7 +204,7 @@ class SimpleChoice(RandomChoice):
         # Figure out which coefficients to use
         if event is None : p = self.contra_use_pars[0]
         if event == 'pp1': p = self.contra_use_pars[1]
-        if event == 'pp6': p = self.contra_use_pars[6]
+        if event == 'pp6': p = self.contra_use_pars[2]
 
         # Calculate probability of use
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
@@ -297,7 +297,7 @@ class SimpleChoice(RandomChoice):
                             #these_probs = np.array(these_probs)/self.mcpr_adj   # MCPR Adjustment
                             these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                             these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
-                            choice_array[switch_iinds] = these_choices  # Set values
+                            # choice_array[switch_iinds] = these_choices  # Set values
 
                             # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
                             choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
@@ -320,7 +320,8 @@ class SimpleChoice(RandomChoice):
                 #these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                 these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                 these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
-                choice_array[switch_iinds] = these_choices  # Set values
+                # choice_array[switch_iinds] = these_choices  # Set values
+                choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
 
         return choice_array
 

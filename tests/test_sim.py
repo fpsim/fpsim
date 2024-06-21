@@ -79,6 +79,6 @@ def test_empowered_choice():
 
 if __name__ == '__main__':
 
-    s0 = test_simple()
+    # s0 = test_simple()
     s1 = test_simple_choice()
-    s2 = test_empowered_choice()
+    # s2 = test_empowered_choice()

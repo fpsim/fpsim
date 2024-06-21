@@ -186,6 +186,7 @@ class People(fpb.BasePeople):
 
                 # Non-users will be made to pick a method
                 new_users = self.filter(~self.on_contra)
+                prev_users = self.filter(self.on_contra)
                 if len(new_users):
                     new_users.on_contra = True
                     self.step_results['contra_access'] += len(new_users)
@@ -194,20 +195,22 @@ class People(fpb.BasePeople):
                     new_users.ti_contra = ti + cm.set_dur_method(new_users)
 
                 # Get previous users and see whether they will switch methods or stop using
-                prev_users = self.filter(self.on_contra)
                 if len(prev_users):
                     prev_users.on_contra = cm.get_contra_users(prev_users, year=year)
 
-                    # For those who keep using, determine their next method and update time
+                    # Divide people into those that keep using contraception vs those that stop
                     still_on_contra = prev_users.filter(prev_users.on_contra)
+                    stopping_contra = prev_users.filter(~prev_users.on_contra)
                     self.step_results['contra_access'] += len(still_on_contra)
+
+                    # For those who keep using, determine their next method and update time
                     still_on_contra.method = cm.choose_method(still_on_contra)
                     still_on_contra.ti_contra = ti + cm.set_dur_method(still_on_contra)
 
                     # For those who stop using, determine when next to update
-                    stopping_contra = prev_users.filter(~prev_users.on_contra)
-                    stopping_contra.method = 0
-                    stopping_contra.ti_contra = ti + cm.set_dur_method(stopping_contra)
+                    if len(stopping_contra) > 0:
+                        stopping_contra.method = 0
+                        stopping_contra.ti_contra = ti + cm.set_dur_method(stopping_contra)
 
                 # Validate
                 n_methods = len(self.contraception_module.methods)
@@ -219,9 +222,19 @@ class People(fpb.BasePeople):
             if event in ['pp1', 'pp6']:
                 self.on_contra = cm.get_contra_users(self, year=year, event=event)
                 on_contra = self.filter(self.on_contra)
+                off_contra = self.filter(~self.on_contra)
                 self.step_results['contra_access'] += len(on_contra)
-                on_contra.method = cm.choose_method(on_contra, event=event)
-                on_contra.ti_contra = ti + cm.set_dur_method(on_contra)
+
+                # Set method for those who use contraception
+                if len(on_contra):
+                    on_contra.method = cm.choose_method(on_contra, event=event)
+                    on_contra.ti_contra = ti + cm.set_dur_method(on_contra)
+                if len(off_contra):
+                    off_contra.method = 0
+                    if event == 'pp1':  # For women 1m postpartum, choose again when they are 6 months pp
+                        off_contra.ti_contra_pp6 = ti + 5
+                    else:
+                        off_contra.ti_contra = ti + cm.set_dur_method(off_contra)
 
         return
 
@@ -395,8 +408,10 @@ class People(fpb.BasePeople):
         self.postpartum = False
         self.postpartum_dur = 0
         self.reset_breastfeeding()  # Stop lactating if becoming pregnant
-        self.method = 0  # Not using contraception during pregnancy
+        self.on_contra = False  # Not using contraception during pregnancy
+        self.method = 0  # Method zero due to non-use
         self.ti_contra_pp1 = self.ti + self.preg_dur  # Set a trigger to update contraceptive choices post delivery
+        self.ti_contra = np.nan  # Remove this value... is this safe?? Should be ok, but what happens
         return
 
     def check_lam(self):
@@ -484,6 +499,7 @@ class People(fpb.BasePeople):
             miscarriage.miscarriage += 1  # Add 1 to number of miscarriages agent has had
             miscarriage.postpartum = False
             miscarriage.gestation = 0  # Reset gestation counter
+            miscarriage.ti_contra = self.ti+1  # Update contraceptive choices
 
         return
 
@@ -887,7 +903,6 @@ class People(fpb.BasePeople):
         """
         Perform all updates to people on each timestep
         """
-
         self.init_step_results()  # Initialize outputs
         alive_start = self.filter(self.alive)
         alive_start.check_mortality()  # Decide if person dies at this t in the simulation
@@ -926,8 +941,12 @@ class People(fpb.BasePeople):
         if len(methods):
             methods.update_method(mcpr_adj=mcpr_adj)
 
-        if len(methods_pp1): methods.update_method(event='pp1', mcpr_adj=mcpr_adj)
-        if len(methods_pp6): methods.update_method(event='pp6', mcpr_adj=mcpr_adj)
+        if len(methods_pp1): methods_pp1.update_method(event='pp1', mcpr_adj=mcpr_adj)
+        if len(methods_pp6): methods_pp6.update_method(event='pp6', mcpr_adj=mcpr_adj)
+        methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
+        if not methods_ok:
+            errormsg = 'Agents not using contraception are not the same as agents who are using None method'
+            raise ValueError(errormsg)
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()
@@ -954,6 +973,5 @@ class People(fpb.BasePeople):
         if (self.ti_contra < 0).any():
             errormsg = 'Invalid values for ti_contra'
             raise ValueError(errormsg)
-
 
         return self.step_results
