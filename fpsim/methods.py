@@ -213,8 +213,6 @@ class SimpleChoice(RandomChoice):
             rhs[age_bins == ai] += p.age_factors[ai]
         rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
         prob_use = 1 / (1+np.exp(-rhs))
-
-        # prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
         return prob_use
 
     def set_dur_method(self, ppl, method_used=None):
@@ -270,8 +268,8 @@ class SimpleChoice(RandomChoice):
         if event == 'pp1': return self.choose_method_post_birth(ppl)
 
         else:
-            if event==None:  mcp = self.method_choice_pars[0]
-            if event=='pp6': mcp = self.method_choice_pars[6]
+            if event is None:  mcp = self.method_choice_pars[0]
+            if event == 'pp6': mcp = self.method_choice_pars[6]
 
             # Initialize arrays and get parameters
             jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
@@ -290,17 +288,13 @@ class SimpleChoice(RandomChoice):
 
                         # Get probability of choosing each method
                         if mname == 'btl':
-                            choice_array[switch_iinds] = method.idx  # Continue, can't actually sto
+                            choice_array[switch_iinds] = method.idx  # Continue, can't actually stop this method
                         else:
-                            try:
-                                these_probs = mcp[key][mname]  # Cannot stay on method
-                            except:
-                                raise ValueError
+                            these_probs = mcp[key][mname]  # Cannot stay on method
                             these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
                             #these_probs = np.array(these_probs)/self.mcpr_adj   # MCPR Adjustment
                             these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                             these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
-                            # choice_array[switch_iinds] = these_choices  # Set values
 
                             # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
                             choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
@@ -323,7 +317,6 @@ class SimpleChoice(RandomChoice):
                 #these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                 these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                 these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
-                # choice_array[switch_iinds] = these_choices  # Set values
                 choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
 
         return choice_array

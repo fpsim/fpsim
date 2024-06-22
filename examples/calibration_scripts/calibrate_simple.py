@@ -135,9 +135,9 @@ print(f"High parity, nonuse: {pars['high_parity_nonuse']}")
 #print(f"Birth spacing preference: {spacing_pars}")
 print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
 
-# calibration = fp.Calibration(pars, calib_pars=freepars)
-# calibration.calibrate()
-# pars.update(calibration.best_pars)
+calibration = fp.Calibration(pars, calib_pars=freepars)
+calibration.calibrate()
+pars.update(calibration.best_pars)
 
 # Run the sim
 method_choice = fp.SimpleChoice(location='kenya')
