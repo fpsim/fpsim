@@ -8,9 +8,6 @@ import sciris as sc
 from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
-from . import education as fpedu
-from . import empowerment as fpemp
-from . import education as fpedu
 from . import demographics as fpdmg
 from . import subnational as fpsn
 
@@ -34,11 +31,6 @@ class People(fpb.BasePeople):
         self.pars = pars  # Set parameters
         if n is None:
             n = int(self.pars['n_agents'])
-
-        # # Time indexing
-        # self.ti = 0     # Time index (0,1,2, ...)
-        # self.ty = None  # Time in years since beginning of sim (25, 25.1, ...)
-        # self.y = None   # Year (1975, 1975.1,...)
 
         # Set default states
         self.states = fpd.person_defaults
@@ -90,7 +82,7 @@ class People(fpb.BasePeople):
         if self.education_module is not None:
             self.education_module.initialize(self)
 
-        # Partnership - TODO, move out of education
+        # Partnership
         if self.pars['use_partnership']:
             fpdmg.init_partnership_states(self)
 
@@ -229,12 +221,16 @@ class People(fpb.BasePeople):
                 if len(on_contra):
                     on_contra.method = cm.choose_method(on_contra, event=event)
                     on_contra.ti_contra = ti + cm.set_dur_method(on_contra)
+
                 if len(off_contra):
                     off_contra.method = 0
                     if event == 'pp1':  # For women 1m postpartum, choose again when they are 6 months pp
                         off_contra.ti_contra_pp6 = ti + 5
                     else:
                         off_contra.ti_contra = ti + cm.set_dur_method(off_contra)
+
+                if event == 'pp1': self.ti_contra_pp1 = np.nan
+                if event == 'pp6': self.ti_contra_pp6 = np.nan
 
         return
 
@@ -466,13 +462,11 @@ class People(fpb.BasePeople):
             self.step_results[key] += len(this_pp_bin)
         postpart.postpartum_dur += self.pars['timestep']
 
-        # If agents are 1 or 6 months postpartum, time to reassess contraception choice
+        # If agents are 1m postpartum, time to reassess contraception choice
         if len(postpart):
-            for pp_dur in [1, 6]:
-                critical_pp = postpart.filter(postpart.postpartum_dur == pp_dur)
-                if len(critical_pp):
-                    if pp_dur == 1: critical_pp.ti_contra_pp1 = self.ti
-                    if pp_dur == 6: critical_pp.ti_contra_pp6 = self.ti
+            critical_pp = postpart.filter(postpart.postpartum_dur == 1)
+            if len(critical_pp):
+                critical_pp.ti_contra_pp1 = self.ti
 
         return
 
