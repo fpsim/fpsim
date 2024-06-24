@@ -100,7 +100,6 @@ pars = fp.pars(location=country)
 pars['n_agents'] = 1000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
-
 # Free parameters for calibration
 pars['fecundity_var_low'] = 1
 pars['fecundity_var_high'] = 1.27

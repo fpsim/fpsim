@@ -117,7 +117,7 @@ class ContraceptiveChoice:
         del self.methods[method.name]
 
     def get_contra_users(self, ppl, year=None, event=None):
-        """ Select contraction users, return boolean array """
+        """ Select contraception users, return boolean array """
         prob_use = self.get_prob_use(ppl, event=event, year=year)
         uses_contra_bool = fpu.binomial_arr(prob_use)
         return uses_contra_bool
