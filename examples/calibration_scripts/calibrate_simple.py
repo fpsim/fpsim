@@ -100,13 +100,12 @@ pars = fp.pars(location=country)
 pars['n_agents'] = 10_000 # Small population size
 pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
-'''
 # Free parameters for calibration
-pars['fecundity_var_low'] = .95
-pars['fecundity_var_high'] = 1.1
-pars['exposure_factor'] = 2.1
-pars['high_parity'] = 1.1
-pars['high_parity_nonuse'] = .8
+pars['fecundity_var_low'] = 1
+pars['fecundity_var_high'] = 1.27
+pars['exposure_factor'] = 1.93
+pars['high_parity'] = 1.04
+pars['high_parity_nonuse'] = .88
 '''
 freepars = dict(
         fecundity_var_low=[0.95, 0.925, 1.0],
@@ -115,7 +114,7 @@ freepars = dict(
         high_parity=[1.0, 0.95, 1.2],
         high_parity_nonuse=[.8, 0.7, 1.0]
 )
-
+'''
 # Last free parameter, postpartum sexual activity correction or 'birth spacing preference'
 # Set all to 1 to reset
 spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-{country}.py'
@@ -135,9 +134,9 @@ print(f"High parity, nonuse: {pars['high_parity_nonuse']}")
 #print(f"Birth spacing preference: {spacing_pars}")
 print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
 
-calibration = fp.Calibration(pars, calib_pars=freepars)
-calibration.calibrate()
-pars.update(calibration.best_pars)
+#calibration = fp.Calibration(pars, calib_pars=freepars)
+#calibration.calibrate()
+#pars.update(calibration.best_pars)
 
 # Run the sim
 method_choice = fp.SimpleChoice(location='kenya')
