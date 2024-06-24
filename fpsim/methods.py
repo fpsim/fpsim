@@ -63,7 +63,7 @@ for m in SimpleMethods.values(): m.dur_use = 1
 # %% Define classes to contain information about the way women choose contraception
 
 class ContraceptiveChoice:
-    def __init__(self, methods=None, pars=None, mcpr_adj=None, **kwargs):
+    def __init__(self, methods=None, pars=None, **kwargs):
         self.methods = methods or SimpleMethods
         self.__dict__.update(kwargs)
         self.n_options = len(self.methods)
@@ -73,7 +73,6 @@ class ContraceptiveChoice:
             p_use=0.5,
         )
         self.pars = sc.mergedicts(default_pars, pars)
-        self.mcpr_adj = mcpr_adj
 
     @property
     def average_dur_use(self):
@@ -292,7 +291,6 @@ class SimpleChoice(RandomChoice):
                         else:
                             these_probs = mcp[key][mname]  # Cannot stay on method
                             these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                            #these_probs = np.array(these_probs)/self.mcpr_adj   # MCPR Adjustment
                             these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                             these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
 
@@ -314,7 +312,6 @@ class SimpleChoice(RandomChoice):
             if len(switch_iinds):
                 these_probs = mcp[key]
                 these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                #these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                 these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                 these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
                 choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
@@ -383,7 +380,6 @@ class EmpoweredChoice(ContraceptiveChoice):
                         # Get probability of choosing each method
                         these_probs = [v for k, v in mcp[key][parity].items() if k != mname]  # Cannot stay on method
                         these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                        #these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                         these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                         these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
 

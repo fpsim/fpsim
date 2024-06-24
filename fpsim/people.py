@@ -167,12 +167,11 @@ class People(fpb.BasePeople):
                                           (self.categorical_intent == "cannot"))] = False
         return
 
-    def update_method(self, year=None, ti=None, mcpr_adj=None):
+    def update_method(self, year=None, ti=None):
         """ Inputs: filtered people, only includes those for whom it's time to update """
         cm = self.contraception_module
         if year is None: year = self.y
         if ti is None: ti = self.ti
-        cm.mcpr_adj = mcpr_adj
         if cm is not None:
 
             # If people are 1 or 6m postpartum, we use different parameters for updating their contraceptive decisions
@@ -863,7 +862,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def update(self, mcpr_adj):
+    def update(self):
         """
         Perform all updates to people on each timestep
         """
@@ -901,7 +900,7 @@ class People(fpb.BasePeople):
         nonpreg.check_sexually_active()
 
         if len(methods):
-            methods.update_method(mcpr_adj=mcpr_adj)
+            methods.update_method()
 
         methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
         if not methods_ok:
