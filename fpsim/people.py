@@ -820,6 +820,14 @@ class People(fpb.BasePeople):
                 self.step_results[key] = as_result_dict[key]
         return
 
+    def birthday_filter(self):
+        """
+        Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
+        annualy, but not based on a calendar year, rather every year on an agent's bday."""
+        age_diff = self.ceil_age - self.age
+        whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
+        return self.filter(whole_years)
+
     def init_step_results(self):
         self.step_results = dict(
             deaths=0,
