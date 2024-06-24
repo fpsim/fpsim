@@ -87,6 +87,7 @@ class People(fpb.BasePeople):
         self.education_module = education_module
         if self.empowerment_module is not None:
             self.empowerment_module.initialize(self)
+
         if self.education_module is not None:
             self.education_module.initialize(self)
 
@@ -913,8 +914,11 @@ class People(fpb.BasePeople):
 
         # Update education and empowerment
         alive_now_f = self.filter(self.is_female)
+        eligible = alive_now_f.filter(((alive_now_f.age >= fpd.min_age) & (alive_now_f.age < fpd.max_age_preg)))
+        bday = eligible.birthday_filter()
+
         if self.empowerment_module is not None:
-            self.empowerment_module.update(alive_now_f)
+            self.empowerment_module.update(bday)
         if self.education_module is not None:
             self.education_module.update(alive_now_f)
 
