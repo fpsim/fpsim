@@ -825,9 +825,9 @@ class People(fpb.BasePeople):
         """
         Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
         annualy, but not based on a calendar year, rather every year on an agent's bday."""
-        age_diff = self.ceil_age - self.age
-        whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
-        return self.filter(whole_years)
+        age_diff = self.int_age - self.age
+        had_bday = (age_diff <= (self.pars['timestep'] / fpd.mpy))
+        return self.filter(had_bday)
 
     def init_step_results(self):
         self.step_results = dict(
