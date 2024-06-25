@@ -411,18 +411,19 @@ class empowerment_recorder(Analyzer):
         # Alive and female
         living_females = sc.findinds(sim.people.alive, sim.people.is_female)
         ages = sim.people.age[living_females]
-        age_group = np.digitize(ages, self.bins) - 1
+        # ages that fall outside (left) of the first bin, are assigned to the 0-th bin
+        # ages that fall outside (right) of the last bin, are assgined to the (nbins+1)-th bin
+        age_bin = np.digitize(ages, self.bins)
 
         for key in self.keys:
             data = sim.people[key][living_females]
             if key == 'age':
-                # Count how many living females we have in this age group
+                # Count how many living females we have in each age group
                 temp = np.histogram(ages, self.bins)[0]
                 vals = temp / temp.sum()  # Transform to density
-            elif key in ['financial_autonomy', 'decision_making']:
-                vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
-            else: # boolean states, expressed as proportion
-                vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
+            else:
+                vals = [np.nanmean(data[age_bin == group_idx]) for group_idx in range(1, self.nbins+1)]
+
             self.data[key][:, sim.ti] = vals
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
