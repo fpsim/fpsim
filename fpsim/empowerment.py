@@ -109,7 +109,32 @@ class Empowerment:
         for empwr_state in self.metrics:
             setattr(ppl, empwr_state, fpu.binomial_arr(self.empowerment_pars[empwr_state][data_inds]))
 
-        self.calculate_composite_measures(ppl)
+        return
+
+    def update_empwr_coeffs(self, ppl):
+        # Update based on coefficients
+        for mi, lhs in enumerate(self.metrics):
+            # lhs -- metric to be updated as a function of rhs variables
+            p = self.update_pars[lhs]
+            rhs = p.intercept * np.ones(len(ppl[lhs]))
+
+            for vname, vval in p.items():
+                 # TODO: update the bit below; this is a temporary fix because ppl does not have all the
+                 # states in p.items()
+                 # keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
+                if vname in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban"]:
+                    rhs += vval * ppl[vname]
+            # NOTE: probability multiplier?
+            prob_1 = 1 / (1 + np.exp(-rhs))
+            if lhs in self.cm_metrics:
+                continue
+            else:
+                # base empowerment states are boolean, we do not currently track probs,
+                new_vals = fpu.binomial_arr(prob_1)
+            old_vals = ppl[lhs]
+            changers = sc.findinds(new_vals != old_vals)  # People whose empowerment changes
+            ppl.ti_contra[changers] = ppl.ti  # Trigger update to contraceptive choices if empowerment changes
+            setattr(ppl, lhs, new_vals)
         return
 
     def update(self, ppl):
@@ -120,29 +145,8 @@ class Empowerment:
         # the simulation and for women who are botn within the simulation
         # Update
         self.update_empwr_states(ppl)
-
-
-        # for mi, metric in enumerate(self.up_metrics):
-        #     p = self.update_pars[metric]
-        #     rhs = p.intercept * np.ones(len(ppl[metric]))
-        #
-        #     for vname, vval in p.items():
-        #          # TODO: update the bit below; this is a temporary fix because ppl does not have all the
-        #          # states in p.items()
-        #          # keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
-        #         if vname in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban"]:
-        #             rhs += vval * ppl[vname]
-        #
-        #     prob_1 = 1 / (1+np.exp(-rhs))
-        #     if metric in self.cm_metrics:  #not probabilities
-        #         new_vals = prob_1
-        #     else:  # probabilities
-        #         # base empowerment states are boolean, we do not currently track probs,
-        #         new_vals = fpu.binomial_arr(prob_1)
-        #     changers = sc.findinds(new_vals != ppl[metric])  # People whose empowerment changes
-        #     ppl.ti_contra[changers] = ppl.ti  # Trigger update to contraceptive choices if empowerment changes
-        #     ppl[metric] = new_vals
-
+        self.update_empwr_coeffs(ppl)
+        self.calculate_composite_measures(ppl)
         return
 
     def calculate_composite_measures(self, ppl):
