@@ -427,7 +427,7 @@ class empowerment_recorder(Analyzer):
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
         """
-        Plot all keys in self.keys or in to_plot as a heatmaps
+        Plot all keys in self.keys or in to_plot as a time vs age-groups heatmaps
         """
         fig_args = sc.mergedicts(fig_args)
         pl_args = sc.mergedicts(pl_args)
@@ -446,7 +446,7 @@ class empowerment_recorder(Analyzer):
                 data = np.array(self.data[key], dtype=float)
                 label = f'metric: {key}'
                 if key in ['age']:
-                    clabel = "proportion of agents"
+                    clabel = "proportion of living women"
                     cmap = 'Blues'
                     vmin, vmax = 0, np.nanmax(data[:])
                 # Composite measures
@@ -487,6 +487,75 @@ class empowerment_recorder(Analyzer):
                 axs[k].set_ylabel('Age (years)')
             except:
                 pl.title(f'Could not plot {key}')
+
+        return fig
+
+    def plot_snapshot(self, ti=0, to_plot=None, fig_args=None, pl_args=None):
+        """
+        Plot curves of each key value vs age-groups, for a single "snapshot" or point
+        in time.
+
+        Args:
+            ti (int, optional): The timestep/snapshot to plot.
+            to_plot (list, optional): The list of keys to plot.
+            fig_args (dict, optional): additional keyword arguments to pass to pl.figure()
+            pl_args (dict, optional): additional keyword arguments to pass to pl.bar()
+
+        Returns:
+            fig
+        """
+        fig_args = sc.mergedicts(fig_args)
+        pl_args = sc.mergedicts(pl_args)
+        fig = pl.figure(**fig_args)
+
+        if to_plot is None:
+            to_plot = self.keys
+
+        nkeys = len(to_plot)
+        rows, cols = sc.get_rows_cols(nkeys)
+
+        axs = []
+        for k, key in enumerate(to_plot):
+            axs.append(fig.add_subplot(rows, cols, k+1))
+            data = np.array(self.data[key], dtype=float)[:, ti]  # (nbinx x ntpts)
+
+            if key in ["age"]:
+                ylabel = "proportion of living women"
+                ymin, ymax = 0, np.nanmax(data[:])
+                color = "tab:blue"
+                label = f"{key} at timestep {ti}"
+            # Composite measures
+            elif key in ['financial_autonomy', 'decision_making']:
+                label = f"composite: {key} at timestep {ti}"
+                ylabel = f"Median value of composite:\n{key}"
+                color = "lightsteelblue"
+                ymin, ymax = 0, 4.0
+            else:
+                label = f"metric: {key} at timestep {ti}"
+                ylabel = f"proportion of women who\n{key}"
+                color = "powderblue"
+                ymin, ymax = 0, 1
+
+            # Generate age-group labels and xtick positions
+            xtick_labels = [f"{self.bins[i]:.0f}-{self.bins[i+1]-1:.0f}" for i in range(self.nbins)]
+            xtick_positions = np.arange(0.5, self.nbins + 0.5)  # Center positions for ticks
+
+            pbar = axs[k].bar(xtick_positions, data, label=label, color=color, **pl_args)
+
+            # Reduce the number of labels if we have too many bins
+            max_labels = 10
+            if len(xtick_labels) > max_labels:
+                step_size = len(xtick_labels) // max_labels
+                xtick_labels = xtick_labels[::step_size]
+                xtick_positions = xtick_positions[::step_size]
+
+            # Label plots
+            axs[k].set_xticks(xtick_positions)
+            axs[k].set_xticklabels(xtick_labels)
+            axs[k].set_title(label)
+            axs[k].set_xlabel('Age group (years)')
+            axs[k].set_ylabel(ylabel)
+            axs[k].set_ylim([ymin, ymax])
 
         return fig
 
