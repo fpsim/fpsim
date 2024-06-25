@@ -124,7 +124,6 @@ class Empowerment:
                  # keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
                 if vname in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban"]:
                     rhs += vval * ppl[vname]
-            # NOTE: probability multiplier?
             prob_1 = 1 / (1 + np.exp(-rhs))
             if lhs in self.cm_metrics:
                 continue

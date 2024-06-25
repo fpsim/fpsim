@@ -18,7 +18,6 @@ pars['end_year'] = 1980  # Very short simulation
 
 
 sc.tic()
-#age_bin_edges = np.concatenate((np.array([0]), np.linspace(15, 50, 36, endpoint=True), np.array([100])))
 age_bin_edges = np.arange(15, 51)  # for simplicity track data in 1yr bins, in the relevant range
 
 sim = fp.Sim(pars=pars, empowerment_module=empwr, analyzers=[fp.empowerment_recorder(bins=age_bin_edges)])
@@ -31,6 +30,7 @@ empwr_analyzer = sim.get_analyzers()[0]
 if do_plot:
     empwr_analyzer.plot_snapshot(ti=0)
     plt.show()
+
 
 def plot_sim_vs_data(emp_data, sim_data, bins, nbins, ti=0,
                      to_plot=None, fig_args=None, pl_args=None):
