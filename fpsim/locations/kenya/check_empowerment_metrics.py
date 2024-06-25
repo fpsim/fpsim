@@ -13,7 +13,7 @@ import fpsim as fp
 do_plot = True
 empwr = fp.Empowerment()
 pars = fp.pars(location='kenya')
-pars['n_agents'] = 10_000  # Smallish population size
+pars['n_agents'] = 1_000  # Smallish population size
 pars['end_year'] = 1980  # Very short simulation
 
 
