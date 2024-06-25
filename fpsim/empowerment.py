@@ -82,7 +82,7 @@ class Empowerment:
             ppl[empwr_state][eligible_inds] = new_vals
         return
 
-    def prob2state(self, ppl):
+    def update_empwr_states(self, ppl):
         """
         Set the homonymous boolean states in ppl. Expects people to be filtered
         by the appropriate conditions.
@@ -97,29 +97,30 @@ class Empowerment:
         """
         # Transform ages to integers
         ages = fpu.digitize_ages_1yr(ppl.age)
-        # Transform to indices of available ages in pars
+        # Transform to indices of available ages in empowerment_pars
         data_inds = ages - fpd.min_age
 
+        # NOTE: The code below should work but it doesn't -- some clash with, or undefined setitem, somewhere ..
         # for empwr_state in self.metrics:
         #     probs = self.empowerment_pars[empwr_state][data_inds]  # empirical probabilities per age 15-49
         #     new_vals = fpu.binomial_arr(probs)
         #     ppl[empwr_state] = new_vals
-        ppl.paid_employment = fpu.binomial_arr(self.empowerment_pars["paid_employment"][data_inds])
+
+        for empwr_state in self.metrics:
+            setattr(ppl, empwr_state, fpu.binomial_arr(self.empowerment_pars[empwr_state][data_inds]))
+
+        self.calculate_composite_measures(ppl)
         return
 
     def update(self, ppl):
         """ Update empowerment probs and re-calculate empowerment states"""
-        self.prob2state(ppl)
 
-        # NOTE:  Update annually on her birthday, ie update empowerment by age,
-        # This will set empowerment state for women who where < 15 at the start of
-        # the simulation and for women (agents) who are botn within the simulation
-        # birthdays = ppl.birthday_filter()
-        # if len(birthdays):
-        #     breakpoint()
-        # self.prob2state(ppl)
-        #
-        # ppl = birthdays.unfilter()
+        # NOTE: Update empowerment annually on her birthday: ie update empowerment by age,
+        # This will set empowerment state for women who where < 15 yo at the start of
+        # the simulation and for women who are botn within the simulation
+        # Update
+        self.update_empwr_states(ppl)
+
 
         # for mi, metric in enumerate(self.up_metrics):
         #     p = self.update_pars[metric]
