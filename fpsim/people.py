@@ -917,7 +917,7 @@ class People(fpb.BasePeople):
         eligible = alive_now_f.filter(((alive_now_f.age >= fpd.min_age) & (alive_now_f.age < fpd.max_age_preg)))
         bday = eligible.birthday_filter()
 
-        if self.empowerment_module is not None:
+        if self.empowerment_module is not None and len(bday):
             self.empowerment_module.update(bday)
         if self.education_module is not None:
             self.education_module.update(alive_now_f)
