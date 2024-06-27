@@ -822,11 +822,14 @@ class People(fpb.BasePeople):
                 self.step_results[key] = as_result_dict[key]
         return
 
-    def birthday_filter(self):
+    def birthday_filter(self, int_age=None):
         """
         Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
         annualy, but not based on a calendar year, rather every year on an agent's bday."""
-        age_diff = self.int_age - self.age
+        if int_age is None:
+            int_age = self.int_age
+
+        age_diff = int_age - self.age
         had_bday = (age_diff <= (self.pars['timestep'] / fpd.mpy))
         return self.filter(had_bday)
 
@@ -915,13 +918,20 @@ class People(fpb.BasePeople):
 
         # Update education and empowerment
         alive_now_f = self.filter(self.is_female)
-        eligible = alive_now_f.filter(((alive_now_f.age >= fpd.min_age) & (alive_now_f.age < fpd.max_age_preg)))
-        bday = eligible.birthday_filter()
+        if self.empowerment_module is not None:
+            eligible = alive_now_f.filter(((alive_now_f.age >= fpd.min_age) & (
+                        alive_now_f.age < fpd.max_age_preg)))
 
-        if self.empowerment_module is not None and len(bday):
-            self.empowerment_module.update(bday)
-            # Update fertility intent on her bday, together with empowerment updates
-            bday.update_fertility_intent_by_age()
+            # Women who just turned 15 get assigned a value based on empowerment probs
+            bday_15 = eligible.birthday_filter(int_age=15)
+            if len(bday_15):
+                self.empowerment_module.update_empwr_states(bday_15)
+            # Update states on her bday, based on coefficients
+            bday = eligible.birthday_filter()
+            if len(bday):
+                self.empowerment_module.update(bday)
+                # Update fertility intent on her bday, together with empowerment updates
+                bday.update_fertility_intent_by_age()
         if self.education_module is not None:
             self.education_module.update(alive_now_f)
 
