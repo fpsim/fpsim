@@ -111,25 +111,27 @@ class Empowerment:
 
         return
 
-    def update_empwr_coeffs(self, ppl):
+    def update_empwr_states_by_coeffs(self, ppl):
         # Update based on coefficients
         for mi, lhs in enumerate(self.metrics):
             # lhs -- metric to be updated as a function of rhs variables
             p = self.update_pars[lhs]
             rhs = p.intercept * np.ones(len(ppl[lhs]))
 
-            for vname, vval in p.items():
+            for predictor, vval in p.items():
                  # TODO: update the bit below; this is a temporary fix because ppl does not have all the
                  # states in p.items()
                  # keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
-                if vname in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban"]:
-                    rhs += vval * ppl[vname]
-            prob_1 = 1 / (1 + np.exp(-rhs))
+                if predictor in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban"]:
+                    rhs += vval * ppl[predictor]
+
+            # Logit
+            prob_t = np.exp(rhs) / (1.0 + np.exp(rhs))
             if lhs in self.cm_metrics:
                 continue
             else:
                 # base empowerment states are boolean, we do not currently track probs,
-                new_vals = fpu.binomial_arr(prob_1)
+                new_vals = fpu.binomial_arr(prob_t)
             old_vals = ppl[lhs]
             changers = sc.findinds(new_vals != old_vals)  # People whose empowerment changes
             ppl.ti_contra[changers] = ppl.ti  # Trigger update to contraceptive choices if empowerment changes
@@ -138,13 +140,7 @@ class Empowerment:
 
     def update(self, ppl):
         """ Update empowerment probs and re-calculate empowerment states"""
-
-        # NOTE: Update empowerment annually on her birthday: ie update empowerment by age,
-        # This will set empowerment state for women who where < 15 yo at the start of
-        # the simulation and for women who are botn within the simulation
-        # Update
-        self.update_empwr_states(ppl)
-        self.update_empwr_coeffs(ppl)
+        self.update_empwr_states_by_coeffs(ppl)
         self.calculate_composite_measures(ppl)
         return
 
