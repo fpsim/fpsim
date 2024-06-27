@@ -157,6 +157,7 @@ class People(fpb.BasePeople):
     def update_fertility_intent_by_age(self):
         """
         In the absence of other factors, fertilty intent changes as a function of age
+        each year on a woman’s birthday
         """
         intent_pars = self.pars['fertility_intent']
 
@@ -919,6 +920,8 @@ class People(fpb.BasePeople):
 
         if self.empowerment_module is not None and len(bday):
             self.empowerment_module.update(bday)
+            # Update fertility intent on her bday, together with empowerment updates
+            bday.update_fertility_intent_by_age()
         if self.education_module is not None:
             self.education_module.update(alive_now_f)
 
