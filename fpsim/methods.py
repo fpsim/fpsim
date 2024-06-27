@@ -147,7 +147,7 @@ class RandomChoice(ContraceptiveChoice):
         return self.choose_method(ppl)
 
     def choose_method(self, ppl, event=None):
-        choice_arr = np.random.choice(np.arange(self.n_methods), size=len(ppl), p=self.pars['method_mix'])
+        choice_arr = np.random.choice(np.arange(1, self.n_methods+1), size=len(ppl), p=self.pars['method_mix'])
         return choice_arr.astype(int)
 
 
