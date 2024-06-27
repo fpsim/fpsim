@@ -37,6 +37,7 @@ fa_draws = np.zeros((n_draws, n_ages))
 dm_draws = np.zeros((n_draws, n_ages))
 n_agents = 1000
 
+
 def generate_composites(empwr_pars):
     age_inds = np.random.randint(0, high=35, size=n_agents)
     fa = np.zeros_like(age_inds, dtype=np.float64)
@@ -64,6 +65,13 @@ def get_average_composites(fa, dm, ages):
 
 # Showcase how the baseline empowerment probabilities are slightly different
 # for multiple seeds.
+metrics_lst = ["paid_employment", "decision_wages", "sexual_autonomy", "decision_purchase",
+               "decide_spending_partner", "decision_health",
+               "has_savings", "buy_decision_major",
+               "has_fin_goals", "buy_decision_daily",
+               "has_fin_knowl", "buy_decision_clothes",
+               "financial_autonomy", "decision_making"]
+
 for draw_i, seed in enumerate(np.random.randint(21, size=n_draws)):
     empowerment_pars = kny.make_empowerment_pars(seed=seed)
     m_i = -1
@@ -74,7 +82,7 @@ for draw_i, seed in enumerate(np.random.randint(21, size=n_draws)):
     fa_draws[draw_i, :] = fa
     dm_draws[draw_i, :] = dm
 
-    for ax, metric in zip(axes, empowerment_pars["avail_metrics"]+comp_metrics):
+    for ax, metric in zip(axes, metrics_lst):
         m_i += 1
         if metric not in comp_metrics:
             data = empowerment_pars[metric]
@@ -85,22 +93,22 @@ for draw_i, seed in enumerate(np.random.randint(21, size=n_draws)):
         if draw_i == n_draws-1:
             # Dummy plot to get the label
             if metric not in comp_metrics:
-                ax.plot(empowerment_pars["avail_ages"], data, 'o', ms=2, c='b',
+                ax.plot(empowerment_pars["avail_ages"], data, '.', ms=2, c='k',
                         alpha=0.4, label=f"Draws with {n_draws} different seeds")
             # Pick axes background color
             if metric in dm_cols:
-                ax.set_facecolor('oldlace')
+                ax.set_facecolor('ivory')
             if metric in fa_cols:
-                ax.set_facecolor('aliceblue')
+                ax.set_facecolor('ghostwhite')
 
             if metric in comp_metrics:
-                mean_estimates = np.nan*np.ones(n_ages)
+                mean_estimates = empowerment_data[f"{metric}.mean"].to_numpy()
                 se_vals = np.nan*np.ones(n_ages)
-                ax.set_title(f"Composite: {metric}")
+                ax.set_title(f"Aggregate: {metric}")
                 if metric in ["financial_autonomy"]:
-                    ax.set_facecolor('powderblue')
+                    ax.set_facecolor('lavender')
                 if metric in ["decision_making"]:
-                    ax.set_facecolor('peachpuff')
+                    ax.set_facecolor('lemonchiffon')
             else:
                 # Empirical data from csv file
                 mean_estimates = empowerment_data[f"{metric}.mean"].to_numpy()
@@ -121,7 +129,7 @@ for draw_i, seed in enumerate(np.random.randint(21, size=n_draws)):
                 ax.errorbar(empowerment_pars["avail_ages"],
                             data_mean.mean(axis=0),
                             yerr=data_mean.std(axis=0) / np.sqrt(n_draws),
-                            ls='', marker='s', ms=3, c='r',
+                            ls='', marker='s', ms=3, c='deeppink',
                             alpha=0.7,
                             label=f"Mean and SE estimated from {n_draws} draws.")
             else:
@@ -136,7 +144,7 @@ for draw_i, seed in enumerate(np.random.randint(21, size=n_draws)):
                 ax.errorbar(age_c,
                             me,
                             yerr=se,
-                            ls='', marker='s', ms=3, c='r',
+                            ls='', marker='s', ms=3, c='deeppink',
                             alpha=0.7,
                             label=f"Mean and SE estimated from {n_draws} draws.")
 
@@ -147,13 +155,13 @@ for draw_i, seed in enumerate(np.random.randint(21, size=n_draws)):
 
         else:
             if metric in ["financial_autonomy"]:
-                ax.plot(age_c, fa, '.', zorder=-1,  ms=2, c='b', alpha=0.1)
+                ax.plot(age_c, fa, '.', zorder=-1,  ms=2, c='k', alpha=0.1)
                 ax.set_ylim([0, 4])
             elif metric in ["decision_making"]:
-                ax.plot(age_c, dm, '.', zorder=-1, ms=2, c='b', alpha=0.1)
+                ax.plot(age_c, dm, '.', zorder=-1, ms=2, c='k', alpha=0.1)
                 ax.set_ylim([0, 4])
             else:
-                ax.plot(empowerment_pars["avail_ages"], data, '.', zorder=-1, ms=2, c='b', alpha=0.1)
+                ax.plot(empowerment_pars["avail_ages"], data, '.', zorder=-1, ms=2, c='k', alpha=0.1)
                 ax.set_ylim([0, 1])
 #fig.tight_layout()
 plt.show()
