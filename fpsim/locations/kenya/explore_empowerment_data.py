@@ -26,7 +26,7 @@ fa_cols = ["has_savings", "has_fin_knowl", "has_fin_goals"]
 n_plots = n_base_metrics + len(comp_metrics)
 
 # Plotting stuff
-nr, nc = sc.get_rows_cols(n_plots, 3)
+nr, nc = sc.get_rows_cols(n_plots, ncols=2)
 fig, axs = plt.subplots(nr, nc)
 axes = [ax for ax in axs.flat]
 
@@ -96,7 +96,7 @@ for draw_i, seed in enumerate(np.random.randint(21, size=n_draws)):
             if metric in comp_metrics:
                 mean_estimates = np.nan*np.ones(n_ages)
                 se_vals = np.nan*np.ones(n_ages)
-                ax.set_title(f"Composite: {metric}.")
+                ax.set_title(f"Composite: {metric}")
                 if metric in ["financial_autonomy"]:
                     ax.set_facecolor('powderblue')
                 if metric in ["decision_making"]:
@@ -105,7 +105,9 @@ for draw_i, seed in enumerate(np.random.randint(21, size=n_draws)):
                 # Empirical data from csv file
                 mean_estimates = empowerment_data[f"{metric}.mean"].to_numpy()
                 se_vals = empowerment_data[f"{metric}.se"].to_numpy()
-                ax.set_title(f"Prob({metric}|age).\n  Draws from ~N({metric}.mean, {metric}.se).")
+                ax.set_title(f"Metric: {metric}")
+                #ax.set_title(f"Prob({metric}|age).\n  Draws from ~N({metric}.mean, {metric}.se).")
+
 
             # Plot empirical mean estimates and use SE for error val
             ax.errorbar(empowerment_data["age"], mean_estimates, yerr=se_vals,
@@ -124,11 +126,11 @@ for draw_i, seed in enumerate(np.random.randint(21, size=n_draws)):
                             label=f"Mean and SE estimated from {n_draws} draws.")
             else:
                 if metric in ["financial_autonomy"]:
-                    me = fa_draws.mean(axis=0)
+                    me = np.median(fa_draws, axis=0)
                     se = fa_draws.std(axis=0) / np.sqrt(n_draws)
 
-                if metric in ["financial_autonomy"]:
-                    me = dm_draws.mean(axis=0)
+                if metric in ["decision_making"]:
+                    me = np.median(dm_draws, axis=0)
                     se = dm_draws.std(axis=0) / np.sqrt(n_draws)
 
                 ax.errorbar(age_c,
@@ -138,17 +140,20 @@ for draw_i, seed in enumerate(np.random.randint(21, size=n_draws)):
                             alpha=0.7,
                             label=f"Mean and SE estimated from {n_draws} draws.")
 
-
-            ax.set_xlabel("Age [years]")
-            ax.set_ylabel(metric)
-            ax.legend()
+            if m_i > 11:
+                ax.set_xlabel("Age [years]")
+            ax.set_ylabel(f"p(empowerment|age)")
+            #ax.legend()
 
         else:
             if metric in ["financial_autonomy"]:
-                ax.plot(age_c, fa, 'o', ms=2, c='b', alpha=0.1)
+                ax.plot(age_c, fa, '.', zorder=-1,  ms=2, c='b', alpha=0.1)
+                ax.set_ylim([0, 4])
             elif metric in ["decision_making"]:
-                ax.plot(age_c, dm, 'o', ms=2, c='b', alpha=0.1)
+                ax.plot(age_c, dm, '.', zorder=-1, ms=2, c='b', alpha=0.1)
+                ax.set_ylim([0, 4])
             else:
-                ax.plot(empowerment_pars["avail_ages"], data, 'o', ms=2, c='b', alpha=0.1)
-
+                ax.plot(empowerment_pars["avail_ages"], data, '.', zorder=-1, ms=2, c='b', alpha=0.1)
+                ax.set_ylim([0, 1])
+#fig.tight_layout()
 plt.show()
