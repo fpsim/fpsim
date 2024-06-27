@@ -610,6 +610,31 @@ def get_empowerment_loadings():
     return loadings
 
 
+def calculate_empwr_composites(empwr_data, empwr_pars):
+    dm_cols = ["buy_decision_major", "buy_decision_daily",
+               "buy_decision_clothes", "decision_health"]
+
+    fa_cols = ["has_savings", "has_fin_knowl", "has_fin_goals"]
+
+    fa = np.zeros(len(empwr_pars["avail_ages"]), dtype=np.float64)
+    dm = np.zeros_like(fa, dtype=np.float64)
+
+    col = ".mean"
+    for metric in fa_cols:
+        probs = empwr_data[metric+col].to_numpy()
+        vals = fpu.binomial_arr(probs).astype(float)
+        temp = vals * empwr_pars["loadings"][metric]
+        fa += temp
+
+    for metric in dm_cols:
+        probs = empwr_data[metric+col].to_numpy()
+        vals = fpu.binomial_arr(probs).astype(float)
+        dm += vals * empwr_pars["loadings"][metric]
+    empwr_data["financial_autonomy.mean"] = fa
+    empwr_data["decision_making.mean"] = dm
+    return empwr_data
+
+
 # Empowerment metrics
 def make_empowerment_pars(seed=None, return_data=False):
     """
@@ -670,6 +695,8 @@ def make_empowerment_pars(seed=None, return_data=False):
     # Estimate composites for decision making (dm) and financial autonomy (fa)
     # and add them to the empowerment pars
     empowerment_pars["loadings"] = get_empowerment_loadings()
+    empowerment_data = calculate_empwr_composites(empowerment_data, empowerment_pars)
+
     if return_data:
         return empowerment_pars, empowerment_data
     return empowerment_pars
