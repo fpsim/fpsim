@@ -225,9 +225,9 @@ class People(fpb.BasePeople):
             ppdict = {'pp1': pp1, 'pp6': pp6}
             for event, pp in ppdict.items():
                 if len(pp):
-                    if pp.on_contra.any():
-                        errormsg = 'Postpartum women whould not currently be using contraception.'
-                        raise ValueError(errormsg)
+                    # if pp.on_contra.any():
+                    #     errormsg = 'Postpartum women whould not currently be using contraception.'
+                    #     raise ValueError(errormsg)
                     pp.on_contra = cm.get_contra_users(pp, year=year, event=event)
                     on_contra = pp.filter(pp.on_contra)
                     off_contra = pp.filter(~pp.on_contra)
