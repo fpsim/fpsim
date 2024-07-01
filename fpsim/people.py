@@ -176,7 +176,7 @@ class People(fpb.BasePeople):
 
             # If people are 1 or 6m postpartum, we use different parameters for updating their contraceptive decisions
             is_pp1 = (self.postpartum_dur == 1)
-            is_pp6 = (self.postpartum_dur == 6)
+            is_pp6 = (self.postpartum_dur == 6) & ~self.on_contra  # They may have decided to use contraception after 1m
             pp0 = self.filter(~(is_pp1 | is_pp6))
             pp1 = self.filter(is_pp1)
             pp6 = self.filter(is_pp6)
@@ -225,9 +225,9 @@ class People(fpb.BasePeople):
             ppdict = {'pp1': pp1, 'pp6': pp6}
             for event, pp in ppdict.items():
                 if len(pp):
-                    # if pp.on_contra.any():
-                    #     errormsg = 'Postpartum women whould not currently be using contraception.'
-                    #     raise ValueError(errormsg)
+                    if pp.on_contra.any():
+                        errormsg = 'Postpartum women whould not currently be using contraception.'
+                        raise ValueError(errormsg)
                     pp.on_contra = cm.get_contra_users(pp, year=year, event=event)
                     on_contra = pp.filter(pp.on_contra)
                     off_contra = pp.filter(~pp.on_contra)
