@@ -185,14 +185,18 @@ class People(fpb.BasePeople):
             if len(pp0):
 
                 # Non-users will be made to pick a method
-                new_users = pp0.filter(~pp0.on_contra)
-                prev_users = pp0.filter(pp0.on_contra)
-                if len(new_users):
-                    new_users.on_contra = True
-                    pp0.step_results['contra_access'] += len(new_users)
-                    new_users.method = cm.choose_method(new_users)
-                    pp0.step_results['new_users'] += np.count_nonzero(new_users.method)
-                    new_users.ti_contra = ti + cm.set_dur_method(new_users)
+                if cm.pars['force_choose']:
+                    new_users = pp0.filter(~pp0.on_contra)
+                    prev_users = pp0.filter(pp0.on_contra)
+                    if len(new_users):
+                        new_users.on_contra = True
+                        pp0.step_results['contra_access'] += len(new_users)
+                        new_users.method = cm.choose_method(new_users)
+                        pp0.step_results['new_users'] += np.count_nonzero(new_users.method)
+                        new_users.ti_contra = ti + cm.set_dur_method(new_users)
+
+                else:
+                    prev_users = pp0
 
                 # Get previous users and see whether they will switch methods or stop using
                 if len(prev_users):

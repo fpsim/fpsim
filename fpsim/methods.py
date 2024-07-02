@@ -71,6 +71,7 @@ class ContraceptiveChoice:
         self.init_dist = None
         default_pars = dict(
             p_use=0.5,
+            force_choose=False,  # Whether to force non-users to choose a method
         )
         self.pars = sc.mergedicts(default_pars, pars)
 
