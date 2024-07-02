@@ -63,7 +63,7 @@ for m in SimpleMethods.values(): m.dur_use = 1
 # %% Define classes to contain information about the way women choose contraception
 
 class ContraceptiveChoice:
-    def __init__(self, methods=None, pars=None, mcpr_adj=None, **kwargs):
+    def __init__(self, methods=None, pars=None, **kwargs):
         self.methods = methods or SimpleMethods
         self.__dict__.update(kwargs)
         self.n_options = len(self.methods)
@@ -71,9 +71,9 @@ class ContraceptiveChoice:
         self.init_dist = None
         default_pars = dict(
             p_use=0.5,
+            force_choose=False,  # Whether to force non-users to choose a method
         )
         self.pars = sc.mergedicts(default_pars, pars)
-        self.mcpr_adj = mcpr_adj
 
     @property
     def average_dur_use(self):
@@ -139,6 +139,7 @@ class RandomChoice(ContraceptiveChoice):
         default_pars = dict(
             p_use=0.5,
             method_mix=np.array([1/self.n_methods]*self.n_methods),
+            force_choose=False,  # Whether to force non-users to choose a method
         )
         self.pars = sc.mergedicts(default_pars, pars)
         self.init_dist = self.pars['method_mix']
@@ -148,7 +149,7 @@ class RandomChoice(ContraceptiveChoice):
         return self.choose_method(ppl)
 
     def choose_method(self, ppl, event=None):
-        choice_arr = np.random.choice(np.arange(self.n_methods), size=len(ppl), p=self.pars['method_mix'])
+        choice_arr = np.random.choice(np.arange(1, self.n_methods+1), size=len(ppl), p=self.pars['method_mix'])
         return choice_arr.astype(int)
 
 
@@ -159,6 +160,7 @@ class SimpleChoice(RandomChoice):
         default_pars = dict(
             prob_use_year=2000,
             prob_use_trend_par=0.1,
+            force_choose=False,  # Whether to force non-users to choose a method
         )
         updated_pars = sc.mergedicts(default_pars, pars)
         self.pars = sc.mergedicts(self.pars, updated_pars)
@@ -204,7 +206,7 @@ class SimpleChoice(RandomChoice):
         # Figure out which coefficients to use
         if event is None : p = self.contra_use_pars[0]
         if event == 'pp1': p = self.contra_use_pars[1]
-        if event == 'pp6': p = self.contra_use_pars[6]
+        if event == 'pp6': p = self.contra_use_pars[2]
 
         # Calculate probability of use
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
@@ -213,8 +215,6 @@ class SimpleChoice(RandomChoice):
             rhs[age_bins == ai] += p.age_factors[ai]
         rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
         prob_use = 1 / (1+np.exp(-rhs))
-
-        # prob_use[(ppl.age<18) | (ppl.age>50)] = 0  # CHECK
         return prob_use
 
     def set_dur_method(self, ppl, method_used=None):
@@ -270,8 +270,8 @@ class SimpleChoice(RandomChoice):
         if event == 'pp1': return self.choose_method_post_birth(ppl)
 
         else:
-            if event==None:  mcp = self.method_choice_pars[0]
-            if event=='pp6': mcp = self.method_choice_pars[6]
+            if event is None:  mcp = self.method_choice_pars[0]
+            if event == 'pp6': mcp = self.method_choice_pars[6]
 
             # Initialize arrays and get parameters
             jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
@@ -290,14 +290,12 @@ class SimpleChoice(RandomChoice):
 
                         # Get probability of choosing each method
                         if mname == 'btl':
-                            choice_array[switch_iinds] = method.idx  # Con't
+                            choice_array[switch_iinds] = method.idx  # Continue, can't actually stop this method
                         else:
                             these_probs = mcp[key][mname]  # Cannot stay on method
                             these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                            #these_probs = np.array(these_probs)/self.mcpr_adj   # MCPR Adjustment
                             these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                             these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
-                            choice_array[switch_iinds] = these_choices  # Set values
 
                             # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
                             choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
@@ -317,10 +315,9 @@ class SimpleChoice(RandomChoice):
             if len(switch_iinds):
                 these_probs = mcp[key]
                 these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                #these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                 these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                 these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
-                choice_array[switch_iinds] = these_choices  # Set values
+                choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
 
         return choice_array
 
@@ -386,7 +383,6 @@ class EmpoweredChoice(ContraceptiveChoice):
                         # Get probability of choosing each method
                         these_probs = [v for k, v in mcp[key][parity].items() if k != mname]  # Cannot stay on method
                         these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                        #these_probs = np.array(these_probs) / self.mcpr_adj  # MCPR Adjustment
                         these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
                         these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
 
