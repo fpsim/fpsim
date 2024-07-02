@@ -139,6 +139,7 @@ class RandomChoice(ContraceptiveChoice):
         default_pars = dict(
             p_use=0.5,
             method_mix=np.array([1/self.n_methods]*self.n_methods),
+            force_choose=False,  # Whether to force non-users to choose a method
         )
         self.pars = sc.mergedicts(default_pars, pars)
         self.init_dist = self.pars['method_mix']
@@ -159,6 +160,7 @@ class SimpleChoice(RandomChoice):
         default_pars = dict(
             prob_use_year=2000,
             prob_use_trend_par=0.1,
+            force_choose=False,  # Whether to force non-users to choose a method
         )
         updated_pars = sc.mergedicts(default_pars, pars)
         self.pars = sc.mergedicts(self.pars, updated_pars)
