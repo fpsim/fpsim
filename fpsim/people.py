@@ -143,6 +143,7 @@ class People(fpb.BasePeople):
             self.on_contra = contraception_module.get_contra_users(self, year=year)
             oc = self.filter(self.on_contra)
             oc.method = contraception_module.init_method_dist(oc)
+            oc.ever_used_contra = 1
             self.ti_contra = ti + contraception_module.set_dur_method(self)
 
     def update_fertility_intent_by_age(self):
@@ -192,15 +193,22 @@ class People(fpb.BasePeople):
                         new_users.on_contra = True
                         pp0.step_results['contra_access'] += len(new_users)
                         new_users.method = cm.choose_method(new_users)
+                        new_users.ever_used_contra = 1
                         pp0.step_results['new_users'] += np.count_nonzero(new_users.method)
                         new_users.ti_contra = ti + cm.set_dur_method(new_users)
 
                 else:
-                    prev_users = pp0
+                    prev_users = pp0.filter(pp0.on_contra)
 
                 # Get previous users and see whether they will switch methods or stop using
                 if len(prev_users):
                     prev_users.on_contra = cm.get_contra_users(prev_users, year=year)
+
+                    # Validate
+                    count_never_on_contra = np.count_nonzero(prev_users.ever_used_contra==False)
+                    if np.count_nonzero(prev_users.ever_used_contra is False) > 0:
+                        errormsg = f'All previous users should have ever_on_contra value of 1; {count_never_on_contra} persons with value of 0'
+                        raise ValueError(errormsg)
 
                     # Divide people into those that keep using contraception vs those that stop
                     still_on_contra = prev_users.filter(prev_users.on_contra)
@@ -230,7 +238,7 @@ class People(fpb.BasePeople):
             for event, pp in ppdict.items():
                 if len(pp):
                     if pp.on_contra.any():
-                        errormsg = 'Postpartum women whould not currently be using contraception.'
+                        errormsg = 'Postpartum women should not currently be using contraception.'
                         raise ValueError(errormsg)
                     pp.on_contra = cm.get_contra_users(pp, year=year, event=event)
                     on_contra = pp.filter(pp.on_contra)
@@ -240,6 +248,7 @@ class People(fpb.BasePeople):
                     # Set method for those who use contraception
                     if len(on_contra):
                         on_contra.method = cm.choose_method(on_contra, event=event)
+                        on_contra.ever_used_contra = 1
                         on_contra.ti_contra = ti + cm.set_dur_method(on_contra)
 
                     if len(off_contra):
