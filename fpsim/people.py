@@ -185,34 +185,35 @@ class People(fpb.BasePeople):
             # Update choices for people who aren't postpartum
             if len(pp0):
 
-                # Non-users will be made to pick a method
+                # If force_choose is True, then all non-users will be made to pick a method
                 if cm.pars['force_choose']:
-                    new_users = pp0.filter(~pp0.on_contra)
-                    prev_users = pp0.filter(pp0.on_contra)
-                    if len(new_users):
-                        new_users.on_contra = True
-                        pp0.step_results['contra_access'] += len(new_users)
-                        new_users.method = cm.choose_method(new_users)
-                        new_users.ever_used_contra = 1
-                        pp0.step_results['new_users'] += np.count_nonzero(new_users.method)
-                        new_users.ti_contra = ti + cm.set_dur_method(new_users)
+                    must_use = pp0.filter(~pp0.on_contra)
+                    choosers = pp0.filter(pp0.on_contra)
+
+                    if len(must_use):
+                        must_use.on_contra = True
+                        pp0.step_results['contra_access'] += len(must_use)
+                        must_use.method = cm.choose_method(must_use)
+                        must_use.ever_used_contra = 1
+                        pp0.step_results['new_users'] += np.count_nonzero(must_use.method)
+                        must_use.ti_contra = ti + cm.set_dur_method(must_use)
 
                 else:
-                    prev_users = pp0.filter(pp0.on_contra)
+                    choosers = pp0  #.filter(pp0.on_contra)
 
                 # Get previous users and see whether they will switch methods or stop using
-                if len(prev_users):
-                    prev_users.on_contra = cm.get_contra_users(prev_users, year=year)
+                if len(choosers):
+                    choosers.on_contra = cm.get_contra_users(choosers, year=year)
 
-                    # Validate
-                    count_never_on_contra = np.count_nonzero(prev_users.ever_used_contra==False)
-                    if np.count_nonzero(prev_users.ever_used_contra is False) > 0:
-                        errormsg = f'All previous users should have ever_on_contra value of 1; {count_never_on_contra} persons with value of 0'
-                        raise ValueError(errormsg)
+                    # # Validate
+                    # count_never_on_contra = np.count_nonzero(choosers.ever_used_contra==False)
+                    # if np.count_nonzero(choosers.ever_used_contra is False) > 0:
+                    #     errormsg = f'All previous users should have ever_on_contra value of 1; {count_never_on_contra} persons with value of 0'
+                    #     raise ValueError(errormsg)
 
                     # Divide people into those that keep using contraception vs those that stop
-                    still_on_contra = prev_users.filter(prev_users.on_contra)
-                    stopping_contra = prev_users.filter(~prev_users.on_contra)
+                    still_on_contra = choosers.filter(choosers.on_contra)
+                    stopping_contra = choosers.filter(~choosers.on_contra)
                     pp0.step_results['contra_access'] += len(still_on_contra)
 
                     # For those who keep using, determine their next method and update time
