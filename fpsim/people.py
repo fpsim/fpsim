@@ -199,17 +199,12 @@ class People(fpb.BasePeople):
                         must_use.ti_contra = ti + cm.set_dur_method(must_use)
 
                 else:
-                    choosers = pp0  #.filter(pp0.on_contra)
+                    choosers = pp0 
 
                 # Get previous users and see whether they will switch methods or stop using
                 if len(choosers):
                     choosers.on_contra = cm.get_contra_users(choosers, year=year)
-
-                    # # Validate
-                    # count_never_on_contra = np.count_nonzero(choosers.ever_used_contra==False)
-                    # if np.count_nonzero(choosers.ever_used_contra is False) > 0:
-                    #     errormsg = f'All previous users should have ever_on_contra value of 1; {count_never_on_contra} persons with value of 0'
-                    #     raise ValueError(errormsg)
+                    choosers.ever_used_contra = choosers.ever_used_contra | choosers.on_contra
 
                     # Divide people into those that keep using contraception vs those that stop
                     still_on_contra = choosers.filter(choosers.on_contra)
