@@ -213,6 +213,7 @@ class SimpleChoice(RandomChoice):
         age_bins = np.digitize(ppl.age, self.age_bins)
         for ai, ab in enumerate(self.age_bins):
             rhs[age_bins == ai] += p.age_factors[ai]
+        rhs[ppl.ever_used_contra] += p.fp_ever_user
         rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
         prob_use = 1 / (1+np.exp(-rhs))
         return prob_use

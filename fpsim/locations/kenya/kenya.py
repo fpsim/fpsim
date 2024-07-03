@@ -840,8 +840,9 @@ def process_contra_use_simple():
     contra_use_pars = dict()
     for di, df in enumerate(alldfs):
         contra_use_pars[di] = sc.objdict(
-            intercept=df.Estimate[0],
-            age_factors=df.Estimate[1:].values,
+            intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
+            age_factors=df[df['rhs'].str.match('age')].Estimate.values,
+            fp_ever_user=df[df['rhs'].str.contains('fp_ever_user')].Estimate.values[0],
         )
     return contra_use_pars
 
