@@ -1,5 +1,5 @@
 {
-    "name": "Test Codespace",
+    "name": "FPsim Codespace",
     "image": "mcr.microsoft.com/vscode/devcontainers/python:3",
     "extensions": [
         "ms-python.python",
