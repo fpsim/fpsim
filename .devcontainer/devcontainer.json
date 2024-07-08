@@ -1,0 +1,12 @@
+{
+    "name": "Test Codespace",
+    "image": "mcr.microsoft.com/vscode/devcontainers/python:3",
+    "extensions": [
+        "ms-python.python",
+        "ms-toolsai.jupyter"
+    ],
+    "settings": {
+        "terminal.integrated.shell.linux": "/bin/bash"
+    },
+    "postCreateCommand": "pip install -e ."
+}
