@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 1.0.2 (2024-07-08)
+---------------------------
+- Adds .devcontainer configuration for a Codespaces dev container
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/369>`_
+
 Version 1.0.1 (2024-06-17)
 ---------------------------
 - Adds empowerment metrics (paid work and education attainment) to calibration targets
