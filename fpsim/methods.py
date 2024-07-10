@@ -256,8 +256,6 @@ class SimpleChoice(RandomChoice):
                         rv = sps.gamma(par1, scale=1/par2)
                     elif dur_use['dist'] == 'llogis':
                         rv = sps.fisk(c=par1, scale=par2)
-
-
                     dur_method[users] = rv.rvs(n_users)
 
                 else:
