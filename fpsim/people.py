@@ -196,10 +196,9 @@ class People(fpb.BasePeople):
                         must_use.method = cm.choose_method(must_use)
                         must_use.ever_used_contra = 1
                         pp0.step_results['new_users'] += np.count_nonzero(must_use.method)
-                        must_use.ti_contra = ti + cm.set_dur_method(must_use)
 
                 else:
-                    choosers = pp0 
+                    choosers = pp0
 
                 # Get previous users and see whether they will switch methods or stop using
                 if len(choosers):
@@ -207,18 +206,16 @@ class People(fpb.BasePeople):
                     choosers.ever_used_contra = choosers.ever_used_contra | choosers.on_contra
 
                     # Divide people into those that keep using contraception vs those that stop
-                    still_on_contra = choosers.filter(choosers.on_contra)
+                    switching_contra = choosers.filter(choosers.on_contra)
                     stopping_contra = choosers.filter(~choosers.on_contra)
-                    pp0.step_results['contra_access'] += len(still_on_contra)
+                    pp0.step_results['contra_access'] += len(switching_contra)
 
                     # For those who keep using, determine their next method and update time
-                    still_on_contra.method = cm.choose_method(still_on_contra)
-                    still_on_contra.ti_contra = ti + cm.set_dur_method(still_on_contra)
+                    switching_contra.method = cm.choose_method(switching_contra)
 
                     # For those who stop using, determine when next to update
                     if len(stopping_contra) > 0:
                         stopping_contra.method = 0
-                        stopping_contra.ti_contra = ti + cm.set_dur_method(stopping_contra)
 
                 # Validate
                 n_methods = len(pp0.contraception_module.methods)
@@ -245,14 +242,16 @@ class People(fpb.BasePeople):
                     if len(on_contra):
                         on_contra.method = cm.choose_method(on_contra, event=event)
                         on_contra.ever_used_contra = 1
-                        on_contra.ti_contra = ti + cm.set_dur_method(on_contra)
 
                     if len(off_contra):
                         off_contra.method = 0
                         if event == 'pp1':  # For women 1m postpartum, choose again when they are 6 months pp
                             off_contra.ti_contra = ti + 5
-                        else:
-                            off_contra.ti_contra = ti + cm.set_dur_method(off_contra)
+
+            # Set duration of use for everyone, and reset the time they'll next update
+            durs_fixed = (self.postpartum_dur == 1) & (self.method == 0)
+            update_durs = self.filter(~durs_fixed)
+            update_durs.ti_contra = ti + cm.set_dur_method(update_durs)
 
         return
 
