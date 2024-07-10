@@ -71,6 +71,7 @@ person_defaults = [
     State('on_contra',          0, bool),  # whether she's on contraception
     State('method',             0, int),  # Which method to use. 0 used for those on no method
     State('ti_contra',          0, int),  # time point at which to set method
+    State('ti_set_dur',         0, int),  # time point at which to set duration of method use
     State('barrier',            0, int),
     State('ever_used_contra',   0, bool),  # Ever been on contraception. 0 for never having used
 
