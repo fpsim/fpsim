@@ -196,7 +196,6 @@ class People(fpb.BasePeople):
                         must_use.method = cm.choose_method(must_use)
                         must_use.ever_used_contra = 1
                         pp0.step_results['new_users'] += np.count_nonzero(must_use.method)
-                        # must_use.ti_contra = ti + cm.set_dur_method(must_use)
 
                 else:
                     choosers = pp0
@@ -213,12 +212,10 @@ class People(fpb.BasePeople):
 
                     # For those who keep using, determine their next method and update time
                     switching_contra.method = cm.choose_method(switching_contra)
-                    # still_on_contra.ti_contra = ti + cm.set_dur_method(still_on_contra)
 
                     # For those who stop using, determine when next to update
                     if len(stopping_contra) > 0:
                         stopping_contra.method = 0
-                        # stopping_contra.ti_contra = ti + cm.set_dur_method(stopping_contra)
 
                 # Validate
                 n_methods = len(pp0.contraception_module.methods)
@@ -245,15 +242,13 @@ class People(fpb.BasePeople):
                     if len(on_contra):
                         on_contra.method = cm.choose_method(on_contra, event=event)
                         on_contra.ever_used_contra = 1
-                        # on_contra.ti_contra = ti + cm.set_dur_method(on_contra)
 
                     if len(off_contra):
                         off_contra.method = 0
                         if event == 'pp1':  # For women 1m postpartum, choose again when they are 6 months pp
                             off_contra.ti_contra = ti + 5
-                        # else:
-                            # off_contra.ti_contra = ti + cm.set_dur_method(off_contra)
 
+            # Set duration of use for everyone, and reset the time they'll next update
             durs_fixed = (self.postpartum_dur == 1) & (self.method == 0)
             update_durs = self.filter(~durs_fixed)
             update_durs.ti_contra = ti + cm.set_dur_method(update_durs)
