@@ -256,7 +256,7 @@ class People(fpb.BasePeople):
 
             durs_fixed = (self.postpartum_dur == 1) & (self.method == 0)
             update_durs = self.filter(~durs_fixed)
-            self.ti_contra = ti + cm.set_dur_method(update_durs)
+            update_durs.ti_contra = ti + cm.set_dur_method(update_durs)
 
         return
 
