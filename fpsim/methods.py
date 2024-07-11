@@ -229,10 +229,23 @@ class SimpleChoice(RandomChoice):
         return par1, par2
 
     @staticmethod
+    def _lognormal_make_dict(dur_use, par1, par2):
+        """
+        Map par1 and par2 from duration use, to par1 and par2 needed
+        by fpu.sample
+        """
+        # NOTE:TODO: fix me, after lognorm distribution has been consolidated in utils.py
+        return dict(dist='lognorm_sps', par1=par2, par2=np.exp(par1))
+
+    @staticmethod
     def _llogis_dpars(dur_use, ai):
         par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
         par2 = np.exp(dur_use['par2'])
         return par1, par2
+
+    @staticmethod
+    def _llogis_make_dict(dur_use, par1, par2):
+        return dict(dist=dur_use['dist'], par1=par1, par2=par2)
 
     @staticmethod
     def _gamma_dpars(dur_use, ai):
@@ -240,14 +253,18 @@ class SimpleChoice(RandomChoice):
         par2 = np.exp(method.dur_use['par2'])
         return par1, par2
 
-    def _get_dpars_fun(self, dist_name):
+    @staticmethod
+    def _gamma_make_dict(dur_use, par1, par2):
+        return dict(dist=dur_use['dist'], par1=par1, par2=1/par2)
+
+    def _get_dist_funs(self, dist_name):
         match dist_name:
             case 'lognormal':
-                return self._lognormal_dpars
+                return self._lognormal_dpars, self._lognormal_make_dict
             case 'gamma':
-                return self._gamma_dpars
+                return self._gamma_dpars, self._gamma_make_dict
             case 'llogis':
-                return self._llogis_dpars
+                return self._llogis_dpars, self._llogis_make_dict
             case _:
                 raise ValueError('Unrecognized distribution type for duration of use')
 
@@ -263,6 +280,7 @@ class SimpleChoice(RandomChoice):
             n_users = len(users)
 
             if isinstance(dur_use, dict):
+                # NOTE: List of available/supported distros can be a property of the class?
                 if not (dur_use['dist'] in ['lognormal', 'gamma', 'llogis']):
                     # bail early
                     raise ValueError(
@@ -271,34 +289,22 @@ class SimpleChoice(RandomChoice):
                 if 'age_factors' in dur_use.keys():
                     age_bins = np.digitize(ppl.age, self.age_bins)
                     par1 = np.zeros(n_users)
-                    dpars_fun = self._get_dpars_fun(dur_use['dist'])
-                    # First set parameters
+                    par2 = np.zeros(n_users)
+
+                    # Get functions based on distro
+                    dist_pars_fun, make_dist_dict = self._get_dist_funs(dur_use['dist'])
+
+                    # First set parameters for every agent
                     for ai, ab in enumerate(self.age_bins):
-                        par1[age_bins[users] == ai], par2 = dpars_fun(dur_use, ai)
-
-                    # # Now sample from distributions
-                    if dur_use['dist'] == 'lognormal':
-                        #dist_dict = dict(dist=dur_use['dist'], par1=par2, par2=par2)
-                        # If we add sps.lognorm to fpu.sample then we can further simplify
-                        # this code. We would not need the if/else to produce the values
-                        # just generate the corect par1 and par2 and pass them
-                        # as fpu.sample(**dist_dict, size=n_users)
-                        vals = sps.lognorm.rvs(par2, 0, np.exp(par1), size=n_users)
-                    elif dur_use['dist'] == 'gamma':
-                        dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=1/par2)
-                        vals = fpu.sample(**dist_dict, size=n_users)
-                    elif dur_use['dist'] == 'llogis':
-                        dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
-                        vals = fpu.sample(**dist_dict, size=n_users)
-                    else:
-                        raise ValueError('Unrecognized distribution type for duration of use')
-                    dur_method[users] = vals
-
+                        par1[age_bins[users] == ai], par2 = dist_pars_fun(dur_use, ai)
+                    # Transform to parameters needed by fpsim distributions
+                    dist_dict = make_dist_dict(dur_use, par1, par2)
                 else:
                     par1 = dur_use['par1']
                     par2 = dur_use['par2']
                     dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
-                    dur_method[users] = fpu.sample(**dist_dict, size=n_users)
+                # Draw samples
+                dur_method[users] = fpu.sample(**dist_dict, size=n_users)
             elif sc.isnumber(dur_use):
                 dur_method[users] = dur_use
             else:
