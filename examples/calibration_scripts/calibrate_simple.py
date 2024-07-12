@@ -97,7 +97,8 @@ sc.tic()
 
 # Set up sim for country
 pars = fp.pars(location=country)
-pars['n_agents'] = 1000  # Small population size
+pars['n_agents'] = 10_000  # Small population size
+pars['start_year'] = 2000
 pars['end_year'] = 2020  # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
