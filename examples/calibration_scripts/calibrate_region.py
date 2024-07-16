@@ -31,9 +31,6 @@ import pandas as pd
 import sciris as sc
 import fpsim as fp
 import pylab as pl
-import seaborn as sns
-
-sc.options(interactive=False)
 
 if __name__ == '__main__':
         ####################################################
@@ -42,8 +39,7 @@ if __name__ == '__main__':
         # Name of the country being calibrated. To note that this should match the name of the country data folder
         country = 'ethiopia'
         #Name of the region being calibrated
-        region = 'addis_ababa'
-        region = region.capitalize()
+        region = 'somali'
 
         # Set options for plotting
         do_plot_sim = True
@@ -61,7 +57,7 @@ if __name__ == '__main__':
         ####################################################
         cwd = os.path.abspath(os.getcwd())
         country_dir = f'../../fpsim/locations/{country}'
-        figs_dir = os.path.join(cwd, country_dir, 'subnational_data/figs', region)
+        figs_dir = os.path.join(cwd, country_dir, 'regions/figs', region)
         if do_save == 1 and os.path.exists(figs_dir) is False:
             os.makedirs(figs_dir, exist_ok=True)
 
@@ -87,10 +83,9 @@ if __name__ == '__main__':
 
         # Set up sim for country
         pars = fp.pars(location=region)
-        pars['n_agents'] = 1_000 # Small population size
+        pars['n_agents'] = 10_000 # Small population size
         pars['end_year'] = 2016 # 1961 - 2020 is the normal date range
 
-        # Free parameters for calibration
         # Free parameters for calibration
         freepars = dict(
                 fecundity_var_low = [0.95, 0.925, 0.975],
@@ -110,20 +105,23 @@ if __name__ == '__main__':
         #pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
 
         # Convert region name to the format used in the data
-        formatted_region = region.replace('_', ' ').title()  # Replace underscore with space and capitalize each word
         if region == 'benishangul_gumuz':
                 formatted_region = region.replace('_', '-').title()  # Replace underscore with dash and capitalize each word
+        elif region == 'snnpr':
+                formatted_region = 'SNNPR'
+        else:
+                formatted_region = region.replace('_', ' ').title()  # Replace underscore with space and capitalize each word
 
         # Import country data files to compare
-        data_asfr = pd.read_csv(f'{country_dir}/subnational_data/asfr_region.csv').loc[lambda df: df['region'] == formatted_region]
-        data_methods = pd.read_csv(f'{country_dir}/subnational_data/mix_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
-        data_tfr = pd.read_csv(f'{country_dir}/subnational_data/tfr_region.csv').loc[lambda df: df['region'] == formatted_region]
-        data_use = pd.read_csv(f'{country_dir}/subnational_data/use_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
+        data_asfr = pd.read_csv(f'{country_dir}/regions/data/asfr_region.csv').loc[lambda df: df['region'] == formatted_region]
+        data_methods = pd.read_csv(f'{country_dir}/regions/data/mix_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
+        data_tfr = pd.read_csv(f'{country_dir}/regions/data/tfr_region.csv').loc[lambda df: df['region'] == formatted_region]
+        data_use = pd.read_csv(f'{country_dir}/regions/data/use_region.csv').loc[lambda df: (df['region'] == formatted_region) & (df['year'] == pars['end_year'])]
         
         calibration = fp.Calibration(pars, calib_pars=freepars)
         calibration.calibrate()
-
-        sim = fp.Sim(pars=calibration.best_pars)
+        pars.update(calibration.best_pars)
+        sim = fp.Sim(pars=pars)
         sim.run()
 
         # Plot results from sim run

@@ -1,5 +1,5 @@
 '''
-Set the parameters for FPsim, specifically for Kenya.
+Set the parameters for FPsim, specifically for NUHDSS.
 '''
 
 import numpy as np
@@ -487,7 +487,7 @@ def debut_age():
     sexual_debut = pd.read_csv(thisdir / 'nuhdss' / 'sex_debut.csv')
     debut_age = {}
     debut_age['ages'] = sexual_debut.Age_at_first_sex.values
-    debut_age['probs'] = sexual_debut.prop.values
+    debut_age['probs'] = sexual_debut.prob.values
 
     return debut_age
 
@@ -557,6 +557,7 @@ def birth_spacing_pref():
 
 
 # %% Contraceptive methods
+
 
 def methods():
     '''

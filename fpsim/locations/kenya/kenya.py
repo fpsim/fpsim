@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 from scipy import interpolate as si
-from .. import defaults as fpd
-from .. import utils as fpu
+from fpsim import defaults as fpd
+from fpsim import utils as fpu
 # %% Housekeeping
 
 thisdir = sc.thispath(__file__)  # For loading CSV files
@@ -40,7 +40,7 @@ def data2interp(data, ages, normalize=False):
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'kenya'
+    files['base'] = sc.thisdir(aspath=True) / 'data'
     files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
     files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
@@ -86,7 +86,7 @@ def age_pyramid():
 
 def urban_proportion():
     """Load information about the proportion of people who live in an urban setting"""
-    urban_data = pd.read_csv(thisdir / 'kenya' / 'urban.csv')
+    urban_data = pd.read_csv(thisdir / 'data' / 'urban.csv')
     return urban_data["mean"][0]  # Return this value as a float
 
 
@@ -101,8 +101,8 @@ def age_mortality():
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
     data_year = 2010
-    mortality_data = pd.read_csv(thisdir / 'kenya' / 'mortality_prob.csv')
-    mortality_trend = pd.read_csv(thisdir / 'kenya' / 'mortality_trend.csv')
+    mortality_data = pd.read_csv(thisdir / 'data' / 'mortality_prob.csv')
+    mortality_trend = pd.read_csv(thisdir / 'data' / 'mortality_trend.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -575,7 +575,7 @@ def methods():
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'kenya' / 'cpr.csv')
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
@@ -1009,46 +1009,32 @@ def empowerment_regression_pars(regression_type='logistic'):
 
 # Empowerment metrics
 def empowerment_distributions(seed=None, regression_type='logistic'):
-    """Intial distributions of empowerment attributes based on latest DHS data <YYYY>
-    TODO: perhaps split into single functions, one per attribute?
-    TODO: update docstring for empowerment_distributions
-    NOTE: DHS data covers the age group from 15 to 49 (inclusive). In this function we
-    interpolate data to reduce noise and extrapolate to cover the age range (0, 100).
-    Interpolation is done using a piecewise linear approximation with an inflexion point
-    on
+    """
+    Produce intial distributions of empowerment attributes
+    based on latest DHS-8 IR 2022 dataset.
 
-    Paid employment (https://github.com/fpsim/fpsim/issues/185)
-    0.6198487 at age 25
-    slope <25, 6.216042e-02 (SE 2.062729e-03)
-    slope >25, 0.0008010242 (SE 0.0592966648)
+    Because DHS data covers the age group from 15 to 49 (inclusive range),
+    in this function we:
+    - (1) interpolate data to reduce noise; and
+    - (2) extrapolate to cover the age range (0, 100) needed
+          to populate the corresponding attributes of each individual agent
+          at the start of a simulation.
 
-    Control over wages (https://github.com/fpsim/fpsim/issues/187)
-    Parameterization:
-    0.9434381 at age 20
-    slope <20, 2.548961e-02 (SE 5.243655e-03)
-    slope >20, 0.0008366125 (SE 0.0194093421)
-
-    Sexual autonomy (https://github.com/fpsim/fpsim/issues/188)
-    Parameterization:
-    0.8292142 at age 25
-    slope <25, 0.025677 (SE 0.003474)
-    slope>25, -0.003916498 (SE 0.026119389)
+    By default, interpolation and extrapolation use
+    a nonlinear logistic-based function (a product of sigmoids).
     """
     from scipy import optimize
 
     # Load empirical data
-    empowerment_data = pd.read_csv(thisdir / 'kenya' / 'empowerment.csv')
+    empowerment_data = pd.read_csv(thisdir / 'data' / 'empowerment.csv')
     mean_cols = {col: col + '.mean' for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"}
     empowerment_data.rename(columns=mean_cols, inplace=True)
     empowerment_dict = {}
 
-    # TODO: Think of a better way to initialize this?
-    # Set seed
     if seed is None:
         seed = 42
     fpu.set_seed(seed)
 
-    # TODO: parametrise so the users can decide which function to use?
     regression_pars, regression_fun = empowerment_regression_pars(regression_type=regression_type)
 
     data_points = {"paid_employment": [], "decision_wages":  [], "decision_health": [], "sexual_autonomy": []}
@@ -1065,15 +1051,24 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
         # Update regression parameters
         regression_pars[col]  = fit_pars
 
-    # Create vector of ages 0, 99 (inclusive) to extrapolate data
-    ages = np.arange(100.0)
+    # Creates a vector of ages [0, 99] (inclusive range) to extrapolate data
+    ages = np.arange(fpd.max_age + 1)
+    empowerment_dict["age"] = ages
 
     # Interpolate and extrapolate data for different empowerment metrics
-    empowerment_dict["age"] = ages
-    empowerment_dict["paid_employment"] = empowerment_paid_employment(ages, regression_fun, regression_pars=regression_pars["paid_employment"])
-    empowerment_dict["decision_wages"]  = empowerment_decision_wages(ages, regression_fun, regression_pars=regression_pars["decision_wages"])
-    empowerment_dict["decision_health"] = empowerment_decision_health(ages, regression_fun, regression_pars=regression_pars["decision_health"])
-    empowerment_dict["sexual_autonomy"] = empowerment_sexual_autonomy(ages, regression_fun, regression_pars=regression_pars["sexual_autonomy"])
+    empowerment_functions = {
+        "paid_employment": empowerment_paid_employment,
+        "decision_wages": empowerment_decision_wages,
+        "decision_health": empowerment_decision_health,
+        "sexual_autonomy": empowerment_sexual_autonomy,
+    }
+    for metric in empowerment_functions.keys():
+        empowerment_dict[metric] = empowerment_functions[metric](
+            ages,
+            regression_fun,
+            regression_pars=regression_pars[metric]
+        )
+
     # Store the estimates of each metric and the optimised regression parameters
     empowerment_dict["regression_pars"] = regression_pars
     empowerment_dict["sampled_points"] = data_points
@@ -1083,7 +1078,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
 
 def age_partnership():
     """ Probabilities of being partnered at age X"""
-    age_partnership_data = pd.read_csv(thisdir / 'kenya' / 'age_partnership.csv')
+    age_partnership_data = pd.read_csv(thisdir / 'data' / 'age_partnership.csv')
     partnership_dict = {}
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
@@ -1092,24 +1087,39 @@ def age_partnership():
 
 def education_objective(df):
     """
-    Convert education objective data to necesary numeric types and into a numpy array
-    NOTE: These values are based on the distribution of education for women over age 20 with no children,
-    stratified by urban/rural from DHS.
+    Transforms education objective data from a DataFrame into a numpy array. The DataFrame represents
+    the proportion of women with different education objectives, stratified by urban/rural residence.
+
+    The 'percent' column represents the proportion of women aiming for 'edu' years of education. The data
+    is based on education completed by women over 20 with no children, stratified by urban/rural residence
+    from the Demographic and Health Surveys (DHS).
+
+    Args:
+        df (pd.DataFrame): Contains 'urban', 'edu' and 'percent' columns, with 'edu' ranging from
+                           0 to a maximum value representing years of education.
+
+    Returns:
+        arr (np.array): A 2D array of shape (2, n_edu_objective_years) containing proportions. The first
+                        row corresponds to 'rural' women and the second row to 'urban' women.
     """
-    # This df has columns
-    # edu: years education, urban: geographic setting, percent:
-    # transformed to a 2d array of proportions with dimensions (n_urban, n_edu_years)
     arr = df["percent"].to_numpy().reshape(df["urban"].nunique(), df["edu"].nunique())
     return arr
 
 
 def education_attainment(df):
     """
-    Convert education attainment data to necessary numeric types and into a numpy array
-    These data are the mean years of education of a woman aged X years from DHS.
+    Transforms education attainment data (from education_initialization.csv) from a DataFrame
+    into a numpy array. The DataFrame represents the average (mean) number of years of
+    education 'edu', a woman aged 'age' has attained/completed.
 
-    NOTE: The data in education_initialization.csv have been extrapolated. Here we only
-    interpolate data for the group 15-49 (inclusive range).
+    Args:
+        df (pd.DataFrame): Contains 'age', 'edu' columns.
+
+    Returns:
+        arr (np.array): A 1D with array with interpolated values of 'edu' years attained.
+
+    NOTE: The data in education_initialization.csv have been extrapolated to cover the age range
+    [0, 99], inclusive range. Here we only interpolate data for the group 15-49 (inclusive range).
     """
     # This df has columns
     # age:age in years and edu: mean years of education
@@ -1117,25 +1127,30 @@ def education_attainment(df):
     ages = df["age"].to_numpy()
     arr  = df["edu"].to_numpy()
 
-    # We interpolate data from 15-49 years
     # Get indices of those ages
-    inds = np.array(sc.findinds(ages >= 15, ages <= 55))
-    from scipy import interpolate
-    # TODO: parameterise interpolation, or provide interpolated data in csv file
-    f_interp = interpolate.interp1d(ages[inds[::4]], arr[inds[::4]], kind="quadratic")
-    arr[inds] = f_interp(ages[inds])
-    return arr, ages
+    inds = np.array(sc.findinds(ages >= fpd.min_age, ages < fpd.max_age_preg+5)) # interpolate beyond DHS max age to avoid discontinuities
+    arr[inds] = sc.smooth(arr[inds], 3)
+    return arr
 
 
 def education_dropout_probs(df):
     """
-    Convert education dropout probability to necessary numeric types and data structure
+    Transforms education dropout probabilities (from edu_stop.csv) from a DataFrame
+    into a dictionary. The dataframe will be used as the probability that a woman aged 'age'
+    and with 'parity' number of children, would drop out of school if she is enrolled in
+    education and becomes pregnant.
 
-    NOTE: This df contains PMA data:
-    - Of women with a first birth before age 18, 12.6% stopped education within 1 year of that birth.
-    - Of women who had a subsequent (not first) birth before age 18, 14.1% stopped school within 1 year of that birth.
+    The data comes from PMA Datalab and 'percent' represents the probability of stopping/droppping
+    out of education within 1 year of the birth represented in 'parity'.
+        - Of women with a first birth before age 18, 12.6% stopped education within 1 year of that birth.
+        - Of women who had a subsequent (not first) birth before age 18, 14.1% stopped school within 1 year of that birth.
 
-    The probabilities in this df represents the prob of stopping/droppping out of education within 1 year of that birth.
+    Args:
+        df (pd.DataFrame): Contains 'age', 'parity' and 'percent' columns.
+
+    Returns:
+       data (dictionary): Dictionary with keys '1' and '2+' indicating a woman's parity. The values are dictionaries,
+           each with keys 'age' and 'percent'.
     """
     data = {}
     for k in df["parity"].unique():
@@ -1146,19 +1161,35 @@ def education_dropout_probs(df):
 
 
 def education_distributions():
+    """
+    Loads and processes all education-related data files. Performs additional interpolation
+    to reduce noise from empirical data.
+
+    Returns:
+        Tuple[dict, dict]: A tuple of two dictionaries:
+            education_data (dict): Contains the unmodified empirical data from CSV files.
+            education_dict (dict): Contains the processed empirical data to use in simulations.
+    """
+
     # Load empirical data
-    education_data = {"edu_objective": pd.read_csv(thisdir / 'kenya' / 'edu_objective.csv'),
-                      "edu_attainment": pd.read_csv(thisdir / 'kenya' / 'edu_initialization.csv'),
-                      "edu_dropout_probs": pd.read_csv(thisdir / 'kenya' / 'edu_stop.csv')}
+    data_path = thisdir / "data"
 
-    attainment, age = education_attainment(education_data["edu_attainment"])
-    education_dict = {"age": age,
-                      "age_start": 6.0,
-                      "edu_objective": education_objective(education_data["edu_objective"]),
-                      "edu_attainment": attainment,
-                      "edu_dropout_probs": education_dropout_probs(education_data["edu_dropout_probs"]),
-                      }
+    education ={"edu_objective":
+                    {"data_file": "edu_objective.csv",
+                     "process_function": education_objective},
+                "edu_attainment":
+                    {"data_file": "edu_initialization.csv",
+                     "process_function": education_attainment},
+                "edu_dropout_probs":
+                    {"data_file": "edu_stop.csv",
+                     "process_function": education_dropout_probs}}
 
+    education_data = dict()
+    education_dict = dict()
+    for edu_key in education.keys():
+        education_data[edu_key] = pd.read_csv(data_path / education[edu_key]["data_file"])
+        education_dict[edu_key] = education[edu_key]["process_function"](education_data[edu_key])
+    education_dict.update({"age_start": 6.0})
     return education_dict, education_data
 
 
