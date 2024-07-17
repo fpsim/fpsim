@@ -221,6 +221,7 @@ class People(fpb.BasePeople):
 
                 # Get previous users and see whether they will switch methods or stop using
                 if len(choosers):
+
                     choosers.on_contra = cm.get_contra_users(choosers, year=year)
                     choosers.ever_used_contra = choosers.ever_used_contra | choosers.on_contra
 
@@ -957,7 +958,7 @@ class People(fpb.BasePeople):
 
         # Add check for ti contra
         if (self.ti_contra < 0).any():
-            errormsg = 'Invalid values for ti_contra'
+            errormsg = f'Invalid values for ti_contra at timestep {self.ti}'
             raise ValueError(errormsg)
 
         return self.step_results
