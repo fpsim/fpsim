@@ -193,7 +193,8 @@ class SimpleChoice(RandomChoice):
                 ppl_this_age = this_age_bools.nonzero()[-1]
                 if len(ppl_this_age) > 0:
                     these_probs = self.init_dist[key]
-                    these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
+                    these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
+                    these_probs = these_probs/sum(these_probs)  # Renormalize
                     these_choices = fpu.n_multinomial(these_probs, len(ppl_this_age))  # Choose
                     # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
                     choice_array[this_age_bools] = np.array(list(self.init_dist.method_idx))[these_choices]
@@ -326,7 +327,8 @@ class SimpleChoice(RandomChoice):
             if len(switch_iinds):
                 these_probs = mcp[key]
                 these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
+                these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
+                these_probs = these_probs/sum(these_probs)  # Renormalize
                 these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
                 choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
 

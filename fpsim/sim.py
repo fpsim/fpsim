@@ -276,8 +276,10 @@ class Sim(fpb.BaseSim):
         """Expand population size"""
         # Births
         new_people = fpppl.People(
-                    pars=self.pars, n=n_new_people, age=0, method_selector=self.contraception_module,
-                    education_module=self.education_module, empowerment_module=self.empowerment_module)
+                    pars=self.pars, n=n_new_people, age=0,
+                    education_module=self.education_module, empowerment_module=self.empowerment_module
+                    )
+        new_people.init_methods(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
         self.people += new_people
 
     def step(self):

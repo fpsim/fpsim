@@ -23,7 +23,7 @@ class People(fpb.BasePeople):
     """
 
     def __init__(self, pars, n=None, age=None, sex=None,
-                 contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
+                 empowerment_module=None, education_module=None, **kwargs):
 
         # Initialization
         super().__init__(**kwargs)
