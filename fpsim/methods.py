@@ -161,6 +161,7 @@ class SimpleChoice(RandomChoice):
             prob_use_year=2000,
             prob_use_trend_par=0.1,
             force_choose=False,  # Whether to force non-users to choose a method
+            method_weights=np.ones(self.n_methods),
         )
         updated_pars = sc.mergedicts(default_pars, pars)
         self.pars = sc.mergedicts(self.pars, updated_pars)
@@ -303,7 +304,8 @@ class SimpleChoice(RandomChoice):
                         else:
                             these_probs = mcp[key][mname]  # Cannot stay on method
                             these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                            these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
+                            these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
+                            these_probs = these_probs/sum(these_probs)  # Renormalize
                             these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
 
                             # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)

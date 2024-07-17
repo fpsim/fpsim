@@ -144,7 +144,7 @@ class Sim(fpb.BaseSim):
             fpu.set_seed(self['seed'])
             self.init_results()
             self.init_people()  # This step also initializes the empowerment and education modules if provided
-            self.init_methods()
+            self.init_methods()  # Initialize methods
         return self
 
     def init_results(self):
