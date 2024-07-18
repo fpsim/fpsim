@@ -41,6 +41,7 @@ country = 'kenya'
 
 # Set options for plotting
 do_plot_sim = False
+do_plot_by_age = True
 do_plot_asfr = True
 do_plot_methods = True
 do_plot_ageparity = False
@@ -77,17 +78,6 @@ data_tfr     = pd.read_csv(os.path.join(country_dir, 'data/tfr.csv'))
 data_popsize = pd.read_csv(os.path.join(country_dir, 'data/popsize.csv'))
 
 # Set up global variables
-age_bin_map = {
-        '10-14': [10, 15],
-        '15-19': [15, 20],
-        '20-24': [20, 25],
-        '25-29': [25, 30],
-        '30-34': [30, 35],
-        '35-39': [35, 40],
-        '40-44': [40, 45],
-        '45-49': [45, 50]
-}
-
 min_age = 15
 max_age = 50
 bin_size = 5
@@ -110,8 +100,6 @@ freepars = dict(
         fecundity_var_low=[0.95, 0.925, 1.0],
         fecundity_var_high=[1.1, 1.025, 1.3],
         exposure_factor=[2.0, 0.9, 2.2],
-        high_parity=[1.0, 0.95, 1.2],
-        high_parity_nonuse=[.8, 0.7, 1.0]
 )
 '''
 # Last free parameter, postpartum sexual activity correction or 'birth spacing preference'
@@ -128,8 +116,6 @@ pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
 print("FREE PARAMETERS BEING USED:")
 print(f"Fecundity range: {pars['fecundity_var_low']}-{pars['fecundity_var_high']}")
 print(f"Exposure factor: {pars['exposure_factor']}")
-print(f"High parity: {pars['high_parity']}")
-print(f"High parity, nonuse: {pars['high_parity_nonuse']}")
 #print(f"Birth spacing preference: {spacing_pars}")
 print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
 
@@ -139,7 +125,7 @@ print(f"Age-based exposure and parity-based exposure can be adjusted manually in
 
 # Run the sim
 method_choice = fp.SimpleChoice(location='kenya')
-sim = fp.Sim(pars=pars, contraception_module=method_choice)
+sim = fp.Sim(pars=pars, contraception_module=method_choice, analyzers=[fp.cpr_by_age(), fp.method_mix_by_age()])
 sim.run()
 
 # Plot results from sim run
@@ -156,6 +142,32 @@ ppl = sim.people
 data_dict = {}
 model_dict = {} # For comparison from model to data
 
+if do_plot_by_age:
+    fig, ax = pl.subplots()
+    age_bins = [18, 20, 25, 35, 50]
+    colors = sc.vectocolor(age_bins)
+    cind = 0
+
+    for alabel, ares in sim.get_analyzer('cpr_by_age').results.items():
+        ax.plot(sim.results.t, ares, label=alabel, color=colors[cind])
+        cind += 1
+    ax.legend(loc='best', frameon=False)
+    ax.set_ylim([0, 1])
+    ax.set_ylabel('CPR')
+    ax.set_title('CPR')
+    if do_save:
+        sc.savefig(os.path.join(figs_dir, 'cpr_by_age.png'))
+    pl.show()
+
+    fig, ax = pl.subplots()
+    df = pd.DataFrame(sim.get_analyzer('method_mix_by_age').results)
+    df['method'] = sim.contraception_module.methods.keys()
+    df_plot = df.melt(id_vars='method')
+    sns.barplot(x=df_plot['method'], y=df_plot['value'], ax=ax, hue=df_plot['variable'], palette="viridis")
+    if do_save:
+        sc.savefig(os.path.join(figs_dir, 'method_mix_by_age.png'))
+    pl.show()
+
 
 def pop_growth_rate(years, population):
         '''
@@ -170,6 +182,7 @@ def pop_growth_rate(years, population):
 
         return growth_rate
 
+
 # Start series of options for plotting data to model comaprisons
 if do_plot_asfr:
         '''
@@ -177,7 +190,7 @@ if do_plot_asfr:
         '''
         pl.clf()
         # Print ASFR form model in output
-        for key in age_bin_map.keys():
+        for key in fp.age_bin_map.keys():
             print(f'ASFR (annual) for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
 
         x = [1, 2, 3, 4, 5, 6, 7, 8]
@@ -190,7 +203,7 @@ if do_plot_asfr:
         asfr_model = []
 
         # Extract from model
-        for key in age_bin_map.keys():
+        for key in fp.age_bin_map.keys():
                 x_labels.append(key)
                 asfr_model.append(res['asfr'][key][-1])
 
@@ -298,7 +311,7 @@ if do_plot_ageparity:
         pl.clf()
 
         # Set up
-        age_keys = list(age_bin_map.keys())[1:]
+        age_keys = list(fp.age_bin_map.keys())[1:]
         age_bins = pl.arange(min_age, max_age, bin_size)
         parity_bins = pl.arange(0, 7) # Plot up to parity 6
         n_age = len(age_bins)

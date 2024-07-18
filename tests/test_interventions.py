@@ -97,7 +97,7 @@ def test_plot():
     sc.heading('Testing intervention plotting...')
 
     cp = fp.change_par(par='exposure_factor', years=2002, vals=2.0) # Reduce exposure factor
-    um1 = fp.update_methods(year=2005, eff={'Injectables':1.0})
+    um1 = fp.update_methods(year=2005, eff={'Injectables': 1.0})
     um2 = fp.update_methods(year=2008, p_use=0.5)
     um3 = fp.update_methods(year=2010, method_mix=[0.9, 0.1, 0, 0, 0, 0, 0, 0, 0])
     sim = make_sim(interventions=[cp, um1, um2, um3]).run()
