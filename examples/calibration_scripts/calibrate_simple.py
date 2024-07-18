@@ -105,8 +105,6 @@ pars['end_year'] = 2020  # 1961 - 2020 is the normal date range
 pars['fecundity_var_low'] = 1
 pars['fecundity_var_high'] = 1.27
 pars['exposure_factor'] = 1.93
-pars['high_parity'] = 1.04
-pars['high_parity_nonuse'] = .88
 '''
 freepars = dict(
         fecundity_var_low=[0.95, 0.925, 1.0],
