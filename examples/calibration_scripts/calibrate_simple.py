@@ -94,7 +94,7 @@ pars['end_year'] = 2020  # 1961 - 2020 is the normal date range
 # Free parameters for calibration
 pars['fecundity_var_low'] = 1
 pars['fecundity_var_high'] = 1.27
-pars['exposure_factor'] = 1.93
+pars['exposure_factor'] = 1  #1.93
 '''
 freepars = dict(
         fecundity_var_low=[0.95, 0.925, 1.0],
@@ -102,29 +102,35 @@ freepars = dict(
         exposure_factor=[2.0, 0.9, 2.2],
 )
 '''
-# Last free parameter, postpartum sexual activity correction or 'birth spacing preference'
-# Set all to 1 to reset
-spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-{country}.py'
-pars['spacing_pref']['preference'][:3] = spacing_pars['space0_6']
-pars['spacing_pref']['preference'][3:6] = spacing_pars['space9_15']
-pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
-#pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
-
-# Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
-
-# Print out free params being used
-print("FREE PARAMETERS BEING USED:")
-print(f"Fecundity range: {pars['fecundity_var_low']}-{pars['fecundity_var_high']}")
-print(f"Exposure factor: {pars['exposure_factor']}")
-#print(f"Birth spacing preference: {spacing_pars}")
-print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
+# # Last free parameter, postpartum sexual activity correction or 'birth spacing preference'
+# # Set all to 1 to reset
+# # spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-{country}.py'
+# # pars['spacing_pref']['preference'][:3] = spacing_pars['space0_6']
+# # pars['spacing_pref']['preference'][3:6] = spacing_pars['space9_15']
+# # pars['spacing_pref']['preference'][6:9] = spacing_pars['space18_24']
+# #pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
+#
+# # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
+#
+# # Print out free params being used
+# print("FREE PARAMETERS BEING USED:")
+# print(f"Fecundity range: {pars['fecundity_var_low']}-{pars['fecundity_var_high']}")
+# print(f"Exposure factor: {pars['exposure_factor']}")
+# #print(f"Birth spacing preference: {spacing_pars}")
+# print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
 
 #calibration = fp.Calibration(pars, calib_pars=freepars)
 #calibration.calibrate()
 #pars.update(calibration.best_pars)
 
-# Run the sim
-method_choice = fp.SimpleChoice(location='kenya')
+# Adjust contraceptive choice parameters
+cm_pars = dict(
+    prob_use_year=2020,
+    prob_use_trend_par=0.03,
+    force_choose=False,
+    method_weights=np.array([0.1, 2, 0.5, 0.5, 2, 1, 1.5, 0.5, 5])
+)
+method_choice = fp.SimpleChoice(pars=cm_pars, location='kenya')
 sim = fp.Sim(pars=pars, contraception_module=method_choice, analyzers=[fp.cpr_by_age(), fp.method_mix_by_age()])
 sim.run()
 
