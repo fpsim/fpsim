@@ -19,7 +19,8 @@ class FPmod(ss.Demographics):
             fecundity_max=50,
 
             # Probabilities: can all be overwritten by age/time-varying values
-            p_conceive=ss.bernoulli(p=0.1),     # Monthly probability of conceiving
+            p_conceive=0.1,
+            p_conceive_dist=ss.bernoulli(p=0),  # Placeholder: monthly probability of conceiving
             p_stillbirth=ss.bernoulli(p=0.02),  # Probability of a stillbirth
             p_abortion=ss.bernoulli(p=0.01),    # Probability of abortion
             p_twins=ss.bernoulli(p=0.001),
@@ -38,7 +39,7 @@ class FPmod(ss.Demographics):
             dur_contra=ss.lognorm_ex(12, 24),   # Overall average duration of contraception use
 
             # Other
-            eff_contra=ss.bernoulli(0.7),       # Overall average efficacy of contraception
+            eff_contra=0.7,       # Overall average efficacy of contraception
             sex_ratio=ss.bernoulli(0.5),
             rel_fecundity=ss.normal(1, 0.1)     # Individual variation in fecundity
         )
@@ -142,7 +143,8 @@ class FPmod(ss.Demographics):
         pars = self.pars
 
         # Update fertility
-        self.fertile[(ppl.age < pars.fecundity_max)] = False
+        self.fertile[ppl.male] = False
+        self.fertile[(ppl.age > pars.fecundity_max)] = False
 
         # Trigger delivery
         deliv_uids = (self.pregnant & (self.ti_delivery <= ti)).uids
@@ -173,7 +175,7 @@ class FPmod(ss.Demographics):
             self.on_contra[stopping_uids] = False
 
         # Starting contraception
-        off_contra_uids = (~self.on_contra).uids
+        off_contra_uids = (~self.on_contra & self.sim.people.female).uids
         starting_contra = self.pars.p_contra.filter(off_contra_uids)
         self.on_contra[starting_contra] = True
         dur_contra = self.pars.dur_contra.rvs(starting_contra)
@@ -239,8 +241,11 @@ class FPmod(ss.Demographics):
         ti = self.sim.ti
 
         # Greatly simplified version, need to add more logic here
-        can_conceive_uids = self.fertile.uids
-        conceives_uids = self.pars.p_conceive.filter(can_conceive_uids)
+        p_conceive = np.zeros(len(self.sim.people))
+        p_conceive[self.fertile & self.on_contra] = self.pars.p_conceive
+        p_conceive[self.fertile & ~self.on_contra] = self.pars.p_conceive * self.pars.eff_contra
+        self.pars.p_conceive_dist.set(p=p_conceive[self.fertile])
+        conceives_uids = self.pars.p_conceive_dist.filter(self.fertile.uids)
         self.results.conceptions[ti] += len(conceives_uids)
         self.n_pregnancies[conceives_uids] += 1
 
