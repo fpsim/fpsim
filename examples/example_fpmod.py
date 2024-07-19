@@ -17,19 +17,28 @@ class FPmod(ss.Demographics):
         # Create parameters
         self.default_pars(
             fecundity_max=50,
+
+            # Probabilities: can all be overwritten by age/time-varying values
             p_conceive=ss.bernoulli(p=0.1),     # Monthly probability of conceiving
             p_stillbirth=ss.bernoulli(p=0.02),  # Probability of a stillbirth
             p_abortion=ss.bernoulli(p=0.01),    # Probability of abortion
             p_twins=ss.bernoulli(p=0.001),
             p_maternal_mortality=ss.bernoulli(p=0.01),
             p_miscarriage=ss.bernoulli(p=0.1),
+            p_contra=ss.bernoulli(p=0.2),
             miscarriage_timing=ss.choice(
                 a=np.arange(9),
                 p=np.array([0.7, 0.2, 0.07, 0.025, 0.001, 0.001, 0.001, 0.001, 0.001])
             ),
+
+            # Durations
             dur_pregnancy=ss.uniform(7, 9),
             dur_postpartum=ss.constant(6),
             dur_lactation=ss.constant(6),
+            dur_contra=ss.lognorm_ex(12, 24),   # Overall average duration of contraception use
+
+            # Other
+            eff_contra=ss.bernoulli(0.7),       # Overall average efficacy of contraception
             sex_ratio=ss.bernoulli(0.5),
             rel_fecundity=ss.normal(1, 0.1)     # Individual variation in fecundity
         )
@@ -156,11 +165,20 @@ class FPmod(ss.Demographics):
 
     def update_methods(self):
         """ Update women's contraceptive choices and methods """
-        # TODO
-        # Add check for ti contra
-        if (self.ti_contra < 0).any():
-            errormsg = f'Invalid values for ti_contra at timestep {self.ti}'
-            raise ValueError(errormsg)
+        ti = self.sim.ti
+
+        # Stopping contraception
+        stopping_uids = (self.on_contra & (self.ti_contra <= ti)).uids
+        if len(stopping_uids):
+            self.on_contra[stopping_uids] = False
+
+        # Starting contraception
+        off_contra_uids = (~self.on_contra).uids
+        starting_contra = self.pars.p_contra.filter(off_contra_uids)
+        self.on_contra[starting_contra] = True
+        dur_contra = self.pars.dur_contra.rvs(starting_contra)
+        self.ti_contra[starting_contra] = ti + dur_contra
+
         return
 
     def stop_pregnancy(self, uids):
