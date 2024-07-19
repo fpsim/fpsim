@@ -186,6 +186,7 @@ class FPmod(ss.Demographics):
         if len(still_uids):
             self.n_stillbirths[still_uids] += 1  # Track how many stillbirths an agent has had
             self.results.stillbirths[ti] = len(still_uids)
+            self.parity[still_uids] += 1
 
         # Determine outcomes for live births: twins, mortality, lactation
         if len(live_uids):
@@ -193,6 +194,8 @@ class FPmod(ss.Demographics):
             twin_uids, single_uids = self.pars.p_twins.split(live_uids)
             self.n_live_births[single_uids] += 1
             self.n_live_births[twin_uids] += 2
+            self.parity[single_uids] += 1
+            self.parity[twin_uids] += 2
             self.results.live_births[ti] = len(single_uids) + 2*len(twin_uids)
 
             # Mortality
@@ -204,9 +207,6 @@ class FPmod(ss.Demographics):
             self.lactating[live_uids] = True
             dur_lactation = self.pars.dur_lactation.rvs(live_uids)
             self.ti_stop_lactation[live_uids] = ti + dur_lactation
-
-        # Update parity
-        self.parity[deliv_uids] += 1
 
         return
 
