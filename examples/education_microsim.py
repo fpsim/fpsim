@@ -8,12 +8,11 @@ import matplotlib.pyplot as plt
 
 # Set options
 do_plot = True
-pars = fp.pars(location='kenya',
-               use_education=True)
+pars = fp.pars(location='kenya')
 pars['n_agents'] = 50  # Small population size
 
 sc.tic()
-sim = fp.Sim(pars=pars, analyzers=[fp.education_recorder()])
+sim = fp.Sim(pars=pars, analyzers=[fp.education_recorder()], education_module=fp.Education())
 sim.run()
 
 if do_plot:

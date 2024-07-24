@@ -6,12 +6,14 @@ defined by the user by inheriting from these classes.
 import numpy as np
 import sciris as sc
 import pylab as pl
+from . import defaults as fpd
+from . import utils as fpu
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 #%% Generic intervention classes
 
-__all__ = ['Analyzer', 'snapshot', 'age_pyramids', 'empowerment_recorder', 'education_recorder']
+__all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'empowerment_recorder', 'education_recorder']
 
 
 class Analyzer(sc.prettyobj):
@@ -138,11 +140,60 @@ class snapshot(Analyzer):
         save result at snapshot[str(timestep)]
         """
         for t in self.timesteps:
-            if np.isclose(sim.i, t):
-                self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
+            if np.isclose(sim.ti, t):
+                self.snapshots[str(sim.ti)] = sc.dcp(sim.people) # Take snapshot!
         return
 
-      
+
+class cpr_by_age(Analyzer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)   # Initialize the Analyzer object
+        self.age_bins = [v[1] for v in fpd.method_age_map.values()]
+        self.results = None
+        return
+
+    def initialize(self, sim):
+        super().initialize()
+        self.results = {k: np.zeros(sim.npts) for k in fpd.method_age_map.keys()}
+        self.total = np.zeros(sim.npts)
+
+    def apply(self, sim):
+        ppl = sim.people
+        for key, (age_low, age_high) in fpd.method_age_map.items():
+            match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
+            denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
+            num_conds = denom_conds * (ppl.method != 0)
+            self.results[key][sim.ti] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
+
+        total_denom_conds = (ppl.sex == 0) * ppl.alive
+        total_num_conds = total_denom_conds * (ppl.method != 0)
+        self.total[sim.ti] = sc.safedivide(np.count_nonzero(total_num_conds), np.count_nonzero(total_denom_conds))
+        return
+
+
+class method_mix_by_age(Analyzer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)   # Initialize the Analyzer object
+        self.age_bins = [v[1] for v in fpd.method_age_map.values()]
+        self.results = None
+        self.n_methods = None
+        return
+
+    def initialize(self, sim):
+        super().initialize()
+
+    def finalize(self, sim):
+        n_methods = len(sim.contraception_module.methods)
+        self.results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
+        ppl = sim.people
+        for key, (age_low, age_high) in fpd.method_age_map.items():
+            match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
+            denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
+            for mn in range(n_methods):
+                num_conds = denom_conds * (ppl.method == mn)
+                self.results[key][mn] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
+        return
+
 class education_recorder(Analyzer):
         '''
         Analyzer records all education attributes of females + pregnancy + living status
@@ -170,9 +221,9 @@ class education_recorder(Analyzer):
             save result at snapshot[str(timestep)]
             """
             females = sim.people.filter(sim.people.is_female)
-            self.snapshots[str(sim.i)] = {}
+            self.snapshots[str(sim.ti)] = {}
             for key in self.keys:
-                self.snapshots[str(sim.i)][key] = sc.dcp(females[key])  # Take snapshot!
+                self.snapshots[str(sim.ti)][key] = sc.dcp(females[key])  # Take snapshot!
                 self.max_agents = max(self.max_agents, len(females))
             return
 
@@ -351,12 +402,15 @@ class empowerment_recorder(Analyzer):
 
     def __init__(self, bins=None):
         """
-        Initializes self.i/t/y as empty lists and self.data as empty dictionary
+        Initializes self.ti/t/y as empty lists and self.data as empty dictionary
         """
         super().__init__()
         self.bins = bins
         self.data = sc.objdict()
-        self.keys = ['partnered', 'urban', 'paid_employment', 'decision_wages', 'decision_health', 'sexual_autonomy', 'age']
+        self.keys = ['age', 'paid_employment', 'decision_wages', 'decision_health', 'decision_purchase',
+                     'buy_decision_major', 'buy_decision_daily', 'buy_decision_clothes',
+                     'decide_spending_partner', 'has_savings', 'has_fin_knowl', 'has_fin_goals',
+                     'sexual_autonomy', 'financial_autonomy', 'decision_making']
         self.nbins = None
         return
 
@@ -388,17 +442,17 @@ class empowerment_recorder(Analyzer):
                 # Count how many living females we have in this age group
                 temp = np.histogram(ages, self.bins)[0]
                 vals = temp / temp.sum()  # Transform to density
-            elif key in ['partnered', 'urban', 'paid_employment']:
+            elif key in ['financial_autonomy', 'decision_making']:
                 vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
-            else:  # assume float
-                vals = [np.median(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
-            self.data[key][:, sim.i] = vals
+            else: # boolean states, expressed as proportion
+                vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
+            self.data[key][:, sim.ti] = vals
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
         """
         Plot all keys in self.keys or in to_plot as a heatmaps
         """
-        fig_args  = sc.mergedicts(fig_args)
+        fig_args = sc.mergedicts(fig_args)
         pl_args = sc.mergedicts(pl_args)
         fig = pl.figure(**fig_args)
 
@@ -414,18 +468,17 @@ class empowerment_recorder(Analyzer):
             try:
                 data = np.array(self.data[key], dtype=float)
                 label = f'metric: {key}'
-                if key in ['partnered', 'urban', 'paid_employment']:
-                    clabel = f"proportion of {key}"
-                    cmap = 'RdPu'
-                    vmin, vmax = 0, 1
-                    if key in ['urban']:
-                        cmap = 'RdYlBu_r'
-                elif key in ['age']:
+                if key in ['age']:
                     clabel = "proportion of agents"
                     cmap = 'Blues'
                     vmin, vmax = 0, np.nanmax(data[:])
+                # Composite measures
+                elif key in ['financial_autonomy', 'decision_making']:
+                    clabel = f"Median of composite:\n{key}"
+                    cmap = 'RdPu'
+                    vmin, vmax = 0, 4.0
                 else:
-                    clabel = "average (median)"
+                    clabel = f"proportion of {key}"
                     cmap = 'coolwarm'
                     vmin, vmax = 0, 1
 
@@ -498,8 +551,8 @@ class age_pyramids(Analyzer):
         self.data[timestep] = list of proportions where index signifies age
         """
         ages = sim.people.age[sc.findinds(sim.people.alive)]
-        self._raw[sim.i, :] = np.histogram(ages, self.bins)[0]
-        self.data[sim.i, :] = self._raw[sim.i, :]/self._raw[sim.i, :].sum()
+        self._raw[sim.ti, :] = np.histogram(ages, self.bins)[0]
+        self.data[sim.ti, :] = self._raw[sim.ti, :]/self._raw[sim.ti, :].sum()
 
     def plot(self):
         """
@@ -521,3 +574,52 @@ class age_pyramids(Analyzer):
         pl.xlabel('Timestep')
         pl.ylabel('Age (years)')
         return fig
+
+
+class track_switching(Analyzer):
+
+    def __init__(self):
+        super().__init__()
+        self.results = sc.objdict()
+
+    def initialize(self, sim):
+        n_methods = len(sim.methods)
+        keys = [
+            'switching_events_annual',
+            'switching_events_postpartum',
+            'switching_events_<18',
+            'switching_events_18-20',
+            'switching_events_21-25',
+            'switching_events_26-35',
+            'switching_events_>35',
+            'switching_events_pp_<18',
+            'switching_events_pp_18-20',
+            'switching_events_pp_21-25',
+            'switching_events_pp_26-35',
+            'switching_events_pp_>35',
+        ]
+        for key in keys:
+            self.results[key] = {}  # CK: TODO: refactor
+            for p in range(sim.npts):
+                self.results[key][p] = np.zeros((n_methods, n_methods), dtype=int)
+
+    def apply(self, sim):
+        # Store results of number of switching events in each age group
+        ti = sim.ti
+        r = sim.results
+        scale = sim['scaled_pop'] / sim['n_agents']
+        switch_events = r.pop('switching')
+        self.results['switching_events_<18'][ti] = scale * r.switching_annual['<18']
+        self.results['switching_events_18-20'][ti] = scale * r.switching_annual['18-20']
+        self.results['switching_events_21-25'][ti] = scale * r.switching_annual['21-25']
+        self.results['switching_events_26-35'][ti] = scale * r.switching_annual['26-35']
+        self.results['switching_events_>35'][ti] = scale * r.switching_annual['>35']
+        self.results['switching_events_pp_<18'][ti] = scale * r.switching_postpartum['<18']
+        self.results['switching_events_pp_18-20'][ti] = scale * r.switching_postpartum['18-20']
+        self.results['switching_events_pp_21-25'][ti] = scale * r.switching_postpartum['21-25']
+        self.results['switching_events_pp_26-35'][ti] = scale * r.switching_postpartum['26-35']
+        self.results['switching_events_pp_>35'][ti] = scale * r.switching_postpartum['>35']
+        self.results['switching_events_annual'][ti] = scale * switch_events['annual']
+        self.results['switching_events_postpartum'][ti] = scale * switch_events['postpartum']
+
+        return

@@ -5,6 +5,7 @@ File for storing utilities and probability calculators needed to run FP model
 import numpy as np
 import sciris as sc
 import numba as nb
+import scipy.stats as sps
 from . import defaults as fpd
 from . import version as fpv
 
@@ -20,6 +21,17 @@ def match_ages(age, age_low, age_high):
     match_low  = (age >= age_low)
     match_high = (age <  age_high)
     return match_low & match_high
+
+
+@nb.jit((nb.float64[:], ), cache=True, nopython=True)
+def digitize_ages_1yr(ages):
+    """
+    Return the indices of the 1-year bins to which each value in ages array belongs.
+    The bin index is used as an integer representation of the agent's age.
+    """
+    # Create age bins because ppl.age is a continous variable
+    age_cutoffs = np.arange(0, fpd.max_age + 1)
+    return np.digitize(ages, age_cutoffs) - 1
 
 
 def set_seed(seed=None):
@@ -191,6 +203,8 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
         'normal_int',
         'lognormal',
         'lognormal_int',
+        'gamma',
+        'gompertz',
     ]
 
     # Ensure it's an integer
@@ -204,7 +218,7 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
     elif dist == 'normal_pos':        samples = np.abs(np.random.normal(loc=par1, scale=par2, size=size, **kwargs))
     elif dist == 'normal_int':        samples = np.round(np.abs(np.random.normal(loc=par1, scale=par2, size=size, **kwargs)))
     elif dist in ['lognorm', 'lognormal', 'lognorm_int', 'lognormal_int']:
-        if par1>0:
+        if (sc.isnumber(par1) and par1>0) or (sc.checktype(par1,'arraylike') and (par1>0).all()):
             mean  = np.log(par1**2 / np.sqrt(par2**2 + par1**2)) # Computes the mean of the underlying normal distribution
             sigma = np.sqrt(np.log(par2**2/par1**2 + 1)) # Computes sigma for the underlying normal distribution
             samples = np.random.lognormal(mean=mean, sigma=sigma, size=size, **kwargs)
@@ -212,6 +226,13 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
             samples = np.zeros(size)
         if '_int' in dist:
             samples = np.round(samples)
+
+        if '_int' in dist:
+            samples = np.round(samples)
+    elif dist == 'gamma':
+        samples = sps.gamma(a=par1, scale=par2).rvs(size=size)
+    elif dist == 'llogis':
+        samples = sps.fisk(c=par1, scale=par2).rvs(size=size)
     else:
         errormsg = f'The selected distribution "{dist}" is not implemented; choices are: {sc.newlinejoin(choices)}'
         raise NotImplementedError(errormsg)

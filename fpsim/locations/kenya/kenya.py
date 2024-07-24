@@ -21,8 +21,6 @@ def scalar_pars():
         'breastfeeding_dur_beta': 7.5435309020483,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'abortion_prob':        0.201,              # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
         'twins_prob':           0.016,              # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'high_parity_nonuse':   1,                  # TODO: check whether it's correct that this should be different to the other locations
-        'mcpr_norm_year':       2020,               # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
@@ -64,24 +62,25 @@ def age_pyramid():
     Data are from World Population Prospects
     https://population.un.org/wpp/Download/Standard/Population/
      '''
-    pyramid = np.array([[0, 801895, 800503],  # Kenya 1960
-                        [5, 620524, 625424],
-                        [10, 463547, 464020],
-                        [15, 333241, 331921],
-                        [20, 307544, 309057],
-                        [25, 292141, 287621],
-                        [30, 247826, 236200],
-                        [35, 208416, 190234],
-                        [40, 177914, 162057],
-                        [45, 156771, 138943],
-                        [50, 135912, 123979],
-                        [55, 108653, 111939],
-                        [60, 85407, 94582],
-                        [65, 61664, 71912],
-                        [70, 40797, 49512],
-                        [75, 22023, 29298],
-                        [80, 11025, 17580],
-                        ], dtype=float)
+    pyramid = np.array([     # Kenya 2015
+                [0, 3423916, 3389030],  # Age 0
+                [5, 3375371, 3355162],  # Age 5
+                [10, 2968639, 2963464],  # Age 10
+                [15, 2489864, 2523193],  # Age 15
+                [20, 2158196, 2218927],  # Age 20
+                [25, 2001891, 2031898],  # Age 25
+                [30, 1706214, 1690237],  # Age 30
+                [35, 1366575, 1343727],  # Age 35
+                [40, 1085439, 1080669],  # Age 40
+                [45, 850015, 862716],  # Age 45
+                [50, 629510, 655977],  # Age 50
+                [55, 437712, 472329],  # Age 55
+                [60, 280747, 317579],  # Age 60
+                [65, 217816, 236148],  # Age 65
+                [70, 124418, 171373],  # Age 70
+                [75, 72579, 126721],  # Age 75
+                [80, 44659, 80139]  # Age 80
+                ], dtype=float)
 
     return pyramid
 
@@ -412,8 +411,6 @@ def sexual_activity_pp():
         [23, 0.72202]
     ])
 
-
-
     postpartum_activity = {}
     postpartum_activity['month'] = postpartum_sex[:, 0]
     postpartum_activity['percent_active'] = postpartum_sex[:, 1]
@@ -533,363 +530,6 @@ def birth_spacing_pref():
 
 
 # %% Contraceptive methods
-
-def methods():
-    '''
-    Names, indices, modern/traditional flag, and efficacies of contraceptive methods -- see also parameters.py
-    Efficacy from Guttmacher, fp_prerelease/docs/gates_review/contraceptive-failure-rates-in-developing-world_1.pdf
-    BTL failure rate from general published data
-    Pooled efficacy rates for all women in this study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4970461/
-    '''
-
-    # Define method data
-    data = {  # Index, modern, efficacy
-        'None': [0, False, 0.000],
-        'Withdrawal': [1, False, 0.866],
-        'Other traditional': [2, False, 0.861],
-        # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-        'Condoms': [3, True, 0.946],
-        'Pill': [4, True, 0.945],
-        'Injectables': [5, True, 0.983],
-        'Implants': [6, True, 0.994],
-        'IUDs': [7, True, 0.986],
-        'BTL': [8, True, 0.995],
-        'Other modern': [9, True, 0.880],
-        # SDM makes up about 1/2 of this, perfect use is 95% and typical is 88%.  EC also included here, efficacy around 85% https : //www.aafp.org/afp/2004/0815/p707.html
-    }
-
-    keys = data.keys()
-    methods = {}
-    methods['map'] = {k: data[k][0] for k in keys}
-    methods['modern'] = {k: data[k][1] for k in keys}
-    methods['eff'] = {k: data[k][2] for k in keys}
-
-    # Age bins for different method switching matrices -- duplicated in defaults.py
-    methods['age_map'] = {
-        '<18': [0, 18],
-        '18-20': [18, 20],
-        '21-25': [20, 25],
-        '26-35': [25, 35],
-        '>35': [35, fpd.max_age + 1],  # +1 since we're using < rather than <=
-    }
-
-    # Data on trend in CPR over time in from Kenya, in %.
-    # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
-    # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
-    methods['mcpr_years'] = cpr_data['year'].to_numpy()
-    methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
-
-    return methods
-
-
-'''
-For reference
-def method_probs_senegal():
-    
-    It does leave Senegal matrices in place in the Kenya file for now. 
-    We may want to test with these as we work through scenarios and calibration. 
-    
-    Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
-    from 2018 DHS Senegal contraceptive calendar data.
-
-    Probabilities in this function are annual probabilities of initiating (top row), discontinuing (first column),
-    continuing (diagonal), or switching methods (all other entries).
-
-    Probabilities at postpartum month 1 are 1 month transitional probabilities
-    for starting a method after delivery.
-
-    Probabilities at postpartum month 6 are 5 month transitional probabilities
-    for starting or changing methods over the first 6 months postpartum.
-
-    Data from Senegal DHS contraceptive calendars, 2017 and 2018 combined
-    
-
-    raw = {
-
-        # Main switching matrix: all non-postpartum women
-        'annual': {
-            '<18': np.array([
-                [0.9953, 0., 0.0002, 0.0012, 0.0002, 0.0017, 0.0014, 0.0001, 0., 0.],
-                [0., 1.0000, 0., 0., 0., 0., 0., 0., 0., 0.],
-                [0.0525, 0., 0.9475, 0., 0., 0., 0., 0., 0., 0.],
-                [0.307, 0., 0., 0.693, 0., 0., 0., 0., 0., 0.],
-                [0.5358, 0., 0., 0., 0.3957, 0.0685, 0., 0., 0., 0.],
-                [0.3779, 0., 0., 0., 0.0358, 0.5647, 0.0216, 0., 0., 0.],
-                [0.2003, 0., 0., 0., 0., 0., 0.7997, 0., 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 1.0000, 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]]),
-            '18-20': np.array([
-                [0.9774, 0., 0.0014, 0.0027, 0.0027, 0.0104, 0.0048, 0.0003, 0., 0.0003],
-                [0., 1.0000, 0., 0., 0., 0., 0., 0., 0., 0.],
-                [0.3216, 0., 0.6784, 0., 0., 0., 0., 0., 0., 0.],
-                [0.182, 0., 0., 0.818, 0., 0., 0., 0., 0., 0.],
-                [0.4549, 0., 0., 0., 0.4754, 0.0463, 0.0234, 0., 0., 0.],
-                [0.4389, 0., 0.0049, 0.0099, 0.0196, 0.5218, 0.0049, 0., 0., 0.],
-                [0.17, 0., 0., 0., 0., 0.0196, 0.8103, 0., 0., 0.],
-                [0.1607, 0., 0., 0., 0., 0., 0., 0.8393, 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
-                [0.4773, 0., 0., 0.4773, 0., 0., 0., 0., 0., 0.0453]]),
-            '21-25': np.array([
-                [0.9581, 0.0001, 0.0011, 0.0024, 0.0081, 0.0184, 0.0108, 0.0006, 0., 0.0004],
-                [0.4472, 0.5528, 0., 0., 0., 0., 0., 0., 0., 0.],
-                [0.2376, 0., 0.7624, 0., 0., 0., 0., 0., 0., 0.],
-                [0.1896, 0., 0.0094, 0.754, 0.0094, 0., 0.0188, 0., 0., 0.0188],
-                [0.3715, 0.003, 0.003, 0., 0.5703, 0.0435, 0.0088, 0., 0., 0.],
-                [0.3777, 0., 0.0036, 0.0036, 0.0258, 0.5835, 0.0036, 0.0024, 0., 0.],
-                [0.137, 0., 0., 0.003, 0.0045, 0.0045, 0.848, 0.003, 0., 0.],
-                [0.1079, 0., 0., 0., 0.0445, 0., 0.0225, 0.8251, 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
-                [0.3342, 0., 0., 0.1826, 0., 0., 0., 0., 0., 0.4831]]),
-            '26-35': np.array([
-                [0.9462, 0.0001, 0.0018, 0.0013, 0.0124, 0.0209, 0.0139, 0.003, 0.0001, 0.0002],
-                [0.0939, 0.8581, 0., 0., 0., 0.048, 0., 0., 0., 0.],
-                [0.1061, 0., 0.8762, 0.0051, 0.0025, 0.0025, 0.0051, 0.0025, 0., 0.],
-                [0.1549, 0., 0., 0.8077, 0.0042, 0.0125, 0.0083, 0.0083, 0., 0.0042],
-                [0.3031, 0.0016, 0.0021, 0.0021, 0.6589, 0.0211, 0.0053, 0.0053, 0., 0.0005],
-                [0.2746, 0., 0.0028, 0.002, 0.0173, 0.691, 0.0073, 0.0048, 0., 0.0003],
-                [0.1115, 0.0003, 0.0009, 0.0003, 0.0059, 0.0068, 0.8714, 0.0025, 0.0003, 0.],
-                [0.0775, 0., 0.0015, 0., 0.0058, 0.0044, 0.0044, 0.905, 0., 0.0015],
-                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
-                [0.1581, 0., 0.0121, 0., 0., 0., 0., 0., 0., 0.8297]]),
-            '>35': np.array([
-                [0.9462, 0.0001, 0.0018, 0.0013, 0.0124, 0.0209, 0.0139, 0.003, 0.0001, 0.0002],
-                [0.0939, 0.8581, 0., 0., 0., 0.048, 0., 0., 0., 0.],
-                [0.1061, 0., 0.8762, 0.0051, 0.0025, 0.0025, 0.0051, 0.0025, 0., 0.],
-                [0.1549, 0., 0., 0.8077, 0.0042, 0.0125, 0.0083, 0.0083, 0., 0.0042],
-                [0.3031, 0.0016, 0.0021, 0.0021, 0.6589, 0.0211, 0.0053, 0.0053, 0., 0.0005],
-                [0.2746, 0., 0.0028, 0.002, 0.0173, 0.691, 0.0073, 0.0048, 0., 0.0003],
-                [0.1115, 0.0003, 0.0009, 0.0003, 0.0059, 0.0068, 0.8714, 0.0025, 0.0003, 0.],
-                [0.0775, 0., 0.0015, 0., 0.0058, 0.0044, 0.0044, 0.905, 0., 0.0015],
-                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
-                [0.1581, 0., 0.0121, 0., 0., 0., 0., 0., 0., 0.8297]])
-        },
-
-        # Postpartum switching matrix, 1 to 6 months
-        'pp1to6': {
-            '<18': np.array([
-                [0.9014, 0., 0.0063, 0.001, 0.0126, 0.051, 0.0272, 0.0005, 0., 0.],
-                [0., 0.5, 0., 0., 0., 0., 0.5, 0., 0., 0.],
-                [0., 0., 1.0000, 0., 0., 0., 0., 0., 0., 0.],
-                [0., 0., 0., 1.0000, 0., 0., 0., 0., 0., 0.],
-                [0.4, 0., 0., 0., 0.6, 0., 0., 0., 0., 0.],
-                [0.0714, 0., 0., 0., 0., 0.9286, 0., 0., 0., 0.],
-                [0., 0., 0., 0., 0., 0., 1.0000, 0., 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 1.0000, 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]]),
-            '18-20': np.array([
-                [0.8775, 0.0007, 0.0026, 0.0033, 0.0191, 0.0586, 0.0329, 0.0046, 0., 0.0007],
-                [0., 1.0000, 0., 0., 0., 0., 0., 0., 0., 0.],
-                [0., 0., 1.0000, 0., 0., 0., 0., 0., 0., 0.],
-                [0., 0., 0., 1.0000, 0., 0., 0., 0., 0., 0.],
-                [0., 0., 0., 0., 0.75, 0.25, 0., 0., 0., 0.],
-                [0.0278, 0., 0., 0., 0., 0.9722, 0., 0., 0., 0.],
-                [0.0312, 0., 0., 0., 0., 0., 0.9688, 0., 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 1.0000, 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]]),
-            '21-25': np.array([
-                [0.8538, 0.0004, 0.0055, 0.0037, 0.0279, 0.0721, 0.0343, 0.0022, 0., 0.],
-                [0., 1.0000, 0., 0., 0., 0., 0., 0., 0., 0.],
-                [0., 0., 0.9583, 0., 0., 0.0417, 0., 0., 0., 0.],
-                [0., 0., 0., 0.5, 0.25, 0.25, 0., 0., 0., 0.],
-                [0.0244, 0., 0., 0., 0.9512, 0.0244, 0., 0., 0., 0.],
-                [0.0672, 0., 0., 0., 0., 0.9328, 0., 0., 0., 0.],
-                [0.0247, 0., 0., 0., 0., 0.0123, 0.963, 0., 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 1.0000, 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]]),
-            '26-35': np.array([
-                [0.8433, 0.0008, 0.0065, 0.004, 0.029, 0.0692, 0.039, 0.0071, 0.0001, 0.001],
-                [0., 0.5, 0., 0., 0., 0., 0.5, 0., 0., 0.],
-                [0.027, 0., 0.9189, 0., 0., 0.027, 0.027, 0., 0., 0.],
-                [0.1667, 0., 0., 0.6667, 0., 0., 0.1667, 0., 0., 0.],
-                [0.0673, 0., 0., 0., 0.8654, 0.0288, 0.0385, 0., 0., 0.],
-                [0.0272, 0., 0.0039, 0., 0.0078, 0.9533, 0.0078, 0., 0., 0.],
-                [0.0109, 0., 0., 0., 0.0036, 0., 0.9855, 0., 0., 0.],
-                [0.0256, 0., 0., 0., 0., 0.0256, 0., 0.9487, 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]]),
-            '>35': np.array([
-                [0.8433, 0.0008, 0.0065, 0.004, 0.029, 0.0692, 0.039, 0.0071, 0.0001, 0.001],
-                [0., 0.5, 0., 0., 0., 0., 0.5, 0., 0., 0.],
-                [0.027, 0., 0.9189, 0., 0., 0.027, 0.027, 0., 0., 0.],
-                [0.1667, 0., 0., 0.6667, 0., 0., 0.1667, 0., 0., 0.],
-                [0.0673, 0., 0., 0., 0.8654, 0.0288, 0.0385, 0., 0., 0.],
-                [0.0272, 0., 0.0039, 0., 0.0078, 0.9533, 0.0078, 0., 0., 0.],
-                [0.0109, 0., 0., 0., 0.0036, 0., 0.9855, 0., 0., 0.],
-                [0.0256, 0., 0., 0., 0., 0.0256, 0., 0.9487, 0., 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 1.0000, 0.],
-                [0., 0., 0., 0., 0., 0., 0., 0., 0., 1.0000]])
-        },
-
-        # Postpartum initiation vectors, 0 to 1 month
-        'pp0to1': {
-            '<18': np.array([0.9607, 0.0009, 0.0017, 0.0009, 0.0021, 0.0128, 0.0205, 0.0004, 0., 0.]),
-            '18-20': np.array([0.9525, 0.0006, 0.0017, 0.0006, 0.0028, 0.0215, 0.0198, 0.0006, 0., 0.]),
-            '21-25': np.array([0.9379, 0., 0.0053, 0.0009, 0.0083, 0.0285, 0.0177, 0.0013, 0., 0.]),
-            '26-35': np.array([0.9254, 0.0002, 0.0036, 0.0007, 0.0102, 0.0265, 0.0268, 0.004, 0.0022, 0.0004]),
-            '>35': np.array([0.9254, 0.0002, 0.0036, 0.0007, 0.0102, 0.0265, 0.0268, 0.004, 0.0022, 0.0004]),
-        }
-    }
-    return raw
-    '''
-
-def method_probs():
-    '''
-    Define "raw" (un-normalized, un-trended) matrices to give transitional probabilities
-    from PMA Kenya contraceptive calendar data.
-
-    Probabilities in this function are annual probabilities of initiating (top row), discontinuing (first column),
-    continuing (diagonal), or switching methods (all other entries).
-
-    Probabilities at postpartum month 1 are 1 month transitional probabilities
-    for starting a method after delivery.
-
-    Probabilities at postpartum month 6 are 5 month transitional probabilities
-    for starting or changing methods over the first 6 months postpartum.
-
-    Data from Kenya PMA contraceptive calendars, 2019-2020
-    Processed from matrices_kenya_pma_2019_20.csv using process_matrices.py
-    '''
-
-    raw = {
-
-        # Main switching matrix: all non-postpartum women
-        'annual': {
-            '<18': np.array([
-                [0.9578, 0.0003, 0.0023, 0.024 , 0.0025, 0.005 , 0.0043, 0.0002, 0.0002, 0.0035],
-                [0.5684, 0.0179, 0.0038, 0.0752, 0.2552, 0.0295, 0.0024, 0.0001, 0.0001, 0.0475],
-                [0.1187, 0.0001, 0.8034, 0.0471, 0.0173, 0.0021, 0.0003, 0.    , 0.    , 0.0111],
-                [0.6347, 0.0006, 0.0016, 0.3171, 0.0078, 0.0131, 0.002 , 0.0001, 0.0001, 0.0229],
-                [0.1704, 0.0001, 0.0006, 0.0162, 0.7059, 0.0896, 0.0038, 0.    , 0.    , 0.0135],
-                [0.1791, 0.    , 0.0007, 0.0027, 0.0169, 0.7371, 0.0629, 0.    , 0.    , 0.0006],
-                [0.1138, 0.    , 0.0144, 0.002 , 0.0006, 0.0302, 0.8386, 0.    , 0.    , 0.0004],
-                [0.1352, 0.    , 0.0002, 0.0019, 0.0002, 0.0003, 0.0003, 0.8617, 0.    , 0.0003],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ],
-                [0.7052, 0.0003, 0.0166, 0.1279, 0.0253, 0.0282, 0.0032, 0.0001, 0.0001, 0.0931]]),
-            '18-20': np.array([
-                [0.8392, 0.0014, 0.0132, 0.0705, 0.0131, 0.0331, 0.0199, 0.0003, 0.0001, 0.0091],
-                [0.3917, 0.2362, 0.0072, 0.3268, 0.0115, 0.0138, 0.0093, 0.0001, 0.    , 0.0033],
-                [0.1867, 0.0082, 0.6907, 0.0706, 0.0035, 0.0147, 0.0037, 0.    , 0.    , 0.0219],
-                [0.4299, 0.0063, 0.0162, 0.4647, 0.0286, 0.0279, 0.0213, 0.0001, 0.    , 0.0049],
-                [0.2567, 0.0005, 0.0031, 0.0339, 0.5704, 0.0974, 0.0262, 0.    , 0.    , 0.0117],
-                [0.2396, 0.0002, 0.0047, 0.0134, 0.0189, 0.6235, 0.0971, 0.    , 0.    , 0.0025],
-                [0.1203, 0.0001, 0.001 , 0.0057, 0.0246, 0.0458, 0.8005, 0.    , 0.    , 0.002 ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    , 0.    ],
-                [0.0612, 0.    , 0.0004, 0.0026, 0.0004, 0.0011, 0.0006, 0.    , 0.9332, 0.0004],
-                [0.5869, 0.0079, 0.0513, 0.1252, 0.0303, 0.0183, 0.0228, 0.0001, 0.    , 0.1571]]),
-            '21-25': np.array([
-                [0.7658, 0.0054, 0.0157, 0.0507, 0.0161, 0.0809, 0.0427, 0.0026, 0.0003, 0.0198],
-                [0.4475, 0.1729, 0.1476, 0.0282, 0.0091, 0.0755, 0.0965, 0.0009, 0.0001, 0.0219],
-                [0.1748, 0.0125, 0.6072, 0.0684, 0.0151, 0.0648, 0.03  , 0.0004, 0.    , 0.0269],
-                [0.3311, 0.011 , 0.0225, 0.5046, 0.0152, 0.0625, 0.0344, 0.0019, 0.0001, 0.0168],
-                [0.2285, 0.0069, 0.0112, 0.0189, 0.5645, 0.1011, 0.0465, 0.0115, 0.    , 0.0108],
-                [0.1962, 0.0019, 0.0063, 0.0099, 0.0263, 0.6879, 0.0656, 0.0005, 0.    , 0.0054],
-                [0.1346, 0.0013, 0.0028, 0.0084, 0.0107, 0.0481, 0.7906, 0.0006, 0.    , 0.003 ],
-                [0.1184, 0.0005, 0.0011, 0.0038, 0.0014, 0.0208, 0.0221, 0.83  , 0.    , 0.0019],
-                [0.1765, 0.0007, 0.0016, 0.0057, 0.0017, 0.0085, 0.0043, 0.0003, 0.7981, 0.0028],
-                [0.5085, 0.0085, 0.0829, 0.0964, 0.0422, 0.12  , 0.04  , 0.0015, 0.0001, 0.0999]]),
-            '26-35': np.array([
-                [0.7865, 0.0028, 0.0097, 0.0245, 0.0209, 0.0864, 0.0506, 0.0057, 0.0016, 0.0113],
-                [0.1941, 0.5082, 0.0085, 0.0392, 0.0435, 0.0802, 0.1139, 0.0011, 0.0002, 0.011 ],
-                [0.1255, 0.0019, 0.6694, 0.0287, 0.0362, 0.0787, 0.0313, 0.0108, 0.0002, 0.0172],
-                [0.3772, 0.0169, 0.0177, 0.462 , 0.0312, 0.0451, 0.0171, 0.003 , 0.0005, 0.0294],
-                [0.1759, 0.0024, 0.0081, 0.0102, 0.6488, 0.0881, 0.052 , 0.0076, 0.0002, 0.0068],
-                [0.1732, 0.0022, 0.0081, 0.0087, 0.0257, 0.72  , 0.0565, 0.002 , 0.0004, 0.0031],
-                [0.1008, 0.0019, 0.0025, 0.0021, 0.0075, 0.0383, 0.8418, 0.0026, 0.0001, 0.0024],
-                [0.0852, 0.0034, 0.0059, 0.0015, 0.014 , 0.0097, 0.0227, 0.8567, 0.0001, 0.0008],
-                [0.0304, 0.0001, 0.0003, 0.0009, 0.0004, 0.0019, 0.001 , 0.0001, 0.961 , 0.0042],
-                [0.3847, 0.0026, 0.0276, 0.1025, 0.0153, 0.1219, 0.0486, 0.0019, 0.0063, 0.2886]]),
-            '>35': np.array([
-                [0.9082, 0.0012, 0.0024, 0.0207, 0.0116, 0.0343, 0.014 , 0.0007, 0.002 , 0.0049],
-                [0.1334, 0.775 , 0.0004, 0.025 , 0.0015, 0.0366, 0.027 , 0.0002, 0.0002, 0.0007],
-                [0.0334, 0.0026, 0.9284, 0.0049, 0.0056, 0.0204, 0.0011, 0.0011, 0.    , 0.0025],
-                [0.2519, 0.0098, 0.0006, 0.6864, 0.0064, 0.0079, 0.0218, 0.0001, 0.0003, 0.0148],
-                [0.1553, 0.0002, 0.0138, 0.0039, 0.7037, 0.0656, 0.0487, 0.0056, 0.0002, 0.003 ],
-                [0.1269, 0.0013, 0.0111, 0.0047, 0.0218, 0.7748, 0.0499, 0.0044, 0.0017, 0.0033],
-                [0.0765, 0.0022, 0.0044, 0.0033, 0.0148, 0.0389, 0.8536, 0.0019, 0.0012, 0.0032],
-                [0.0605, 0.0001, 0.0013, 0.0007, 0.0006, 0.0126, 0.0063, 0.9143, 0.0001, 0.0034],
-                [0.0061, 0.    , 0.    , 0.0001, 0.0001, 0.0002, 0.0027, 0.    , 0.9909, 0.    ],
-                [0.2256, 0.0004, 0.0198, 0.0236, 0.038 , 0.0711, 0.0689, 0.0004, 0.0003, 0.5519]])
-        },
-
-
-        # Postpartum switching matrix, 1 to 6 months
-        'pp1to6': {
-            '<18': np.array([
-                [0.7005, 0.    , 0.0054, 0.026 , 0.0172, 0.1096, 0.1413, 0.    ,0.    , 0.    ],
-                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.6154, 0.3846, 0.    , 0.    ,0.    , 0.    ],
-                [0.0913, 0.    , 0.    , 0.    , 0.    , 0.7858, 0.1229, 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]]),
-            '18-20': np.array([
-                [0.565 , 0.    , 0.    , 0.0078, 0.0146, 0.2205, 0.192 , 0.    ,0.    , 0.    ],
-                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.6788, 0.    , 0.    , 0.3212, 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.397 , 0.    , 0.603 , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.9237, 0.0763, 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]]),
-            '21-25': np.array([
-                [0.4814, 0.0062, 0.0085, 0.0191, 0.0364, 0.2541, 0.1712, 0.0205, 0.    , 0.0025],
-                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.6549, 0.    , 0.    , 0.3451, 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.5075, 0.    , 0.451 , 0.0415, 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.6087, 0.32  , 0.0713, 0.    ,0.    , 0.    ],
-                [0.0329, 0.    , 0.    , 0.    , 0.    , 0.8558, 0.1014, 0.0098,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.3303, 0.    , 0.    ,0.    , 0.6697]]),
-            '26-35': np.array([
-                [0.5309, 0.    , 0.0128, 0.0119, 0.0355, 0.2012, 0.1932, 0.0144,0.    , 0.    ],
-                [0.    , 0.8094, 0.    , 0.    , 0.    , 0.1906, 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.9214, 0.    , 0.    , 0.0786, 0.    , 0.    ,0.    , 0.    ],
-                [0.096 , 0.    , 0.    , 0.8052, 0.    , 0.0704, 0.    , 0.    ,0.    , 0.0285],
-                [0.    , 0.    , 0.    , 0.    , 0.7361, 0.1569, 0.107 , 0.    ,0.    , 0.    ],
-                [0.0445, 0.    , 0.    , 0.    , 0.    , 0.9078, 0.035 , 0.    ,0.0127, 0.    ],
-                [0.0063, 0.    , 0.    , 0.    , 0.0052, 0.014 , 0.9746, 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
-                [0.2318, 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.7682, 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]]),
-            '>35': np.array([
-                [0.6572, 0.    , 0.0115, 0.0184, 0.0639, 0.1318, 0.1068, 0.0031,0.0047, 0.0025],
-                [0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 1.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.4391, 0.    , 0.    , 0.5609, 0.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 1.    , 0.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 1.    , 0.    , 0.    ,0.    , 0.    ],
-                [0.0392, 0.    , 0.    , 0.    , 0.    , 0.    , 0.9608, 0.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 1.    ,0.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,1.    , 0.    ],
-                [0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    , 0.    ,0.    , 1.    ]])
-        },
-
-        # Postpartum initiation vectors, 0 to 1 month
-        'pp0to1': {
-            '<18': np.array([0.801 , 0.    , 0.0052, 0.0099, 0.0089, 0.0508, 0.1243, 0.    ,0.    , 0.    ]),
-            '18-20': np.array([0.7849, 0.    , 0.0066, 0.0134, 0.0082, 0.0793, 0.1007, 0.0038, 0.    , 0.0033]),
-            '21-25': np.array([0.7252, 0.003 , 0.0104, 0.0151, 0.0108, 0.1242, 0.1068, 0.0015, 0.    , 0.0029]),
-            '26-35': np.array([0.7706, 0.004 , 0.011 , 0.0121, 0.0142, 0.0835, 0.0829, 0.0095,0.0092, 0.0031]),
-            '>35': np.array([0.8013, 0.    , 0.0037, 0.0093, 0.0059, 0.0594, 0.0622, 0.0075, 0.0406, 0.0101]),
-        }
-    }
-
-    return raw
-
-
 def barriers():
     ''' Reasons for nonuse -- taken from Kenya DHS 2014. '''
 
@@ -905,115 +545,78 @@ def barriers():
     return barriers
 
 
-def empowerment_sexual_autonomy(ages, regression_fun, regression_pars=None):
+def _check_age_endpoints(df):
     """
-    Interpolate data from DHS and extrapolate to cover the full range of ages
+    Add 'age endpoints' 0 and fpd.max_age+1 if they are not present in the
+    add rows of the dataframe. This is needed for extrapolation if we want to
+    have a complete representation of the probabilities across all possible
+    ages.
 
-    NOTE: this is a temporary implementation to illustrate different parameterisation to
-    interpolate/extrapolate DHS data.
-    """
-    arr = regression_fun(ages, *regression_pars)
-    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
-        # Set the metric to zero for ages < 5
-        arr[ages < 5] = 0.0
-        # Set the metric to zero if it goes below 0
-        arr[arr < 0] = 0.0
-        # Set metric to 1 if it goes above with this parameterisation
-        arr[arr > 1] = 1.0
-    return arr
+    TODO:PSL: remove after we decide whether we want to have full arrays of
+    data, meaning arrays that have data/probs/metric every age represented
+    in the range [0-fpd.max_age],
+    as opposed to arrays that have a subset of ages represented. The
+    difference between the two approaches is how to correctly index
+    into the data array.
 
+    Pseudo-code:
+    A: with age extrapolation
+    age = ppl.age
+    empwr_data[int(age)][empwr_metric]
 
-def empowerment_decision_wages(ages, regression_fun, regression_pars=None):
-    """
-    Interpolate data from DHS and extrapolate to cover the full range of ages
+    B: without age extrapolation, we don't need this function _check_age_endpoints()
+    age = ppl.age
+    age_cutofs = np.hstack(empwr_min_age, empwr_max_age) ## assumes contignuous age range between min, max age
+    empwr_age_index = np.digitize(age, age_cuttofs)
+    empwr_data[empwr_age_index][empwr_metric]
 
-    NOTE: this is a temporary implementation to illustrate different parameterisation to
-    interpolate/extrapolate DHS data.
-    """
-    arr = regression_fun(ages, *regression_pars)
-    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
-        # Set the metric to zero for ages < 5
-        arr[ages < 5] = 0.0
-        # Set other metric to zero if it goes below 0
-        arr[arr < 0] = 0.0
-        # Set metric to 1 if it goes above with this parameterisation
-        arr[arr > 1] = 1.0
-    return arr
+    A: can be faster than B as we don't have to digitize the agents ages each
+    time we want to access the data, we only need to cast ages into integers.
+    continous ages - > integer ages > index empowerment data
 
+    B: removes the need for extrapolation and choosing the extrapolation function.
+    But we won't be able to directly index using an integer version of the agent ages.
 
-def empowerment_decision_health(ages, regression_fun, regression_pars=None):
-    """
-    Interpolate data from DHS and extrapolate to cover the full range of ages
-
-    NOTE: this is a temporary implementation to illustrate different parameterisation to
-    interpolate/extrapolate DHS data.
-    """
-    arr = regression_fun(ages, *regression_pars)
-    if regression_fun.__name__ == "piecewise_linear":  # piecewise linear interpolation
-        # Set other metric to zero if it goes below 0
-        arr[arr < 0] = 0.0
-        # Set metric to 1 if it goes above with this parameterisation
-        arr[arr > 1] = 1.0
-    return arr
-
-
-def empowerment_paid_employment(ages, regression_fun, regression_pars=None):
-    """
-    Interpolate data from DHS and extrapolate to cover the full range of ages
-
-    NOTE: this is a temporary implementation to illustrate different parameterisation to
-    interpolate/extrapolate DHS data.
+    continuous ages -> binned ages > bin indices -> index empowerment probs
 
     """
-    arr = regression_fun(ages, *regression_pars)
 
-    if regression_fun.__name__ == "piecewise_linear": # piecewise linear interpolation
-        inflection_age, inflection_prob, m1, m2 = regression_pars
-        # Set other probabilities to zero in the range 5 <= age < 15
-        arr[arr < 0] = 0.0
-        # Decline probability of having paid wages above 60 -- age of retirement in Kenya
-        inflection_age_2 = 60
-        if m2 > 0:
-            m3 = -m2 # NOTE: assumption
-        else:
-            m3 = m2
-        age_inds = sc.findinds(ages >= inflection_age_2 - 5)
-        arr[age_inds] = regression_fun(ages[age_inds], inflection_age_2, arr[inflection_age_2], m2, m3)
-        arr[ages < 5] = 0.0
-    return arr
+    rows_to_add = []
+    for age in [0, fpd.max_age+1]:
+        if age not in df['age'].values:
+            new_row = pd.Series([0.0] * len(df.columns), index=df.columns)
+            new_row['age'] = age
+            rows_to_add.append(new_row)
+
+    df = pd.concat([df, pd.DataFrame(rows_to_add)], ignore_index=True)
+    df.sort_values('age', inplace=True)
+    df.reset_index(drop=True, inplace=True)
+    return df
 
 
-def empowerment_regression_pars(regression_type='logistic'):
+def get_empowerment_loadings():
     """
-    Return initial guesses of parameters for the corresponding regression function.
-    These parameters have been estimated from the mean estimates of each metric over the range 15-49 years old
-    """
-    if regression_type == "pwlin":
-    # Parameters for two-part piecewise lienar interpolation, p0: age, p1: val at age, p2: slope < age,  p: slope >= age
-        regression_pars = {"paid_employment": [25.0, 0.6198487     , 6.216042e-02  ,  0.0008010242],
-                           "decision_wages":  [28.0, 0.5287573     , 4.644537e-02  , -0.001145422],
-                           "decision_health": [16.0, 9.90297066e-01, 6.26846208e-02,  1.44754082e-04],
-                           "sexual_autonomy": [25.0, 0.8292142     , 0.025677      , -0.003916498]}
-        regression_fun = fpu.piecewise_linear
-    elif regression_type == 'logistic':
-        # Parameters for product of sigmoids
-        regression_pars = {"paid_employment": [-6.33459372e-01, -2.07598104e-03,  1.02375876e+01,  5.03843348e-01],
-                           "decision_wages":  [-6.33459372e-01, -2.07598104e-03,  1.02375876e+01,  5.03843348e-01],
-                           "decision_health": [-4.36694812e+00, 1.72072493e-02 ,  2.92858981e+02,  1.97195136e+01],
-                           "sexual_autonomy": [ 6.25030509    , 0.43789906     , -1.83553293    , -0.015715291]}
-        regression_fun = fpu.sigmoid_product
-    else:
-        mssg = f"Not implemented or unknown regression type [{regression_type}]."
-        raise NotImplementedError(mssg)
+    Loading coefficients to estimate composite measures for:
+     - (1) decision making and
+     - (2) financial autonomy
 
-    return regression_pars, regression_fun
+    Bilbiographic ref:
+    https://www.tandfonline.com/doi/full/10.1080/13545701.2024.2339979?src=
+
+
+    """
+
+    df = pd.read_csv(thisdir / 'data' / 'empower_cfa_loadings.csv')
+    loadings = df.set_index('empowerment_var')['loading_coef'].to_dict()
+    return loadings
 
 
 # Empowerment metrics
-def empowerment_distributions(seed=None, regression_type='logistic'):
+def make_empowerment_pars(seed=None, return_data=False):
     """
     Produce intial distributions of empowerment attributes
-    based on latest DHS-8 IR 2022 dataset.
+    based on latest DHS-8 IR 2022 dataset and PMA Household/Female surveys
+    from 2019, 2020 and 2022.
 
     Because DHS data covers the age group from 15 to 49 (inclusive range),
     in this function we:
@@ -1022,60 +625,82 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
           to populate the corresponding attributes of each individual agent
           at the start of a simulation.
 
+
     By default, interpolation and extrapolation use
     a nonlinear logistic-based function (a product of sigmoids).
+
+    Arguments:
+        seed (int): random seed used to generate a new 'empirical' dataset
+        using the standard error of the mean (se) specified in the csv files.
+
+        regression_type (str): specifies the function to use to peform
+        regression on the empirical data, usually done to extrapolate ages beyond
+        the 15-49 range.
+
+    Returns:
+        empowerment_dict (dict): A dictionary with the processed data ready
+            for fpsim simulations.
+        empowerment_data (dict): A dictionary with the preprocessed data loaded
+            from the csv files in thisdir/data
     """
     from scipy import optimize
 
     # Load empirical data
     empowerment_data = pd.read_csv(thisdir / 'data' / 'empowerment.csv')
-    mean_cols = {col: col + '.mean' for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"}
+    empwr_cols = [col for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"]
+    mean_cols = {col: col + '.mean' for col in empwr_cols}
     empowerment_data.rename(columns=mean_cols, inplace=True)
-    empowerment_dict = {}
+    # Output dict
+    empowerment_pars = {}
 
     if seed is None:
         seed = 42
     fpu.set_seed(seed)
 
-    regression_pars, regression_fun = empowerment_regression_pars(regression_type=regression_type)
-
-    data_points = {"paid_employment": [], "decision_wages":  [], "decision_health": [], "sexual_autonomy": []}
-    cols = ["paid_employment", "decision_wages", "decision_health", "sexual_autonomy"]
-    ages_interp = empowerment_data["age"].to_numpy()
-    for col in cols:
+    data_points = {col: [] for col in empwr_cols}
+    ages = empowerment_data["age"].to_numpy()
+    for col in empwr_cols:
         loc   = empowerment_data[f"{col}.mean"]
         scale = empowerment_data[f"{col}.se"]
-        # Use the standard error to capture the uncertainty in the mean eastimates of each metric
-        data = np.random.normal(loc=loc, scale=scale)
-        data_points[col] = data
-        # Optimise regression parameters
-        fit_pars, fit_err = optimize.curve_fit(regression_fun, ages_interp, data, p0=regression_pars[col])
-        # Update regression parameters
-        regression_pars[col]  = fit_pars
+        # Use the standard error to capture the uncertainty in the mean eastimates of each metric for each age
+        empowerment_pars[col] = np.random.normal(loc=loc, scale=scale)
 
-    # Creates a vector of ages [0, 99] (inclusive range) to extrapolate data
-    ages = np.arange(fpd.max_age + 1)
-    empowerment_dict["age"] = ages
+    empowerment_pars["avail_ages"] = ages           # available ages in empowerment data
+    empowerment_pars["avail_metrics"] = empwr_cols  # empowerment metrics available in the csv file, does not include the composite metrics
 
-    # Interpolate and extrapolate data for different empowerment metrics
-    empowerment_functions = {
-        "paid_employment": empowerment_paid_employment,
-        "decision_wages": empowerment_decision_wages,
-        "decision_health": empowerment_decision_health,
-        "sexual_autonomy": empowerment_sexual_autonomy,
-    }
-    for metric in empowerment_functions.keys():
-        empowerment_dict[metric] = empowerment_functions[metric](
-            ages,
-            regression_fun,
-            regression_pars=regression_pars[metric]
-        )
+    # Estimate composites for decision making (dm) and financial autonomy (fa)
+    # and add them to the empowerment pars
+    empowerment_pars["loadings"] = get_empowerment_loadings()
+    if return_data:
+        return empowerment_pars, empowerment_data
+    return empowerment_pars
 
-    # Store the estimates of each metric and the optimised regression parameters
-    empowerment_dict["regression_pars"] = regression_pars
-    empowerment_dict["sampled_points"] = data_points
 
-    return empowerment_dict, empowerment_data
+def fertility_intent_dist():
+    """Add additional metrics from PMA Household/Female surveys"""
+    df = pd.read_csv(thisdir / 'data' / 'fertility_intent.csv')
+
+    data = {}
+    for row in df.itertuples(index=False):
+        intent = row.fertility_intent
+        age = row.age
+        freq = row.freq
+        data.setdefault(age, {})[intent] = freq
+    return data
+
+
+def empowerment_update_pars():
+    raw_pars = pd.read_csv(thisdir / 'data' / 'empower_coef.csv')
+    pars = sc.objdict()
+    metrics = raw_pars.lhs.unique()
+    for metric in metrics:
+        pars[metric] = sc.objdict()
+        thisdf = raw_pars.loc[raw_pars.lhs == metric]
+        for var_dict in thisdf.to_dict('records'):
+            var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
+            if var_name == 'contraception': var_name = 'on_contra'
+            pars[metric][var_name] = var_dict['Estimate']
+    return pars
 
 
 def age_partnership():
@@ -1087,6 +712,7 @@ def age_partnership():
     return  partnership_dict
 
 
+# %% Education
 def education_objective(df):
     """
     Transforms education objective data from a DataFrame into a numpy array. The DataFrame represents
@@ -1195,9 +821,134 @@ def education_distributions():
     return education_dict, education_data
 
 
+def process_contra_use_pars():
+    raw_pars = pd.read_csv(thisdir / 'data' / 'contra_coef.csv')
+    pars = sc.objdict()
+    for var_dict in raw_pars.to_dict('records'):
+        var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
+        pars[var_name] = var_dict['Estimate']
+    return pars
+
+
+def process_contra_use_simple():
+    # Read in data
+    alldfs = [
+        pd.read_csv(thisdir / 'data' / 'contra_coef_simple.csv'),
+        pd.read_csv(thisdir / 'data' / 'contra_coef_simple_pp1.csv'),
+        pd.read_csv(thisdir / 'data' / 'contra_coef_simple_pp6.csv'),
+    ]
+
+    contra_use_pars = dict()
+    for di, df in enumerate(alldfs):
+        contra_use_pars[di] = sc.objdict(
+            intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
+            age_factors=df[df['rhs'].str.match('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+            fp_ever_user=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
+            age_ever_user_factors=df[df['rhs'].str.match('age') & df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+        )
+    return contra_use_pars
+
+
+def mcpr():
+
+    mcpr = {}
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
+    mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
+    mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
+
+    return mcpr
+
+
+def process_simple_method_pars(methods):
+    """ Choice of method is based on age and parity """
+    df = pd.read_csv(thisdir / 'data' / 'method_mix.csv')
+    # Awful code to speed pandas up
+    dd = dict()
+    for akey in df.age_grp.unique():
+        dd[akey] = dict()
+        for pkey in df.parity.unique():
+            dd[akey][pkey] = dict()
+            for mlabel in df.method.unique():
+                val = df.loc[(df.age_grp == akey) & (df.parity == pkey) & (df.method == mlabel)].percent.values[0]
+                if mlabel != 'Abstinence':
+                    mname = [m.name for m in methods.values() if m.csv_name == mlabel][0]
+                    dd[akey][pkey][mname] = val
+                else:
+                    abstinence_val = sc.dcp(val)
+            dd[akey][pkey]['othtrad'] += abstinence_val
+
+    return dd
+
+
+def process_markovian_method_choice(methods):
+    """ Choice of method is age and previous method """
+    df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+    csv_map = {method.csv_name: method.name for method in methods.values()}
+    idx_map = {method.csv_name: method.idx for method in methods.values()}
+    idx_df = {}
+    for col in df.columns:
+        if col in csv_map.keys():
+            idx_df[col] = idx_map[col]
+
+    mc = dict()  # This one is a dict because it will be keyed with numbers
+    init_dist = sc.objdict()  # Initial distribution of method choice
+
+    for pp in df.postpartum.unique():
+        mc[pp] = sc.objdict()
+        mc[pp].method_idx = idx_df.values()
+        for akey in df.age_grp.unique():
+            mc[pp][akey] = sc.objdict()
+            thisdf = df.loc[(df.age_grp == akey) & (df.postpartum == pp)]
+            if pp == 1:  # Different logic for immediately postpartum
+                mc[pp][akey] = thisdf.values[0][4:13].astype(float)  # If this is going to be standard practice, should make it more robust
+            else:
+                from_methods = thisdf.From.unique()
+                for from_method in from_methods:
+                    from_mname = csv_map[from_method]
+                    row = thisdf.loc[thisdf.From == from_method]
+                    mc[pp][akey][from_mname] = row.values[0][4:13].astype(float)
+
+            # Set initial distributions by age
+            if pp == 0:
+                init_dist[akey] = thisdf.loc[thisdf.From == 'None'].values[0][4:13].astype(float)
+                init_dist.method_idx = idx_df.values()
+
+    return mc, init_dist
+
+
+def process_dur_use(methods):
+    """ Process duration of use parameters"""
+    df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+    for method in methods.values():
+        if method.name == 'btl':
+            method.dur_use = dict(dist='lognormal', par1=100, par2=1)
+        else:
+            mlabel = method.csv_name
+
+            thisdf = df.loc[df.method == mlabel]
+            dist = thisdf.functionform.iloc[0]
+            method.dur_use = dict()
+            method.dur_use['age_factors'] = np.append(thisdf.coef.values[2:], 0)
+
+            if dist == 'lognormal':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'meanlog'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'sdlog'].values[0]
+            elif dist in ['gamma']:
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'rate'].values[0]
+            elif dist == 'llogis':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'scale'].values[0]
+
+    return methods
+
+
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
+def make_pars(seed=None, use_subnational=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -1229,19 +980,13 @@ def make_pars(use_empowerment=None, use_education=None, use_partnership=None, us
     pars['spacing_pref'] = birth_spacing_pref()
 
     # Contraceptive methods
-    pars['methods'] = methods()
-    pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
+    pars['mcpr'] = mcpr()
 
-    # Empowerment metrics
-    if use_empowerment:
-        empowerment_dict, _ = empowerment_distributions(seed=seed)  # This function returns extrapolated and raw data
-        pars['empowerment'] = empowerment_dict
-    if use_education:
-        education_dict, _ = education_distributions() # This function returns extrapolated and raw data
-        pars['education'] = education_dict
-    if use_partnership:
-        pars['age_partnership'] = age_partnership()
+    # Demographics: geography and partnership status
+    pars['urban_prop'] = urban_proportion()
+    pars['age_partnership'] = age_partnership()
+    pars['fertility_intent'] = fertility_intent_dist()
 
     kwargs = locals()
     not_implemented_args = ['use_subnational']

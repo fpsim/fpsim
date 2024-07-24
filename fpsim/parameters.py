@@ -104,58 +104,6 @@ class Pars(dict):
             else:
                 print(errormsg)
 
-        # Validate method properties
-        methods = self['methods']
-        new_method_map = methods['map']
-        new_method_age_map = methods['age_map']
-        n = len(new_method_map)
-        method_keys = list(new_method_map.keys())
-        modern_keys = list(methods['modern'].keys())
-        eff_keys = list(methods['eff'].keys())
-        if not (method_keys == eff_keys == modern_keys):
-            errormsg = f'Mismatch between method mapping keys:\n{method_keys}",\nmodern keys\n"{modern_keys}", and efficacy keys\n"{eff_keys}"'
-            if die:
-                raise ValueError(errormsg)
-            else:
-                print(errormsg)
-
-        # Validate method matrices
-        raw = methods['raw']
-        age_keys = set(new_method_age_map.keys())
-        for mkey in ['annual', 'pp0to1', 'pp1to6']:
-            m_age_keys = set(raw[mkey].keys())
-            if age_keys != m_age_keys:
-                errormsg = f'Matrix "{mkey}" has inconsistent keys: "{sc.strjoin(age_keys)}" ≠ "{sc.strjoin(m_age_keys)}"'
-                if die:
-                    raise ValueError(errormsg)
-                else:
-                    print(errormsg)
-        for k in age_keys:
-            shape = raw['pp0to1'][k].shape
-            if shape != (n,):
-                errormsg = f'Postpartum method initiation matrix for ages {k} has unexpected shape: should be ({n},), not {shape}'
-                if die:
-                    raise ValueError(errormsg)
-                else:
-                    print(errormsg)
-            for mkey in ['annual', 'pp1to6']:
-                shape = raw[mkey][k].shape
-                if shape != (n, n):
-                    errormsg = f'Method matrix {mkey} for ages {k} has unexpected shape: should be ({n},{n}), not {shape}'
-                    if die:
-                        raise ValueError(errormsg)
-                    else:
-                        print(errormsg)
-
-        # Copy to defaults, making use of mutable objects to preserve original object ID
-        if update:
-            for k in list(fpd.method_map.keys()):     fpd.method_map.pop(k)  # Remove all items
-            for k in list(fpd.method_age_map.keys()): fpd.method_age_map.pop(k)  # Remove all items
-            for k, v in new_method_map.items():
-                fpd.method_map[k] = v
-            for k, v in new_method_age_map.items():
-                fpd.method_age_map[k] = v
-
         return self
 
 
@@ -218,286 +166,6 @@ class Pars(dict):
             raise TypeError(errormsg)
         return key
 
-    def update_method_eff(self, method, eff=None, verbose=False):
-        '''
-        Update efficacy of one or more contraceptive methods.
-
-        Args:
-            method (str/dict): method to update, or dict of method:value pairs
-            eff (float): new value of contraceptive efficacy (not required if method is a dict)
-
-        **Examples**::
-            pars.update_method_eff('Injectables', 0.99)
-            pars.update_method_eff({'Injectables':0.99, 'Condoms':0.50})
-        '''
-
-        # Validation
-        if not isinstance(method, dict):
-            if eff is None:
-                errormsg = 'Must supply a value to update the contraceptive efficacy to'
-                raise ValueError(errormsg)
-            else:
-                method = {method: eff}
-
-        # Perform updates
-        for k, rawval in method.items():
-            k = self._as_key(k)
-            v = getval(rawval)
-            effs = self['methods']['eff']
-            orig = effs[k]
-            effs[k] = v
-            if verbose:
-                print(f'Efficacy for method {k} was changed from {orig:0.3f} to {v:0.3f}')
-
-        return self
-
-    def update_method_prob(self, source=None, dest=None, factor=None, value=None,
-                           ages=None, matrix=None, copy_from=None, verbose=False):
-        '''
-        Updates the probability matrices with a new value. Usually used via the
-        intervention ``fp.update_methods()``.
-
-        Args:
-            source    (str/int):  the method to switch from
-            dest      (str/int):  the method to switch to
-            factor    (float):    if supplied, multiply the probability by this factor
-            value     (float):    if supplied, change the probability to this value
-            ages      (str/list): the ages to modify (default: all)
-            matrix    (str):      which switching matrix to modify (default: annual)
-            copy_from (str):      the existing method to copy the probability vectors from (optional)
-            verbose   (bool):     how much detail to print
-        '''
-
-        raw = self['methods']['raw']  # We adjust the raw matrices, so the effects are persistent
-
-        # Convert from strings to indices
-        if copy_from:
-            copy_from = self._as_ind(copy_from, allow_none=False)
-            if source is None:  # We need a source, but it's not always used
-                source = copy_from
-        source = self._as_ind(source, allow_none=False)
-        dest = self._as_ind(dest, allow_none=False)
-
-        # Replace age keys with all ages if so asked
-        if ages in fpd.none_all_keys:
-            ages = raw['annual'].keys()
-        else:
-            ages = sc.tolist(ages)
-
-        # Check matrix is valid
-        if matrix not in raw:
-            errormsg = f'Invalid matrix "{matrix}"; valid choices are: {sc.strjoin(raw.keys())}'
-            raise sc.KeyNotFoundError(errormsg)
-
-        # Actually loop over the matrices and apply the changes
-        for k in ages:
-            arr = raw[matrix][k]
-            if matrix == 'pp0to1':  # Handle the postpartum initialization *vector*
-                orig = arr[dest]  # Pull out before being overwritten
-
-                # Handle copy from
-                if copy_from is not None:
-                    arr[dest] = arr[copy_from]
-
-                # Handle everything else
-                if factor is not None:
-                    arr[dest] *= getval(factor)
-                elif value is not None:
-                    val = getval(value)
-                    arr[dest] = 0
-                    arr *= (1 - val) / arr.sum()
-                    arr[dest] = val
-                    assert np.isclose(arr.sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {arr.sum()}'
-                if verbose:
-                    print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[dest]}')
-
-            else:  # Handle annual switching *matrices*
-                orig = sc.dcp(arr[source, dest])
-
-                # Handle copy from
-                if copy_from is not None:
-                    arr[:, dest] = arr[:, copy_from]
-                    arr[dest, :] = arr[copy_from, :]
-                    median_init = np.median(arr[:, copy_from])
-                    median_discont = np.median(arr[copy_from, :])
-                    arr[dest, dest] = arr[copy_from, copy_from]  # Replace diagonal element with correct version
-                    arr[copy_from, dest] = median_init
-                    arr[dest, copy_from] = median_discont
-
-                # Handle modifications
-                if factor is not None:
-                    arr[source, dest] *= getval(factor)
-                elif value is not None:
-                    val = getval(value)
-                    arr[source, dest] = 0
-                    arr[source, :] *= (1 - val) / arr[source, :].sum()
-                    arr[source, dest] = val
-                    assert np.isclose(arr[source, :].sum(), 1, atol=1e-3), f'Matrix should sum to 1, not {arr.sum()}'
-                if verbose:
-                    print(f'Matrix {matrix} for age group {k} was changed from:\n{orig}\nto\n{arr[source, dest]}')
-
-        return self
-
-    def reset_methods_map(self):
-        ''' Refresh the methods map to be self-consistent '''
-        methods = self['methods']
-        methods['map'] = {k: i for i, k in enumerate(methods['map'].keys())}  # Reset numbering
-        return self
-
-    def add_method(self, name, eff, modern=True):
-        '''
-        Add a new contraceptive method to the switching matrices.
-
-        A new method should only be added before the sim is run, not during.
-
-        Note: the matrices are stored in ``pars['methods']['raw']``; this method
-        is a helper function for modifying those. For more flexibility, modify
-        them directly. The ``fp.update_methods()`` intervention can be used to
-        modify the switching probabilities later.
-
-        Args:
-            name (str): the name of the new method
-            eff (float): the efficacy of the new method
-            modern (bool): whether it's a modern method (default: yes)
-
-        **Examples**::
-            pars = fp.pars()
-            pars.add_method('New method', 0.90)
-            pars.add_method(name='Male pill', eff=0.98, modern=True)
-        '''
-        # Remove from mapping and efficacy
-        methods = self['methods']
-        n = len(methods['map'])
-        methods['map'][name] = n  # Can't use reset_methods_map since need to define the new entry
-        methods['modern'][name] = modern
-        methods['eff'][name] = eff
-
-        # Modify method matrices
-        raw = methods['raw']
-        age_keys = methods['age_map'].keys()
-        for k in age_keys:
-            # Handle the initiation matrix
-            pp0to1 = raw['pp0to1']
-            pp0to1[k] = np.append(pp0to1[k], 0)  # Append a zero to the end
-
-            # Handle the other matrices
-            for mkey in ['annual', 'pp1to6']:
-                matrix = raw[mkey]
-                zeros_row = np.zeros((1, n))
-                zeros_col = np.zeros((n + 1, 1))
-                matrix[k] = np.append(matrix[k], zeros_row, axis=0)  # Append row to bottom
-                matrix[k] = np.append(matrix[k], zeros_col, axis=1)  # Append column to right
-                matrix[k][n, n] = 1.0  # Set everything to zero except continuation
-
-        # Validate
-        self.validate()
-
-        return self
-
-    def rm_method(self, name):
-        '''
-        Removes a contraceptive method from the switching matrices.
-
-        A method should only be removed before the sim is run, not during, since
-        the method associated with each person in the sim will point to the wrong
-        index.
-
-        Args:
-            name (str/ind): the name or index of the method to remove
-
-        **Example**::
-            pars = fp.pars()
-            pars.rm_method('Other modern')
-        '''
-
-        # Get index of method to remove
-        ind = self._as_ind(name, allow_none=False)
-        key = self._as_key(name)
-
-        # Store a copy for debugging
-        methods = self['methods']
-        methods['map_orig'] = sc.dcp(methods['map'])
-
-        # Remove from mapping and efficacy
-        for parkey in ['map', 'modern', 'eff']:
-            methods[parkey].pop(key)
-        self.reset_methods_map()
-
-        # Modify method matrices
-        raw = methods['raw']
-        age_keys = methods['age_map'].keys()
-        for k in age_keys:
-            # Handle the initiation matrix
-            pp0to1 = raw['pp0to1']
-            pp0to1[k] = np.delete(pp0to1[k], ind)
-
-            # Handle the other matrices
-            for mkey in ['annual', 'pp1to6']:
-                matrix = raw[mkey]
-                for axis in [0, 1]:
-                    matrix[k] = np.delete(matrix[k], ind, axis=axis)
-
-        # Validate
-        self.validate()
-
-        return self
-
-    def reorder_methods(self, order):
-        '''
-        Reorder the contraceptive method matrices.
-
-        Method reordering should be done before the sim is created (or at least before it's run).
-
-        Args:
-            order (arr): the new order of methods, either ints or strings
-            sim (Sim): if supplied, also reorder
-
-        **Exampls**::
-            pars = fp.pars()
-            pars.reorder_methods([2, 6, 4, 7, 0, 8, 5, 1, 3])
-        '''
-
-        # Store a copy for debugging
-        methods = self['methods']
-        orig = sc.dcp(methods['map'])
-        orig_keys = list(orig.keys())
-        methods['map_orig'] = orig
-
-        # Reorder mapping and efficacy
-        if isinstance(order[0], str):  # If strings are supplied, convert to ints
-            order = [orig_keys.index(k) for k in order]
-        order_set = sorted(set(order))
-        orig_set = sorted(set(np.arange(len(orig_keys))))
-
-        # Validation
-        if order_set != orig_set:
-            errormsg = f'Reordering "{order}" does not match indices of methods "{orig_set}"'
-            raise ValueError(errormsg)
-
-        # Reorder map and efficacy -- TODO: think about how to implement rename as well
-        new_keys = [orig_keys[k] for k in order]
-        for parkey in ['map', 'modern', 'eff']:
-            methods[parkey] = {k: methods[parkey][k] for k in new_keys}
-        self.reset_methods_map()  # Restore ordering
-
-        # Modify method matrices
-        raw = methods['raw']
-        age_keys = methods['age_map'].keys()
-        for k in age_keys:
-            # Handle the initiation matrix
-            pp0to1 = raw['pp0to1']
-            pp0to1[k] = pp0to1[k][order]
-
-            # Handle the other matrices
-            for mkey in ['annual', 'pp1to6']:
-                matrix = raw[mkey]
-                matrix[k] = matrix[k][:, order][order]
-
-        # Validate
-        self.validate()
-
-        return self
-
 
 # %% Parameter creation functions
 
@@ -513,18 +181,13 @@ default_pars = {
     'start_year':           1960,   # Start year of simulation
     'end_year':             2020,   # End year of simulation
     'timestep':             1,      # The simulation timestep in months
-    'method_timestep':      1,      # How many simulation timesteps to go for every method update step
     'seed':                 1,      # Random seed
     'verbose':              1,      # How much detail to print during the simulation
 
     # Settings - what aspects are being modeled
-    'track_switching':      0,      # Whether to track method switching
     'track_as':             0,      # Whether to track age-specific channels
-    'use_urban':            0,      # Whether to model urban setting state - will need to add context-specific data if using
-    'use_partnership':      0,      # Whether to model partnered states- will need to add context-specific data if using
-    'use_empowerment':      0,      # Whether to model empowerment - will need to add context-specific data if using
-    'use_education':        0,      # Whether to model education, requires use_urban==True for kenya - will need to add context-specific data if using
-    'use_subnational':        0,    # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
+    'use_subnational':      0,      # Whether to model partnered states- will need to add context-specific data if using
+    'use_partnership':      0,      # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
 
     # Age limits (in years)
     'method_age':           15,
@@ -532,15 +195,14 @@ default_pars = {
     'max_age':              99,
 
     # Durations (in months)
-    'switch_frequency':     12,     # How frequently to check for changes to contraception
-    'end_first_tri':        3,
-    'preg_dur_low':         9,
-    'preg_dur_high':        9,
-    'max_lam_dur':          5,      # Duration of lactational amenorrhea
-    'short_int':            24,     # Duration of a short birth interval between live births in months
+    'end_first_tri':        3,      # Months
+    'preg_dur_low':         9,      # Months
+    'preg_dur_high':        9,      # Months
+    'max_lam_dur':          5,      # Duration of lactational amenorrhea (months)
+    'short_int':            24,     # Duration of a short birth interval between live births (months)
     'low_age_short_int':    0,      # age limit for tracking the age-specific short birth interval
     'high_age_short_int':   20,     # age limit for tracking the age-specific short birth interval
-    'postpartum_dur':       35,
+    'postpartum_dur':       35,     # Months
     'breastfeeding_dur_mu': None,   # CONTEXT-SPECIFIC #### - Location parameter of gumbel distribution
     'breastfeeding_dur_beta': None,  # CONTEXT-SPECIFIC #### - Scale parameter of gumbel distribution
 
@@ -553,17 +215,8 @@ default_pars = {
     # Fecundity and exposure
     'fecundity_var_low':    0.7,
     'fecundity_var_high':   1.1,
-    'high_parity':          4,
-    'high_parity_nonuse':   0.6,
     'primary_infertility':  0.05,
     'exposure_factor':      1.0,    # Overall exposure correction factor
-    'restrict_method_use':  0,      # If 1, only allows agents to select methods when sexually active within 1 year
-                                    # and at fated debut age.  Contraceptive matrix probs must be changed to turn on
-
-    # MCPR
-    'mcpr_growth_rate':     0.02,   # Year-on-year change in MCPR after the end of the data
-    'mcpr_max':             0.9,    # Do not allow MCPR to increase beyond this
-    'mcpr_norm_year':       None,   # CONTEXT-SPECIFIC #### - year to normalize MCPR trend to 1
 
     # Other sim parameters
     'mortality_probs':      {},
@@ -589,14 +242,13 @@ default_pars = {
     'exposure_age':         None,
     'exposure_parity':      None,
     'spacing_pref':         None,
-    'methods':              None,
     'barriers':             None,
-
-    # Empowerment (if using, set use_empowerment to True in the pars dict or location file and provide these)
     'urban_prop':           None,
-    'empowerment':          None,
-    'education':            None,
     'age_partnership':      None,
+    'mcpr':                 None,
+
+    # Newer parameters, associated with empowerment, but that are not empowerment metrics
+    'fertility_intent':     None,
 
     'region':               None,
     'lactational_amenorrhea_region': None,
@@ -611,7 +263,7 @@ par_keys = default_pars.keys()
 
 
 def pars(location=None, validate=True, die=True, update=True, **kwargs):
-    '''
+    """
     Function for updating parameters.
 
     Args:
@@ -623,7 +275,8 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
 
     **Example**::
         pars = fp.pars(location='senegal')
-    '''
+    """
+
     from . import locations as fplocs # Here to avoid circular import
 
     if not location:
@@ -643,22 +296,20 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     pars = sc.mergedicts(default_pars, kwargs, _copy=True)  # Merge all pars with kwargs and copy
 
     # Pull out values needed for the location-specific make_pars functions
-    loc_kwargs = dict(use_empowerment = pars['use_empowerment'],
-                      use_education   = pars['use_education'],
-                      use_partnership = pars['use_partnership'],
-                      seed            = pars['seed'])
+    loc_kwargs = dict(seed=pars['seed'])
 
     # Define valid locations
     if location == 'default':
         location = 'senegal'
-    valid_country_locs = dir(fplocs)
+    valid_country_locs = ['senegal', 'kenya', 'ethiopia']  # Hardcoding for now
     valid_ethiopia_regional_locs = dir(fplocs.ethiopia.regions)
 
     # Get parameters for this location
     if location in valid_country_locs:
         location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
-    elif location in valid_ethiopia_regional_locs:
-        location_pars = getattr(fplocs.ethiopia.regions, location).make_pars(**loc_kwargs)
+    # TODO: regional locations not supported yet
+    # elif location in valid_ethiopia_regional_locs:
+    #     location_pars = getattr(fplocs.ethiopia.regions, location).make_pars(**loc_kwargs)
     else: # Else, error
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)

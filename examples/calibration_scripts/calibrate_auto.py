@@ -364,7 +364,6 @@ if __name__ == '__main__':
                         pl.show()
 
         if do_plot_cpr:
-
                 '''
                 Plot contraceptive prevalence rate for model vs data
                 '''

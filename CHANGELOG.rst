@@ -8,6 +8,22 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+
+Version 2.0.0 (2024-06-07)
+---------------------------
+Previously, women updated their contraceptive choices each year in their birth month.
+This PR introduces a new method for setting contraceptive choices, whereby women choose a method of contraception, and are then assigned a duration of use (`dur_use`). They update their contraceptive choice at the end of this duration, or after certain other events (e.g. postpartum, or after a change in one of their empowerment metrics).
+
+To support this new feature, this PR also introduces several new items:
+ - `ContraceptiveChoice` modules can be defined and flexibly added to sims depending on how one wishes to model the mechanism for choosing contraception
+ - `sim.i` has been renamed `sim.ti` for consistency across starsim modules and for clarity that it refers to time
+ - `track_switching` has been moved to an analyzer
+ - the fpsim `ndict` class has been removed and replaced with the starsim `ndict` class
+ - the lists of lists in the results object have been replaced with arrays
+ - `Education` and `Empowerment` modules have been added
+ 
+ *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/280>`_
+
 Version 1.0.1 (2024-06-17)
 ---------------------------
 - Adds empowerment metrics (paid work and education attainment) to calibration targets

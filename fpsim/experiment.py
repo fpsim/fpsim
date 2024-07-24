@@ -150,35 +150,26 @@ class Experiment(sc.prettyobj):
 
         self.sim = fps.Sim(pars=pars, **kwargs)
         self.sim.run()
-        self.post_process_sim()
 
-        return
-
-
-    def post_process_sim(self):
-        self.people = self.sim.people  # Extract people objects from sim
-        self.model_results = self.sim.results  # Stores dictionary of results
-
-        self.method_keys = list(self.sim['methods']['map'].keys())
         return
 
 
     def extract_model(self):
-        if self.flags.popsize:  self.model_pop_size()
-        if self.flags.mcpr:     self.model_mcpr()
-        if self.flags.mmr:      self.model_mmr()
-        if self.flags.infant_m: self.model_infant_mortality_rate()
-        if self.flags.cdr:      self.model_crude_death_rate()
-        if self.flags.cbr:      self.model_crude_birth_rate()
-        if self.flags.tfr:      self.model_data_tfr()
-        if self.flags.asfr:     self.model_data_asfr()
+        sres = self.sim.results
+        if self.flags.popsize:  self.model_pop_size(sres)
+        if self.flags.mcpr:     self.model_mcpr(sres)
+        if self.flags.mmr:      self.model_mmr(sres)
+        if self.flags.infant_m: self.model_infant_mortality_rate(sres)
+        if self.flags.cdr:      self.model_crude_death_rate(sres)
+        if self.flags.cbr:      self.model_crude_birth_rate(sres)
+        if self.flags.tfr:      self.model_data_tfr(sres)
+        if self.flags.asfr:     self.model_data_asfr(sres)
         return
 
 
-    def model_pop_size(self):
-
-        self.model['pop_size'] = self.model_results['pop_size']
-        self.model['pop_years'] = self.model_results['tfr_years']
+    def model_pop_size(self, sres=None):
+        self.model['pop_size'] = sres['pop_size']
+        self.model['pop_years'] = sres['tfr_years']
 
         model_growth_rate = self.pop_growth_rate(self.model['pop_years'], self.model['pop_size'])
         self.model['pop_growth_rate'] = model_growth_rate
@@ -186,9 +177,8 @@ class Experiment(sc.prettyobj):
         return
 
 
-    def model_mcpr(self):
-
-        model = {'years': self.model_results['t'], 'mcpr': self.model_results['mcpr']}
+    def model_mcpr(self, sres=None):
+        model = {'years': sres['t'], 'mcpr': sres['mcpr']}
         model_frame = pd.DataFrame(model)
 
         # Filter to matching years
@@ -203,54 +193,49 @@ class Experiment(sc.prettyobj):
         return
 
 
-    def model_mmr(self):
+    def model_mmr(self, sres=None):
         '''
         Calculate maternal mortality in model over most recent 3 years
         '''
-
-        maternal_deaths = np.sum(self.model_results['maternal_deaths'][-mpy * 3:])
-        births_last_3_years = np.sum(self.model_results['births'][-mpy * 3:])
-        self.model['maternal_mortality_ratio'] = (maternal_deaths / births_last_3_years) * 100000
-
-        return
-
-
-    def model_infant_mortality_rate(self):
-
-        infant_deaths = np.sum(self.model_results['infant_deaths'][-mpy:])
-        births_last_year = np.sum(self.model_results['births'][-mpy:])
-        self.model['infant_mortality_rate'] = (infant_deaths / births_last_year) * 1000
+        maternal_deaths = np.sum(sres['maternal_deaths'][-mpy * 3:])
+        births_last_3_years = np.sum(sres['births'][-mpy * 3:])
+        self.model['maternal_mortality_ratio'] = sc.safedivide(maternal_deaths, births_last_3_years) * 100000
 
         return
 
+    def model_infant_mortality_rate(self, sres=None):
 
-    def model_crude_death_rate(self):
-        total_deaths = np.sum(self.model_results['deaths'][-mpy:]) + \
-                       np.sum(self.model_results['infant_deaths'][-mpy:]) + \
-                       np.sum(self.model_results['maternal_deaths'][-mpy:])
-        self.model['crude_death_rate'] = (total_deaths / self.model_results['pop_size'][-1]) * 1000
+        infant_deaths = np.sum(sres['infant_deaths'][-mpy:])
+        births_last_year = np.sum(sres['births'][-mpy:])
+        self.model['infant_mortality_rate'] = sc.safedivide(infant_deaths, births_last_year) * 1000
+
+        return
+
+    def model_crude_death_rate(self, sres=None):
+        total_deaths = np.sum(sres['deaths'][-mpy:]) + \
+                       np.sum(sres['infant_deaths'][-mpy:]) + \
+                       np.sum(sres['maternal_deaths'][-mpy:])
+        self.model['crude_death_rate'] = (total_deaths / sres['pop_size'][-1]) * 1000
+        return
+
+    def model_crude_birth_rate(self, sres=None):
+        births_last_year = np.sum(sres['births'][-mpy:])
+        self.model['crude_birth_rate'] = (births_last_year / sres['pop_size'][-1]) * 1000
         return
 
 
-    def model_crude_birth_rate(self):
-        births_last_year = np.sum(self.model_results['births'][-mpy:])
-        self.model['crude_birth_rate'] = (births_last_year / self.model_results['pop_size'][-1]) * 1000
-        return
-
-
-    def model_data_tfr(self):
+    def model_data_tfr(self, sres=None):
 
         # Extract tfr over time in data - keep here to ignore dhs data if not using tfr for calibration
         tfr = self.load_data('tfr')  # From DHS
         self.data['tfr_years'] = tfr['year'].to_numpy()
         self.data['total_fertility_rate'] = tfr['tfr'].to_numpy()
 
-        self.model['tfr_years'] = self.model_results['tfr_years']
-        self.model['total_fertility_rate'] = self.model_results['tfr_rates']
+        self.model['tfr_years'] = sres['tfr_years']
+        self.model['total_fertility_rate'] = sres['tfr_rates']
         return
 
-
-    def model_data_asfr(self, ind=-1):
+    def model_data_asfr(self, sres=None, ind=-1):
 
         # Extract ASFR for different age bins
         asfr = self.load_data('asfr')  # From DHS
@@ -271,7 +256,7 @@ class Experiment(sc.prettyobj):
         self.model['asfr_bins'] = age_bins
         self.model['asfr'] = []
         for ab in age_bins:
-            val = self.model_results['asfr'][ab][ind] # Only use one index (default: last) CK: TODO: match year automatically
+            val = sres['asfr'][ab][ind] # Only use one index (default: last) CK: TODO: match year automatically
             self.model['asfr'].append(val)
 
         # Check
@@ -307,13 +292,12 @@ class Experiment(sc.prettyobj):
                 sky_arr['Data'][age_ind, row.parity] = row.percentage
 
         # Extract from model
-        sky_arr['Model'] = pl.zeros((len(age_bins), len(parity_bins)))
-        ppl = self.people
-        for i in range(len(ppl)):
-            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-                age_bin = sc.findinds(age_bins <= ppl.age[i])[-1]
-                parity_bin = sc.findinds(parity_bins <= ppl.parity[i])[-1]
-                sky_arr['Model'][age_bin, parity_bin] += 1
+        ppl = self.sim.people
+        alive_f = ppl.filter(ppl.alive * ~ppl.sex)
+        m_age_bins = np.append(age_bins,max_age)
+        m_parity_bins = np.append(parity_bins, parity_bins[-1]+1)
+        counts, _, _ = np.histogram2d(alive_f.age, alive_f.parity, bins=(m_age_bins, m_parity_bins))
+        sky_arr['Model'] = counts
 
         # Normalize
         for key in ['Data', 'Model']:
@@ -334,27 +318,21 @@ class Experiment(sc.prettyobj):
         data_spaces = self.load_data('spacing')
         data_spaces = data_spaces.sort_values(by='space_mo')
         spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
-        model_age_first = []
-        model_spacing = []
-        model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
-        ppl = self.people
 
-        # Extract age at first birth and birth spaces from model
-        for i in range(len(ppl)):
-            if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
-                if len(ppl.dobs[i]):
-                    model_age_first.append(ppl.dobs[i][0])
-                if len(ppl.dobs[i]) > 1:
-                    for d in range(len(ppl.dobs[i]) - 1):
-                        space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
-                        ind = sc.findinds(space > spacing_bins[:])[-1]
-                        model_spacing_counts[ind] += 1
-                        model_spacing.append(space)
+        # Extract birth spaces from model
+        ppl = self.sim.people
+        gt1_birth = ppl.filter(ppl.alive * ~ppl.sex * ppl.parity>1)  # Alive women with >1 birth
+        birth_spaces = np.diff(gt1_birth.birth_ages)  # Birth spacings
+        defined_vals = ~np.isnan(birth_spaces) * (birth_spaces>0)  # Find NaNs and twins
+        model_spacing = birth_spaces[defined_vals]  # Remove NaNs and twins
+        model_spacing_counts, _ = np.histogram(model_spacing, bins=np.append(spacing_bins.values(), 10))  # Bin
+        model_spacing_counts = model_spacing_counts / model_spacing_counts[:].sum()  # Normalize
+        model_spacing_counts[:] *= 100  # Percentages
 
-        # Normalize model birth space bin counts to percentages
-        model_spacing_counts[:] /= model_spacing_counts[:].sum()
-        model_spacing_counts[:] *= 100
+        # Extract age at first birth from model
+        any_births = ppl.filter(ppl.alive * ~ppl.sex * ppl.parity>0)
+        model_age_first = any_births.birth_ages[:,0]
 
         # Extract birth spaces and age at first birth from data
         for i, j in data_spaces.iterrows():
@@ -382,11 +360,11 @@ class Experiment(sc.prettyobj):
         birth_spacing_cum_weights = np.cumsum(birth_spacing_weights)
         birth_spacing_total_weight = birth_spacing_cum_weights[-1]
 
-        data_spacing_stats = np.array([np.interp((.25 * afb_total_weight), afb_cum_weights, afb_values),
+        data_age_first_stats = np.array([np.interp((.25 * afb_total_weight), afb_cum_weights, afb_values),
                                        np.interp((.50 * afb_total_weight), afb_cum_weights, afb_values),
                                        np.interp((.75 * afb_total_weight), afb_cum_weights, afb_values)])
 
-        data_age_first_stats = np.array([np.interp((.25 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values),
+        data_spacing_stats = np.array([np.interp((.25 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values),
                                        np.interp((.50 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values),
                                        np.interp((.75 * birth_spacing_total_weight), birth_spacing_cum_weights, birth_spacing_values)])
 
@@ -409,15 +387,15 @@ class Experiment(sc.prettyobj):
             model_age_first_stats = np.zeros(data_age_first_stats.shape)
 
         # Save arrays to dictionary
-        self.model['spacing_bins'] = np.array(model_spacing_counts.values())
+        self.model['spacing_bins'] = np.array(model_spacing_counts)
         self.model['spacing_stats'] = model_spacing_stats
         self.model['age_first_stats'] = model_age_first_stats
 
         return
 
     def extract_methods(self):
-        data_method_counts = sc.odict().make(self.method_keys, vals=0.0)
-        model_method_counts = sc.dcp(data_method_counts)
+        data_method_counts = sc.odict()
+        model_method_counts = sc.odict()
 
         # Extract from data
         data_methods = self.load_data('methods')
@@ -440,12 +418,12 @@ class Experiment(sc.prettyobj):
             data_method_counts.update({key: value})
 
         # Extract from model
-        ppl = self.people
-        for i in range(len(ppl)):
-            if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-                model_method_counts[ppl.method[i]] += 1
-
-        model_method_counts[:] /= model_method_counts[:].sum()
+        ppl = self.sim.people
+        alive_f = ppl.filter(ppl.alive * ~ppl.sex)
+        model_methods = alive_f.method
+        model_method_counts,_ = np.histogram(model_methods, bins=np.arange(11))
+        model_method_counts = model_method_counts/model_method_counts.sum()
+        model_labels = [m.label for m in self.sim.contraception_module.methods.values()]
 
         # Make labels
         data_labels = data_method_counts.keys()
@@ -454,7 +432,6 @@ class Experiment(sc.prettyobj):
                 data_labels[d] = f'{data_labels[d]}: {data_method_counts[d] * 100:0.1f}%'
             else:
                 data_labels[d] = ''
-        model_labels = model_method_counts.keys()
         for d in range(len(model_labels)):
             if model_method_counts[d] > 0.01:
                 model_labels[d] = f'{model_labels[d]}: {model_method_counts[d] * 100:0.1f}%'
@@ -462,7 +439,7 @@ class Experiment(sc.prettyobj):
                 model_labels[d] = ''
 
         self.data['method_counts'] = np.array(data_method_counts.values())
-        self.model['method_counts'] = np.array(model_method_counts.values())
+        self.model['method_counts'] = np.array(model_method_counts)
 
         return
 
@@ -565,11 +542,6 @@ class Experiment(sc.prettyobj):
         if self.flags.empowerment:
             self.extract_employment()
             self.extract_education()
-
-        # Remove people, they're large!
-        if not keep_people:
-            del self.people
-
 
         # Compute comparison
         self.df = self.compare()
