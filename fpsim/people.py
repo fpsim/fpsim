@@ -23,7 +23,7 @@ class People(fpb.BasePeople):
     """
 
     def __init__(self, pars, n=None, age=None, sex=None,
-                 contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
+                 empowerment_module=None, education_module=None, **kwargs):
 
         # Initialization
         super().__init__(**kwargs)
@@ -98,6 +98,10 @@ class People(fpb.BasePeople):
 
         return
 
+    @property
+    def dt(self):
+        return self.pars['timestep'] / fpd.mpy
+
     def get_urban(self, n):
         """ Get initial distribution of urban """
         urban_prop = self.pars['urban_prop']
@@ -138,13 +142,28 @@ class People(fpb.BasePeople):
         return
 
     def init_methods(self, ti=None, year=None, contraception_module=None):
+
+        # Initialize sexual debut
+        fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
+        fecund.check_sexually_active()
+
+        # Determine when girls/women will first choose a method
+        time_to_debut = (fecund.fated_debut-fecund.age)/self.dt
+        fecund.ti_contra = np.maximum(time_to_debut, 0)
+        time_to_set_contra = fecund.ti_contra == 0
+        if not np.array_equal(((fecund.age - fecund.fated_debut) > -self.dt), time_to_set_contra):
+            errormsg = 'Should be choosing contraception for everyone past fated debut age.'
+            raise ValueError(errormsg)
+        contra_choosers = fecund.filter(time_to_set_contra)
+
         if contraception_module is not None:
             self.contraception_module = contraception_module
-            self.on_contra = contraception_module.get_contra_users(self, year=year)
-            oc = self.filter(self.on_contra)
+            contra_choosers.on_contra = contraception_module.get_contra_users(contra_choosers, year=year)
+            oc = contra_choosers.filter(contra_choosers.on_contra)
             oc.method = contraception_module.init_method_dist(oc)
             oc.ever_used_contra = 1
-            self.ti_contra = ti + contraception_module.set_dur_method(self)
+            method_dur = contraception_module.set_dur_method(contra_choosers)
+            contra_choosers.ti_contra = ti + method_dur
 
     def update_fertility_intent_by_age(self):
         """
@@ -202,6 +221,7 @@ class People(fpb.BasePeople):
 
                 # Get previous users and see whether they will switch methods or stop using
                 if len(choosers):
+
                     choosers.on_contra = cm.get_contra_users(choosers, year=year)
                     choosers.ever_used_contra = choosers.ever_used_contra | choosers.on_contra
 
@@ -210,11 +230,12 @@ class People(fpb.BasePeople):
                     stopping_contra = choosers.filter(~choosers.on_contra)
                     pp0.step_results['contra_access'] += len(switching_contra)
 
-                    # For those who keep using, determine their next method and update time
-                    switching_contra.method = cm.choose_method(switching_contra)
+                    # For those who keep using, choose their next method
+                    if len(switching_contra):
+                        switching_contra.method = cm.choose_method(switching_contra)
 
-                    # For those who stop using, determine when next to update
-                    if len(stopping_contra) > 0:
+                    # For those who stop using, set method to zero
+                    if len(stopping_contra):
                         stopping_contra.method = 0
 
                 # Validate
@@ -301,6 +322,7 @@ class People(fpb.BasePeople):
         """
         Decide if agent is sexually active based either on month postpartum or age if
         not postpartum.  Postpartum and general age-based data from DHS.
+        Agents can revert to active or not active each timestep
         """
         # Set postpartum probabilities
         match_low = self.postpartum_dur >= 0
@@ -311,29 +333,27 @@ class People(fpb.BasePeople):
         non_pp = self.filter(non_pp_match)
 
         # Adjust for postpartum women's birth spacing preferences
-        pref = self.pars['spacing_pref']  # Shorten since used a lot
-        spacing_bins = pp.postpartum_dur / pref['interval']  # Main calculation -- divide the duration by the interval
-        spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']),
-                                dtype=int)  # Convert to an integer and bound by longest bin
-        probs_pp = self.pars['sexual_activity_pp']['percent_active'][pp.postpartum_dur]
-        probs_pp *= pref['preference'][
-            spacing_bins]  # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
+        if len(pp):
+            pref = self.pars['spacing_pref']  # Shorten since used a lot
+            spacing_bins = pp.postpartum_dur / pref['interval']  # Main calculation: divide the duration by the interval
+            spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int)  # Bound by longest bin
+            probs_pp = self.pars['sexual_activity_pp']['percent_active'][pp.postpartum_dur]
+            # Adjust the probability: check the overall probability with print(pref['preference'][spacing_bins].mean())
+            probs_pp *= pref['preference'][spacing_bins]
+            pp.sexually_active = fpu.binomial_arr(probs_pp)
 
         # Set non-postpartum probabilities
-        probs_non_pp = self.pars['sexual_activity'][non_pp.int_age]
+        if len(non_pp):
+            probs_non_pp = self.pars['sexual_activity'][non_pp.int_age]
+            non_pp.sexually_active = fpu.binomial_arr(probs_non_pp)
 
-        # Evaluate likelihood in this time step of being sexually active
-        # Can revert to active or not active each timestep
-        pp.sexually_active = fpu.binomial_arr(probs_pp)
-        non_pp.sexually_active = fpu.binomial_arr(probs_non_pp)
-
-        # Set debut to True if sexually active for the first time
-        # Record agent age at sexual debut in their memory
-        never_sex = non_pp.sexual_debut == 0
-        now_active = non_pp.sexually_active == 1
-        first_debut = non_pp.filter(now_active * never_sex)
-        first_debut.sexual_debut = True
-        first_debut.sexual_debut_age = first_debut.age
+            # Set debut to True if sexually active for the first time
+            # Record agent age at sexual debut in their memory
+            never_sex = non_pp.sexual_debut == 0
+            now_active = non_pp.sexually_active == 1
+            first_debut = non_pp.filter(now_active * never_sex)
+            first_debut.sexual_debut = True
+            first_debut.sexual_debut_age = first_debut.age
 
         active_sex = self.sexually_active == 1
         debuted = self.sexual_debut == 1
@@ -938,7 +958,7 @@ class People(fpb.BasePeople):
 
         # Add check for ti contra
         if (self.ti_contra < 0).any():
-            errormsg = 'Invalid values for ti_contra'
+            errormsg = f'Invalid values for ti_contra at timestep {self.ti}'
             raise ValueError(errormsg)
 
         return self.step_results

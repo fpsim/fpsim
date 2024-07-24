@@ -22,8 +22,14 @@ def test_simple_choice(location='kenya'):
     sc.heading('Method choice is based on age & previous method')
 
     # Make & run sim
+    import numpy as np
     pars = fp.pars(location=location, **par_kwargs)
-    method_choice = fp.SimpleChoice(pars=dict(prob_use_trend_par=0.1, force_choose=True), location=location, methods=sc.dcp(fp.Methods))
+    cm_pars = dict(
+        prob_use_trend_par=0.1,
+        force_choose=False,
+        method_weights=np.array([0.1, 2, 0.5, 0.5, 2, 1, 1.5, 0.5, 5])
+    )
+    method_choice = fp.SimpleChoice(pars=cm_pars, location=location, methods=sc.dcp(fp.Methods))
     sim = fp.Sim(pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
     sim.run()
 

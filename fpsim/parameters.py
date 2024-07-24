@@ -215,15 +215,8 @@ default_pars = {
     # Fecundity and exposure
     'fecundity_var_low':    0.7,
     'fecundity_var_high':   1.1,
-    'high_parity':          4,
-    'high_parity_nonuse':   0.6,
     'primary_infertility':  0.05,
     'exposure_factor':      1.0,    # Overall exposure correction factor
-
-    # MCPR
-    'mcpr_growth_rate':     0.02,   # Year-on-year change in MCPR after the end of the data
-    'mcpr_max':             0.9,    # Do not allow MCPR to increase beyond this
-    'mcpr_norm_year':       None,   # CONTEXT-SPECIFIC #### - year to normalize MCPR trend to 1
 
     # Other sim parameters
     'mortality_probs':      {},

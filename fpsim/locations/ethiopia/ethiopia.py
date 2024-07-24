@@ -22,7 +22,6 @@ def scalar_pars():
         'breastfeeding_dur_beta': 8.20149079,   # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'abortion_prob':        0.176,          # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
         'twins_prob':           0.011,          # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'mcpr_norm_year':       2020,           # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 

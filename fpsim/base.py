@@ -319,9 +319,9 @@ class BasePeople(sc.prettyobj):
         '''
 
         # Create a new People object with the same properties as the original
-        filtered = object.__new__(self.__class__) # Create a new People instance
-        BasePeople.__init__(filtered) # Perform essential initialization
-        filtered.__dict__ = self.__dict__.copy() # Copy pointers to the arrays in People
+        filtered = object.__new__(self.__class__)  # Create a new People instance
+        BasePeople.__init__(filtered)  # Perform essential initialization
+        filtered.__dict__ = self.__dict__.copy()  # Copy pointers to the arrays in People
 
         # Perform the filtering
         if criteria is None: # No filtering: reset
