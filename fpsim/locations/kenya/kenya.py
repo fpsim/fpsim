@@ -21,8 +21,6 @@ def scalar_pars():
         'breastfeeding_dur_beta': 7.5435309020483,  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'abortion_prob':        0.201,              # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
         'twins_prob':           0.016,              # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
-        'high_parity_nonuse':   1,                  # TODO: check whether it's correct that this should be different to the other locations
-        'mcpr_norm_year':       2020,               # Year to normalize MCPR trend to 1
     }
     return scalar_pars
 
@@ -62,24 +60,25 @@ def age_pyramid():
     Data are from World Population Prospects
     https://population.un.org/wpp/Download/Standard/Population/
      '''
-    pyramid = np.array([[0, 801895, 800503],  # Kenya 1960
-                        [5, 620524, 625424],
-                        [10, 463547, 464020],
-                        [15, 333241, 331921],
-                        [20, 307544, 309057],
-                        [25, 292141, 287621],
-                        [30, 247826, 236200],
-                        [35, 208416, 190234],
-                        [40, 177914, 162057],
-                        [45, 156771, 138943],
-                        [50, 135912, 123979],
-                        [55, 108653, 111939],
-                        [60, 85407, 94582],
-                        [65, 61664, 71912],
-                        [70, 40797, 49512],
-                        [75, 22023, 29298],
-                        [80, 11025, 17580],
-                        ], dtype=float)
+    pyramid = np.array([     # Kenya 2015
+                [0, 3423916, 3389030],  # Age 0
+                [5, 3375371, 3355162],  # Age 5
+                [10, 2968639, 2963464],  # Age 10
+                [15, 2489864, 2523193],  # Age 15
+                [20, 2158196, 2218927],  # Age 20
+                [25, 2001891, 2031898],  # Age 25
+                [30, 1706214, 1690237],  # Age 30
+                [35, 1366575, 1343727],  # Age 35
+                [40, 1085439, 1080669],  # Age 40
+                [45, 850015, 862716],  # Age 45
+                [50, 629510, 655977],  # Age 50
+                [55, 437712, 472329],  # Age 55
+                [60, 280747, 317579],  # Age 60
+                [65, 217816, 236148],  # Age 65
+                [70, 124418, 171373],  # Age 70
+                [75, 72579, 126721],  # Age 75
+                [80, 44659, 80139]  # Age 80
+                ], dtype=float)
 
     return pyramid
 
@@ -867,8 +866,10 @@ def process_contra_use_simple():
     contra_use_pars = dict()
     for di, df in enumerate(alldfs):
         contra_use_pars[di] = sc.objdict(
-            intercept=df.Estimate[0],
-            age_factors=df.Estimate[1:].values,
+            intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
+            age_factors=df[df['rhs'].str.match('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+            fp_ever_user=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
+            age_ever_user_factors=df[df['rhs'].str.match('age') & df['rhs'].str.contains('fp_ever_user')].Estimate.values,
         )
     return contra_use_pars
 
@@ -945,7 +946,7 @@ def process_dur_use(methods):
     df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
     for method in methods.values():
         if method.name == 'btl':
-            method.dur_use = dict(dist='lognormal', par1=100, par2=1, age_factors=[0, 0, 0, 0, 0, 0])
+            method.dur_use = dict(dist='lognormal', par1=100, par2=1)
         else:
             mlabel = method.csv_name
 

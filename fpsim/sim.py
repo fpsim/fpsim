@@ -104,6 +104,12 @@ class Sim(fpb.BaseSim):
         if len(mismatches):
             errormsg = f'Key(s) {mismatches} not found; available keys are {fpp.par_keys}'
             raise sc.KeyNotFoundError(errormsg)
+
+        if isinstance(contraception_module, fpm.EmpoweredChoice) and (empowerment_module is None or education_module is None):
+            errormsg = 'If EmpoweredChoice contraception module is used, empowerment_module and education_module must ' \
+                       'be provided as parameters. '
+            raise ValueError(errormsg)
+
         super().__init__(pars, location=location, **kwargs)  # Initialize and set the parameters as attributes
 
         # Metadata and settings
@@ -144,7 +150,7 @@ class Sim(fpb.BaseSim):
             fpu.set_seed(self['seed'])
             self.init_results()
             self.init_people()  # This step also initializes the empowerment and education modules if provided
-            self.init_methods()
+            self.init_methods()  # Initialize methods
         return self
 
     def init_results(self):
@@ -185,29 +191,6 @@ class Sim(fpb.BaseSim):
         """
         self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
                                     empowerment_module=self.empowerment_module, education_module=self.education_module)
-
-    def update_mcpr_adj(self):
-        mcpr = self['mcpr']  # Shorten variable
-
-        # Compute the trend in MCPR
-        trend_years = mcpr['mcpr_years']
-        trend_vals = mcpr['mcpr_rates']
-        ind = sc.findnearest(trend_years, self.y)  # The year of data closest to the sim year
-        norm_ind = sc.findnearest(trend_years, self['mcpr_norm_year'])  # The year we're using to normalize
-
-        nearest_val = trend_vals[ind]  # Nearest MCPR value from the data
-        norm_val = trend_vals[norm_ind]  # Normalization value
-        if self.y > max(trend_years):  # We're after the last year of data: extrapolate
-            eps = 1e-3  # Epsilon for lowest allowed MCPR value (to avoid divide by zero errors)
-            nearest_year = trend_years[ind]
-            year_diff = self.y - nearest_year
-            correction = self['mcpr_growth_rate'] * year_diff  # Project the change in MCPR
-            extrapolated_val = nearest_val * (1 + correction)  # Multiply the current value by the projection
-            trend_val = np.clip(extrapolated_val, eps, self['mcpr_max'])  # Ensure it stays within bounds
-        else:  # Otherwise, just use the nearest data point
-            trend_val = nearest_val
-        norm_trend_val = trend_val / norm_val  # Normalize so the correction factor is 1 at the normalization year
-        return norm_trend_val
 
     def init_methods(self):
         if self.contraception_module is not None:
@@ -299,15 +282,14 @@ class Sim(fpb.BaseSim):
         """Expand population size"""
         # Births
         new_people = fpppl.People(
-                    pars=self.pars, n=n_new_people, age=0, method_selector=self.contraception_module,
-                    education_module=self.education_module, empowerment_module=self.empowerment_module)
+                    pars=self.pars, n=n_new_people, age=0,
+                    education_module=self.education_module, empowerment_module=self.empowerment_module
+                    )
+        new_people.init_methods(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
         self.people += new_people
 
     def step(self):
         """ Update logic of a single time step """
-
-        # Update MCPR adjustment value
-        mcpr_adj = self.update_mcpr_adj()
 
         # Update mortality probabilities for year of sim
         self.update_mortality()
@@ -319,7 +301,7 @@ class Sim(fpb.BaseSim):
         self.people.ti = self.ti
         self.people.ty = self.ty
         self.people.y = self.y
-        step_results = self.people.update(mcpr_adj)
+        step_results = self.people.update()
 
         # Store results
         r = sc.dictobj(**step_results)

@@ -23,7 +23,7 @@ def test_null(do_plot=do_plot):
     pars = fp.pars('test')  # For default pars
 
     # Set things to zero
-    for key in ['exposure_factor', 'high_parity_nonuse']:
+    for key in ['exposure_factor']:
         pars[key] = 0
 
     for key in ['f', 'm']:

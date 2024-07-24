@@ -13,7 +13,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 #%% Generic intervention classes
 
-__all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'age_pyramids', 'empowerment_recorder', 'education_recorder']
+__all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'empowerment_recorder', 'education_recorder']
 
 
 class Analyzer(sc.prettyobj):
@@ -170,6 +170,29 @@ class cpr_by_age(Analyzer):
         self.total[sim.ti] = sc.safedivide(np.count_nonzero(total_num_conds), np.count_nonzero(total_denom_conds))
         return
 
+
+class method_mix_by_age(Analyzer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)   # Initialize the Analyzer object
+        self.age_bins = [v[1] for v in fpd.method_age_map.values()]
+        self.results = None
+        self.n_methods = None
+        return
+
+    def initialize(self, sim):
+        super().initialize()
+
+    def finalize(self, sim):
+        n_methods = len(sim.contraception_module.methods)
+        self.results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
+        ppl = sim.people
+        for key, (age_low, age_high) in fpd.method_age_map.items():
+            match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
+            denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
+            for mn in range(n_methods):
+                num_conds = denom_conds * (ppl.method == mn)
+                self.results[key][mn] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
+        return
 
 class education_recorder(Analyzer):
         '''
