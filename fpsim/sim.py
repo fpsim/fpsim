@@ -104,6 +104,12 @@ class Sim(fpb.BaseSim):
         if len(mismatches):
             errormsg = f'Key(s) {mismatches} not found; available keys are {fpp.par_keys}'
             raise sc.KeyNotFoundError(errormsg)
+
+        if isinstance(contraception_module, fpm.EmpoweredChoice) and (empowerment_module is None or education_module is None):
+            errormsg = 'If EmpoweredChoice contraception module is used, empowerment_module and education_module must ' \
+                       'be provided as parameters. '
+            raise ValueError(errormsg)
+
         super().__init__(pars, location=location, **kwargs)  # Initialize and set the parameters as attributes
 
         # Metadata and settings
