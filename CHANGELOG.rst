@@ -8,6 +8,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 1.0.2 (2024-07-25)
+---------------------------
+- Fixes issue 347, correcting variable in defaults storing age-specific results
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/388>`_
+
 Version 1.0.1 (2024-06-17)
 ---------------------------
 - Adds empowerment metrics (paid work and education attainment) to calibration targets
