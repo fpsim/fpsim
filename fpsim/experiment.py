@@ -1,7 +1,7 @@
 '''
 Define classes and functions for the Experiment class (running sims and comparing them to data)
 '''
-
+import math
 
 import yaml
 import numpy as np
@@ -37,6 +37,7 @@ default_flags = sc.objdict(
     cbr           = 1, # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
     tfr           = 1, # Total fertility rate
     asfr          = 1, # Age-specific fertility rate
+    empowerment   = 0, # Empowerment metrics, i.e. paid employment and education params
 )
 
 
@@ -53,7 +54,7 @@ class Experiment(sc.prettyobj):
     '''
 
     def __init__(self, pars=None, flags=None, label=None, **kwargs):
-        self.flags = sc.mergedicts(default_flags, flags, _copy=True) # Set flags for what gets run
+        self.flags = sc.mergedicts(default_flags, flags, _copy=True)  # Set flags for what gets run
         self.pars = pars if pars else fpp.pars(**kwargs)
         self.location = self.pars['location']
         self.model = sc.objdict()
@@ -441,6 +442,80 @@ class Experiment(sc.prettyobj):
 
         return
 
+
+    def extract_employment(self):
+        # Extract paid work from data
+        data_empowerment = self.load_data('empowerment')
+        data_empowerment = data_empowerment.iloc[1:-1]
+        data_paid_work = data_empowerment[['age', 'paid_employment']].copy()
+        age_bins = np.arange(min_age, max_age+1, bin_size)
+        data_paid_work['age_group'] = pd.cut(data_paid_work['age'], bins=age_bins, right=False)
+
+        # Calculate mean and standard error for each age bin
+        employment_data_grouped = data_paid_work.groupby('age_group', observed=False)['paid_employment']
+        self.data['paid_employment'] = employment_data_grouped.mean().tolist()
+
+        # Extract paid work from model
+        employed_counts = {age_bin: 0 for age_bin in age_bins}
+        total_counts = {age_bin: 0 for age_bin in age_bins}
+
+        # Count the number of employed and total people in each age bin
+        ppl = self.people
+        for i in range(len(ppl)):
+            if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
+                total_counts[age_bin] += 1
+                if ppl.paid_employment[i]:
+                    employed_counts[age_bin] += 1
+
+        # Calculate the percentage of employed people in each age bin
+        percentage_employed = {}
+        age_bins = np.arange(min_age, max_age, bin_size)
+        for age_bin in age_bins:
+            total_ppl = total_counts[age_bin]
+            if total_ppl != 0:
+                employed_ratio = employed_counts[age_bin] / total_ppl
+                percentage_employed[age_bin] = employed_ratio
+            else:
+                percentage_employed[age_bin] = 0
+
+        self.model['paid_employment'] = list(percentage_employed.values())
+        return
+
+
+    def extract_education(self):
+        # Extract education from data
+        dhs_data_education = self.load_data('education')
+        data_edu = dhs_data_education[['age', 'edu']].sort_values(by='age')
+        data_edu = data_edu.query(f"{min_age} <= age < {max_age}").copy()
+        age_bins = np.arange(min_age, max_age + 1, bin_size)
+        data_edu['age_group'] = pd.cut(data_edu['age'], bins=age_bins, right=False)
+
+        # Calculate mean for each age bin
+        education_data_grouped = data_edu.groupby('age_group', observed=False)['edu']
+        self.data['education'] = education_data_grouped.mean().tolist()
+
+        # Extract education from model
+        model_edu_years = {age_bin: [] for age_bin in np.arange(min_age, max_age, bin_size)}
+        ppl = self.people
+        for i in range(len(ppl)):
+            if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
+                model_edu_years[age_bin].append(ppl.edu_attainment[i])
+
+        # Calculate average # of years of educational attainment for each age
+        model_edu_mean = []
+        for age_group in model_edu_years:
+            if len(model_edu_years[age_group]) != 0:
+                avg_edu = sum(model_edu_years[age_group]) / len(model_edu_years[age_group])
+                model_edu_mean.append(avg_edu)
+            else:
+                model_edu_years[age_group] = 0
+        self.model['education'] = model_edu_mean
+
+        return
+
+
     def compute_fit(self, *args, **kwargs):
         ''' Compute how good the fit is '''
         data = sc.dcp(self.data)
@@ -463,6 +538,9 @@ class Experiment(sc.prettyobj):
         if self.flags.ageparity:   self.extract_ageparity()
         if self.flags.birth_space:   self.extract_birth_spacing()
         if self.flags.methods:       self.extract_methods()
+        if self.flags.empowerment:
+            self.extract_employment()
+            self.extract_education()
 
         # Compute comparison
         self.df = self.compare()
