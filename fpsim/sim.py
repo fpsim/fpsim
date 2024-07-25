@@ -563,7 +563,12 @@ class Sim(fpb.BaseSim):
         # Convert all results to Numpy arrays
         for key, arr in self.results.items():
             if isinstance(arr, list):
-                self.results[key] = np.array(arr, dtype=object)  # Convert any lists to arrays
+                # These keys have list of lists with different lengths
+                if key in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr_age_by_group',
+                            'mmr_age_by_group', 'as_stillbirths', 'stillbirth_ages']:
+                    self.results[key] = np.array(arr, dtype=object)
+                else:
+                    self.results[key] = np.array(arr)  # Convert any lists to arrays
 
         # Calculate cumulative totals
         self.results['cum_maternal_deaths_by_year'] = np.cumsum(self.results['maternal_deaths_over_year'])
