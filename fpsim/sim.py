@@ -166,7 +166,7 @@ class Sim(fpb.BaseSim):
             self.results['imr_age_by_group'] = []
             self.results['mmr_age_by_group'] = []
             self.results['stillbirth_ages'] = []
-            for age_specific_channel in fpd.age_specific_results:
+            for age_specific_channel in fpd.by_age_results:
                 for age_group in fpd.age_specific_channel_bins:
                     if 'numerator' in age_specific_channel or 'denominator' in age_specific_channel or 'as_' in age_specific_channel:
                         self.results[age_specific_channel] = []
@@ -563,7 +563,7 @@ class Sim(fpb.BaseSim):
         # Convert all results to Numpy arrays
         for key, arr in self.results.items():
             if isinstance(arr, list):
-                self.results[key] = np.array(arr)  # Convert any lists to arrays
+                self.results[key] = np.array(arr, dtype=object)  # Convert any lists to arrays
 
         # Calculate cumulative totals
         self.results['cum_maternal_deaths_by_year'] = np.cumsum(self.results['maternal_deaths_over_year'])
