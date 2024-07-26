@@ -48,8 +48,8 @@ do_plot_ageparity = False
 do_plot_cpr = True
 do_plot_tfr = True
 do_plot_pop_growth = False
-do_plot_birth_space_afb = False
-do_plot_contra_analysis = False
+do_plot_birth_space_afb = True
+do_plot_contra_analysis = True
 
 # Set option to save figures
 do_save = True
@@ -111,17 +111,6 @@ freepars = dict(
 # #pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
 #
 # # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
-#
-# # Print out free params being used
-# print("FREE PARAMETERS BEING USED:")
-# print(f"Fecundity range: {pars['fecundity_var_low']}-{pars['fecundity_var_high']}")
-# print(f"Exposure factor: {pars['exposure_factor']}")
-# #print(f"Birth spacing preference: {spacing_pars}")
-# print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
-
-#calibration = fp.Calibration(pars, calib_pars=freepars)
-#calibration.calibrate()
-#pars.update(calibration.best_pars)
 
 # Adjust contraceptive choice parameters
 cm_pars = dict(
@@ -485,7 +474,7 @@ if do_plot_birth_space_afb:
         pl.clf()
 
         # Set up
-        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
+        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in months
         model_age_first = []
         model_spacing = []
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
@@ -494,17 +483,19 @@ if do_plot_birth_space_afb:
 
         # Extract age at first birth and birth spaces from model
         for i in range(len(ppl)):
-                if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-                        if len(ppl.dobs[i]) == 0:
+                if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                        if ppl.first_birth_age[i] == -1:
                                 model_age_first.append(float('inf'))
-                        if len(ppl.dobs[i]) and ppl.age[i] >= first_birth_age:
-                                model_age_first.append(ppl.dobs[i][0])
-                        if len(ppl.dobs[i]) > 1:
-                                for d in range(len(ppl.dobs[i]) - 1):
-                                        space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
-                                        ind = sc.findinds(space > spacing_bins[:])[-1]
-                                        model_spacing_counts[ind] += 1
-                                        model_spacing.append(space)
+                        else:
+                                model_age_first.append(ppl.first_birth_age[i])
+                                if ppl.parity[i] > 1:
+                                        cleaned_birth_ages = ppl.birth_ages[i][~np.isnan(ppl.birth_ages[i])]
+                                        for d in range(len(cleaned_birth_ages) - 1):
+                                                space = cleaned_birth_ages[d + 1] - cleaned_birth_ages[d]
+                                                if space > 0:
+                                                        ind = sc.findinds(space > spacing_bins[:])[-1]
+                                                        model_spacing_counts[ind] += 1
+                                                        model_spacing.append(space)
 
         # Normalize model birth space bin counts to percentages
         model_spacing_counts[:] /= model_spacing_counts[:].sum()

@@ -235,6 +235,7 @@ class People(fpb.BasePeople):
                     # For those who keep using, choose their next method
                     if len(switching_contra):
                         switching_contra.method = cm.choose_method(switching_contra)
+                        choosers.step_results['new_users'] += np.count_nonzero(switching_contra.method)
 
                     # For those who stop using, set method to zero
                     if len(stopping_contra):
