@@ -618,7 +618,6 @@ class People(fpb.BasePeople):
                 inds = stillborn.inds[stillborn.parity == parity]
                 all_ppl.stillborn_ages[inds, parity] = all_ppl.age[inds]
 
-
             # Handle twins
             is_twin = live.binomial(self.pars['twins_prob'])
             twin = live.filter(is_twin)
