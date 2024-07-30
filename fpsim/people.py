@@ -235,6 +235,7 @@ class People(fpb.BasePeople):
                     # For those who keep using, choose their next method
                     if len(switching_contra):
                         switching_contra.method = cm.choose_method(switching_contra)
+                        choosers.step_results['new_users'] += np.count_nonzero(switching_contra.method)
 
                     # For those who stop using, set method to zero
                     if len(stopping_contra):
@@ -772,11 +773,11 @@ class People(fpb.BasePeople):
         DHS data records only women who self-report LAM which is much lower.
         Follows the DHS definition of mCPR
         """
-        modern_methods = [m.name for m in self.contraception_module.methods.values() if m.modern]
+        modern_methods_num = [idx for idx, m in enumerate(self.contraception_module.methods.values()) if m.modern]
         method_age = (self.pars['method_age'] <= self.age)
         fecund_age = self.age < self.pars['age_limit_fecundity']
         denominator = method_age * fecund_age * self.is_female * (self.alive)
-        numerator = np.isin(self.method, modern_methods)
+        numerator = np.isin(self.method, modern_methods_num)
         no_method_mcpr = np.sum((self.method == 0) * denominator)
         on_method_mcpr = np.sum(numerator * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
