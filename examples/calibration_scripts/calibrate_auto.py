@@ -357,7 +357,6 @@ if __name__ == '__main__':
                         pl.colorbar(im, label='Percentage')
                         pl.draw()
 
-
                         if do_save:
                                 pl.savefig(f'{figs_dir}/ageparity_' + str(key.lower()) + '.png')
 

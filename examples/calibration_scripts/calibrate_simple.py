@@ -48,7 +48,7 @@ do_plot_ageparity = False
 do_plot_cpr = True
 do_plot_tfr = True
 do_plot_pop_growth = False
-do_plot_birth_space_afb = False
+do_plot_birth_space_afb = True
 do_plot_contra_analysis = False
 
 # Set option to save figures
@@ -490,7 +490,6 @@ if do_plot_birth_space_afb:
         model_spacing = []
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
-
 
         # Extract age at first birth and birth spaces from model
         for i in range(len(ppl)):

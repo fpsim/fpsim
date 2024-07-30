@@ -313,8 +313,8 @@ def fecundity_ratio_nullip():
     from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
     Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
     '''
-    fecundity_ratio_nullip = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 34, 37, 40, 45, 50],
-                                       [1, 1, 1, 1, 1, 1, 1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
+    fecundity_ratio_nullip = np.array([[0, 5, 10, 12.5, 15, 18, 20,   25,   30,   34,   37,   40, 45, 50],
+                                       [1, 1,  1,    1,  1,  1,  1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
     fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
 
     return fecundity_nullip_interp
