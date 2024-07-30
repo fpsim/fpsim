@@ -611,9 +611,12 @@ class People(fpb.BasePeople):
             all_ppl = self.unfilter()
             live = deliv.filter(~is_stillborn)
             for parity in np.unique(live.parity):
-                all_ppl.birth_ages[live.inds, parity] = live.age
-                all_ppl.stillborn_ages[stillborn.inds, parity] = stillborn.age
-            all_ppl.first_birth_age[live.inds] = all_ppl.birth_ages[live.inds, 0]
+                inds = live.inds[live.parity == parity]
+                all_ppl.birth_ages[inds, parity] = all_ppl.age[inds]
+                if parity == 0: all_ppl.first_birth_age[inds] = all_ppl.age[inds]
+            for parity in np.unique(stillborn.parity):
+                inds = stillborn.inds[stillborn.parity == parity]
+                all_ppl.stillborn_ages[inds, parity] = stillborn.age
 
             # Handle twins
             is_twin = live.binomial(self.pars['twins_prob'])
