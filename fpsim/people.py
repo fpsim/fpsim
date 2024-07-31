@@ -63,6 +63,13 @@ class People(fpb.BasePeople):
         # Update distribution of fertility intent if it is present in self.pars
         self.get_fertility_intent(n)
 
+        # Intent to use contraception
+        has_intent = "intent_to_use"
+        self.intent_to_use  = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        # Update distribution of fertility intent if it is present in self.pars
+        self.get_intent_to_use(n)
+
+
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
         if not self.pars['use_subnational']:
             self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
@@ -142,6 +149,12 @@ class People(fpb.BasePeople):
         self.update_fertility_intent_by_age()
         return
 
+    def get_intent_to_use(self, n):
+        if self.pars['intent_to_use'] is None:
+            return
+        self.update_intent_to_use_by_age()
+        return
+
     def init_methods(self, ti=None, year=None, contraception_module=None):
 
         # Initialize sexual debut
@@ -187,6 +200,26 @@ class People(fpb.BasePeople):
         self.fertility_intent[sc.findinds(self.categorical_intent == "yes")] = True
         self.fertility_intent[sc.findinds((self.categorical_intent == "no") |
                                           (self.categorical_intent == "cannot"))] = False
+        return
+
+    def update_intent_to_use_by_age(self):
+        """
+        In the absence of other factors, intent to use contraception
+        can change as a function of age each year on a woman’s birthday.
+
+        This function is also used to initialise the State intent_to_use
+        """
+        intent_pars = self.pars['intent_to_use']
+
+        f_inds = sc.findinds(self.is_female)
+        f_ages = self.age[f_inds]
+        age_inds = fpu.digitize_ages_1yr(f_ages)
+
+        for age in intent_pars.keys():
+            f_aged_x_inds = f_inds[age_inds == age]  # indices of women of a given age
+            prob = intent_pars[age][1]  # Get the probability of having intent
+            self.intent_to_use[f_aged_x_inds] = fpu.n_binomial(prob, len(f_aged_x_inds))
+
         return
 
     def update_method(self, year=None, ti=None):
@@ -926,14 +959,14 @@ class People(fpb.BasePeople):
         nonpreg = fecund.filter(~fecund.pregnant)
         lact = fecund.filter(fecund.lactating)
 
-        # Update education and empowerment
+        # Update empowerment states, and empowerment-related states
         alive_now_f = self.filter(self.is_female)
         if self.empowerment_module is not None:
             eligible = alive_now_f.filter(((alive_now_f.age >= fpd.min_age) & (
                         alive_now_f.age < fpd.max_age_preg)))
 
             # Women who just turned 15 get assigned a value based on empowerment probs
-            bday_15 = eligible.birthday_filter(int_age=15)
+            bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
             if len(bday_15):
                 self.empowerment_module.update_empwr_states(bday_15)
             # Update states on her bday, based on coefficients
@@ -942,6 +975,8 @@ class People(fpb.BasePeople):
                 self.empowerment_module.update(bday)
                 # Update fertility intent on her bday, together with empowerment updates
                 bday.update_fertility_intent_by_age()
+
+        # Update education
         if self.education_module is not None:
             self.education_module.update(alive_now_f)
 
