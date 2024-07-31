@@ -480,7 +480,6 @@ if do_plot_birth_space_afb:
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
 
-
         # Extract age at first birth and birth spaces from model
         for i in range(len(ppl)):
                 if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:

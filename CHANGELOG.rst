@@ -24,6 +24,12 @@ To support this new feature, this PR also introduces several new items:
  
  *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/280>`_
 
+Version 1.0.1 (2024-06-17)
+---------------------------
+- Adds empowerment metrics (paid work and education attainment) to calibration targets
+- Creates script for empowerment calibration
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/240>`_
+
 Version 1.0.0 (2024-06-07)
 --------------------------
 - Releases FPsim1.0 to pypi
