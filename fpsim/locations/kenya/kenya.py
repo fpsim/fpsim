@@ -716,7 +716,36 @@ def fertility_intent_dist():
     return data
 
 
+def contraception_intent_dist():
+    """Add additional metrics from PMA Household/Female surveys"""
+
+    df = pd.read_csv(thisdir / 'data' / 'contra_intent.csv')
+
+    data = {}
+    for row in df.itertuples(index=False):
+        intent = row.intent_contra
+        age = row.age
+        freq = row.freq
+        data.setdefault(age, {})[intent] = freq
+    return data
+
+
+def contraception_intent_update_pars():
+    """ Regression coefficients to update intent to use contraception"""
+    raw_pars = pd.read_csv(thisdir / 'data' / 'contra_intent_coef.csv')
+    pars = sc.objdict()
+    metrics = raw_pars.lhs.unique()
+    for metric in metrics:
+        pars[metric] = sc.objdict()
+        thisdf = raw_pars.loc[raw_pars.lhs == metric]
+        for var_dict in thisdf.to_dict('records'):
+            var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
+            pars[metric][var_name] = var_dict['Estimate']
+    return pars
+
+
 def empowerment_update_pars():
+    """ Regression coefficients used to update empowerment attributes"""
     raw_pars = pd.read_csv(thisdir / 'data' / 'empower_coef.csv')
     pars = sc.objdict()
     metrics = raw_pars.lhs.unique()
@@ -1014,6 +1043,8 @@ def make_pars(seed=None, use_subnational=None):
     pars['urban_prop'] = urban_proportion()
     pars['age_partnership'] = age_partnership()
     pars['fertility_intent'] = fertility_intent_dist()
+    pars['intent_to_use'] = contraception_intent_dist()
+
 
     kwargs = locals()
     not_implemented_args = ['use_subnational']
