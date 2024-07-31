@@ -92,9 +92,9 @@ pars['start_year'] = 2000
 pars['end_year'] = 2020  # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
-pars['fecundity_var_low'] = 1
-pars['fecundity_var_high'] = 1.80
-pars['exposure_factor'] = 1.23 #1.93
+pars['fecundity_var_low'] = .8
+pars['fecundity_var_high'] = 2
+pars['exposure_factor'] = 1.24
 '''
 freepars = dict(
         fecundity_var_low=[0.95, 0.925, 1.0],
@@ -115,9 +115,9 @@ freepars = dict(
 # Adjust contraceptive choice parameters
 cm_pars = dict(
     prob_use_year=2020,
-    prob_use_trend_par=0.03,
+    prob_use_trend_par=0.035,
     force_choose=False,
-    method_weights=np.array([0.35, .8, 0.5, 0.8, 1.3, 1, 1.8, 0.5, 8])
+    method_weights=np.array([0.34, .7, 0.64, 0.74, 0.76, 1, 1.63, 0.65, 9.5])
 )
 method_choice = fp.SimpleChoice(pars=cm_pars, location='kenya')
 sim = fp.Sim(pars=pars, contraception_module=method_choice, analyzers=[fp.cpr_by_age(), fp.method_mix_by_age()])

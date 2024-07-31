@@ -484,7 +484,7 @@ def exposure_parity():
     or live birth by parity.
     '''
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
-                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])
+                                           [.3, .3, 7, 7, 7, 8, 8, 6, 4, 1, 1, 1, 1.5, 1.5]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
