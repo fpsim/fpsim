@@ -8,6 +8,29 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+
+Version 1.0.3 (2024-07-26)
+---------------------------
+- Adds .devcontainer configuration for a Codespaces dev container
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/369>`_
+
+Version 1.0.2 (2024-07-25)
+---------------------------
+- Fixes issue 347, correcting variable in defaults storing age-specific results
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/388>`_
+
+Version 1.0.1 (2024-06-17)
+---------------------------
+- Adds empowerment metrics (paid work and education attainment) to calibration targets
+- Creates script for empowerment calibration
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/240>`_
+
+Version 1.0.0 (2024-06-07)
+--------------------------
+- Releases FPsim1.0 to pypi
+- Adds FPsim New User Instructions to tutorials
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/349>`_
+
 Version 0.28.3 (2024-04-30)
 --------------------------
 - Creates subnational tutorial for Ethiopia
