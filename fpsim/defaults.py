@@ -125,6 +125,8 @@ person_defaults = [
     # Empowerment - fertility intent
     State('fertility_intent', 0, bool),
     State('categorical_intent', "cannot", "<U6"),
+    State('intent_to_use', 0, bool),            # for women not on contraception, whether she has intent to use contraception
+
 
     # Partnership information -- states will remain at these values if use_partnership is False
     State('partnered',    0, bool),
