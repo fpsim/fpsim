@@ -17,7 +17,6 @@ class Empowerment:
         # Handle location
         location = location.lower()
         if location == 'kenya':
-            # TODO:PSL: consolidate these two dictionaries.
             # This dictionary contains the coefficients of the model that
             # defines how empowerment proababilities change
             self.update_pars = fplocs.kenya.empowerment_update_pars()
@@ -119,14 +118,16 @@ class Empowerment:
             rhs = p.intercept * np.ones(len(ppl[lhs]))
 
             for predictor, vval in p.items():
-                 # TODO: update the bit below; this is a temporary fix because ppl does not have all the
-                 # states in p.items()
-                 # keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
+                 # TODO: update the bit below; iterating over specific attributes
+                 #  is a temporary fix because ppl does not have all the
+                 #  states in p.items()
+                 #  keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
                 if predictor in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban"]:
                     rhs += vval * ppl[predictor]
 
             # Logit
-            prob_t = np.exp(rhs) / (1.0 + np.exp(rhs))
+            prob_t = 1.0 / (1.0 + np.exp(-rhs))
+
             if lhs in self.cm_metrics:
                 continue
             else:
