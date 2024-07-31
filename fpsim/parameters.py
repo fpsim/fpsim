@@ -249,6 +249,7 @@ default_pars = {
 
     # Newer parameters, associated with empowerment, but that are not empowerment metrics
     'fertility_intent':     None,
+    'intent_to_use':        None,
 
     'region':               None,
     'lactational_amenorrhea_region': None,
