@@ -20,6 +20,7 @@ class Empowerment:
             # This dictionary contains the coefficients of the model that
             # defines how empowerment proababilities change
             self.update_pars = fplocs.kenya.empowerment_update_pars()
+            self.intent_update_pars = fplocs.kenya.contraception_intent_update_pars()
 
             # This dictionary contains the default/baseline empowerment
             # probabilities, and loading coefficients for composite measures,
@@ -112,7 +113,7 @@ class Empowerment:
 
     def update_empwr_states_by_coeffs(self, ppl):
         # Update based on coefficients
-        for mi, lhs in enumerate(self.metrics):
+        for lhs in self.metrics:
             # lhs -- metric to be updated as a function of rhs variables
             p = self.update_pars[lhs]
             rhs = p.intercept * np.ones(len(ppl[lhs]))
@@ -139,9 +140,36 @@ class Empowerment:
             setattr(ppl, lhs, new_vals)
         return
 
+    def update_intent_to_use_by_coeffs(self, ppl):
+        # Update her intent to use contraception based on coefficients
+        lhs = "intent_to_use"
+        # lhs -- metric to be updated as a function of rhs variables
+        p = self.intent_update_pars[lhs]
+        rhs = p.intercept * np.ones(len(ppl[lhs]))
+
+        for predictor, vval in p.items():
+             # TODO: update the bit below; iterating over specific attributes
+             #  is a temporary fix because ppl does not have all the
+             #  states in p.items()
+             #  keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
+            if predictor in ["intent_to_use", "edu_attainment", "parity", "urban"]:
+                rhs += vval * ppl[predictor]
+
+        # Logit
+        prob_t = 1.0 / (1.0 + np.exp(-rhs))
+
+        # base empowerment states are boolean, we do not currently track probs
+        new_vals = fpu.binomial_arr(prob_t)
+        old_vals = ppl[lhs]
+        changers = sc.findinds(new_vals != old_vals)  # People whose empowerment changes
+        ppl.ti_contra[changers] = ppl.ti  # Trigger update to contraceptive choices if empowerment changes
+        setattr(ppl, lhs, new_vals)
+        return
+
     def update(self, ppl):
-        """ Update empowerment probs and re-calculate empowerment states"""
+        """ Update empowerment states and intent to use based on regression coefficients"""
         self.update_empwr_states_by_coeffs(ppl)
+        self.update_intent_to_use_by_coeffs(ppl)
         self.calculate_composite_measures(ppl)
         return
 
