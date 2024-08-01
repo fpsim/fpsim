@@ -125,7 +125,7 @@ class Empowerment:
                  #  is a temporary fix because ppl does not have all the
                  #  states in p.items()
                  #  keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
-                if predictor in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban"]:
+                if predictor in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban", "wealthquintile"]:
                     rhs += beta_p * ppl[predictor]
 
             # Logit
@@ -154,7 +154,7 @@ class Empowerment:
              #  is a temporary fix because ppl does not have all the
              #  states in p.items()
              #  keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
-            if predictor in ["intent_to_use", "edu_attainment", "parity", "urban"]:
+            if predictor in ["intent_to_use", "edu_attainment", "parity", "urban", "wealthquintile"]:
                 rhs += beta_p * ppl[predictor]
 
         # Handle predictors based on fertility intent
