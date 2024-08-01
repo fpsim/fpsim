@@ -768,6 +768,13 @@ def age_partnership():
     return  partnership_dict
 
 
+def wealth():
+    """ Process percent distribution of people in each wealth quintile"""
+    cols = ["quintile", "percent"]
+    wealth_data = pd.read_csv(thisdir / 'data' / 'wealth.csv', header=0, names=cols)
+    return wealth_data
+
+
 # %% Education
 def education_objective(df):
     """
@@ -1042,6 +1049,7 @@ def make_pars(seed=None, use_subnational=None):
     # Demographics: geography and partnership status
     pars['urban_prop'] = urban_proportion()
     pars['age_partnership'] = age_partnership()
+    pars['wealth_quintile'] = wealth()
     pars['fertility_intent'] = fertility_intent_dist()
     pars['intent_to_use'] = contraception_intent_dist()
 

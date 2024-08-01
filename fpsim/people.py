@@ -60,15 +60,17 @@ class People(fpb.BasePeople):
         has_intent = "fertility_intent"
         self.fertility_intent   = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
         self.categorical_intent = self.states["categorical_intent"].new(n, "no")
-        # Update distribution of fertility intent if it is present in self.pars
-        self.get_fertility_intent(n)
+        # Update distribution of fertility intent with location-specific values if it is present in self.pars
+        self.update_fertility_intent(n)
 
         # Intent to use contraception
         has_intent = "intent_to_use"
-        self.intent_to_use  = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        self.intent_to_use = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
         # Update distribution of fertility intent if it is present in self.pars
-        self.get_intent_to_use(n)
+        self.update_intent_to_use(n)
 
+        self.wealthquintile = self.states["wealthquintile"].new(n, fpd.person_defaults["wealthquintile"].val)
+        self.update_wealthquintile(n)
 
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
         if not self.pars['use_subnational']:
@@ -143,16 +145,24 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
-    def get_fertility_intent(self, n):
+    def update_fertility_intent(self, n):
         if self.pars['fertility_intent'] is None:
             return
         self.update_fertility_intent_by_age()
         return
 
-    def get_intent_to_use(self, n):
+    def update_intent_to_use(self, n):
         if self.pars['intent_to_use'] is None:
             return
         self.update_intent_to_use_by_age()
+        return
+
+    def update_wealthquintile(self, n):
+        if self.pars['wealth_quintile'] is None:
+            return
+        wq_probs = self.pars['wealth_quintile']['percent']
+        vals = np.random.choice(len(wq_probs), size=n, p=wq_probs)+1
+        self.wealthquintile = vals
         return
 
     def init_methods(self, ti=None, year=None, contraception_module=None):
@@ -178,6 +188,7 @@ class People(fpb.BasePeople):
             oc.ever_used_contra = 1
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
+
 
     def update_fertility_intent_by_age(self):
         """

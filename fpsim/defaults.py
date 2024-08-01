@@ -135,6 +135,7 @@ person_defaults = [
     # Urban (basic demographics) -- state will remain at these values if use_urban is False
     State('urban', 1, bool),
     State('region', None, str),
+    State('wealthquintile', 3, int),       # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
 
     # Education - states will remain at these values if use_education is False
     State('edu_objective',      0, float),

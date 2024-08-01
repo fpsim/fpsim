@@ -244,6 +244,7 @@ default_pars = {
     'spacing_pref':         None,
     'barriers':             None,
     'urban_prop':           None,
+    'wealth_quintile':      None,
     'age_partnership':      None,
     'mcpr':                 None,
 
