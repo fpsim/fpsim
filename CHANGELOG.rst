@@ -16,12 +16,14 @@ This PR introduces a new method for setting contraceptive choices, whereby women
 
 To support this new feature, this PR also introduces several new items:
  - `ContraceptiveChoice` modules can be defined and flexibly added to sims depending on how one wishes to model the mechanism for choosing contraception
- - `sim.i` has been renamed `sim.ti` for consistency across starsim modules and for clarity that it refers to time
+ - `sim.i` has been renamed `sim.ti` for consistency across starsim modules and for clarity that it refers to an integer representation of time (time step)
  - `track_switching` has been moved to an analyzer
  - the fpsim `ndict` class has been removed and replaced with the starsim `ndict` class
  - the lists of lists in the results object have been replaced with arrays
  - `Education` and `Empowerment` modules have been added
- 
+ - new parameters and people's attributes have been added: `fertility_intent`, `intent_to_use` and `wealth_quintile`
+ - new analyzer "Life of" has been added to visualise the events during the lifecourse of a woman
+
  *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/280>`_
 
 Version 1.0.2 (2024-07-25)
