@@ -258,15 +258,15 @@ class SimpleChoice(RandomChoice):
         return dict(dist=dur_use['dist'], par1=par1, par2=1/par2)
 
     def _get_dist_funs(self, dist_name):
-        match dist_name:
-            case 'lognormal':
-                return self._lognormal_dpars, self._lognormal_make_dict
-            case 'gamma':
-                return self._gamma_dpars, self._gamma_make_dict
-            case 'llogis':
-                return self._llogis_dpars, self._llogis_make_dict
-            case _:
-                raise ValueError('Unrecognized distribution type for duration of use')
+        if dist_name == 'lognormal':
+            return self._lognormal_dpars, self._lognormal_make_dict
+        elif dist_name == 'gamma':
+            return self._gamma_dpars, self._gamma_make_dict
+        elif dist_name == 'llogis':
+            return self._llogis_dpars, self._llogis_make_dict
+        else :
+            raise ValueError(
+                'Unrecognized distribution type for duration of use')
 
     def set_dur_method(self, ppl, method_used=None):
         """ Time on method depends on age and method """
