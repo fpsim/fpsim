@@ -445,8 +445,14 @@ class empowerment_recorder(Analyzer):
                 temp = np.histogram(ages, self.bins)[0]
                 vals = temp / temp.sum()  # Transform to density
             else:
-                vals = [np.nanmean(data[age_bin == group_idx]) for group_idx in range(1, self.nbins+1)]
-
+                vals = np.empty(self.nbins, dtype=float)
+                for group_idx in range(1, self.nbins+1):
+                    temp = data[age_bin == group_idx]
+                    if temp.size:
+                        val = np.nanmean(temp)
+                    else:
+                        val = None
+                    vals[group_idx-1] = val
             self.data[key][:, sim.ti] = vals
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
