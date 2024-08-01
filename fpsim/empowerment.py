@@ -17,9 +17,11 @@ class Empowerment:
         # Handle location
         location = location.lower()
         if location == 'kenya':
-            # This dictionary contains the coefficients of the model that
+            # This dictionary contains the coefficients of the regression model that
             # defines how empowerment proababilities change
-            self.update_pars = fplocs.kenya.empowerment_update_pars()
+            self.empower_update_pars = fplocs.kenya.empowerment_update_pars()
+            # This dictionary contains the coefficients of the regression model that
+            # defines how intent to use contraception changes e
             self.intent_update_pars = fplocs.kenya.contraception_intent_update_pars()
 
             # This dictionary contains the default/baseline empowerment
@@ -33,7 +35,7 @@ class Empowerment:
         # List only empowerment metrics that are defined in empowerment.csv
         self.metrics = list(self.empowerment_pars["avail_metrics"])
         # Metrics that will be updated using value from empower_coef.csv
-        self.up_metrics = sorted(list(self.update_pars.keys()))
+        self.up_metrics = sorted(list(self.empower_update_pars.keys()))
         self.cm_metrics = ["financial_autonomy", "decision_making"]
 
         return
@@ -115,16 +117,16 @@ class Empowerment:
         # Update based on coefficients
         for lhs in self.metrics:
             # lhs -- metric to be updated as a function of rhs variables
-            p = self.update_pars[lhs]
+            p = self.empower_update_pars[lhs]
             rhs = p.intercept * np.ones(len(ppl[lhs]))
 
-            for predictor, vval in p.items():
+            for predictor, beta_p in p.items():
                  # TODO: update the bit below; iterating over specific attributes
                  #  is a temporary fix because ppl does not have all the
                  #  states in p.items()
                  #  keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
                 if predictor in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban"]:
-                    rhs += vval * ppl[predictor]
+                    rhs += beta_p * ppl[predictor]
 
             # Logit
             prob_t = 1.0 / (1.0 + np.exp(-rhs))
@@ -147,13 +149,18 @@ class Empowerment:
         p = self.intent_update_pars[lhs]
         rhs = p.intercept * np.ones(len(ppl[lhs]))
 
-        for predictor, vval in p.items():
+        for predictor, beta_p in p.items():
              # TODO: update the bit below; iterating over specific attributes
              #  is a temporary fix because ppl does not have all the
              #  states in p.items()
              #  keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
             if predictor in ["intent_to_use", "edu_attainment", "parity", "urban"]:
-                rhs += vval * ppl[predictor]
+                rhs += beta_p * ppl[predictor]
+
+        # Handle predictors based on fertility intent
+        beta_p = p["fertility_intentno"] * np.ones(len(ppl[lhs]))
+        beta_p[sc.findinds(ppl["fertility_intent"] == True)] = p["fertility_intentyes"]
+        rhs += beta_p*ppl["fertility_intent"]
 
         # Logit
         prob_t = 1.0 / (1.0 + np.exp(-rhs))
