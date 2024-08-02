@@ -60,8 +60,17 @@ class People(fpb.BasePeople):
         has_intent = "fertility_intent"
         self.fertility_intent   = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
         self.categorical_intent = self.states["categorical_intent"].new(n, "no")
+        # Update distribution of fertility intent with location-specific values if it is present in self.pars
+        self.update_fertility_intent(n)
+
+        # Intent to use contraception
+        has_intent = "intent_to_use"
+        self.intent_to_use = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
         # Update distribution of fertility intent if it is present in self.pars
-        self.get_fertility_intent(n)
+        self.update_intent_to_use(n)
+
+        self.wealthquintile = self.states["wealthquintile"].new(n, fpd.person_defaults["wealthquintile"].val)
+        self.update_wealthquintile(n)
 
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
         if not self.pars['use_subnational']:
@@ -136,10 +145,24 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
-    def get_fertility_intent(self, n):
+    def update_fertility_intent(self, n):
         if self.pars['fertility_intent'] is None:
             return
         self.update_fertility_intent_by_age()
+        return
+
+    def update_intent_to_use(self, n):
+        if self.pars['intent_to_use'] is None:
+            return
+        self.update_intent_to_use_by_age()
+        return
+
+    def update_wealthquintile(self, n):
+        if self.pars['wealth_quintile'] is None:
+            return
+        wq_probs = self.pars['wealth_quintile']['percent']
+        vals = np.random.choice(len(wq_probs), size=n, p=wq_probs)+1
+        self.wealthquintile = vals
         return
 
     def init_methods(self, ti=None, year=None, contraception_module=None):
@@ -166,6 +189,7 @@ class People(fpb.BasePeople):
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
 
+
     def update_fertility_intent_by_age(self):
         """
         In the absence of other factors, fertilty intent changes as a function of age
@@ -187,6 +211,26 @@ class People(fpb.BasePeople):
         self.fertility_intent[sc.findinds(self.categorical_intent == "yes")] = True
         self.fertility_intent[sc.findinds((self.categorical_intent == "no") |
                                           (self.categorical_intent == "cannot"))] = False
+        return
+
+    def update_intent_to_use_by_age(self):
+        """
+        In the absence of other factors, intent to use contraception
+        can change as a function of age each year on a woman’s birthday.
+
+        This function is also used to initialise the State intent_to_use
+        """
+        intent_pars = self.pars['intent_to_use']
+
+        f_inds = sc.findinds(self.is_female)
+        f_ages = self.age[f_inds]
+        age_inds = fpu.digitize_ages_1yr(f_ages)
+
+        for age in intent_pars.keys():
+            f_aged_x_inds = f_inds[age_inds == age]  # indices of women of a given age
+            prob = intent_pars[age][1]  # Get the probability of having intent
+            self.intent_to_use[f_aged_x_inds] = fpu.n_binomial(prob, len(f_aged_x_inds))
+
         return
 
     def update_method(self, year=None, ti=None):
@@ -926,22 +970,25 @@ class People(fpb.BasePeople):
         nonpreg = fecund.filter(~fecund.pregnant)
         lact = fecund.filter(fecund.lactating)
 
-        # Update education and empowerment
+        # Update empowerment states, and empowerment-related states
         alive_now_f = self.filter(self.is_female)
         if self.empowerment_module is not None:
             eligible = alive_now_f.filter(((alive_now_f.age >= fpd.min_age) & (
                         alive_now_f.age < fpd.max_age_preg)))
 
             # Women who just turned 15 get assigned a value based on empowerment probs
-            bday_15 = eligible.birthday_filter(int_age=15)
+            bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
             if len(bday_15):
                 self.empowerment_module.update_empwr_states(bday_15)
             # Update states on her bday, based on coefficients
             bday = eligible.birthday_filter()
             if len(bday):
+                # The empowerment module will update the empowerment states and intent to use
                 self.empowerment_module.update(bday)
                 # Update fertility intent on her bday, together with empowerment updates
                 bday.update_fertility_intent_by_age()
+
+        # Update education
         if self.education_module is not None:
             self.education_module.update(alive_now_f)
 

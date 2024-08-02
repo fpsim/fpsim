@@ -125,6 +125,8 @@ person_defaults = [
     # Empowerment - fertility intent
     State('fertility_intent', 0, bool),
     State('categorical_intent', "cannot", "<U6"),
+    State('intent_to_use', 0, bool),            # for women not on contraception, whether she has intent to use contraception
+
 
     # Partnership information -- states will remain at these values if use_partnership is False
     State('partnered',    0, bool),
@@ -133,6 +135,7 @@ person_defaults = [
     # Urban (basic demographics) -- state will remain at these values if use_urban is False
     State('urban', 1, bool),
     State('region', None, str),
+    State('wealthquintile', 3, int),       # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
 
     # Education - states will remain at these values if use_education is False
     State('edu_objective',      0, float),
