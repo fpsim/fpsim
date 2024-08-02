@@ -6,8 +6,8 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 from scipy import interpolate as si
-from .. import defaults as fpd
-from .. import utils as fpu
+from fpsim import defaults as fpd
+from fpsim import utils as fpu
 
 # %% Housekeeping
 
@@ -42,11 +42,11 @@ def data2interp(data, ages, normalize=False):
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'nuhdss'
+    files['base'] = sc.thisdir(aspath=True) / 'data'
     files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
     files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE  #How do we include rounds #Look at subcounty doata
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    files['tfr'] = 'kenya_tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
+    files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
     files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2014 or PMA 2022
     files['spacing'] = 'birth_spacing_dhs.csv'
@@ -89,7 +89,7 @@ def age_pyramid():
 
 def urban_proportion():
     """Load information about the proportion of people who live in an urban setting""" #100% urban mean 1, se 0
-    urban_data = pd.read_csv(thisdir / 'nuhdss' / 'urban.csv')
+    urban_data = pd.read_csv(thisdir / 'data' / 'urban.csv')
     return urban_data["mean"][0]  # Return this value as a float
 
 
@@ -105,8 +105,8 @@ def age_mortality():
     #Leave as it is.....
     '''
     data_year = 2010
-    mortality_data = pd.read_csv(thisdir / 'nuhdss' / 'mortality_prob.csv')
-    mortality_trend = pd.read_csv(thisdir / 'nuhdss' / 'mortality_trend.csv')
+    mortality_data = pd.read_csv(thisdir / 'data' / 'mortality_prob.csv')
+    mortality_trend = pd.read_csv(thisdir / 'data' / 'mortality_trend.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -484,7 +484,7 @@ def debut_age():
         [41.0, 0.00013980442816424654],
         [44.0, 4.372731039149624e-05]])
         '''
-    sexual_debut = pd.read_csv(thisdir / 'nuhdss' / 'sex_debut.csv')
+    sexual_debut = pd.read_csv(thisdir / 'data' / 'sex_debut.csv')
     debut_age = {}
     debut_age['ages'] = sexual_debut.Age_at_first_sex.values
     debut_age['probs'] = sexual_debut.prob.values
@@ -606,7 +606,7 @@ def methods():
     # Taken from UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     # https://population.un.org/dataportal/data/indicators/1/locations/404/start/1950/end/2040/table/pivotbylocation
     # Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    cpr_data = pd.read_csv(thisdir / 'nuhdss' / 'cpr.csv')
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
     methods['mcpr_years'] = cpr_data['year'].to_numpy()
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
@@ -1115,7 +1115,7 @@ def empowerment_distributions(seed=None, regression_type='logistic'):
 
 def age_partnership():
     """ Probabilities of being partnered at age X"""
-    age_partnership_data = pd.read_csv(thisdir / 'nuhdss' / 'age_partnership.csv')
+    age_partnership_data = pd.read_csv(thisdir / 'data' / 'age_partnership.csv')
     partnership_dict = {}
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
