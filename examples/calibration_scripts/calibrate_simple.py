@@ -49,7 +49,7 @@ do_plot_cpr = True
 do_plot_tfr = True
 do_plot_pop_growth = False
 do_plot_birth_space_afb = True
-do_plot_contra_analysis = True
+do_plot_contra_analysis = False
 
 # Set option to save figures
 do_save = True
@@ -93,15 +93,9 @@ pars['end_year'] = 2020  # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
 pars['fecundity_var_low'] = .8
-pars['fecundity_var_high'] = 2
-pars['exposure_factor'] = 1.24
-'''
-freepars = dict(
-        fecundity_var_low=[0.95, 0.925, 1.0],
-        fecundity_var_high=[1.1, 1.025, 1.3],
-        exposure_factor=[2.0, 0.9, 2.2],
-)
-'''
+pars['fecundity_var_high'] = 3.25
+pars['exposure_factor'] = 3.5
+
 # # Last free parameter, postpartum sexual activity correction or 'birth spacing preference'
 # # Set all to 1 to reset
 # # spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-{country}.py'
@@ -115,9 +109,9 @@ freepars = dict(
 # Adjust contraceptive choice parameters
 cm_pars = dict(
     prob_use_year=2020,
-    prob_use_trend_par=0.035,
+    prob_use_trend_par=0.03,
     force_choose=False,
-    method_weights=np.array([0.34, .7, 0.64, 0.74, 0.76, 1, 1.63, 0.65, 9.5])
+    method_weights=np.array([0.34, .7, 0.6, 0.74, 0.76, 1, 1.63, 0.65, 9.5])
 )
 method_choice = fp.SimpleChoice(pars=cm_pars, location='kenya')
 sim = fp.Sim(pars=pars, contraception_module=method_choice, analyzers=[fp.cpr_by_age(), fp.method_mix_by_age()])

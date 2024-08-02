@@ -485,8 +485,9 @@ def exposure_parity():
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
     or live birth by parity.
     '''
+    # Previously set to: [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
-                                           [.3, .3, 7, 7, 7, 8, 8, 6, 4, 1, 1, 1, 1.5, 1.5]])
+                                           [.1, .1, 7, 7, 7, 8, 8, 6, 4, 1, 1, 1, 1.5, 1.5]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
@@ -499,20 +500,21 @@ def birth_spacing_pref():
 
     NOTE: spacing bins must be uniform!
     '''
+    # Previously all values set to default of 1
     postpartum_spacing = np.array([
-        [0, 1],
-        [3, 1],
-        [6, 1],
-        [9, 1],
-        [12, 1],
-        [15, 1],
-        [18, 1],
-        [21, 1],
-        [24, 1],
-        [27, 1],
-        [30, 1],
-        [33, 1],
-        [36, 1],
+        [0, .1],
+        [3, .1],
+        [6, .1],
+        [9, .1],
+        [12, .01],
+        [15, .01],
+        [18, .01],
+        [21, .01],
+        [24, .75],
+        [27, .75],
+        [30, .75],
+        [33, .75],
+        [36, .75],
     ])
 
     # Calculate the intervals and check they're all the same
