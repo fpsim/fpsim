@@ -9,7 +9,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-Version 2.0.0 (2024-06-07)
+Version 2.0.0 (2024-08-31)
 ---------------------------
 Previously, women updated their contraceptive choices each year in their birth month.
 This PR introduces a new method for setting contraceptive choices, whereby women choose a method of contraception, and are then assigned a duration of use (`dur_use`). They update their contraceptive choice at the end of this duration, or after certain other events (e.g. postpartum, or after a change in one of their empowerment metrics).
@@ -25,6 +25,11 @@ To support this new feature, this PR also introduces several new items:
  - new analyzer "Life of" has been added to visualise the events during the lifecourse of a woman
 
  *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/280>`_
+
+Version 1.0.3 (2024-07-26)
+---------------------------
+- Adds .devcontainer configuration for a Codespaces dev container
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/369>`_
 
 Version 1.0.2 (2024-07-25)
 ---------------------------
