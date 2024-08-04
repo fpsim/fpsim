@@ -43,13 +43,15 @@ if __name__ == '__main__':
 
         # Set options for plotting
         do_plot_sim = True
+        do_plot_paid_work = False
+        do_plot_education = False
         do_plot_asfr = True
         do_plot_methods = True
         do_plot_ageparity = True
         do_plot_cpr = True
         do_plot_tfr = True
         do_plot_pop_growth = True
-        do_plot_birth_space_afb = False
+        do_plot_birth_space_afb = True
 
         # Set option to save figures
         do_save = 1
@@ -62,21 +64,23 @@ if __name__ == '__main__':
         ####################################################
 
         cwd = os.path.abspath(os.getcwd())
-        country_dir = f'../../fpsim/locations/{country}'
-        figs_dir = os.path.join(country_dir, 'figs')
+        country_data_dir = f'../../fpsim/locations/{country}/data'
+        figs_dir = os.path.join(country_data_dir, 'figs')
         if do_save and not os.path.exists(figs_dir):
                 os.makedirs(figs_dir, exist_ok=True)
 
         # Import country data files to compare
-        ageparity   = pd.read_csv(os.path.join(country_dir, 'data/ageparity.csv'))  # Age-parity distribution file
-        use         = pd.read_csv(os.path.join(country_dir, 'data/use.csv'))  # Dichotomous contraceptive method use
-        data_spaces = pd.read_csv(os.path.join(country_dir, 'data/birth_spacing_dhs.csv'))  # Birth-to-birth interval data
-        data_afb = pd.read_csv(os.path.join(country_dir, 'data/afb.table.csv'))  # Ages at first birth in DHS for women age 25-50
-        data_cpr = pd.read_csv(os.path.join(country_dir, 'data/cpr.csv'))  # From UN Data Portal
-        data_asfr = pd.read_csv(os.path.join(country_dir, 'data/asfr.csv'))
-        data_methods = pd.read_csv(os.path.join(country_dir, 'data/mix.csv'))
-        data_tfr     = pd.read_csv(os.path.join(country_dir, 'data/tfr.csv'))
-        data_popsize = pd.read_csv(os.path.join(country_dir, 'data/popsize.csv'))
+        ageparity   = pd.read_csv(os.path.join(country_data_dir, 'ageparity.csv'))  # Age-parity distribution file
+        use         = pd.read_csv(os.path.join(country_data_dir, 'use.csv'))  # Dichotomous contraceptive method use
+        data_spaces = pd.read_csv(os.path.join(country_data_dir, 'birth_spacing_dhs.csv'))  # Birth-to-birth interval data
+        data_afb = pd.read_csv(os.path.join(country_data_dir, 'afb.table.csv'))  # Ages at first birth in DHS for women age 25-50
+        data_cpr = pd.read_csv(os.path.join(country_data_dir, 'cpr.csv'))  # From UN Data Portal
+        data_asfr = pd.read_csv(os.path.join(country_data_dir, 'asfr.csv'))
+        data_methods = pd.read_csv(os.path.join(country_data_dir, 'mix.csv'))
+        data_tfr     = pd.read_csv(os.path.join(country_data_dir, 'tfr.csv'))
+        data_popsize = pd.read_csv(os.path.join(country_data_dir, 'popsize.csv'))
+        data_empowerment = pd.read_csv(os.path.join(country_data_dir, 'empowerment.csv'))
+        data_education = pd.read_csv(os.path.join(country_data_dir, 'edu_initialization.csv'))
 
         # Set up global variables
         age_bin_map = {
@@ -99,7 +103,9 @@ if __name__ == '__main__':
         sc.tic()
 
         # Set up sim for country
-        pars = fp.pars(location=country)
+        pars = fp.pars(location=country,
+                        use_empowerment=False,
+                        use_education=False)
         pars['n_agents'] = 10_000 # Small population size
         pars['end_year'] = 2020 # 1961 - 2020 is the normal date range
 
@@ -155,11 +161,152 @@ if __name__ == '__main__':
 
                 return growth_rate
 
-        # Start series of options for plotting data to model comparisons
+        if do_plot_paid_work:
+                '''
+                Plot rates of paid employment between model and data
+                '''
+                # Extract paid work from data
+                data_empowerment = data_empowerment.iloc[1:-1]
+                data_paid_work = data_empowerment[['age', 'paid_employment', 'paid_employment.se']].copy()
+                age_bins = np.arange(min_age, max_age+1, bin_size)
+                data_paid_work['age_group'] = pd.cut(data_paid_work['age'], bins=age_bins, right=False)
+
+                # Calculate mean and standard error for each age bin
+                employment_data_grouped = data_paid_work.groupby('age_group', observed=False)['paid_employment']
+                employment_data_mean = employment_data_grouped.mean().tolist()
+                employment_data_se = data_paid_work.groupby('age_group', observed=False)['paid_employment.se'].apply(lambda x: np.sqrt(np.sum(x ** 2)) / len(x)).tolist()
+
+                # Extract paid work from model
+                employed_counts = {age_bin: 0 for age_bin in age_bins}
+                total_counts = {age_bin: 0 for age_bin in age_bins}
+
+                # Count the number of employed and total people in each age bin
+                ppl = sim.people
+                for i in range(len(ppl)):
+                        if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                                age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
+                                total_counts[age_bin] += 1
+                                if ppl.paid_employment[i]:
+                                        employed_counts[age_bin] += 1
+
+                # Calculate the percentage of employed people in each age bin and their standard errors
+                percentage_employed = {}
+                percentage_employed_se = {}
+                age_bins = np.arange(min_age, max_age, bin_size)
+                for age_bin in age_bins:
+                        total_ppl = total_counts[age_bin]
+                        if total_ppl != 0:
+                                employed_ratio = employed_counts[age_bin] / total_ppl
+                                percentage_employed[age_bin] = employed_ratio
+                                percentage_employed_se[age_bin] = (employed_ratio * (
+                                                1 - employed_ratio) / total_ppl) ** 0.5
+                        else:
+                                percentage_employed[age_bin] = 0
+                                percentage_employed_se[age_bin] = 0
+
+                employment_model = list(percentage_employed.values())
+                employment_model_se = list(percentage_employed_se.values())
+
+                # Set up plotting
+                labels = list(age_bin_map.keys())[1:]
+                x_pos = np.arange(len(labels))
+                fig, ax = pl.subplots()
+                width = 0.35
+
+                # Plot Data
+                ax.barh(x_pos - width / 2, employment_data_mean, width, label='DHS', color='black')
+                ax.errorbar(employment_data_mean, x_pos - width / 2, xerr=employment_data_se, fmt='none', ecolor='gray',
+                            capsize=5)
+
+                # Plot Model
+                ax.barh(x_pos + width / 2, employment_model, width, label='FPsim', color='cornflowerblue')
+                ax.errorbar(employment_model, x_pos + width / 2, xerr=employment_model_se, fmt='none', ecolor='gray',
+                            capsize=5)
+
+                # Set labels and title
+                ax.set_xlabel('Percent Women with Paid Work')
+                ax.set_ylabel('Age Bin')
+                ax.set_title(f'{country.capitalize()}: Paid Employment - Model vs Data')
+                ax.set_yticks(x_pos)
+                ax.set_yticklabels(labels)
+                ax.legend()
+
+                if do_save:
+                        pl.savefig(f"{figs_dir}/paid_employment.png", bbox_inches='tight', dpi=100)
+                pl.show()
+
+        if do_plot_education:
+                '''
+                Plot years of educational attainment between model and data
+                '''
+                pl.clf()
+
+                # Extract education from data
+                data_edu = data_education[['age', 'edu', 'se']].sort_values(by='age')
+                data_edu = data_edu.query(f"{min_age} <= age < {max_age}").copy()
+                age_bins = np.arange(min_age, max_age+1, bin_size)
+                data_edu['age_group'] = pd.cut(data_edu['age'], bins=age_bins, right=False)
+
+                # Calculate mean and standard error for each age bin
+                education_data_grouped = data_edu.groupby('age_group', observed=False)['edu']
+                education_data_mean = education_data_grouped.mean().tolist()
+                education_data_se = data_edu.groupby('age_group', observed=False)['se'].apply(lambda x: np.sqrt(np.sum(x ** 2)) / len(x)).tolist()
+
+                # Extract education from model
+                model_edu_years = {age_bin: [] for age_bin in np.arange(min_age, max_age, bin_size)}
+                ppl = sim.people
+                for i in range(len(ppl)):
+                        if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                                age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
+                                model_edu_years[age_bin].append(ppl.edu_attainment[i])
+
+                # Calculate average # of years of educational attainment for each age
+                model_edu_mean = []
+                model_edu_se = []
+                for age_group in model_edu_years:
+                        if len(model_edu_years[age_group]) != 0:
+                                avg_edu = sum(model_edu_years[age_group]) / len(model_edu_years[age_group])
+                                se_edu = np.std(model_edu_years[age_group], ddof=1) / np.sqrt(len(model_edu_years[age_group]))
+                                model_edu_mean.append(avg_edu)
+                                model_edu_se.append(se_edu)
+                        else:
+                                model_edu_years[age_group] = 0
+                                model_edu_se.append(0)
+
+                # Set up plotting
+                labels = list(age_bin_map.keys())[1:]
+                x_pos = np.arange(len(labels))
+                fig, ax = pl.subplots()
+                width = 0.35
+
+                # Plot DHS data
+                ax.barh(x_pos - width / 2, education_data_mean, width, label='DHS', color='black')
+                ax.errorbar(education_data_mean, x_pos - width / 2, xerr=education_data_se, fmt='none', ecolor='gray',
+                            capsize=5)
+
+                # Plot FPsim data
+                ax.barh(x_pos + width / 2, model_edu_mean, width, label='FPsim', color='cornflowerblue')
+                ax.errorbar(model_edu_mean, x_pos + width / 2, xerr=model_edu_se, fmt='none', ecolor='gray', capsize=5)
+
+                # Set labels and title
+                ax.set_xlabel('Avg Years of Education Attainment')
+                ax.set_ylabel('Age Bin')
+                ax.set_title(f'{country.capitalize()}: Years of Education - Model vs Data')
+                ax.set_yticks(x_pos)
+                ax.set_yticklabels(labels)
+                ax.legend()
+
+                if do_save:
+                        pl.savefig(f"{figs_dir}/education.png", bbox_inches='tight', dpi=100)
+                pl.show()
+
+        # Start series of options for plotting data to model comaprisons
         if do_plot_asfr:
                 '''
                 Plot age-specific fertility rate between model and data
                 '''
+                pl.clf()
+
                 # Print ASFR form model in output
                 for key in age_bin_map.keys():
                     print(f'ASFR (annual) for age bin {key} in the last year of the sim: {res["asfr"][key][-1]}')
@@ -200,6 +347,7 @@ if __name__ == '__main__':
                 '''
                 Plots both dichotomous method use and non-use and contraceptive mix
                 '''
+                pl.clf()
 
                 # Pull method definitions from parameters file
                 # Method map; this remains constant across locations. True indicates modern method,
@@ -296,6 +444,7 @@ if __name__ == '__main__':
                 '''
                 Plot an age-parity distribution for model vs data
                 '''
+                pl.clf()
 
                 # Set up
                 age_keys = list(age_bin_map.keys())[1:]
@@ -357,15 +506,19 @@ if __name__ == '__main__':
                         pl.colorbar(im, label='Percentage')
                         pl.draw()
 
+
                         if do_save:
                                 pl.savefig(f'{figs_dir}/ageparity_' + str(key.lower()) + '.png')
 
                         pl.show()
 
         if do_plot_cpr:
+
                 '''
                 Plot contraceptive prevalence rate for model vs data
                 '''
+                pl.clf()
+
                 # Import data
                 data_cpr = data_cpr[data_cpr['year'] <= pars['end_year']] # Restrict years to plot
 
@@ -386,9 +539,7 @@ if __name__ == '__main__':
                 '''
                 Plot total fertility rate for model vs data
                 '''
-
-                # Import data
-                #data_tfr = pd.read_csv(f'tfr.csv')
+                pl.clf()
 
                 # Plot
                 pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
@@ -407,6 +558,7 @@ if __name__ == '__main__':
                 '''
                 Plot annual population growth rate for model vs data
                 '''
+                pl.clf()
 
                 # Import data
                 data_popsize = data_popsize[data_popsize['year'] <= pars['end_year']]  # Restrict years to plot
@@ -436,6 +588,7 @@ if __name__ == '__main__':
                 '''
                 Plot birth space and age at first birth for model vs data
                 '''
+                pl.clf()
 
                 # Set up
                 spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
@@ -516,28 +669,3 @@ if __name__ == '__main__':
 
         sc.toc()
         print('Done.')
-
-
-        '''
-        Leaving code here in case we want to plot age-parity distribution differently with colormesh
-        
-        
-                fig, axs = pl.subplots(3)
-        
-                fig.suptitle('Age Parity Distribution')
-        
-                axs[0].pcolormesh(age_bins, parity_bins, sky_arr.Data.transpose(), shading='nearest', cmap='turbo')
-                axs[0].set_aspect(1. / ax.get_data_ratio())  # Make square
-                axs[0].set_title('Age-parity plot: Kenya PMA 2022')
-                axs[0].set_xlabel('Age')
-                ax[0].set_ylabel('Parity')
-        
-                axs[1].pcolormesh(age_bins, parity_bins, sky_arr.Model.transpose(), shading='nearest', cmap='turbo')
-                axs[1].set_aspect(1. / ax.get_data_ratio())  # Make square
-                axs[1].set_title('Age-parity plot: Kenya PMA 2022')
-                axs[1].set_xlabel('Age')
-                axs[1].set_ylabel('Parity')
-        
-                pl.show()
-        
-        '''

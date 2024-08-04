@@ -244,11 +244,13 @@ default_pars = {
     'spacing_pref':         None,
     'barriers':             None,
     'urban_prop':           None,
+    'wealth_quintile':      None,
     'age_partnership':      None,
     'mcpr':                 None,
 
     # Newer parameters, associated with empowerment, but that are not empowerment metrics
     'fertility_intent':     None,
+    'intent_to_use':        None,
 
     'region':               None,
     'lactational_amenorrhea_region': None,

@@ -11,10 +11,10 @@ import fpsim as fp
 do_plot = True
 empwr = fp.Empowerment()
 pars = fp.pars(location='kenya')
-pars['n_agents'] = 500  # Small population size
+pars['n_agents'] = 1_000  # Small population size
 
 sc.tic()
-age_bins = np.arange(100)[::5] # 5 year bins
+age_bins = np.arange(101)[::5] # 5 year bins
 sim = fp.Sim(pars=pars, empowerment_module=empwr, analyzers=[fp.empowerment_recorder(bins=age_bins)])
 sim.run()
 

@@ -49,6 +49,8 @@ def filenames():
     files['methods'] = 'mix.csv'
     files['afb'] = 'afb.table.csv'
     files['use'] = 'use.csv'
+    files['empowerment'] = 'empowerment.csv'
+    files['education'] = 'edu_initialization.csv'
     return files
 
 
@@ -311,8 +313,8 @@ def fecundity_ratio_nullip():
     from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
     Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
     '''
-    fecundity_ratio_nullip = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 34, 37, 40, 45, 50],
-                                       [1, 1, 1, 1, 1, 1, 1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
+    fecundity_ratio_nullip = np.array([[0, 5, 10, 12.5, 15, 18, 20,   25,   30,   34,   37,   40, 45, 50],
+                                       [1, 1,  1,    1,  1,  1,  1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
     fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
 
     return fecundity_nullip_interp
@@ -483,8 +485,9 @@ def exposure_parity():
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
     or live birth by parity.
     '''
+    # Previously set to: [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
-                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])
+                                           [.1, .1, 7, 7, 7, 8, 8, 6, 4, 1, 1, 1, 1.5, 1.5]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
@@ -497,20 +500,21 @@ def birth_spacing_pref():
 
     NOTE: spacing bins must be uniform!
     '''
+    # Previously all values set to default of 1
     postpartum_spacing = np.array([
-        [0, 1],
-        [3, 1],
-        [6, 1],
-        [9, 1],
-        [12, 1],
-        [15, 1],
-        [18, 1],
-        [21, 1],
-        [24, 1],
-        [27, 1],
-        [30, 1],
-        [33, 1],
-        [36, 1],
+        [0, .1],
+        [3, .1],
+        [6, .1],
+        [9, .1],
+        [12, .01],
+        [15, .01],
+        [18, .01],
+        [21, .01],
+        [24, .75],
+        [27, .75],
+        [30, .75],
+        [33, .75],
+        [36, .75],
     ])
 
     # Calculate the intervals and check they're all the same
@@ -609,6 +613,31 @@ def get_empowerment_loadings():
     return loadings
 
 
+def calculate_empwr_composites(empwr_data, empwr_pars):
+    dm_cols = ["buy_decision_major", "buy_decision_daily",
+               "buy_decision_clothes", "decision_health"]
+
+    fa_cols = ["has_savings", "has_fin_knowl", "has_fin_goals"]
+
+    fa = np.zeros(len(empwr_pars["avail_ages"]), dtype=np.float64)
+    dm = np.zeros_like(fa, dtype=np.float64)
+
+    col = ".mean"
+    for metric in fa_cols:
+        probs = empwr_data[metric+col].to_numpy()
+        vals = fpu.binomial_arr(probs).astype(float)
+        temp = vals * empwr_pars["loadings"][metric]
+        fa += temp
+
+    for metric in dm_cols:
+        probs = empwr_data[metric+col].to_numpy()
+        vals = fpu.binomial_arr(probs).astype(float)
+        dm += vals * empwr_pars["loadings"][metric]
+    empwr_data["financial_autonomy.mean"] = fa
+    empwr_data["decision_making.mean"] = dm
+    return empwr_data
+
+
 # Empowerment metrics
 def make_empowerment_pars(seed=None, return_data=False):
     """
@@ -669,6 +698,8 @@ def make_empowerment_pars(seed=None, return_data=False):
     # Estimate composites for decision making (dm) and financial autonomy (fa)
     # and add them to the empowerment pars
     empowerment_pars["loadings"] = get_empowerment_loadings()
+    empowerment_data = calculate_empwr_composites(empowerment_data, empowerment_pars)
+
     if return_data:
         return empowerment_pars, empowerment_data
     return empowerment_pars
@@ -687,7 +718,36 @@ def fertility_intent_dist():
     return data
 
 
+def contraception_intent_dist():
+    """Add additional metrics from PMA Household/Female surveys"""
+
+    df = pd.read_csv(thisdir / 'data' / 'contra_intent.csv')
+
+    data = {}
+    for row in df.itertuples(index=False):
+        intent = row.intent_contra
+        age = row.age
+        freq = row.freq
+        data.setdefault(age, {})[intent] = freq
+    return data
+
+
+def contraception_intent_update_pars():
+    """ Regression coefficients to update intent to use contraception"""
+    raw_pars = pd.read_csv(thisdir / 'data' / 'contra_intent_coef.csv')
+    pars = sc.objdict()
+    metrics = raw_pars.lhs.unique()
+    for metric in metrics:
+        pars[metric] = sc.objdict()
+        thisdf = raw_pars.loc[raw_pars.lhs == metric]
+        for var_dict in thisdf.to_dict('records'):
+            var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
+            pars[metric][var_name] = var_dict['Estimate']
+    return pars
+
+
 def empowerment_update_pars():
+    """ Regression coefficients used to update empowerment attributes"""
     raw_pars = pd.read_csv(thisdir / 'data' / 'empower_coef.csv')
     pars = sc.objdict()
     metrics = raw_pars.lhs.unique()
@@ -708,6 +768,13 @@ def age_partnership():
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
     return  partnership_dict
+
+
+def wealth():
+    """ Process percent distribution of people in each wealth quintile"""
+    cols = ["quintile", "percent"]
+    wealth_data = pd.read_csv(thisdir / 'data' / 'wealth.csv', header=0, names=cols)
+    return wealth_data
 
 
 # %% Education
@@ -984,7 +1051,10 @@ def make_pars(seed=None, use_subnational=None):
     # Demographics: geography and partnership status
     pars['urban_prop'] = urban_proportion()
     pars['age_partnership'] = age_partnership()
+    pars['wealth_quintile'] = wealth()
     pars['fertility_intent'] = fertility_intent_dist()
+    pars['intent_to_use'] = contraception_intent_dist()
+
 
     kwargs = locals()
     not_implemented_args = ['use_subnational']

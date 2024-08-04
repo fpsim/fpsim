@@ -60,8 +60,17 @@ class People(fpb.BasePeople):
         has_intent = "fertility_intent"
         self.fertility_intent   = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
         self.categorical_intent = self.states["categorical_intent"].new(n, "no")
+        # Update distribution of fertility intent with location-specific values if it is present in self.pars
+        self.update_fertility_intent(n)
+
+        # Intent to use contraception
+        has_intent = "intent_to_use"
+        self.intent_to_use = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
         # Update distribution of fertility intent if it is present in self.pars
-        self.get_fertility_intent(n)
+        self.update_intent_to_use(n)
+
+        self.wealthquintile = self.states["wealthquintile"].new(n, fpd.person_defaults["wealthquintile"].val)
+        self.update_wealthquintile(n)
 
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
         if not self.pars['use_subnational']:
@@ -79,6 +88,7 @@ class People(fpb.BasePeople):
         self.education_module = education_module
         if self.empowerment_module is not None:
             self.empowerment_module.initialize(self)
+
         if self.education_module is not None:
             self.education_module.initialize(self)
 
@@ -135,10 +145,24 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
-    def get_fertility_intent(self, n):
+    def update_fertility_intent(self, n):
         if self.pars['fertility_intent'] is None:
             return
         self.update_fertility_intent_by_age()
+        return
+
+    def update_intent_to_use(self, n):
+        if self.pars['intent_to_use'] is None:
+            return
+        self.update_intent_to_use_by_age()
+        return
+
+    def update_wealthquintile(self, n):
+        if self.pars['wealth_quintile'] is None:
+            return
+        wq_probs = self.pars['wealth_quintile']['percent']
+        vals = np.random.choice(len(wq_probs), size=n, p=wq_probs)+1
+        self.wealthquintile = vals
         return
 
     def init_methods(self, ti=None, year=None, contraception_module=None):
@@ -165,9 +189,11 @@ class People(fpb.BasePeople):
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
 
+
     def update_fertility_intent_by_age(self):
         """
         In the absence of other factors, fertilty intent changes as a function of age
+        each year on a woman’s birthday
         """
         intent_pars = self.pars['fertility_intent']
 
@@ -185,6 +211,26 @@ class People(fpb.BasePeople):
         self.fertility_intent[sc.findinds(self.categorical_intent == "yes")] = True
         self.fertility_intent[sc.findinds((self.categorical_intent == "no") |
                                           (self.categorical_intent == "cannot"))] = False
+        return
+
+    def update_intent_to_use_by_age(self):
+        """
+        In the absence of other factors, intent to use contraception
+        can change as a function of age each year on a woman’s birthday.
+
+        This function is also used to initialise the State intent_to_use
+        """
+        intent_pars = self.pars['intent_to_use']
+
+        f_inds = sc.findinds(self.is_female)
+        f_ages = self.age[f_inds]
+        age_inds = fpu.digitize_ages_1yr(f_ages)
+
+        for age in intent_pars.keys():
+            f_aged_x_inds = f_inds[age_inds == age]  # indices of women of a given age
+            prob = intent_pars[age][1]  # Get the probability of having intent
+            self.intent_to_use[f_aged_x_inds] = fpu.n_binomial(prob, len(f_aged_x_inds))
+
         return
 
     def update_method(self, year=None, ti=None):
@@ -233,6 +279,7 @@ class People(fpb.BasePeople):
                     # For those who keep using, choose their next method
                     if len(switching_contra):
                         switching_contra.method = cm.choose_method(switching_contra)
+                        choosers.step_results['new_users'] += np.count_nonzero(switching_contra.method)
 
                     # For those who stop using, set method to zero
                     if len(stopping_contra):
@@ -609,9 +656,12 @@ class People(fpb.BasePeople):
             all_ppl = self.unfilter()
             live = deliv.filter(~is_stillborn)
             for parity in np.unique(live.parity):
-                all_ppl.birth_ages[live.inds, parity] = live.age
-                all_ppl.stillborn_ages[stillborn.inds, parity] = stillborn.age
-            all_ppl.first_birth_age[live.inds] = all_ppl.birth_ages[live.inds, 0]
+                inds = live.inds[live.parity == parity]
+                all_ppl.birth_ages[inds, parity] = all_ppl.age[inds]
+                if parity == 0: all_ppl.first_birth_age[inds] = all_ppl.age[inds]
+            for parity in np.unique(stillborn.parity):
+                inds = stillborn.inds[stillborn.parity == parity]
+                all_ppl.stillborn_ages[inds, parity] = all_ppl.age[inds]
 
             # Handle twins
             is_twin = live.binomial(self.pars['twins_prob'])
@@ -766,11 +816,11 @@ class People(fpb.BasePeople):
         DHS data records only women who self-report LAM which is much lower.
         Follows the DHS definition of mCPR
         """
-        modern_methods = [m.name for m in self.contraception_module.methods.values() if m.modern]
+        modern_methods_num = [idx for idx, m in enumerate(self.contraception_module.methods.values()) if m.modern]
         method_age = (self.pars['method_age'] <= self.age)
         fecund_age = self.age < self.pars['age_limit_fecundity']
         denominator = method_age * fecund_age * self.is_female * (self.alive)
-        numerator = np.isin(self.method, modern_methods)
+        numerator = np.isin(self.method, modern_methods_num)
         no_method_mcpr = np.sum((self.method == 0) * denominator)
         on_method_mcpr = np.sum(numerator * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
@@ -826,6 +876,17 @@ class People(fpb.BasePeople):
             for key in as_result_dict:
                 self.step_results[key] = as_result_dict[key]
         return
+
+    def birthday_filter(self, int_age=None):
+        """
+        Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
+        annualy, but not based on a calendar year, rather every year on an agent's bday."""
+        if int_age is None:
+            int_age = self.int_age
+
+        age_diff = int_age - self.age
+        had_bday = (age_diff <= (self.pars['timestep'] / fpd.mpy))
+        return self.filter(had_bday)
 
     def init_step_results(self):
         self.step_results = dict(
@@ -909,10 +970,25 @@ class People(fpb.BasePeople):
         nonpreg = fecund.filter(~fecund.pregnant)
         lact = fecund.filter(fecund.lactating)
 
-        # Update education and empowerment
+        # Update empowerment states, and empowerment-related states
         alive_now_f = self.filter(self.is_female)
         if self.empowerment_module is not None:
-            self.empowerment_module.update(alive_now_f)
+            eligible = alive_now_f.filter(((alive_now_f.age >= fpd.min_age) & (
+                        alive_now_f.age < fpd.max_age_preg)))
+
+            # Women who just turned 15 get assigned a value based on empowerment probs
+            bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
+            if len(bday_15):
+                self.empowerment_module.update_empwr_states(bday_15)
+            # Update states on her bday, based on coefficients
+            bday = eligible.birthday_filter()
+            if len(bday):
+                # The empowerment module will update the empowerment states and intent to use
+                self.empowerment_module.update(bday)
+                # Update fertility intent on her bday, together with empowerment updates
+                bday.update_fertility_intent_by_age()
+
+        # Update education
         if self.education_module is not None:
             self.education_module.update(alive_now_f)
 

@@ -48,7 +48,7 @@ do_plot_ageparity = False
 do_plot_cpr = True
 do_plot_tfr = True
 do_plot_pop_growth = False
-do_plot_birth_space_afb = False
+do_plot_birth_space_afb = True
 do_plot_contra_analysis = False
 
 # Set option to save figures
@@ -92,16 +92,10 @@ pars['start_year'] = 2000
 pars['end_year'] = 2020  # 1961 - 2020 is the normal date range
 
 # Free parameters for calibration
-pars['fecundity_var_low'] = 1
-pars['fecundity_var_high'] = 1.27
-pars['exposure_factor'] = 1  #1.93
-'''
-freepars = dict(
-        fecundity_var_low=[0.95, 0.925, 1.0],
-        fecundity_var_high=[1.1, 1.025, 1.3],
-        exposure_factor=[2.0, 0.9, 2.2],
-)
-'''
+pars['fecundity_var_low'] = .8
+pars['fecundity_var_high'] = 3.25
+pars['exposure_factor'] = 3.5
+
 # # Last free parameter, postpartum sexual activity correction or 'birth spacing preference'
 # # Set all to 1 to reset
 # # spacing_pars = {'space0_6': 1, 'space18_24': 1, 'space27_36': 1, 'space9_15': 1}  # output from 'optimize-space-prefs-{country}.py'
@@ -111,24 +105,13 @@ freepars = dict(
 # #pars['spacing_pref']['preference'][9:] = spacing_pars['space27_36'] # Removing this bin for Kenya as it doesn't extend out
 #
 # # Only other free parameters are age-based exposure and parity-based exposure, can adjust manually in {country}.py
-#
-# # Print out free params being used
-# print("FREE PARAMETERS BEING USED:")
-# print(f"Fecundity range: {pars['fecundity_var_low']}-{pars['fecundity_var_high']}")
-# print(f"Exposure factor: {pars['exposure_factor']}")
-# #print(f"Birth spacing preference: {spacing_pars}")
-# print(f"Age-based exposure and parity-based exposure can be adjusted manually in {country}.py")
-
-#calibration = fp.Calibration(pars, calib_pars=freepars)
-#calibration.calibrate()
-#pars.update(calibration.best_pars)
 
 # Adjust contraceptive choice parameters
 cm_pars = dict(
     prob_use_year=2020,
     prob_use_trend_par=0.03,
     force_choose=False,
-    method_weights=np.array([0.1, 2, 0.5, 0.5, 2, 1, 1.5, 0.5, 5])
+    method_weights=np.array([0.34, .7, 0.6, 0.74, 0.76, 1, 1.63, 0.65, 9.5])
 )
 method_choice = fp.SimpleChoice(pars=cm_pars, location='kenya')
 sim = fp.Sim(pars=pars, contraception_module=method_choice, analyzers=[fp.cpr_by_age(), fp.method_mix_by_age()])
@@ -485,26 +468,27 @@ if do_plot_birth_space_afb:
         pl.clf()
 
         # Set up
-        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
+        spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in months
         model_age_first = []
         model_spacing = []
         model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
         data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
 
-
         # Extract age at first birth and birth spaces from model
         for i in range(len(ppl)):
-                if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-                        if len(ppl.dobs[i]) == 0:
+                if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+                        if ppl.first_birth_age[i] == -1:
                                 model_age_first.append(float('inf'))
-                        if len(ppl.dobs[i]) and ppl.age[i] >= first_birth_age:
-                                model_age_first.append(ppl.dobs[i][0])
-                        if len(ppl.dobs[i]) > 1:
-                                for d in range(len(ppl.dobs[i]) - 1):
-                                        space = ppl.dobs[i][d + 1] - ppl.dobs[i][d]
-                                        ind = sc.findinds(space > spacing_bins[:])[-1]
-                                        model_spacing_counts[ind] += 1
-                                        model_spacing.append(space)
+                        else:
+                                model_age_first.append(ppl.first_birth_age[i])
+                                if ppl.parity[i] > 1:
+                                        cleaned_birth_ages = ppl.birth_ages[i][~np.isnan(ppl.birth_ages[i])]
+                                        for d in range(len(cleaned_birth_ages) - 1):
+                                                space = cleaned_birth_ages[d + 1] - cleaned_birth_ages[d]
+                                                if space > 0:
+                                                        ind = sc.findinds(space > spacing_bins[:])[-1]
+                                                        model_spacing_counts[ind] += 1
+                                                        model_spacing.append(space)
 
         # Normalize model birth space bin counts to percentages
         model_spacing_counts[:] /= model_spacing_counts[:].sum()

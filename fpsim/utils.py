@@ -229,10 +229,13 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
 
         if '_int' in dist:
             samples = np.round(samples)
+    elif dist == 'lognorm_sps':
+        # NOTE: temporary fix
+        samples = sps.lognorm.rvs(s=par1, scale=par2, loc=0, size=size)
     elif dist == 'gamma':
-        samples = sps.gamma(a=par1, scale=par2).rvs(size=size)
+        samples = sps.gamma.rvs(a=par1, scale=par2, size=size)
     elif dist == 'llogis':
-        samples = sps.fisk(c=par1, scale=par2).rvs(size=size)
+        samples = sps.fisk.rvs(c=par1, scale=par2, size=size)
     else:
         errormsg = f'The selected distribution "{dist}" is not implemented; choices are: {sc.newlinejoin(choices)}'
         raise NotImplementedError(errormsg)
