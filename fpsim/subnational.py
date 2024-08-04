@@ -91,11 +91,11 @@ def initialize_lam_region(self, n, lam_region):
                                'month': lam_region_dict['month'],
                                'rate': lam_region_dict['rate']})
     lam_values = np.zeros(n, dtype=bool)
-    for r in lam_by_region['region'].unique():
+    for reg in lam_by_region['region'].unique():
         # Find indices in region array
-        f_inds = sc.findinds(lam_region == r)
-        for month in lam_by_region[lam_by_region['region'] == r]['month'].unique(): 
-            month_data = lam_by_region[(lam_by_region['region'] == r) & (lam_by_region['month'] == month)]
+        f_inds = sc.findinds(lam_region == reg)
+        for month in lam_by_region[lam_by_region['region'] == reg]['month'].unique(): 
+            month_data = lam_by_region[(lam_by_region['region'] == reg) & (lam_by_region['month'] == month)]
             lam_values[f_inds] = np.random.choice([True, False], size=len(f_inds), p=month_data['rate'].values)
     return lam_values
 """

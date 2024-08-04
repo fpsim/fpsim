@@ -6,13 +6,15 @@ defined by the user by inheriting from these classes.
 import numpy as np
 import sciris as sc
 import pylab as pl
+from . import defaults as fpd
+from . import utils as fpu
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+import matplotlib.ticker as ticker
+
 
 #%% Generic intervention classes
-
-__all__ = ['Analyzer', 'snapshot', 'age_pyramids', 'empowerment_recorder', 'education_recorder']
-
+__all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'empowerment_recorder', 'education_recorder', 'lifeof_recorder']
 
 class Analyzer(sc.prettyobj):
     '''
@@ -138,11 +140,60 @@ class snapshot(Analyzer):
         save result at snapshot[str(timestep)]
         """
         for t in self.timesteps:
-            if np.isclose(sim.i, t):
-                self.snapshots[str(sim.i)] = sc.dcp(sim.people) # Take snapshot!
+            if np.isclose(sim.ti, t):
+                self.snapshots[str(sim.ti)] = sc.dcp(sim.people) # Take snapshot!
         return
 
-      
+
+class cpr_by_age(Analyzer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)   # Initialize the Analyzer object
+        self.age_bins = [v[1] for v in fpd.method_age_map.values()]
+        self.results = None
+        return
+
+    def initialize(self, sim):
+        super().initialize()
+        self.results = {k: np.zeros(sim.npts) for k in fpd.method_age_map.keys()}
+        self.total = np.zeros(sim.npts)
+
+    def apply(self, sim):
+        ppl = sim.people
+        for key, (age_low, age_high) in fpd.method_age_map.items():
+            match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
+            denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
+            num_conds = denom_conds * (ppl.method != 0)
+            self.results[key][sim.ti] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
+
+        total_denom_conds = (ppl.sex == 0) * ppl.alive
+        total_num_conds = total_denom_conds * (ppl.method != 0)
+        self.total[sim.ti] = sc.safedivide(np.count_nonzero(total_num_conds), np.count_nonzero(total_denom_conds))
+        return
+
+
+class method_mix_by_age(Analyzer):
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)   # Initialize the Analyzer object
+        self.age_bins = [v[1] for v in fpd.method_age_map.values()]
+        self.results = None
+        self.n_methods = None
+        return
+
+    def initialize(self, sim):
+        super().initialize()
+
+    def finalize(self, sim):
+        n_methods = len(sim.contraception_module.methods)
+        self.results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
+        ppl = sim.people
+        for key, (age_low, age_high) in fpd.method_age_map.items():
+            match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
+            denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
+            for mn in range(n_methods):
+                num_conds = denom_conds * (ppl.method == mn)
+                self.results[key][mn] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
+        return
+
 class education_recorder(Analyzer):
         '''
         Analyzer records all education attributes of females + pregnancy + living status
@@ -170,9 +221,9 @@ class education_recorder(Analyzer):
             save result at snapshot[str(timestep)]
             """
             females = sim.people.filter(sim.people.is_female)
-            self.snapshots[str(sim.i)] = {}
+            self.snapshots[str(sim.ti)] = {}
             for key in self.keys:
-                self.snapshots[str(sim.i)][key] = sc.dcp(females[key])  # Take snapshot!
+                self.snapshots[str(sim.ti)][key] = sc.dcp(females[key])  # Take snapshot!
                 self.max_agents = max(self.max_agents, len(females))
             return
 
@@ -351,12 +402,15 @@ class empowerment_recorder(Analyzer):
 
     def __init__(self, bins=None):
         """
-        Initializes self.i/t/y as empty lists and self.data as empty dictionary
+        Initializes self.ti/t/y as empty lists and self.data as empty dictionary
         """
         super().__init__()
         self.bins = bins
         self.data = sc.objdict()
-        self.keys = ['partnered', 'urban', 'paid_employment', 'decision_wages', 'decision_health', 'sexual_autonomy', 'age']
+        self.keys = ['age', 'paid_employment', 'decision_wages', 'decision_health', 'decision_purchase',
+                     'buy_decision_major', 'buy_decision_daily', 'buy_decision_clothes',
+                     'decide_spending_partner', 'has_savings', 'has_fin_knowl', 'has_fin_goals',
+                     'sexual_autonomy', 'financial_autonomy', 'decision_making']
         self.nbins = None
         return
 
@@ -380,25 +434,32 @@ class empowerment_recorder(Analyzer):
         # Alive and female
         living_females = sc.findinds(sim.people.alive, sim.people.is_female)
         ages = sim.people.age[living_females]
-        age_group = np.digitize(ages, self.bins) - 1
+        # ages that fall outside (left) of the first bin, are assigned to the 0-th bin
+        # ages that fall outside (right) of the last bin, are assgined to the (nbins+1)-th bin
+        age_bin = np.digitize(ages, self.bins)
 
         for key in self.keys:
             data = sim.people[key][living_females]
             if key == 'age':
-                # Count how many living females we have in this age group
+                # Count how many living females we have in each age group
                 temp = np.histogram(ages, self.bins)[0]
                 vals = temp / temp.sum()  # Transform to density
-            elif key in ['partnered', 'urban', 'paid_employment']:
-                vals = [np.mean(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
-            else:  # assume float
-                vals = [np.median(data[age_group == group_idx]) for group_idx in range(1, len(self.bins))]
-            self.data[key][:, sim.i] = vals
+            else:
+                vals = np.empty(self.nbins, dtype=float)
+                for group_idx in range(1, self.nbins+1):
+                    temp = data[age_bin == group_idx]
+                    if temp.size:
+                        val = np.nanmean(temp)
+                    else:
+                        val = None
+                    vals[group_idx-1] = val
+            self.data[key][:, sim.ti] = vals
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
         """
-        Plot all keys in self.keys or in to_plot as a heatmaps
+        Plot all keys in self.keys or in to_plot as a time vs age-groups heatmaps
         """
-        fig_args  = sc.mergedicts(fig_args)
+        fig_args = sc.mergedicts(fig_args)
         pl_args = sc.mergedicts(pl_args)
         fig = pl.figure(**fig_args)
 
@@ -414,18 +475,17 @@ class empowerment_recorder(Analyzer):
             try:
                 data = np.array(self.data[key], dtype=float)
                 label = f'metric: {key}'
-                if key in ['partnered', 'urban', 'paid_employment']:
-                    clabel = f"proportion of {key}"
-                    cmap = 'RdPu'
-                    vmin, vmax = 0, 1
-                    if key in ['urban']:
-                        cmap = 'RdYlBu_r'
-                elif key in ['age']:
-                    clabel = "proportion of agents"
+                if key in ['age']:
+                    clabel = "proportion of living women"
                     cmap = 'Blues'
                     vmin, vmax = 0, np.nanmax(data[:])
+                # Composite measures
+                elif key in ['financial_autonomy', 'decision_making']:
+                    clabel = f"Median of composite:\n{key}"
+                    cmap = 'RdPu'
+                    vmin, vmax = 0, 4.0
                 else:
-                    clabel = "average (median)"
+                    clabel = f"proportion of {key}"
                     cmap = 'coolwarm'
                     vmin, vmax = 0, 1
 
@@ -459,6 +519,342 @@ class empowerment_recorder(Analyzer):
                 pl.title(f'Could not plot {key}')
 
         return fig
+
+    def plot_snapshot(self, ti=0, to_plot=None, fig_args=None, pl_args=None):
+        """
+        Plot curves of each key value vs age-groups, for a single "snapshot" or point
+        in time.
+
+        Args:
+            ti (int, optional): The timestep/snapshot to plot.
+            to_plot (list, optional): The list of keys to plot.
+            fig_args (dict, optional): additional keyword arguments to pass to pl.figure()
+            pl_args (dict, optional): additional keyword arguments to pass to pl.bar()
+
+        Returns:
+            fig
+        """
+        fig_args = sc.mergedicts(fig_args)
+        pl_args = sc.mergedicts(pl_args)
+        fig = pl.figure(**fig_args)
+
+        if to_plot is None:
+            to_plot = self.keys
+
+        nkeys = len(to_plot)
+        rows, cols = sc.get_rows_cols(nkeys)
+
+        axs = []
+        for k, key in enumerate(to_plot):
+            axs.append(fig.add_subplot(rows, cols, k+1))
+            data = np.array(self.data[key], dtype=float)[:, ti]  # (nbinx x ntpts)
+
+            if key in ["age"]:
+                ylabel = "proportion of living women"
+                ymin, ymax = 0, np.nanmax(data[:])
+                color = "tab:blue"
+                label = f"{key} at timestep {ti}"
+            # Composite measures
+            elif key in ['financial_autonomy', 'decision_making']:
+                label = f"composite: {key} at timestep {ti}"
+                ylabel = f"Median value of composite:\n{key}"
+                color = "lightsteelblue"
+                ymin, ymax = 0, 4.0
+            else:
+                label = f"metric: {key} at timestep {ti}"
+                ylabel = f"proportion of women who\n{key}"
+                color = "powderblue"
+                ymin, ymax = 0, 1
+
+            # Generate age-group labels and xtick positions
+            xtick_labels = [f"{self.bins[i]:.0f}-{self.bins[i+1]-1:.0f}" for i in range(self.nbins)]
+            xtick_positions = np.arange(0.5, self.nbins + 0.5)  # Center positions for ticks
+
+            pbar = axs[k].bar(xtick_positions, data, label=label, color=color, **pl_args)
+
+            # Reduce the number of labels if we have too many bins
+            max_labels = 10
+            if len(xtick_labels) > max_labels:
+                step_size = len(xtick_labels) // max_labels
+                xtick_labels = xtick_labels[::step_size]
+                xtick_positions = xtick_positions[::step_size]
+
+            # Label plots
+            axs[k].set_xticks(xtick_positions)
+            axs[k].set_xticklabels(xtick_labels)
+            axs[k].set_title(label)
+            axs[k].set_xlabel('Age group (years)')
+            axs[k].set_ylabel(ylabel)
+            axs[k].set_ylim([ymin, ymax])
+
+        return fig
+
+
+class lifeof_recorder(Analyzer):
+    '''
+    Analyzer records sexual and reproductive history, and contraceptions
+    females, plus age and living status for all timesteps.
+    Made for debugging purposes.
+
+    Args:
+        args   (list): additional timestep(s)
+        kwargs (dict): passed to Analyzer()
+    '''
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)  # Initialize the Analyzer object
+        self.snapshots = sc.odict()  # Store the actual snapshots
+        self.keys = ['method', 'pregnant', 'lam', 'postpartum', 'sexually_active',
+                     'abortion', 'stillbirth', 'parity', 'method',
+                     'miscarriage', 'age', 'on_contra', 'alive']
+        self.max_agents = 0  # maximum number of agents this analyzer tracks
+        self.time = []
+        self.trajectories = {}  # Store education trajectories
+        from .methods import Methods
+        self.method_map = {idx: method.label for idx, method in enumerate(Methods.values())}
+        self.m2y = 1.0/fpd.mpy  # Transform timesteps in months to years
+
+        return
+
+    def apply(self, sim):
+        """
+        Apply snapshot at each timestep listed in timesteps and
+        save result at snapshot[str(timestep)]
+        """
+        females = sim.people.filter(sim.people.is_female)
+        self.snapshots[str(sim.ti)] = {}
+        for key in self.keys:
+            self.snapshots[str(sim.ti)][key] = sc.dcp(
+                females[key])  # Take snapshot!
+            self.max_agents = max(self.max_agents, len(females))
+        return
+
+    def finalize(self, sim=None):
+        """
+         Process data in snapshots so we can plot it easily
+        """
+        if self.finalized:
+            raise RuntimeError('Analyzer already finalized')
+        self.finalized = True
+        # Process data so we can plot it easily
+        self.time = np.array([key for key in self.snapshots.keys()],
+                             dtype=int)
+        for state in self.keys:
+            self.trajectories[state] = np.full(
+                (len(self.time), self.max_agents), np.nan)
+            for ti, t in enumerate(self.time):
+                stop_idx = len(self.snapshots[t][state])
+                self.trajectories[state][ti, 0:stop_idx] = \
+                self.snapshots[t][state]
+        return
+
+    def plot(self, index=0, fig_args=None, pl_args=None):
+        """
+        Plots time series of each state as a line graph
+        Args:
+           index: index of the female individual, must be less the analyzer's max_pop_size
+        """
+        fig_args = sc.mergedicts(fig_args, {'figsize': (15, 6)})
+        pl_args = sc.mergedicts(pl_args, {'markersize': 12,
+                                                'markeredgecolor': 'black',
+                                                'markeredgewidth': 1.5,
+                                                'ls': 'none'})
+        ymin, ymax = 0, 4
+        rows, cols = sc.get_rows_cols(1)
+
+        fig = pl.figure(**fig_args)
+        pl.subplot(rows, cols,1)
+
+        preg_outcome_state = ["parity", "stillbirth", "miscarriage", "abortion"]
+        preg_outcome_symbl = {"stillbirth": u"\u29BB",
+                              "parity": u"\u29C2",       # use to determine live births
+                              "miscarriage" : u"\u29B0",
+                              "abortion": u"\u2A09"}
+
+
+        preg_outcome_lbl = {"stillbirth": "Stillbirth",
+                            "parity": "Live birth",      # use to determine live births
+                            "miscarriage": "Miscarriage",
+                            "abortion": "Abortion"}
+
+        # Alive
+        state = "alive"
+        temp = self._state_intervals(state, index)
+        temp_age = self._transform_to_age(temp, index)
+        al_bar = pl.broken_barh(temp_age,
+                                (3.5, 0.25),
+                                facecolors="lemonchiffon", label=f"{state}",
+                                hatch="..")
+
+        # Add vertical lines indicating age at start of simulation
+        yoffset = 0.25
+        yp = [ymin-yoffset, ymin+yoffset, (ymax-ymin)/2, ymax-yoffset, ymax+yoffset],
+        xp = temp_age[0, 0]*np.ones(len(yp))
+        pl.plot(xp, yp, color='k', ls=':', marker=">")
+
+
+        # Mark the age at the end of the simulation (if they died before the yellowish "alive" bar will stop befor this line)
+        sim_len = len(self.time) * self.m2y
+        xp = (temp_age[0, 0] + sim_len) *len(yp)
+        pl.plot(xp, yp, color='k', ls=':', marker="<")
+
+        # Sexually active
+        state = "sexually_active"
+        temp = self._state_intervals(state, index)
+        sa_bar = pl.broken_barh(self._transform_to_age(temp, index),
+                       (1, 1), facecolors="#9bf1fe", label=f"{state}")
+
+        # Is she on contraception?
+        with plt.rc_context({"hatch.linewidth": 3}):
+        # NOTE: the context manager does not work (known matplotlib bug)
+        # but if we set the a thicker hatch linewidth as common value for all bars
+        # then some hatch patters look ugly ¯\_(ツ)_/¯ ...
+            state = "on_contra"
+            temp = self._state_intervals(state, index)
+            temp_age = self._transform_to_age(temp, index)
+            on_contra_yo, on_contra_height = 1, 1
+            oc_bar = plt.broken_barh(self._transform_to_age(temp, index),
+                                     (on_contra_yo, on_contra_height),
+                                     facecolors="none", label=f"{state}", hatch="//")
+
+        # What contraceptive method is she on?
+        state = "method"
+        contramethod = self.trajectories[state][:, index]
+        bbox = dict(boxstyle="round", fc="w", ec="none", alpha=0.8)
+        for start, age in zip(temp[:, 0], temp_age[:, 0]):
+            pl.annotate(
+                f"{self.method_map[contramethod[start]]}",
+                (age, on_contra_yo + on_contra_height/2), xycoords='data',
+                xytext=(age, on_contra_yo + on_contra_height/2), textcoords='data',
+                size=10, va="center", ha="left",
+                bbox=bbox)
+
+        # Pregnant
+        state = "pregnant"
+        temp = self._state_intervals(state, index)
+        pr_bar = pl.broken_barh(self._transform_to_age(temp, index),
+                       (2, 1), facecolors="deeppink", label=f"{state}")
+
+        # What happened with the pregnancy?
+        po_plots = []
+        for state in preg_outcome_state:
+            if state not in preg_outcome_state:
+                break
+            else:
+                temp = self._preg_outcome_instants(state, index)
+
+            lbl = f"{preg_outcome_lbl[state]}"
+            marker = f"${preg_outcome_symbl[state]}$"
+            age = self.trajectories["age"][:, index]
+            po = pl.plot(age, 2.5*temp, marker=marker, label=f"{lbl}",  **pl_args)
+            po_plots.append(po[0])
+
+
+        # Postpartum
+        state = "postpartum"
+        temp = self._state_intervals(state, index)
+        pp_bar = pl.broken_barh(self._transform_to_age(temp, index),
+                       (0.7, 2.5), facecolors="oldlace", label=f"{state}")
+
+        # Lam period
+        state = "lam"
+        temp = self._state_intervals(state, index)
+        lam_bar = pl.broken_barh(self._transform_to_age(temp, index),
+                       (0.7, 2.5), facecolors="none", edgecolors="#a5a5a5",
+                       label=f"{state}",
+                       hatch="\\\\\\"
+                       )
+
+
+        # Labels and annotations
+        pl.xlim(-0.5, 95)
+        pl.ylim(ymin, ymax)
+        pl.xlabel('Age (years)')
+        pl.ylabel('')
+        pl.title(f"Life course of a woman")
+
+        # Hierarchical legend
+        # TODO: figure out a better/systematic way to do the bbox anchoring of multiple legends
+        lgn_loc = 'center right'
+        lvl_1_fnt_sze = 12
+        lvl_2_fnt_sze = 9
+
+        nonpreg_lgnd = plt.legend([al_bar, sa_bar, oc_bar],
+                                  ["Alive", "Sexually active", "On contraception"],
+                                 fontsize=lvl_1_fnt_sze, loc=lgn_loc,
+                                 bbox_to_anchor=(0.965, 0.5),
+                                 frameon=False)
+
+        preg_lgnd = plt.legend([pr_bar], ["Pregnant"],
+                                 fontsize=lvl_1_fnt_sze, loc=lgn_loc,
+                                 bbox_to_anchor=(0.91, 0.35),
+                                 frameon=False)
+
+        lbls = [po._label for po in po_plots]
+
+        po_lgnd = plt.legend(po_plots,
+                             lbls,
+                             fontsize=lvl_2_fnt_sze,
+                             loc=lgn_loc, bbox_to_anchor=(0.93, 0.25),
+                             frameon=False)
+
+        pp_lgnd = plt.legend([lam_bar, pp_bar], ["LAM", "Pospartum"],
+                                 fontsize=lvl_1_fnt_sze, loc=lgn_loc,
+                                 bbox_to_anchor=(0.92, 0.1),
+                                 frameon=False)
+
+        plt.gca().add_artist(nonpreg_lgnd)
+        plt.gca().add_artist(preg_lgnd)
+        plt.gca().add_artist(po_lgnd)
+        plt.gca().add_artist(pp_lgnd)
+
+        ax = plt.gca()
+        ax.xaxis.set_major_locator(ticker.MultipleLocator(10))
+
+        # Set the minor ticks at every year
+        ax.xaxis.set_minor_locator(ticker.MultipleLocator(1))
+
+
+        return fig
+
+    def _state_intervals(self, state, index):
+        """
+        Extract information about start and length of an interval where the
+        state is true. Works only for boolean States. Needed for broken_barh()
+        plots.
+        """
+        # Find where we go from nonzero to zero in our data (mostly boolean states)
+        data_padded = np.pad(self.trajectories[state][:, index],
+                             (1, 1), mode='constant')
+        crossings = np.where(np.diff(data_padded != 0))[0]
+
+        starts = crossings[:-1:2]
+        ends   = crossings[1::2]
+        lengths = ends - starts
+
+        intervals = np.column_stack((starts, lengths))
+        return intervals
+
+    def _transform_to_age(self, intervals, index):
+        age = self.trajectories["age"][:, index]
+        intervals_age = np.full(shape=intervals.shape, fill_value=0.0, dtype=np.float64)
+        intervals_age[:, 1] = self.m2y*intervals[:, 1].astype(np.float64)
+        intervals_age[:, 0] = age[intervals[:, 0]]
+        return intervals_age
+
+
+    def _preg_outcome_instants(self, state, index):
+        """
+        Use the States that count how many instances of each type of pregnancy
+        outcome a woman has over the course of her life, to extract the
+        event instants.
+        """
+        data = self.trajectories[state][:, index]
+        temp = np.full(shape=data.shape,
+                       fill_value=np.nan)
+        instants = sc.findinds(np.diff(data)) + 1
+        temp[instants] = 1.0
+        return temp
 
 
 class age_pyramids(Analyzer):
@@ -498,8 +894,8 @@ class age_pyramids(Analyzer):
         self.data[timestep] = list of proportions where index signifies age
         """
         ages = sim.people.age[sc.findinds(sim.people.alive)]
-        self._raw[sim.i, :] = np.histogram(ages, self.bins)[0]
-        self.data[sim.i, :] = self._raw[sim.i, :]/self._raw[sim.i, :].sum()
+        self._raw[sim.ti, :] = np.histogram(ages, self.bins)[0]
+        self.data[sim.ti, :] = self._raw[sim.ti, :]/self._raw[sim.ti, :].sum()
 
     def plot(self):
         """
@@ -521,3 +917,52 @@ class age_pyramids(Analyzer):
         pl.xlabel('Timestep')
         pl.ylabel('Age (years)')
         return fig
+
+
+class track_switching(Analyzer):
+
+    def __init__(self):
+        super().__init__()
+        self.results = sc.objdict()
+
+    def initialize(self, sim):
+        n_methods = len(sim.methods)
+        keys = [
+            'switching_events_annual',
+            'switching_events_postpartum',
+            'switching_events_<18',
+            'switching_events_18-20',
+            'switching_events_21-25',
+            'switching_events_26-35',
+            'switching_events_>35',
+            'switching_events_pp_<18',
+            'switching_events_pp_18-20',
+            'switching_events_pp_21-25',
+            'switching_events_pp_26-35',
+            'switching_events_pp_>35',
+        ]
+        for key in keys:
+            self.results[key] = {}  # CK: TODO: refactor
+            for p in range(sim.npts):
+                self.results[key][p] = np.zeros((n_methods, n_methods), dtype=int)
+
+    def apply(self, sim):
+        # Store results of number of switching events in each age group
+        ti = sim.ti
+        r = sim.results
+        scale = sim['scaled_pop'] / sim['n_agents']
+        switch_events = r.pop('switching')
+        self.results['switching_events_<18'][ti] = scale * r.switching_annual['<18']
+        self.results['switching_events_18-20'][ti] = scale * r.switching_annual['18-20']
+        self.results['switching_events_21-25'][ti] = scale * r.switching_annual['21-25']
+        self.results['switching_events_26-35'][ti] = scale * r.switching_annual['26-35']
+        self.results['switching_events_>35'][ti] = scale * r.switching_annual['>35']
+        self.results['switching_events_pp_<18'][ti] = scale * r.switching_postpartum['<18']
+        self.results['switching_events_pp_18-20'][ti] = scale * r.switching_postpartum['18-20']
+        self.results['switching_events_pp_21-25'][ti] = scale * r.switching_postpartum['21-25']
+        self.results['switching_events_pp_26-35'][ti] = scale * r.switching_postpartum['26-35']
+        self.results['switching_events_pp_>35'][ti] = scale * r.switching_postpartum['>35']
+        self.results['switching_events_annual'][ti] = scale * switch_events['annual']
+        self.results['switching_events_postpartum'][ti] = scale * switch_events['postpartum']
+
+        return

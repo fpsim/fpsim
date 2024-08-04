@@ -8,8 +8,6 @@ import sciris as sc
 from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
-from . import empowerment as fpemp
-from . import education as fpedu
 from . import demographics as fpdmg
 from . import subnational as fpsn
 
@@ -24,10 +22,11 @@ class People(fpb.BasePeople):
     Class for all the people in the simulation.
     """
 
-    def __init__(self, pars, n=None, age=None, sex=None, method=None, **kwargs):
+    def __init__(self, pars, n=None, age=None, sex=None,
+                 empowerment_module=None, education_module=None, **kwargs):
 
         # Initialization
-        super().__init__()
+        super().__init__(**kwargs)
 
         self.pars = pars  # Set parameters
         if n is None:
@@ -54,15 +53,27 @@ class People(fpb.BasePeople):
         self.sex = self.states['sex'].new(n, sex)  # Female (0) or male (1)
         self.urban = self.states['urban'].new(n, _urban)  # Urban (1) or rural (0)
 
-        # Contraceptive use
-        if method is not None:
-            self.method = method  # Contraceptive method 0-9, see pars['methods']['map'], excludes LAM
-        self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
-
         # Parameters on sexual and reproductive history
         self.fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], n)
+
+        # Fertility intent
+        has_intent = "fertility_intent"
+        self.fertility_intent   = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        self.categorical_intent = self.states["categorical_intent"].new(n, "no")
+        # Update distribution of fertility intent with location-specific values if it is present in self.pars
+        self.update_fertility_intent(n)
+
+        # Intent to use contraception
+        has_intent = "intent_to_use"
+        self.intent_to_use = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        # Update distribution of fertility intent if it is present in self.pars
+        self.update_intent_to_use(n)
+
+        self.wealthquintile = self.states["wealthquintile"].new(n, fpd.person_defaults["wealthquintile"].val)
+        self.update_wealthquintile(n)
+
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        if self.pars['use_subnational']==False:
+        if not self.pars['use_subnational']:
             self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
         else:
             self.fated_debut = fpsn.get_debut_init_vals(self)
@@ -72,23 +83,40 @@ class People(fpb.BasePeople):
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.personal_fecundity = np.random.random(n) * fac
 
+        # Empowerment and education
+        self.empowerment_module = empowerment_module
+        self.education_module = education_module
+        if self.empowerment_module is not None:
+            self.empowerment_module.initialize(self)
 
+        if self.education_module is not None:
+            self.education_module.initialize(self)
+
+        # Partnership
         if self.pars['use_partnership']:
             fpdmg.init_partnership_states(self)
 
-        if self.pars['use_empowerment']:
-            fpemp.init_empowerment_states(self)
+        # Once all the other metric are initialized, determine initial contraceptive use
+        self.contraception_module = None  # Set below
+        self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
 
-        if self.pars['use_education']:
-            fpedu.init_education_states(self)
+        # Store keys
+        self._keys = [s.name for s in self.states.values()]
 
         if self.pars['use_subnational']:
             fpsn.init_regional_states(self)
 
-        # Store keys
-        self._keys = [state.name for state in fpd.person_defaults.values()]
-
         return
+
+    @property
+    def dt(self):
+        return self.pars['timestep'] / fpd.mpy
+
+    def get_urban(self, n):
+        """ Get initial distribution of urban """
+        urban_prop = self.pars['urban_prop']
+        urban = fpu.n_binomial(urban_prop, n)
+        return urban
 
     def get_age_sex(self, n):
         """
@@ -117,178 +145,181 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
-    def get_urban(self, n):
-        """ Get initial distribution of urban """
+    def update_fertility_intent(self, n):
+        if self.pars['fertility_intent'] is None:
+            return
+        self.update_fertility_intent_by_age()
+        return
 
-        urban = np.ones(n, dtype=bool)
-        urban_prop = self.pars['urban_prop']
-        urban = fpu.n_binomial(urban_prop, n)
+    def update_intent_to_use(self, n):
+        if self.pars['intent_to_use'] is None:
+            return
+        self.update_intent_to_use_by_age()
+        return
 
-        return urban
+    def update_wealthquintile(self, n):
+        if self.pars['wealth_quintile'] is None:
+            return
+        wq_probs = self.pars['wealth_quintile']['percent']
+        vals = np.random.choice(len(wq_probs), size=n, p=wq_probs)+1
+        self.wealthquintile = vals
+        return
 
-    def birthday_filter(self):
+    def init_methods(self, ti=None, year=None, contraception_module=None):
+
+        # Initialize sexual debut
+        fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
+        fecund.check_sexually_active()
+
+        # Determine when girls/women will first choose a method
+        time_to_debut = (fecund.fated_debut-fecund.age)/self.dt
+        fecund.ti_contra = np.maximum(time_to_debut, 0)
+        time_to_set_contra = fecund.ti_contra == 0
+        if not np.array_equal(((fecund.age - fecund.fated_debut) > -self.dt), time_to_set_contra):
+            errormsg = 'Should be choosing contraception for everyone past fated debut age.'
+            raise ValueError(errormsg)
+        contra_choosers = fecund.filter(time_to_set_contra)
+
+        if contraception_module is not None:
+            self.contraception_module = contraception_module
+            contra_choosers.on_contra = contraception_module.get_contra_users(contra_choosers, year=year)
+            oc = contra_choosers.filter(contra_choosers.on_contra)
+            oc.method = contraception_module.init_method_dist(oc)
+            oc.ever_used_contra = 1
+            method_dur = contraception_module.set_dur_method(contra_choosers)
+            contra_choosers.ti_contra = ti + method_dur
+
+
+    def update_fertility_intent_by_age(self):
         """
-        Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
-        annualy, but not based on a calendar year, rather every year on an agent's bday."""
-        age_diff = self.ceil_age - self.age
-        whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
-        return self.filter(whole_years)
-
-    def update_method(self):
+        In the absence of other factors, fertilty intent changes as a function of age
+        each year on a woman’s birthday
         """
-        Uses a switching matrix from DHS data to decide based on a person's original method their probability of
-        changing to a new method and assigns them the new method. This currently allows switching on whole calendar
-        years to enter function. Matrix serves as an initiation, discontinuation, continuation, and switching matrix.
-        Transition probabilities are for 1 year and only for women who have not given birth within the last 6 months.
+        intent_pars = self.pars['fertility_intent']
+
+        f_inds = sc.findinds(self.is_female)
+        f_ages = self.age[f_inds]
+        age_inds = fpu.digitize_ages_1yr(f_ages)
+
+        for age in intent_pars.keys():
+            aged_x_inds = f_inds[age_inds == age]
+            fi_cats = list(intent_pars[age].keys())  # all ages have the same intent categories
+            probs = np.array(list(intent_pars[age].values()))
+            ci = np.random.choice(fi_cats, aged_x_inds.size, p=probs)
+            self.categorical_intent[aged_x_inds] = ci
+
+        self.fertility_intent[sc.findinds(self.categorical_intent == "yes")] = True
+        self.fertility_intent[sc.findinds((self.categorical_intent == "no") |
+                                          (self.categorical_intent == "cannot"))] = False
+        return
+
+    def update_intent_to_use_by_age(self):
         """
-        methods = self.pars['methods']
-        method_map = methods['map']
-        annual = methods['adjusted']['annual']
-        orig_methods = self.method
-        m = len(method_map)
-        switching_events = np.zeros((m, m), dtype=int)
-        switching_events_ages = {}
-        for key in fpd.method_age_map.keys():
-            switching_events_ages[key] = np.zeros((m, m), dtype=int)
+        In the absence of other factors, intent to use contraception
+        can change as a function of age each year on a woman’s birthday.
 
-        # Method switching depends both on agent age and also on their current method, so we need to loop over both
-        for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = fpu.match_ages(self.age, age_low, age_high)
-            for m in method_map.values():
-                match_m = (orig_methods == m)
-                match = match_m * match_low_high
-                this_method = self.filter(match)
-                if len(this_method):
-                    old_method = this_method.method.copy()
+        This function is also used to initialise the State intent_to_use
+        """
+        intent_pars = self.pars['intent_to_use']
 
-                    matrix = annual[key]
-                    choices = matrix[m]
-                    choices = choices/choices.sum()
-                    new_methods = fpu.n_multinomial(choices, match.sum())
-                    this_method.method = new_methods
+        f_inds = sc.findinds(self.is_female)
+        f_ages = self.age[f_inds]
+        age_inds = fpu.digitize_ages_1yr(f_ages)
 
-                    for i in range(len(old_method)):
-                        x = old_method[i]
-                        y = new_methods[i]
-                        switching_events[x, y] += 1
-                        switching_events_ages[key][x, y] += 1
-
-        if self.pars['track_switching']:
-            self.step_results_switching[
-                'annual'] += switching_events  # CK: TODO: remove this extra result and combine with step_results
-            for key in fpd.method_age_map.keys():
-                self.step_results['switching_annual'][key] += switching_events_ages[key]
+        for age in intent_pars.keys():
+            f_aged_x_inds = f_inds[age_inds == age]  # indices of women of a given age
+            prob = intent_pars[age][1]  # Get the probability of having intent
+            self.intent_to_use[f_aged_x_inds] = fpu.n_binomial(prob, len(f_aged_x_inds))
 
         return
 
-    def update_method_pp(self):
-        """
-        Utilizes data from birth to allow agent to initiate a method postpartum coming from birth by
-        3 months postpartum and then initiate, continue, or discontinue a method by 6 months postpartum.
-        Next opportunity to switch methods will be on whole calendar years, whenever that falls.
-        """
-        # TODO- Probabilities need to be adjusted for postpartum women on the next annual draw in "get_method" since they may be less than one year
+    def update_method(self, year=None, ti=None):
+        """ Inputs: filtered people, only includes those for whom it's time to update """
+        cm = self.contraception_module
+        if year is None: year = self.y
+        if ti is None: ti = self.ti
+        if cm is not None:
 
-        # Probability of initiating a postpartum method at 0-3 months postpartum
-        # Transitional probabilities are for the first 3 month time period after delivery from DHS data
+            # If people are 1 or 6m postpartum, we use different parameters for updating their contraceptive decisions
+            is_pp1 = (self.postpartum_dur == 1)
+            is_pp6 = (self.postpartum_dur == 6) & ~self.on_contra  # They may have decided to use contraception after 1m
+            pp0 = self.filter(~(is_pp1 | is_pp6))
+            pp1 = self.filter(is_pp1)
+            pp6 = self.filter(is_pp6)
 
-        methods = self.pars['methods']
-        pp0to1 = methods['adjusted']['pp0to1']
-        pp1to6 = methods['adjusted']['pp1to6']
-        methods_map = methods['map']
-        orig_methods = self.method
+            # Update choices for people who aren't postpartum
+            if len(pp0):
 
-        m = len(methods_map)
-        switching_events = np.zeros((m, m), dtype=int)
-        switching_events_ages = {}
-        for key in fpd.method_age_map.keys():
-            switching_events_ages[key] = np.zeros((m, m), dtype=int)
+                # If force_choose is True, then all non-users will be made to pick a method
+                if cm.pars['force_choose']:
+                    must_use = pp0.filter(~pp0.on_contra)
+                    choosers = pp0.filter(pp0.on_contra)
 
-        postpartum1 = (self.postpartum_dur == 0)
-        postpartum6 = (self.postpartum_dur == 6)
+                    if len(must_use):
+                        must_use.on_contra = True
+                        pp0.step_results['contra_access'] += len(must_use)
+                        must_use.method = cm.choose_method(must_use)
+                        must_use.ever_used_contra = 1
+                        pp0.step_results['new_users'] += np.count_nonzero(must_use.method)
 
-        # In first time step after delivery, choice is by age but not previous method (since just gave birth)
-        # All women are coming from birth and on no method to start, either will stay on no method or initiate a method
-        for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = fpu.match_ages(self.age, age_low, age_high)
-            low_parity = (self.parity < self.pars['high_parity'])
-            high_parity = (self.parity >= self.pars['high_parity'])
-            match = (self.postpartum * postpartum1 * match_low_high * low_parity)
-            match_high_parity = (self.postpartum * postpartum1 * match_low_high * high_parity)
-            this_method = self.filter(match)
-            if len(this_method):
-                this_method_high_parity = self.filter(match_high_parity)
-                old_method = this_method.method.copy()
-                old_method_high_parity = sc.dcp(this_method_high_parity.method)
+                else:
+                    choosers = pp0
 
-                choices = pp0to1[key]
-                choices_high_parity = sc.dcp(choices)
-                choices_high_parity[0] *= self.pars['high_parity_nonuse']
-                choices_high_parity = choices_high_parity / choices_high_parity.sum()
-                new_methods = fpu.n_multinomial(choices, len(this_method))
-                new_methods_high_parity = fpu.n_multinomial(choices_high_parity, len(this_method_high_parity))
-                this_method.method = np.array(new_methods, dtype=np.int64)
-                this_method_high_parity.method = np.array(new_methods_high_parity, dtype=np.int64)
-                for i in range(len(old_method)):
-                    x = old_method[i]
-                    y = new_methods[i]
-                    switching_events[x, y] += 1
-                    switching_events_ages[key][x, y] += 1
+                # Get previous users and see whether they will switch methods or stop using
+                if len(choosers):
 
-                for i in range(len(old_method_high_parity)):
-                    x = old_method_high_parity[i]
-                    y = new_methods_high_parity[i]
-                    switching_events[x, y] += 1
-                    switching_events_ages[key][x, y] += 1
+                    choosers.on_contra = cm.get_contra_users(choosers, year=year)
+                    choosers.ever_used_contra = choosers.ever_used_contra | choosers.on_contra
 
-        # At 6 months, choice is by previous method and by age
-        # Allow initiation, switching, or discontinuing with matrix at 6 months postpartum
-        # Transitional probabilities are for 5 months, 1-6 months after delivery from DHS data
-        for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = fpu.match_ages(self.age, age_low, age_high)
-            match_postpartum_age = self.postpartum * postpartum6 * match_low_high
-            for m in methods_map.values():
-                match_m = (orig_methods == m)
-                match = match_m * match_postpartum_age
-                this_method = self.filter(match)
-                if len(this_method):
-                    old_method = self.method[match].copy()
+                    # Divide people into those that keep using contraception vs those that stop
+                    switching_contra = choosers.filter(choosers.on_contra)
+                    stopping_contra = choosers.filter(~choosers.on_contra)
+                    pp0.step_results['contra_access'] += len(switching_contra)
 
-                    matrix = pp1to6[key]
-                    choices = matrix[m]
-                    new_methods = fpu.n_multinomial(choices, match.sum())
-                    this_method.method = new_methods
-                    for i in range(len(old_method)):
-                        x = old_method[i]
-                        y = new_methods[i]
-                        switching_events[x, y] += 1
-                        switching_events_ages[key][x, y] += 1
+                    # For those who keep using, choose their next method
+                    if len(switching_contra):
+                        switching_contra.method = cm.choose_method(switching_contra)
+                        choosers.step_results['new_users'] += np.count_nonzero(switching_contra.method)
 
-        if self.pars['track_switching']:
-            self.step_results_switching['postpartum'] += switching_events
-            for key in fpd.method_age_map.keys():
-                self.step_results['switching_postpartum'][key] += switching_events_ages[key]
+                    # For those who stop using, set method to zero
+                    if len(stopping_contra):
+                        stopping_contra.method = 0
 
-        return
+                # Validate
+                n_methods = len(pp0.contraception_module.methods)
+                invalid_vals = (pp0.method >= n_methods) * (pp0.method < 0)
+                if invalid_vals.any():
+                    errormsg = f'Invalid method set: ti={pp0.ti}, inds={invalid_vals.nonzero()[-1]}'
+                    raise ValueError(errormsg)
 
-    def update_methods(self):
-        """
-        If eligible (age 15-49 and not pregnant), choose new method or stay with current one
-        """
+            # Now update choices for postpartum people. Logic here is simpler because none of these
+            # people should be using contraception currently. We first check that's the case, then
+            # have them choose their contraception options.
+            ppdict = {'pp1': pp1, 'pp6': pp6}
+            for event, pp in ppdict.items():
+                if len(pp):
+                    if pp.on_contra.any():
+                        errormsg = 'Postpartum women should not currently be using contraception.'
+                        raise ValueError(errormsg)
+                    pp.on_contra = cm.get_contra_users(pp, year=year, event=event)
+                    on_contra = pp.filter(pp.on_contra)
+                    off_contra = pp.filter(~pp.on_contra)
+                    pp.step_results['contra_access'] += len(on_contra)
 
-        if not (self.i % self.pars['method_timestep']):  # Allow skipping timesteps
-            postpartum = self.postpartum * (self.postpartum_dur <= 6)
-            pp = self.filter(postpartum)
-            non_pp = self.filter(~postpartum)
+                    # Set method for those who use contraception
+                    if len(on_contra):
+                        on_contra.method = cm.choose_method(on_contra, event=event)
+                        on_contra.ever_used_contra = 1
 
-            if len(pp):
-                pp.update_method_pp()  # Update method for postpartum women
+                    if len(off_contra):
+                        off_contra.method = 0
+                        if event == 'pp1':  # For women 1m postpartum, choose again when they are 6 months pp
+                            off_contra.ti_contra = ti + 5
 
-            age_diff = non_pp.ceil_age - non_pp.age
-            whole_years = ((age_diff < (1 / fpd.mpy)) * (age_diff > 0))
-            birthdays = non_pp.filter(whole_years)
-            if len(birthdays):
-                birthdays.update_method()
+            # Set duration of use for everyone, and reset the time they'll next update
+            durs_fixed = (self.postpartum_dur == 1) & (self.method == 0)
+            update_durs = self.filter(~durs_fixed)
+            update_durs.ti_contra = ti + cm.set_dur_method(update_durs)
 
         return
 
@@ -338,6 +369,7 @@ class People(fpb.BasePeople):
         """
         Decide if agent is sexually active based either on month postpartum or age if
         not postpartum.  Postpartum and general age-based data from DHS.
+        Agents can revert to active or not active each timestep
         """
         # Set postpartum probabilities
         match_low = self.postpartum_dur >= 0
@@ -348,29 +380,27 @@ class People(fpb.BasePeople):
         non_pp = self.filter(non_pp_match)
 
         # Adjust for postpartum women's birth spacing preferences
-        pref = self.pars['spacing_pref']  # Shorten since used a lot
-        spacing_bins = pp.postpartum_dur / pref['interval']  # Main calculation -- divide the duration by the interval
-        spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']),
-                                dtype=int)  # Convert to an integer and bound by longest bin
-        probs_pp = self.pars['sexual_activity_pp']['percent_active'][pp.postpartum_dur]
-        probs_pp *= pref['preference'][
-            spacing_bins]  # Actually adjust the probability -- check the overall probability with print(pref['preference'][spacing_bins].mean())
+        if len(pp):
+            pref = self.pars['spacing_pref']  # Shorten since used a lot
+            spacing_bins = pp.postpartum_dur / pref['interval']  # Main calculation: divide the duration by the interval
+            spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int)  # Bound by longest bin
+            probs_pp = self.pars['sexual_activity_pp']['percent_active'][pp.postpartum_dur]
+            # Adjust the probability: check the overall probability with print(pref['preference'][spacing_bins].mean())
+            probs_pp *= pref['preference'][spacing_bins]
+            pp.sexually_active = fpu.binomial_arr(probs_pp)
 
         # Set non-postpartum probabilities
-        probs_non_pp = self.pars['sexual_activity'][non_pp.int_age]
+        if len(non_pp):
+            probs_non_pp = self.pars['sexual_activity'][non_pp.int_age]
+            non_pp.sexually_active = fpu.binomial_arr(probs_non_pp)
 
-        # Evaluate likelihood in this time step of being sexually active
-        # Can revert to active or not active each timestep
-        pp.sexually_active = fpu.binomial_arr(probs_pp)
-        non_pp.sexually_active = fpu.binomial_arr(probs_non_pp)
-
-        # Set debut to True if sexually active for the first time
-        # Record agent age at sexual debut in their memory
-        never_sex = non_pp.sexual_debut == 0
-        now_active = non_pp.sexually_active == 1
-        first_debut = non_pp.filter(now_active * never_sex)
-        first_debut.sexual_debut = True
-        first_debut.sexual_debut_age = first_debut.age
+            # Set debut to True if sexually active for the first time
+            # Record agent age at sexual debut in their memory
+            never_sex = non_pp.sexual_debut == 0
+            now_active = non_pp.sexually_active == 1
+            first_debut = non_pp.filter(now_active * never_sex)
+            first_debut.sexual_debut = True
+            first_debut.sexual_debut_age = first_debut.age
 
         active_sex = self.sexually_active == 1
         debuted = self.sexual_debut == 1
@@ -378,15 +408,6 @@ class People(fpb.BasePeople):
         inactive = self.filter(~active_sex * debuted)
         active.months_inactive = 0
         inactive.months_inactive += 1
-
-        inactive_year = self.months_inactive >= 12
-        sexually_infrequent = self.filter(inactive_year)
-
-        # print (f'Age: {sexually_infrequent.age}')
-        # print (f'Debuted?: {sexually_infrequent.sexual_debut}')
-        # print (f'Debut age: {sexually_infrequent.sexual_debut_age}')
-        # print (f'Months inactive: {sexually_infrequent.months_inactive}')
-        # print (f'On method?: {sexually_infrequent.method}')
 
         return
 
@@ -404,9 +425,13 @@ class People(fpb.BasePeople):
         pars = self.pars  # Shorten
         preg_eval_lam = pars['age_fecundity'][lam.int_age_clip] * lam.personal_fecundity
         preg_eval_nonlam = pars['age_fecundity'][nonlam.int_age_clip] * nonlam.personal_fecundity
-        method_eff = np.array(list(pars['methods']['eff'].values()))[nonlam.method]
+
+        # Get each woman's degree of protection against conception based on her contraception or LAM
+        eff_array = np.array([m.efficacy for m in self.contraception_module.methods.values()])
+        method_eff = eff_array[nonlam.method]
         lam_eff = pars['LAM_efficacy']
 
+        # Change to a monthly probability and set pregnancy probabilities
         lam_probs = fpu.annprob2ts((1 - lam_eff) * preg_eval_lam, pars['timestep'])
         nonlam_probs = fpu.annprob2ts((1 - method_eff) * preg_eval_nonlam, pars['timestep'])
         preg_probs[lam.inds] = lam_probs
@@ -434,13 +459,15 @@ class People(fpb.BasePeople):
         preg = conceived.filter(~is_abort)
 
         # Update states
-        all_ppl = self.unfilter()
-        abort.postpartum = False
-        abort.abortion += 1  # Add 1 to number of abortions agent has had
-        abort.postpartum_dur = 0
-        for i in abort.inds:  # Handle adding dates
-            all_ppl.abortion_dates[i].append(all_ppl.age[i])
-        self.step_results['abortions'] = len(abort)
+        n_aborts = len(abort)
+        self.step_results['abortions'] = n_aborts
+        if n_aborts:
+            all_ppl = self.unfilter()
+            for cum_aborts in np.unique(abort.abortion):
+                all_ppl.abortion_ages[abort.inds, cum_aborts] = abort.age
+            abort.postpartum = False
+            abort.abortion += 1  # Add 1 to number of abortions agent has had
+            abort.postpartum_dur = 0
 
         # Make selected agents pregnant
         preg.make_pregnant()
@@ -465,7 +492,8 @@ class People(fpb.BasePeople):
         self.postpartum = False
         self.postpartum_dur = 0
         self.reset_breastfeeding()  # Stop lactating if becoming pregnant
-        self.method = 0  # Not using contraception during pregnancy
+        self.on_contra = False  # Not using contraception during pregnancy
+        self.method = 0  # Method zero due to non-use
         return
 
     def check_lam(self):
@@ -488,7 +516,9 @@ class People(fpb.BasePeople):
     def update_breastfeeding(self):
         """
         Track breastfeeding, and update time of breastfeeding for individual pregnancy.
-        Agents are randomly assigned a duration value based on a gumbel distribution drawn from the 2018 DHS variable for breastfeeding months. The mean (mu) and the std dev (beta) are both drawn from that distribution in the DHS data.
+        Agents are randomly assigned a duration value based on a gumbel distribution drawn
+        from the 2018 DHS variable for breastfeeding months.
+        The mean (mu) and the std dev (beta) are both drawn from that distribution in the DHS data.
         """
         mu, beta = self.pars['breastfeeding_dur_mu'], self.pars['breastfeeding_dur_beta']
         breastfeed_durs = abs(np.random.gumbel(mu, beta, size=len(self)))
@@ -512,11 +542,11 @@ class People(fpb.BasePeople):
         pp_done.postpartum_dur = 0
 
         # Count the state of the agent for postpartum -- # TOOD: refactor, what is this loop doing?
-        pp = self.filter(self.postpartum)
+        postpart = self.filter(self.postpartum)
         for key, (pp_low, pp_high) in fpd.postpartum_map.items():
-            this_pp_bin = pp.filter((pp.postpartum_dur >= pp_low) * (pp.postpartum_dur < pp_high))
+            this_pp_bin = postpart.filter((postpart.postpartum_dur >= pp_low) * (postpart.postpartum_dur < pp_high))
             self.step_results[key] += len(this_pp_bin)
-        pp.postpartum_dur += self.pars['timestep']
+        postpart.postpartum_dur += self.pars['timestep']
 
         return
 
@@ -532,14 +562,19 @@ class People(fpb.BasePeople):
         miscarriage = end_first_tri.binomial(miscarriage_probs, as_filter=True)
 
         # Reset states and track miscarriages
-        all_ppl = self.unfilter()
-        miscarriage.pregnant = False
-        miscarriage.miscarriage += 1  # Add 1 to number of miscarriages agent has had
-        miscarriage.postpartum = False
-        miscarriage.gestation = 0  # Reset gestation counter
-        for i in miscarriage.inds:  # Handle adding dates
-            all_ppl.miscarriage_dates[i].append(all_ppl.age[i])
-        self.step_results['miscarriages'] = len(miscarriage)
+        n_miscarriages = len(miscarriage)
+        self.step_results['miscarriages'] = n_miscarriages
+
+        if n_miscarriages:
+            all_ppl = self.unfilter()
+            for cum_miscarriages in np.unique(miscarriage.miscarriage):
+                all_ppl.miscarriage_ages[miscarriage.inds, cum_miscarriages] = miscarriage.age
+            miscarriage.pregnant = False
+            miscarriage.miscarriage += 1  # Add 1 to number of miscarriages agent has had
+            miscarriage.postpartum = False
+            miscarriage.gestation = 0  # Reset gestation counter
+            miscarriage.ti_contra = self.ti+1  # Update contraceptive choices
+
         return
 
     def reset_breastfeeding(self):
@@ -575,6 +610,7 @@ class People(fpb.BasePeople):
         death = self.filter(is_death)
         self.step_results['infant_deaths'] += len(death)
         death.reset_breastfeeding()
+        death.ti_contra = self.ti + 1  # Trigger update to contraceptive choices following infant death
         return death
 
     def check_delivery(self):
@@ -591,6 +627,7 @@ class People(fpb.BasePeople):
             deliv.postpartum = True  # Start postpartum state at time of birth
             deliv.breastfeed_dur = 0  # Start at 0, will update before leaving timestep in separate function
             deliv.postpartum_dur = 0
+            deliv.ti_contra = self.ti + 1  # Trigger a call to re-evaluate whether to use contraception when 1month pp
 
             # Handle stillbirth
             still_prob = self.pars['mortality_probs']['stillbirth']
@@ -615,36 +652,16 @@ class People(fpb.BasePeople):
                 self.step_results['stillbirth_ages'] = self.age_by_group
                 self.step_results['as_stillbirths'] = stillbirth_boolean
 
-            # Add dates of live births and stillbirths separately for agent to remember
+            # Record ages of agents when live births / stillbirths occur
             all_ppl = self.unfilter()
             live = deliv.filter(~is_stillborn)
-            short_interval = 0
-            secondary_birth = 0
-            for i in live.inds:  # Handle DOBs
-                all_ppl.dobs[i].append(all_ppl.age[
-                                           i])  # Used for birth spacing only, only add one baby to dob -- CK: can't easily turn this into a Numpy operation
-                if len(all_ppl.dobs[i]) == 1:
-                    all_ppl.first_birth_age[i] = all_ppl.age[i]
-                if (len(all_ppl.dobs[i]) > 1) and all_ppl.age[i] >= self.pars['low_age_short_int'] and all_ppl.age[i] < \
-                        self.pars['high_age_short_int']:
-                    secondary_birth += 1
-                    if ((all_ppl.dobs[i][-1] - all_ppl.dobs[i][-2]) < (self.pars['short_int'] / fpd.mpy)):
-                        all_ppl.short_interval_dates[i].append(all_ppl.age[i])
-                        all_ppl.short_interval[i] += 1
-                        short_interval += 1
-
-            self.step_results['short_intervals'] += short_interval
-            self.step_results['secondary_births'] += secondary_birth
-
-            for i in stillborn.inds:  # Handle adding dates
-                all_ppl.still_dates[i].append(all_ppl.age[i])
-
-            # Add age of agents at birth with short birth interval
-            # for i in live.inds: # Handle DOBs
-            # if len(all_ppl.dobs[i]) > 1:
-            # for d in range(len(all_ppl.dobs[i]) - 1):
-            # if  (all_ppl.dobs[i][d + 1] - all_ppl.dobs[i][d]) < self.pars['short_int']:
-            # short_interval_age = all_ppl.dobs[i][d+1].append(all_ppl.age[i][d+1])
+            for parity in np.unique(live.parity):
+                inds = live.inds[live.parity == parity]
+                all_ppl.birth_ages[inds, parity] = all_ppl.age[inds]
+                if parity == 0: all_ppl.first_birth_age[inds] = all_ppl.age[inds]
+            for parity in np.unique(stillborn.parity):
+                inds = stillborn.inds[stillborn.parity == parity]
+                all_ppl.stillborn_ages[inds, parity] = all_ppl.age[inds]
 
             # Handle twins
             is_twin = live.binomial(self.pars['twins_prob'])
@@ -699,25 +716,6 @@ class People(fpb.BasePeople):
                                                            numerators=[total_women_delivering], denominators=None)
                 for key in live_births_age_split:
                     self.step_results[key] = live_births_age_split[key]
-
-            # TEMP -- update children, need to refactor
-            r = sc.dictobj(**self.step_results)
-            new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
-            children_map = sc.ddict(int)
-            for i in live.inds:
-                children_map[i] += 1
-            for i in twin.inds:
-                children_map[i] += 1
-            for i in i_death.inds:
-                children_map[i] -= 1
-
-            assert sum(list(children_map.values())) == new_people
-            start_ind = len(all_ppl)
-            for mother, n_children in children_map.items():
-                end_ind = start_ind + n_children
-                children = list(range(start_ind, end_ind))
-                all_ppl.children[mother] += children
-                start_ind = end_ind
 
         return
 
@@ -818,11 +816,11 @@ class People(fpb.BasePeople):
         DHS data records only women who self-report LAM which is much lower.
         Follows the DHS definition of mCPR
         """
-        modern_methods = sc.findinds(list(self.pars['methods']['modern'].values()))
+        modern_methods_num = [idx for idx, m in enumerate(self.contraception_module.methods.values()) if m.modern]
         method_age = (self.pars['method_age'] <= self.age)
         fecund_age = self.age < self.pars['age_limit_fecundity']
         denominator = method_age * fecund_age * self.is_female * (self.alive)
-        numerator = np.isin(self.method, modern_methods)
+        numerator = np.isin(self.method, modern_methods_num)
         no_method_mcpr = np.sum((self.method == 0) * denominator)
         on_method_mcpr = np.sum(numerator * denominator)
         self.step_results['no_methods_mcpr'] += no_method_mcpr
@@ -879,6 +877,17 @@ class People(fpb.BasePeople):
                 self.step_results[key] = as_result_dict[key]
         return
 
+    def birthday_filter(self, int_age=None):
+        """
+        Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
+        annualy, but not based on a calendar year, rather every year on an agent's bday."""
+        if int_age is None:
+            int_age = self.int_age
+
+        age_diff = int_age - self.age
+        had_bday = (age_diff <= (self.pars['timestep'] / fpd.mpy))
+        return self.filter(had_bday)
+
     def init_step_results(self):
         self.step_results = dict(
             deaths=0,
@@ -895,6 +904,8 @@ class People(fpb.BasePeople):
             no_methods_cpr=0,
             on_methods_acpr=0,
             no_methods_acpr=0,
+            contra_access=0,
+            new_users=0,
             as_stillbirths=[],
             imr_numerator=[],
             imr_denominator=[],
@@ -938,30 +949,12 @@ class People(fpb.BasePeople):
             self.step_results['birth_bins'][key] = 0
             self.step_results['age_bin_totals'][key] = 0
 
-        m = len(self.pars['methods']['map'])
-
-        def mm_zeros():
-            ''' Return an array of m x m zeros '''
-            return np.zeros((m, m), dtype=int)
-
-        if self.pars['track_switching']:
-            for key in fpd.method_age_map.keys():
-                self.step_results['switching_annual'][key] = mm_zeros()
-                self.step_results['switching_postpartum'][key] = mm_zeros()
-
-            self.step_results['switching'] = dict(
-                annual=mm_zeros(),
-                postpartum=mm_zeros(),
-            )
-
         return
 
     def update(self):
         """
-        Update the person's state for the given timestep.
-        t is the time in the simulation in years (ie, 0-60), y is years of simulation (ie, 1960-2010)
+        Perform all updates to people on each timestep
         """
-
         self.init_step_results()  # Initialize outputs
         alive_start = self.filter(self.alive)
         alive_start.check_mortality()  # Decide if person dies at this t in the simulation
@@ -976,34 +969,51 @@ class People(fpb.BasePeople):
         fecund = alive_now.filter((alive_now.sex == 0) * (alive_now.age < alive_now.pars['age_limit_fecundity']))
         nonpreg = fecund.filter(~fecund.pregnant)
         lact = fecund.filter(fecund.lactating)
-        if self.pars['restrict_method_use'] == 1:
-            methods = nonpreg.filter((nonpreg.age >= nonpreg.fated_debut) * (nonpreg.months_inactive < 12))
-        else:
-            methods = nonpreg.filter(nonpreg.age >= self.pars['method_age'])
+
+        # Update empowerment states, and empowerment-related states
+        alive_now_f = self.filter(self.is_female)
+        if self.empowerment_module is not None:
+            eligible = alive_now_f.filter(((alive_now_f.age >= fpd.min_age) & (
+                        alive_now_f.age < fpd.max_age_preg)))
+
+            # Women who just turned 15 get assigned a value based on empowerment probs
+            bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
+            if len(bday_15):
+                self.empowerment_module.update_empwr_states(bday_15)
+            # Update states on her bday, based on coefficients
+            bday = eligible.birthday_filter()
+            if len(bday):
+                # The empowerment module will update the empowerment states and intent to use
+                self.empowerment_module.update(bday)
+                # Update fertility intent on her bday, together with empowerment updates
+                bday.update_fertility_intent_by_age()
+
+        # Update education
+        if self.education_module is not None:
+            self.education_module.update(alive_now_f)
+
+        # Figure out who to update methods for
+        methods = nonpreg.filter(nonpreg.ti_contra <= self.ti)
 
         # Check if has reached their age at first partnership and set partnered attribute to True.
         # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
         alive_now.check_partnership()
 
-        # Update everything else
+        # Complete all updates. Note that these happen in a particular order!
         preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
-        methods.update_methods()
+
+        if len(methods):
+            methods.update_method()
+
+        methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
+        if not methods_ok:
+            errormsg = 'Agents not using contraception are not the same as agents who are using None method'
+            raise ValueError(errormsg)
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
-
-        # Update education
-        if self.pars['use_education']:
-            alive_now_f = self.filter(self.is_female)
-            fpedu.update_education(alive_now_f)
-
-        # Update empowerment on bdays (unless there's a different mechanism to update)
-        if self.pars['use_empowerment']:
-            birthdays = self.filter(self.is_female).birthday_filter()
-            if len(birthdays):
-               fpemp.update_empowerment(birthdays)
 
         # Update results
         fecund.update_age_bin_totals()
@@ -1021,5 +1031,10 @@ class People(fpb.BasePeople):
         # Storing ages by method age group
         age_bins = [0] + [max(fpd.age_specific_channel_bins[key]) for key in fpd.age_specific_channel_bins]
         self.age_by_group = np.digitize(self.age, age_bins) - 1
+
+        # Add check for ti contra
+        if (self.ti_contra < 0).any():
+            errormsg = f'Invalid values for ti_contra at timestep {self.ti}'
+            raise ValueError(errormsg)
 
         return self.step_results

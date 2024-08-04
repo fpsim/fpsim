@@ -1,9 +1,9 @@
 {
   "time": {
-    "initialize": 0.0,
-    "run": 3.054,
-    "postprocess": 0.088,
-    "total": 3.143
+    "initialize": 0.002,
+    "run": 2.431,
+    "postprocess": 0.043,
+    "total": 2.476
   },
   "parameters": {
     "n": 1000,
