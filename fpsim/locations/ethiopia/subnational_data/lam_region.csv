@@ -1,0 +1,133 @@
+﻿region,month,rate
+Addis Ababa,0,1
+Addis Ababa,1,0.8027634
+Addis Ababa,2,0.55477077
+Addis Ababa,3,0.54125213
+Addis Ababa,4,0.18418907
+Addis Ababa,5,0.07955848
+Addis Ababa,6,0.27236815
+Addis Ababa,7,0
+Addis Ababa,8,0
+Addis Ababa,9,0
+Addis Ababa,10,0
+Addis Ababa,11,0
+Afar,0,0.933118
+Afar,1,0.9053771
+Afar,2,0.7320911
+Afar,3,0.7196012
+Afar,4,0.5988238
+Afar,5,0.6220879
+Afar,6,0.2907021
+Afar,7,0.3169333
+Afar,8,0.3237691
+Afar,9,0.2912673
+Afar,10,0
+Afar,11,0.1241633
+Amhara,0,1
+Amhara,1,1
+Amhara,2,0.79768167
+Amhara,3,0.81609021
+Amhara,4,0.57102879
+Amhara,5,0.70691513
+Amhara,6,0.63788592
+Amhara,7,0.3736451
+Amhara,8,0.69010705
+Amhara,9,0.12329194
+Amhara,10,0.05837032
+Amhara,11,0.07242628
+Benishangul-Gumuz,0,1
+Benishangul-Gumuz,1,1
+Benishangul-Gumuz,2,0.9040914
+Benishangul-Gumuz,3,0.6744351
+Benishangul-Gumuz,4,0.6220282
+Benishangul-Gumuz,5,0.7002666
+Benishangul-Gumuz,6,0.5308698
+Benishangul-Gumuz,7,0.4937344
+Benishangul-Gumuz,8,0.4560624
+Benishangul-Gumuz,9,0.3120467
+Benishangul-Gumuz,10,0.1900743
+Benishangul-Gumuz,11,0
+Dire Dawa,0,1
+Dire Dawa,1,1
+Dire Dawa,2,1
+Dire Dawa,3,0.701963
+Dire Dawa,4,0.6404062
+Dire Dawa,5,0.2179267
+Dire Dawa,6,0.2845405
+Dire Dawa,7,0
+Dire Dawa,8,0
+Dire Dawa,9,0.1770699
+Dire Dawa,10,0.1220121
+Dire Dawa,11,0.1735989
+Gambela,0,1
+Gambela,1,1
+Gambela,2,0.913814
+Gambela,3,0.73748057
+Gambela,4,0.79798609
+Gambela,5,0.53982382
+Gambela,6,0.68192386
+Gambela,7,0.29115173
+Gambela,8,0.07223987
+Gambela,9,0.20118427
+Gambela,10,0
+Gambela,11,0.06413905
+Harari,0,1
+Harari,1,0.86085245
+Harari,2,0.60701742
+Harari,3,0.66829255
+Harari,4,0.6389314
+Harari,5,0.05538218
+Harari,6,0.11934773
+Harari,7,0.32506547
+Harari,8,0
+Harari,9,0.07347774
+Harari,10,0
+Harari,11,0.05169728
+Oromia,0,1
+Oromia,1,0.79439954
+Oromia,2,0.8644254
+Oromia,3,0.72595477
+Oromia,4,0.66058623
+Oromia,5,0.40491284
+Oromia,6,0.31625124
+Oromia,7,0.11707187
+Oromia,8,0.22122687
+Oromia,9,0.03940135
+Oromia,10,0.13034382
+Oromia,11,0.1007131
+SNNPR,0,1
+SNNPR,1,1
+SNNPR,2,0.8078897
+SNNPR,3,0.7691529
+SNNPR,4,0.8843311
+SNNPR,5,0.4576592
+SNNPR,6,0.2450164
+SNNPR,7,0.2363193
+SNNPR,8,0.4169286
+SNNPR,9,0.2770431
+SNNPR,10,0.1198016
+SNNPR,11,0.1060131
+Somali,0,0.81712058
+Somali,1,0.65009125
+Somali,2,0.61041611
+Somali,3,0.36469477
+Somali,4,0.48755122
+Somali,5,0.43319793
+Somali,6,0.41758782
+Somali,7,0.21886407
+Somali,8,0.223223
+Somali,9,0
+Somali,10,0.04689225
+Somali,11,0
+Tigray,0,1
+Tigray,1,0.79365588
+Tigray,2,0.9537356
+Tigray,3,0.75082669
+Tigray,4,0.79974508
+Tigray,5,0.71293209
+Tigray,6,0.62313177
+Tigray,7,0.26790477
+Tigray,8,0.16101035
+Tigray,9,0.12028634
+Tigray,10,0.09209891
+Tigray,11,0.05362567

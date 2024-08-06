@@ -57,7 +57,6 @@ class Experiment(sc.prettyobj):
         self.flags = sc.mergedicts(default_flags, flags, _copy=True) # Set flags for what gets run
         self.flags['empowerment'] = 1 if pars['use_empowerment'] else 0
         self.pars = pars if pars else fpp.pars(**kwargs)
-        self.location = self.pars['location']
         self.model = sc.objdict()
         self.data = sc.objdict()
         self.method_keys = None
@@ -76,15 +75,6 @@ class Experiment(sc.prettyobj):
             data = sc.loadjson(path, **kwargs)
         elif path.suffix == '.csv':
             data = pd.read_csv(path, **kwargs)
-            if str(path).endswith('region.csv'):
-                region = self.location
-                if region == 'benishangul_gumuz':
-                    region = region.replace('_', '-').title()  # Replace underscore with dash and capitalize each word
-                elif region == 'snnpr':
-                    region = 'SNNPR'
-                else:
-                    region = region.replace('_', ' ').title()
-                data = data.loc[data['region'] == region]
         elif path.suffix == '.yaml':
             with open(path) as f:
                 data = yaml.safe_load(f, **kwargs)
@@ -242,8 +232,8 @@ class Experiment(sc.prettyobj):
 
         # Extract tfr over time in data - keep here to ignore dhs data if not using tfr for calibration
         tfr = self.load_data('tfr')  # From DHS
-        self.data['tfr_years'] = tfr['year'].to_numpy()
-        self.data['total_fertility_rate'] = tfr['tfr'].to_numpy()
+        self.data['tfr_years'] = tfr.iloc[:, 0].to_numpy()
+        self.data['total_fertility_rate'] = tfr.iloc[:, 1].to_numpy()
 
         self.model['tfr_years'] = self.model_results['tfr_years']
         self.model['total_fertility_rate'] = self.model_results['tfr_rates']
@@ -256,15 +246,10 @@ class Experiment(sc.prettyobj):
         asfr = self.load_data('asfr')  # From DHS
         age_bins = list(asfr.columns)
         age_bins.remove('year')
-
-        # Save asfr and asfr_bins to data dictionary
-        year_data = asfr[asfr['year'] == self.pars['end_year']]
-        if 'region' in age_bins:
-            age_bins.remove('region')
-            self.data['asfr'] = year_data.drop(['year', 'region'], axis=1).values.tolist()[0]
-        else:
-            self.data['asfr'] = year_data.drop(['year'], axis=1).values.tolist()[0]
         self.data['asfr_bins'] = age_bins
+
+        year_data = asfr[asfr['year'] == self.pars['end_year']]
+        self.data['asfr'] = year_data.drop(['year'], axis=1).values.tolist()[0]
 
         # Model extraction
         age_bins = list(fpd.age_bin_map.keys())
@@ -426,13 +411,8 @@ class Experiment(sc.prettyobj):
 
         # Update data method mix using non-user percentage from 'use' file
         data_use = self.load_data('use')
-        if 'region' in data_use.columns:
-            latest_data = data_use[data_use['year'] == data_use['year'].max()]
-            data_method_counts['None'] = latest_data.loc[latest_data['var1'] == 0, 'perc'].values[0]
-            use_freq = (latest_data.loc[latest_data['var1'] == 1, 'perc'].values[0]) / 100
-        else:
-            data_method_counts['None'] = data_use.loc[0, 'perc']
-            use_freq = (data_use.loc[1, 'perc'])/100
+        data_method_counts['None'] = data_use.loc[0, 'perc']
+        use_freq = (data_use.loc[1, 'perc'])/100
         for key, value in data_method_counts.items():
             value /= 100
             if key != 'None':
