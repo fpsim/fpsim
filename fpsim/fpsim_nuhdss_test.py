@@ -9,7 +9,7 @@ pars = dict(
 
 sim = fp.Sim(pars)
 sim.run()
-fig = sim.plot()
+fig = sim.plot();
 
 
 
