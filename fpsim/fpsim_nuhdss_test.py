@@ -67,9 +67,9 @@ import fpsim as fp
 # Parameters
 n_agents = 756
 start_year = 2012
-end_year = 2035
+end_year = 2030
 
-effect_size = 0.52
+effect_size = 0.60
 
 # Initialize factors for male involvement interventions
 init_factor_info_sessions = 1.0 + effect_size  # Effect of informational sessions
@@ -116,7 +116,7 @@ def run_simulation():
     effect_size = 0.6
     
     # Coverage levels to simulate
-    coverages = [0.45, 0.6, 0.8]
+    coverages = [0.10, 0.30, 0.60]
     
     # Create a list to store scenarios
     scenarios = []
