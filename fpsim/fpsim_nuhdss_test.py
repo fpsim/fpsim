@@ -1,3 +1,4 @@
+#----------------------------------------------------The baseline fitting--------------------------------------------------------------------------------------------------------------------#
 import fpsim as fp
 
 pars = dict(
@@ -9,7 +10,7 @@ pars = dict(
 
 sim = fp.Sim(pars)
 sim.run()
-fig = sim.plot();
+fig = sim.plot()
 
 
 
@@ -17,7 +18,7 @@ fig = sim.plot();
 #sim.df.to_csv(r'results.csv')
 #print("Done.")
 
-
+#---------------------------------Running campaigns for each individual methods of family planning e.g IUD at a single coverage--------------------------------------------------------------#
 import fpsim as fp
 
 n_agents = 10_000
@@ -61,7 +62,7 @@ def run_simulation():
 if __name__ == '__main__':
     run_simulation()
 
-
+#---------------------------------implementation of the male involvement-------------------------------------------------------------------------------------------------------------------#
 import fpsim as fp
 
 # Parameters
@@ -102,6 +103,7 @@ scens.plot()
 if __name__ == '__main__':
     run_simulation()
 
+#----------------------------------------------implementaion of campaigns at different rates on the MCPR and other rates---------------------------------------------------------------------#
 import fpsim as fp
 
 def run_simulation():
@@ -149,3 +151,6 @@ def run_simulation():
 # Run the simulation when the script is executed
 if __name__ == '__main__':
     run_simulation()
+
+
+#----------------------------------------------implementaion of male involvement on the MCPR and other rates--------------------------------------------------------------------------------#
