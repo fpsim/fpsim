@@ -22,7 +22,7 @@ def generate_random_matrix(size):
 
 def run_simulation():
     # Define simulation parameters
-    n_agents = 10000
+    n_agents = 50000
     start_year = 2012
     end_year = 2030
     

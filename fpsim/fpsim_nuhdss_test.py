@@ -58,7 +58,7 @@ def run_inj_campaign():
 
 def run_male_inv():
     # Parameters
-    n_agents = 756
+    n_agents = 50000
     start_year = 2012
     end_year = 2030
 
@@ -144,8 +144,8 @@ if __name__ == '__main__':
     #run_baseline()
     #run_impl_campaign()
     #run_inj_campaign()
-    #run_male_inv()
-    run_campaign_coverage()
+    run_male_inv()
+    #run_campaign_coverage()
 
 
 #----------------------------------------------implementation of male involvement on the MCPR and other rates--------------------------------------------------------------------------------#
