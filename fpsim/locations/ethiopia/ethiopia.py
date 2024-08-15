@@ -989,7 +989,7 @@ def urban_proportion():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, seed=None):
     '''
     Take all parameters and construct into a dictionary
     '''
@@ -1024,15 +1024,6 @@ def make_pars(use_empowerment=None, use_education=None, use_partnership=None, us
     pars['methods'] = methods()
     pars['methods']['raw'] = method_probs()
     pars['barriers'] = barriers()
-
-    # Regional parameters
-    if use_subnational:
-        pars['region'] = region_proportions()  # This function returns extrapolated and raw data
-        pars['lactational_amenorrhea_region'] = lactational_amenorrhea_region()
-        pars['sexual_activity_region'] = sexual_activity_region()
-        pars['sexual_activity_pp_region'] = sexual_activity_pp_region()
-        pars['debut_age_region'] = debut_age_region()
-        pars['barriers_region'] = barriers_region()
 
     kwargs = locals()
     not_implemented_args = ['use_empowerment', 'use_education', 'use_partnership']

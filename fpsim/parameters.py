@@ -524,7 +524,6 @@ default_pars = {
     'use_partnership':      0,      # Whether to model partnered states- will need to add context-specific data if using
     'use_empowerment':      0,      # Whether to model empowerment - will need to add context-specific data if using
     'use_education':        0,      # Whether to model education, requires use_urban==True for kenya - will need to add context-specific data if using
-    'use_subnational':        0,    # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
 
     # Age limits (in years)
     'method_age':           15,
