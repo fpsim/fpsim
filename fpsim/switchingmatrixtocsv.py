@@ -22,12 +22,12 @@ def generate_random_matrix(size):
 
 def run_simulation():
     # Define simulation parameters
-    n_agents = 50000
+    n_agents = 100000
     start_year = 2012
     end_year = 2030
     
     # Define age groups
-    age_groups = ['<20', '20-24', '25-29', '30-34', '35+']
+    age_groups = ['<20', '20-24', '25-34', '35+'] #'25-29' '30-34',
 
     # Generate switching matrices for each age group
     switching_matrices = {age_group: generate_random_matrix(len(age_groups)) for age_group in age_groups}

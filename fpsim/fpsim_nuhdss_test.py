@@ -37,7 +37,7 @@ def run_impl_campaign():
 #----------------------------------------------------Running campaigns for Injectables at a single coverage---------------------------------------------------------------------------------#
 
 def run_inj_campaign():
-    n_agents = 50000
+    n_agents = 10000
     start_year = 2012
     end_year = 2030
 
@@ -58,7 +58,7 @@ def run_inj_campaign():
 
 def run_male_inv():
     # Parameters
-    n_agents = 50000
+    n_agents = 10000
     start_year = 2012
     end_year = 2030
 
@@ -99,7 +99,7 @@ def run_male_inv():
 
 def run_campaign_coverage():
     # Number of agents to simulate
-    n_agents = 50000
+    n_agents = 10000
 
     # Define the start and end year for the simulation
     start_year = 2012
@@ -118,7 +118,7 @@ def run_campaign_coverage():
     for coverage in coverages:
         init_factor = 1.0 + effect_size * coverage
         scen = fp.make_scen(method='Injectables', init_factor=init_factor, year=2025)
-        scenarios.append((scen, f'Campaign_{coverage}'))
+        scenarios.append((scen, f'Campaign - { coverage}'))
 
     # Set the parameters for the simulation including location, number of agents, and time frame
     pars = fp.pars(location='nuhdss', n_agents=n_agents, start_year=start_year, end_year=end_year)
