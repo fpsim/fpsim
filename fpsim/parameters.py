@@ -598,11 +598,6 @@ default_pars = {
     'age_partnership':      None,
 
     'region':               None,
-    'lactational_amenorrhea_region': None,
-    'sexual_activity_region':       None,
-    'sexual_activity_pp_region':    None,
-    'debut_age_region':             None,
-    'barriers_region':              None,
 }
 
 # Shortcut for accessing default keys
