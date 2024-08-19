@@ -1197,7 +1197,7 @@ def education_distributions():
 
 # %% Make and validate parameters
 
-def make_pars(use_empowerment=None, use_education=None, use_partnership=None, use_subnational=None, seed=None):
+def make_pars(use_empowerment=None, use_education=None, use_partnership=None, seed=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -1244,7 +1244,7 @@ def make_pars(use_empowerment=None, use_education=None, use_partnership=None, us
         pars['age_partnership'] = age_partnership()
 
     kwargs = locals()
-    not_implemented_args = ['use_subnational']
+    not_implemented_args = []
     true_args = [key for key in not_implemented_args if kwargs[key] is True]
     if true_args:
         errmsg = f"{true_args} not implemented yet for {pars['location']}"

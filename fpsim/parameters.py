@@ -524,7 +524,6 @@ default_pars = {
     'use_partnership':      0,      # Whether to model partnered states- will need to add context-specific data if using
     'use_empowerment':      0,      # Whether to model empowerment - will need to add context-specific data if using
     'use_education':        0,      # Whether to model education, requires use_urban==True for kenya - will need to add context-specific data if using
-    'use_subnational':        0,    # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
 
     # Age limits (in years)
     'method_age':           15,
@@ -599,11 +598,6 @@ default_pars = {
     'age_partnership':      None,
 
     'region':               None,
-    'lactational_amenorrhea_region': None,
-    'sexual_activity_region':       None,
-    'sexual_activity_pp_region':    None,
-    'debut_age_region':             None,
-    'barriers_region':              None,
 }
 
 # Shortcut for accessing default keys
@@ -651,14 +645,11 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     # Define valid locations
     if location == 'default':
         location = 'senegal'
-    valid_country_locs = dir(fplocs)
-    valid_ethiopia_regional_locs = dir(fplocs.ethiopia.regions)
+    valid_locs = dir(fplocs)
 
     # Get parameters for this location
-    if location in valid_country_locs:
+    if location in valid_locs:
         location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
-    elif location in valid_ethiopia_regional_locs:
-        location_pars = getattr(fplocs.ethiopia.regions, location).make_pars(**loc_kwargs)
     else: # Else, error
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
