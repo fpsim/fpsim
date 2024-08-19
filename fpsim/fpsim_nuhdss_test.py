@@ -144,8 +144,8 @@ if __name__ == '__main__':
     #run_baseline()
     #run_impl_campaign()
     #run_inj_campaign()
-    run_male_inv()
-    #run_campaign_coverage()
+    #run_male_inv()
+    run_campaign_coverage()
 
 
 #----------------------------------------------implementation of male involvement on the MCPR and other rates--------------------------------------------------------------------------------#
