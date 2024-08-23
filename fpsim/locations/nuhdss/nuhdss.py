@@ -558,7 +558,6 @@ def birth_spacing_pref():
 
 # %% Contraceptive methods
 
-
 def methods():
     '''
     Names, indices, modern/traditional flag, and efficacies of contraceptive methods -- see also parameters.py
@@ -611,6 +610,7 @@ def methods():
     methods['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100  # convert from percent to rate
 
     return methods
+
 
 
 '''

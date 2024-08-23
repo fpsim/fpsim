@@ -1,6 +1,6 @@
 #----------------------------------------------------The baseline fitting--------------------------------------------------------------------------------------------------------------------#
+import sciris as sc
 import fpsim as fp
-
 
 def run_baseline():
     pars = dict(
@@ -13,6 +13,7 @@ def run_baseline():
     sim = fp.Sim(pars)
     sim.run()
     sim.plot()
+
 
 #---------------------------------Running campaigns for each individual methods of family planning e.g IUD at a single coverage--------------------------------------------------------------#
 
@@ -44,15 +45,46 @@ def run_inj_campaign():
     effect_size = 0.6
     coverage = 0.60
     init_factor = 1.0 + effect_size * coverage
-    scen = fp.make_scen(method='Injectables', init_factor=init_factor, year=2025)
+
+    scen = fp.make_scen(method='Injectables',init_factor=init_factor, year=2025)
 
     pars = fp.pars(location='nuhdss', n_agents=n_agents, start_year=start_year, end_year=end_year)
 
     scens = fp.Scenarios(pars=pars, repeats=3)
     scens.add_scen(label='Baseline')
-    scens.add_scen(scen, label='Campaign')
+    scens.add_scen(scen, label='Campaign') # type: ignore
     scens.run()
     scens.plot()
+#----------------------------------------------------Running campaigns for all methods at a single coverage---------------------------------------------------------------------------------#
+
+def run_all_methods_campaign():
+    n_agents = 10000
+    start_year = 2012
+    end_year = 2030
+
+    effect_size = 0.6
+    coverage = 0.60
+    init_factor = 1.0 + effect_size * coverage
+    s1 = fp.make_scen(method='Injectables',init_factor=init_factor, year=2022)
+    s2 = fp.make_scen(method='Pill', init_factor=init_factor, year=2022)
+    s3 = fp.make_scen(method='Withdrawal', init_factor=init_factor, year=2022)
+    s4 = fp.make_scen(method='Condoms', init_factor=init_factor, year=2022)
+    s5 = fp.make_scen(method='Implants', init_factor=init_factor, year=2022)
+    s6 = fp.make_scen(method='IUDs', init_factor=init_factor, year=2022)
+    s7 = fp.make_scen(method='BTL', init_factor=init_factor, year=2022)
+    s8 = fp.make_scen(method='Other modern', init_factor=init_factor, year=2022)
+    s9 = fp.make_scen(method='Other traditional', init_factor=init_factor, year=2022)
+
+    s10 = s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 
+    pars = fp.pars(location='nuhdss', n_agents=n_agents, start_year=start_year, end_year=end_year)
+
+    scens = fp.Scenarios(pars=pars, repeats=3)
+    scens.add_scen(label='Baseline')
+    scens.add_scen(s10, label='Campaign')
+    scens.run()
+    scens.plot()
+
+
 
 #---------------------------------implementation of the male involvement-------------------------------------------------------------------------------------------------------------------#
 
@@ -134,7 +166,7 @@ def run_campaign_coverage():
         scens.add_scen(scen, label=label)
 
     # Run the simulation for all scenarios
-    scens.run()
+    scens.run(die=False)
 
     # Plot the results of the simulation
     scens.plot()
@@ -144,8 +176,9 @@ if __name__ == '__main__':
     #run_baseline()
     #run_impl_campaign()
     #run_inj_campaign()
-    run_male_inv()
+    run_all_methods_campaign()
+    #run_male_inv()
     #run_campaign_coverage()
-
+   
 
 #----------------------------------------------implementation of male involvement on the MCPR and other rates--------------------------------------------------------------------------------#
