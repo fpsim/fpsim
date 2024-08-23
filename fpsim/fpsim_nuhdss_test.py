@@ -1,6 +1,8 @@
 #----------------------------------------------------The baseline fitting--------------------------------------------------------------------------------------------------------------------#
 import sciris as sc
 import fpsim as fp
+import matplotlib.pyplot as plt
+import numpy as np
 
 def run_baseline():
     pars = dict(
@@ -65,15 +67,15 @@ def run_all_methods_campaign():
     effect_size = 0.6
     coverage = 0.60
     init_factor = 1.0 + effect_size * coverage
-    s1 = fp.make_scen(method='Injectables',init_factor=init_factor, year=2022)
-    s2 = fp.make_scen(method='Pill', init_factor=init_factor, year=2022)
-    s3 = fp.make_scen(method='Withdrawal', init_factor=init_factor, year=2022)
-    s4 = fp.make_scen(method='Condoms', init_factor=init_factor, year=2022)
-    s5 = fp.make_scen(method='Implants', init_factor=init_factor, year=2022)
-    s6 = fp.make_scen(method='IUDs', init_factor=init_factor, year=2022)
-    s7 = fp.make_scen(method='BTL', init_factor=init_factor, year=2022)
-    s8 = fp.make_scen(method='Other modern', init_factor=init_factor, year=2022)
-    s9 = fp.make_scen(method='Other traditional', init_factor=init_factor, year=2022)
+    s1 = fp.make_scen(method='Injectables',init_factor=init_factor, year=2024)
+    s2 = fp.make_scen(method='Pill', init_factor=init_factor, year=2024)
+    s3 = fp.make_scen(method='Withdrawal', init_factor=init_factor, year=2024)
+    s4 = fp.make_scen(method='Condoms', init_factor=init_factor, year=2024)
+    s5 = fp.make_scen(method='Implants', init_factor=init_factor, year=2024)
+    s6 = fp.make_scen(method='IUDs', init_factor=init_factor, year=2024)
+    s7 = fp.make_scen(method='BTL', init_factor=init_factor, year=2024)
+    s8 = fp.make_scen(method='Other modern', init_factor=init_factor, year=2024)
+    s9 = fp.make_scen(method='Other traditional', init_factor=init_factor, year=2024)
 
     s10 = s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9 
     pars = fp.pars(location='nuhdss', n_agents=n_agents, start_year=start_year, end_year=end_year)
@@ -125,9 +127,10 @@ def run_male_inv():
 
     # Run and plot the scenarios
     scens.run()
+   
     scens.plot()
 
-#----------------------------------------------implementaion of campaigns at different rates on the MCPR and other rates---------------------------------------------------------------------#
+#----------------------------------------------implementaion of campaigns at different rates for all methods on the MCPR and other rates---------------------------------------------------------------------#
 
 def run_campaign_coverage():
     # Number of agents to simulate
@@ -149,8 +152,17 @@ def run_campaign_coverage():
     # Create scenarios for each coverage level
     for coverage in coverages:
         init_factor = 1.0 + effect_size * coverage
-        scen = fp.make_scen(method='Injectables', init_factor=init_factor, year=2025)
-        scenarios.append((scen, f'Campaign - { coverage}'))
+        s1 = fp.make_scen(method='Injectables',init_factor=init_factor, year=2024)
+        s2 = fp.make_scen(method='Pill', init_factor=init_factor, year=2024)
+        s3 = fp.make_scen(method='Withdrawal', init_factor=init_factor, year=2024)
+        s4 = fp.make_scen(method='Condoms', init_factor=init_factor, year=2024)
+        s5 = fp.make_scen(method='Implants', init_factor=init_factor, year=2024)
+        s6 = fp.make_scen(method='IUDs', init_factor=init_factor, year=2024)
+        s7 = fp.make_scen(method='BTL', init_factor=init_factor, year=2024)
+        s8 = fp.make_scen(method='Other modern', init_factor=init_factor, year=2024)
+        s9 = fp.make_scen(method='Other traditional', init_factor=init_factor, year=2024)
+        s10 = s1 + s2 + s3 + s4 + s5 + s6 + s7 + s8 + s9
+        scenarios.append((s10, f'Campaign with { coverage*100:.1f}% coverage'))
 
     # Set the parameters for the simulation including location, number of agents, and time frame
     pars = fp.pars(location='nuhdss', n_agents=n_agents, start_year=start_year, end_year=end_year)
@@ -166,19 +178,18 @@ def run_campaign_coverage():
         scens.add_scen(scen, label=label)
 
     # Run the simulation for all scenarios
-    scens.run(die=False)
-
-    # Plot the results of the simulation
+    scens.run()
+    
+    # Plot the results of the simulation and capture the figure
     scens.plot()
-
 
 if __name__ == '__main__':
     #run_baseline()
     #run_impl_campaign()
     #run_inj_campaign()
-    run_all_methods_campaign()
+    #run_all_methods_campaign()
     #run_male_inv()
-    #run_campaign_coverage()
+    run_campaign_coverage()
    
 
 #----------------------------------------------implementation of male involvement on the MCPR and other rates--------------------------------------------------------------------------------#
