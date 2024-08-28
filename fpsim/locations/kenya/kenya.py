@@ -62,26 +62,25 @@ def age_pyramid():
     Data are from World Population Prospects
     https://population.un.org/wpp/Download/Standard/Population/
      '''
-    pyramid = np.array([     # Kenya 2015
-                [0, 3423916, 3389030],  # Age 0
-                [5, 3375371, 3355162],  # Age 5
-                [10, 2968639, 2963464],  # Age 10
-                [15, 2489864, 2523193],  # Age 15
-                [20, 2158196, 2218927],  # Age 20
-                [25, 2001891, 2031898],  # Age 25
-                [30, 1706214, 1690237],  # Age 30
-                [35, 1366575, 1343727],  # Age 35
-                [40, 1085439, 1080669],  # Age 40
-                [45, 850015, 862716],  # Age 45
-                [50, 629510, 655977],  # Age 50
-                [55, 437712, 472329],  # Age 55
-                [60, 280747, 317579],  # Age 60
-                [65, 217816, 236148],  # Age 65
-                [70, 124418, 171373],  # Age 70
-                [75, 72579, 126721],  # Age 75
-                [80, 44659, 80139]  # Age 80
-                ], dtype=float)
-
+    pyramid = np.array([        # Kenya 2000
+            [0, 2625502, 2604907],  # Age 0
+            [5, 2275724, 2270780],  # Age 5
+            [10, 2109572, 2111215],  # Age 10
+            [15, 1809238, 1809320],  # Age 15
+            [20, 1481057, 1480721],  # Age 20
+            [25, 1210182, 1213708],  # Age 25
+            [30, 979087, 987938],  # Age 30
+            [35, 748578, 762232],  # Age 35
+            [40, 539272, 555873],  # Age 40
+            [45, 355876, 375786],  # Age 45
+            [50, 309561, 300548],  # Age 50
+            [55, 194539, 248280],  # Age 55
+            [60, 144684, 222705],  # Age 60
+            [65, 114848, 169600],  # Age 65
+            [70, 79589, 106710],  # Age 70
+            [75, 50004, 63120],  # Age 75
+            [80, 26103, 32607]  # Age 80
+    ])
     return pyramid
 
 
@@ -473,8 +472,9 @@ def exposure_age():
     increase factor number and residual likelihood of avoiding live birth (mostly abortion,
     also miscarriage), will decrease factor number
     '''
+    # Previously set to all 1's
     exposure_correction_age = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
-                                        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
+                                        [1, 1, 1, 1, 1, 1, 1, 1, .7, .3, .3, .3, .4]])
     exposure_age_interp = data2interp(exposure_correction_age, fpd.spline_preg_ages)
 
     return exposure_age_interp
@@ -487,7 +487,7 @@ def exposure_parity():
     '''
     # Previously set to: [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
-                                           [.1, .1, 7, 7, 7, 8, 8, 6, 4, 1, 1, 1, 1.5, 1.5]])
+                                           [1, 1, 8, 8, 9, 9, 6, 1, .1, .1, .1, .1, .05, 0.01]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
@@ -506,15 +506,21 @@ def birth_spacing_pref():
         [3, .1],
         [6, .1],
         [9, .1],
-        [12, .01],
-        [15, .01],
-        [18, .01],
-        [21, .01],
-        [24, .75],
-        [27, .75],
-        [30, .75],
-        [33, .75],
-        [36, .75],
+        [12, .1],
+        [15, .1],
+        [18, .1],
+        [21, .1],
+        [24, .01],
+        [27, .01],
+        [30, .01],
+        [33, .01],
+        [36, .01],
+        [39, .01],
+        [42, .01],
+        [45, .25],
+        [48, 1.5],
+        [51, 1.5],
+        [54, 1.5],
     ])
 
     # Calculate the intervals and check they're all the same
