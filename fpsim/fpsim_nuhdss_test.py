@@ -48,7 +48,7 @@ def run_inj_campaign():
     coverage = 0.60
     init_factor = 1.0 + effect_size * coverage
 
-    scen = fp.make_scen(method='Injectables',init_factor=init_factor, year=2025)
+    scen = fp.make_scen(method= 'Injectables',init_factor=init_factor, year=2025)
 
     pars = fp.pars(location='nuhdss', n_agents=n_agents, start_year=start_year, end_year=end_year)
 
@@ -57,6 +57,7 @@ def run_inj_campaign():
     scens.add_scen(scen, label='Campaign') # type: ignore
     scens.run()
     scens.plot()
+
 #----------------------------------------------------Running campaigns for all methods at a single coverage---------------------------------------------------------------------------------#
 
 def run_all_methods_campaign():
@@ -64,7 +65,7 @@ def run_all_methods_campaign():
     start_year = 2012
     end_year = 2030
 
-    effect_size = 0.6
+    effect_size = 0.5
     coverage = 0.60
     init_factor = 1.0 + effect_size * coverage
     s1 = fp.make_scen(method='Injectables',init_factor=init_factor, year=2024)
@@ -141,7 +142,7 @@ def run_campaign_coverage():
     end_year = 2030
 
     # Define the effect size
-    effect_size = 0.6
+    effect_size = 0.5
 
     # Coverage levels to simulate
     coverages = [0.10, 0.30, 0.60]
@@ -182,6 +183,10 @@ def run_campaign_coverage():
     
     # Plot the results of the simulation and capture the figure
     scens.plot()
+   
+
+
+
 
 if __name__ == '__main__':
     #run_baseline()
@@ -189,7 +194,13 @@ if __name__ == '__main__':
     #run_inj_campaign()
     #run_all_methods_campaign()
     #run_male_inv()
-    run_campaign_coverage()
+    #run_campaign_coverage()
+    
    
 
 #----------------------------------------------implementation of male involvement on the MCPR and other rates--------------------------------------------------------------------------------#
+# Population parameters
+
+
+
+

@@ -1,0 +1,43 @@
+import fpsim as fp
+import numpy as np
+
+def apply_intervention(sim, intervention_year, coverage=0.60):
+    """Apply a 60% intervention campaign at a specific year to switch to any other method."""
+    
+    current_year = sim.year  # Assuming sim.year provides the current simulation year
+
+    # Check if the current year matches the intervention year
+    if current_year == intervention_year:
+        for i in range(len(sim.people)):  # Iterate over each agent by index
+            agent = sim.people[i]  # Access the agent using its index
+            if np.random.rand() < coverage:
+                # Choose a method different from the current one
+                current_method = agent.method
+                all_methods = sim['methods']['available']  # List of all available methods
+                
+                # Filter out the current method and pick a new one
+                other_methods = [method for method in all_methods if method != current_method]
+                if other_methods:
+                    new_method = np.random.choice(other_methods)  # Randomly pick another method
+                    agent.method = new_method  # Switch to the new method
+
+def run_simulation():
+    # Define simulation parameters
+    n_agents = 100000
+    start_year = 2012
+    end_year = 2030
+    
+    # Initialize simulation
+    sim = fp.Sim(location='nuhdss', n_agents=n_agents, start_year=start_year, end_year=end_year)
+    
+    # Run the simulation
+    sim.run()
+
+    # Apply intervention
+    apply_intervention(sim, 2025, 0.60)  # Example usage of the intervention function
+
+    # After running the simulation, check if people is available
+    print(type(sim.people))  # Verify the type of people
+    print(dir(sim.people))  # Check available methods and attributes
+
+run_simulation()
