@@ -906,6 +906,8 @@ class People(fpb.BasePeople):
             no_methods_acpr=0,
             contra_access=0,
             new_users=0,
+            ever_used_contra=0,
+            urban_women=0,
             as_stillbirths=[],
             imr_numerator=[],
             imr_denominator=[],
@@ -1024,6 +1026,8 @@ class People(fpb.BasePeople):
         age_max = self.age < self.pars['age_limit_fecundity']
 
         self.step_results['total_women_fecund'] = np.sum(self.is_female * age_min * age_max)
+        self.step_results['urban_women'] = np.sum(self.urban * self.is_female)
+        self.step_results['ever_used_contra'] = np.sum(self.ever_used_contra * self.is_female)
 
         # Age person at end of timestep after tabulating results
         alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
