@@ -253,6 +253,8 @@ array_results = sc.autolist(
     'mcpr',
     'cpr',
     'acpr',
+    'ever_used_contra',
+    'urban_women',
     'pp0to5',
     'pp6to11',
     'pp12to23',
