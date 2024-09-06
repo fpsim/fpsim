@@ -474,7 +474,7 @@ def exposure_age():
     '''
     # Previously set to all 1's
     exposure_correction_age = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
-                                        [1, 1, 1, 1, 1, 1, 1, 1, .7, .3, .3, .3, .4]])
+                                        [1, 1, 1,  1,   .6,  1.5, 2.2,  3.2, 2.5, .3, .3, .3, .3]])
     exposure_age_interp = data2interp(exposure_correction_age, fpd.spline_preg_ages)
 
     return exposure_age_interp
@@ -485,9 +485,8 @@ def exposure_parity():
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
     or live birth by parity.
     '''
-    # Previously set to: [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
-                                           [1, 1, 8, 8, 9, 9, 6, 1, .1, .1, .1, .1, .05, 0.01]])
+                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])
     exposure_parity_interp = data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
@@ -502,14 +501,14 @@ def birth_spacing_pref():
     '''
     # Previously all values set to default of 1
     postpartum_spacing = np.array([
-        [0, .1],
-        [3, .1],
-        [6, .1],
-        [9, .1],
-        [12, .1],
-        [15, .1],
-        [18, .1],
-        [21, .1],
+        [0, .5],
+        [3, .5],
+        [6, .5],
+        [9, .5],
+        [12, .2],
+        [15, .2],
+        [18, .2],
+        [21, .2],
         [24, .01],
         [27, .01],
         [30, .01],

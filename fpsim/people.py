@@ -916,6 +916,15 @@ class People(fpb.BasePeople):
             pp0to5=0,
             pp6to11=0,
             pp12to23=0,
+            parity0to1=0,
+            parity2to3=0,
+            parity4to5=0,
+            parity6plus=0,
+            wq1=0,
+            wq2=0,
+            wq3=0,
+            wq4=0,
+            wq5=0,
             total_women_fecund=0,
             pregnancies=0,
             unintended_pregs=0,
@@ -1026,8 +1035,17 @@ class People(fpb.BasePeople):
         age_max = self.age < self.pars['age_limit_fecundity']
 
         self.step_results['total_women_fecund'] = np.sum(self.is_female * age_min * age_max)
-        self.step_results['urban_women'] = np.sum(self.urban * self.is_female)
-        self.step_results['ever_used_contra'] = np.sum(self.ever_used_contra * self.is_female)
+        self.step_results['urban_women'] = np.sum(self.urban * self.is_female) / np.sum(self.is_female) * 100
+        self.step_results['ever_used_contra'] = np.sum(self.ever_used_contra * self.is_female) / np.sum(self.is_female) * 100
+        self.step_results['parity0to1'] = np.sum((self.parity <= 1) & self.is_female) / np.sum(self.is_female) * 100
+        self.step_results['parity2to3'] = np.sum((self.parity >= 2) & (self.parity <= 3) & self.is_female) / np.sum(self.is_female) * 100
+        self.step_results['parity4to5'] = np.sum((self.parity >= 4) & (self.parity <= 5) & self.is_female) / np.sum(self.is_female) * 100
+        self.step_results['parity6plus'] = np.sum((self.parity >= 6) & self.is_female) / np.sum(self.is_female) * 100
+        self.step_results['wq1'] = np.sum((self.wealthquintile == 1) & self.is_female) / np.sum(self.is_female) * 100
+        self.step_results['wq2'] = np.sum((self.wealthquintile == 2) & self.is_female) / np.sum(self.is_female) * 100
+        self.step_results['wq3'] = np.sum((self.wealthquintile == 3) & self.is_female) / np.sum(self.is_female) * 100
+        self.step_results['wq4'] = np.sum((self.wealthquintile == 4) & self.is_female) / np.sum(self.is_female) * 100
+        self.step_results['wq5'] = np.sum((self.wealthquintile == 5) & self.is_female) / np.sum(self.is_female) * 100
 
         # Age person at end of timestep after tabulating results
         alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
