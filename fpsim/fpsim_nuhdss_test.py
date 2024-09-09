@@ -57,6 +57,50 @@ def run_inj_campaign():
     scens.add_scen(scen, label='Campaign') # type: ignore
     scens.run()
     scens.plot()
+#----------------------------------------------implementaion of campaigns at different coverage rates for each individual methods i.e injectables on the MCPR and other rates---------------------------------------------------------------------#
+
+def run_campaign_coverage_inj():
+    # Number of agents to simulate
+    n_agents = 10000
+
+    # Define the start and end year for the simulation
+    start_year = 2012
+    end_year = 2030
+
+    # Define the effect size
+    effect_size = 0.5
+
+    # Coverage levels to simulate
+    coverages = [0.10, 0.30, 0.60]
+
+    # Create a list to store scenarios
+    scenarios = []
+
+    # Create scenarios for each coverage level
+    for coverage in coverages:
+        init_factor = 1.0 + effect_size * coverage
+        s1 = fp.make_scen(method='Injectables',init_factor=init_factor, year=2025)
+        scenarios.append((s1, f'Campaign with { coverage*100:.1f}% coverage'))
+
+    # Set the parameters for the simulation including location, number of agents, and time frame
+    pars = fp.pars(location='nuhdss', n_agents=n_agents, start_year=start_year, end_year=end_year)
+
+    # Create a Scenarios object with the defined parameters and set the number of repeats
+    scens = fp.Scenarios(pars=pars, repeats=3)
+
+    # Add the baseline scenario
+    scens.add_scen(label='Baseline')
+
+    # Add the campaign scenarios
+    for scen, label in scenarios:
+        scens.add_scen(scen, label=label)
+
+    # Run the simulation for all scenarios
+    scens.run()
+    
+    # Plot the results of the simulation and capture the figure
+    scens.plot()
+   
 
 #----------------------------------------------------Running campaigns for all methods at a single coverage---------------------------------------------------------------------------------#
 
@@ -87,51 +131,7 @@ def run_all_methods_campaign():
     scens.run()
     scens.plot()
 
-
-
-#---------------------------------implementation of the male involvement-------------------------------------------------------------------------------------------------------------------#
-
-def run_male_inv():
-    # Parameters
-    n_agents = 10000
-    start_year = 2012
-    end_year = 2030
-
-    effect_size = 0.60
-
-    # Initialize factors for male involvement interventions
-    approval_change_factor = 1.0 + effect_size * 0.5  # Effect on approval change
-
-    ### HERE WE NEED TO DEFINE AN INTERVENTION
-    # Define intervention params
-    # NEED TO DEFINE INTERVENTION PARAMS HERE; BELOW ARE EXAMPLES ONLY
-    year = 2015
-    val = .5
-    par = 'exposure_factor'
-    info_intervention = fp.change_par(par=par, years=year, vals=val, verbose=True)
-
-    # Create scenarios for male involvement interventions
-    scen_info_sessions = fp.make_scen(interventions=info_intervention)
-
-    # Set up the parameters for the simulation
-    pars = fp.pars(
-        location='nuhdss',
-        n_agents=n_agents,
-        start_year=start_year,
-        end_year=end_year
-    )
-
-    # Create the Scenarios object and add scenarios
-    scens = fp.Scenarios(pars=pars, repeats=3)
-    scens.add_scen(label='Baseline')
-    scens.add_scen(scen_info_sessions, label='Male Involvement')
-
-    # Run and plot the scenarios
-    scens.run()
-   
-    scens.plot()
-
-#----------------------------------------------implementaion of campaigns at different rates for all methods on the MCPR and other rates---------------------------------------------------------------------#
+#----------------------------------------------implementaion of campaigns at different coverage rates for all methods on the MCPR and other rates---------------------------------------------------------------------#
 
 def run_campaign_coverage():
     # Number of agents to simulate
@@ -186,21 +186,62 @@ def run_campaign_coverage():
    
 
 
+#---------------------------------implementation of the male involvement-------------------------------------------------------------------------------------------------------------------#
+
+def run_male_inv():
+    # Parameters
+    n_agents = 10000
+    start_year = 2012
+    end_year = 2030
+
+    effect_size = 0.60
+
+    # Initialize factors for male involvement interventions
+    approval_change_factor = 1.0 + effect_size * 0.5  # Effect on approval change
+
+    ### HERE WE NEED TO DEFINE AN INTERVENTION
+    # Define intervention params
+    # NEED TO DEFINE INTERVENTION PARAMS HERE; BELOW ARE EXAMPLES ONLY
+    year = 2015
+    val = .5
+    par = 'exposure_factor'
+    info_intervention = fp.change_par(par=par, years=year, vals=val, verbose=True)
+
+    # Create scenarios for male involvement interventions
+    scen_info_sessions = fp.make_scen(interventions=info_intervention)
+
+    # Set up the parameters for the simulation
+    pars = fp.pars(
+        location='nuhdss',
+        n_agents=n_agents,
+        start_year=start_year,
+        end_year=end_year
+    )
+
+    # Create the Scenarios object and add scenarios
+    scens = fp.Scenarios(pars=pars, repeats=3)
+    scens.add_scen(label='Baseline')
+    scens.add_scen(scen_info_sessions, label='Male Involvement')
+
+    # Run and plot the scenarios
+    scens.run()
+   
+    scens.plot()
+
+
+
 
 
 if __name__ == '__main__':
     #run_baseline()
     #run_impl_campaign()
     #run_inj_campaign()
+    #run_campaign_coverage_inj()
     #run_all_methods_campaign()
-    #run_male_inv()
     #run_campaign_coverage()
+    #run_male_inv()
     
    
-
-#----------------------------------------------implementation of male involvement on the MCPR and other rates--------------------------------------------------------------------------------#
-# Population parameters
-
 
 
 
