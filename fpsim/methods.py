@@ -168,12 +168,12 @@ class SimpleChoice(RandomChoice):
 
         # Handle location
         location = location.lower()
-        if location == 'kenya':
-            self.contra_use_pars = fplocs.kenya.process_contra_use_simple()  # Set probability of use
-            method_choice_pars, init_dist = fplocs.kenya.process_markovian_method_choice(self.methods)  # Method choice
+        if location == 'kenya' or 'ethiopia':
+            self.contra_use_pars = eval(f"fplocs.{location}.process_contra_use_simple()")  # Set probability of use
+            method_choice_pars, init_dist = eval(f"fplocs.{location}.process_markovian_method_choice(self.methods)")  # Method choice
             self.method_choice_pars = method_choice_pars
             self.init_dist = init_dist
-            self.methods = fplocs.kenya.process_dur_use(self.methods)  # Reset duration of use
+            self.methods = eval(f"fplocs.{location}.process_dur_use(self.methods)")  # Reset duration of use
 
             # Handle age bins -- find a more robust way to do this
             self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])

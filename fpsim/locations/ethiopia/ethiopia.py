@@ -639,6 +639,121 @@ def urban_proportion():
     urban_data = pd.read_csv(thisdir / 'data' / 'urban.csv')
     return urban_data["mean"][0]  # Return this value as a float
 
+
+def process_contra_use_pars():
+    raw_pars = pd.read_csv(thisdir / 'data' / 'contra_coef.csv')
+    pars = sc.objdict()
+    for var_dict in raw_pars.to_dict('records'):
+        var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
+        pars[var_name] = var_dict['Estimate']
+    return pars
+
+
+def process_contra_use_simple():
+    # Read in data
+    alldfs = [
+        pd.read_csv(thisdir / 'data' / 'contra_coef_simple.csv'),
+        pd.read_csv(thisdir / 'data' / 'contra_coef_simple_pp1.csv'),
+        pd.read_csv(thisdir / 'data' / 'contra_coef_simple_pp6.csv'),
+    ]
+
+    contra_use_pars = dict()
+    for di, df in enumerate(alldfs):
+        contra_use_pars[di] = sc.objdict(
+            intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
+            age_factors=df[df['rhs'].str.match('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+            fp_ever_user=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
+            age_ever_user_factors=df[df['rhs'].str.match('age') & df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+        )
+    return contra_use_pars
+
+
+def process_simple_method_pars(methods):
+    """ Choice of method is based on age and parity """
+    df = pd.read_csv(thisdir / 'data' / 'method_mix.csv')
+    # Awful code to speed pandas up
+    dd = dict()
+    for akey in df.age_grp.unique():
+        dd[akey] = dict()
+        for pkey in df.parity.unique():
+            dd[akey][pkey] = dict()
+            for mlabel in df.method.unique():
+                val = df.loc[(df.age_grp == akey) & (df.parity == pkey) & (df.method == mlabel)].percent.values[0]
+                if mlabel != 'Abstinence':
+                    mname = [m.name for m in methods.values() if m.csv_name == mlabel][0]
+                    dd[akey][pkey][mname] = val
+                else:
+                    abstinence_val = sc.dcp(val)
+            dd[akey][pkey]['othtrad'] += abstinence_val
+
+    return dd
+
+
+def process_markovian_method_choice(methods):
+    """ Choice of method is age and previous method """
+    df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+    csv_map = {method.csv_name: method.name for method in methods.values()}
+    idx_map = {method.csv_name: method.idx for method in methods.values()}
+    idx_df = {}
+    for col in df.columns:
+        if col in csv_map.keys():
+            idx_df[col] = idx_map[col]
+
+    mc = dict()  # This one is a dict because it will be keyed with numbers
+    init_dist = sc.objdict()  # Initial distribution of method choice
+
+    for pp in df.postpartum.unique():
+        mc[pp] = sc.objdict()
+        mc[pp].method_idx = idx_df.values()
+        for akey in df.age_grp.unique():
+            mc[pp][akey] = sc.objdict()
+            thisdf = df.loc[(df.age_grp == akey) & (df.postpartum == pp)]
+            if pp == 1:  # Different logic for immediately postpartum
+                mc[pp][akey] = thisdf.values[0][4:13].astype(float)  # If this is going to be standard practice, should make it more robust
+            else:
+                from_methods = thisdf.From.unique()
+                for from_method in from_methods:
+                    from_mname = csv_map[from_method]
+                    row = thisdf.loc[thisdf.From == from_method]
+                    mc[pp][akey][from_mname] = row.values[0][4:13].astype(float)
+
+            # Set initial distributions by age
+            if pp == 0:
+                init_dist[akey] = thisdf.loc[thisdf.From == 'None'].values[0][4:13].astype(float)
+                init_dist.method_idx = idx_df.values()
+
+    return mc, init_dist
+
+
+def process_dur_use(methods):
+    """ Process duration of use parameters"""
+    df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+    for method in methods.values():
+        if method.name == 'btl':
+            method.dur_use = dict(dist='lognormal', par1=100, par2=1)
+        else:
+            mlabel = method.csv_name
+
+            thisdf = df.loc[df.method == mlabel]
+            dist = thisdf.functionform.iloc[0]
+            method.dur_use = dict()
+            method.dur_use['age_factors'] = np.append(thisdf.coef.values[2:], 0)
+
+            if dist == 'lognormal':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'meanlog'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'sdlog'].values[0]
+            elif dist in ['gamma']:
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'rate'].values[0]
+            elif dist == 'llogis':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'scale'].values[0]
+
+    return methods
+
 # %% Make and validate parameters
 
 def make_pars(seed=None, use_subnational=None):
