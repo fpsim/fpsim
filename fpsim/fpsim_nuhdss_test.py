@@ -109,7 +109,7 @@ def run_all_methods_campaign():
     start_year = 2012
     end_year = 2030
 
-    effect_size = 0.5
+    effect_size = 0.3
     coverage = 0.60
     init_factor = 1.0 + effect_size * coverage
     s1 = fp.make_scen(method='Injectables',init_factor=init_factor, year=2024)
@@ -142,7 +142,7 @@ def run_campaign_coverage():
     end_year = 2030
 
     # Define the effect size
-    effect_size = 0.5
+    effect_size = 0.3
 
     # Coverage levels to simulate
     coverages = [0.10, 0.30, 0.60]
@@ -237,7 +237,7 @@ if __name__ == '__main__':
     #run_impl_campaign()
     #run_inj_campaign()
     #run_campaign_coverage_inj()
-    #run_all_methods_campaign()
+    run_all_methods_campaign()
     #run_campaign_coverage()
     #run_male_inv()
     
