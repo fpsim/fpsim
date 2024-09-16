@@ -7,6 +7,8 @@ import sciris as sc
 import fpsim as fp
 import pytest
 
+
+
 # Parameters
 do_plot  = 1 # Whether to do plotting in interactive mode
 sc.options(backend='agg') # Turn off interactive plots
@@ -20,7 +22,7 @@ def test_plot():
     ''' Test Experiment plotting '''
     sc.heading('Testing Experiment plotting...')
     if do_plot:
-        pars = fp.pars('test')
+        pars = fp.pars(location='kenya')
         exp = fp.Experiment(pars)
         exp.run()
         exp.plot()
@@ -48,6 +50,7 @@ def test_emp():
     return exp_emp
 
 if __name__ == '__main__':
+
     sc.options(backend=None) # Turn on interactive plots
 
     with sc.timer():
