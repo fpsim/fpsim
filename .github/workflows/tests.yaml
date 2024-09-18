@@ -33,7 +33,7 @@ jobs:
           name: test_results
           path: tests/test-results.xml
       - name: Upload report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: report
