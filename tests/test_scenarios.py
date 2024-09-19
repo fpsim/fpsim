@@ -124,8 +124,7 @@ def test_scenarios():
     scen = fp.make_scen(label='More effective pill', year=int_year, eff={'Pill': high_inj_eff})
     scens_repeat = fp.Scenarios(location='test', repeats=2, scens=scen, start_year=int_year)
     scens_repeat.run(serial=serial)
-
-    assert len(scens_repeat.msim.sims) == 2, f"Should be {2} sims in scens object but found {len(scens.msim.sims)}"
+    assert len(scens_repeat.msim.sims) == 2, f"Should be {2} sims in scens object but found {len(scens_repeat.msim.sims)}"
 
     eff1 = scens_repeat.msim.sims[0].contraception_module.methods['pill'].efficacy
     eff2 = scens_repeat.msim.sims[1].contraception_module.methods['pill'].efficacy
