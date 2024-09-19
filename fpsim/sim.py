@@ -947,6 +947,16 @@ class Sim(fpb.BaseSim):
                 total_df = pd.concat([total_df, year_df], ignore_index=True)
             return total_df
 
+    def list_available_results(self):
+        """Pretty print availbale results keys, sorted alphabetically"""
+        output = 'Result keys:\n'
+        keylen = 35  # Maximum key length  -- "interactive"
+        for k in sorted(self.results.keys()):
+            keystr = sc.colorize(f'  {k:<{keylen}s} ', fg='blue', output=True)
+            reprstr = sc.indent(n=0, text=keystr, width=None)
+            output += f'{reprstr}'
+        print(output)
+
 
 # %% Multisim and running
 class MultiSim(sc.prettyobj):
