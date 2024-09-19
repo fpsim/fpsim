@@ -14,8 +14,7 @@ pars = fp.pars(location='kenya')
 pars['n_agents'] = 1_000  # Small population size
 
 sc.tic()
-age_bins = np.arange(101)[::5] # 5 year bins
-sim = fp.Sim(pars=pars, empowerment_module=empwr, analyzers=[fp.empowerment_recorder(bins=age_bins)])
+sim = fp.Sim(pars=pars, empowerment_module=empwr, analyzers=[fp.empowerment_recorder()])
 sim.run()
 
 if do_plot:
