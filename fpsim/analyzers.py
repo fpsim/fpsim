@@ -420,7 +420,8 @@ class empowerment_recorder(Analyzer):
         """
         super().initialize()
         if self.bins is None:
-            self.bins = np.arange(0, sim.pars['max_age']+2)
+            ages = np.arange(0, sim.pars['max_age']+2)
+            self.bins = ages[::5]  # 5 year bins
         self.nbins = len(self.bins)-1
 
         for key in self.keys:
@@ -459,7 +460,7 @@ class empowerment_recorder(Analyzer):
         """
         Plot all keys in self.keys or in to_plot as a time vs age-groups heatmaps
         """
-        fig_args = sc.mergedicts(fig_args)
+        fig_args = sc.mergedicts(fig_args, {'figsize': (15, 15)})
         pl_args = sc.mergedicts(pl_args)
         fig = pl.figure(**fig_args)
 
@@ -517,7 +518,7 @@ class empowerment_recorder(Analyzer):
                 axs[k].set_ylabel('Age (years)')
             except:
                 pl.title(f'Could not plot {key}')
-
+        fig.tight_layout()
         return fig
 
     def plot_snapshot(self, ti=0, to_plot=None, fig_args=None, pl_args=None):
