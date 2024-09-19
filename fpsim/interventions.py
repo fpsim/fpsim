@@ -306,7 +306,8 @@ class update_methods(Intervention):
         eff (dict):
             An optional key for changing efficacy; its value is a dictionary with the following schema:
                 {method: efficacy}
-                    Where method is the method to be changed, and efficacy is the new efficacy
+                    Where method is the name of the contraceptive method to be changed,
+                    and efficacy is a number with the efficacy
 
         dur_use (dict):
             Optional key for changing the duration of use; its value is a dictionary with the following schema:
