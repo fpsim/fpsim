@@ -261,6 +261,11 @@ class BasePeople(sc.prettyobj):
         return self.alive.sum()
 
     @property
+    def n_female(self):
+        ''' Number of females alive'''
+        return np.sum(self.alive & self.is_female)
+
+    @property
     def inds(self):
         ''' Alias to self._inds to prevent accidental overwrite & increase speed '''
         return self._inds
