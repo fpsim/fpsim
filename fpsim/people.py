@@ -1065,7 +1065,7 @@ class People(fpb.BasePeople):
         return
 
     def _step_results_intent(self):
-        """ Calculate percentage of women who have intent to use contraception and intent to become pregnant in the next 12 months"""
+        """ Calculate percentage of living women who have intent to use contraception and intent to become pregnant in the next 12 months"""
         self.step_results['perc_contra_intent'] = (np.sum(self.alive & self.is_female & self.intent_to_use) / self.n_female) * 100
         self.step_results['perc_fertil_intent'] = (np.sum(self.alive & self.is_female & self.fertility_intent) / self.n_female) * 100
         return
