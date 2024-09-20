@@ -200,7 +200,6 @@ class People(fpb.BasePeople):
         f_inds = sc.findinds(self.is_female)
         f_ages = self.age[f_inds]
         age_inds = fpu.digitize_ages_1yr(f_ages)
-
         for age in intent_pars.keys():
             aged_x_inds = f_inds[age_inds == age]
             fi_cats = list(intent_pars[age].keys())  # all ages have the same intent categories
@@ -1041,11 +1040,9 @@ class People(fpb.BasePeople):
         self.step_results['parity2to3'] = np.sum((self.parity >= 2) & (self.parity <= 3) & self.is_female) / np.sum(self.is_female) * 100
         self.step_results['parity4to5'] = np.sum((self.parity >= 4) & (self.parity <= 5) & self.is_female) / np.sum(self.is_female) * 100
         self.step_results['parity6plus'] = np.sum((self.parity >= 6) & self.is_female) / np.sum(self.is_female) * 100
-        self.step_results['wq1'] = np.sum((self.wealthquintile == 1) & self.is_female) / np.sum(self.is_female) * 100
-        self.step_results['wq2'] = np.sum((self.wealthquintile == 2) & self.is_female) / np.sum(self.is_female) * 100
-        self.step_results['wq3'] = np.sum((self.wealthquintile == 3) & self.is_female) / np.sum(self.is_female) * 100
-        self.step_results['wq4'] = np.sum((self.wealthquintile == 4) & self.is_female) / np.sum(self.is_female) * 100
-        self.step_results['wq5'] = np.sum((self.wealthquintile == 5) & self.is_female) / np.sum(self.is_female) * 100
+
+        self._step_results_wq()
+        self._step_results_intent()
 
         # Age person at end of timestep after tabulating results
         alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
@@ -1060,3 +1057,15 @@ class People(fpb.BasePeople):
             raise ValueError(errormsg)
 
         return self.step_results
+
+    def _step_results_wq(self):
+        """" Calculate step results on wealthquintile """
+        for i in range(1, 6):
+            self.step_results[f'wq{i}'] = (np.sum((self.wealthquintile == i) & self.is_female) / np.sum(self.is_female) * 100)
+        return
+
+    def _step_results_intent(self):
+        """ Calculate percentage of women who have intent to use contraception and intent to become pregnant in the next 12 months"""
+        self.step_results['perc_contra_intent'] = (np.sum(self.alive & self.is_female & self.intent_to_use) / self.n_female) * 100
+        self.step_results['perc_fertil_intent'] = (np.sum(self.alive & self.is_female & self.fertility_intent) / self.n_female) * 100
+        return
