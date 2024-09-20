@@ -267,6 +267,8 @@ array_results = sc.autolist(
     'wq3',
     'wq4',
     'wq5',
+    'perc_contra_intent',
+    'perc_fertil_intent',
     'nonpostpartum',
     'total_women_fecund',
     'unintended_pregs',
