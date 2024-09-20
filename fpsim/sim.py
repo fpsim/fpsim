@@ -91,6 +91,7 @@ class Sim(fpb.BaseSim):
     def __init__(self, pars=None, location=None, label=None, track_children=False, regional=False,
                  contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
 
+        pars = sc.dcp(pars)
         # Handle location
         if location is None:
             if pars is not None and pars.get('location'):
