@@ -266,6 +266,11 @@ class BasePeople(sc.prettyobj):
         return np.sum(self.alive & self.is_female)
 
     @property
+    def is_dhs_age(self):
+        ''' Returns Boolean array of whether each agents's age is within the DHS age range '''
+        return (self.age >= fpd.min_age) & (self.age < fpd.max_age_preg)
+
+    @property
     def inds(self):
         ''' Alias to self._inds to prevent accidental overwrite & increase speed '''
         return self._inds
