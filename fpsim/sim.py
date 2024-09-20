@@ -719,6 +719,11 @@ class Sim(fpb.BaseSim):
                         'cum_miscarriages_by_year':    'Miscarriages',
                         'cum_abortions_by_year':       'Abortions',
                         }
+                elif to_plot == 'intent':
+                    to_plot = {
+                        'perc_contra_intent':     'Intent to use contraception (%)',
+                        'perc_fertil_intent':     'Fertility intent (%)',
+                        }
                 elif to_plot == 'method':
                     to_plot = {
                         'method_usage':                 'Method usage'
@@ -836,6 +841,8 @@ class Sim(fpb.BaseSim):
                     pl.ylabel('Maternal deaths per 10,000 births')
                 elif 'stillbirths_' in key:
                     pl.ylabel('Number of stillbirths')
+                elif 'intent' in key:
+                    pl.ylabel('Percentage')
                 else:
                     pl.ylabel('Count')
                 pl.xlabel('Year')
