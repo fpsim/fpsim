@@ -426,6 +426,10 @@ class Sim(fpb.BaseSim):
         self.results['total_women_fecund'][ti] = res.total_women_fecund * scale
         self.results['unintended_pregs'][ti] = res.unintended_pregs * scale
 
+        # Intent
+        self.results['perc_contra_intent'][ti] = res.perc_contra_intent
+        self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
+
         if self.pars['track_as']:
             for age_specific_channel in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator',
                                          'as_stillbirths', 'imr_age_by_group', 'mmr_age_by_group',
