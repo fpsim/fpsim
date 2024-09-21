@@ -121,6 +121,7 @@ class Sim(fpb.BaseSim):
         self.track_children = track_children
         self.regional = regional
         self.ti = None  # The current timestep of the simulation
+        self.scale = pars['scaled_pop'] / pars['n_agents'] if pars['scaled_pop'] is not None else 1
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
 
@@ -462,6 +463,7 @@ class Sim(fpb.BaseSim):
                                              agekey] * scale  # Store results of total fecund women per age bin for ASFR
 
         # Calculate metrics over the last year in the model and save whole years and stats to an array
+        scale = self.scale
         if ti % fpd.mpy == 0:
             self.results['tfr_years'].append(self.y)
             start_index = (int(self.ty) - 1) * fpd.mpy
