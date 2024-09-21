@@ -175,7 +175,7 @@ class Empowerment:
 
     def update(self, ppl):
         """ Update empowerment states and intent to use based on regression coefficients"""
-        self.update_empwr_states_by_coeffs(ppl)
+        #self.update_empwr_states_by_coeffs(ppl)
         self.update_intent_to_use_by_coeffs(ppl)
         self.calculate_composite_measures(ppl)
         return

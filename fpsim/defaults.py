@@ -269,6 +269,7 @@ array_results = sc.autolist(
     'wq5',
     'perc_contra_intent',
     'perc_fertil_intent',
+    'paid_employment',
     'nonpostpartum',
     'total_women_fecund',
     'unintended_pregs',
@@ -277,6 +278,10 @@ array_results = sc.autolist(
     'secondary_births',
     'proportion_short_interval'
 )
+
+#empowerment_results = sc.autolist('paid_employment')
+#array_results += empowerment_results
+
 for age_group in age_bin_map.keys():
     array_results += 'total_births_' + age_group
     array_results += 'total_women_' + age_group
