@@ -549,7 +549,7 @@ class Sim(fpb.BaseSim):
         infant_mortality_rate = sc.safedivide(self.results['infant_deaths_over_year'][-1], live_births_over_year) * 1000
         self.results['imr'].append(infant_mortality_rate)
 
-        self.results['proportion_short_interval_by_year'] = sc.safedivide(self.results['short_intervals_over_year'][-1], self.results['secondary_births_over_year'][-1])
+        self.results['proportion_short_interval_by_year'].append(sc.safedivide(self.results['short_intervals_over_year'][-1], self.results['secondary_births_over_year'][-1]))
         return
 
     def store_postpartum(self):
