@@ -299,10 +299,15 @@ class Sim(fpb.BaseSim):
         self.people.ti = self.ti
         self.people.ty = self.ty
         self.people.y = self.y
-        step_results = self.people.update()
+
+        # Update people's states based on model dynamics
+        self.people.update()
 
         # Apply interventions
         self.apply_interventions()
+
+        # Count results
+        step_results = self.people.get_step_results()
 
         # Store results
         res = sc.dictobj(**step_results)
@@ -318,6 +323,8 @@ class Sim(fpb.BaseSim):
 
         # Lastly, update analyzers. Needs to happen at the end of the sim as they report on events from this timestep
         self.apply_analyzers()
+
+        self.people.step_age()
 
         return res
 
