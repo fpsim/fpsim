@@ -430,6 +430,9 @@ class Sim(fpb.BaseSim):
         self.results['perc_contra_intent'][ti] = res.perc_contra_intent
         self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
 
+        # Empowerment
+        self.results['paid_employment'][ti] = res.paid_employment
+
         if self.pars['track_as']:
             for age_specific_channel in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator',
                                          'as_stillbirths', 'imr_age_by_group', 'mmr_age_by_group',
@@ -724,6 +727,10 @@ class Sim(fpb.BaseSim):
                         'perc_contra_intent':     'Intent to use contraception (%)',
                         'perc_fertil_intent':     'Fertility intent (%)',
                         }
+                elif to_plot == 'empowerment':
+                    to_plot = {
+                        'paid_employment':     'Paid employment (%)',
+                        }
                 elif to_plot == 'method':
                     to_plot = {
                         'method_usage':                 'Method usage'
@@ -821,9 +828,9 @@ class Sim(fpb.BaseSim):
                     ax.fill_between(x, low, high, **fill_args)
 
                 # Plot interventions, if present
-                # for intv in sc.tolist(self['interventions']):
-                #     if hasattr(intv, 'plot_intervention'): # Don't plot e.g. functions
-                #         intv.plot_intervention(self, ax)
+                for intv in sc.tolist(self['interventions']):
+                    if hasattr(intv, 'plot_intervention'): # Don't plot e.g. functions
+                        intv.plot_intervention(self, ax)
 
                 # Handle annotations
                 as_plot = (
@@ -841,7 +848,7 @@ class Sim(fpb.BaseSim):
                     pl.ylabel('Maternal deaths per 10,000 births')
                 elif 'stillbirths_' in key:
                     pl.ylabel('Number of stillbirths')
-                elif 'intent' in key:
+                elif 'intent' or 'employment' in key:
                     pl.ylabel('Percentage')
                 else:
                     pl.ylabel('Count')

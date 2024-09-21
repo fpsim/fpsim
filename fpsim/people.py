@@ -87,7 +87,7 @@ class People(fpb.BasePeople):
         self.empowerment_module = empowerment_module
         self.education_module = education_module
         if self.empowerment_module is not None:
-            self.empowerment_module.initialize(self)
+            self.empowerment_module.initialize(self.filter(self.is_female))
 
         if self.education_module is not None:
             self.education_module.initialize(self)
@@ -981,15 +981,14 @@ class People(fpb.BasePeople):
         lact = fecund.filter(fecund.lactating)
 
         # Update empowerment states, and empowerment-related states
-        alive_now_f = self.filter(self.is_female)
+        alive_now_f = self.filter(self.is_female & self.alive)
         if self.empowerment_module is not None:
-            eligible = alive_now_f.filter(((alive_now_f.age >= fpd.min_age) & (
-                        alive_now_f.age < fpd.max_age_preg)))
+            eligible = alive_now_f.filter(alive_now_f.is_dhs_age)
 
             # Women who just turned 15 get assigned a value based on empowerment probs
-            bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
-            if len(bday_15):
-                self.empowerment_module.update_empwr_states(bday_15)
+            # bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
+            # if len(bday_15):
+            #     self.empowerment_module.update_empwr_states(bday_15)
             # Update states on her bday, based on coefficients
             bday = eligible.birthday_filter()
             if len(bday):
@@ -1043,6 +1042,7 @@ class People(fpb.BasePeople):
 
         self._step_results_wq()
         self._step_results_intent()
+        self._step_results_empower()
 
         # Age person at end of timestep after tabulating results
         alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
@@ -1062,6 +1062,10 @@ class People(fpb.BasePeople):
         """" Calculate step results on wealthquintile """
         for i in range(1, 6):
             self.step_results[f'wq{i}'] = (np.sum((self.wealthquintile == i) & self.is_female) / np.sum(self.is_female) * 100)
+        return
+
+    def _step_results_empower(self):
+        self.step_results['paid_employment'] = (np.sum(self.paid_employment & self.is_female & self.alive))
         return
 
     def _step_results_intent(self):
