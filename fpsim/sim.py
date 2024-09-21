@@ -295,21 +295,21 @@ class Sim(fpb.BaseSim):
         # Update mortality probabilities for year of sim
         self.update_mortality()
 
-        # Apply interventions
-        self.apply_interventions()
-
         # Update the people
         self.people.ti = self.ti
         self.people.ty = self.ty
         self.people.y = self.y
         step_results = self.people.update()
 
+        # Apply interventions
+        self.apply_interventions()
+
         # Store results
-        r = sc.dictobj(**step_results)
-        self.update_results(r, self.ti)
+        res = sc.dictobj(**step_results)
+        self.update_results(res, self.ti)
 
         # Add births
-        n_new_people = r.births - r.infant_deaths  # Do not add agents who died before age 1 to population
+        n_new_people = res.births - res.infant_deaths  # Do not add agents who died before age 1 to population
         if n_new_people > 0: self.grow_population(n_new_people)
 
         # Update mothers
@@ -319,7 +319,7 @@ class Sim(fpb.BaseSim):
         # Lastly, update analyzers. Needs to happen at the end of the sim as they report on events from this timestep
         self.apply_analyzers()
 
-        return r
+        return res
 
     def run(self, verbose=None):
         """ Run the simulation """
