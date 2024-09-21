@@ -1024,8 +1024,33 @@ class People(fpb.BasePeople):
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
-        # Update results
         fecund.update_age_bin_totals()
+
+        # Add check for ti contra
+        if (self.ti_contra < 0).any():
+            errormsg = f'Invalid values for ti_contra at timestep {self.ti}'
+            raise ValueError(errormsg)
+
+        return
+
+    def step_age(self):
+        """
+        Advance people's age at at end of timestep after tabulating results
+        and update the age_by_group, based on the new age distribution to
+        quantify results in the next time step.
+        """
+        alive_now = self.filter(self.alive)
+        # Age person at end of timestep after tabulating results
+        alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
+
+        # Storing ages by method age group
+        age_bins = [0] + [max(fpd.age_specific_channel_bins[key]) for key in
+                          fpd.age_specific_channel_bins]
+        self.age_by_group = np.digitize(self.age, age_bins) - 1
+        return
+
+    def get_step_results(self):
+        """Calculate and return the results for this specific time step"""
         self.track_mcpr()
         self.track_cpr()
         self.track_acpr()
@@ -1043,18 +1068,6 @@ class People(fpb.BasePeople):
         self._step_results_wq()
         self._step_results_intent()
         self._step_results_empower()
-
-        # Age person at end of timestep after tabulating results
-        alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
-
-        # Storing ages by method age group
-        age_bins = [0] + [max(fpd.age_specific_channel_bins[key]) for key in fpd.age_specific_channel_bins]
-        self.age_by_group = np.digitize(self.age, age_bins) - 1
-
-        # Add check for ti contra
-        if (self.ti_contra < 0).any():
-            errormsg = f'Invalid values for ti_contra at timestep {self.ti}'
-            raise ValueError(errormsg)
 
         return self.step_results
 
