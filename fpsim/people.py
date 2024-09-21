@@ -450,7 +450,7 @@ class People(fpb.BasePeople):
         conceived = active.binomial(preg_probs[active.inds], as_filter=True)
         self.step_results['pregnancies'] += len(conceived)  # track all pregnancies
         unintended = conceived.filter(conceived.method != 0)
-        self.step_results['unintended_pregs'] += len(unintended)  # track pregnancies due to method failure
+        self.step_results['method_failures'] += len(unintended)  # unintended pregnancies due to method failure
 
         # Check for abortion
         is_abort = conceived.binomial(pars['abortion_prob'])
@@ -926,7 +926,7 @@ class People(fpb.BasePeople):
             wq5=0,
             total_women_fecund=0,
             pregnancies=0,
-            unintended_pregs=0,
+            method_failures=0,
             birthday_fraction=None,
             birth_bins={},
             age_bin_totals={},

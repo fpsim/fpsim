@@ -432,7 +432,7 @@ class Sim(fpb.BaseSim):
         self.results['wq5'][ti] = res.wq5
         self.results['nonpostpartum'][ti] = nonpostpartum
         self.results['total_women_fecund'][ti] = res.total_women_fecund * scale
-        self.results['unintended_pregs'][ti] = res.unintended_pregs * scale
+        self.results['method_failures'][ti] = res.method_failures * scale
 
         # Intent
         self.results['perc_contra_intent'][ti] = res.perc_contra_intent
@@ -468,37 +468,15 @@ class Sim(fpb.BaseSim):
             self.results['tfr_years'].append(self.y)
             start_index = (int(self.ty) - 1) * fpd.mpy
             stop_index = int(self.ty) * fpd.mpy
-            unintended_pregs_over_year = scale * np.sum(self.results['unintended_pregs'][
-                                                        start_index:stop_index])  # Grabs sum of unintended pregnancies due to method failures over the last 12 months of calendar year
-            infant_deaths_over_year = scale * np.sum(self.results['infant_deaths'][start_index:stop_index])
-            total_births_over_year = scale * np.sum(self.results['total_births'][start_index:stop_index])
-            live_births_over_year = scale * np.sum(self.results['births'][start_index:stop_index])
-            stillbirths_over_year = scale * np.sum(self.results['stillbirths'][start_index:stop_index])
-            miscarriages_over_year = scale * np.sum(self.results['miscarriages'][start_index:stop_index])
-            abortions_over_year = scale * np.sum(self.results['abortions'][start_index:stop_index])
-            short_intervals_over_year = scale * np.sum(self.results['short_intervals'][start_index:stop_index])
-            secondary_births_over_year = scale * np.sum(self.results['secondary_births'][start_index:stop_index])
-            maternal_deaths_over_year = scale * np.sum(self.results['maternal_deaths'][start_index:stop_index])
-            pregnancies_over_year = scale * np.sum(self.results['pregnancies'][start_index:stop_index])
-            contra_access_by_year = scale * np.sum(self.results['contra_access'][start_index:stop_index])
-            new_users_by_year = scale * np.sum(self.results['new_users'][start_index:stop_index])
+            for res_name, new_res_name in fpd.to_annualize.items():
+                res_over_year = self.annualize_results(res_name, start_index, stop_index)
+                annual_res_name = f'{new_res_name}_over_year'
+                self.results[annual_res_name].append(res_over_year)
+
             # self.results['method_usage'].append(self.compute_method_usage())  # only want this per year
             self.results['pop_size'].append(scale * self.n)  # CK: TODO: replace with arrays
             self.results['mcpr_by_year'].append(self.results['mcpr'][ti])
             self.results['cpr_by_year'].append(self.results['cpr'][ti])
-            self.results['contra_access_by_year'].append(contra_access_by_year)
-            self.results['new_users_by_year'].append(new_users_by_year)
-            self.results['method_failures_over_year'].append(unintended_pregs_over_year)
-            self.results['infant_deaths_over_year'].append(infant_deaths_over_year)
-            self.results['total_births_over_year'].append(total_births_over_year)
-            self.results['live_births_over_year'].append(live_births_over_year)
-            self.results['stillbirths_over_year'].append(stillbirths_over_year)
-            self.results['miscarriages_over_year'].append(miscarriages_over_year)
-            self.results['abortions_over_year'].append(abortions_over_year)
-            self.results['short_intervals_over_year'].append(short_intervals_over_year)
-            self.results['secondary_births_over_year'].append(secondary_births_over_year)
-            self.results['maternal_deaths_over_year'].append(maternal_deaths_over_year)
-            self.results['pregnancies_over_year'].append(pregnancies_over_year)
 
             if self.pars['track_as']:
                 imr_results_dict = self.people.log_age_split(binned_ages_t=self.results['imr_age_by_group'],
@@ -520,23 +498,7 @@ class Sim(fpb.BaseSim):
                     self.results[f"stillbirths_{age_key}"].append(
                         stillbirths_results_dict[f"stillbirths_{age_key}"])
 
-            if maternal_deaths_over_year == 0:
-                self.results['mmr'].append(0)
-            else:
-                maternal_mortality_ratio = maternal_deaths_over_year / live_births_over_year * 100000
-                self.results['mmr'].append(maternal_mortality_ratio)
-            if infant_deaths_over_year == 0:
-                self.results['imr'].append(infant_deaths_over_year)
-
-            else:
-                infant_mortality_rate = infant_deaths_over_year / live_births_over_year * 1000
-                self.results['imr'].append(infant_mortality_rate)
-
-            if secondary_births_over_year == 0:
-                self.results['proportion_short_interval_by_year'].append(secondary_births_over_year)
-            else:
-                short_interval_proportion = (short_intervals_over_year / secondary_births_over_year)
-                self.results['proportion_short_interval_by_year'].append(short_interval_proportion)
+            self.calculate_annual_ratios()
 
             tfr = 0
             for key in fpd.age_bin_map.keys():
@@ -574,6 +536,21 @@ class Sim(fpb.BaseSim):
 
         # Convert to an objdict for easier access
         self.results = sc.objdict(self.results)
+
+    def annualize_results(self, key, start_index, stop_index):
+        return self.scale * np.sum(self.results[key][start_index:stop_index])
+
+    def calculate_annual_ratios(self):
+        live_births_over_year = self.results['live_births_over_year'][-1]
+
+        maternal_mortality_ratio = sc.safedivide(self.results['maternal_deaths_over_year'][-1], live_births_over_year) * 100000
+        self.results['mmr'].append(maternal_mortality_ratio)
+
+        infant_mortality_rate = sc.safedivide(self.results['infant_deaths_over_year'][-1], live_births_over_year) * 1000
+        self.results['imr'].append(infant_mortality_rate)
+
+        self.results['proportion_short_interval_by_year'] = sc.safedivide(self.results['short_intervals_over_year'][-1], self.results['secondary_births_over_year'][-1])
+        return
 
     def store_postpartum(self):
         """
