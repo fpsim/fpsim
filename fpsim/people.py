@@ -986,9 +986,9 @@ class People(fpb.BasePeople):
             eligible = alive_now_f.filter(alive_now_f.is_dhs_age)
 
             # Women who just turned 15 get assigned a value based on empowerment probs
-            # bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
-            # if len(bday_15):
-            #     self.empowerment_module.update_empwr_states(bday_15)
+            bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
+            if len(bday_15):
+                self.empowerment_module.update_empwr_states(bday_15)
             # Update states on her bday, based on coefficients
             bday = eligible.birthday_filter()
             if len(bday):
