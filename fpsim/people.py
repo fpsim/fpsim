@@ -1078,7 +1078,7 @@ class People(fpb.BasePeople):
         return
 
     def _step_results_empower(self):
-        self.step_results['paid_employment'] = (np.sum(self.paid_employment & self.is_female & self.alive))
+        self.step_results['paid_employment'] = (np.sum(self.paid_employment & self.is_female & self.alive) / (self.n_female))*100
         return
 
     def _step_results_intent(self):
