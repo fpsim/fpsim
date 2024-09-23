@@ -204,7 +204,11 @@ class BasePeople(sc.prettyobj):
             npval = newpeople[key]
             p2val = people2[key]
             if isinstance(npval, np.ndarray):
-                newpeople[key] = np.concatenate([npval, p2val], axis=0)
+                if key == 'on_contra_prev':
+                    new_col = np.full((npval.shape[0], len(people2)), p2val)
+                    newpeople[key] = np.hstack((npval, new_col))
+                else:
+                    newpeople[key] = np.concatenate([npval, p2val], axis=0)
             elif isinstance(npval, list):
                 newpeople[key] += p2val
             else:
@@ -402,6 +406,14 @@ class BaseSim(ParsObj):
         ''' Count the number of points in timesteps between the starting year and the ending year.'''
         try:
             return int(fpd.mpy * (self.pars['end_year'] - self.pars['start_year']) / self.pars['timestep'] + 1)
+        except:
+            return 0
+
+    @property
+    def tperyear(self):
+        ''' Count the number of points in timesteps per year.'''
+        try:
+            return (self.npts / (self.pars['end_year'] - self.pars['start_year'])).__ceil__()
         except:
             return 0
 

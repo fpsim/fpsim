@@ -118,7 +118,20 @@ person_defaults = [
     State('has_fin_goals', 0, bool),            # whether she has financial goals
     State('sexual_autonomy',    0, bool),       # whether she has ability to refuse sex
 
-     # Composite empowerment attributes
+    # Longitudinal params used for full empowerment simulations; value of each param in the previous year
+    State('paid_employment_prev', 0, bool),
+    State('decision_wages_prev', 0, bool),
+    State('decide_spending_partner_prev', 0, bool),
+    State('on_contra_prev', 0, bool),
+    State('intent_to_use_prev', 0, bool),
+    State('buy_decision_major_prev', 0, bool),
+    State('buy_decision_clothes_prev', 0, bool),
+    State('has_fin_knowl_prev', 0, bool),
+    State('has_fin_goals_prev', 0, bool),
+    State('financial_autonomy_prev', 0, float),
+    State('has_savings_prev', 0, bool),
+
+    # Composite empowerment attributes
     State('financial_autonomy',    0, float),
     State('decision_making', 0, float),
 

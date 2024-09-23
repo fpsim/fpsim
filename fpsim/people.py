@@ -962,10 +962,42 @@ class People(fpb.BasePeople):
 
         return
 
-    def update(self):
+    def update_long_params(self, tperyear):
+        """
+        Updates longitudinal params in people object (params ending in '_prev')
+        """
+
+        # Calculate index in which to store current vals
+        if self.ti < tperyear:
+            index = self.ti
+        else:
+            index = (self.ti % tperyear)
+
+        # Store the current params in 'previous' arrays
+        self.on_contra_prev[index] = self.on_contra
+        '''
+        self.on_contra_prev.append(self.on_contra)
+        self.intent_to_use_prev.append(self.intent_to_use)
+        self.buy_decision_major_prev.append(self.buy_decision_major)
+        self.buy_decision_clothes_prev.append(self.buy_decision_clothes)
+        self.has_fin_knowl_prev.append(self.has_fin_knowl)
+        self.has_fin_goals_prev.append(self.has_fin_goals)
+        self.financial_autonomy_prev.append(self.financial_autonomy)
+        self.paid_employment_prev.append(self.paid_employment)
+        self.has_savings_prev.append(self.has_savings)
+        self.decision_wages_prev.append(self.decision_wages)
+        self.decide_spending_partner_prev.append(self.decide_spending_partner)
+        '''
+
+        return
+
+    def update(self, tperyear):
         """
         Perform all updates to people on each timestep
         """
+        # Store current values to params tracking previous year's data
+        self.update_long_params(tperyear)
+
         self.init_step_results()  # Initialize outputs
         alive_start = self.filter(self.alive)
         alive_start.check_mortality()  # Decide if person dies at this t in the simulation
