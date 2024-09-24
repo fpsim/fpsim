@@ -982,10 +982,7 @@ class People(fpb.BasePeople):
         """
 
         # Calculate column index in which to store current vals
-        if self.ti < tperyear:
-            index = self.ti
-        else:
-            index = (self.ti % tperyear)
+        index = self.ti % tperyear
 
         # Store the current params in 'previous' arrays
         self.on_contra_prev[:, index] = self.on_contra
