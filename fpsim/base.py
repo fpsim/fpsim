@@ -204,9 +204,9 @@ class BasePeople(sc.prettyobj):
             npval = newpeople[key]
             p2val = people2[key]
             if isinstance(npval, np.ndarray):
-                if key == 'on_contra_prev':
-                    new_col = np.full((npval.shape[0], len(people2)), p2val)
-                    newpeople[key] = np.hstack((npval, new_col))
+                if key.endswith('prev'):    # If key is a longitudinal parameter, create 2-D array for new people and append
+                    new_rows = np.full((len(people2), npval.shape[1]), p2val[0])
+                    newpeople[key] = np.concatenate((npval, new_rows), axis=0)
                 else:
                     newpeople[key] = np.concatenate([npval, p2val], axis=0)
             elif isinstance(npval, list):

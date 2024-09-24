@@ -120,6 +120,7 @@ class Sim(fpb.BaseSim):
         self.track_children = track_children
         self.regional = regional
         self.ti = None  # The current timestep of the simulation
+        self.pars['tperyear'] = self.tperyear
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
 
@@ -192,8 +193,7 @@ class Sim(fpb.BaseSim):
         self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
                                     empowerment_module=self.empowerment_module, education_module=self.education_module)
 
-        # Initialize circular buffers for longitudinal params
-        self.people.on_contra_prev = np.full((self.tperyear, self.pars['n_agents']), self.people.on_contra_prev[0])
+        return
 
     def init_methods(self):
         if self.contraception_module is not None:

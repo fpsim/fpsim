@@ -96,6 +96,20 @@ class People(fpb.BasePeople):
         if self.pars['use_partnership']:
             fpdmg.init_partnership_states(self)
 
+        # Initialize circular buffers for longitudinal params
+        self.on_contra_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.on_contra_prev[0])
+        self.intent_to_use_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.intent_to_use_prev[0])
+        self.buy_decision_major_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.buy_decision_major_prev[0])
+        self.buy_decision_clothes_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.buy_decision_clothes_prev[0])
+        self.has_fin_knowl_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.has_fin_knowl_prev[0])
+        self.has_fin_goals_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.has_fin_goals_prev[0])
+        self.financial_autonomy_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.financial_autonomy_prev[0])
+        self.has_fin_goals_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.has_fin_goals_prev[0])
+        self.paid_employment_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.paid_employment_prev[0])
+        self.has_savings_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.has_savings_prev[0])
+        self.decision_wages_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.decision_wages_prev[0])
+        self.decide_spending_partner_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.decide_spending_partner_prev[0])
+
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
         self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
@@ -182,7 +196,7 @@ class People(fpb.BasePeople):
 
         if contraception_module is not None:
             self.contraception_module = contraception_module
-            contra_choosers.on_contra = contraception_module.get_contra_users(contra_choosers, year=year)
+            contra_choosers.on_contra = contraception_module.get_contra_users(contra_choosers, year=year, ti=ti, tperyear=self.pars['tperyear'])
             oc = contra_choosers.filter(contra_choosers.on_contra)
             oc.method = contraception_module.init_method_dist(oc)
             oc.ever_used_contra = 1
@@ -268,7 +282,7 @@ class People(fpb.BasePeople):
                 # Get previous users and see whether they will switch methods or stop using
                 if len(choosers):
 
-                    choosers.on_contra = cm.get_contra_users(choosers, year=year)
+                    choosers.on_contra = cm.get_contra_users(choosers, year=year, ti=ti, tperyear=self.pars['tperyear'])
                     choosers.ever_used_contra = choosers.ever_used_contra | choosers.on_contra
 
                     # Divide people into those that keep using contraception vs those that stop
@@ -301,7 +315,7 @@ class People(fpb.BasePeople):
                     if pp.on_contra.any():
                         errormsg = 'Postpartum women should not currently be using contraception.'
                         raise ValueError(errormsg)
-                    pp.on_contra = cm.get_contra_users(pp, year=year, event=event)
+                    pp.on_contra = cm.get_contra_users(pp, year=year, event=event, ti=ti, tperyear=self.pars['tperyear'])
                     on_contra = pp.filter(pp.on_contra)
                     off_contra = pp.filter(~pp.on_contra)
                     pp.step_results['contra_access'] += len(on_contra)
@@ -967,27 +981,24 @@ class People(fpb.BasePeople):
         Updates longitudinal params in people object (params ending in '_prev')
         """
 
-        # Calculate index in which to store current vals
+        # Calculate column index in which to store current vals
         if self.ti < tperyear:
             index = self.ti
         else:
             index = (self.ti % tperyear)
 
         # Store the current params in 'previous' arrays
-        self.on_contra_prev[index] = self.on_contra
-        '''
-        self.on_contra_prev.append(self.on_contra)
-        self.intent_to_use_prev.append(self.intent_to_use)
-        self.buy_decision_major_prev.append(self.buy_decision_major)
-        self.buy_decision_clothes_prev.append(self.buy_decision_clothes)
-        self.has_fin_knowl_prev.append(self.has_fin_knowl)
-        self.has_fin_goals_prev.append(self.has_fin_goals)
-        self.financial_autonomy_prev.append(self.financial_autonomy)
-        self.paid_employment_prev.append(self.paid_employment)
-        self.has_savings_prev.append(self.has_savings)
-        self.decision_wages_prev.append(self.decision_wages)
-        self.decide_spending_partner_prev.append(self.decide_spending_partner)
-        '''
+        self.on_contra_prev[:, index] = self.on_contra
+        self.intent_to_use_prev[:, index] = self.intent_to_use
+        self.buy_decision_major_prev[:, index] = self.buy_decision_major
+        self.buy_decision_clothes_prev[:, index] = self.buy_decision_clothes
+        self.has_fin_knowl_prev[:, index] = self.has_fin_knowl
+        self.has_fin_goals_prev[:, index] = self.has_fin_goals
+        self.financial_autonomy_prev[:, index] = self.financial_autonomy
+        self.paid_employment_prev[:, index] = self.paid_employment
+        self.has_savings_prev[:, index] = self.has_savings
+        self.decision_wages_prev[:, index] = self.decision_wages
+        self.decide_spending_partner_prev[:, index] = self.decide_spending_partner
 
         return
 
