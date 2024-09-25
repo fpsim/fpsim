@@ -97,24 +97,25 @@ class People(fpb.BasePeople):
             fpdmg.init_partnership_states(self)
 
         # Initialize circular buffers for longitudinal params
-        attrs = [
-            'on_contra_prev',
-            'intent_to_use_prev',
-            'buy_decision_major_prev',
-            'buy_decision_clothes_prev',
-            'has_fin_knowl_prev',
-            'has_fin_goals_prev',
-            'financial_autonomy_prev',
-            'has_fin_goals_prev',
-            'paid_employment_prev',
-            'has_savings_prev',
-            'decision_wages_prev',
-            'decide_spending_partner_prev',
+        longitude_keys = [
+            'on_contra',
+            'intent_to_use',
+            'buy_decision_major',
+            'buy_decision_clothes',
+            'has_fin_knowl',
+            'has_fin_goals',
+            'financial_autonomy',
+            'has_fin_goals',
+            'paid_employment',
+            'has_savings',
+            'decision_wages',
+            'decide_spending_partner',
         ]
-        for attr in attrs:
-            current = getattr(self, attr) # Current value of this attribute
-            new = np.full((n, self.pars['tperyear']), current[0])
-            setattr(self, attr, new)
+
+        self.longitude = sc.objdict()
+        for key in longitude_keys:
+            current = getattr(self, key)  # Current value of this attribute
+            self.longitude[key] = np.full((n, self.pars['tperyear']), current[0])
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
@@ -984,24 +985,15 @@ class People(fpb.BasePeople):
 
     def update_long_params(self, tperyear):
         """
-        Updates longitudinal params in people object (params ending in '_prev')
+        Updates longitudinal params in people object
         """
 
         # Calculate column index in which to store current vals
         index = self.ti % tperyear
 
-        # Store the current params in 'previous' arrays
-        self.on_contra_prev[:, index] = self.on_contra
-        self.intent_to_use_prev[:, index] = self.intent_to_use
-        self.buy_decision_major_prev[:, index] = self.buy_decision_major
-        self.buy_decision_clothes_prev[:, index] = self.buy_decision_clothes
-        self.has_fin_knowl_prev[:, index] = self.has_fin_knowl
-        self.has_fin_goals_prev[:, index] = self.has_fin_goals
-        self.financial_autonomy_prev[:, index] = self.financial_autonomy
-        self.paid_employment_prev[:, index] = self.paid_employment
-        self.has_savings_prev[:, index] = self.has_savings
-        self.decision_wages_prev[:, index] = self.decision_wages
-        self.decide_spending_partner_prev[:, index] = self.decide_spending_partner
+        # Store the current params in people.longitude object
+        for key in self.longitude.keys():
+            self.longitude[key][:, index] = getattr(self, key)
 
         return
 

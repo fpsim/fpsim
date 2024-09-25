@@ -204,11 +204,11 @@ class BasePeople(sc.prettyobj):
             npval = newpeople[key]
             p2val = people2[key]
             if isinstance(npval, np.ndarray):
-                if key.endswith('prev'):    # If key is a longitudinal parameter, create 2-D array for new people and append
-                    new_rows = np.full((len(people2), npval.shape[1]), p2val[0])
-                    newpeople[key] = np.concatenate((npval, new_rows), axis=0)
-                else:
-                    newpeople[key] = np.concatenate([npval, p2val], axis=0)
+                newpeople[key] = np.concatenate([npval, p2val], axis=0)
+            elif isinstance(npval, dict):
+                for attr in npval.keys():
+                    new_rows = np.full((len(people2), npval[attr].shape[1]), p2val[attr][0])
+                    newpeople[key][attr] = np.concatenate((npval[attr], new_rows), axis=0)
             elif isinstance(npval, list):
                 newpeople[key] += p2val
             else:
@@ -230,6 +230,9 @@ class BasePeople(sc.prettyobj):
         ''' Returns keys for all properties of the people object '''
         try: # Unclear wy this fails, but sometimes it does during initialization/pickling
             keys = obj_get(self, '_keys')[:]
+            if 'longitude' not in keys:
+                if hasattr(self, 'longitude'):
+                    keys.append('longitude')
         except:
             keys = []
         return keys
