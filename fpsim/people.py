@@ -1003,8 +1003,6 @@ class People(fpb.BasePeople):
         """
         Perform all updates to people on each timestep
         """
-        # Store current values to params tracking previous year's data
-        self.update_long_params(tperyear)
 
         self.init_step_results()  # Initialize outputs
         alive_start = self.filter(self.alive)
@@ -1065,6 +1063,9 @@ class People(fpb.BasePeople):
         lact.update_breastfeeding()
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
+
+        # Store current values to params tracking previous year's data
+        self.update_long_params(tperyear)
 
         # Update results
         fecund.update_age_bin_totals()
