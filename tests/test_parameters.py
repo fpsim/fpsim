@@ -150,6 +150,27 @@ def test_save_load():
     return pars
 
 
+def test_long_params():
+    sc.heading('Test longitudinal params')
+    # Define pars
+    pars = fp.pars(location='kenya')
+
+    # Make and run sim
+    s = fp.Sim(pars)
+    s.run()
+
+    expected_rows = len(s.people)
+    expected_cols = s.tperyear
+
+    for key in s.people.keys():
+        if key.endswith('prev'):
+            df = s.people[key]
+            assert df.shape == (expected_rows, expected_cols), f"Expected {key} to have dimensions ({expected_rows}, {expected_cols}), but got {df.shape}"
+            curr_data_key = key.removesuffix("_prev")
+            curr_year_index = s.ti % s.tperyear
+            assert (df[:, curr_year_index] == s.people[curr_data_key]).all(), f"Expected column {curr_year_index} to have same data as {curr_data_key} but it does not."
+
+
 if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
