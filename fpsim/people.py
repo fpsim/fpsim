@@ -97,18 +97,24 @@ class People(fpb.BasePeople):
             fpdmg.init_partnership_states(self)
 
         # Initialize circular buffers for longitudinal params
-        self.on_contra_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.on_contra_prev[0])
-        self.intent_to_use_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.intent_to_use_prev[0])
-        self.buy_decision_major_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.buy_decision_major_prev[0])
-        self.buy_decision_clothes_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.buy_decision_clothes_prev[0])
-        self.has_fin_knowl_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.has_fin_knowl_prev[0])
-        self.has_fin_goals_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.has_fin_goals_prev[0])
-        self.financial_autonomy_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.financial_autonomy_prev[0])
-        self.has_fin_goals_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.has_fin_goals_prev[0])
-        self.paid_employment_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.paid_employment_prev[0])
-        self.has_savings_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.has_savings_prev[0])
-        self.decision_wages_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.decision_wages_prev[0])
-        self.decide_spending_partner_prev = np.full((self.pars['n_agents'], self.pars['tperyear']), self.decide_spending_partner_prev[0])
+        attrs = [
+            'on_contra_prev',
+            'intent_to_use_prev',
+            'buy_decision_major_prev',
+            'buy_decision_clothes_prev',
+            'has_fin_knowl_prev',
+            'has_fin_goals_prev',
+            'financial_autonomy_prev',
+            'has_fin_goals_prev',
+            'paid_employment_prev',
+            'has_savings_prev',
+            'decision_wages_prev',
+            'decide_spending_partner_prev',
+        ]
+        for attr in attrs:
+            current = getattr(self, attr) # Current value of this attribute
+            new = np.full((n, self.pars['tperyear']), current[0])
+            setattr(self, attr, new)
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
