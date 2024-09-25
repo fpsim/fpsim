@@ -2,11 +2,11 @@
 Specify the core interventions available in FPsim. Other interventions can be
 defined by the user by inheriting from these classes.
 '''
-
+import numpy as np
 import pylab as pl
 import sciris as sc
 import inspect
-
+from . import utils as fpu
 
 #%% Generic intervention classes
 
@@ -308,12 +308,13 @@ class change_people_state(Intervention):
         eligibility  (inds/callable): indices OR callable that returns inds
     """
 
-    def __init__(self, state_name, year, new_val, eligibility=None):
+    def __init__(self, state_name, year, new_val, eligibility=None, prop=1.0):
         super().__init__()
         self.state_name = state_name
         self.year = year
         self.new_val = new_val
         self.eligibility = eligibility
+        self.prop = prop
         self.applied = False
         return
 
@@ -339,10 +340,18 @@ class change_people_state(Intervention):
         """
         if callable(self.eligibility):
             is_eligible = self.eligibility(sim)
+        elif sc.isarray(self.eligibility):
+            eligible_inds = self.eligibility
+            is_eligible = np.zeros(len(sim.people), dtype=bool)
+            is_eligible[eligible_inds] = True
         else:
-            #TODO: implement
-            errormsg = 'Eligibility must be a function'
+            errormsg = 'Eligibility must be a function or an array of indices'
             raise ValueError(errormsg)
+
+        eligible_inds = sc.findinds(is_eligible)
+        is_selected = fpu.n_binomial(self.prop, len(eligible_inds))
+        is_eligible[eligible_inds] = is_selected
+
         return is_eligible
 
     def apply(self, sim):
