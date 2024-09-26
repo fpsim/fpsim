@@ -74,7 +74,7 @@ def test_update_methods():
     }
 
     # Change the method mix
-    method_mix=[0.05, 0.3, 0.3, 0.05, 0, 0, 0.3, 0, 0]
+    method_mix=np.array([0.05, 0.3, 0.3, 0.05, 0, 0, 0.3, 0, 0])
 
     # Make interventions
     no_contra = fp.update_methods(2000, p_use=0.0)
@@ -88,7 +88,7 @@ def test_update_methods():
     # Test that all the parameters were correctly updated
     assert msim.sims[1].contraception_module.pars['p_use'] == p_use
     assert msim.sims[1].contraception_module.methods['iud'].dur_use == 10
-    assert msim.sims[1].contraception_module.pars['method_mix'] == method_mix
+    assert np.array_equal(msim.sims[1].contraception_module.pars['method_mix'], method_mix)
     ok('Parameters updated correctly')
 
     # Test that there are fewer births with the new method parameters
