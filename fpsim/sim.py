@@ -301,8 +301,8 @@ class Sim(fpb.BaseSim):
         self.people.ty = self.ty
         self.people.y = self.y
 
-        # Update people's states based on model dynamics
-        self.people.update()
+        # Step forward people's states based on model dynamics
+        self.people.step()
 
         # Apply interventions
         self.apply_interventions()
@@ -1310,6 +1310,7 @@ class MultiSim(sc.prettyobj):
                 sim_plot_args = sc.mergedicts(dict(alpha=alpha, c=color), plot_args)
                 kw = dict(new_fig=False, do_show=False, label=label, plot_args=sim_plot_args)
                 sim.plot(to_plot=to_plot, **kw, **kwargs)
+
             if to_plot is not None:
                 # Scale axes
                 if to_plot == 'cpr':
