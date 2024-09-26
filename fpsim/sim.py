@@ -152,7 +152,7 @@ class Sim(fpb.BaseSim):
             fpu.set_seed(self['seed'])
             self.init_results()
             self.init_people()  # This step also initializes the empowerment and education modules if provided
-            self.init_methods()  # Initialize methods
+            self.init_contraception()  # Initialize contraceptive methods
         return self
 
     def init_results(self):
@@ -194,9 +194,9 @@ class Sim(fpb.BaseSim):
         self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
                                     empowerment_module=self.empowerment_module, education_module=self.education_module)
 
-    def init_methods(self):
+    def init_contraception(self):
         if self.contraception_module is not None:
-            self.people.init_methods(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
+            self.people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
         return
 
     def update_mortality(self):
@@ -285,9 +285,10 @@ class Sim(fpb.BaseSim):
         # Births
         new_people = fpppl.People(
                     pars=self.pars, n=n_new_people, age=0,
-                    education_module=self.education_module, empowerment_module=self.empowerment_module
+                    education_module=self.education_module,
+                    empowerment_module=self.empowerment_module
                     )
-        new_people.init_methods(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
+        new_people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
         self.people += new_people
 
     def step(self):

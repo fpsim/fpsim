@@ -165,7 +165,11 @@ class People(fpb.BasePeople):
         self.wealthquintile = vals
         return
 
-    def init_methods(self, ti=None, year=None, contraception_module=None):
+    def decide_contraception(self, ti=None, year=None, contraception_module=None):
+        """
+        Decide who wll start using contraception, the contraception method and the
+        duration on that method
+        """
 
         # Initialize sexual debut
         fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
