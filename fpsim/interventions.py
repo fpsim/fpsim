@@ -440,7 +440,8 @@ class update_methods(Intervention):
             # Change in method mix
             if self.method_mix is not None:
                 if sim.people.contraception_module.pars.get('method_mix') is not None:
-                    sim.people.contraception_module.pars['method_mix'] = self.method_mix
+                    this_mix = self.method_mix / np.sum(self.method_mix) # Renormalise in case they are not adding up to 1
+                    sim.people.contraception_module.pars['method_mix'] = this_mix
                 else:
                     errormsg = (f"Contraceptive module does not have method_mix parameter. This may be because it's an "
                                 f"EmpoweredChoice or SimpleChoice module. For these modules, the probability of "
