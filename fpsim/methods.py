@@ -198,8 +198,10 @@ class SimpleChoice(RandomChoice):
                     these_choices = fpu.n_multinomial(these_probs, len(ppl_this_age))  # Choose
                     # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
                     choice_array[this_age_bools] = np.array(list(self.init_dist.method_idx))[these_choices]
-
-        return choice_array.astype(int)
+            return choice_array.astype(int)
+        else:
+            errormsg = f'Intial distribution of contraceptive choice has not been provided'
+            raise ValueError(errormsg)
 
     def get_prob_use(self, ppl, year=None, event=None):
         """
