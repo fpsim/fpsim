@@ -322,7 +322,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def check_mortality(self):
+    def decide_death_outcome(self):
         """ Decide if person dies at a timestep """
 
         timestep = self.pars['timestep']
@@ -612,7 +612,7 @@ class People(fpb.BasePeople):
         death.ti_contra = self.ti + 1  # Trigger update to contraceptive choices following infant death
         return death
 
-    def check_delivery(self):
+    def process_delivery(self):
         """
         Decide if pregnant woman gives birth and explore maternal mortality and child mortality
         """
@@ -963,16 +963,17 @@ class People(fpb.BasePeople):
 
     def step(self):
         """
-        Perform all updates to people on each timestep
+        Perform all updates to people within a single timestep
         """
-        self.reset_step_results()  # Initialize outputs
+        self.reset_step_results()  # Allocate an 'empty' dictionary for the outputs of this time step
+
         alive_start = self.filter(self.alive)
-        alive_start.check_mortality()  # Decide if person dies at this t in the simulation
+        alive_start.decide_death_outcome()     # Decide if person dies at this t in the simulation
         alive_check = self.filter(self.alive)  # Reselect live agents after exposure to general mortality
 
         # Update pregnancy with maternal mortality outcome
         preg = alive_check.filter(alive_check.pregnant)
-        preg.check_delivery()  # Deliver with birth outcomes if reached pregnancy duration
+        preg.process_delivery()  # Deliver with birth outcomes if reached pregnancy duration
 
         # Reselect for live agents after exposure to maternal mortality
         alive_now = self.filter(self.alive)
@@ -982,24 +983,9 @@ class People(fpb.BasePeople):
 
         # Update empowerment states, and empowerment-related states
         alive_now_f = self.filter(self.is_female & self.alive)
-        if self.empowerment_module is not None:
-            eligible = alive_now_f.filter(alive_now_f.is_dhs_age)
 
-            # Women who just turned 15 get assigned a value based on empowerment probs
-            bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
-            if len(bday_15):
-                self.empowerment_module.update_empwr_states(bday_15)
-            # Update states on her bday, based on coefficients
-            bday = eligible.birthday_filter()
-            if len(bday):
-                # The empowerment module will update the empowerment states and intent to use
-                self.empowerment_module.update(bday)
-                # Update fertility intent on her bday, together with empowerment updates
-                bday.update_fertility_intent_by_age()
-
-        # Update education
-        if self.education_module is not None:
-            self.education_module.update(alive_now_f)
+        if self.empowerment_module is not None: alive_now_f.step_empowerment()
+        if self.education_module is not None: alive_now_f.step_education()
 
         # Figure out who to update methods for
         methods = nonpreg.filter(nonpreg.ti_contra <= self.ti)
@@ -1031,6 +1017,25 @@ class People(fpb.BasePeople):
             errormsg = f'Invalid values for ti_contra at timestep {self.ti}'
             raise ValueError(errormsg)
 
+        return
+
+    def step_empowerment(self):
+        eligible = self.filter(self.is_dhs_age)
+        # Women who just turned 15 get assigned a value based on empowerment probs
+        bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
+        if len(bday_15):
+            self.empowerment_module.update_empwr_states(bday_15)
+        # Update states on her bday, based on coefficients
+        bday = eligible.birthday_filter()
+        if len(bday):
+            # The empowerment module will update the empowerment states and intent to use
+            self.empowerment_module.update(bday)
+            # Update fertility intent on her bday, together with empowerment updates
+            bday.update_fertility_intent_by_age()
+        return
+
+    def step_education(self):
+        self.education_module.update(self)
         return
 
     def step_age(self):
