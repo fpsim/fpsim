@@ -887,7 +887,7 @@ class People(fpb.BasePeople):
         had_bday = (age_diff <= (self.pars['timestep'] / fpd.mpy))
         return self.filter(had_bday)
 
-    def init_step_results(self):
+    def reset_step_results(self):
         self.step_results = dict(
             deaths=0,
             births=0,
@@ -965,7 +965,7 @@ class People(fpb.BasePeople):
         """
         Perform all updates to people on each timestep
         """
-        self.init_step_results()  # Initialize outputs
+        self.reset_step_results()  # Initialize outputs
         alive_start = self.filter(self.alive)
         alive_start.check_mortality()  # Decide if person dies at this t in the simulation
         alive_check = self.filter(self.alive)  # Reselect live agents after exposure to general mortality
