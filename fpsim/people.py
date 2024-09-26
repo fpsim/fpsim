@@ -961,7 +961,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def update(self):
+    def step(self):
         """
         Perform all updates to people on each timestep
         """
