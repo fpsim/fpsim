@@ -167,8 +167,9 @@ class People(fpb.BasePeople):
 
     def decide_contraception(self, ti=None, year=None, contraception_module=None):
         """
-        Decide who wll start using contraception, the contraception method and the
-        duration on that method
+        Decide who will start using contraception, when, which contraception method and the
+        duration on that method. This method can be called, in principle,
+        in every time step.
         """
 
         # Initialize sexual debut
