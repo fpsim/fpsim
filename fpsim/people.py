@@ -189,7 +189,6 @@ class People(fpb.BasePeople):
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
 
-
     def update_fertility_intent_by_age(self):
         """
         In the absence of other factors, fertilty intent changes as a function of age
@@ -354,7 +353,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def check_partnership(self):
+    def start_partnership(self):
         """
         Decide if an agent has reached their age at first partnership. Age-based data from DHS.
         """
@@ -363,6 +362,7 @@ class People(fpb.BasePeople):
         reached_partnership_age = self.age >= self.partnership_age
         first_timers = self.filter(is_not_partnered * reached_partnership_age)
         first_timers.partnered = True
+        return
 
     def check_sexually_active(self):
         """
@@ -549,7 +549,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def update_pregnancy(self):
+    def progress_pregnancy(self):
         """ Advance pregnancy in time and check for miscarriage """
 
         preg = self.filter(self.pregnant)
@@ -988,28 +988,29 @@ class People(fpb.BasePeople):
         if self.education_module is not None: alive_now_f.step_education()
 
         # Figure out who to update methods for
-        methods = nonpreg.filter(nonpreg.ti_contra <= self.ti)
+        ready = nonpreg.filter(nonpreg.ti_contra <= self.ti)
 
         # Check if has reached their age at first partnership and set partnered attribute to True.
         # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
-        alive_now.check_partnership()
+        alive_now.start_partnership()
 
         # Complete all updates. Note that these happen in a particular order!
-        preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
+        preg.progress_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
 
-        if len(methods):
-            methods.update_method()
+        # Update methods for those who are elgible
+        if len(ready):
+            ready.update_method()
 
         methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
         if not methods_ok:
             errormsg = 'Agents not using contraception are not the same as agents who are using None method'
             raise ValueError(errormsg)
+
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
-
         fecund.update_age_bin_totals()
 
         # Add check for ti contra
