@@ -1,0 +1,4 @@
+"rhs","Estimate"
+"(Intercept)",-1.23009781893336
+"ns(age, knots = c(25, 40))1",-0.490261234637011
+"fp_ever_user:edu_attainment",0.0142385547029522

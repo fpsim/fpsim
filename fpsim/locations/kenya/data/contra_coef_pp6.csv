@@ -1,0 +1,10 @@
+"rhs","Estimate"
+"(Intercept)",-1.63941736273915
+"intent_cat_0no_intent",-0.117706902620688
+"fp_ever_user",1.69225746533032
+"parity",-0.000974631524044135
+"intent_cat_0no_intent:decide_spending_partner_0",-0.253023553542913
+"intent_cat_0no_intent:financial.autonomy_0",-0.244892592735337
+"paid_employment_0:urban",-0.290363423929304
+"decide_spending_partner_0:parity",-0.00302817205665806
+"financial_goals_0:parity",-0.0831901751119778
