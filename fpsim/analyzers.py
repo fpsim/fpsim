@@ -307,7 +307,7 @@ class education_recorder(Analyzer):
             Args:
                 max_timepoints (int, optional): The maximum number of timepoints to plot, defaults to 30.
                 min_age (int, optional): The minimum age for the age group, defaults to 18.
-                max_age (int, optional): The maximum age for the age group, defaults to 20.
+                max_age (int, optional): The maximum age for the age group, defaults to 40.
 
             Returns:
                 figure handle
@@ -413,11 +413,15 @@ class empowerment_recorder(Analyzer):
         super().__init__()
         self.bins = bins
         self.data = sc.objdict()
+        self.snapshots = sc.odict()  # Store the actual snapshots
         self.keys = ['age', 'paid_employment', 'decision_wages', 'decision_health', 'decision_purchase',
                      'buy_decision_major', 'buy_decision_daily', 'buy_decision_clothes',
                      'decide_spending_partner', 'has_savings', 'has_fin_knowl', 'has_fin_goals',
-                     'sexual_autonomy', 'financial_autonomy', 'decision_making']
+                     'sexual_autonomy', 'financial_autonomy', 'decision_making', 'wealthquintile']
+        self.max_agents = 0  # maximum number of agents this analyzer tracks
+        self.time = []
         self.nbins = None
+        self.trajectories = {}
         return
 
     def initialize(self, sim):
@@ -438,6 +442,14 @@ class empowerment_recorder(Analyzer):
         """
         Records histogram of empowerment attribute of all **alive female** individuals
         """
+
+        females = sim.people.filter(sim.people.is_female)
+        self.snapshots[str(sim.ti)] = {}
+        for key in self.keys:
+            self.snapshots[str(sim.ti)][key] = sc.dcp(females[key])  # Take snapshot!
+            self.max_agents = max(self.max_agents, len(females))
+        return
+        '''
         # Alive and female
         living_females = sc.findinds(sim.people.alive, sim.people.is_female)
         ages = sim.people.age[living_females]
@@ -461,6 +473,22 @@ class empowerment_recorder(Analyzer):
                         val = None
                     vals[group_idx-1] = val
             self.data[key][:, sim.ti] = vals
+        '''
+    def finalize(self, sim=None):
+        """
+         Process data in snapshots so we can plot it easily
+        """
+        if self.finalized:
+            raise RuntimeError('Analyzer already finalized')
+        self.finalized = True
+        # Process data so we can plot it easily
+        self.time = np.array([key for key in self.snapshots.keys()], dtype=int)
+        for state in self.keys:
+            self.trajectories[state] = np.full((len(self.time), self.max_agents), np.nan)
+            for ti, t in enumerate(self.time):
+                stop_idx = len(self.snapshots[t][state])
+                self.trajectories[state][ti, 0:stop_idx] = self.snapshots[t][state]
+        return
 
     def plot(self, to_plot=None, fig_args=None, pl_args=None):
         """
@@ -526,6 +554,41 @@ class empowerment_recorder(Analyzer):
                 pl.title(f'Could not plot {key}')
         fig.tight_layout()
         return fig
+
+
+    def plot_wealthquintiles(self):
+        """
+        Plots wealth quintiles proportions over time
+        """
+        #fig = pl.figure()
+        wealthquintile_data = self.data['wealthquintile']
+
+        wealthquintile_percentage = np.nanmean(wealthquintile_data, axis=0)  # Averaging across all bins
+
+        # Plotting
+        pl.figure(figsize=(10, 6))
+        pl.plot(self.data.T, wealthquintile_percentage, label='Percentage of Women in Wealth Quintile')
+
+        # Adding labels and title
+        pl.xlabel('Time')
+        pl.ylabel('Percentage')
+        pl.title('Percentage of Women in Wealth Quintile Over Time')
+        pl.legend()
+        '''
+        # Plotting the lines
+        pl.plot(res['t'], self.data['wealthquintiles'][0], label='Quintile 1', color='blue')
+        pl.plot(res['t'], self.data['wealthquintiles'][1], label='Quintile 2', color='red')
+        pl.plot(res['t'], self.data['wealthquintiles'][2], label='Quintile 3', color='green')
+        pl.plot(res['t'], self.data['wealthquintiles'][3], label='Quintile 4', color='orange')
+        pl.plot(res['t'], self.data['wealthquintiles'][4], label='Quintile 5', color='purple')
+
+        pl.title('Parity over Time')
+        pl.xlabel('Time')
+        pl.ylabel('Wealth Quintiles')
+        pl.legend()
+        '''
+        return pl
+
 
     def plot_snapshot(self, ti=0, to_plot=None, fig_args=None, pl_args=None):
         """
@@ -594,6 +657,93 @@ class empowerment_recorder(Analyzer):
             axs[k].set_ylabel(ylabel)
             axs[k].set_ylim([ymin, ymax])
 
+        return fig
+
+
+    def plot_wealth_waterfall(self, max_timepoints=30, min_age=18, max_age=40, fig_args=None, pl_args=None):
+        """
+        Plot a waterfall plot showing the evolution of education objective and attainment over time
+        for a specified age group.
+
+        Args:
+            max_timepoints (int, optional): The maximum number of timepoints to plot, defaults to 30.
+            min_age (int, optional): The minimum age for the age group, defaults to 18.
+            max_age (int, optional): The maximum age for the age group, defaults to 40.
+
+        Returns:
+            figure handle
+
+        The function generates uses kernel density estimation to visualize the data. If there's not data for the
+        min max age specified, for a specific time step (ie, there are no agents in that age group), it adds a
+        textbox. This is an edge case that can happen for a simulation with very few agents, and a very narrow
+        age group.
+        """
+
+        from scipy.stats import gaussian_kde
+
+        data_wq = self.trajectories["wealthquintile"]
+        data_age = self.trajectories["age"]
+
+        mask = (data_age < min_age) | (data_age > max_age) | np.isnan(data_age)
+        data_wq = np.ma.array(data_wq, mask=mask)
+
+        n_tpts = data_wq.shape[0]
+        if n_tpts <= max_timepoints:
+            tpts_to_plot = np.arange(n_tpts)
+        else:
+            tpts_to_plot = np.linspace(0, n_tpts - 1, max_timepoints, dtype=int)
+
+        fig_args = sc.mergedicts(fig_args, {'figsize': (3, 10)})
+        pl_args = sc.mergedicts(pl_args, {'y_scaling': 0.9})
+
+        fig = plt.figure(**fig_args)
+        ax = fig.add_subplot(111)
+
+        wq_min, wq_max = 1, 5  # Wealth quintiles range from 1 to 5
+        wq_mid = (wq_max - wq_min) / 2 + wq_min
+        wq_values = np.linspace(wq_min, wq_max, 50)
+        y_scaling = pl_args['y_scaling']
+
+        # Set the y-axis (time) labels
+        ax.set_yticks(y_scaling*np.arange(len(tpts_to_plot)))
+        ax.set_yticklabels(tpts_to_plot)
+
+        # Initialize legend labels
+        wq_label = None
+
+        # Loop through the selected time points and create kernel density estimates
+        for idx, ti in enumerate(tpts_to_plot):
+            data_wq_ti = np.sort(data_wq[ti, :][~data_wq[ti, :].mask].data)
+
+            try:
+                kde_wq = gaussian_kde(data_wq_ti)
+                y_wq = kde_wq(wq_values)
+
+                y_wealth = kde_wealth(edu_years)
+
+                if idx == len(tpts_to_plot) - 1:
+                    wq_label = 'Distribution of Wealth Quintiles'
+
+                ax.fill_between(wq_values, y_scaling * idx, y_wq / y_wq.max() + y_scaling * idx,
+                                color='#2f72de', alpha=0.3, label=wq_label)
+                ax.plot(wq_values, y_wq / y_wq.max() + y_scaling * idx,
+                        color='black', alpha=0.7, label=wq_label)
+
+            except:
+                ax.plot(wq_values, (y_scaling * idx) * np.ones_like(wq_values),
+                    color='black', alpha=0.2, label=wq_label)
+                ax.annotate('No data available', xy=(wq_mid, y_scaling * idx), xycoords='data', fontsize=8,
+                    ha='center', va='center', bbox=dict(boxstyle='round,pad=0.4', fc='none', ec="none"))
+
+        # Labels and annotations
+        ax.set_xlim([wq_min, wq_max])
+        ax.set_xlabel('Wealth Quintile')
+        ax.set_ylabel('Timesteps')
+        ax.legend()
+        ax.set_title(f"Evolution of Wealth Quintile Distribution for age group:\n{min_age}-{max_age}.")
+
+        # Show the plot
+        plt.show()
         return fig
 
 
