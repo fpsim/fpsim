@@ -192,18 +192,7 @@ class People(fpb.BasePeople):
         in every time step.
         """
 
-        # Initialize sexual debut
-        fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
-        fecund.check_sexually_active()
-
-        # Determine when girls/women will first choose a method
-        time_to_debut = (fecund.fated_debut-fecund.age)/self.dt
-        fecund.ti_contra = np.maximum(time_to_debut, 0)
-        time_to_set_contra = fecund.ti_contra == 0
-        if not np.array_equal(((fecund.age - fecund.fated_debut) > -self.dt), time_to_set_contra):
-            errormsg = 'Should be choosing contraception for everyone past fated debut age.'
-            raise ValueError(errormsg)
-        contra_choosers = fecund.filter(time_to_set_contra)
+        contra_choosers = self.contra_choosers_filter()
 
         if contraception_module is not None:
             self.contraception_module = contraception_module
@@ -213,6 +202,26 @@ class People(fpb.BasePeople):
             oc.ever_used_contra = 1
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
+
+    def contra_choosers_filter(self):
+        """
+        Returns a filtered ppl object of all women who are eligible to choose a contraception method.
+        Useful for class methods or interventions that may need to select this specific subgroup of women.
+        """
+        # Initialize sexual debut
+        fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
+        fecund.check_sexually_active()
+
+        # Determine when girls/women will first choose a method
+        time_to_debut = (fecund.fated_debut-fecund.age)/self.dt
+        fecund.ti_contra = np.maximum(time_to_debut, 0)
+
+        time_to_set_contra = fecund.ti_contra == 0
+        if not np.array_equal(((fecund.age - fecund.fated_debut) > -self.dt), time_to_set_contra):
+            errormsg = 'Should be choosing contraception for everyone past fated debut age.'
+            raise ValueError(errormsg)
+        contra_choosers = fecund.filter(time_to_set_contra)
+        return contra_choosers
 
     def update_fertility_intent_by_age(self):
         """
