@@ -2,15 +2,15 @@
 Specify the core interventions available in FPsim. Other interventions can be
 defined by the user by inheriting from these classes.
 '''
-
+import numpy as np
 import pylab as pl
 import sciris as sc
 import inspect
-
+from . import utils as fpu
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'change_par', 'update_methods']
+__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state']
 
 
 class Intervention:
@@ -296,6 +296,73 @@ class change_par(Intervention):
         return
 
 
+class change_people_state(Intervention):
+    """
+    Intervention to modify values of a People's boolean state at one specific
+    point in time.
+
+    Args:
+        state_name   (string): name of the People's state that will be modified
+        year         (float): time expressed in years when the change is applied
+        new_val      (float): the new state value eligible people will have
+        eligibility  (inds/callable): indices OR callable that returns inds
+    """
+
+    def __init__(self, state_name, year, new_val, eligibility=None, prop=1.0):
+        super().__init__()
+        self.state_name = state_name
+        self.year = year
+        self.new_val = new_val
+        self.eligibility = eligibility
+        self.prop = prop
+        self.applied = False
+        return
+
+    def _validate(self):
+        # Validation
+        if self.state_name is None:
+            errormsg = 'A state name must be supplied.'
+            raise ValueError(errormsg)
+        if self.year is None:
+            errormsg = 'A year must be supplied.'
+            raise ValueError(errormsg)
+        if self.new_val is None:
+            errormsg = 'A new value must be supplied.'
+            raise ValueError(errormsg)
+        if self.eligibility is None:
+            errormsg = 'Eligibility needs to be provided'
+            raise ValueError(errormsg)
+        return
+
+    def check_eligibility(self, sim):
+        """
+        Return an array of indices of agents eligible
+        """
+        if callable(self.eligibility):
+            is_eligible = self.eligibility(sim)
+        elif sc.isarray(self.eligibility):
+            eligible_inds = self.eligibility
+            is_eligible = np.zeros(len(sim.people), dtype=bool)
+            is_eligible[eligible_inds] = True
+        else:
+            errormsg = 'Eligibility must be a function or an array of indices'
+            raise ValueError(errormsg)
+
+        eligible_inds = sc.findinds(is_eligible)
+        is_selected = fpu.n_binomial(self.prop, len(eligible_inds))
+        is_eligible[eligible_inds] = is_selected
+
+        return is_eligible
+
+    def apply(self, sim):
+        if not self.applied and sim.y >= self.year:
+            self.applied = True  # Ensure we don't apply this more than once
+            is_eligible = self.check_eligibility(sim)
+            ppl = sim.people.filter(is_eligible)
+            setattr(ppl, self.state_name, self.new_val)
+        return
+
+
 class update_methods(Intervention):
     """
     Intervention to modify method efficacy and/or switching matrix.
@@ -306,7 +373,8 @@ class update_methods(Intervention):
         eff (dict):
             An optional key for changing efficacy; its value is a dictionary with the following schema:
                 {method: efficacy}
-                    Where method is the method to be changed, and efficacy is the new efficacy
+                    Where method is the name of the contraceptive method to be changed,
+                    and efficacy is a number with the efficacy
 
         dur_use (dict):
             Optional key for changing the duration of use; its value is a dictionary with the following schema:
@@ -372,7 +440,8 @@ class update_methods(Intervention):
             # Change in method mix
             if self.method_mix is not None:
                 if sim.people.contraception_module.pars.get('method_mix') is not None:
-                    sim.people.contraception_module.pars['method_mix'] = self.method_mix
+                    this_mix = self.method_mix / np.sum(self.method_mix) # Renormalise in case they are not adding up to 1
+                    sim.people.contraception_module.pars['method_mix'] = this_mix
                 else:
                     errormsg = (f"Contraceptive module does not have method_mix parameter. This may be because it's an "
                                 f"EmpoweredChoice or SimpleChoice module. For these modules, the probability of "

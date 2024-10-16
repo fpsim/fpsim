@@ -194,12 +194,14 @@ class SimpleChoice(RandomChoice):
                 if len(ppl_this_age) > 0:
                     these_probs = self.init_dist[key]
                     these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
-                    these_probs = these_probs/sum(these_probs)  # Renormalize
+                    these_probs = these_probs/np.sum(these_probs)  # Renormalize
                     these_choices = fpu.n_multinomial(these_probs, len(ppl_this_age))  # Choose
                     # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
                     choice_array[this_age_bools] = np.array(list(self.init_dist.method_idx))[these_choices]
-
-        return choice_array.astype(int)
+            return choice_array.astype(int)
+        else:
+            errormsg = f'Distribution of contraceptive choices has not been provided.'
+            raise ValueError(errormsg)
 
     def get_prob_use(self, ppl, year=None, event=None, ti=None, tiperyear=None):
         """

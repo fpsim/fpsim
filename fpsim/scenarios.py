@@ -394,8 +394,13 @@ class Scenarios(sc.prettyobj):
 
             # Defines how we calculate each channel, first number is is_sum: 1 = aggregate as sum, 0 = aggregate as mean
             # The second parameter defines whether to aggregate by year or by timestep where 1 = use sim.t (timestep), 0 = use sim.tfr_years (years)
-            agg_param_dict = {'method_failures_over_year': (1, 0), 'pop_size': (1, 0), 'tfr_rates': (0, 0), 'maternal_deaths_over_year': (1, 0),
-                            'infant_deaths_over_year': (1, 0), 'mcpr': (0, 1), 'births': (1, 1)}
+            agg_param_dict = {'method_failures_over_year': (1, 0),
+                              'pop_size': (1, 0),
+                              'tfr_rates': (0, 0),
+                              'maternal_deaths_over_year': (1, 0),
+                              'infant_deaths_over_year': (1, 0),
+                              'mcpr': (0, 1),
+                              'births': (1, 1)}
             results_dict = {}
 
             for channel in agg_param_dict:

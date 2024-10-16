@@ -267,14 +267,19 @@ array_results = sc.autolist(
     'wq3',
     'wq4',
     'wq5',
+    'perc_contra_intent',
+    'perc_fertil_intent',
+    'paid_employment',
     'nonpostpartum',
     'total_women_fecund',
-    'unintended_pregs',
+    'method_failures',
     'birthday_fraction',
     'short_intervals',
     'secondary_births',
     'proportion_short_interval'
 )
+
+
 for age_group in age_bin_map.keys():
     array_results += 'total_births_' + age_group
     array_results += 'total_women_' + age_group
@@ -285,8 +290,8 @@ list_results = sc.autolist(
     'pop_size',
     'mcpr_by_year',
     'cpr_by_year',
-    'contra_access_by_year',
-    'new_users_by_year',
+    'contra_access_over_year',
+    'new_users_over_year',
     'method_failures_over_year',
     'infant_deaths_over_year',
     'total_births_over_year',
@@ -305,3 +310,35 @@ list_results = sc.autolist(
     'birthday_fraction',
     'method_usage',
 )
+
+# Map between key names in results and annualised results, some of them are different
+to_annualize = {
+    'method_failures' :'method_failures',
+    'infant_deaths'   :'infant_deaths',
+    'total_births'    :'total_births',
+    'births'          :'live_births',  # X
+    'stillbirths'     :'stillbirths',
+    'miscarriages'    :'miscarriages',
+    'abortions'       :'abortions',
+    'short_intervals' : 'short_intervals',
+    'secondary_births': 'secondary_births',
+    'maternal_deaths' : 'maternal_deaths',
+    'pregnancies'     : 'pregnancies',
+    'contra_access'   : 'contra_access',
+    'new_users'       : 'new_users'}
+
+# People's states for which we will need circular buffers
+longitude_keys = [
+    'on_contra',
+    'intent_to_use',
+    'buy_decision_major',
+    'buy_decision_clothes',
+    'has_fin_knowl',
+    'has_fin_goals',
+    'financial_autonomy',
+    'has_fin_goals',
+    'paid_employment',
+    'has_savings',
+    'decision_wages',
+    'decide_spending_partner',
+]

@@ -74,7 +74,7 @@ def test_update_methods():
     }
 
     # Change the method mix
-    method_mix=[0.05, 0.3, 0.3, 0.05, 0, 0, 0.3, 0, 0]
+    method_mix=np.array([0.05, 0.3, 0.3, 0.05, 0, 0, 0.3, 0, 0])
 
     # Make interventions
     no_contra = fp.update_methods(2000, p_use=0.0)
@@ -88,7 +88,7 @@ def test_update_methods():
     # Test that all the parameters were correctly updated
     assert msim.sims[1].contraception_module.pars['p_use'] == p_use
     assert msim.sims[1].contraception_module.methods['iud'].dur_use == 10
-    assert msim.sims[1].contraception_module.pars['method_mix'] == method_mix
+    assert np.array_equal(msim.sims[1].contraception_module.pars['method_mix'], method_mix)
     ok('Parameters updated correctly')
 
     # Test that there are fewer births with the new method parameters
@@ -124,8 +124,7 @@ def test_scenarios():
     scen = fp.make_scen(label='More effective pill', year=int_year, eff={'Pill': high_inj_eff})
     scens_repeat = fp.Scenarios(location='test', repeats=2, scens=scen, start_year=int_year)
     scens_repeat.run(serial=serial)
-
-    assert len(scens_repeat.msim.sims) == 2, f"Should be {2} sims in scens object but found {len(scens.msim.sims)}"
+    assert len(scens_repeat.msim.sims) == 2, f"Should be {2} sims in scens object but found {len(scens_repeat.msim.sims)}"
 
     eff1 = scens_repeat.msim.sims[0].contraception_module.methods['pill'].efficacy
     eff2 = scens_repeat.msim.sims[1].contraception_module.methods['pill'].efficacy

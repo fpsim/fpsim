@@ -87,7 +87,7 @@ class People(fpb.BasePeople):
         self.empowerment_module = empowerment_module
         self.education_module = education_module
         if self.empowerment_module is not None:
-            self.empowerment_module.initialize(self)
+            self.empowerment_module.initialize(self.filter(self.is_female))
 
         if self.education_module is not None:
             self.education_module.initialize(self)
@@ -96,26 +96,9 @@ class People(fpb.BasePeople):
         if self.pars['use_partnership']:
             fpdmg.init_partnership_states(self)
 
-        # Initialize circular buffers for longitudinal params
-        longitude_keys = [
-            'on_contra',
-            'intent_to_use',
-            'buy_decision_major',
-            'buy_decision_clothes',
-            'has_fin_knowl',
-            'has_fin_goals',
-            'financial_autonomy',
-            'has_fin_goals',
-            'paid_employment',
-            'has_savings',
-            'decision_wages',
-            'decide_spending_partner',
-        ]
-
+        # Handle circular buffer to keep track of historical data
         self.longitude = sc.objdict()
-        for key in longitude_keys:
-            current = getattr(self, key)  # Current value of this attribute
-            self.longitude[key] = np.full((n, self.pars['tiperyear']), current[0])
+        self.initialize_circular_buffer()
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
@@ -129,9 +112,25 @@ class People(fpb.BasePeople):
 
         return
 
+    def initialize_circular_buffer(self):
+        # Initialize circular buffers to track longitudinal data
+        longitude_keys = fpd.longitude_keys
+        # NOTE: by default the history array/circular buffer is initialised with constant
+        # values. We could potentially initialise the buffer
+        # with the data from a previous simulation.
+
+        for key in longitude_keys:
+            current = getattr(self, key)  # Current value of this attribute
+            self.longitude[key] = np.full((self.n, self.tiperyear), current[0])
+        return
+
     @property
     def dt(self):
         return self.pars['timestep'] / fpd.mpy
+
+    @property
+    def tiperyear(self):
+        return  self.pars['tiperyear']
 
     def get_urban(self, n):
         """ Get initial distribution of urban """
@@ -186,7 +185,12 @@ class People(fpb.BasePeople):
         self.wealthquintile = vals
         return
 
-    def init_methods(self, ti=None, year=None, contraception_module=None):
+    def decide_contraception(self, ti=None, year=None, contraception_module=None):
+        """
+        Decide who will start using contraception, when, which contraception method and the
+        duration on that method. This method can be called, in principle,
+        in every time step.
+        """
 
         # Initialize sexual debut
         fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
@@ -210,7 +214,6 @@ class People(fpb.BasePeople):
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
 
-
     def update_fertility_intent_by_age(self):
         """
         In the absence of other factors, fertilty intent changes as a function of age
@@ -221,7 +224,6 @@ class People(fpb.BasePeople):
         f_inds = sc.findinds(self.is_female)
         f_ages = self.age[f_inds]
         age_inds = fpu.digitize_ages_1yr(f_ages)
-
         for age in intent_pars.keys():
             aged_x_inds = f_inds[age_inds == age]
             fi_cats = list(intent_pars[age].keys())  # all ages have the same intent categories
@@ -344,7 +346,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def check_mortality(self):
+    def decide_death_outcome(self):
         """ Decide if person dies at a timestep """
 
         timestep = self.pars['timestep']
@@ -376,7 +378,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def check_partnership(self):
+    def start_partnership(self):
         """
         Decide if an agent has reached their age at first partnership. Age-based data from DHS.
         """
@@ -385,6 +387,7 @@ class People(fpb.BasePeople):
         reached_partnership_age = self.age >= self.partnership_age
         first_timers = self.filter(is_not_partnered * reached_partnership_age)
         first_timers.partnered = True
+        return
 
     def check_sexually_active(self):
         """
@@ -472,7 +475,7 @@ class People(fpb.BasePeople):
         conceived = active.binomial(preg_probs[active.inds], as_filter=True)
         self.step_results['pregnancies'] += len(conceived)  # track all pregnancies
         unintended = conceived.filter(conceived.method != 0)
-        self.step_results['unintended_pregs'] += len(unintended)  # track pregnancies due to method failure
+        self.step_results['method_failures'] += len(unintended)  # unintended pregnancies due to method failure
 
         # Check for abortion
         is_abort = conceived.binomial(pars['abortion_prob'])
@@ -519,7 +522,8 @@ class People(fpb.BasePeople):
 
     def check_lam(self):
         """
-        Check to see if postpartum agent meets criteria for LAM in this time step
+        Check to see if postpartum agent meets criteria for
+        Lactation amenorrhea method (LAM) LAM in this time step
         """
         max_lam_dur = self.pars['max_lam_dur']
         lam_candidates = self.filter((self.postpartum) * (self.postpartum_dur <= max_lam_dur))
@@ -571,7 +575,7 @@ class People(fpb.BasePeople):
 
         return
 
-    def update_pregnancy(self):
+    def progress_pregnancy(self):
         """ Advance pregnancy in time and check for miscarriage """
 
         preg = self.filter(self.pregnant)
@@ -634,7 +638,7 @@ class People(fpb.BasePeople):
         death.ti_contra = self.ti + 1  # Trigger update to contraceptive choices following infant death
         return death
 
-    def check_delivery(self):
+    def process_delivery(self):
         """
         Decide if pregnant woman gives birth and explore maternal mortality and child mortality
         """
@@ -909,7 +913,7 @@ class People(fpb.BasePeople):
         had_bday = (age_diff <= (self.pars['timestep'] / fpd.mpy))
         return self.filter(had_bday)
 
-    def init_step_results(self):
+    def reset_step_results(self):
         self.step_results = dict(
             deaths=0,
             births=0,
@@ -948,7 +952,7 @@ class People(fpb.BasePeople):
             wq5=0,
             total_women_fecund=0,
             pregnancies=0,
-            unintended_pregs=0,
+            method_failures=0,
             birthday_fraction=None,
             birth_bins={},
             age_bin_totals={},
@@ -983,13 +987,13 @@ class People(fpb.BasePeople):
 
         return
 
-    def update_long_params(self, tiperyear):
+    def update_history_buffer(self):
         """
         Updates longitudinal params in people object
         """
 
         # Calculate column index in which to store current vals
-        index = self.ti % tiperyear
+        index = self.ti % self.tiperyear
 
         # Store the current params in people.longitude object
         for key in self.longitude.keys():
@@ -997,19 +1001,19 @@ class People(fpb.BasePeople):
 
         return
 
-    def update(self, tiperyear):
+    def step(self):
         """
-        Perform all updates to people on each timestep
+        Perform all updates to people within a single timestep
         """
+        self.reset_step_results()  # Allocate an 'empty' dictionary for the outputs of this time step
 
-        self.init_step_results()  # Initialize outputs
         alive_start = self.filter(self.alive)
-        alive_start.check_mortality()  # Decide if person dies at this t in the simulation
+        alive_start.decide_death_outcome()     # Decide if person dies at this t in the simulation
         alive_check = self.filter(self.alive)  # Reselect live agents after exposure to general mortality
 
         # Update pregnancy with maternal mortality outcome
         preg = alive_check.filter(alive_check.pregnant)
-        preg.check_delivery()  # Deliver with birth outcomes if reached pregnancy duration
+        preg.process_delivery()  # Deliver with birth outcomes if reached pregnancy duration
 
         # Reselect for live agents after exposure to maternal mortality
         alive_now = self.filter(self.alive)
@@ -1018,55 +1022,87 @@ class People(fpb.BasePeople):
         lact = fecund.filter(fecund.lactating)
 
         # Update empowerment states, and empowerment-related states
-        alive_now_f = self.filter(self.is_female)
-        if self.empowerment_module is not None:
-            eligible = alive_now_f.filter(((alive_now_f.age >= fpd.min_age) & (
-                        alive_now_f.age < fpd.max_age_preg)))
+        alive_now_f = self.filter(self.is_female & self.alive)
 
-            # Women who just turned 15 get assigned a value based on empowerment probs
-            bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
-            if len(bday_15):
-                self.empowerment_module.update_empwr_states(bday_15)
-            # Update states on her bday, based on coefficients
-            bday = eligible.birthday_filter()
-            if len(bday):
-                # The empowerment module will update the empowerment states and intent to use
-                self.empowerment_module.update(bday)
-                # Update fertility intent on her bday, together with empowerment updates
-                bday.update_fertility_intent_by_age()
-
-        # Update education
-        if self.education_module is not None:
-            self.education_module.update(alive_now_f)
+        if self.empowerment_module is not None: alive_now_f.step_empowerment()
+        if self.education_module is not None: alive_now_f.step_education()
 
         # Figure out who to update methods for
-        methods = nonpreg.filter(nonpreg.ti_contra <= self.ti)
+        ready = nonpreg.filter(nonpreg.ti_contra <= self.ti)
 
         # Check if has reached their age at first partnership and set partnered attribute to True.
         # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
-        alive_now.check_partnership()
+        alive_now.start_partnership()
 
         # Complete all updates. Note that these happen in a particular order!
-        preg.update_pregnancy()  # Advance gestation in timestep, handle miscarriage
+        preg.progress_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
 
-        if len(methods):
-            methods.update_method()
+        # Update methods for those who are elgible
+        if len(ready):
+            ready.update_method()
 
         methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
         if not methods_ok:
             errormsg = 'Agents not using contraception are not the same as agents who are using None method'
             raise ValueError(errormsg)
+
         nonpreg.update_postpartum()  # Updates postpartum counter if postpartum
         lact.update_breastfeeding()
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
-        # Store current values to params tracking previous year's data
-        self.update_long_params(tiperyear)
+        # Populate the ciruclar buffers with data from Peoples states that
+        # are needed for methods/classes that use historical data (eg, need previous year's data)
+        self.update_history_buffer()
 
         # Update results
         fecund.update_age_bin_totals()
+
+        # Add check for ti contra
+        if (self.ti_contra < 0).any():
+            errormsg = f'Invalid values for ti_contra at timestep {self.ti}'
+            raise ValueError(errormsg)
+
+        return
+
+    def step_empowerment(self):
+        eligible = self.filter(self.is_dhs_age)
+        # Women who just turned 15 get assigned a value based on empowerment probs
+        bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
+        if len(bday_15):
+            self.empowerment_module.update_empwr_states(bday_15)
+        # Update states on her bday, based on coefficients
+        bday = eligible.birthday_filter()
+        if len(bday):
+            # The empowerment module will update the empowerment states and intent to use
+            self.empowerment_module.update(bday)
+            # Update fertility intent on her bday, together with empowerment updates
+            bday.update_fertility_intent_by_age()
+        return
+
+    def step_education(self):
+        self.education_module.update(self)
+        return
+
+    def step_age(self):
+        """
+        Advance people's age at at end of timestep after tabulating results
+        and update the age_by_group, based on the new age distribution to
+        quantify results in the next time step.
+        """
+        alive_now = self.filter(self.alive)
+        # Age person at end of timestep after tabulating results
+        alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
+
+        # Storing ages by method age group
+        age_bins = [0] + [max(fpd.age_specific_channel_bins[key]) for key in
+                          fpd.age_specific_channel_bins]
+        self.age_by_group = np.digitize(self.age, age_bins) - 1
+        return
+
+    def get_step_results(self):
+        """Calculate and return the results for this specific time step"""
         self.track_mcpr()
         self.track_cpr()
         self.track_acpr()
@@ -1080,22 +1116,25 @@ class People(fpb.BasePeople):
         self.step_results['parity2to3'] = np.sum((self.parity >= 2) & (self.parity <= 3) & self.is_female) / np.sum(self.is_female) * 100
         self.step_results['parity4to5'] = np.sum((self.parity >= 4) & (self.parity <= 5) & self.is_female) / np.sum(self.is_female) * 100
         self.step_results['parity6plus'] = np.sum((self.parity >= 6) & self.is_female) / np.sum(self.is_female) * 100
-        self.step_results['wq1'] = np.sum((self.wealthquintile == 1) & self.is_female) / np.sum(self.is_female) * 100
-        self.step_results['wq2'] = np.sum((self.wealthquintile == 2) & self.is_female) / np.sum(self.is_female) * 100
-        self.step_results['wq3'] = np.sum((self.wealthquintile == 3) & self.is_female) / np.sum(self.is_female) * 100
-        self.step_results['wq4'] = np.sum((self.wealthquintile == 4) & self.is_female) / np.sum(self.is_female) * 100
-        self.step_results['wq5'] = np.sum((self.wealthquintile == 5) & self.is_female) / np.sum(self.is_female) * 100
 
-        # Age person at end of timestep after tabulating results
-        alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
-
-        # Storing ages by method age group
-        age_bins = [0] + [max(fpd.age_specific_channel_bins[key]) for key in fpd.age_specific_channel_bins]
-        self.age_by_group = np.digitize(self.age, age_bins) - 1
-
-        # Add check for ti contra
-        if (self.ti_contra < 0).any():
-            errormsg = f'Invalid values for ti_contra at timestep {self.ti}'
-            raise ValueError(errormsg)
+        self._step_results_wq()
+        self._step_results_intent()
+        self._step_results_empower()
 
         return self.step_results
+
+    def _step_results_wq(self):
+        """" Calculate step results on wealthquintile """
+        for i in range(1, 6):
+            self.step_results[f'wq{i}'] = (np.sum((self.wealthquintile == i) & self.is_female) / np.sum(self.is_female) * 100)
+        return
+
+    def _step_results_empower(self):
+        self.step_results['paid_employment'] = (np.sum(self.paid_employment & self.is_female & self.alive) / (self.n_female))*100
+        return
+
+    def _step_results_intent(self):
+        """ Calculate percentage of living women who have intent to use contraception and intent to become pregnant in the next 12 months"""
+        self.step_results['perc_contra_intent'] = (np.sum(self.alive & self.is_female & self.intent_to_use) / self.n_female) * 100
+        self.step_results['perc_fertil_intent'] = (np.sum(self.alive & self.is_female & self.fertility_intent) / self.n_female) * 100
+        return
