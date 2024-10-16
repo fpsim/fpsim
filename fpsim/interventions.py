@@ -7,6 +7,7 @@ import pylab as pl
 import sciris as sc
 import inspect
 from . import utils as fpu
+from . import methods as fpm
 
 #%% Generic intervention classes
 
@@ -318,6 +319,11 @@ class change_people_state(Intervention):
         self.applied = False
         return
 
+    def initialize(self, sim=None):
+        super().initialize()
+        self._validate()
+        return
+
     def _validate(self):
         # Validation
         if self.state_name is None:
@@ -408,6 +414,22 @@ class update_methods(Intervention):
 
         return
 
+    def initialize(self, sim=None):
+        super().initialize()
+        par_name = None
+        if self.p_use is not None and isinstance(sim.people.contraception_module, (fpm.SimpleChoice, fpm.EmpoweredChoice)):
+            par_name = 'p_use'
+        if self.method_mix is not None and isinstance(sim.people.contraception_module, (fpm.SimpleChoice, fpm.EmpoweredChoice)):
+            par_name = 'method_mix'
+
+        if par_name is not None:
+            errormsg = (
+                f"Contraceptive module  {type(sim.people.contraception_module)} does not have `{par_name}` parameter. "
+                f"For this type of module, the probability of contraceptive use depends on people attributes and can't be reset using this intervention.")
+            raise ValueError(errormsg)
+
+        return
+
     def apply(self, sim):
         """
         Applies the efficacy or contraceptive uptake changes if it is the specified year
@@ -429,23 +451,11 @@ class update_methods(Intervention):
 
             # Change in probability of use
             if self.p_use is not None:
-                if sim.people.contraception_module.pars.get('p_use'):
-                    sim.people.contraception_module.pars['p_use'] = self.p_use
-                else:
-                    errormsg = (f"Contraceptive module does not have a p_use parameter. This may be because it's an "
-                                f"EmpoweredChoice or SimpleChoice module. For these modules, the probability of "
-                                f"contraceptive use depends on people attributes and can't be reset using this method.")
-                    raise ValueError(errormsg)
+                sim.people.contraception_module.pars['p_use'] = self.p_use
 
             # Change in method mix
             if self.method_mix is not None:
-                if sim.people.contraception_module.pars.get('method_mix') is not None:
-                    this_mix = self.method_mix / np.sum(self.method_mix) # Renormalise in case they are not adding up to 1
-                    sim.people.contraception_module.pars['method_mix'] = this_mix
-                else:
-                    errormsg = (f"Contraceptive module does not have method_mix parameter. This may be because it's an "
-                                f"EmpoweredChoice or SimpleChoice module. For these modules, the probability of "
-                                f"contraceptive use depends on people attributes and can't be reset using this method.")
-                    raise ValueError(errormsg)
+                this_mix = self.method_mix / np.sum(self.method_mix) # Renormalise in case they are not adding up to 1
+                sim.people.contraception_module.pars['method_mix'] = this_mix
 
         return
