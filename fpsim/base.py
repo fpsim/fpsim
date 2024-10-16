@@ -413,7 +413,7 @@ class BaseSim(ParsObj):
             return 0
 
     @property
-    def tperyear(self):
+    def tiperyear(self):
         ''' Count the number of points in timesteps per year.'''
         try:
             return (self.npts / (self.pars['end_year'] - self.pars['start_year'])).__ceil__()

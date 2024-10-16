@@ -120,7 +120,7 @@ class Sim(fpb.BaseSim):
         self.track_children = track_children
         self.regional = regional
         self.ti = None  # The current timestep of the simulation
-        self.pars['tperyear'] = self.tperyear
+        self.pars['tiperyear'] = self.tiperyear
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
 
@@ -304,7 +304,7 @@ class Sim(fpb.BaseSim):
         self.people.ti = self.ti
         self.people.ty = self.ty
         self.people.y = self.y
-        step_results = self.people.update(self.tperyear)
+        step_results = self.people.update(self.tiperyear)
 
         # Store results
         r = sc.dictobj(**step_results)

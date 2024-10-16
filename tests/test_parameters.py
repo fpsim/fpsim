@@ -160,12 +160,12 @@ def test_long_params():
     s.run()
 
     expected_rows = len(s.people)
-    expected_cols = s.tperyear
+    expected_cols = s.tiperyear
 
     for key in s.people.longitude.keys():
         df = s.people.longitude[key]
         assert df.shape == (expected_rows, expected_cols), f"Expected {key} to have dimensions ({expected_rows}, {expected_cols}), but got {df.shape}"
-        curr_year_index = s.ti % s.tperyear
+        curr_year_index = s.ti % s.tiperyear
         assert (df[:, curr_year_index] == s.people[key]).all(), f"Expected column {curr_year_index} to have same longitudinal data as {key} but it does not."
 
 
