@@ -130,7 +130,7 @@ class People(fpb.BasePeople):
 
     @property
     def tiperyear(self):
-        return  self.pars['tiperyear']
+        return self.pars['tiperyear']
 
     def get_urban(self, n):
         """ Get initial distribution of urban """
