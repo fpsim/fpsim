@@ -401,21 +401,12 @@ class update_methods(Intervention):
         self.p_use = p_use
         self.method_mix = method_mix
         self.verbose = verbose
-
-        # Validation
-        if self.year is None:
-            errormsg = 'A year must be supplied'
-            raise ValueError(errormsg)
-        if self.eff is None and self.dur_use is None and self.p_use is None and self.method_mix is None:
-            errormsg = 'Either efficacy, durations of use, probability of use, or method mix must be supplied'
-            raise ValueError(errormsg)
-
         self.applied = False
-
         return
 
     def initialize(self, sim=None):
         super().initialize()
+        self._validate()
         par_name = None
         if self.p_use is not None and isinstance(sim.people.contraception_module, (fpm.SimpleChoice, fpm.EmpoweredChoice)):
             par_name = 'p_use'
@@ -428,6 +419,16 @@ class update_methods(Intervention):
                 f"For this type of module, the probability of contraceptive use depends on people attributes and can't be reset using this intervention.")
             raise ValueError(errormsg)
 
+        return
+
+    def _validate(self):
+        # Validation
+        if self.year is None:
+            errormsg = 'A year must be supplied'
+            raise ValueError(errormsg)
+        if self.eff is None and self.dur_use is None and self.p_use is None and self.method_mix is None:
+            errormsg = 'Either efficacy, durations of use, probability of use, or method mix must be supplied'
+            raise ValueError(errormsg)
         return
 
     def apply(self, sim):
