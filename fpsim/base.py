@@ -205,6 +205,10 @@ class BasePeople(sc.prettyobj):
             p2val = people2[key]
             if isinstance(npval, np.ndarray):
                 newpeople[key] = np.concatenate([npval, p2val], axis=0)
+            elif isinstance(npval, dict):
+                for attr in npval.keys():
+                    new_rows = np.full((len(people2), npval[attr].shape[1]), p2val[attr][0])
+                    newpeople[key][attr] = np.concatenate((npval[attr], new_rows), axis=0)
             elif isinstance(npval, list):
                 newpeople[key] += p2val
             else:
@@ -226,6 +230,9 @@ class BasePeople(sc.prettyobj):
         ''' Returns keys for all properties of the people object '''
         try: # Unclear wy this fails, but sometimes it does during initialization/pickling
             keys = obj_get(self, '_keys')[:]
+            if 'longitude' not in keys:
+                if hasattr(self, 'longitude'):
+                    keys.append('longitude')
         except:
             keys = []
         return keys
@@ -412,6 +419,14 @@ class BaseSim(ParsObj):
         ''' Count the number of points in timesteps between the starting year and the ending year.'''
         try:
             return int(fpd.mpy * (self.pars['end_year'] - self.pars['start_year']) / self.pars['timestep'] + 1)
+        except:
+            return 0
+
+    @property
+    def tiperyear(self):
+        ''' Count the number of points in timesteps per year.'''
+        try:
+            return (self.npts / (self.pars['end_year'] - self.pars['start_year'])).__ceil__()
         except:
             return 0
 

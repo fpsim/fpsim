@@ -86,7 +86,7 @@ class ContraceptiveChoice:
     def init_method_dist(self, ppl):
         pass
 
-    def get_prob_use(self, ppl, year=None, event=None):
+    def get_prob_use(self, ppl, year=None, event=None, ti=None, tiperyear=None):
         """ Assign probabilities that each woman will use contraception """
         prob_use = np.full(len(ppl), fill_value=self.pars['p_use'], dtype=float)
         return prob_use
@@ -117,9 +117,9 @@ class ContraceptiveChoice:
         method = self.get_method_by_label(method_label)
         del self.methods[method.name]
 
-    def get_contra_users(self, ppl, year=None, event=None):
+    def get_contra_users(self, ppl, year=None, event=None, ti=None, tiperyear=None):
         """ Select contraception users, return boolean array """
-        prob_use = self.get_prob_use(ppl, event=event, year=year)
+        prob_use = self.get_prob_use(ppl, event=event, year=year, ti=ti, tiperyear=tiperyear)
         uses_contra_bool = fpu.binomial_arr(prob_use)
         return uses_contra_bool
 
@@ -203,7 +203,7 @@ class SimpleChoice(RandomChoice):
             errormsg = f'Distribution of contraceptive choices has not been provided.'
             raise ValueError(errormsg)
 
-    def get_prob_use(self, ppl, year=None, event=None):
+    def get_prob_use(self, ppl, year=None, event=None, ti=None, tiperyear=None):
         """
         Return an array of probabilities that each woman will use contraception.
         """
@@ -395,7 +395,7 @@ class EmpoweredChoice(ContraceptiveChoice):
         # TODO look for initial values
         return self.choose_method(ppl)
 
-    def get_prob_use(self, ppl, year=None, inds=None, event=None):
+    def get_prob_use(self, ppl, year=None, inds=None, event=None, ti=None, tiperyear=None):
         """
         Given an array of indices, return an array of probabilities that each woman will use contraception.
         Probabilities are a function of:
