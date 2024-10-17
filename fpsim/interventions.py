@@ -11,7 +11,7 @@ from . import methods as fpm
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state', 'change_initiation']
+__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state', 'change_initiation_prob']
 
 
 class Intervention:
@@ -462,21 +462,20 @@ class update_methods(Intervention):
         return
 
 
-class change_initiation(Intervention):
+class change_initiation_prob(Intervention):
     """
-    Intervention to change the percentage of women who are using contraception
-    by x% per year.
+    Intervention to change the probabilty of contraception use trend parameter in
+    contraceptive choice modules that have a logistic regression model.
 
     Args:
         year (float): The year we want to start the intervention.
-        p_use_year (float): A number between -1 and 1 expressing the change in the % of women
-        (eligible to use contraception) using any form of contraception per year.
+        prob_use_trend_par (float): A number between 0 and 1
     """
 
-    def __init__(self, year, p_use_year=None, verbose=False):
+    def __init__(self, year, prob_use_trend_par=None, verbose=False):
         super().__init__()
         self.year    = year
-        self.p_use_year = p_use_year
+        self.prob_use_trend_par = prob_use_trend_par
         self.verbose = verbose
         self.applied = False
         return
@@ -485,8 +484,8 @@ class change_initiation(Intervention):
         super().initialize()
         self._validate()
         par_name = None
-        if (self.p_use_year is not None) and (not isinstance(sim.people.contraception_module, (fpm.SimpleChoice))):
-            par_name = 'p_use_year'
+        if (self.prob_use_trend_par is not None) and (not isinstance(sim.people.contraception_module, (fpm.SimpleChoice))):
+            par_name = 'prob_use_trend_par'
 
         if par_name is not None:
             errormsg = (
@@ -512,8 +511,8 @@ class change_initiation(Intervention):
             self.applied = True # Ensure we don't apply this more than once
 
             # Change in percentage of women who are using contraception
-            if self.p_use_year is not None:
+            if self.prob_use_trend_par is not None:
                 #sim.people.contraception_module.pars['prob_use_year'] = self.year
-                sim.people.contraception_module.pars['prob_use_trend_par'] = self.p_use_year
+                sim.people.contraception_module.pars['prob_use_trend_par'] = self.prob_use_trend_par
 
         return
