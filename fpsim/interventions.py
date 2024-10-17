@@ -11,7 +11,7 @@ from . import methods as fpm
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state']
+__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state', 'change_initiation']
 
 
 class Intervention:
@@ -458,5 +458,62 @@ class update_methods(Intervention):
             if self.method_mix is not None:
                 this_mix = self.method_mix / np.sum(self.method_mix) # Renormalise in case they are not adding up to 1
                 sim.people.contraception_module.pars['method_mix'] = this_mix
+
+        return
+
+
+class change_initiation(Intervention):
+    """
+    Intervention to change the percentage of women who are using contraception
+    by x% per year.
+
+    Args:
+        year (float): The year we want to start the intervention.
+        p_use_year (float): A number between -1 and 1 expressing the change in the % of women
+        (eligible to use contraception) using any form of contraception per year.
+    """
+
+    def __init__(self, year, p_use_year=None, verbose=False):
+        super().__init__()
+        self.year    = year
+        self.p_use_year = p_use_year
+        self.verbose = verbose
+        self.applied = False
+        return
+
+    def initialize(self, sim=None):
+        super().initialize()
+        self._validate()
+        par_name = None
+        if (self.p_use_year is not None) and (not isinstance(sim.people.contraception_module, (fpm.SimpleChoice))):
+            par_name = 'p_use_year'
+
+        if par_name is not None:
+            errormsg = (
+                f"Contraceptive module  {type(sim.people.contraception_module)} does not have `{par_name}` parameter.")
+            raise ValueError(errormsg)
+
+        return
+
+    def _validate(self):
+        # Validation
+        if self.year is None:
+            errormsg = 'A year must be supplied'
+            raise ValueError(errormsg)
+        return
+
+    def apply(self, sim):
+        """
+        Applies the changes to efficacy or contraceptive uptake changes if it is the specified year
+        based on scenario specifications.
+        """
+
+        if not self.applied and sim.y >= self.year:
+            self.applied = True # Ensure we don't apply this more than once
+
+            # Change in percentage of women who are using contraception
+            if self.p_use_year is not None:
+                #sim.people.contraception_module.pars['prob_use_year'] = self.year
+                sim.people.contraception_module.pars['prob_use_trend_par'] = self.p_use_year
 
         return
