@@ -193,10 +193,9 @@ class People(fpb.BasePeople):
         """
 
         contra_choosers = self.contra_choosers_filter()
-
         if contraception_module is not None:
             self.contraception_module = contraception_module
-            contra_choosers.on_contra = contraception_module.get_contra_users(contra_choosers, year=year, ti=ti, tiperyear=self.pars['tiperyear'])
+            contra_choosers.on_contra = contraception_module.get_contra_users(contra_choosers, year=year, ti=ti, tiperyear=self.tiperyear)
             oc = contra_choosers.filter(contra_choosers.on_contra)
             oc.method = contraception_module.init_method_dist(oc)
             oc.ever_used_contra = 1
