@@ -58,8 +58,8 @@ for i in range(len(ppl)):
         if ppl.sexual_debut[i] == 0:
             predebut += 1
         if ppl.age[i] >= ppl.fated_debut[i]:
-            #if ppl.sexual_debut[i] == 0:
-                #time_to_debut.append(ppl.age[i] - ppl.fated_debut[i])
+            #if ppl.sexual_debut[ti] == 0:
+                #time_to_debut.append(ppl.age[ti] - ppl.fated_debut[ti])
             if ppl.sexual_debut[i] == 1:
                 time_to_debut.append(ppl.sexual_debut_age[i] - ppl.fated_debut[i])
         if ppl.months_inactive[i] >= 12 and ppl.sexual_debut[i] == 1:

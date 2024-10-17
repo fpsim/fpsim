@@ -17,7 +17,7 @@ import pylab as pl
 import sciris as sc
 
 
-# Only the class instance is public
+# Visible things
 __all__ = ['options']
 
 
@@ -60,7 +60,7 @@ class Options(sc.objdict):
 
         - verbose:        default verbosity for simulations to use
         - style:          the plotting style to use
-        - dpi:            the overall DPI (i.e. size) of the figures
+        - dpi:            the overall DPI (ti.e. size) of the figures
         - font:           the font family/face used for the plots
         - fontsize:       the font size used for the plots
         - interactive:    convenience method to set show, close, and backend
@@ -179,7 +179,7 @@ class Options(sc.objdict):
         optdesc.save = 'Set whether or not to save figures (i.e. call pl.savefig() automatically)'
         options.save = int(os.getenv('FPSIM_SAVE', False))
 
-        optdesc.close = 'Set whether or not to close figures (i.e. call pl.close() automatically)'
+        optdesc.close = 'Set whether or not to close figures (ti.e. call pl.close() automatically)'
         options.close = int(os.getenv('FPSIM_CLOSE', False))
 
         optdesc.returnfig = 'Set whether or not to return figures from plotting functions'
