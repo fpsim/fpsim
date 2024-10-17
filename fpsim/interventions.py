@@ -8,10 +8,11 @@ import sciris as sc
 import inspect
 from . import utils as fpu
 from . import methods as fpm
+from . import defaults as fpd
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state', 'change_initiation_prob']
+__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state', 'change_initiation_prob', 'change_initiation']
 
 
 class Intervention:
@@ -515,4 +516,84 @@ class change_initiation_prob(Intervention):
                 #sim.people.contraception_module.pars['prob_use_year'] = self.year
                 sim.people.contraception_module.pars['prob_use_trend_par'] = self.prob_use_trend_par
 
+        return
+
+
+class change_initiation(Intervention):
+    """
+    Intervention that modifies the outcomes of whether women are on contraception or not
+    Select a proportion of women and sets them on a contraception method.
+
+    Args:
+        state_name   (string): name of the People's state that will be modified
+        year         (float): time expressed in years when the change is applied
+        new_val      (float): the new state value eligible people will have
+        eligibility  (inds/callable): indices OR callable that returns inds
+    """
+
+    def __init__(self, year=None, new_val=None, annual_increase=0.1, eligibility=None):
+        super().__init__()
+        self.year = year
+        self.new_val = new_val
+        self.eligibility = eligibility
+        self.annual_increase = 1.0 + annual_increase
+        self.dt_increase = None
+        self.applied = False
+        return
+
+    def initialize(self, sim=None):
+        super().initialize()
+        self._validate()
+        self.dt_increase = self.annual_increase ** (sim.people.dt/fpd.mpy)
+        return
+
+    def _validate(self):
+        # Validation
+        if self.year is None:
+            errormsg = 'A year must be supplied.'
+            raise ValueError(errormsg)
+        if self.new_val is None:
+            errormsg = 'A new value must be supplied.'
+            raise ValueError(errormsg)
+        return
+
+    def check_eligibility(self, sim):
+        """
+        """
+
+        if self.eligibility is None:
+            contra_choosers = sim.people.contra_choosers_filter()
+        return contra_choosers
+
+    def apply(self, sim):
+        if sim.y >= self.year:
+
+            # Number currently on contra
+            n_oncontra = sum(sim.people.on_contra)
+
+            # Get how many should be on contra
+            new_on_contra = sc.randround(n_oncontra * self.dt_increase - n_oncontra)
+
+            if new_on_contra:
+                # TODO: check this is ok, or make a filter about the largest group of eligible women that can be set to use contraception
+                # Get women who are ready to select contraception
+                contra_choosers = self.check_eligibility()
+
+                # Get those who are not currently on contraception
+                is_eligible = ~contra_choosers.on_contra
+
+                # Select only the corresponding fraction
+                eligible_inds = sc.findinds(is_eligible)
+
+                selected_inds = np.random.choice(eligible_inds, size=new_on_contra, replace=False)
+
+                is_eligible[:] = False
+                is_eligible[selected_inds] = True
+
+                new_users = contra_coosers.filter(is_eligible)
+                new_users.on_contra[:] = True
+                new_users.method = sim.people.contraception_module.init_method_dist(new_users)
+                new_users.ever_used_contra = 1
+                method_dur = sim.people.contraception_module.set_dur_method(new_users)
+                new_users.ti_contra = ti + method_dur
         return
