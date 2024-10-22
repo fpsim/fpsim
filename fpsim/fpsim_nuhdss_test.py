@@ -237,8 +237,8 @@ if __name__ == '__main__':
     #run_impl_campaign()
     #run_inj_campaign()
     #run_campaign_coverage_inj()
-    run_all_methods_campaign()
-    #run_campaign_coverage()
+    #run_all_methods_campaign()
+    run_campaign_coverage()
     #run_male_inv()
     
    
