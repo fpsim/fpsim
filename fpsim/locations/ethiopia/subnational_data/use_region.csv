@@ -1,0 +1,441 @@
+year,region,var1,freq,perc,use
+2000,Addis Ababa,0,0.790,79.0,No current method
+2000,Afar,0,0.934,93.4,No current method
+2000,Amhara,0,0.940,94.0,No current method
+2000,Benishangul-Gumuz,0,0.933,93.3,No current method
+2000,Dire Dawa,0,0.819,81.9,No current method
+2000,Gambela,0,0.891,89.1,No current method
+2000,Harari,0,0.855,85.5,No current method
+2000,Oromia,0,0.955,95.5,No current method
+2000,SNNPR,0,0.953,95.3,No current method
+2000,Somali,0,0.966,96.6,No current method
+2000,Tigray,0,0.931,93.1,No current method
+2001,Addis Ababa,0,0.791,79.1,No current method
+2001,Afar,0,0.934,93.4,No current method
+2001,Amhara,0,0.929,92.9,No current method
+2001,Benishangul-Gumuz,0,0.928,92.8,No current method
+2001,Dire Dawa,0,0.815,81.5,No current method
+2001,Gambela,0,0.888,88.8,No current method
+2001,Harari,0,0.843,84.3,No current method
+2001,Oromia,0,0.944,94.4,No current method
+2001,SNNPR,0,0.946,94.6,No current method
+2001,Somali,0,0.968,96.8,No current method
+2001,Tigray,0,0.922,92.2,No current method
+2002,Addis Ababa,0,0.792,79.2,No current method
+2002,Afar,0,0.934,93.4,No current method
+2002,Amhara,0,0.918,91.8,No current method
+2002,Benishangul-Gumuz,0,0.923,92.3,No current method
+2002,Dire Dawa,0,0.811,81.1,No current method
+2002,Gambela,0,0.886,88.6,No current method
+2002,Harari,0,0.831,83.1,No current method
+2002,Oromia,0,0.934,93.4,No current method
+2002,SNNPR,0,0.939,93.9,No current method
+2002,Somali,0,0.970,97.0,No current method
+2002,Tigray,0,0.914,91.4,No current method
+2003,Addis Ababa,0,0.792,79.2,No current method
+2003,Afar,0,0.935,93.5,No current method
+2003,Amhara,0,0.907,90.7,No current method
+2003,Benishangul-Gumuz,0,0.919,91.9,No current method
+2003,Dire Dawa,0,0.806,80.6,No current method
+2003,Gambela,0,0.883,88.3,No current method
+2003,Harari,0,0.819,81.9,No current method
+2003,Oromia,0,0.923,92.3,No current method
+2003,SNNPR,0,0.932,93.2,No current method
+2003,Somali,0,0.973,97.3,No current method
+2003,Tigray,0,0.905,90.5,No current method
+2004,Addis Ababa,0,0.793,79.3,No current method
+2004,Afar,0,0.935,93.5,No current method
+2004,Amhara,0,0.896,89.6,No current method
+2004,Benishangul-Gumuz,0,0.914,91.4,No current method
+2004,Dire Dawa,0,0.802,80.2,No current method
+2004,Gambela,0,0.881,88.1,No current method
+2004,Harari,0,0.807,80.7,No current method
+2004,Oromia,0,0.913,91.3,No current method
+2004,SNNPR,0,0.925,92.5,No current method
+2004,Somali,0,0.975,97.5,No current method
+2004,Tigray,0,0.897,89.7,No current method
+2005,Addis Ababa,0,0.794,79.4,No current method
+2005,Afar,0,0.935,93.5,No current method
+2005,Amhara,0,0.885,88.5,No current method
+2005,Benishangul-Gumuz,0,0.909,90.9,No current method
+2005,Dire Dawa,0,0.798,79.8,No current method
+2005,Gambela,0,0.878,87.8,No current method
+2005,Harari,0,0.795,79.5,No current method
+2005,Oromia,0,0.902,90.2,No current method
+2005,SNNPR,0,0.918,91.8,No current method
+2005,Somali,0,0.977,97.7,No current method
+2005,Tigray,0,0.888,88.8,No current method
+2006,Addis Ababa,0,0.783,78.3,No current method
+2006,Afar,0,0.932,93.2,No current method
+2006,Amhara,0,0.866,86.6,No current method
+2006,Benishangul-Gumuz,0,0.890,89.0,No current method
+2006,Dire Dawa,0,0.797,79.7,No current method
+2006,Gambela,0,0.843,84.3,No current method
+2006,Harari,0,0.792,79.2,No current method
+2006,Oromia,0,0.887,88.7,No current method
+2006,SNNPR,0,0.903,90.3,No current method
+2006,Somali,0,0.975,97.5,No current method
+2006,Tigray,0,0.880,88.0,No current method
+2007,Addis Ababa,0,0.771,77.1,No current method
+2007,Afar,0,0.930,93.0,No current method
+2007,Amhara,0,0.846,84.6,No current method
+2007,Benishangul-Gumuz,0,0.871,87.1,No current method
+2007,Dire Dawa,0,0.795,79.5,No current method
+2007,Gambela,0,0.808,80.8,No current method
+2007,Harari,0,0.789,78.9,No current method
+2007,Oromia,0,0.873,87.3,No current method
+2007,SNNPR,0,0.888,88.8,No current method
+2007,Somali,0,0.973,97.3,No current method
+2007,Tigray,0,0.871,87.1,No current method
+2008,Addis Ababa,0,0.760,76.0,No current method
+2008,Afar,0,0.927,92.7,No current method
+2008,Amhara,0,0.827,82.7,No current method
+2008,Benishangul-Gumuz,0,0.852,85.2,No current method
+2008,Dire Dawa,0,0.794,79.4,No current method
+2008,Gambela,0,0.774,77.4,No current method
+2008,Harari,0,0.786,78.6,No current method
+2008,Oromia,0,0.858,85.8,No current method
+2008,SNNPR,0,0.873,87.3,No current method
+2008,Somali,0,0.971,97.1,No current method
+2008,Tigray,0,0.863,86.3,No current method
+2009,Addis Ababa,0,0.749,74.9,No current method
+2009,Afar,0,0.924,92.4,No current method
+2009,Amhara,0,0.807,80.7,No current method
+2009,Benishangul-Gumuz,0,0.832,83.2,No current method
+2009,Dire Dawa,0,0.793,79.3,No current method
+2009,Gambela,0,0.739,73.9,No current method
+2009,Harari,0,0.783,78.3,No current method
+2009,Oromia,0,0.843,84.3,No current method
+2009,SNNPR,0,0.858,85.8,No current method
+2009,Somali,0,0.969,96.9,No current method
+2009,Tigray,0,0.855,85.5,No current method
+2010,Addis Ababa,0,0.737,73.7,No current method
+2010,Afar,0,0.922,92.2,No current method
+2010,Amhara,0,0.788,78.8,No current method
+2010,Benishangul-Gumuz,0,0.813,81.3,No current method
+2010,Dire Dawa,0,0.791,79.1,No current method
+2010,Gambela,0,0.704,70.4,No current method
+2010,Harari,0,0.780,78.0,No current method
+2010,Oromia,0,0.829,82.9,No current method
+2010,SNNPR,0,0.843,84.3,No current method
+2010,Somali,0,0.967,96.7,No current method
+2010,Tigray,0,0.846,84.6,No current method
+2011,Addis Ababa,0,0.726,72.6,No current method
+2011,Afar,0,0.919,91.9,No current method
+2011,Amhara,0,0.768,76.8,No current method
+2011,Benishangul-Gumuz,0,0.794,79.4,No current method
+2011,Dire Dawa,0,0.790,79.0,No current method
+2011,Gambela,0,0.669,66.9,No current method
+2011,Harari,0,0.777,77.7,No current method
+2011,Oromia,0,0.814,81.4,No current method
+2011,SNNPR,0,0.828,82.8,No current method
+2011,Somali,0,0.965,96.5,No current method
+2011,Tigray,0,0.838,83.8,No current method
+2012,Addis Ababa,0,0.729,72.9,No current method
+2012,Afar,0,0.915,91.5,No current method
+2012,Amhara,0,0.746,74.6,No current method
+2012,Benishangul-Gumuz,0,0.791,79.1,No current method
+2012,Dire Dawa,0,0.793,79.3,No current method
+2012,Gambela,0,0.682,68.2,No current method
+2012,Harari,0,0.781,78.1,No current method
+2012,Oromia,0,0.809,80.9,No current method
+2012,SNNPR,0,0.809,80.9,No current method
+2012,Somali,0,0.970,97.0,No current method
+2012,Tigray,0,0.820,82.0,No current method
+2013,Addis Ababa,0,0.732,73.2,No current method
+2013,Afar,0,0.911,91.1,No current method
+2013,Amhara,0,0.724,72.4,No current method
+2013,Benishangul-Gumuz,0,0.788,78.8,No current method
+2013,Dire Dawa,0,0.796,79.6,No current method
+2013,Gambela,0,0.695,69.5,No current method
+2013,Harari,0,0.785,78.5,No current method
+2013,Oromia,0,0.803,80.3,No current method
+2013,SNNPR,0,0.790,79.0,No current method
+2013,Somali,0,0.975,97.5,No current method
+2013,Tigray,0,0.802,80.2,No current method
+2014,Addis Ababa,0,0.734,73.4,No current method
+2014,Afar,0,0.908,90.8,No current method
+2014,Amhara,0,0.703,70.3,No current method
+2014,Benishangul-Gumuz,0,0.786,78.6,No current method
+2014,Dire Dawa,0,0.798,79.8,No current method
+2014,Gambela,0,0.709,70.9,No current method
+2014,Harari,0,0.789,78.9,No current method
+2014,Oromia,0,0.798,79.8,No current method
+2014,SNNPR,0,0.771,77.1,No current method
+2014,Somali,0,0.979,97.9,No current method
+2014,Tigray,0,0.784,78.4,No current method
+2015,Addis Ababa,0,0.737,73.7,No current method
+2015,Afar,0,0.904,90.4,No current method
+2015,Amhara,0,0.681,68.1,No current method
+2015,Benishangul-Gumuz,0,0.783,78.3,No current method
+2015,Dire Dawa,0,0.801,80.1,No current method
+2015,Gambela,0,0.722,72.2,No current method
+2015,Harari,0,0.793,79.3,No current method
+2015,Oromia,0,0.792,79.2,No current method
+2015,SNNPR,0,0.752,75.2,No current method
+2015,Somali,0,0.984,98.4,No current method
+2015,Tigray,0,0.766,76.6,No current method
+2016,Addis Ababa,0,0.740,74.0,No current method
+2016,Afar,0,0.900,90.0,No current method
+2016,Amhara,0,0.659,65.9,No current method
+2016,Benishangul-Gumuz,0,0.780,78.0,No current method
+2016,Dire Dawa,0,0.804,80.4,No current method
+2016,Gambela,0,0.735,73.5,No current method
+2016,Harari,0,0.797,79.7,No current method
+2016,Oromia,0,0.787,78.7,No current method
+2016,SNNPR,0,0.733,73.3,No current method
+2016,Somali,0,0.989,98.9,No current method
+2016,Tigray,0,0.748,74.8,No current method
+2017,Addis Ababa,0,0.740,74.0,No current method
+2017,Afar,0,0.896,89.6,No current method
+2017,Amhara,0,0.658,65.8,No current method
+2017,Benishangul-Gumuz,0,0.762,76.2,No current method
+2017,Dire Dawa,0,0.807,80.7,No current method
+2017,Gambela,0,0.745,74.5,No current method
+2017,Harari,0,0.796,79.6,No current method
+2017,Oromia,0,0.762,76.2,No current method
+2017,SNNPR,0,0.717,71.7,No current method
+2017,Somali,0,0.983,98.3,No current method
+2017,Tigray,0,0.743,74.3,No current method
+2018,Addis Ababa,0,0.739,73.9,No current method
+2018,Afar,0,0.893,89.3,No current method
+2018,Amhara,0,0.657,65.7,No current method
+2018,Benishangul-Gumuz,0,0.745,74.5,No current method
+2018,Dire Dawa,0,0.811,81.1,No current method
+2018,Gambela,0,0.754,75.4,No current method
+2018,Harari,0,0.795,79.5,No current method
+2018,Oromia,0,0.737,73.7,No current method
+2018,SNNPR,0,0.702,70.2,No current method
+2018,Somali,0,0.978,97.8,No current method
+2018,Tigray,0,0.737,73.7,No current method
+2019,Addis Ababa,0,0.739,73.9,No current method
+2019,Afar,0,0.889,88.9,No current method
+2019,Amhara,0,0.656,65.6,No current method
+2019,Benishangul-Gumuz,0,0.727,72.7,No current method
+2019,Dire Dawa,0,0.814,81.4,No current method
+2019,Gambela,0,0.764,76.4,No current method
+2019,Harari,0,0.794,79.4,No current method
+2019,Oromia,0,0.712,71.2,No current method
+2019,SNNPR,0,0.686,68.6,No current method
+2019,Somali,0,0.972,97.2,No current method
+2019,Tigray,0,0.732,73.2,No current method
+2000,Addis Ababa,1,0.210,21.0,Any current method
+2000,Afar,1,0.066,6.6,Any current method
+2000,Amhara,1,0.060,6.0,Any current method
+2000,Benishangul-Gumuz,1,0.067,6.7,Any current method
+2000,Dire Dawa,1,0.181,18.1,Any current method
+2000,Gambela,1,0.109,10.9,Any current method
+2000,Harari,1,0.145,14.5,Any current method
+2000,Oromia,1,0.045,4.5,Any current method
+2000,SNNPR,1,0.047,4.7,Any current method
+2000,Somali,1,0.034,3.4,Any current method
+2000,Tigray,1,0.069,6.9,Any current method
+2001,Addis Ababa,1,0.209,20.9,Any current method
+2001,Afar,1,0.066,6.6,Any current method
+2001,Amhara,1,0.071,7.1,Any current method
+2001,Benishangul-Gumuz,1,0.072,7.2,Any current method
+2001,Dire Dawa,1,0.185,18.5,Any current method
+2001,Gambela,1,0.112,11.2,Any current method
+2001,Harari,1,0.157,15.7,Any current method
+2001,Oromia,1,0.056,5.6,Any current method
+2001,SNNPR,1,0.054,5.4,Any current method
+2001,Somali,1,0.032,3.2,Any current method
+2001,Tigray,1,0.078,7.8,Any current method
+2002,Addis Ababa,1,0.208,20.8,Any current method
+2002,Afar,1,0.066,6.6,Any current method
+2002,Amhara,1,0.082,8.2,Any current method
+2002,Benishangul-Gumuz,1,0.077,7.7,Any current method
+2002,Dire Dawa,1,0.189,18.9,Any current method
+2002,Gambela,1,0.114,11.4,Any current method
+2002,Harari,1,0.169,16.9,Any current method
+2002,Oromia,1,0.066,6.6,Any current method
+2002,SNNPR,1,0.061,6.1,Any current method
+2002,Somali,1,0.030,3.0,Any current method
+2002,Tigray,1,0.086,8.6,Any current method
+2003,Addis Ababa,1,0.208,20.8,Any current method
+2003,Afar,1,0.065,6.5,Any current method
+2003,Amhara,1,0.093,9.3,Any current method
+2003,Benishangul-Gumuz,1,0.081,8.1,Any current method
+2003,Dire Dawa,1,0.194,19.4,Any current method
+2003,Gambela,1,0.117,11.7,Any current method
+2003,Harari,1,0.181,18.1,Any current method
+2003,Oromia,1,0.077,7.7,Any current method
+2003,SNNPR,1,0.068,6.8,Any current method
+2003,Somali,1,0.027,2.7,Any current method
+2003,Tigray,1,0.095,9.5,Any current method
+2004,Addis Ababa,1,0.207,20.7,Any current method
+2004,Afar,1,0.065,6.5,Any current method
+2004,Amhara,1,0.104,10.4,Any current method
+2004,Benishangul-Gumuz,1,0.086,8.6,Any current method
+2004,Dire Dawa,1,0.198,19.8,Any current method
+2004,Gambela,1,0.119,11.9,Any current method
+2004,Harari,1,0.193,19.3,Any current method
+2004,Oromia,1,0.087,8.7,Any current method
+2004,SNNPR,1,0.075,7.5,Any current method
+2004,Somali,1,0.025,2.5,Any current method
+2004,Tigray,1,0.103,10.3,Any current method
+2005,Addis Ababa,1,0.206,20.6,Any current method
+2005,Afar,1,0.065,6.5,Any current method
+2005,Amhara,1,0.115,11.5,Any current method
+2005,Benishangul-Gumuz,1,0.091,9.1,Any current method
+2005,Dire Dawa,1,0.202,20.2,Any current method
+2005,Gambela,1,0.122,12.2,Any current method
+2005,Harari,1,0.205,20.5,Any current method
+2005,Oromia,1,0.098,9.8,Any current method
+2005,SNNPR,1,0.082,8.2,Any current method
+2005,Somali,1,0.023,2.3,Any current method
+2005,Tigray,1,0.112,11.2,Any current method
+2006,Addis Ababa,1,0.217,21.7,Any current method
+2006,Afar,1,0.068,6.8,Any current method
+2006,Amhara,1,0.135,13.5,Any current method
+2006,Benishangul-Gumuz,1,0.110,11.0,Any current method
+2006,Dire Dawa,1,0.203,20.3,Any current method
+2006,Gambela,1,0.157,15.7,Any current method
+2006,Harari,1,0.208,20.8,Any current method
+2006,Oromia,1,0.113,11.3,Any current method
+2006,SNNPR,1,0.097,9.7,Any current method
+2006,Somali,1,0.025,2.5,Any current method
+2006,Tigray,1,0.120,12.0,Any current method
+2007,Addis Ababa,1,0.229,22.9,Any current method
+2007,Afar,1,0.070,7.0,Any current method
+2007,Amhara,1,0.154,15.4,Any current method
+2007,Benishangul-Gumuz,1,0.129,12.9,Any current method
+2007,Dire Dawa,1,0.205,20.5,Any current method
+2007,Gambela,1,0.192,19.2,Any current method
+2007,Harari,1,0.211,21.1,Any current method
+2007,Oromia,1,0.127,12.7,Any current method
+2007,SNNPR,1,0.112,11.2,Any current method
+2007,Somali,1,0.027,2.7,Any current method
+2007,Tigray,1,0.129,12.9,Any current method
+2008,Addis Ababa,1,0.240,24.0,Any current method
+2008,Afar,1,0.073,7.3,Any current method
+2008,Amhara,1,0.174,17.4,Any current method
+2008,Benishangul-Gumuz,1,0.149,14.9,Any current method
+2008,Dire Dawa,1,0.206,20.6,Any current method
+2008,Gambela,1,0.227,22.7,Any current method
+2008,Harari,1,0.214,21.4,Any current method
+2008,Oromia,1,0.142,14.2,Any current method
+2008,SNNPR,1,0.127,12.7,Any current method
+2008,Somali,1,0.029,2.9,Any current method
+2008,Tigray,1,0.137,13.7,Any current method
+2009,Addis Ababa,1,0.251,25.1,Any current method
+2009,Afar,1,0.076,7.6,Any current method
+2009,Amhara,1,0.193,19.3,Any current method
+2009,Benishangul-Gumuz,1,0.168,16.8,Any current method
+2009,Dire Dawa,1,0.207,20.7,Any current method
+2009,Gambela,1,0.261,26.1,Any current method
+2009,Harari,1,0.217,21.7,Any current method
+2009,Oromia,1,0.157,15.7,Any current method
+2009,SNNPR,1,0.142,14.2,Any current method
+2009,Somali,1,0.031,3.1,Any current method
+2009,Tigray,1,0.145,14.5,Any current method
+2010,Addis Ababa,1,0.263,26.3,Any current method
+2010,Afar,1,0.078,7.8,Any current method
+2010,Amhara,1,0.213,21.3,Any current method
+2010,Benishangul-Gumuz,1,0.187,18.7,Any current method
+2010,Dire Dawa,1,0.209,20.9,Any current method
+2010,Gambela,1,0.296,29.6,Any current method
+2010,Harari,1,0.220,22.0,Any current method
+2010,Oromia,1,0.171,17.1,Any current method
+2010,SNNPR,1,0.157,15.7,Any current method
+2010,Somali,1,0.033,3.3,Any current method
+2010,Tigray,1,0.154,15.4,Any current method
+2011,Addis Ababa,1,0.274,27.4,Any current method
+2011,Afar,1,0.081,8.1,Any current method
+2011,Amhara,1,0.232,23.2,Any current method
+2011,Benishangul-Gumuz,1,0.206,20.6,Any current method
+2011,Dire Dawa,1,0.210,21.0,Any current method
+2011,Gambela,1,0.331,33.1,Any current method
+2011,Harari,1,0.223,22.3,Any current method
+2011,Oromia,1,0.186,18.6,Any current method
+2011,SNNPR,1,0.172,17.2,Any current method
+2011,Somali,1,0.035,3.5,Any current method
+2011,Tigray,1,0.162,16.2,Any current method
+2012,Addis Ababa,1,0.271,27.1,Any current method
+2012,Afar,1,0.085,8.5,Any current method
+2012,Amhara,1,0.254,25.4,Any current method
+2012,Benishangul-Gumuz,1,0.209,20.9,Any current method
+2012,Dire Dawa,1,0.207,20.7,Any current method
+2012,Gambela,1,0.318,31.8,Any current method
+2012,Harari,1,0.219,21.9,Any current method
+2012,Oromia,1,0.191,19.1,Any current method
+2012,SNNPR,1,0.191,19.1,Any current method
+2012,Somali,1,0.030,3.0,Any current method
+2012,Tigray,1,0.180,18.0,Any current method
+2013,Addis Ababa,1,0.268,26.8,Any current method
+2013,Afar,1,0.089,8.9,Any current method
+2013,Amhara,1,0.276,27.6,Any current method
+2013,Benishangul-Gumuz,1,0.212,21.2,Any current method
+2013,Dire Dawa,1,0.204,20.4,Any current method
+2013,Gambela,1,0.305,30.5,Any current method
+2013,Harari,1,0.215,21.5,Any current method
+2013,Oromia,1,0.197,19.7,Any current method
+2013,SNNPR,1,0.210,21.0,Any current method
+2013,Somali,1,0.025,2.5,Any current method
+2013,Tigray,1,0.198,19.8,Any current method
+2014,Addis Ababa,1,0.266,26.6,Any current method
+2014,Afar,1,0.092,9.2,Any current method
+2014,Amhara,1,0.297,29.7,Any current method
+2014,Benishangul-Gumuz,1,0.214,21.4,Any current method
+2014,Dire Dawa,1,0.202,20.2,Any current method
+2014,Gambela,1,0.291,29.1,Any current method
+2014,Harari,1,0.211,21.1,Any current method
+2014,Oromia,1,0.202,20.2,Any current method
+2014,SNNPR,1,0.229,22.9,Any current method
+2014,Somali,1,0.021,2.1,Any current method
+2014,Tigray,1,0.216,21.6,Any current method
+2015,Addis Ababa,1,0.263,26.3,Any current method
+2015,Afar,1,0.096,9.6,Any current method
+2015,Amhara,1,0.319,31.9,Any current method
+2015,Benishangul-Gumuz,1,0.217,21.7,Any current method
+2015,Dire Dawa,1,0.199,19.9,Any current method
+2015,Gambela,1,0.278,27.8,Any current method
+2015,Harari,1,0.207,20.7,Any current method
+2015,Oromia,1,0.208,20.8,Any current method
+2015,SNNPR,1,0.248,24.8,Any current method
+2015,Somali,1,0.016,1.6,Any current method
+2015,Tigray,1,0.234,23.4,Any current method
+2016,Addis Ababa,1,0.260,26.0,Any current method
+2016,Afar,1,0.100,10.0,Any current method
+2016,Amhara,1,0.341,34.1,Any current method
+2016,Benishangul-Gumuz,1,0.220,22.0,Any current method
+2016,Dire Dawa,1,0.196,19.6,Any current method
+2016,Gambela,1,0.265,26.5,Any current method
+2016,Harari,1,0.203,20.3,Any current method
+2016,Oromia,1,0.213,21.3,Any current method
+2016,SNNPR,1,0.267,26.7,Any current method
+2016,Somali,1,0.011,1.1,Any current method
+2016,Tigray,1,0.252,25.2,Any current method
+2017,Addis Ababa,1,0.260,26.0,Any current method
+2017,Afar,1,0.104,10.4,Any current method
+2017,Amhara,1,0.342,34.2,Any current method
+2017,Benishangul-Gumuz,1,0.238,23.8,Any current method
+2017,Dire Dawa,1,0.193,19.3,Any current method
+2017,Gambela,1,0.255,25.5,Any current method
+2017,Harari,1,0.204,20.4,Any current method
+2017,Oromia,1,0.238,23.8,Any current method
+2017,SNNPR,1,0.283,28.3,Any current method
+2017,Somali,1,0.017,1.7,Any current method
+2017,Tigray,1,0.257,25.7,Any current method
+2018,Addis Ababa,1,0.261,26.1,Any current method
+2018,Afar,1,0.107,10.7,Any current method
+2018,Amhara,1,0.343,34.3,Any current method
+2018,Benishangul-Gumuz,1,0.255,25.5,Any current method
+2018,Dire Dawa,1,0.189,18.9,Any current method
+2018,Gambela,1,0.246,24.6,Any current method
+2018,Harari,1,0.205,20.5,Any current method
+2018,Oromia,1,0.263,26.3,Any current method
+2018,SNNPR,1,0.298,29.8,Any current method
+2018,Somali,1,0.022,2.2,Any current method
+2018,Tigray,1,0.263,26.3,Any current method
+2019,Addis Ababa,1,0.261,26.1,Any current method
+2019,Afar,1,0.111,11.1,Any current method
+2019,Amhara,1,0.344,34.4,Any current method
+2019,Benishangul-Gumuz,1,0.273,27.3,Any current method
+2019,Dire Dawa,1,0.186,18.6,Any current method
+2019,Gambela,1,0.236,23.6,Any current method
+2019,Harari,1,0.206,20.6,Any current method
+2019,Oromia,1,0.288,28.8,Any current method
+2019,SNNPR,1,0.314,31.4,Any current method
+2019,Somali,1,0.028,2.8,Any current method
+2019,Tigray,1,0.268,26.8,Any current method
