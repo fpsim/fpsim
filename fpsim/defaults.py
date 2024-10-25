@@ -118,7 +118,7 @@ person_defaults = [
     State('has_fin_goals', 0, bool),            # whether she has financial goals
     State('sexual_autonomy',    0, bool),       # whether she has ability to refuse sex
 
-     # Composite empowerment attributes
+    # Composite empowerment attributes
     State('financial_autonomy',    0, float),
     State('decision_making', 0, float),
 
@@ -326,3 +326,19 @@ to_annualize = {
     'pregnancies'     : 'pregnancies',
     'contra_access'   : 'contra_access',
     'new_users'       : 'new_users'}
+
+# People's states for which we will need circular buffers
+longitude_keys = [
+    'on_contra',
+    'intent_to_use',
+    'buy_decision_major',
+    'buy_decision_clothes',
+    'has_fin_knowl',
+    'has_fin_goals',
+    'financial_autonomy',
+    'has_fin_goals',
+    'paid_employment',
+    'has_savings',
+    'decision_wages',
+    'decide_spending_partner',
+]

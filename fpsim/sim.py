@@ -125,6 +125,9 @@ class Sim(fpb.BaseSim):
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
 
+        # Add a new parameter to pars that determines the size of the circular buffer
+        self.pars['tiperyear'] = self.tiperyear
+
         # People and results - intialized later
         self.results = {}
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
@@ -194,6 +197,7 @@ class Sim(fpb.BaseSim):
         self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
                                     empowerment_module=self.empowerment_module, education_module=self.education_module)
 
+
     def init_contraception(self):
         if self.contraception_module is not None:
             self.people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
@@ -223,6 +227,7 @@ class Sim(fpb.BaseSim):
     def update_mothers(self):
         """
         Add link between newly added individuals and their mothers
+        TODO: move to People?
         """
         all_ppl = self.people.unfilter()
         for mother_index, postpartum in enumerate(all_ppl.postpartum):
@@ -302,13 +307,14 @@ class Sim(fpb.BaseSim):
         self.people.ty = self.ty
         self.people.y = self.y
 
-        # Step forward people's states based on model dynamics
+
+        # Step forward people's states and attributes
         self.people.step()
 
         # Apply interventions
         self.apply_interventions()
 
-        # Count results
+        # Count results for this step
         step_results = self.people.get_step_results()
 
         # Store results

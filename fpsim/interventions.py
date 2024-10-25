@@ -7,10 +7,12 @@ import pylab as pl
 import sciris as sc
 import inspect
 from . import utils as fpu
+from . import methods as fpm
+from . import defaults as fpd
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state']
+__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state', 'change_initiation_prob', 'change_initiation']
 
 
 class Intervention:
@@ -318,6 +320,11 @@ class change_people_state(Intervention):
         self.applied = False
         return
 
+    def initialize(self, sim=None):
+        super().initialize()
+        self._validate()
+        return
+
     def _validate(self):
         # Validation
         if self.state_name is None:
@@ -395,7 +402,27 @@ class update_methods(Intervention):
         self.p_use = p_use
         self.method_mix = method_mix
         self.verbose = verbose
+        self.applied = False
+        return
 
+    def initialize(self, sim=None):
+        super().initialize()
+        self._validate()
+        par_name = None
+        if self.p_use is not None and isinstance(sim.people.contraception_module, (fpm.SimpleChoice, fpm.EmpoweredChoice)):
+            par_name = 'p_use'
+        if self.method_mix is not None and isinstance(sim.people.contraception_module, (fpm.SimpleChoice, fpm.EmpoweredChoice)):
+            par_name = 'method_mix'
+
+        if par_name is not None:
+            errormsg = (
+                f"Contraceptive module  {type(sim.people.contraception_module)} does not have `{par_name}` parameter. "
+                f"For this type of module, the probability of contraceptive use depends on people attributes and can't be reset using this intervention.")
+            raise ValueError(errormsg)
+
+        return
+
+    def _validate(self):
         # Validation
         if self.year is None:
             errormsg = 'A year must be supplied'
@@ -403,9 +430,6 @@ class update_methods(Intervention):
         if self.eff is None and self.dur_use is None and self.p_use is None and self.method_mix is None:
             errormsg = 'Either efficacy, durations of use, probability of use, or method mix must be supplied'
             raise ValueError(errormsg)
-
-        self.applied = False
-
         return
 
     def apply(self, sim):
@@ -429,23 +453,147 @@ class update_methods(Intervention):
 
             # Change in probability of use
             if self.p_use is not None:
-                if sim.people.contraception_module.pars.get('p_use'):
-                    sim.people.contraception_module.pars['p_use'] = self.p_use
-                else:
-                    errormsg = (f"Contraceptive module does not have a p_use parameter. This may be because it's an "
-                                f"EmpoweredChoice or SimpleChoice module. For these modules, the probability of "
-                                f"contraceptive use depends on people attributes and can't be reset using this method.")
-                    raise ValueError(errormsg)
+                sim.people.contraception_module.pars['p_use'] = self.p_use
 
             # Change in method mix
             if self.method_mix is not None:
-                if sim.people.contraception_module.pars.get('method_mix') is not None:
-                    this_mix = self.method_mix / np.sum(self.method_mix) # Renormalise in case they are not adding up to 1
-                    sim.people.contraception_module.pars['method_mix'] = this_mix
-                else:
-                    errormsg = (f"Contraceptive module does not have method_mix parameter. This may be because it's an "
-                                f"EmpoweredChoice or SimpleChoice module. For these modules, the probability of "
-                                f"contraceptive use depends on people attributes and can't be reset using this method.")
-                    raise ValueError(errormsg)
+                this_mix = self.method_mix / np.sum(self.method_mix) # Renormalise in case they are not adding up to 1
+                sim.people.contraception_module.pars['method_mix'] = this_mix
 
+        return
+
+
+class change_initiation_prob(Intervention):
+    """
+    Intervention to change the probabilty of contraception use trend parameter in
+    contraceptive choice modules that have a logistic regression model.
+
+    Args:
+        year (float): The year we want to start the intervention.
+        prob_use_trend_par (float): A number between 0 and 1
+    """
+
+    def __init__(self, year, prob_use_trend_par=None, verbose=False):
+        super().__init__()
+        self.year    = year
+        self.prob_use_trend_par = prob_use_trend_par
+        self.verbose = verbose
+        self.applied = False
+        return
+
+    def initialize(self, sim=None):
+        super().initialize()
+        self._validate()
+        par_name = None
+        if (self.prob_use_trend_par is not None) and (not isinstance(sim.people.contraception_module, (fpm.SimpleChoice))):
+            par_name = 'prob_use_trend_par'
+
+        if par_name is not None:
+            errormsg = (
+                f"Contraceptive module  {type(sim.people.contraception_module)} does not have `{par_name}` parameter.")
+            raise ValueError(errormsg)
+
+        return
+
+    def _validate(self):
+        # Validation
+        if self.year is None:
+            errormsg = 'A year must be supplied'
+            raise ValueError(errormsg)
+        return
+
+    def apply(self, sim):
+        """
+        Applies the changes to efficacy or contraceptive uptake changes if it is the specified year
+        based on scenario specifications.
+        """
+
+        if not self.applied and sim.y >= self.year:
+            self.applied = True # Ensure we don't apply this more than once
+
+            # Change in percentage of women who are using contraception
+            if self.prob_use_trend_par is not None:
+                #sim.people.contraception_module.pars['prob_use_year'] = self.year
+                sim.people.contraception_module.pars['prob_use_trend_par'] = self.prob_use_trend_par
+
+        return
+
+
+class change_initiation(Intervention):
+    """
+    Intervention that modifies the outcomes of whether women are on contraception or not
+    Select a proportion of women and sets them on a contraception method.
+
+    Args:
+        state_name   (string): name of the People's state that will be modified
+        year         (float): time expressed in years when the change is applied
+        new_val      (float): the new state value eligible people will have
+        eligibility  (inds/callable): indices OR callable that returns inds
+    """
+
+    def __init__(self, year=None, new_val=None, annual_increase=0.1, eligibility=None):
+        super().__init__()
+        self.year = year
+        self.new_val = new_val
+        self.eligibility = eligibility
+        self.annual_increase = 1.0 + annual_increase
+        self.dt_increase = None
+        self.applied = False
+        return
+
+    def initialize(self, sim=None):
+        super().initialize()
+        self._validate()
+        self.dt_increase = self.annual_increase ** (sim.people.dt/fpd.mpy)
+        return
+
+    def _validate(self):
+        # Validation
+        if self.year is None:
+            errormsg = 'A year must be supplied.'
+            raise ValueError(errormsg)
+        if self.new_val is None:
+            errormsg = 'A new value must be supplied.'
+            raise ValueError(errormsg)
+        return
+
+    def check_eligibility(self, sim):
+        """
+        """
+
+        if self.eligibility is None:
+            contra_choosers = sim.people.contra_choosers_filter()
+        return contra_choosers
+
+    def apply(self, sim):
+        if sim.y >= self.year:
+
+            # Number currently on contra
+            n_oncontra = sum(sim.people.on_contra)
+
+            # Get how many should be on contra
+            new_on_contra = sc.randround(n_oncontra * self.dt_increase - n_oncontra)
+
+            if new_on_contra:
+                # TODO: check this is ok, or make a filter about the largest group of eligible women that can be set to use contraception
+                # Get women who are ready to select contraception
+                contra_choosers = self.check_eligibility()
+
+                # Get those who are not currently on contraception
+                is_eligible = ~contra_choosers.on_contra
+
+                # Select only the corresponding fraction
+                eligible_inds = sc.findinds(is_eligible)
+
+                selected_inds = np.random.choice(eligible_inds, size=new_on_contra, replace=False)
+
+                is_eligible[:] = False
+                is_eligible[selected_inds] = True
+
+                new_users = contra_coosers.filter(is_eligible)
+                new_users.on_contra[:] = True
+                new_users.method = sim.people.contraception_module.init_method_dist(new_users)
+                new_users.ever_used_contra = 1
+                method_dur = sim.people.contraception_module.set_dur_method(new_users)
+                new_users.ti_contra = ti + method_dur
         return

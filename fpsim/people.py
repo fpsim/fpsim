@@ -96,6 +96,10 @@ class People(fpb.BasePeople):
         if self.pars['use_partnership']:
             fpdmg.init_partnership_states(self)
 
+        # Handle circular buffer to keep track of historical data
+        self.longitude = sc.objdict()
+        self.initialize_circular_buffer()
+
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
         self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
@@ -108,9 +112,25 @@ class People(fpb.BasePeople):
 
         return
 
+    def initialize_circular_buffer(self):
+        # Initialize circular buffers to track longitudinal data
+        longitude_keys = fpd.longitude_keys
+        # NOTE: by default the history array/circular buffer is initialised with constant
+        # values. We could potentially initialise the buffer
+        # with the data from a previous simulation.
+
+        for key in longitude_keys:
+            current = getattr(self, key)  # Current value of this attribute
+            self.longitude[key] = np.full((self.n, self.tiperyear), current[0])
+        return
+
     @property
     def dt(self):
         return self.pars['timestep'] / fpd.mpy
+
+    @property
+    def tiperyear(self):
+        return self.pars['tiperyear']
 
     def get_urban(self, n):
         """ Get initial distribution of urban """
@@ -173,10 +193,9 @@ class People(fpb.BasePeople):
         """
 
         contra_choosers = self.contra_choosers_filter()
-
         if contraception_module is not None:
             self.contraception_module = contraception_module
-            contra_choosers.on_contra = contraception_module.get_contra_users(contra_choosers, year=year)
+            contra_choosers.on_contra = contraception_module.get_contra_users(contra_choosers, year=year, ti=ti, tiperyear=self.tiperyear)
             oc = contra_choosers.filter(contra_choosers.on_contra)
             oc.method = contraception_module.init_method_dist(oc)
             oc.ever_used_contra = 1
@@ -280,7 +299,7 @@ class People(fpb.BasePeople):
                 # Get previous users and see whether they will switch methods or stop using
                 if len(choosers):
 
-                    choosers.on_contra = cm.get_contra_users(choosers, year=year)
+                    choosers.on_contra = cm.get_contra_users(choosers, year=year, ti=ti, tiperyear=self.pars['tiperyear'])
                     choosers.ever_used_contra = choosers.ever_used_contra | choosers.on_contra
 
                     # Divide people into those that keep using contraception vs those that stop
@@ -313,7 +332,7 @@ class People(fpb.BasePeople):
                     if pp.on_contra.any():
                         errormsg = 'Postpartum women should not currently be using contraception.'
                         raise ValueError(errormsg)
-                    pp.on_contra = cm.get_contra_users(pp, year=year, event=event)
+                    pp.on_contra = cm.get_contra_users(pp, year=year, event=event, ti=ti, tiperyear=self.pars['tiperyear'])
                     on_contra = pp.filter(pp.on_contra)
                     off_contra = pp.filter(~pp.on_contra)
                     pp.step_results['contra_access'] += len(on_contra)
@@ -511,7 +530,8 @@ class People(fpb.BasePeople):
 
     def check_lam(self):
         """
-        Check to see if postpartum agent meets criteria for LAM in this time step
+        Check to see if postpartum agent meets criteria for
+        Lactation amenorrhea method (LAM) LAM in this time step
         """
         max_lam_dur = self.pars['max_lam_dur']
         lam_candidates = self.filter((self.postpartum) * (self.postpartum_dur <= max_lam_dur))
@@ -975,6 +995,20 @@ class People(fpb.BasePeople):
 
         return
 
+    def update_history_buffer(self):
+        """
+        Updates longitudinal params in people object
+        """
+
+        # Calculate column index in which to store current vals
+        index = self.ti % self.tiperyear
+
+        # Store the current params in people.longitude object
+        for key in self.longitude.keys():
+            self.longitude[key][:, index] = getattr(self, key)
+
+        return
+
     def step(self):
         """
         Perform all updates to people within a single timestep
@@ -1025,6 +1059,12 @@ class People(fpb.BasePeople):
         lact.update_breastfeeding()
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
+
+        # Populate the ciruclar buffers with data from Peoples states that
+        # are needed for methods/classes that use historical data (eg, need previous year's data)
+        self.update_history_buffer()
+
+        # Update results
         fecund.update_age_bin_totals()
 
         # Add check for ti contra
