@@ -965,7 +965,7 @@ def process_markovian_method_choice(methods):
 
     for pp in df.postpartum.unique():
         mc[pp] = sc.objdict()
-        mc[pp].method_idx = idx_df.values()
+        mc[pp].method_idx = np.array(list(idx_df.values()))
         for akey in df.age_grp.unique():
             mc[pp][akey] = sc.objdict()
             thisdf = df.loc[(df.age_grp == akey) & (df.postpartum == pp)]
@@ -981,7 +981,7 @@ def process_markovian_method_choice(methods):
             # Set initial distributions by age
             if pp == 0:
                 init_dist[akey] = thisdf.loc[thisdf.From == 'None'].values[0][4:13].astype(float)
-                init_dist.method_idx = idx_df.values()
+                init_dist.method_idx = np.array(list(idx_df.values()))
 
     return mc, init_dist
 
