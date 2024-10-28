@@ -418,7 +418,7 @@ class update_methods(Intervention):
             errormsg = (
                 f"Contraceptive module  {type(sim.people.contraception_module)} does not have `{par_name}` parameter. "
                 f"For this type of module, the probability of contraceptive use depends on people attributes and can't be reset using this intervention.")
-            raise ValueError(errormsg)
+            print(errormsg)
 
         return
 
