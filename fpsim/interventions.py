@@ -590,10 +590,10 @@ class change_initiation(Intervention):
                 is_eligible[:] = False
                 is_eligible[selected_inds] = True
 
-                new_users = contra_coosers.filter(is_eligible)
+                new_users = contra_choosers.filter(is_eligible)
                 new_users.on_contra[:] = True
                 new_users.method = sim.people.contraception_module.init_method_dist(new_users)
                 new_users.ever_used_contra = 1
                 method_dur = sim.people.contraception_module.set_dur_method(new_users)
-                new_users.ti_contra = ti + method_dur
+                new_users.ti_contra = ti + method_dur # CK: "ti" not defined, not sure what it should be, self.year?
         return
