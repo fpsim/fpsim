@@ -160,6 +160,7 @@ class SimpleChoice(RandomChoice):
         default_pars = dict(
             prob_use_year=2000,
             prob_use_trend_par=0.1,
+            prob_use_intercept=0.0,
             force_choose=False,  # Whether to force non-users to choose a method
             method_weights=np.ones(self.n_methods),
         )
@@ -221,7 +222,11 @@ class SimpleChoice(RandomChoice):
             if ai > 1:
                 rhs[(age_bins == ai) & ppl.ever_used_contra] += p.age_ever_user_factors[ai-1]
         rhs[ppl.ever_used_contra] += p.fp_ever_user
-        rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
+
+        # The yearly trend
+        rhs += (year - self.pars['prob_use_year']) * self.pars['prob_use_trend_par']
+        # This parameter can be positive or negative
+        rhs += self.pars['prob_use_intercept']
         prob_use = 1 / (1+np.exp(-rhs))
         return prob_use
 
