@@ -159,7 +159,7 @@ class SimpleChoice(RandomChoice):
         super().__init__(**kwargs)
         default_pars = dict(
             prob_use_year=2000,
-            prob_use_trend_par=0.1,
+            prob_use_trend_par=0.0,
             prob_use_intercept=0.0,
             force_choose=False,  # Whether to force non-users to choose a method
             method_weights=np.ones(self.n_methods),
