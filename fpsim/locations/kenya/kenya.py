@@ -950,9 +950,10 @@ def process_simple_method_pars(methods):
     return dd
 
 
-def process_markovian_method_choice(methods):
+def process_markovian_method_choice(methods, df=None):
     """ Choice of method is age and previous method """
-    df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+    if df is None:
+        df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
     csv_map = {method.csv_name: method.name for method in methods.values()}
     idx_map = {method.csv_name: method.idx for method in methods.values()}
     idx_df = {}
@@ -962,6 +963,9 @@ def process_markovian_method_choice(methods):
 
     mc = dict()  # This one is a dict because it will be keyed with numbers
     init_dist = sc.objdict()  # Initial distribution of method choice
+    
+    # Get end index
+    ei = 4+len(methods)-1
 
     for pp in df.postpartum.unique():
         mc[pp] = sc.objdict()
@@ -970,25 +974,26 @@ def process_markovian_method_choice(methods):
             mc[pp][akey] = sc.objdict()
             thisdf = df.loc[(df.age_grp == akey) & (df.postpartum == pp)]
             if pp == 1:  # Different logic for immediately postpartum
-                mc[pp][akey] = thisdf.values[0][4:13].astype(float)  # If this is going to be standard practice, should make it more robust
+                mc[pp][akey] = thisdf.values[0][4:ei].astype(float)  # If this is going to be standard practice, should make it more robust
             else:
                 from_methods = thisdf.From.unique()
                 for from_method in from_methods:
                     from_mname = csv_map[from_method]
                     row = thisdf.loc[thisdf.From == from_method]
-                    mc[pp][akey][from_mname] = row.values[0][4:13].astype(float)
+                    mc[pp][akey][from_mname] = row.values[0][4:ei].astype(float)
 
             # Set initial distributions by age
             if pp == 0:
-                init_dist[akey] = thisdf.loc[thisdf.From == 'None'].values[0][4:13].astype(float)
+                init_dist[akey] = thisdf.loc[thisdf.From == 'None'].values[0][4:ei].astype(float)
                 init_dist.method_idx = np.array(list(idx_df.values()))
 
     return mc, init_dist
 
 
-def process_dur_use(methods):
+def process_dur_use(methods, df=None):
     """ Process duration of use parameters"""
-    df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+    if df is None:
+        df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
     for method in methods.values():
         if method.name == 'btl':
             method.dur_use = dict(dist='lognormal', par1=100, par2=1)
