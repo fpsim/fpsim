@@ -156,17 +156,18 @@ class RandomChoice(ContraceptiveChoice):
 class SimpleChoice(RandomChoice):
     def __init__(self, pars=None, location=None, **kwargs):
         """ Args: coefficients """
+        super().__init__(**kwargs)
         default_pars = dict(
             prob_use_year=2000,
             prob_use_intercept=0.0,
             prob_use_trend_par=0.0,
             prob_use_intercept=0.0,
             force_choose=False,  # Whether to force non-users to choose a method
+            method_weights=np.ones(self.n_methods),
         )
-        updated_pars = sc.mergedicts(default_pars, pars, **kwargs)
-        super().__init__(**updated_pars)
-        self.pars.update(updated_pars) # CK: so ugly, should refactor
-        self.pars['method_weights'] = updated_pars.get('method_weights', np.ones(self.n_methods))
+        updated_pars = sc.mergedicts(default_pars, pars)
+        self.pars = sc.mergedicts(self.pars, updated_pars)
+        self.pars.update(kwargs) # TODO: check
 
         # Handle location
         if location is not None:
