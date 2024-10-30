@@ -699,7 +699,7 @@ class Sim(fpb.BaseSim):
                     to_plot = {
                         'mcpr': 'MCPR (modern contraceptive prevalence rate)',
                         'cpr':  'CPR (contraceptive prevalence rate)',
-                        'acpr': 'ACPR (alternative contraceptive prevalence rate',
+                        'acpr': 'ACPR (alternative contraceptive prevalence rate)',
                     }
                 elif to_plot == 'mortality':
                     to_plot = {
