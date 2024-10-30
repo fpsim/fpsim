@@ -394,13 +394,14 @@ class update_methods(Intervention):
 
     """
 
-    def __init__(self, year, eff=None, dur_use=None, p_use=None, method_mix=None, verbose=False):
+    def __init__(self, year, eff=None, dur_use=None, p_use=None, method_mix=None, method_choice_pars=None, verbose=False):
         super().__init__()
         self.year    = year
         self.eff     = eff
         self.dur_use = dur_use
         self.p_use = p_use
         self.method_mix = method_mix
+        self.method_choice_pars = method_choice_pars
         self.verbose = verbose
         self.applied = False
         return
@@ -427,7 +428,7 @@ class update_methods(Intervention):
         if self.year is None:
             errormsg = 'A year must be supplied'
             raise ValueError(errormsg)
-        if self.eff is None and self.dur_use is None and self.p_use is None and self.method_mix is None:
+        if self.eff is None and self.dur_use is None and self.p_use is None and self.method_mix is None and self.method_choice_pars is None:
             errormsg = 'Either efficacy, durations of use, probability of use, or method mix must be supplied'
             raise ValueError(errormsg)
         return
@@ -459,7 +460,12 @@ class update_methods(Intervention):
             if self.method_mix is not None:
                 this_mix = self.method_mix / np.sum(self.method_mix) # Renormalise in case they are not adding up to 1
                 sim.people.contraception_module.pars['method_mix'] = this_mix
-
+            
+            # Change in switching matrix
+            if self.method_choice_pars is not None:
+                print(f'Changed contraceptive switching matrix in year {sim.y}')
+                sim.people.contraception_module.method_choice_pars = self.method_choice_pars
+                
         return
 
 
