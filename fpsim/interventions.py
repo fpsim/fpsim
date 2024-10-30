@@ -470,33 +470,34 @@ class change_initiation_prob(Intervention):
 
     Args:
         year (float): The year we want to start the intervention.
-        prob_use_trend_par (float): A number between 0 and 1
+        prob_use_intercept (float): A number that changes the intercept in the logistic refgression model
+        p_use = 1 / (1 + np.exp(-rhs + p_use_time_trend + p_use_intercept))
     """
 
-    def __init__(self, year, prob_use_trend_par=None, verbose=False):
+    def __init__(self, year, prob_use_intercept=0.0, verbose=False):
         super().__init__()
         self.year    = year
-        self.prob_use_trend_par = prob_use_trend_par
+        self.prob_use_intercept = prob_use_intercept
         self.verbose = verbose
         self.applied = False
+        self.par_name = None
         return
 
     def initialize(self, sim=None):
         super().initialize()
         self._validate()
-        par_name = None
-        if (self.prob_use_trend_par is not None) and (not isinstance(sim.people.contraception_module, (fpm.SimpleChoice))):
-            par_name = 'prob_use_trend_par'
+        if isinstance(sim.people.contraception_module, (fpm.SimpleChoice)):
+            self.par_name = 'prob_use_intercept'
 
-        if par_name is not None:
+        if self.par_name is None:
             errormsg = (
-                f"Contraceptive module  {type(sim.people.contraception_module)} does not have `{par_name}` parameter.")
+                f"Contraceptive module  {type(sim.people.contraception_module)} does not have `{self.par_name}` parameter.")
             raise ValueError(errormsg)
 
         return
 
     def _validate(self):
-        # Validation
+        # Basic Validation
         if self.year is None:
             errormsg = 'A year must be supplied'
             raise ValueError(errormsg)
@@ -510,11 +511,7 @@ class change_initiation_prob(Intervention):
 
         if not self.applied and sim.y >= self.year:
             self.applied = True # Ensure we don't apply this more than once
-
-            # Change in percentage of women who are using contraception
-            if self.prob_use_trend_par is not None:
-                #sim.people.contraception_module.pars['prob_use_year'] = self.year
-                sim.people.contraception_module.pars['prob_use_trend_par'] = self.prob_use_trend_par
+            sim.people.contraception_module.pars[self.par_name] = self.prob_use_intercept
 
         return
 
