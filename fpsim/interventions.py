@@ -535,7 +535,7 @@ class change_initiation(Intervention):
         super().__init__()
         self.year = year
         self.eligibility = eligibility
-        self.annual_increase = 1.0 + annual_increase
+        self.increase = annual_increase / fpd.mpy
         self.dt_increase = None
         self.applied = False
         return
@@ -543,7 +543,7 @@ class change_initiation(Intervention):
     def initialize(self, sim=None):
         super().initialize()
         self._validate()
-        self.dt_increase = self.annual_increase ** (sim.people.dt/fpd.mpy) # if we do the updates at every time point
+        self.dt_increase = 1.0 + self.increase  # if we do the updates at every time point
         return
 
     def _validate(self):
@@ -596,5 +596,5 @@ class change_initiation(Intervention):
                 new_users.ever_used_contra = 1
                 method_dur = sim.people.contraception_module.set_dur_method(new_users)
                 new_users.ti_contra = ti + method_dur
-            self.dt_increase *= self.dt_increase
+            self.dt_increase += self.increase # Not sure this is exactly what was required
         return
