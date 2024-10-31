@@ -584,7 +584,8 @@ class change_initiation(Intervention):
             new_oncontra = sc.randround(current_oncontra * self.annual_increase - current_oncontra)
             if new_oncontra:
                 contra_choosers = self.check_eligibility(sim)
-                contra_choosers.on_contra = fpu.n_binomial(1.0/len(contra_choosers), new_oncontra)
+                p_select = new_oncontra * np.ones(len(contra_choosers)) / len(contra_choosers)
+                contra_choosers.on_contra = fpu.binomial_arr(p_select)
                 new_users = contra_choosers.filter(contra_choosers.on_contra)
                 new_users.method = sim.people.contraception_module.init_method_dist(new_users)
                 new_users.ever_used_contra = 1
