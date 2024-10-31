@@ -212,7 +212,7 @@ class People(fpb.BasePeople):
         #TODO: rename to something that indicates this method is used for initialisation
         """
         fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
-        # NOTE: PSL: This line effectivelt "initialises" whether a woman is sexually active or not.
+        # NOTE: PSL: This line effectively "initialises" whether a woman is sexually active or not.
         # Because of the current initialisation flow, it's not possible to initialise the
         # sexually_active state in the init constructor.
         fecund.check_sexually_active()
@@ -230,11 +230,6 @@ class People(fpb.BasePeople):
             oc.ever_used_contra = 1
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
-
-    def contra_choosers_filter(self):
-        """
-        """
-        pass
 
     def update_fertility_intent_by_age(self):
         """
