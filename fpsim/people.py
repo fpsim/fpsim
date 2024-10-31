@@ -78,13 +78,17 @@ class People(fpb.BasePeople):
         else:
             self.fated_debut = fpsn.get_debut_init_vals(self)
 
-        # Initialise whether is time to choose contraception based on fated debut
-        self.update_time_to_choose_contra()
-
         # Fecundity variation
         fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.personal_fecundity = np.random.random(n) * fac
+
+        breakpoint()
+        # Initialise ti_contra based on age and fated debut
+        fecund = self.fecund_filter()
+        fecund.update_time_to_choose()
+        # Initialise whether a woman is sexually active or not
+        fecund.check_sexually_active()
 
         # Empowerment and education
         self.empowerment_module = empowerment_module
@@ -189,6 +193,20 @@ class People(fpb.BasePeople):
         self.wealthquintile = vals
         return
 
+    def update_time_to_choose(self):
+        """
+        Initialise the counter to determine when girls/women will have to first choose a method.
+        """
+        time_to_debut = (self.fated_debut-self.age)/self.dt
+        self.ti_contra = np.maximum(time_to_debut, 0)
+
+        # Validation
+        time_to_set_contra = self.ti_contra == 0
+        if not np.array_equal(((self.age - self.fated_debut) > -self.dt), time_to_set_contra):
+            errormsg = 'Should be choosing contraception for everyone past fated debut age.'
+            raise ValueError(errormsg)
+        return
+
     def decide_contraception(self, ti=None, year=None, contraception_module=None):
         """
         Decide who will start using contraception, when, which contraception method and the
@@ -197,7 +215,11 @@ class People(fpb.BasePeople):
 
         #TODO: rename to something that indicates this method is used for initialisation
         """
-        contra_choosers = self.first_time_contra_choosers()
+        fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
+        # Check whether have reached the time to choose
+        time_to_set_contra = fecund.ti_contra == 0
+        contra_choosers = fecund.filter(time_to_set_contra)
+
         if contraception_module is not None:
             self.contraception_module = contraception_module
             contra_choosers.on_contra = contraception_module.get_contra_users(contra_choosers, year=year, ti=ti, tiperyear=self.tiperyear)
@@ -207,16 +229,8 @@ class People(fpb.BasePeople):
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
 
-    def first_time_contra_choosers(self):
-        """
-        Returns a filtered ppl object of all women who are eligible to choose a
-        contraception method.
-        """
-        fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
-        # Check whether have reached the time to choose
-        time_to_set_contra = fecund.ti_contra == 0
-        contra_choosers = fecund.filter(time_to_set_contra)
-        return contra_choosers
+    def fecund_filter(self):
+        return self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
 
     def contra_choosers_filter(self):
         """
@@ -355,20 +369,6 @@ class People(fpb.BasePeople):
 
         return
 
-    def update_time_to_choose_contra(self):
-        """
-        Update the counter to determine when girls/women will have to first choose a method.
-        This function is expected to be called by a filtered people object with only fecund women.
-        """
-        time_to_debut = (self.fated_debut-self.age)/self.dt
-        self.ti_contra = np.maximum(time_to_debut, 0)
-
-        time_to_set_contra = self.ti_contra == 0
-        if not np.array_equal(((self.age - self.fated_debut) > -self.dt), time_to_set_contra):
-            errormsg = 'Should be choosing contraception for everyone past fated debut age.'
-            raise ValueError(errormsg)
-        return
-
     def decide_death_outcome(self):
         """ Decide if person dies at a timestep """
 
@@ -414,9 +414,11 @@ class People(fpb.BasePeople):
 
     def check_sexually_active(self):
         """
-        Decide if agent is sexually active based either on month postpartum or age if
-        not postpartum.  Postpartum and general age-based data from DHS.
-        Agents can revert to active or not active each timestep
+        Decide if agent is sexually active based either time-on-postpartum month
+        or their age if not postpartum.
+
+        Agents can revert to active or not active each timestep. Postpartum and
+        general age-based data from DHS.
         """
         # Set postpartum probabilities
         match_low = self.postpartum_dur >= 0
