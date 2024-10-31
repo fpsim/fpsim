@@ -540,7 +540,7 @@ class change_initiation(Intervention):
     def initialize(self, sim=None):
         super().initialize()
         self._validate()
-        self.dt_increase = self.annual_increase ** (sim.people.dt/fpd.mpy)
+        self.dt_increase = self.annual_increase ** (sim.people.dt/fpd.mpy) # if we do the updates at every time point
         return
 
     def _validate(self):
@@ -565,7 +565,7 @@ class change_initiation(Intervention):
         # TODO: check this is ok, or make a filter about the largest group of women who are eligible to choose contraception
         # TODO: do we care whether eligible people have ti_contra > 0?
         eligible = ppl.filter((ppl.sex == 0) & (ppl.alive)                   # living women
-                              (ppl.age < self.pars['age_limit_fecundity']) & # who are fecund
+                              (ppl.age < ppl.pars['age_limit_fecundity']) & # who are fecund
                               (ppl.sexual_debut) &                           # who already had their sexual debut
                               (~ppl.pregnant)  &                             # who are not currently pregnant
                               (ppl.sexually_active)                          # who are sexually active on this time step or doesn't matter???
@@ -574,16 +574,16 @@ class change_initiation(Intervention):
         return eligible
 
     def apply(self, sim):
+        ti = sim.ti
         if sim.y >= self.year and (ti % fpd.mpy == 0):
-            ti = sim.ti
             # Number currently on contra
             current_oncontra = sum(sim.people.on_contra)
             #PSL: Number on contra one year ago. Not sure we need this, but if there is a trend parameter we might
-            past_oncontra = sum(sim.people['longitude']['on_contra_prev'][:, sim.people.yei])
+            past_oncontra = sum(sim.people['longitude']['on_contra'][:, sim.people.yei])
             # Get how many more should be on contraception
-            new_oncontra = sc.randround(n_oncontra * self.dt_increase - current_oncontra)
-            if new_on_contra:
-                contra_choosers = self.check_eligibility()
+            new_oncontra = sc.randround(current_oncontra * self.annual_increase - current_oncontra)
+            if new_oncontra:
+                contra_choosers = self.check_eligibility(sim)
                 contra_choosers.on_contra = fpu.n_binomial(1.0/len(contra_choosers), new_oncontra)
                 new_users = contra_choosers.filter(contra_choosers.on_contra)
                 new_users.method = sim.people.contraception_module.init_method_dist(new_users)
