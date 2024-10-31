@@ -135,6 +135,13 @@ class People(fpb.BasePeople):
     @property
     def tiperyear(self):
         return self.pars['tiperyear']
+    @property
+    def yei(self):
+        """
+        The index of year-ending as of the same date expressed in ti
+        or 12-months ago as of the same date.
+        """
+        return (self.ti + 1) % self.tiperyear
 
     def get_urban(self, n):
         """ Get initial distribution of urban """
