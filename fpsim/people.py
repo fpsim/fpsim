@@ -78,6 +78,9 @@ class People(fpb.BasePeople):
         else:
             self.fated_debut = fpsn.get_debut_init_vals(self)
 
+        # Initialise whether is time to choose contraception based on fated debut
+        self.update_time_to_choose_contra()
+
         # Fecundity variation
         fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
@@ -108,6 +111,7 @@ class People(fpb.BasePeople):
         self._keys = [s.name for s in self.states.values()]
 
         if self.pars['use_subnational']:
+            fpsn.init_regional_states(self)
             fpsn.init_regional_states(self)
 
         return
@@ -190,6 +194,8 @@ class People(fpb.BasePeople):
         Decide who will start using contraception, when, which contraception method and the
         duration on that method. This method is called by the simulation to initialise the
         people object at the beginning of the simulation and new people born during the simulation.
+
+        #TODO: rename to something that indicates this method is used for initialisation
         """
         contra_choosers = self.first_time_contra_choosers()
         if contraception_module is not None:
@@ -208,7 +214,6 @@ class People(fpb.BasePeople):
         """
         fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
         # Check whether have reached the time to choose
-        fecund.update_time_to_choose_contra()
         time_to_set_contra = fecund.ti_contra == 0
         contra_choosers = fecund.filter(time_to_set_contra)
         return contra_choosers
