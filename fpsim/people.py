@@ -209,16 +209,8 @@ class People(fpb.BasePeople):
         """
         # Initialize sexual debut
         fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
-        fecund.check_sexually_active()
-
-        # Determine when girls/women will first choose a method
-        time_to_debut = (fecund.fated_debut-fecund.age)/self.dt
-        fecund.ti_contra = np.maximum(time_to_debut, 0)
-
+        fecund.update_time_to_choose_contra()
         time_to_set_contra = fecund.ti_contra == 0
-        if not np.array_equal(((fecund.age - fecund.fated_debut) > -self.dt), time_to_set_contra):
-            errormsg = 'Should be choosing contraception for everyone past fated debut age.'
-            raise ValueError(errormsg)
         contra_choosers = fecund.filter(time_to_set_contra)
         return contra_choosers
 
@@ -352,6 +344,20 @@ class People(fpb.BasePeople):
             update_durs = self.filter(~durs_fixed)
             update_durs.ti_contra = ti + cm.set_dur_method(update_durs)
 
+        return
+
+    def update_time_to_choose_contra(self):
+        """
+        Update the counter to determine when girls/women will have to first choose a method.
+        This function is expected to be called by a filtered people object with only fecund women.
+        """
+        time_to_debut = (self.fated_debut-self.age)/self.dt
+        self.ti_contra = np.maximum(time_to_debut, 0)
+
+        time_to_set_contra = self.ti_contra == 0
+        if not np.array_equal(((self.age - self.fated_debut) > -self.dt), time_to_set_contra):
+            errormsg = 'Should be choosing contraception for everyone past fated debut age.'
+            raise ValueError(errormsg)
         return
 
     def decide_death_outcome(self):
@@ -1026,6 +1032,10 @@ class People(fpb.BasePeople):
         # Reselect for live agents after exposure to maternal mortality
         alive_now = self.filter(self.alive)
         fecund = alive_now.filter((alive_now.sex == 0) * (alive_now.age < alive_now.pars['age_limit_fecundity']))
+
+        # Update who is sexually active only once per time step
+        fecund.check_sexually_active()
+
         nonpreg = fecund.filter(~fecund.pregnant)
         lact = fecund.filter(fecund.lactating)
 
