@@ -522,10 +522,9 @@ class change_initiation(Intervention):
     Select a proportion of women and sets them on a contraception method.
 
     Args:
-        state_name   (string): name of the People's state that will be modified
-        year         (float): time expressed in years when the change is applied
+        year         (float): time expressed in years when the intervention starts is applied
         new_val      (float): the new state value eligible people will have
-        eligibility  (inds/callable): indices OR callable that returns inds
+        eligibility  (callable): callable that returns a filtered version of people eligible to receive the intervention
     """
 
     def __init__(self, year=None, new_val=None, annual_increase=0.1, eligibility=None):
@@ -556,39 +555,37 @@ class change_initiation(Intervention):
 
     def check_eligibility(self, sim):
         """
+        Select eligible who is eligible
         """
-
         if self.eligibility is None:
-            contra_choosers = sim.people.contra_choosers_filter()
+            contra_choosers = self._default_contra_choosers(sim.people)
         return contra_choosers
 
+    def _default_contra_choosers(self, ppl):
+        # TODO: check this is ok, or make a filter about the largest group of women who are eligible to choose contraception
+        # TODO: do we care whether eligible people have ti_contra > 0?
+        eligible = ppl.filter((ppl.sex == 0) & (ppl.alive)                   # living women
+                              (ppl.age < self.pars['age_limit_fecundity']) & # who are fecund
+                              (ppl.sexual_debut) &                           # who already had their sexual debut
+                              (~ppl.pregnant)  &                             # who are not currently pregnant
+                              (ppl.sexually_active)                          # who are sexually active on this time step or doesn't matter???
+                              (~ppl.on_contra)                               # who are not already on contra
+                              )
+        return eligible
+
     def apply(self, sim):
-        if sim.y >= self.year:
-
+        if sim.y >= self.year and (ti % fpd.mpy == 0):
+            ti = sim.ti
             # Number currently on contra
-            n_oncontra = sum(sim.people.on_contra)
-
-            # Get how many should be on contra
-            new_on_contra = sc.randround(n_oncontra * self.dt_increase - n_oncontra)
-
+            current_oncontra = sum(sim.people.on_contra)
+            #PSL: Number on contra one year ago. Not sure we need this, but if there is a trend parameter we might
+            past_oncontra = sum(sim.people['longitude']['on_contra_prev'][:, sim.people.yei])
+            # Get how many more should be on contraception
+            new_oncontra = sc.randround(n_oncontra * self.dt_increase - current_oncontra)
             if new_on_contra:
-                # TODO: check this is ok, or make a filter about the largest group of eligible women that can be set to use contraception
-                # Get women who are ready to select contraception
                 contra_choosers = self.check_eligibility()
-
-                # Get those who are not currently on contraception
-                is_eligible = ~contra_choosers.on_contra
-
-                # Select only the corresponding fraction
-                eligible_inds = sc.findinds(is_eligible)
-
-                selected_inds = np.random.choice(eligible_inds, size=new_on_contra, replace=False)
-
-                is_eligible[:] = False
-                is_eligible[selected_inds] = True
-
-                new_users = contra_coosers.filter(is_eligible)
-                new_users.on_contra[:] = True
+                contra_choosers.on_contra = fpu.n_binomial(1.0/len(contra_choosers), new_oncontra)
+                new_users = contra_choosers.filter(contra_choosers.on_contra)
                 new_users.method = sim.people.contraception_module.init_method_dist(new_users)
                 new_users.ever_used_contra = 1
                 method_dur = sim.people.contraception_module.set_dur_method(new_users)
