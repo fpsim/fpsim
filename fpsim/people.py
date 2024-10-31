@@ -188,11 +188,10 @@ class People(fpb.BasePeople):
     def decide_contraception(self, ti=None, year=None, contraception_module=None):
         """
         Decide who will start using contraception, when, which contraception method and the
-        duration on that method. This method can be called, in principle,
-        in every time step.
+        duration on that method. This method is called by the simulation to initialise the
+        people object at the beginning of the simulation and new people born during the simulation.
         """
-
-        contra_choosers = self.contra_choosers_filter()
+        contra_choosers = self.first_time_contra_choosers()
         if contraception_module is not None:
             self.contraception_module = contraception_module
             contra_choosers.on_contra = contraception_module.get_contra_users(contra_choosers, year=year, ti=ti, tiperyear=self.tiperyear)
@@ -202,17 +201,22 @@ class People(fpb.BasePeople):
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
 
-    def contra_choosers_filter(self):
+    def first_time_contra_choosers(self):
         """
-        Returns a filtered ppl object of all women who are eligible to choose a contraception method.
-        Useful for class methods or interventions that may need to select this specific subgroup of women.
+        Returns a filtered ppl object of all women who are eligible to choose a
+        contraception method.
         """
-        # Initialize sexual debut
         fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
+        # Check whether have reached the time to choose
         fecund.update_time_to_choose_contra()
         time_to_set_contra = fecund.ti_contra == 0
         contra_choosers = fecund.filter(time_to_set_contra)
         return contra_choosers
+
+    def contra_choosers_filter(self):
+        """
+        """
+        pass
 
     def update_fertility_intent_by_age(self):
         """
@@ -1032,9 +1036,6 @@ class People(fpb.BasePeople):
         # Reselect for live agents after exposure to maternal mortality
         alive_now = self.filter(self.alive)
         fecund = alive_now.filter((alive_now.sex == 0) * (alive_now.age < alive_now.pars['age_limit_fecundity']))
-
-        # Update who is sexually active only once per time step
-        fecund.check_sexually_active()
 
         nonpreg = fecund.filter(~fecund.pregnant)
         lact = fecund.filter(fecund.lactating)
