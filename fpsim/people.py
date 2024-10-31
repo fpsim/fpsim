@@ -83,12 +83,8 @@ class People(fpb.BasePeople):
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.personal_fecundity = np.random.random(n) * fac
 
-        breakpoint()
         # Initialise ti_contra based on age and fated debut
-        fecund = self.fecund_filter()
-        fecund.update_time_to_choose()
-        # Initialise whether a woman is sexually active or not
-        fecund.check_sexually_active()
+        self.update_time_to_choose()
 
         # Empowerment and education
         self.empowerment_module = empowerment_module
@@ -197,12 +193,12 @@ class People(fpb.BasePeople):
         """
         Initialise the counter to determine when girls/women will have to first choose a method.
         """
-        time_to_debut = (self.fated_debut-self.age)/self.dt
-        self.ti_contra = np.maximum(time_to_debut, 0)
-
+        inds = sc.findinds((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
+        time_to_debut = (self.fated_debut[inds]-self.age[inds])/self.dt
+        self.ti_contra[inds] = np.maximum(time_to_debut, 0)
         # Validation
-        time_to_set_contra = self.ti_contra == 0
-        if not np.array_equal(((self.age - self.fated_debut) > -self.dt), time_to_set_contra):
+        time_to_set_contra = self.ti_contra[inds] == 0
+        if not np.array_equal(((self.age[inds] - self.fated_debut[inds]) > -self.dt), time_to_set_contra):
             errormsg = 'Should be choosing contraception for everyone past fated debut age.'
             raise ValueError(errormsg)
         return
@@ -216,6 +212,12 @@ class People(fpb.BasePeople):
         #TODO: rename to something that indicates this method is used for initialisation
         """
         fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
+        # NOTE: PSL: This line effectivelt "initialises" whether a woman is sexually active or not.
+        # Because of the current initialisation flow, it's not possible to initialise the
+        # sexually_active state in the init constructor.
+        fecund.check_sexually_active()
+        fecund.update_time_to_choose()
+
         # Check whether have reached the time to choose
         time_to_set_contra = fecund.ti_contra == 0
         contra_choosers = fecund.filter(time_to_set_contra)
@@ -228,9 +230,6 @@ class People(fpb.BasePeople):
             oc.ever_used_contra = 1
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
-
-    def fecund_filter(self):
-        return self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
 
     def contra_choosers_filter(self):
         """
