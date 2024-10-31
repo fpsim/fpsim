@@ -564,11 +564,11 @@ class change_initiation(Intervention):
     def _default_contra_choosers(self, ppl):
         # TODO: check this is ok, or make a filter about the largest group of women who are eligible to choose contraception
         # TODO: do we care whether eligible people have ti_contra > 0?
-        eligible = ppl.filter((ppl.sex == 0) & (ppl.alive)                   # living women
-                              (ppl.age < ppl.pars['age_limit_fecundity']) & # who are fecund
+        eligible = ppl.filter((ppl.sex == 0) & (ppl.alive) &                 # living women
+                              (ppl.age < ppl.pars['age_limit_fecundity']) &  # who are fecund
                               (ppl.sexual_debut) &                           # who already had their sexual debut
                               (~ppl.pregnant)  &                             # who are not currently pregnant
-                              (ppl.sexually_active)                          # who are sexually active on this time step or doesn't matter???
+                              (ppl.sexually_active) &                          # who are sexually active on this time step or doesn't matter???
                               (~ppl.on_contra)                               # who are not already on contra
                               )
         return eligible
