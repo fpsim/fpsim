@@ -522,15 +522,18 @@ class change_initiation(Intervention):
     Select a proportion of women and sets them on a contraception method.
 
     Args:
-        year         (float): time expressed in years when the intervention starts is applied
-        new_val      (float): the new state value eligible people will have
-        eligibility  (callable): callable that returns a filtered version of people eligible to receive the intervention
+        year (float): time expressed in years when the intervention starts is applied
+        annual_increase (float): a value between 0 and 1 indicating the x% extra of women
+            who will be made to select a contraception method.
+            The proportion or % is with respect to the number of
+            women who were on contraception the previous year.
+        eligibility (callable): callable that returns a filtered version of
+            people eligible to receive the intervention
     """
 
-    def __init__(self, year=None, new_val=None, annual_increase=0.1, eligibility=None):
+    def __init__(self, year=None, annual_increase=0.0, eligibility=None):
         super().__init__()
         self.year = year
-        self.new_val = new_val
         self.eligibility = eligibility
         self.annual_increase = 1.0 + annual_increase
         self.dt_increase = None
@@ -548,9 +551,6 @@ class change_initiation(Intervention):
         if self.year is None:
             errormsg = 'A year must be supplied.'
             raise ValueError(errormsg)
-        if self.new_val is None:
-            errormsg = 'A new value must be supplied.'
-            raise ValueError(errormsg)
         return
 
     def check_eligibility(self, sim):
@@ -563,32 +563,38 @@ class change_initiation(Intervention):
 
     def _default_contra_choosers(self, ppl):
         # TODO: check this is ok, or make a filter about the largest group of women who are eligible to choose contraception
-        # TODO: do we care whether eligible people have ti_contra > 0?
+        # TODO: do we care whether women people have ti_contra > 0? For instance postpartum women could be made to choose earlier?
         eligible = ppl.filter((ppl.sex == 0) & (ppl.alive) &                 # living women
                               (ppl.age < ppl.pars['age_limit_fecundity']) &  # who are fecund
                               (ppl.sexual_debut) &                           # who already had their sexual debut
                               (~ppl.pregnant)  &                             # who are not currently pregnant
-                              (ppl.sexually_active) &                          # who are sexually active on this time step or doesn't matter???
+                              (~ppl.postpartum) &                            # who are not in postpartum
+                              (ppl.sexually_active) &                        # who are sexually active on this time step or doesn't matter???
                               (~ppl.on_contra)                               # who are not already on contra
                               )
         return eligible
 
     def apply(self, sim):
         ti = sim.ti
-        if sim.y >= self.year and (ti % fpd.mpy == 0):
+        if sim.y >= self.year:
+            contra_choosers = self.check_eligibility(sim)
+            n_choosers = len(contra_choosers)
             # Number currently on contra
-            current_oncontra = sum(sim.people.on_contra)
-            #PSL: Number on contra one year ago. Not sure we need this, but if there is a trend parameter we might
+            current_oncontra = sum(sim.people.on_contra) # PSL: not used at the moment, not sure if we should be using this value instead of past_oncontra
+            #PSL: Number on contra one year ago.
             past_oncontra = sum(sim.people['longitude']['on_contra'][:, sim.people.yei])
-            # Get how many more should be on contraception
-            new_oncontra = sc.randround(current_oncontra * self.annual_increase - current_oncontra)
+            oncontra = past_oncontra
+            # avoid overflow and selecting more agents than we have available. feel there should be a better way of doing this
+            increase_factor = np.minimum(self.dt_increase, 1e9)
+            new_oncontra = sc.randround(oncontra * increase_factor - oncontra)
+            new_oncontra = np.minimum(new_oncontra, n_choosers)
             if new_oncontra:
-                contra_choosers = self.check_eligibility(sim)
-                p_select = new_oncontra * np.ones(len(contra_choosers)) / len(contra_choosers)
+                p_select = new_oncontra * np.ones(n_choosers) / n_choosers
                 contra_choosers.on_contra = fpu.binomial_arr(p_select)
                 new_users = contra_choosers.filter(contra_choosers.on_contra)
                 new_users.method = sim.people.contraception_module.init_method_dist(new_users)
                 new_users.ever_used_contra = 1
                 method_dur = sim.people.contraception_module.set_dur_method(new_users)
                 new_users.ti_contra = ti + method_dur
+            self.dt_increase *= self.dt_increase
         return
