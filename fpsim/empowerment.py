@@ -5,6 +5,7 @@ We consider four empowerment metrics: paid_employment, decision_health, decision
 
 # %% Imports
 import numpy as np
+import pandas as pd
 import sciris as sc
 from . import utils as fpu
 from . import locations as fplocs
@@ -83,6 +84,80 @@ class Empowerment:
             new_vals = fpu.binomial_arr(probs)
             ppl[empwr_state][eligible_inds] = new_vals
         return
+
+    def extract_empow_coeffs():
+        # Read in all the CSV files dynamically
+        df = pd.read_csv('locations/kenya/data/empower_coef.csv')
+
+        empow_coef_pars = sc.objdict(
+            intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
+            on_contra_prev=next(iter(df[df['rhs'] == 'intent_cat_0User'].Estimate), 0),
+            intent_to_use_prev=next(iter(df[df['rhs'] == 'intent_cat_0no_intent'].Estimate), 0),
+            ever_used_contra=next(iter(df[df['rhs'] == 'fp_ever_user'].Estimate), 0),
+            parity=next(iter(df[df['rhs'] == 'parity'].Estimate), 0),
+            age=next(iter(df[df['rhs'].str.match(r'^ns\(age, knots = .*\)\d+$')].Estimate), 0),
+            intent_to_use_prev__buy_decision_major_prev=next(
+                iter(df[df['rhs'].str.contains('no_intent') & df['rhs'].str.contains('major')].Estimate), 0),
+            intent_to_use_prev__buy_decision_clothes_prev=next(
+                iter(df[df['rhs'].str.contains('clothes') & df['rhs'].str.contains('no_intent')].Estimate), 0),
+            on_contra_prev__buy_decision_clothes_prev=next(
+                iter(df[df['rhs'].str.contains('clothes') & df['rhs'].str.contains('User')].Estimate), 0),
+            on_contra_prev__has_fin_knowl_prev=next(
+                iter(df[df['rhs'].str.contains('User') & df['rhs'].str.contains('financial')].Estimate), 0),
+            on_contra_prev__age=df[df['rhs'].str.contains('User') & df['rhs'].str.contains(
+                'age')].Estimate.values.tolist() or 0,
+            intent_to_use_prev__age=next(
+                iter(df[df['rhs'].str.contains('no_intent') & df['rhs'].str.contains('age')].Estimate), 0),
+            on_contra_prev__parity=next(
+                iter(df[df['rhs'].str.contains('User') & df['rhs'].str.contains('parity')].Estimate), 0),
+            intent_to_use_prev__urban=next(
+                iter(df[df['rhs'].str.contains('no_intent') & df['rhs'].str.contains('urban')].Estimate), 0),
+            on_contra_prev__wealthquintile=next(
+                iter(df[df['rhs'].str.contains('User') & df['rhs'].str.contains('wealthquintile')].Estimate), 0),
+            paid_employment_prev__has_savings_prev=next(
+                iter(df[df['rhs'].str.contains('paid_emp') & df['rhs'].str.contains('savings')].Estimate), 0),
+            decision_wages_prev__buy_decision_major_prev=next(
+                iter(df[df['rhs'].str.contains('wages') & df['rhs'].str.contains('major')].Estimate), 0),
+            decision_wages_prev__age=next(
+                iter(df[df['rhs'].str.contains('wages') & df['rhs'].str.contains('knots')].Estimate), 0),
+            buy_decision_major_prev__has_savings_prev=next(
+                iter(df[df['rhs'].str.contains('major') & df['rhs'].str.contains('savings')].Estimate), 0),
+            decide_spending_partner_prev__ever_used_contra=next(
+                iter(df[df['rhs'].str.contains('partner') & df['rhs'].str.contains('ever_user')].Estimate), 0),
+            decide_spending_partner_prev__urban=next(
+                iter(df[df['rhs'].str.contains('partner') & df['rhs'].str.contains('urban')].Estimate), 0),
+            buy_decision_clothes_prev__urban=next(
+                iter(df[df['rhs'].str.contains('clothes') & df['rhs'].str.contains('urban')].Estimate), 0),
+            has_fin_knowl_prev__ever_used_contra=next(
+                iter(df[df['rhs'].str.contains('info') & df['rhs'].str.contains('ever_user')].Estimate), 0),
+            has_fin_knowl_prev__age=next(
+                iter(df[df['rhs'].str.contains('info') & df['rhs'].str.contains('age')].Estimate), 0),
+            has_fin_goals_prev__ever_used_contra=next(
+                iter(df[df['rhs'].str.contains('goals') & df['rhs'].str.contains('ever_user')].Estimate), 0),
+            ever_used_contra__age=next(
+                iter(df[df['rhs'].str.contains('ever_user') & df['rhs'].str.contains('age')].Estimate), 0),
+            ever_used_contra__edu_attainment=next(
+                iter(df[df['rhs'].str.contains('ever_user') & df['rhs'].str.contains('edu')].Estimate), 0),
+            ever_used_contra__parity=next(
+                iter(df[df['rhs'].str.contains('ever_user') & df['rhs'].str.contains('parity')].Estimate), 0),
+            age__parity=next(iter(df[df['rhs'].str.contains('age') & df['rhs'].str.contains('parity')].Estimate),
+                             0),
+            age__urban=next(iter(df[df['rhs'].str.contains('age') & df['rhs'].str.contains('urban')].Estimate), 0),
+            edu_attainment__parity=next(
+                iter(df[df['rhs'].str.contains('edu') & df['rhs'].str.contains('parity')].Estimate), 0),
+            decide_spending_partner_prev__intent_to_use_prev=next(
+                iter(df[df['rhs'].str.contains('spend') & df['rhs'].str.contains('no_intent')].Estimate), 0),
+            financial_autonomy_prev__intent_to_use_prev=next(
+                iter(df[df['rhs'].str.contains('autonomy') & df['rhs'].str.contains('no_intent')].Estimate), 0),
+            paid_employment_prev__urban=next(
+                iter(df[df['rhs'].str.contains('paid_emp') & df['rhs'].str.contains('urban')].Estimate), 0),
+            decide_spending_partner_prev__parity=next(
+                iter(df[df['rhs'].str.contains('spend') & df['rhs'].str.contains('parity')].Estimate), 0),
+            has_fin_goals_prev__parity=next(
+                iter(df[df['rhs'].str.contains('goals') & df['rhs'].str.contains('parity')].Estimate), 0),
+        )
+
+        return empow_coef_pars
 
     def update_empwr_states(self, ppl):
         """
