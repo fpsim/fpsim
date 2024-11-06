@@ -178,6 +178,13 @@ class Empowerment:
                 else:
                     rhs += beta_p * ppl[predictor]
 
+            # Age-based weights
+            age_group = fpu.digitize_ages(ppl.age, self.pars['age_bins'])  # Finds the age-group index to get the correct age weight
+            # Get age weights
+            age_weights = self.pars['age_weights'][age_group]
+            # TODO: check with Marita whether directly adding a weight to the rhs is ok
+            rhs += age_weights
+
             # Logit
             prob_t = 1.0 / (1.0 + np.exp(-rhs))
 
