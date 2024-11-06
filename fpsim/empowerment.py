@@ -15,7 +15,19 @@ empow_path = sc.thispath(__file__)
 
 # %% Class for updating empowerment states and pars (probabilities from csv files)
 class Empowerment:
-    def __init__(self, location='kenya', seed=None):
+    def __init__(self, pars=None, location='kenya', seed=None):
+        default_pars = dict(
+            age_bins=[15, 20, 25, 30, 35, 40, 45, 50],
+            age_weights=None,
+            nbins=None
+        )
+
+        updated_pars = sc.mergedicts(default_pars, pars)
+        self.pars = sc.mergedicts(self.pars, updated_pars)
+
+        self.pars.nbins = len(self.pars.age_bins)-1
+        if self.pars.age_weights is None:
+            self.pars.age_weights = np.zeros(len(self.pars.age_bins)-1)
 
         # Handle location
         location = location.lower()
