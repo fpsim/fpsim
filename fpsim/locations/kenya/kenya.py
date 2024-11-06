@@ -760,8 +760,8 @@ def empowerment_update_pars():
         pars[metric] = sc.objdict()
         thisdf = raw_pars.loc[raw_pars.lhs == metric]
         for var_dict in thisdf.to_dict('records'):
-            var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
-            if var_name == 'contraception': var_name = 'on_contra'
+            var_name = (var_dict['rhs'].replace('_0', '_prev').replace('(', '').replace(')', '').replace('contraception','on_contra').
+                        replace('savings', 'has_savings').replace('financial_info', 'has_fin_knowl').replace('financial_goals', 'has_fin_goals').lower())
             pars[metric][var_name] = var_dict['Estimate']
     return pars
 

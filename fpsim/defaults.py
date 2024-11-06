@@ -333,6 +333,7 @@ longitude_keys = [
     'intent_to_use',
     'buy_decision_major',
     'buy_decision_clothes',
+    'buy_decision_daily',
     'has_fin_knowl',
     'has_fin_goals',
     'financial_autonomy',
@@ -341,4 +342,5 @@ longitude_keys = [
     'has_savings',
     'decision_wages',
     'decide_spending_partner',
+    'decision_health'
 ]
