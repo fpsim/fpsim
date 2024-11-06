@@ -15,7 +15,7 @@ empow_path = sc.thispath(__file__)
 
 # %% Class for updating empowerment states and pars (probabilities from csv files)
 class Empowerment:
-    def __init__(self, location='kenya', seed=None, empowerment_file=None):
+    def __init__(self, location='kenya', seed=None):
 
         # Handle location
         location = location.lower()
