@@ -765,6 +765,10 @@ def empowerment_update_pars():
     return pars
 
 
+def empowerment_age_spline():
+    return pd.read_csv(thisdir / 'data' / 'age_spline.csv', index_col=0)
+
+
 def age_partnership():
     """ Probabilities of being partnered at age X"""
     age_partnership_data = pd.read_csv(thisdir / 'data' / 'age_partnership.csv')

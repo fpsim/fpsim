@@ -42,8 +42,7 @@ class Empowerment:
         self.cm_metrics = ["financial_autonomy", "decision_making"]
 
         # Store the age spline
-        data_dir = f'locations/{location}/data'
-        self.age_spline = pd.read_csv(empow_path/data_dir/'age_spline.csv', index_col=0)
+        self.age_spline = fplocs.kenya.empowerment_age_spline()
 
         return
 
