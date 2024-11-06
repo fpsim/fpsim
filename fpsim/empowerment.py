@@ -93,9 +93,16 @@ class Empowerment:
 
     def get_longitud_data(self, ppl, term, ti, tiperyear):
         """
-        :param ppl:
-        :param term:
-        :return:
+        Uses the ppl 'longitude' parameter to extract the term data for the respective people from one year prior
+
+        Arguments:
+            ppl (fpsim.People object): filtered people object containing people for whom we're extracting previous year data
+            term (str): attribute from ppl object that we are extracting
+            ti (int): current timestep
+            tiperyear (int): timesteps per year (in current simulation)
+
+        Returns:
+            data (np.arr):  array of the ppl.term values from one year prior to current timestep
         """
         # Calculate correct index for data 1 year prior
         if len(ppl) > 0:
@@ -136,26 +143,28 @@ class Empowerment:
         return
 
     def update_empwr_states_by_coeffs(self, ppl, ti, tiperyear):
+        # Add age spline setup
+        int_age = ppl.int_age
+        int_age[int_age < fpd.min_age] = fpd.min_age
+        int_age[int_age >= fpd.max_age_preg] = fpd.max_age_preg - 1
+        dfa = self.age_spline.loc[int_age]
+
         # Update based on coefficients
         for lhs in self.metrics:
-            if lhs == 'sexual_autonomy' or lhs == 'decision_purchase':
+            # If lhs empowerment metric not in the lhs variables from empower_coef.csv
+            if lhs not in self.empower_update_pars.keys() and f'{lhs}_prev' not in self.empower_update_pars.keys():
                 continue
-            # lhs -- metric to be updated as a function of rhs variables
+
+            # Extract coefficients and initialize rhs with intercept
             p = self.empower_update_pars[lhs]
             rhs = p.intercept * np.ones(len(ppl[lhs]))
-
-            # Add age spline setup
-            int_age = ppl.int_age
-            int_age[int_age < fpd.min_age] = fpd.min_age
-            int_age[int_age >= fpd.max_age_preg] = fpd.max_age_preg - 1
-            dfa = self.age_spline.loc[int_age]
 
             for predictor, beta_p in p.items():
                 if predictor == 'intercept':
                     continue
-                if predictor.endswith('_prev'):
+                if predictor.endswith('_prev'):     # For longitudinal predictors
                     rhs += beta_p * self.get_longitud_data(ppl, predictor.removesuffix('_prev'), ti, tiperyear)
-                elif 'knots' in predictor:
+                elif 'knots' in predictor:          # For age predictors
                     knot = predictor[-1]
                     rhs += beta_p * dfa[f'knot_{knot}'].values
                 else:
