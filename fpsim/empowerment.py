@@ -11,6 +11,8 @@ from . import utils as fpu
 from . import locations as fplocs
 from . import defaults as fpd
 
+empow_path = sc.thispath(__file__)
+
 # %% Class for updating empowerment states and pars (probabilities from csv files)
 class Empowerment:
     def __init__(self, location='kenya', seed=None, empowerment_file=None):
@@ -38,6 +40,10 @@ class Empowerment:
         # Metrics that will be updated using value from empower_coef.csv
         self.up_metrics = sorted(list(self.empower_update_pars.keys()))
         self.cm_metrics = ["financial_autonomy", "decision_making"]
+
+        # Store the age spline
+        data_dir = f'locations/{location}/data'
+        self.age_spline = pd.read_csv(empow_path/data_dir/'age_spline.csv', index_col=0)
 
         return
 
@@ -85,79 +91,20 @@ class Empowerment:
             ppl[empwr_state][eligible_inds] = new_vals
         return
 
-    def extract_empow_coeffs():
-        # Read in all the CSV files dynamically
-        df = pd.read_csv('locations/kenya/data/empower_coef.csv')
+    def get_longitud_data(self, ppl, term, ti, tiperyear):
+        """
+        :param ppl:
+        :param term:
+        :return:
+        """
+        # Calculate correct index for data 1 year prior
+        if len(ppl) > 0:
+            year_ago_index = (ti+1) % tiperyear
+            data = ppl['longitude'][term][ppl.inds, year_ago_index]
+        else:
+            data = np.empty((0,))
 
-        empow_coef_pars = sc.objdict(
-            intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
-            on_contra_prev=next(iter(df[df['rhs'] == 'intent_cat_0User'].Estimate), 0),
-            intent_to_use_prev=next(iter(df[df['rhs'] == 'intent_cat_0no_intent'].Estimate), 0),
-            ever_used_contra=next(iter(df[df['rhs'] == 'fp_ever_user'].Estimate), 0),
-            parity=next(iter(df[df['rhs'] == 'parity'].Estimate), 0),
-            age=next(iter(df[df['rhs'].str.match(r'^ns\(age, knots = .*\)\d+$')].Estimate), 0),
-            intent_to_use_prev__buy_decision_major_prev=next(
-                iter(df[df['rhs'].str.contains('no_intent') & df['rhs'].str.contains('major')].Estimate), 0),
-            intent_to_use_prev__buy_decision_clothes_prev=next(
-                iter(df[df['rhs'].str.contains('clothes') & df['rhs'].str.contains('no_intent')].Estimate), 0),
-            on_contra_prev__buy_decision_clothes_prev=next(
-                iter(df[df['rhs'].str.contains('clothes') & df['rhs'].str.contains('User')].Estimate), 0),
-            on_contra_prev__has_fin_knowl_prev=next(
-                iter(df[df['rhs'].str.contains('User') & df['rhs'].str.contains('financial')].Estimate), 0),
-            on_contra_prev__age=df[df['rhs'].str.contains('User') & df['rhs'].str.contains(
-                'age')].Estimate.values.tolist() or 0,
-            intent_to_use_prev__age=next(
-                iter(df[df['rhs'].str.contains('no_intent') & df['rhs'].str.contains('age')].Estimate), 0),
-            on_contra_prev__parity=next(
-                iter(df[df['rhs'].str.contains('User') & df['rhs'].str.contains('parity')].Estimate), 0),
-            intent_to_use_prev__urban=next(
-                iter(df[df['rhs'].str.contains('no_intent') & df['rhs'].str.contains('urban')].Estimate), 0),
-            on_contra_prev__wealthquintile=next(
-                iter(df[df['rhs'].str.contains('User') & df['rhs'].str.contains('wealthquintile')].Estimate), 0),
-            paid_employment_prev__has_savings_prev=next(
-                iter(df[df['rhs'].str.contains('paid_emp') & df['rhs'].str.contains('savings')].Estimate), 0),
-            decision_wages_prev__buy_decision_major_prev=next(
-                iter(df[df['rhs'].str.contains('wages') & df['rhs'].str.contains('major')].Estimate), 0),
-            decision_wages_prev__age=next(
-                iter(df[df['rhs'].str.contains('wages') & df['rhs'].str.contains('knots')].Estimate), 0),
-            buy_decision_major_prev__has_savings_prev=next(
-                iter(df[df['rhs'].str.contains('major') & df['rhs'].str.contains('savings')].Estimate), 0),
-            decide_spending_partner_prev__ever_used_contra=next(
-                iter(df[df['rhs'].str.contains('partner') & df['rhs'].str.contains('ever_user')].Estimate), 0),
-            decide_spending_partner_prev__urban=next(
-                iter(df[df['rhs'].str.contains('partner') & df['rhs'].str.contains('urban')].Estimate), 0),
-            buy_decision_clothes_prev__urban=next(
-                iter(df[df['rhs'].str.contains('clothes') & df['rhs'].str.contains('urban')].Estimate), 0),
-            has_fin_knowl_prev__ever_used_contra=next(
-                iter(df[df['rhs'].str.contains('info') & df['rhs'].str.contains('ever_user')].Estimate), 0),
-            has_fin_knowl_prev__age=next(
-                iter(df[df['rhs'].str.contains('info') & df['rhs'].str.contains('age')].Estimate), 0),
-            has_fin_goals_prev__ever_used_contra=next(
-                iter(df[df['rhs'].str.contains('goals') & df['rhs'].str.contains('ever_user')].Estimate), 0),
-            ever_used_contra__age=next(
-                iter(df[df['rhs'].str.contains('ever_user') & df['rhs'].str.contains('age')].Estimate), 0),
-            ever_used_contra__edu_attainment=next(
-                iter(df[df['rhs'].str.contains('ever_user') & df['rhs'].str.contains('edu')].Estimate), 0),
-            ever_used_contra__parity=next(
-                iter(df[df['rhs'].str.contains('ever_user') & df['rhs'].str.contains('parity')].Estimate), 0),
-            age__parity=next(iter(df[df['rhs'].str.contains('age') & df['rhs'].str.contains('parity')].Estimate),
-                             0),
-            age__urban=next(iter(df[df['rhs'].str.contains('age') & df['rhs'].str.contains('urban')].Estimate), 0),
-            edu_attainment__parity=next(
-                iter(df[df['rhs'].str.contains('edu') & df['rhs'].str.contains('parity')].Estimate), 0),
-            decide_spending_partner_prev__intent_to_use_prev=next(
-                iter(df[df['rhs'].str.contains('spend') & df['rhs'].str.contains('no_intent')].Estimate), 0),
-            financial_autonomy_prev__intent_to_use_prev=next(
-                iter(df[df['rhs'].str.contains('autonomy') & df['rhs'].str.contains('no_intent')].Estimate), 0),
-            paid_employment_prev__urban=next(
-                iter(df[df['rhs'].str.contains('paid_emp') & df['rhs'].str.contains('urban')].Estimate), 0),
-            decide_spending_partner_prev__parity=next(
-                iter(df[df['rhs'].str.contains('spend') & df['rhs'].str.contains('parity')].Estimate), 0),
-            has_fin_goals_prev__parity=next(
-                iter(df[df['rhs'].str.contains('goals') & df['rhs'].str.contains('parity')].Estimate), 0),
-        )
-
-        return empow_coef_pars
+        return data
 
     def update_empwr_states(self, ppl):
         """
@@ -188,19 +135,30 @@ class Empowerment:
 
         return
 
-    def update_empwr_states_by_coeffs(self, ppl):
+    def update_empwr_states_by_coeffs(self, ppl, ti, tiperyear):
         # Update based on coefficients
         for lhs in self.metrics:
+            if lhs == 'sexual_autonomy' or lhs == 'decision_purchase':
+                continue
             # lhs -- metric to be updated as a function of rhs variables
             p = self.empower_update_pars[lhs]
             rhs = p.intercept * np.ones(len(ppl[lhs]))
 
+            # Add age spline setup
+            int_age = ppl.int_age
+            int_age[int_age < fpd.min_age] = fpd.min_age
+            int_age[int_age >= fpd.max_age_preg] = fpd.max_age_preg - 1
+            dfa = self.age_spline.loc[int_age]
+
             for predictor, beta_p in p.items():
-                 # TODO: update the bit below; iterating over specific attributes
-                 #  is a temporary fix because ppl does not have all the
-                 #  states in p.items()
-                 #  keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
-                if predictor in ["on_contra", "paid_employment", "edu_attainment", "parity", "urban", "wealthquintile"]:
+                if predictor == 'intercept':
+                    continue
+                if predictor.endswith('_prev'):
+                    rhs += beta_p * self.get_longitud_data(ppl, predictor.removesuffix('_prev'), ti, tiperyear)
+                elif 'knots' in predictor:
+                    knot = predictor[-1]
+                    rhs += beta_p * dfa[f'knot_{knot}'].values
+                else:
                     rhs += beta_p * ppl[predictor]
 
             # Logit
@@ -248,9 +206,9 @@ class Empowerment:
         setattr(ppl, lhs, new_vals)
         return
 
-    def update(self, ppl):
+    def update(self, ppl, ti, tiperyear):
         """ Update empowerment states and intent to use based on regression coefficients"""
-        self.update_empwr_states_by_coeffs(ppl)
+        self.update_empwr_states_by_coeffs(ppl, ti, tiperyear)
         self.update_intent_to_use_by_coeffs(ppl)
         self.calculate_composite_measures(ppl)
         return

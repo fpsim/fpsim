@@ -1104,7 +1104,7 @@ class People(fpb.BasePeople):
         bday = eligible.birthday_filter()
         if len(bday):
             # The empowerment module will update the empowerment states and intent to use
-            self.empowerment_module.update(bday)
+            self.empowerment_module.update(bday, self.ti, self.tiperyear)
             # Update fertility intent on her bday, together with empowerment updates
             bday.update_fertility_intent_by_age()
         return
