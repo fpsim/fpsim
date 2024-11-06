@@ -21,13 +21,10 @@ class Empowerment:
             age_weights=None,
             nbins=None
         )
-
-        updated_pars = sc.mergedicts(default_pars, pars)
-        self.pars = sc.mergedicts(self.pars, updated_pars)
-
-        self.pars.nbins = len(self.pars.age_bins)-1
-        if self.pars.age_weights is None:
-            self.pars.age_weights = np.zeros(len(self.pars.age_bins)-1)
+        self.pars = sc.mergedicts(default_pars, pars)
+        self.pars['nbins'] = len(self.pars['age_bins'])-1
+        if self.pars['age_weights'] is None:
+            self.pars['age_weights'] = np.zeros(self.pars['nbins'])
 
         # Handle location
         location = location.lower()
