@@ -237,6 +237,7 @@ class People(fpb.BasePeople):
             oc.ever_used_contra = 1
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
+        return
 
     def update_fertility_intent_by_age(self):
         """
