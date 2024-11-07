@@ -154,7 +154,7 @@ class RandomChoice(ContraceptiveChoice):
 
 
 class SimpleChoice(RandomChoice):
-    def __init__(self, pars=None, location=None, **kwargs):
+    def __init__(self, pars=None, location=None, method_choice_df=None, method_time_df=None, **kwargs):
         """ Args: coefficients """
         super().__init__(**kwargs)
         default_pars = dict(
@@ -172,18 +172,18 @@ class SimpleChoice(RandomChoice):
         if location is not None:
             location = location.lower()
             if location == 'kenya':
-                self.init_method_pars(location)
+                self.init_method_pars(location, method_choice_df=method_choice_df, method_time_df=method_time_df)
         else:
             errormsg = f'Location "{location}" is not currently supported for method-time analyses'
             raise NotImplementedError(errormsg)
         return
 
-    def init_method_pars(self, location):
+    def init_method_pars(self, location, method_choice_df=None, method_time_df=None):
         self.contra_use_pars = fplocs.kenya.process_contra_use_simple()  # Set probability of use
-        method_choice_pars, init_dist = fplocs.kenya.process_markovian_method_choice(self.methods)  # Method choice
+        method_choice_pars, init_dist = fplocs.kenya.process_markovian_method_choice(self.methods, df=method_choice_df)  # Method choice
         self.method_choice_pars = method_choice_pars
         self.init_dist = init_dist
-        self.methods = fplocs.kenya.process_dur_use(self.methods)  # Reset duration of use
+        self.methods = fplocs.kenya.process_dur_use(self.methods, df=method_time_df)  # Reset duration of use
 
         # Handle age bins -- find a more robust way to do this
         self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
