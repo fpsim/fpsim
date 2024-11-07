@@ -40,6 +40,9 @@ class Empowerment:
             # probabilities, and loading coefficients for composite measures,
             # as well as ages for which probs are defined.
             self.empowerment_pars = fplocs.kenya.make_empowerment_pars(seed=seed)
+
+            # Store the age spline
+            self.age_spline = fplocs.kenya.empowerment_age_spline()
         else:
             errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
             raise NotImplementedError(errormsg)
@@ -49,9 +52,6 @@ class Empowerment:
         # Metrics that will be updated using value from empower_coef.csv
         self.up_metrics = sorted(list(self.empower_update_pars.keys()))
         self.cm_metrics = ["financial_autonomy", "decision_making"]
-
-        # Store the age spline
-        self.age_spline = fplocs.kenya.empowerment_age_spline()
 
         return
 
