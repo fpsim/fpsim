@@ -34,7 +34,7 @@ def digitize_ages_1yr(ages):
     return np.digitize(ages, age_cutoffs) - 1
 
 
-@nb.jit(cache=True, nopython=True)
+@nb.jit((nb.float64[:], nb.float64[:]), cache=True, nopython=True)
 def digitize_ages(ages, age_group_lb):
     """
     This function returns the 0-based indices of the age bins passed in age_group_lb
