@@ -135,6 +135,7 @@ class People(fpb.BasePeople):
     @property
     def tiperyear(self):
         return self.pars['tiperyear']
+
     @property
     def yei(self):
         """
@@ -142,6 +143,23 @@ class People(fpb.BasePeople):
         or 12-months ago as of the same date.
         """
         return (self.ti + 1) % self.tiperyear
+
+    def get_longitudinal_state(self, state_name):
+        """
+        Extract values of one of the longitudinal state/attributes (aka states with history)
+
+        Arguments:
+            state_name (str): the name of the state or attribute that we are extracting
+
+        Returns:
+            state_vals (np.arr):  array of the ppl.term values from one year prior to current timestep
+        """
+        # Calculate correct index for data 1 year prior
+        if len(self):
+            state_vals = self['longitude'][state_name][self.inds, self.yei]
+        else:
+            state_vals = np.empty((0,))
+        return state_vals
 
     def get_urban(self, n):
         """ Get initial distribution of urban """

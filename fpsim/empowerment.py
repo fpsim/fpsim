@@ -99,28 +99,6 @@ class Empowerment:
             ppl[empwr_state][eligible_inds] = new_vals
         return
 
-    def get_longitud_data(self, ppl, term, ti, tiperyear):
-        """
-        Uses the ppl 'longitude' parameter to extract the term data for the respective people from one year prior
-
-        Arguments:
-            ppl (fpsim.People object): filtered people object containing people for whom we're extracting previous year data
-            term (str): attribute from ppl object that we are extracting
-            ti (int): current timestep
-            tiperyear (int): timesteps per year (in current simulation)
-
-        Returns:
-            data (np.arr):  array of the ppl.term values from one year prior to current timestep
-        """
-        # Calculate correct index for data 1 year prior
-        if len(ppl) > 0:
-            year_ago_index = (ti+1) % tiperyear
-            data = ppl['longitude'][term][ppl.inds, year_ago_index]
-        else:
-            data = np.empty((0,))
-
-        return data
-
     def update_empwr_states(self, ppl):
         """
         Set the homonymous boolean states in ppl. Expects people to be filtered
