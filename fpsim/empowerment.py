@@ -128,7 +128,7 @@ class Empowerment:
 
         return
 
-    def update_empwr_states_by_coeffs(self, ppl, ti, tiperyear):
+    def update_empwr_states_by_coeffs(self, ppl):
         # Add age spline setup
         int_age = ppl.int_age
         int_age[int_age < fpd.min_age] = fpd.min_age
@@ -208,9 +208,9 @@ class Empowerment:
         setattr(ppl, lhs, new_vals)
         return
 
-    def update(self, ppl, ti, tiperyear):
+    def update(self, ppl):
         """ Update empowerment states and intent to use based on regression coefficients"""
-        self.update_empwr_states_by_coeffs(ppl, ti, tiperyear)
+        self.update_empwr_states_by_coeffs(ppl)
         self.update_intent_to_use_by_coeffs(ppl)
         self.calculate_composite_measures(ppl)
         return
