@@ -17,7 +17,7 @@ empow_path = sc.thispath(__file__)
 class Empowerment:
     def __init__(self, pars=None, location='kenya', seed=None):
         default_pars = dict(
-            age_bins=[15, 20, 25, 30, 35, 40, 45, 50],
+            age_bins=np.array([15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0]),
             age_weights=None,
             nbins=None
         )
@@ -171,7 +171,7 @@ class Empowerment:
                 if predictor == 'intercept':
                     continue
                 if predictor.endswith('_prev'):     # For longitudinal predictors
-                    rhs += beta_p * self.get_longitud_data(ppl, predictor.removesuffix('_prev'), ti, tiperyear)
+                    rhs += beta_p * ppl.get_longitudinal_state(predictor.removesuffix('_prev'))
                 elif 'knots' in predictor:          # For age predictors
                     knot = predictor[-1]
                     rhs += beta_p * dfa[f'knot_{knot}'].values
