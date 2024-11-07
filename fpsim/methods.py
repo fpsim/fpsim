@@ -159,30 +159,34 @@ class SimpleChoice(RandomChoice):
         super().__init__(**kwargs)
         default_pars = dict(
             prob_use_year=2000,
-            prob_use_trend_par=0.1,
             prob_use_intercept=0.0,
+            prob_use_trend_par=0.0,
             force_choose=False,  # Whether to force non-users to choose a method
             method_weights=np.ones(self.n_methods),
         )
         updated_pars = sc.mergedicts(default_pars, pars)
         self.pars = sc.mergedicts(self.pars, updated_pars)
+        self.pars.update(kwargs) # TODO: check
 
         # Handle location
         if location is not None:
             location = location.lower()
             if location == 'kenya':
-                self.contra_use_pars = fplocs.kenya.process_contra_use_simple()  # Set probability of use
-                method_choice_pars, init_dist = fplocs.kenya.process_markovian_method_choice(self.methods)  # Method choice
-                self.method_choice_pars = method_choice_pars
-                self.init_dist = init_dist
-                self.methods = fplocs.kenya.process_dur_use(self.methods)  # Reset duration of use
-
-                # Handle age bins -- find a more robust way to do this
-                self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
-
+                self.init_method_pars(location)
         else:
             errormsg = f'Location "{location}" is not currently supported for method-time analyses'
             raise NotImplementedError(errormsg)
+        return
+
+    def init_method_pars(self, location):
+        self.contra_use_pars = fplocs.kenya.process_contra_use_simple()  # Set probability of use
+        method_choice_pars, init_dist = fplocs.kenya.process_markovian_method_choice(self.methods)  # Method choice
+        self.method_choice_pars = method_choice_pars
+        self.init_dist = init_dist
+        self.methods = fplocs.kenya.process_dur_use(self.methods)  # Reset duration of use
+
+        # Handle age bins -- find a more robust way to do this
+        self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
         return
 
     def init_method_dist(self, ppl):
