@@ -1177,6 +1177,17 @@ class People(fpb.BasePeople):
 
     def _step_results_empower(self):
         self.step_results['paid_employment'] = (np.sum(self.paid_employment & self.is_female & self.alive) / (self.n_female))*100
+        self.step_results['decision_wages'] = (np.sum(self.decision_wages & self.is_female & self.alive) / (self.n_female))*100
+        self.step_results['decide_spending_partner'] = (np.sum(self.decide_spending_partner & self.is_female & self.alive) / (self.n_female))*100
+        self.step_results['buy_decision_major'] = (np.sum(self.buy_decision_major & self.is_female & self.alive) / (self.n_female))*100
+        self.step_results['buy_decision_daily'] = (np.sum(self.buy_decision_daily & self.is_female & self.alive) / (self.n_female))*100
+        self.step_results['buy_decision_clothes'] = (np.sum(self.buy_decision_clothes & self.is_female & self.alive) / (self.n_female))*100
+        self.step_results['decision_health'] = (np.sum(self.decision_health & self.is_female & self.alive) / (self.n_female))*100
+        self.step_results['has_savings'] = (np.sum(self.has_savings & self.is_female & self.alive) / (self.n_female))*100
+        self.step_results['has_fin_knowl'] = (np.sum(self.has_fin_knowl & self.is_female & self.alive) / (self.n_female))*100
+        self.step_results['has_fin_goals'] = (np.sum(self.has_fin_goals & self.is_female & self.alive) / (self.n_female))*100
+        #self.step_results['financial_autonomy'] = (np.sum(self.financial_autonomy & self.is_female & self.alive) / (self.n_female)) # incorrect type, need to fiure it out
+        #self.step_results['decision_making'] = (np.sum(self.decision_making & self.is_female & self.alive) / (self.n_female))
         return
 
     def _step_results_intent(self):

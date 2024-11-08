@@ -447,6 +447,17 @@ class Sim(fpb.BaseSim):
 
         # Empowerment
         self.results['paid_employment'][ti] = res.paid_employment
+        self.results['decision_wages'][ti] = res.decision_wages
+        self.results['decide_spending_partner'][ti] = res.decide_spending_partner
+        self.results['buy_decision_major'][ti] = res.buy_decision_major
+        self.results['buy_decision_daily'][ti] = res.buy_decision_daily
+        self.results['buy_decision_clothes'][ti] = res.buy_decision_clothes
+        self.results['decision_health'][ti] = res.decision_health
+        self.results['has_savings'][ti] = res.has_savings
+        self.results['has_fin_knowl'][ti] = res.has_fin_knowl
+        self.results['has_fin_goals'][ti] = res.has_fin_goals
+        #self.results['financial_autonomy'][ti] = res.financial_autonomy
+        #self.results['decision_making'][ti] = res.decision_making
 
         if self.pars['track_as']:
             for age_specific_channel in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator',
