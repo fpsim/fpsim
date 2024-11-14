@@ -442,6 +442,10 @@ class BaseSim(ParsObj):
     def n(self):
         return self.people.alive.sum()
 
+    @property
+    def dt(self):
+        """ Time step in years"""
+        return self.pars['timestep'] / fpd.mpy  # months / (months/year) --> years
 
     def _brief(self):
         '''
