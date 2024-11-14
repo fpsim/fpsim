@@ -145,11 +145,6 @@ class Sim(fpb.BaseSim):
         return self.ind2year(self.ti)  # years elapsed since beginning of sim (ie, 25.75... )
 
     @property
-    def dt(self):
-        """ Time step in years"""
-        return self.pars['timestep'] / fpd.mpy
-
-    @property
     def y(self):
         return self.ind2calendar(self.ti)  # y is calendar year of timestep (ie, 1975.75)
 
@@ -485,13 +480,13 @@ class Sim(fpb.BaseSim):
             self.results[women_key][ti] = res.age_bin_totals[
                                              agekey] * scale  # Store results of total fecund women per age bin for ASFR
 
-        # Calculate metrics over the last year in the model and save whole years and stats to an array
         scale = self.scale
-        if ti % fpd.mpy == 0:
-            self.results['tfr_years'].append(self.y)
-            start_index = (int(self.ty) - 1) * fpd.mpy
-            stop_index = int(self.ty) * fpd.mpy
-
+        time_months = int(self.ti * self.pars["timestep"])  # time since the beginning of the sim, expresse in months
+        # Calculate metrics over the last year in the model and save whole years and stats to an array
+        if (time_months >= fpd.mpy) and (time_months % fpd.mpy) == 0:
+            self.results['tfr_years'].append(self.y-1.0)  # Substract one year to as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year', they correspond to the 'year-1'
+            stop_index = self.ti
+            start_index = stop_index - self.tiperyear
             for res_name, new_res_name in fpd.to_annualize.items():
                 res_over_year = self.annualize_results(res_name, start_index, stop_index)
                 annual_res_name = f'{new_res_name}_over_year'
@@ -787,8 +782,6 @@ class Sim(fpb.BaseSim):
                 else:
                     y, low, high = this_res, None, None
 
-                years = res['tfr_years']
-
                 # Figure out x axis
                 years = res['tfr_years']
                 timepoints = res['t']  # Likewise
@@ -798,6 +791,7 @@ class Sim(fpb.BaseSim):
                         x = x_opt
                         break
                 if x is None:
+                    breakpoint()
                     errormsg = f'Could not figure out how to plot {key}: result of length {len(y)} does not match a known x-axis'
                     raise RuntimeError(errormsg)
 

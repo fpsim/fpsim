@@ -418,7 +418,7 @@ class BaseSim(ParsObj):
     def npts(self):
         ''' Count the number of points in timesteps between the starting year and the ending year.'''
         try:
-            return int(fpd.mpy * (self.pars['end_year'] - self.pars['start_year']) / self.pars['timestep'] + 1)
+            return int(fpd.mpy * (self.pars['end_year'] - self.pars['start_year']) / self.pars['timestep']+1)
         except:
             return 0
 
@@ -445,7 +445,7 @@ class BaseSim(ParsObj):
     @property
     def dt(self):
         """ Time step in years"""
-        return self.pars['timestep'] / fpd.mpy  # months / (months/year) --> years
+        return self.pars['timestep'] / fpd.mpy
 
     def _brief(self):
         '''
