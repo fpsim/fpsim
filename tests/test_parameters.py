@@ -47,6 +47,21 @@ def test_null(do_plot=do_plot):
     return sim
 
 
+def test_timestep():
+    # Set options
+    pars['n_agents'] = 500   # Small population size
+    pars['end_year'] = 2020  # 1961 - 2020 is the normal date range
+    pars['exposure_factor'] = 0.5  # Overall scale factor on probability of becoming pregnant
+
+    for timestep in range(1, 13):
+        pars['timestep'] = timestep
+        sim = fp.Sim(pars=pars)
+        sim.run()
+        ok(f'simulation ran for timestep {timestep}')
+
+    return
+
+
 def test_scale():
     sc.heading('Test scale factor')
 
