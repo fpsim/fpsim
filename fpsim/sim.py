@@ -145,6 +145,11 @@ class Sim(fpb.BaseSim):
         return self.ind2year(self.ti)  # years elapsed since beginning of sim (ie, 25.75... )
 
     @property
+    def dt(self):
+        """ Time step in years"""
+        return self.pars['timestep'] / fpd.mpy
+
+    @property
     def y(self):
         return self.ind2calendar(self.ti)  # y is calendar year of timestep (ie, 1975.75)
 
@@ -486,6 +491,7 @@ class Sim(fpb.BaseSim):
             self.results['tfr_years'].append(self.y)
             start_index = (int(self.ty) - 1) * fpd.mpy
             stop_index = int(self.ty) * fpd.mpy
+
             for res_name, new_res_name in fpd.to_annualize.items():
                 res_over_year = self.annualize_results(res_name, start_index, stop_index)
                 annual_res_name = f'{new_res_name}_over_year'
