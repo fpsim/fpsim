@@ -5,7 +5,7 @@ defined by the user by inheriting from these classes.
 
 import numpy as np
 import sciris as sc
-import pylab as pl
+import matplotlib.pyplot as pl
 from . import defaults as fpd
 from . import utils as fpu
 import matplotlib.pyplot as plt
@@ -13,8 +13,13 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.ticker as ticker
 
 
-#%% Generic intervention classes
-__all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'empowerment_recorder', 'education_recorder', 'lifeof_recorder']
+#%% Generic analyzer classes
+__all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder']
+# Specific analyzers
+__all__ += ['empowerment_recorder', 'education_recorder']
+# Analyzers for debugging
+__all__ += ['state_tracker']
+
 
 class Analyzer(sc.prettyobj):
     '''
@@ -967,3 +972,57 @@ class track_switching(Analyzer):
         self.results['switching_events_postpartum'][ti] = scale * switch_events['postpartum']
 
         return
+
+
+class state_tracker(Analyzer):
+    '''
+    Records the number of living women on a specific boolean state (eg, numbe of
+    living women who live in rural settings)
+    '''
+
+    def __init__(self, state_name=None):
+        """
+        Initializes bins and data variables
+        """
+        super().__init__()
+        self.state_name = state_name
+        self.data_num = None
+        self.data_perc = None
+        self.tvec = None
+        return
+
+    def initialize(self, sim):
+        """
+        Initializes bins and data with proper shapes
+        """
+        super().initialize()
+        self.data_num = np.full((sim.npts,), np.nan)
+        self.data_perc = np.full((sim.npts,), np.nan)
+        self.tvec = np.full((sim.npts,), np.nan)
+        return
+
+    def apply(self, sim):
+        """
+        Records histogram of ages of all alive individuals at a timestep such that
+        self.data[timestep] = list of proportions where index signifies age
+        """
+        living_women = sim.people.filter((sim.people.alive) & (sim.people.is_female))
+        self.data_num[sim.ti] = living_women[self.state_name].sum()
+        self.data_perc[sim.ti] = self.data_num[sim.ti] / len(living_women)
+        self.tvec[sim.ti] = sim.y
+
+    def plot(self):
+        """
+        Plots self.data as a line
+        """
+        colors = ["steelblue", "deepskyblue"]
+        fig, ax1 = plt.subplots()
+        ax2 = ax1.twinx()
+        ax1.spines["left"].set_color(colors[0])
+        ax2.spines["right"].set_color(colors[1])
+        ax1.plot(self.tvec, self.data_num, color=colors[0])
+        ax2.plot(self.tvec, self.data_perc, color=colors[1])
+        ax1.set_xlabel('Year')
+        ax1.set_ylabel(f'Number of women who are {self.state_name}')
+        ax2.set_ylabel(f'% of women who are {self.state_name} (denominator=num living women all ages)')
+        return fig
