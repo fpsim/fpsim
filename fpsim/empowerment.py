@@ -1,107 +1,228 @@
 """
 Methods and functions related to empowerment
+We consider four empowerment metrics: paid_employment, decision_health, decision_wages, sexual_autonomy
 """
 
 # %% Imports
-import numpy as np  # Needed for a few things not provided by pl
+import numpy as np
+import pandas as pd
 import sciris as sc
 from . import utils as fpu
+from . import locations as fplocs
 from . import defaults as fpd
 
+empow_path = sc.thispath(__file__)
 
-# %% Initialization methods
+# %% Class for updating empowerment states and pars (probabilities from csv files)
+class Empowerment:
+    def __init__(self, pars=None, location='kenya', seed=None):
+        default_pars = dict(
+            age_bins=np.array([15.0, 20.0, 25.0, 30.0, 35.0, 40.0, 45.0, 50.0]),
+            age_weights=None,
+            nbins=None
+        )
+        self.pars = sc.mergedicts(default_pars, pars)
+        self.pars['nbins'] = len(self.pars['age_bins'])-1
+        if self.pars['age_weights'] is None:
+            self.pars['age_weights'] = np.zeros(self.pars['nbins'])
 
-def init_empowerment_states(ppl):
-    """
-    If ppl.pars['use_empowerment'] == True, location-specific data
-    are expected to exist to populate empowerment states/attributes.
+        # Handle location
+        location = location.lower()
+        if location == 'kenya':
+            # This dictionary contains the coefficients of the regression model that
+            # defines how empowerment proababilities change
+            self.empower_update_pars = fplocs.kenya.empowerment_update_pars()
+            # This dictionary contains the coefficients of the regression model that
+            # defines how intent to use contraception changes e
+            self.intent_update_pars = fplocs.kenya.contraception_intent_update_pars()
 
-    If If ppl.pars['use_empowerment'] == False, related
-    attributes will be initialized with values found in defaults.py.
-    """
+            # This dictionary contains the default/baseline empowerment
+            # probabilities, and loading coefficients for composite measures,
+            # as well as ages for which probs are defined.
+            self.empowerment_pars = fplocs.kenya.make_empowerment_pars(seed=seed)
 
-    # Initialize empowerment-related attributes with location-specific data
-    # TODO: check whether the corresponding data dictionary exists in ppl.pars,
-    # if it doesn't these states could be intialised with a user-defined distribution.
-    emp = get_empowerment_init_vals(ppl)
+            # Store the age spline
+            self.age_spline = fplocs.kenya.empowerment_age_spline()
+        else:
+            errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
+            raise NotImplementedError(errormsg)
 
-    # Populate empowerment states with location-specific data
-    ppl.paid_employment = emp['paid_employment']
-    ppl.sexual_autonomy = emp['sexual_autonomy']
-    ppl.decision_wages  = emp['decision_wages']   # Decision-making autonomy over household purchases/wages
-    ppl.decision_health = emp['decision_health']  # Decision-making autonomy over her health
-    return
+        # List only empowerment metrics that are defined in empowerment.csv
+        self.metrics = list(self.empowerment_pars["avail_metrics"])
+        # Metrics that will be updated using value from empower_coef.csv
+        self.up_metrics = sorted(list(self.empower_update_pars.keys()))
+        self.cm_metrics = ["financial_autonomy", "decision_making"]
 
+        return
 
-def get_empowerment_init_vals(ppl):
-    """
-    Initialize empowerment atrtibutes with location-specific data,
-    expected to be found in ppl.pars['empowerment']
+    @property
+    def fa_metrics(self):
+        """ Base metric that combined with loadings make up a woman's
+        financial autonomy measure"""
+        return ["has_savings", "has_fin_knowl", "has_fin_goals"]
 
-    # NOTE-PSL: this function could be generally used to update empowerment states as a function of age,
-    at every time step. Probably need to rename it to get_vals_from_data() or just get_empowerment_vals(), or
-    something else.
+    @property
+    def dm_metrics(self):
+        """ Base metric that combined with loadings make up a woman's decision making
+        measure"""
+        return ["buy_decision_major", "buy_decision_daily", "buy_decision_clothes", "decision_health"]
 
-    >> subpop = ppl.filter(some_criteria)
-    >> get_empowerment()
-    """
-    empowerment_dict = ppl.pars['empowerment']
-    # NOTE: we assume that either probabilities or metrics in empowerment_dict are defined over all possible ages
-    # from 0 to 100 years old.
-    n = len(ppl)
+    def initialize(self, ppl):
+        self.prob2state_init(ppl)
+        self.calculate_composite_measures(ppl)
+        return
 
-    empwr_states = ['paid_employment', 'sexual_autonomy', 'decision_wages', 'decision_health']
-    empowerment = {empwr_state: np.zeros(n, dtype=fpd.person_defaults[empwr_state].dtype) for empwr_state in empwr_states}
+    def prob2state_init(self, ppl):
+        """
+        Use empowerment probabilities in self.empowerment_pars to set the
+        homonymous boolean states in ppl.
 
-    # Get female agents indices and ages
-    f_inds = sc.findinds(ppl.is_female)
-    f_ages = ppl.age[f_inds]
+        Arguments:
+            ppl (fpsim.People object): filtered people object containing only
+            alive female agents
 
-    # Create age bins because ppol.age is a continous variable
-    age_cutoffs = np.hstack((empowerment_dict['age'], empowerment_dict['age'].max() + 1))
-    age_inds = np.digitize(f_ages, age_cutoffs) - 1
+        Returns:
+            None
+        """
+        # Fitler female agents that are outside the inclusive range 15-49
+        eligible_inds = sc.findinds(ppl.age >= fpd.min_age,
+                                    ppl.age <  fpd.max_age_preg)
 
-    # Paid employment
-    paid_employment_probs = empowerment_dict['paid_employment']
-    empowerment['paid_employment'][f_inds] = fpu.binomial_arr(paid_employment_probs[age_inds])
+        # Transform ages to integers
+        ages = fpu.digitize_ages_1yr(ppl.age[eligible_inds])
+        # Transform to indices of available ages in pars
+        data_inds = ages - fpd.min_age
 
-    # Make other metrics
-    for metric in ['decision_wages', 'decision_health', 'sexual_autonomy']:
-        empowerment[metric][f_inds] = empowerment_dict[metric][age_inds]
+        for empwr_state in self.metrics:
+            probs = self.empowerment_pars[empwr_state][data_inds]  # empirical probabilities per age 15-49
+            new_vals = fpu.binomial_arr(probs)
+            ppl[empwr_state][eligible_inds] = new_vals
+        return
 
-    return empowerment
+    def update_empwr_states(self, ppl):
+        """
+        Set the homonymous boolean states in ppl. Expects people to be filtered
+        by the appropriate conditions.
 
+        Arguments:
+            ppl (fpsim.People object): filtered people object containing only
+            alive female agents, that are on their bday and within the
+            appropriate age range.
 
-# %% Methods to update empowerment attributes based on an agent's age
+        Returns:
+            None
+        """
+        # Transform ages to integers
+        ages = fpu.digitize_ages_1yr(ppl.age)
+        # Transform to indices of available ages in empowerment_pars
+        data_inds = ages - fpd.min_age
 
-def update_decision_health(ppl):
-    pass
-    # """Assumes ppl object received is only female agents"""
-    # age_inds = np.round(ppl.age).astype(int)
-    # ppl.decision_health = ppl.pars['empowerment']['decision_health'][age_inds]
+        # NOTE: The code below should work but it doesn't -- some clash with, or undefined setitem, somewhere ..
+        # for empwr_state in self.metrics:
+        #     probs = self.empowerment_pars[empwr_state][data_inds]  # empirical probabilities per age 15-49
+        #     new_vals = fpu.binomial_arr(probs)
+        #     ppl[empwr_state] = new_vals
 
+        for empwr_state in self.metrics:
+            setattr(ppl, empwr_state, fpu.binomial_arr(self.empowerment_pars[empwr_state][data_inds]))
 
-def update_decision_wages(ppl):
-    pass
-    # age_inds = np.round(ppl.age).astype(int)
-    # ppl.decision_health = ppl.pars['empowerment']['decision_wages'][age_inds]
+        return
 
+    def update_empwr_states_by_coeffs(self, ppl):
+        # Add age spline setup
+        int_age = ppl.int_age
+        int_age[int_age < fpd.min_age] = fpd.min_age
+        int_age[int_age >= fpd.max_age_preg] = fpd.max_age_preg - 1
+        dfa = self.age_spline.loc[int_age]
 
-def update_paid_employment(ppl):
-    pass
+        # Update based on coefficients
+        for lhs in self.metrics:
+            # If lhs empowerment metric not in the lhs variables from empower_coef.csv
+            if lhs not in self.empower_update_pars.keys() and f'{lhs}_prev' not in self.empower_update_pars.keys():
+                continue
 
+            # Extract coefficients and initialize rhs with intercept
+            p = self.empower_update_pars[lhs]
+            rhs = p.intercept * np.ones(len(ppl[lhs]))
 
-def update_sexual_autonomy(ppl):
-    pass
+            for predictor, beta_p in p.items():
+                if predictor == 'intercept':
+                    continue
+                if predictor.endswith('_prev'):     # For longitudinal predictors
+                    rhs += beta_p * ppl.get_longitudinal_state(predictor.removesuffix('_prev'))
+                elif 'knots' in predictor:          # For age predictors
+                    knot = predictor[-1]
+                    rhs += beta_p * dfa[f'knot_{knot}'].values
+                else:
+                    rhs += beta_p * ppl[predictor]
 
+            # Age-based weights
+            age_group = fpu.digitize_ages(ppl.age, self.pars['age_bins'])  # Finds the age-group index to get the correct age weight
+            # Get age weights
+            age_weights = self.pars['age_weights'][age_group]
+            # TODO: check with Marita whether directly adding a weight to the rhs is ok
+            rhs += age_weights
 
-def update_empowerment(ppl):
-    """
-    Update empowerment metrics based on age(ing).
-    ppl is assumed to be a filtered People object, with only the agents who have had their bdays.
-    """
-    # This would update the corresponding attributes from location-specific data based on age
-    update_decision_wages(ppl)
-    update_decision_health(ppl)
-    update_paid_employment(ppl)
-    update_sexual_autonomy(ppl)
+            # Logit
+            prob_t = 1.0 / (1.0 + np.exp(-rhs))
+
+            if lhs in self.cm_metrics:
+                continue
+            else:
+                # base empowerment states are boolean, we do not currently track probs,
+                new_vals = fpu.binomial_arr(prob_t)
+            old_vals = ppl[lhs]
+            changers = sc.findinds(new_vals != old_vals)  # People whose empowerment changes
+            ppl.ti_contra[changers] = ppl.ti  # Trigger update to contraceptive choices if empowerment changes
+            setattr(ppl, lhs, new_vals)
+        return
+
+    def update_intent_to_use_by_coeffs(self, ppl):
+        # Update her intent to use contraception based on coefficients
+        lhs = "intent_to_use"
+        # lhs -- metric to be updated as a function of rhs variables
+        p = self.intent_update_pars[lhs]
+        rhs = p.intercept * np.ones(len(ppl[lhs]))
+
+        for predictor, beta_p in p.items():
+             # TODO: update the bit below; iterating over specific attributes
+             #  is a temporary fix because ppl does not have all the
+             #  states in p.items()
+             #  keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
+            if predictor in ["intent_to_use", "edu_attainment", "parity", "urban", "wealthquintile"]:
+                rhs += beta_p * ppl[predictor]
+
+        # Handle predictors based on fertility intent
+        beta_p = p["fertility_intentno"] * np.ones(len(ppl[lhs]))
+        beta_p[sc.findinds(ppl["fertility_intent"] == True)] = p["fertility_intentyes"]
+        rhs += beta_p*ppl["fertility_intent"]
+
+        # Logit
+        prob_t = 1.0 / (1.0 + np.exp(-rhs))
+
+        # base empowerment states are boolean, we do not currently track probs
+        new_vals = fpu.binomial_arr(prob_t)
+        old_vals = ppl[lhs]
+        changers = sc.findinds(new_vals != old_vals)  # People whose empowerment changes
+        ppl.ti_contra[changers] = ppl.ti  # Trigger update to contraceptive choices if empowerment changes
+        setattr(ppl, lhs, new_vals)
+        return
+
+    def update(self, ppl):
+        """ Update empowerment states and intent to use based on regression coefficients"""
+        self.update_empwr_states_by_coeffs(ppl)
+        self.update_intent_to_use_by_coeffs(ppl)
+        self.calculate_composite_measures(ppl)
+        return
+
+    def calculate_composite_measures(self, ppl):
+        temp_fa = 0.0
+        temp_dm = 0.0
+        for metric in self.fa_metrics:
+            temp_fa += ppl[metric] * self.empowerment_pars["loadings"][metric]
+        for metric in self.dm_metrics:
+            temp_dm += ppl[metric] * self.empowerment_pars["loadings"][metric]
+
+        ppl.financial_autonomy = temp_fa
+        ppl.decision_making = temp_dm
+        return
