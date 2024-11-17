@@ -48,6 +48,8 @@ def test_null(do_plot=do_plot):
 
 
 def test_timestep():
+    pars = fp.pars('test')
+
     # Set options
     pars['n_agents'] = 500   # Small population size
     pars['end_year'] = 2020  # 1961 - 2020 is the normal date range
