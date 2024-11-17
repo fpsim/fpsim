@@ -483,8 +483,8 @@ class Sim(fpb.BaseSim):
         scale = self.scale
         time_months = int(self.ti * self.pars["timestep"])  # time since the beginning of the sim, expresse in months
         # Calculate metrics over the last year in the model and save whole years and stats to an array
-        if (time_months >= fpd.mpy) and (time_months % fpd.mpy) == 0:
-            self.results['tfr_years'].append(self.y-1.0)  # Substract one year to as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year', they correspond to the 'year-1'
+        if (time_months >= fpd.mpy) and (time_months % fpd.mpy) == 0:  # Start calculating annual metrics after we have at least 1 year of data
+            self.results['tfr_years'].append(self.y-1.0)  # Substract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
             stop_index = self.ti
             start_index = stop_index - self.tiperyear
             for res_name, new_res_name in fpd.to_annualize.items():
@@ -791,7 +791,6 @@ class Sim(fpb.BaseSim):
                         x = x_opt
                         break
                 if x is None:
-                    breakpoint()
                     errormsg = f'Could not figure out how to plot {key}: result of length {len(y)} does not match a known x-axis'
                     raise RuntimeError(errormsg)
 
