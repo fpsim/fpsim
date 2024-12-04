@@ -919,9 +919,8 @@ class Sim(fpb.BaseSim):
         max_age = self['age_limit_fecundity']
 
         # filtering for women with appropriate characteristics
-        bool_list = ppl.alive * [sex == 0 for sex in ppl.sex] * [min_age <= age for age in ppl.age] * [age < max_age for
-                                                                                                       age in ppl.age]
-        filtered_methods = [method for index, method in enumerate(ppl.method) if bool_list[index]]
+        bool_list = ppl.alive * (ppl.sex==0) * (pp.age >= min_age) * (ppl.age <= max_age)
+        filtered_methods = ppl.method[bool_list]
 
         unique, counts = np.unique(filtered_methods, return_counts=True)
         count_dict = dict(zip(unique, counts))
