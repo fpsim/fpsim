@@ -244,6 +244,17 @@ class Scenarios(sc.prettyobj):
         self.already_run = False
         return
 
+    def __bool__(self):
+        """ Always return True """
+        return True
+
+    def __len__(self):
+        """ Try to get the length of the scenarios, else return 0 """
+        try:
+            return len(self.scens)
+        except:
+            return 0
+
 
     def add_scen(self, scen=None, label=None):
         ''' Add a scenario or scenarios to the Scenarios object '''
