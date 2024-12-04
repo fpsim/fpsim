@@ -422,7 +422,7 @@ class Scenarios(sc.prettyobj):
 
         # Split the sims up by scenario
         results = sc.objdict()
-        results.sims = sc.objdict(defaultdict=sc.autolist)
+        sims = sc.objdict(defaultdict=sc.autolist)
         for sim in self.msim.sims:
             try:
                 label = sim.scenlabel
@@ -430,11 +430,11 @@ class Scenarios(sc.prettyobj):
                 errormsg = f'Warning, could not extract scenlabel from sim {sim.label}; using default...'
                 print(errormsg)
                 label = sim.label
-            results.sims[label] += sim
+            sims[label] += sim
 
         # Count the births across the scenarios
         raw = sc.ddict(list)
-        for key,sims in results.sims.items():
+        for key,sims in sims.items():
             for sim in sims:
                 results_dict = analyze_sim(sim)
                 raw['scenario'] += [key]      # Append scenario key
