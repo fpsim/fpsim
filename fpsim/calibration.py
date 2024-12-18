@@ -14,12 +14,15 @@ from . import experiment as fpe
 
 
 __all__ = ['Calibration']
+DEFAULT_TARGETS = []
 
 
 class Calibration(sc.prettyobj):
     '''
     A class to handle calibration of FPsim objects. Uses the Optuna hyperparameter
     optimization library (optuna.org).
+
+    Additional customization to specify calibration targets (if not specified, defaults to
 
     Note: running a calibration does not guarantee a good fit! You must ensure that
     you run for a sufficient number of iterations, have enough free parameters, and
@@ -29,6 +32,7 @@ class Calibration(sc.prettyobj):
     Args:
         sim          (Sim)  : the simulation to calibrate
         calib_pars   (dict) : a dictionary of the parameters to calibrate of the format dict(key1=[best, low, high])
+        targets      (list):  list of calibration targets (default: all outputs)
         weights      (dict) : a custom dictionary of weights for each output
         n_trials     (int)  : the number of trials per worker
         n_workers    (int)  : the number of parallel workers (default: maximum)
@@ -196,7 +200,7 @@ class Calibration(sc.prettyobj):
         output = op.create_study(storage=self.g.storage, study_name=self.g.name)
         return output
 
-    def calibrate(self, calib_pars=None, weights=None, verbose=None, **kwargs):
+    def calibrate(self, calib_pars=None, targets=DEFAULT_TARGETS, weights=None, verbose=None, **kwargs):
         ''' Actually perform calibration '''
 
         # Load and validate calibration parameters

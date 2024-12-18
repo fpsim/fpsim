@@ -26,7 +26,7 @@ mpy = 12  # Months per year
 # Flags for what to run
 default_flags = sc.objdict(
     popsize       = 1, # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
-    ageparity   = 1, # Population distribution of agents in each age/parity bin (age-parity plot); 'ageparity'
+    ageparity     = 1, # Population distribution of agents in each age/parity bin (age-parity plot); 'ageparity'
     first_birth   = 1, # Age at first birth mean with standard deviation; 'age_first_birth'
     birth_space   = 1, # Birth spacing both in bins and mean with standard deviation; 'spacing'
     mcpr          = 1, # Modern contraceptive prevalence; 'mcpr'
