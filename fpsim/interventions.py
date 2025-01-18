@@ -550,7 +550,6 @@ class change_initiation(Intervention):
 
     def initialize(self, sim=None):
         super().initialize()
-        self._validate()
         self.dt_increase = 1.0 + self.increase  # if we do the updates at every time point
 
         # Validate years and values
@@ -595,9 +594,8 @@ class change_initiation(Intervention):
         eligible = ppl.filter((ppl.sex == 0) & (ppl.alive) &                 # living women
                               (ppl.age < ppl.pars['age_limit_fecundity']) &  # who are fecund
                               (ppl.sexual_debut) &                           # who already had their sexual debut
-                              (~ppl.pregnant)  &                             # who are not currently pregnant
-                              (~ppl.postpartum) &                            # who are not in postpartum
-                              (ppl.sexually_active) &                        # who are sexually active on this time step or doesn't matter???
+                              (~ppl.pregnant)    &                           # who are not currently pregnant
+                              (~ppl.postpartum)  &                           # who are not in postpartum
                               (~ppl.on_contra)                               # who are not already on contra
                               )
         return eligible
