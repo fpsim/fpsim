@@ -625,6 +625,9 @@ class change_initiation(Intervention):
 
             # Save theoretical number based on the value of women on contraception at start of intervention
             nnew_on_contra = self.perc * self.expected_women_oncontra
+
+            # NOTE: TEMPORARY: force specified increase
+            new_on_contra = nnew_on_contra + (self.expected_women_oncontra - self.current_women_oncontra)
             self.expected_women_oncontra += nnew_on_contra
 
             if not new_on_contra:
