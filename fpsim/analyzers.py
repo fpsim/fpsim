@@ -8,6 +8,7 @@ import sciris as sc
 import matplotlib.pyplot as pl
 from . import defaults as fpd
 from . import utils as fpu
+from .settings import options as fpo
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.ticker as ticker
@@ -1013,38 +1014,39 @@ class state_tracker(Analyzer):
         self.data_perc[sim.ti] = self.data_num[sim.ti] / self.data_n_female[sim.ti]
         self.tvec[sim.ti] = sim.y
 
-    def plot(self):
+    def plot(self, style=None):
         """
         Plots self.data as a line
         """
         colors = ["steelblue", "deepskyblue", "black"]
-        fig, ax1 = plt.subplots()
+        with fpo.with_style(style):
+            fig, ax1 = plt.subplots(figsize=(10, 5))
 
-        ax2 = ax1.twinx()
-        ax3 = ax1.twinx()
+            ax2 = ax1.twinx()
+            ax3 = ax1.twinx()
 
-        ax1.spines["left"].set_color(colors[0])
-        ax1.tick_params(axis="y", labelcolor=colors[0])
+            ax1.spines["left"].set_color(colors[0])
+            ax1.tick_params(axis="y", labelcolor=colors[0])
 
-        ax2.spines["right"].set_color(colors[1])
-        ax2.yaxis.tick_right()
-        ax2.yaxis.set_label_position("right")
-        ax2.tick_params(axis="y", labelcolor=colors[1])
+            ax2.spines["right"].set_color(colors[1])
+            ax2.yaxis.tick_right()
+            ax2.yaxis.set_label_position("right")
+            ax2.tick_params(axis="y", labelcolor=colors[1])
 
-        ax3.yaxis.tick_left()
-        ax3.spines["left"].set_position(('outward', 50))
-        ax3.spines["left"].set_color(colors[2])
-        ax3.yaxis.set_label_position("left")
-        ax3.tick_params(axis="y", labelcolor=colors[2])
+            ax3.yaxis.tick_left()
+            ax3.spines["left"].set_position(('outward', 70))
+            ax3.spines["left"].set_color(colors[2])
+            ax3.yaxis.set_label_position("left")
+            ax3.tick_params(axis="y", labelcolor=colors[2])
 
 
-        ax1.plot(self.tvec, self.data_num, color=colors[0])
-        ax2.plot(self.tvec, self.data_perc, color=colors[1])
-        ax3.plot(self.tvec, self.data_n_female, color=colors[2])
+            ax1.plot(self.tvec, self.data_num, color=colors[0])
+            ax2.plot(self.tvec, self.data_perc, color=colors[1])
+            ax3.plot(self.tvec, self.data_n_female, color=colors[2])
 
-        ax1.set_xlabel('Year')
-        ax1.set_ylabel(f'Number of women who are {self.state_name}', color=colors[0])
-        ax2.set_ylabel(f'percentage (%) of women who are {self.state_name} (denominator=num living women all ages)', color=colors[1])
-        ax3.set_ylabel(f'Number of women alive, all ages', color=colors[2])
-
+            ax1.set_xlabel('Year')
+            ax1.set_ylabel(f'Number of women who are {self.state_name}', color=colors[0])
+            ax2.set_ylabel(f'percentage (%) of women who are {self.state_name} \n (denominator=num living women all ages)', color=colors[1])
+            ax3.set_ylabel(f'Number of women alive, all ages', color=colors[2])
+        fig.tight_layout()
         return fig
