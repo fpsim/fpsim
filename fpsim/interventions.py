@@ -539,14 +539,14 @@ class change_initiation(Intervention):
             increase.
     """
 
-    def __init__(self, years=None, eligibility=None, perc=0.0, annual=True):
+    def __init__(self, years=None, eligibility=None, perc=0.0, annual=True, force_theoretical=False):
         super().__init__()
         self.years = years
         self.eligibility = eligibility
         self.perc = perc
         self.annual = annual
         self.annual_perc = None
-        self.applied = False
+        self.force_theoretical = force_theoretical
         self.current_women_oncontra = None
 
         # Initial value of women on contra at the start of the intervention. Tracked for validation.
@@ -620,14 +620,16 @@ class change_initiation(Intervention):
         if self.years[0] <= sim.y <= self.years[1]:  # Inclusive range
             self.current_women_oncontra = (sim.people.alive & sim.people.on_contra).sum()
 
-            # how many more women should be added per time step
-            new_on_contra = self.perc * self.current_women_oncontra
-
             # Save theoretical number based on the value of women on contraception at start of intervention
             nnew_on_contra = self.perc * self.expected_women_oncontra
 
             # NOTE: TEMPORARY: force specified increase
-            new_on_contra = nnew_on_contra + (self.expected_women_oncontra - self.current_women_oncontra)
+            # how many more women should be added per time step
+            if self.force_theoretical:
+                new_on_contra = nnew_on_contra + (self.expected_women_oncontra - self.current_women_oncontra)
+            else:
+                new_on_contra = self.perc * self.current_women_oncontra
+
             self.expected_women_oncontra += nnew_on_contra
 
             if not new_on_contra:
