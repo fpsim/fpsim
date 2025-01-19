@@ -613,15 +613,16 @@ class change_initiation(Intervention):
         ti = sim.ti
         # Save theoretical number based on the value of women on contraception at start of intervention
         if self.years[0] == sim.y:
-            self.expected_women_oncontra = sim.people.on_contra.sum()
-            self.init_women_oncontra = sim.people.on_contra.sum()
+            self.expected_women_oncontra = (sim.people.alive & sim.people.on_contra).sum()
+            self.init_women_oncontra = self.expected_women_oncontra
 
         # Apply intervention within this time range
         if self.years[0] <= sim.y <= self.years[1]:  # Inclusive range
-            self.current_women_oncontra = sim.people.on_contra.sum()
+            self.current_women_oncontra = (sim.people.alive & sim.people.on_contra).sum()
 
             # how many more women should be added per time step
             new_on_contra = self.perc * self.current_women_oncontra
+
             # Save theoretical number based on the value of women on contraception at start of intervention
             nnew_on_contra = self.perc * self.expected_women_oncontra
             self.expected_women_oncontra += nnew_on_contra
@@ -647,4 +648,6 @@ class change_initiation(Intervention):
                 new_users.ever_used_contra = 1
                 method_dur = sim.people.contraception_module.set_dur_method(new_users)
                 new_users.ti_contra = ti + method_dur
+            else:
+                print(f"Ran out of eligible women to initiate")
         return
