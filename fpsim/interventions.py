@@ -548,6 +548,12 @@ class change_initiation(Intervention):
         self.annual_perc = None
         self.applied = False
         self.current_women_oncontra = None
+
+        # Initial value of women on contra at the start of the intervention. Tracked for validation.
+        self.init_women_oncontra = None
+        # Theoretical number of women on contraception we should have by the end of the intervention period, if
+        # nothing else affected the dynamics of the contraception. Tracked for validation.
+        self.expected_women_oncontra = None
         return
 
     def initialize(self, sim=None):
@@ -605,11 +611,21 @@ class change_initiation(Intervention):
 
     def apply(self, sim):
         ti = sim.ti
-        new_on_contra = 0.0
+        # Save theoretical number based on the value of women on contraception at start of intervention
+        if self.years[0] == sim.y:
+            self.n_women_oncontra = sim.people.on_contra.sum()
+            self.init_women_oncontra = sim.people.on_contra.sum()
+
+        # Apply intervention within this time range
         if self.years[0] <= sim.y <= self.years[1]:  # Inclusive range
             self.current_women_oncontra = sim.people.on_contra.sum()
+
             # how many more women should be added per time step
             new_on_contra = self.perc * self.current_women_oncontra
+            # Save theoretical number based on the value of women on contraception at start of intervention
+            nnew_on_contra = self.perc * self.n_women_oncontra
+            self.n_women_oncontra += nnew_on_contra
+
             if not new_on_contra:
                 raise ValueError("For the given parameters (n_agents, and perc increase) we won't see an effect. "
                                  "Consider increasing the number of agents.")
