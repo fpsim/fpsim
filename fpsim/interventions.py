@@ -613,7 +613,7 @@ class change_initiation(Intervention):
         ti = sim.ti
         # Save theoretical number based on the value of women on contraception at start of intervention
         if self.years[0] == sim.y:
-            self.n_women_oncontra = sim.people.on_contra.sum()
+            self.expected_women_oncontra = sim.people.on_contra.sum()
             self.init_women_oncontra = sim.people.on_contra.sum()
 
         # Apply intervention within this time range
@@ -623,8 +623,8 @@ class change_initiation(Intervention):
             # how many more women should be added per time step
             new_on_contra = self.perc * self.current_women_oncontra
             # Save theoretical number based on the value of women on contraception at start of intervention
-            nnew_on_contra = self.perc * self.n_women_oncontra
-            self.n_women_oncontra += nnew_on_contra
+            nnew_on_contra = self.perc * self.expected_women_oncontra
+            self.expected_women_oncontra += nnew_on_contra
 
             if not new_on_contra:
                 raise ValueError("For the given parameters (n_agents, and perc increase) we won't see an effect. "
