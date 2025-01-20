@@ -1018,7 +1018,7 @@ class state_tracker(Analyzer):
         """
         Plots self.data as a line
         """
-        colors = ["steelblue", "deepskyblue", "black"]
+        colors = ["steelblue", "slategray", "black"]
         with fpo.with_style(style):
             fig, ax1 = plt.subplots(figsize=(10, 5))
 
