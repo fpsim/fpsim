@@ -625,8 +625,15 @@ class change_initiation(Intervention):
 
             # NOTE: TEMPORARY: force specified increase
             # how many more women should be added per time step
+            # However, if the current number of women on contraception is >> than the expected value, this
+            # intervention does nothing. The forcing ocurrs in one particular direction, making it incomplete.
+            # If the forcing had to be fully function, when there are more women than the expected value
+            # this intervention should additionaly 'reset' the contraceptive state and related attributes (ie, like the duration on the method)
             if self.force_theoretical:
-                new_on_contra = nnew_on_contra + (self.expected_women_oncontra - self.current_women_oncontra)
+                additional_women_on_contra = self.expected_women_oncontra - self.current_women_oncontra
+                if additional_women_on_contra < 0:
+                    additional_women_on_contra = 0
+                new_on_contra = nnew_on_contra + additional_women_on_contra
             else:
                 new_on_contra = self.perc * self.current_women_oncontra
 
