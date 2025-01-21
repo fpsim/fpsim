@@ -1010,8 +1010,9 @@ class method_mix_over_time(Analyzer):
             for method in self.methods:
                 ax.plot(self.tvec, self.results[method][:], label=method)
 
-            ax.set_xlabel('Year')
-            ax.set_ylabel(f'Number of women on contraceptive method')
+            ax.set_xlabel("Year")
+            ax.set_ylabel(f"Number of living women on method 'x'")
+            ax.legend()
         fig.tight_layout()
         return fig
 
