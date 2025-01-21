@@ -19,7 +19,7 @@ __all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyram
 # Specific analyzers
 __all__ += ['empowerment_recorder', 'education_recorder']
 # Analyzers for debugging
-__all__ += ['state_tracker']
+__all__ += ['state_tracker', 'method_mix_over_time']
 
 
 class Analyzer(sc.prettyobj):
@@ -973,6 +973,47 @@ class track_switching(Analyzer):
         self.results['switching_events_postpartum'][ti] = scale * switch_events['postpartum']
 
         return
+
+
+class method_mix_over_time(Analyzer):
+    """
+    Tracks the number of women on each method available
+    for each time step
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)   # Initialize the Analyzer object
+        self.results = None
+        self.n_methods = None
+        self.tvec = None
+        return
+
+    def initialize(self, sim):
+        super().initialize()
+        self.methods = sim.contraception_module.methods.keys()
+        self.n_methods = len(self.methods)
+        self.results = {k: np.zeros(sim.npts) for k in self.methods}
+        self.tvec = sim.tvec
+        return
+
+    def apply(self, sim):
+        ppl = sim.people
+        for m_idx, method in enumerate(self.methods):
+            eligible = ppl.is_female & ppl.alive & (ppl.method == m_idx)
+            self.results[method][sim.ti] = np.count_nonzero(eligible)
+        return
+
+    def plot(self, style=None):
+        with fpo.with_style(style):
+            fig, ax = plt.subplots(figsize=(10, 5))
+
+            for method in self.methods:
+                ax.plot(self.tvec, self.results[method][:], label=method)
+
+            ax.set_xlabel('Year')
+            ax.set_ylabel(f'Number of women on contraceptive method')
+        fig.tight_layout()
+        return fig
 
 
 class state_tracker(Analyzer):
