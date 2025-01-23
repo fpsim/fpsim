@@ -13,5 +13,6 @@ from .calibration import *
 from .scenarios import *
 from .education import *
 from .empowerment import *
+from .plotting import *
 
 
