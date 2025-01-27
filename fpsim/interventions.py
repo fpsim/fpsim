@@ -307,31 +307,60 @@ class change_people_state(Intervention):
         state_name   (string): name of the People's state that will be modified
         year         (float): time expressed in years when the change is applied
         new_val      (float): the new state value eligible people will have
+        annual (bool): whether the increase, prop, represents a "per year" increase, or per time step
         eligibility  (inds/callable): indices OR callable that returns inds
     """
 
-    def __init__(self, state_name, year, new_val, eligibility=None, prop=1.0):
+    def __init__(self, state_name, new_val, years=None, eligibility=None, prop=1.0, annual=False):
         super().__init__()
         self.state_name = state_name
-        self.year = year
-        self.new_val = new_val
+        self.years = years
         self.eligibility = eligibility
+
         self.prop = prop
+        self.annual = annual
+        self.annual_perc = None
+        self.new_val = new_val
+
         self.applied = False
         return
 
     def initialize(self, sim=None):
         super().initialize()
-        self._validate()
+        self._validate_pars()
+
+        # Lastly, adjust the probability by the sim's timestep, if it's an annual probability
+        if self.annual:
+            # per timestep/monthly growth rate or perc of eligible women who will be made to choose contraception
+            self.annual_perc = self.prop
+            self.prop = ((1 + self.annual_perc) ** sim.dt)-1
+        # Validate years and values
+        if self.years is None:
+            # f'Intervention start and end years not provided. Will use sim start an end years'
+            self.years = [sim['start_year'], sim['end_year']]
+        if sc.isnumber(self.years) or len(self.years) == 1:
+            self.years = sc.promotetolist(self.years)
+            # Assumes that start year has been specified, append end of the simulation as end year of the intervention
+            self.years.append(sim['end_year'])
+
+        min_year = min(self.years)
+        max_year = max(self.years)
+        if min_year < sim['start_year']:
+            errormsg = f'Intervention start {min_year} is before the start of the simulation.'
+            raise ValueError(errormsg)
+        if max_year > sim['end_year']:
+            errormsg = f'Intervention end {max_year} is after the end of the simulation.'
+            raise ValueError(errormsg)
+        if self.years != sorted(self.years):
+            errormsg = f'Years {self.years} should be monotonically increasing'
+            raise ValueError(errormsg)
+
         return
 
-    def _validate(self):
+    def _validate_pars(self):
         # Validation
         if self.state_name is None:
             errormsg = 'A state name must be supplied.'
-            raise ValueError(errormsg)
-        if self.year is None:
-            errormsg = 'A year must be supplied.'
             raise ValueError(errormsg)
         if self.new_val is None:
             errormsg = 'A new value must be supplied.'
@@ -362,8 +391,7 @@ class change_people_state(Intervention):
         return is_eligible
 
     def apply(self, sim):
-        if not self.applied and sim.y >= self.year:
-            self.applied = True  # Ensure we don't apply this more than once
+        if self.years[0] <= sim.y <= self.years[1]:  # Inclusive range
             is_eligible = self.check_eligibility(sim)
             ppl = sim.people.filter(is_eligible)
             setattr(ppl, self.state_name, self.new_val)
