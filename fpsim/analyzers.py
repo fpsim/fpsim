@@ -1023,7 +1023,7 @@ class state_tracker(Analyzer):
     living women who live in rural settings)
     '''
 
-    def __init__(self, state_name=None):
+    def __init__(self, state_name=None, min_age=fpd.min_age, max_age=fpd.max_age):
         """
         Initializes bins and data variables
         """
@@ -1032,6 +1032,8 @@ class state_tracker(Analyzer):
         self.data_num = None
         self.data_perc = None
         self.tvec = None
+        self.min_age = min_age
+        self.max_age = max_age
         return
 
     def initialize(self, sim):
@@ -1050,7 +1052,7 @@ class state_tracker(Analyzer):
         Records histogram of ages of all alive individuals at a timestep such that
         self.data[timestep] = list of proportions where index signifies age
         """
-        living_women = sim.people.filter((sim.people.alive) & (sim.people.is_female))
+        living_women = sim.people.filter((sim.people.alive) & (sim.people.is_female) & (sim.people.age >= self.min_age) & (sim.people.age < self.max_age))
         self.data_num[sim.ti] = living_women[self.state_name].sum()
         self.data_n_female[sim.ti] = len(living_women)
         self.data_perc[sim.ti] = self.data_num[sim.ti] / self.data_n_female[sim.ti]
@@ -1088,7 +1090,7 @@ class state_tracker(Analyzer):
 
             ax1.set_xlabel('Year')
             ax1.set_ylabel(f'Number of women who are {self.state_name}', color=colors[0])
-            ax2.set_ylabel(f'percentage (%) of women who are {self.state_name} \n (denominator=num living women all ages)', color=colors[1])
-            ax3.set_ylabel(f'Number of women alive, all ages', color=colors[2])
+            ax2.set_ylabel(f'percentage (%) of women who are {self.state_name} \n (denominator=num living women {self.min_age}-{self.max_age})', color=colors[1])
+            ax3.set_ylabel(f'Number of women alive, aged {self.min_age}-{self.max_age}', color=colors[2])
         fig.tight_layout()
         return fig
