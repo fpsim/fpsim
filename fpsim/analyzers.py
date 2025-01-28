@@ -1055,7 +1055,7 @@ class state_tracker(Analyzer):
         living_women = sim.people.filter((sim.people.alive) & (sim.people.is_female) & (sim.people.age >= self.min_age) & (sim.people.age < self.max_age))
         self.data_num[sim.ti] = living_women[self.state_name].sum()
         self.data_n_female[sim.ti] = len(living_women)
-        self.data_perc[sim.ti] = self.data_num[sim.ti] / self.data_n_female[sim.ti]
+        self.data_perc[sim.ti] = (self.data_num[sim.ti] / self.data_n_female[sim.ti])*100.0
         self.tvec[sim.ti] = sim.y
 
     def plot(self, style=None):
