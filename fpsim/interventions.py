@@ -529,7 +529,7 @@ class change_people_state(Intervention):
 
         return is_eligible
 
-    def select_people(self, sim, is_eligible):
+    def select_people(self, is_eligible):
         """
         Select people using
         """
@@ -541,7 +541,7 @@ class change_people_state(Intervention):
     def apply(self, sim):
         if self.years[0] <= sim.y <= self.years[1]:  # Inclusive range
             is_eligible = self.check_eligibility(sim)
-            selected_inds = self.select_people(sim, is_eligible)
+            selected_inds = self.select_people(is_eligible)
             sim.people[self.state_name][selected_inds] = self.new_val
         return
 

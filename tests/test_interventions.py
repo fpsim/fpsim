@@ -98,17 +98,32 @@ def test_change_people_state():
                 (sim.people.age < 50) &
                 ~sim.people.has_fin_knowl)
 
-    fin_know = fp.change_people_state('has_fin_knowl', years=2000, new_val=True, eligibility=intv_eligible, prop=0.1, annual=True)
-    sim = fp.Sim(interventions=fin_know, label="Fin_Knowl")
+    fin_know = fp.change_people_state('has_fin_knowl', years=2010, new_val=True, eligibility=intv_eligible, prop=0.1, annual=True)
+
+    # Create modules
+    ms = fp.EmpoweredChoice(location='kenya')
+    emp = fp.Empowerment(location='kenya')
+    edu = fp.Education(location='kenya')
+    par_kwargs = dict(n_agents=5000, start_year=1970, end_year=2020, seed=1, verbose=1)
+    pars = fp.pars(location='kenya', **par_kwargs)
+
+    # Make and run sim
+    s0 = fp.Sim(pars, contraception_module=ms, empowerment_module=emp, education_module=edu, label="Baseline")
+    s1 = fp.Sim(pars, contraception_module=ms, empowerment_module=emp, education_module=edu, interventions=fin_know, label="Fin_Knowl")
+    m = fp.parallel(s0, s1)
+    s0, s1, = m.sims[:] # Replace with run versions
+
     sim.run()
 
     # Check with plot
     if do_plot:
         import pylab as pl
-        t = sim.results['t']
-        y = sim.results['has_fin_knowl']
+        t = s0.results['t']
+        y0 = s0.results['has_fin_knowl']
+        y1 = s1.results['has_fin_knowl']
         pl.figure()
-        pl.plot(t, y, label='Improved financial knowledge')
+        pl.plot(t, y0, label='Baseline')
+        pl.plot(t, y1, label='Improved financial knowledge')
         pl.legend()
         pl.show()
 
@@ -116,7 +131,7 @@ def test_change_people_state():
 
 
 if __name__ == '__main__':
-    isim   = test_intervention_fn()
-    cpmsim = test_change_par()
-    sim  = test_plot()
+    # isim   = test_intervention_fn()
+    # cpmsim = test_change_par()
+    # sim  = test_plot()
     sim = test_change_people_state()
