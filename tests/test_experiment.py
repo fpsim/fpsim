@@ -44,6 +44,6 @@ if __name__ == '__main__':
 
     with sc.timer():
         exp1 = test_plot()
-        exp = test_plot()
+        # exp = test_plot()
         # exp_reg = test_regional_exp()     # This test won't work on the methodtime branch
         # exp_emp = test_emp()              # Test removed as we haven't set up the experiment class with empowerment yet
