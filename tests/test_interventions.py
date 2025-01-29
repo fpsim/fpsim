@@ -123,11 +123,11 @@ def test_change_people_state():
         pl.legend()
         pl.show()
 
-    return sim
+    return s0, s1
 
 
 if __name__ == '__main__':
     # isim   = test_intervention_fn()
     # cpmsim = test_change_par()
     # sim  = test_plot()
-    sim = test_change_people_state()
+    s0, s1 = test_change_people_state()
