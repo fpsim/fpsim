@@ -474,7 +474,8 @@ def exposure_age():
     '''
     # Previously set to all 1's
     exposure_correction_age = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
-                                        [1, 1, 1,  1,   .6, 1.5, 2.1, 3.3, 2.5, .3, .3, .3, .3]])
+                                        [1, 1, 1,  1 ,   .4, 1.3, 1.5 ,.8, .8, .5, .3, .5, .5]])
+
     exposure_age_interp = data2interp(exposure_correction_age, fpd.spline_preg_ages)
 
     return exposure_age_interp
@@ -505,11 +506,11 @@ def birth_spacing_pref():
         [3, .3],
         [6, .3],
         [9, .3],
-        [12, .001],
-        [15, .001],
-        [18, .001],
-        [21, .001],
-        [24, .01],
+        [12, .2],
+        [15, .2],
+        [18, .2],
+        [21, .2],
+        [24, .2],
         [27, .01],
         [30, .01],
         [33, .01],

@@ -8,6 +8,7 @@ import sciris as sc
 import matplotlib.pyplot as pl
 from . import defaults as fpd
 from . import utils as fpu
+from .settings import options as fpo
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.ticker as ticker
@@ -18,7 +19,7 @@ __all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyram
 # Specific analyzers
 __all__ += ['empowerment_recorder', 'education_recorder']
 # Analyzers for debugging
-__all__ += ['state_tracker']
+__all__ += ['state_tracker', 'method_mix_over_time']
 
 
 class Analyzer(sc.prettyobj):
@@ -974,13 +975,55 @@ class track_switching(Analyzer):
         return
 
 
+class method_mix_over_time(Analyzer):
+    """
+    Tracks the number of women on each method available
+    for each time step
+    """
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)   # Initialize the Analyzer object
+        self.results = None
+        self.n_methods = None
+        self.tvec = None
+        return
+
+    def initialize(self, sim):
+        super().initialize()
+        self.methods = sim.contraception_module.methods.keys()
+        self.n_methods = len(self.methods)
+        self.results = {k: np.zeros(sim.npts) for k in self.methods}
+        self.tvec = sim.tvec
+        return
+
+    def apply(self, sim):
+        ppl = sim.people
+        for m_idx, method in enumerate(self.methods):
+            eligible = ppl.is_female & ppl.alive & (ppl.method == m_idx)
+            self.results[method][sim.ti] = np.count_nonzero(eligible)
+        return
+
+    def plot(self, style=None):
+        with fpo.with_style(style):
+            fig, ax = plt.subplots(figsize=(10, 5))
+
+            for method in self.methods:
+                ax.plot(self.tvec, self.results[method][:], label=method)
+
+            ax.set_xlabel("Year")
+            ax.set_ylabel(f"Number of living women on method 'x'")
+            ax.legend()
+        fig.tight_layout()
+        return fig
+
+
 class state_tracker(Analyzer):
     '''
     Records the number of living women on a specific boolean state (eg, numbe of
     living women who live in rural settings)
     '''
 
-    def __init__(self, state_name=None):
+    def __init__(self, state_name=None, min_age=fpd.min_age, max_age=fpd.max_age):
         """
         Initializes bins and data variables
         """
@@ -989,6 +1032,8 @@ class state_tracker(Analyzer):
         self.data_num = None
         self.data_perc = None
         self.tvec = None
+        self.min_age = min_age
+        self.max_age = max_age
         return
 
     def initialize(self, sim):
@@ -998,6 +1043,7 @@ class state_tracker(Analyzer):
         super().initialize()
         self.data_num = np.full((sim.npts,), np.nan)
         self.data_perc = np.full((sim.npts,), np.nan)
+        self.data_n_female = np.full((sim.npts,), np.nan)
         self.tvec = np.full((sim.npts,), np.nan)
         return
 
@@ -1006,23 +1052,45 @@ class state_tracker(Analyzer):
         Records histogram of ages of all alive individuals at a timestep such that
         self.data[timestep] = list of proportions where index signifies age
         """
-        living_women = sim.people.filter((sim.people.alive) & (sim.people.is_female))
+        living_women = sim.people.filter((sim.people.alive) & (sim.people.is_female) & (sim.people.age >= self.min_age) & (sim.people.age < self.max_age))
         self.data_num[sim.ti] = living_women[self.state_name].sum()
-        self.data_perc[sim.ti] = self.data_num[sim.ti] / len(living_women)
+        self.data_n_female[sim.ti] = len(living_women)
+        self.data_perc[sim.ti] = (self.data_num[sim.ti] / self.data_n_female[sim.ti])*100.0
         self.tvec[sim.ti] = sim.y
 
-    def plot(self):
+    def plot(self, style=None):
         """
         Plots self.data as a line
         """
-        colors = ["steelblue", "deepskyblue"]
-        fig, ax1 = plt.subplots()
-        ax2 = ax1.twinx()
-        ax1.spines["left"].set_color(colors[0])
-        ax2.spines["right"].set_color(colors[1])
-        ax1.plot(self.tvec, self.data_num, color=colors[0])
-        ax2.plot(self.tvec, self.data_perc, color=colors[1])
-        ax1.set_xlabel('Year')
-        ax1.set_ylabel(f'Number of women who are {self.state_name}')
-        ax2.set_ylabel(f'% of women who are {self.state_name} (denominator=num living women all ages)')
+        colors = ["steelblue", "slategray", "black"]
+        with fpo.with_style(style):
+            fig, ax1 = plt.subplots(figsize=(10, 5))
+
+            ax2 = ax1.twinx()
+            ax3 = ax1.twinx()
+
+            ax1.spines["left"].set_color(colors[0])
+            ax1.tick_params(axis="y", labelcolor=colors[0])
+
+            ax2.spines["right"].set_color(colors[1])
+            ax2.yaxis.tick_right()
+            ax2.yaxis.set_label_position("right")
+            ax2.tick_params(axis="y", labelcolor=colors[1])
+
+            ax3.yaxis.tick_left()
+            ax3.spines["left"].set_position(('outward', 70))
+            ax3.spines["left"].set_color(colors[2])
+            ax3.yaxis.set_label_position("left")
+            ax3.tick_params(axis="y", labelcolor=colors[2])
+
+
+            ax1.plot(self.tvec, self.data_num, color=colors[0])
+            ax2.plot(self.tvec, self.data_perc, color=colors[1])
+            ax3.plot(self.tvec, self.data_n_female, color=colors[2])
+
+            ax1.set_xlabel('Year')
+            ax1.set_ylabel(f'Number of women who are {self.state_name}', color=colors[0])
+            ax2.set_ylabel(f'percentage (%) of women who are {self.state_name} \n (denominator=num living women {self.min_age}-{self.max_age})', color=colors[1])
+            ax3.set_ylabel(f'Number of women alive, aged {self.min_age}-{self.max_age}', color=colors[2])
+        fig.tight_layout()
         return fig
