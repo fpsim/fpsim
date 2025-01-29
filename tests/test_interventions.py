@@ -118,6 +118,7 @@ def test_change_people_state(emp=False):
     s1 = fp.Sim(pars, **sim_kwargs, interventions=fin_know, label="Fin_Knowl")
     s0.run()
     s1.run()
+    # return s1
 
     # Check with plot
     if do_plot:
@@ -138,4 +139,5 @@ if __name__ == '__main__':
     # isim   = test_intervention_fn()
     # cpmsim = test_change_par()
     # sim  = test_plot()
+    # s1 = test_change_people_state(emp=True)
     s0, s1 = test_change_people_state(emp=True)
