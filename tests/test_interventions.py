@@ -104,16 +104,14 @@ def test_change_people_state():
     ms = fp.EmpoweredChoice(location='kenya')
     emp = fp.Empowerment(location='kenya')
     edu = fp.Education(location='kenya')
-    par_kwargs = dict(n_agents=5000, start_year=1970, end_year=2020, seed=1, verbose=1)
+    par_kwargs = dict(n_agents=1000, start_year=1990, end_year=2020, seed=1, verbose=1)
     pars = fp.pars(location='kenya', **par_kwargs)
 
     # Make and run sim
     s0 = fp.Sim(pars, contraception_module=ms, empowerment_module=emp, education_module=edu, label="Baseline")
     s1 = fp.Sim(pars, contraception_module=ms, empowerment_module=emp, education_module=edu, interventions=fin_know, label="Fin_Knowl")
-    m = fp.parallel(s0, s1)
-    s0, s1, = m.sims[:] # Replace with run versions
-
-    sim.run()
+    s0.run()
+    s1.run()
 
     # Check with plot
     if do_plot:
