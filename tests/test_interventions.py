@@ -87,7 +87,7 @@ def test_plot():
     return sim
 
 
-def test_change_people_state():
+def test_change_people_state(emp=False):
     """ Testing that change_people_state() modifies sim results in expected ways """
     sc.heading('Testing change_people_state()...')
 
@@ -100,14 +100,22 @@ def test_change_people_state():
 
     fin_know = fp.change_people_state('has_fin_knowl', years=2010, new_val=True, eligibility=intv_eligible, prop=0.1, annual=True)
 
-    # Create modules
-    ms = fp.SimpleChoice(location='kenya')
-    par_kwargs = dict(n_agents=1000, start_year=1990, end_year=2020, seed=1, verbose=1)
+    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=1)
     pars = fp.pars(location='kenya', **par_kwargs)
 
+    # Create modules
+    if not emp:
+        ms = fp.SimpleChoice(location='kenya')
+        sim_kwargs = dict(contraception_module=ms)
+    else:
+        ms = fp.EmpoweredChoice(location='kenya')
+        emp = fp.Empowerment(location='kenya')
+        edu = fp.Education(location='kenya')
+        sim_kwargs = dict(contraception_module=ms, empowerment_module=emp, education_module=edu)
+
     # Make and run sim
-    s0 = fp.Sim(pars, contraception_module=ms, label="Baseline")
-    s1 = fp.Sim(pars, contraception_module=ms, interventions=fin_know, label="Fin_Knowl")
+    s0 = fp.Sim(pars, **sim_kwargs, label="Baseline")
+    s1 = fp.Sim(pars, **sim_kwargs, interventions=fin_know, label="Fin_Knowl")
     s0.run()
     s1.run()
 
@@ -130,4 +138,4 @@ if __name__ == '__main__':
     # isim   = test_intervention_fn()
     # cpmsim = test_change_par()
     # sim  = test_plot()
-    s0, s1 = test_change_people_state()
+    s0, s1 = test_change_people_state(emp=True)
