@@ -86,9 +86,20 @@ def test_plot():
         sim.plot()
     return sim
 
+
+def test_change_people_state():
+    """ Testing that change_people_state() modifies sim results in expected ways """
+    sc.heading('Testing change_people_state()...')
+
+    fin_know = fp.change_people_state('has_fin_knowl', year=2020, new_val=True, prop = 0.1, annual=True)
+    # sim0 = fp.Sim(label="Baseline")
+    sim = fp.Sim(interventions=fin_know, label="Fin_Knowl")
+    # m = fp.parallel(sim0, sim1, serial=serial, compute_stats=False)
+    sim.run()
+    return sim
+
 if __name__ == '__main__':
-    sc.options(backend=None) # Turn on interactive plots
-    with sc.timer():
-        isim   = test_intervention_fn()
-        cpmsim = test_change_par()
-        sim  = test_plot()
+    # isim   = test_intervention_fn()
+    # cpmsim = test_change_par()
+    # sim  = test_plot()
+    sim = test_change_people_state()
