@@ -57,7 +57,7 @@ for method in method_list:
 method_map = {method.label: method.idx for method in method_list}
 Methods = ss.ndict(method_list, type=Method)
 SimpleMethods = sc.dcp(Methods)
-for m in SimpleMethods.values(): m.dur_use = 1
+# for m in SimpleMethods.values(): m.dur_use = 1
 
 
 # %% Define classes to contain information about the way women choose contraception

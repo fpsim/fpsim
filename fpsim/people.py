@@ -1084,7 +1084,7 @@ class People(fpb.BasePeople):
         preg.progress_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
 
-        # Update methods for those who are elgible
+        # Update methods for those who are eligible
         if len(ready):
             ready.update_method()
 
