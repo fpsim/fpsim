@@ -623,7 +623,7 @@ def calculate_empwr_composites(empwr_data, empwr_pars):
     dm_cols = ["buy_decision_major", "buy_decision_daily",
                "buy_decision_clothes", "decision_health"]
 
-    fa_cols = ["has_savings", "has_fin_knowl", "has_fin_goals"]
+    fa_cols = ["has_savings", "has_fin_goals"]  #"has_fin_knowl",
 
     fa = np.zeros(len(empwr_pars["avail_ages"]), dtype=np.float64)
     dm = np.zeros_like(fa, dtype=np.float64)
