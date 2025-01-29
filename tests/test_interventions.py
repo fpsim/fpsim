@@ -8,7 +8,7 @@ import pytest
 
 serial   = 0 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
-sc.options(backend='agg') # Turn off interactive plots
+# sc.options(backend='agg') # Turn off interactive plots
 
 
 def make_sim(**kwargs):
@@ -91,15 +91,32 @@ def test_change_people_state():
     """ Testing that change_people_state() modifies sim results in expected ways """
     sc.heading('Testing change_people_state()...')
 
-    fin_know = fp.change_people_state('has_fin_knowl', year=2020, new_val=True, prop = 0.1, annual=True)
-    # sim0 = fp.Sim(label="Baseline")
+    def intv_eligible(sim):
+        return ((sim.people.is_female) &
+                (sim.people.alive) &
+                (sim.people.age >= 15) &
+                (sim.people.age < 50) &
+                ~sim.people.has_fin_knowl)
+
+    fin_know = fp.change_people_state('has_fin_knowl', years=2000, new_val=True, eligibility=intv_eligible, prop=0.1, annual=True)
     sim = fp.Sim(interventions=fin_know, label="Fin_Knowl")
-    # m = fp.parallel(sim0, sim1, serial=serial, compute_stats=False)
     sim.run()
+
+    # Check with plot
+    if do_plot:
+        import pylab as pl
+        t = sim.results['t']
+        y = sim.results['has_fin_knowl']
+        pl.figure()
+        pl.plot(t, y, label='Improved financial knowledge')
+        pl.legend()
+        pl.show()
+
     return sim
 
+
 if __name__ == '__main__':
-    # isim   = test_intervention_fn()
-    # cpmsim = test_change_par()
-    # sim  = test_plot()
+    isim   = test_intervention_fn()
+    cpmsim = test_change_par()
+    sim  = test_plot()
     sim = test_change_people_state()

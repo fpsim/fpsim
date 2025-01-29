@@ -527,17 +527,22 @@ class change_people_state(Intervention):
             errormsg = 'Eligibility must be a function or an array of indices'
             raise ValueError(errormsg)
 
+        return is_eligible
+
+    def select_people(self, sim, is_eligible):
+        """
+        Select people using
+        """
         eligible_inds = sc.findinds(is_eligible)
         is_selected = fpu.n_binomial(self.prop, len(eligible_inds))
-        is_eligible[eligible_inds] = is_selected
-
-        return is_eligible
+        selected_inds = eligible_inds[is_selected]
+        return selected_inds
 
     def apply(self, sim):
         if self.years[0] <= sim.y <= self.years[1]:  # Inclusive range
             is_eligible = self.check_eligibility(sim)
-            ppl = sim.people.filter(is_eligible)
-            setattr(ppl, self.state_name, self.new_val)
+            selected_inds = self.select_people(sim, is_eligible)
+            sim.people[self.state_name][selected_inds] = self.new_val
         return
 
 
