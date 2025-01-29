@@ -100,7 +100,7 @@ def test_change_people_state(emp=False):
 
     fin_know = fp.change_people_state('has_fin_knowl', years=2010, new_val=True, eligibility=intv_eligible, prop=0.1, annual=True)
 
-    par_kwargs = dict(n_agents=500, start_year=1960, end_year=2020, seed=1, verbose=1)
+    par_kwargs = dict(n_agents=500, start_year=1990, end_year=2030, seed=1, verbose=1)
     pars = fp.pars(location='kenya', **par_kwargs)
 
     # Create modules
