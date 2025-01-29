@@ -73,7 +73,7 @@ Estimate,Std. Error,t value,Pr(>|t|),lhs,rhs
 0.216307761,0.029601811,7.307247487,2.88E-12,has_savings,wealthquintile
 -2.572032025,0.231087642,-11.13011497,4.99E-24,has_fin_knowl,(Intercept)
 0.02134659,0.092532196,0.230693645,0.817723103,has_fin_knowl,contraception_0
-0,0.116397947,13.48030838,3.45E-32,has_fin_knowl,has_fin_knowl_0
+1.569080224,0.116397947,13.48030838,3.45E-32,has_fin_knowl,has_fin_knowl_0
 2.39387932,0.374528944,6.391707121,6.93E-10,has_fin_knowl,"ns(age, knots = c(25))1"
 0.659410993,0.182352587,3.616131832,0.000355213,has_fin_knowl,"ns(age, knots = c(25))2"
 0.061420218,0.014414734,4.260933,2.79E-05,has_fin_knowl,edu_attainment
