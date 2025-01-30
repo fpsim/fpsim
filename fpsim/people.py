@@ -142,7 +142,7 @@ class People(fpb.BasePeople):
         The index of year-ending as of the same date expressed in ti
         or 12-months ago as of the same date.
         """
-        return (self.ti + 1) % self.tiperyear
+        return (self.ti % self.tiperyear)
 
     def get_longitudinal_state(self, state_name):
         """
