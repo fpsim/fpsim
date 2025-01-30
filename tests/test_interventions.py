@@ -8,7 +8,7 @@ import pytest
 
 serial   = 0 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
-sc.options(backend='agg') # Turn off interactive plots
+# sc.options(backend='agg') # Turn off interactive plots
 
 
 def make_sim(**kwargs):
@@ -86,9 +86,58 @@ def test_plot():
         sim.plot()
     return sim
 
+
+def test_change_people_state(emp=False):
+    """ Testing that change_people_state() modifies sim results in expected ways """
+    sc.heading('Testing change_people_state()...')
+
+    def intv_eligible(sim):
+        return ((sim.people.is_female) &
+                (sim.people.alive) &
+                (sim.people.age >= 15) &
+                (sim.people.age < 50) &
+                ~sim.people.has_fin_knowl)
+
+    fin_know = fp.change_people_state('has_fin_knowl', years=2010, new_val=True, eligibility=intv_eligible, prop=0.1, annual=True)
+
+    par_kwargs = dict(n_agents=500, start_year=1990, end_year=2030, seed=1, verbose=1)
+    pars = fp.pars(location='kenya', **par_kwargs)
+
+    # Create modules
+    if not emp:
+        ms = fp.SimpleChoice(location='kenya')
+        sim_kwargs = dict(contraception_module=ms)
+    else:
+        ms = fp.EmpoweredChoice(location='kenya')
+        emp = fp.Empowerment(location='kenya')
+        edu = fp.Education(location='kenya')
+        sim_kwargs = dict(contraception_module=ms, empowerment_module=emp, education_module=edu)
+
+    # Make and run sim
+    s0 = fp.Sim(pars, **sim_kwargs, label="Baseline")
+    s1 = fp.Sim(pars, **sim_kwargs, interventions=fin_know, label="Fin_Knowl")
+    s0.run()
+    s1.run()
+    # return s1
+
+    # Check with plot
+    if do_plot:
+        import pylab as pl
+        t = s0.results['t']
+        y0 = s0.results['has_fin_knowl']
+        y1 = s1.results['has_fin_knowl']
+        pl.figure()
+        pl.plot(t, y0, label='Baseline')
+        pl.plot(t, y1, label='Improved financial knowledge')
+        pl.legend()
+        pl.show()
+
+    return s0, s1
+
+
 if __name__ == '__main__':
-    sc.options(backend=None) # Turn on interactive plots
-    with sc.timer():
-        isim   = test_intervention_fn()
-        cpmsim = test_change_par()
-        sim  = test_plot()
+    # isim   = test_intervention_fn()
+    # cpmsim = test_change_par()
+    # sim  = test_plot()
+    # s1 = test_change_people_state(emp=True)
+    s0, s1 = test_change_people_state(emp=True)

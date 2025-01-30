@@ -947,14 +947,11 @@ class People(fpb.BasePeople):
                 self.step_results[key] = as_result_dict[key]
         return
 
-    def birthday_filter(self, int_age=None):
+    def birthday_filter(self):
         """
         Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
         annualy, but not based on a calendar year, rather every year on an agent's bday."""
-        if int_age is None:
-            int_age = self.int_age
-
-        age_diff = int_age - self.age
+        age_diff = self.age - self.int_age
         had_bday = (age_diff <= (self.pars['timestep'] / fpd.mpy))
         return self.filter(had_bday)
 
@@ -1084,7 +1081,7 @@ class People(fpb.BasePeople):
         preg.progress_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
 
-        # Update methods for those who are elgible
+        # Update methods for those who are eligible
         if len(ready):
             ready.update_method()
 
@@ -1115,7 +1112,7 @@ class People(fpb.BasePeople):
     def step_empowerment(self):
         eligible = self.filter(self.is_dhs_age)
         # Women who just turned 15 get assigned a value based on empowerment probs
-        bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
+        bday_15 = eligible.filter((eligible.age > int(fpd.min_age)) & (eligible.age <= int(fpd.min_age) + (self.pars['timestep'] / fpd.mpy)))
         if len(bday_15):
             self.empowerment_module.update_empwr_states(bday_15)
         # Update states on her bday, based on coefficients
