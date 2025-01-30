@@ -86,6 +86,9 @@ html_theme_options = {
     "header_links_before_dropdown": 5,
     "footer_start": ["copyright", "footer_start"],
     "footer_end": ["theme-version", "footer_end"],
+    "logo": {
+        "text": "FPsim",
+    },
 }
 html_sidebars = {
     "**": ["sidebar-nav-bs", "page-toc"],

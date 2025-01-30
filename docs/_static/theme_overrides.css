@@ -60,6 +60,12 @@ h4 {
     margin-bottom: 0.5em;
 }
 
+footer p {
+    font-size: 14px;
+    margin-top: 0px;
+    margin-bottom: 0px;
+}
+
 /* Layout changes */
 .bd-main .bd-content .bd-article-container {
   max-width: 100em;  /* default is 60em */
