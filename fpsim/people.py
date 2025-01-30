@@ -1095,10 +1095,6 @@ class People(fpb.BasePeople):
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
 
-        # Populate the ciruclar buffers with data from Peoples states that
-        # are needed for methods/classes that use historical data (eg, need previous year's data)
-        self.update_history_buffer()
-
         # Update results
         fecund.update_age_bin_totals()
 
