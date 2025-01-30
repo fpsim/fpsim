@@ -41,9 +41,8 @@ class Empowerment:
             # as well as ages for which probs are defined.
             self.empowerment_pars = fplocs.kenya.make_empowerment_pars(seed=seed)
 
-            # Store the age spline
+            # Store the age spline. The version used in this module has 2 knots. There's a 3 knot version if required
             self.age_spline_2 = fplocs.kenya.empowerment_age_spline("2")
-            self.age_spline_3 = fplocs.kenya.empowerment_age_spline("3")
         else:
             errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
             raise NotImplementedError(errormsg)
