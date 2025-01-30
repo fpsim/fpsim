@@ -42,7 +42,8 @@ class Empowerment:
             self.empowerment_pars = fplocs.kenya.make_empowerment_pars(seed=seed)
 
             # Store the age spline
-            self.age_spline = fplocs.kenya.empowerment_age_spline()
+            self.age_spline_2 = fplocs.kenya.empowerment_age_spline("2")
+            self.age_spline_3 = fplocs.kenya.empowerment_age_spline("3")
         else:
             errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
             raise NotImplementedError(errormsg)
@@ -133,7 +134,7 @@ class Empowerment:
         int_age = ppl.int_age
         int_age[int_age < fpd.min_age] = fpd.min_age
         int_age[int_age >= fpd.max_age_preg] = fpd.max_age_preg - 1
-        dfa = self.age_spline.loc[int_age]
+        dfa = self.age_spline_2.loc[int_age]
 
         # Update based on coefficients
         for lhs in self.metrics:
