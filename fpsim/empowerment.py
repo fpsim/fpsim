@@ -208,7 +208,9 @@ class Empowerment:
     def update(self, ppl):
         """ Update empowerment states and intent to use based on regression coefficients"""
         self.update_empwr_states_by_coeffs(ppl)
-        self.update_intent_to_use_by_coeffs(ppl)
+        # Perform updates to intent_to_use to women who are not currently on contraception
+        not_on_contra = ppl.filter(~ppl.on_contra)
+        self.update_intent_to_use_by_coeffs(not_on_contra)
         self.calculate_composite_measures(ppl)
         return
 
