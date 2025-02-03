@@ -1085,6 +1085,9 @@ class People(fpb.BasePeople):
         if len(ready):
             ready.update_method()
 
+        # Make sure that women who are on contraception do not have intent to use contraception
+        self.intent_to_use[self.on_contra] = False
+
         methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
         if not methods_ok:
             errormsg = 'Agents not using contraception are not the same as agents who are using None method'
