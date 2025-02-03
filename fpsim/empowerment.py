@@ -185,10 +185,7 @@ class Empowerment:
         rhs = p.intercept * np.ones(len(ppl[lhs]))
 
         for predictor, beta_p in p.items():
-             # TODO: update the bit below; iterating over specific attributes
-             #  is a temporary fix because ppl does not have all the
-             #  states in p.items()
-             #  keys in p, not represented in ppl: "wealthquintile", "nsage, knots"
+            #  keys in p, not represented in ppl: "nsage, knots"
             if predictor in ["intent_to_use", "edu_attainment", "parity", "urban", "wealthquintile"]:
                 rhs += beta_p * ppl[predictor]
 
