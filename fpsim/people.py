@@ -255,6 +255,9 @@ class People(fpb.BasePeople):
             oc.ever_used_contra = 1
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
+
+        # Change the intent of women who have started to use a contraception method
+        self.intent_to_use[self.on_contra] = False
         return
 
     def update_fertility_intent_by_age(self):
@@ -296,7 +299,6 @@ class People(fpb.BasePeople):
             f_aged_x_inds = f_inds[age_inds == age]  # indices of women of a given age
             prob = intent_pars[age][1]  # Get the probability of having intent
             self.intent_to_use[f_aged_x_inds] = fpu.n_binomial(prob, len(f_aged_x_inds))
-
         return
 
     def update_method(self, year=None, ti=None):
