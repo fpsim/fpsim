@@ -25,7 +25,7 @@ n_agents = 10_000
 start_year = 2000
 end_year = 2040
 
-# Define logistic growth parameters
+# Logistic growth parameters
 C_max = 0.9                                                                             # Maximum contraceptive uptake (90%)
 C_0 = 0.05                                                                              # Initial contraceptive uptake (5%)
 t0 = 2030                                                                               # Year when 50% of max coverage is reached
