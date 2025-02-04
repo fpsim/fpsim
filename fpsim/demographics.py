@@ -7,8 +7,10 @@ age at first partnership.
 import numpy as np  # Needed for a few things not provided by pl
 import sciris as sc
 import starsim as ss
+from . import defaults as fpd
 from . import subnational as fpsn
 from . import utils as fpu
+from . import parameters as fpp
 
 #%% Global defaults
 useSI          = True
@@ -21,7 +23,7 @@ max_parity     = 20   # Maximum number of children to track - also applies to ab
 max_parity_spline = 20   # Used for parity splines
 
 class FamilyPlanning(ss.Demographics):
-    def __init__(self, pars=None, **kwargs):
+    def __init__(self, pars=None, location=None, empowerment_module=None, education_module=None, **kwargs):
         super().__init__(pars=pars, **kwargs)
 
         # Set default pars
@@ -30,13 +32,31 @@ class FamilyPlanning(ss.Demographics):
             track_children=False,
             regional=False,
             contraception_module=None,
-            empowerment_module=None,
-            education_module=None,
-            p_fertile=ss.bernoulli(1 - self.pars['primary_infertility']),
-            #p_debut_age = ss.
+            empowerment_module=empowerment_module,
+            education_module=education_module,
+
+            # Fecundity and exposure
+            fecundity_var_low=0.7,
+            fecundity_var_high= 1.1,
+            primary_infertility= 0.05,
+            exposure_factor= 1.0,  # Overall exposure correction factor
+
+            # p_debut_age = ss.
             p_personal_fecundity=ss.uniform(),
         )
 
+        self.pars['p_fertile']=ss.bernoulli(1 - self.pars['primary_infertility'])
+
+        location_pars = fpp.pars(location)
+
+        # TODO remove these from location_pars because they're part of core modules now
+        location_pars.pop('verbose', None)
+        location_pars.pop('timestep', None)
+
+        # Update the parameters with the location-specific parameters
+        self.define_pars(pars=location_pars)
+
+        # Override any remaining parameters with user-specified pars
         self.update_pars(pars=pars, **kwargs)
 
         # Do we need to check for unmatched pars?
@@ -124,82 +144,9 @@ class FamilyPlanning(ss.Demographics):
             ss.FloatArr('edu_completed', default=0),
             ss.FloatArr('edu_started', default=0),
 
+
         )
 
-        self.child_inds = np.ones(shape=(len(self.people), max_parity))*-1,
-        self.birth_ages = np.full(shape=(len(self.people), max_parity), fill_value=np.nan, dtype=float),  # Ages at time of live births
-        self.stillborn_ages = np.full(shape=(len(self.people), max_parity), fill_value=np.nan, dtype=float),  # Ages at time of stillbirths
-        self.miscarriage_ages = np.full(shape=(len(self.people), max_parity), fill_value=np.nan, dtype=float),  # Ages at time of miscarriages
-        self.abortion_ages = np.full(shape=(len(self.people), max_parity), fill_value=np.nan, dtype=float),  # Ages at time of abortions
-        # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
-
-
-        if not self.pars['use_subnational']:
-            _urban = self.get_urban(len(self.sim.people))
-        else:
-            _urban = fpsn.get_urban_init_vals(self.sim.people)
-            self.urban = _urban
-
-        # Parameters on sexual and reproductive history
-        self.fertile = self.pars['p_fertile'].filter()
-
-
-
-        # Fertility intent
-        # Update distribution of fertility intent with location-specific values if it is present in self.pars
-        self.update_fertility_intent(n)
-
-        # Intent to use contraception
-        self.update_intent_to_use(n)
-
-        # Update the distribution of wealth quintile
-        self.update_wealthquintile(n)
-
-        # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        if not self.pars['use_subnational']:
-            # TODO see if we can swap out fpu.n_multinomial for ss.choice or other dist?
-            self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
-        else:
-            self.fated_debut = fpsn.get_debut_init_vals(self)
-
-        # Fecundity variation
-        fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
-        fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
-        self.personal_fecundity = self.p_personal_fecundity.rvs() * fac
-
-        # Initialise ti_contra based on age and fated debut
-        self.update_time_to_choose()
-
-        # Empowerment and education
-        self.empowerment_module = empowerment_module
-        self.education_module = education_module
-        if self.empowerment_module is not None:
-            self.empowerment_module.initialize(self.filter(self.is_female))
-
-        if self.education_module is not None:
-            self.education_module.initialize(self)
-
-        # Partnership
-        if self.pars['use_partnership']:
-            fpdmg.init_partnership_states(self)
-
-        # Handle circular buffer to keep track of historical data
-        self.longitude = sc.objdict()
-        self.initialize_circular_buffer()
-
-
-        # Once all the other metric are initialized, determine initial contraceptive use
-        self.contraception_module = None  # Set below
-        self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
-
-        # Store keys
-        self._keys = [s.name for s in self.states.values()]
-
-        if self.pars['use_subnational']:
-            fpsn.init_regional_states(self)
-            fpsn.init_regional_states(self)
-
-        return
 
     def initialize_circular_buffer(self):
         # Initialize circular buffers to track longitudinal data
@@ -217,14 +164,36 @@ class FamilyPlanning(ss.Demographics):
         """
         Initialise the counter to determine when girls/women will have to first choose a method.
         """
-        inds = sc.findinds((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
-        time_to_debut = (self.fated_debut[inds] - self.age[inds]) / self.dt
-        self.ti_contra[inds] = np.maximum(time_to_debut, 0)
+        ppl = self.sim.people
+        fecund_females = (ppl.female) & (ppl.age < self.pars['age_limit_fecundity'])
+        time_to_debut = (self.fated_debut[fecund_females] - ppl.age[fecund_females]) / self.t.dt
+        self.ti_contra[fecund_females] = np.maximum(time_to_debut, 0)
+
         # Validation
-        time_to_set_contra = self.ti_contra[inds] == 0
-        if not np.array_equal(((self.age[inds] - self.fated_debut[inds]) > -self.dt), time_to_set_contra):
+        time_to_set_contra = self.ti_contra[fecund_females] == 0
+        if not np.array_equal(((ppl.age[fecund_females] - self.fated_debut[fecund_females]) > -self.t.dt), time_to_set_contra):
             errormsg = 'Should be choosing contraception for everyone past fated debut age.'
             raise ValueError(errormsg)
+        return
+
+    def update_fertility_intent(self):
+        if self.pars['fertility_intent'] is None:
+            return
+        self.update_fertility_intent_by_age()
+        return
+
+    def update_intent_to_use(self):
+        if self.pars['intent_to_use'] is None:
+            return
+        self.update_intent_to_use_by_age()
+        return
+
+    def update_wealthquintile(self):
+        if self.pars['wealth_quintile'] is None:
+            return
+        wq_probs = self.pars['wealth_quintile']['percent']
+        vals = np.random.choice(len(wq_probs), size=n, p=wq_probs) + 1
+        self.wealthquintile = vals
         return
 
 
@@ -249,10 +218,11 @@ class FamilyPlanning(ss.Demographics):
 
 
 
+        # TODO clean this up using ss people filters
         f_inds = sc.findinds(sexes == 0)
         m_inds = sc.findinds(sexes == 1)
-        ppl.is_female[f_inds] = True
-        ppl.is_female[m_inds] = False
+        ppl.female[ss.uids(f_inds)] = True
+        ppl.female[ss.uids(m_inds)] = False
 
         age_data_min = pyramid[:, 0]
         age_data_max = np.append(pyramid[1:, 0], self.pars['max_age'])
@@ -264,14 +234,95 @@ class FamilyPlanning(ss.Demographics):
                 age_bins = fpu.n_multinomial(age_data_prob, len(inds))  # Choose age bins
                 #ages[inds] = age_data_min[age_bins] + age_data_range[age_bins] * np.random.random(
                 #    len(inds))  # Uniformly distribute within this age bin
-                ppl.age[inds] = age_data_min[age_bins] + age_data_range[age_bins] * np.random.random(
+                ppl.age[ss.uids(inds)] = age_data_min[age_bins] + age_data_range[age_bins] * np.random.random(
                     len(inds))  # Uniformly distribute within this age bin
 
         return ages, sexes
 
     def init_pre(self, sim, force=False):
+        super().init_pre(sim, force)
+        # add additional n-dimensional stats to track. We initialize here because we need to know n_agents
+        self.child_inds = np.full(shape=(sim.pars['n_agents'], max_parity), fill_value=-1, dtype=int)
+        self.birth_ages = np.full(shape=(sim.pars['n_agents'], max_parity), fill_value=np.nan, dtype=float)
+        self.stillborn_ages = np.full(shape=(sim.pars['n_agents'], max_parity), fill_value=np.nan, dtype=float)
+        self.miscarriage_ages = np.full(shape=(sim.pars['n_agents'], max_parity), fill_value=np.nan, dtype=float)
+        self.abortion_ages = np.full(shape=(sim.pars['n_agents'], max_parity), fill_value=np.nan, dtype=float)
+
+
+    def init_post(self):
         # update the age and sex of each agent
+        super().init_post()
+
         self.set_age_sex()
+
+
+        if not self.pars['use_subnational']:
+            _urban = self.get_urban(len(self.sim.people))
+        else:
+            _urban = fpsn.get_urban_init_vals(self.sim.people)
+        self.urban = _urban
+
+        # Parameters on sexual and reproductive history
+        self.fertile = self.pars['p_fertile'].filter()
+
+
+
+        # Fertility intent
+        # Update distribution of fertility intent with location-specific values if it is present in self.pars
+        self.update_fertility_intent()
+
+        # Intent to use contraception
+        self.update_intent_to_use()
+
+        # Update the distribution of wealth quintile
+        self.update_wealthquintile()
+
+        # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
+        if not self.pars['use_subnational']:
+            # TODO see if we can swap out fpu.n_multinomial for ss.choice or other dist?
+            self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], self.sim.people.n_uids)]
+        else:
+            self.fated_debut = fpsn.get_debut_init_vals(self)
+
+        # Fecundity variation
+        fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
+        fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
+        self.personal_fecundity = self.pars.p_personal_fecundity.rvs() * fac
+
+        # Initialise ti_contra based on age and fated debut
+        self.update_time_to_choose()
+
+
+        if self.empowerment_module is not None:
+            self.empowerment_module.initialize(self.filter(self.is_female))
+
+        if self.education_module is not None:
+            self.education_module.initialize(self)
+
+        # Partnership
+        if self.pars['use_partnership']:
+            init_partnership_states(self.sim.people)
+
+        # Handle circular buffer to keep track of historical data
+        self.longitude = sc.objdict()
+        self.initialize_circular_buffer()
+
+
+        # Once all the other metric are initialized, determine initial contraceptive use
+        self.contraception_module = None  # Set below
+        self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
+
+        # Store keys
+        self._keys = [s.name for s in self.states.values()]
+
+        if self.pars['use_subnational']:
+            fpsn.init_regional_states(self)
+            fpsn.init_regional_states(self)
+
+        return
+
+    #def init_post(self):
+
 
 
 
