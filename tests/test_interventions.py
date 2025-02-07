@@ -3,6 +3,8 @@ Run tests on the interventions.
 """
 
 import sciris as sc
+from numba.cpython.charseq import s1_dtype
+
 import fpsim as fp
 import numpy as np
 import pytest
@@ -96,6 +98,42 @@ def test_plot():
     return sim
 
 
+def test_empowerment_boost():
+    """ Test that empowerment_boost() modifies sim results in expected ways """
+    sc.heading('Testing empowerment_boost()...')
+
+    # We use the default eligibility criteria for this test
+
+    def eligibility(sim):
+        ppl = sim.people
+        eligible_ppl = ppl.filter((ppl.sex == 0) &
+                                   ppl.alive &  # living women
+                                  (ppl.age >= 15) & (ppl.age < 40)
+                                  )
+        return eligible_ppl
+
+    # Establish some empowerment at the beginning, otherwise the boost is trying to scale off of 0
+    init_emp = fp.change_people_state('paid_employment', years=[2008, 2009], new_val=True, prop=.5,
+                                      annual=True, eligibility=np.arange(90))
+    emp = fp.empowerment_boost(years=2009, perc=1, annual=True, state_name="paid_employment", force_theoretical=True)
+    s0 = make_sim(label='Baseline')
+    s1 = make_sim(interventions=[init_emp, emp], label='Empowerment boost')
+
+    # Run
+    m = fp.parallel(s0, s1, serial=serial, compute_stats=False)
+    s0, s1 = m.sims[:] # Replace with run versions
+
+    # Test empowerment boost
+    s0_employed = np.sum(s0.people['paid_employment'])
+    s1_employed = np.sum(s1.people['paid_employment'])
+
+    assert s1_employed > s0_employed, f'Empowerment boost should increase the number of people with paid employment, but {s1_employed} is not greater than the baseline of {s0_employed}'
+
+    return s0, s1
+
+
+
+
 def test_change_people_state(emp=False):
     """ Testing that change_people_state() modifies sim results in expected ways """
     sc.heading('Testing change_people_state()...')
@@ -131,16 +169,16 @@ def test_change_people_state(emp=False):
     s2.run()
 
     # Test people state change
-    s0_has_fin_knowl = s0['has_fin_knowl'].count(True)
-    s1_has_fin_knowl = s1['has_fin_knowl'].count(True)
-    s2_500_has_fin_knowl = s2['has_fin_knowl'][0:500].count(True)
+    s0_has_fin_knowl = np.sum(s0.people['has_fin_knowl'])
+    s1_has_fin_knowl = np.sum(s1.people['has_fin_knowl'])
+    s2_500_has_fin_knowl = np.sum(s2.people['has_fin_knowl'][0:500])
 
     assert s1_has_fin_knowl > s0_has_fin_knowl, f'Changing people state should increase the number of people with financial knowledge, but {s1_has_fin_knowl} is not greater than the baseline of {s0_has_fin_knowl}'
     assert s2_500_has_fin_knowl == 0, f'Changing people state should set the financial knowledge of the first 500 agents to 0, but {s2_500_has_fin_knowl} is not 0'
 
     # Check user input validation
     with pytest.raises(ValueError):  # Check invalid parameter
-        make_sim(interventions=fp.change_people_state('not_a_parameter')).run()
+        make_sim(interventions=fp.change_people_state('not_a_parameter', new_val=True)).run()
     with pytest.raises(ValueError):  # Check bad value
         make_sim(interventions=fp.change_people_state('has_fin_know', new_val=None)).run()
     with pytest.raises(ValueError):  # Check too late end year
@@ -166,14 +204,16 @@ def test_change_people_state(emp=False):
         pl.legend()
         pl.show()
 
-    return s0, s1
+    return s0, s1, s2
 
 
 if __name__ == '__main__':
     isim   = test_intervention_fn()
     cpmsim = test_change_par()
     sim  = test_plot()
-    s0, s1 = test_change_people_state(emp=True)
-    s2, s3 = test_change_people_state(emp=False)
+    s0, s1, s2 = test_change_people_state(emp=True)
+    s3, s4, s5 = test_change_people_state(emp=False)
+    s6, s7 = test_empowerment_boost()
+    print('Done.')
 
 
