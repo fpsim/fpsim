@@ -1111,6 +1111,9 @@ class People(fpb.BasePeople):
         return
 
     def step_empowerment(self):
+        """
+        NOTE: by default this will not be used, but it will be used for analyses run from the kenya_empowerment repo
+        """
         eligible = self.filter(self.is_dhs_age)
         # Women who just turned 15 get assigned a value based on empowerment probs
         bday_15 = eligible.filter((eligible.age > int(fpd.min_age)) & (eligible.age <= int(fpd.min_age) + (self.pars['timestep'] / fpd.mpy)))

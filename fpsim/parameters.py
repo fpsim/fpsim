@@ -249,6 +249,7 @@ default_pars = {
     'mcpr':                 None,
 
     # Newer parameters, associated with empowerment, but that are not empowerment metrics
+    # NOTE, these are slated to be relocated into the kenya_emporwerment repo
     'fertility_intent':     None,
     'intent_to_use':        None,
 

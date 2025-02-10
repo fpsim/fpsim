@@ -10,14 +10,12 @@ Idea:
 # %% Imports
 import numpy as np
 import sciris as sc
-import pandas as pd
-import scipy.stats as sps  # For sampling durations
 import starsim as ss  # TODO add to dependencies
 from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs
 
-__all__ = ['Method', 'Methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'EmpoweredChoice']
+__all__ = ['Method', 'Methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'MidChoice']
 
 
 # %% Base definition of contraceptive methods -- can be overwritten by locations
@@ -166,7 +164,7 @@ class SimpleChoice(RandomChoice):
         )
         updated_pars = sc.mergedicts(default_pars, pars)
         self.pars = sc.mergedicts(self.pars, updated_pars)
-        self.pars.update(kwargs) # TODO: check
+        self.pars.update(kwargs)  # TODO: check
 
         # Handle location
         if location is not None:
@@ -179,7 +177,7 @@ class SimpleChoice(RandomChoice):
         return
 
     def init_method_pars(self, location, method_choice_df=None, method_time_df=None):
-        self.contra_use_pars = fplocs.kenya.process_contra_use_simple()  # Set probability of use
+        self.contra_use_pars = fplocs.kenya.process_contra_use('simple')  # Set probability of use
         method_choice_pars, init_dist = fplocs.kenya.process_markovian_method_choice(self.methods, df=method_choice_df)  # Method choice
         self.method_choice_pars = method_choice_pars
         self.init_dist = init_dist
@@ -386,92 +384,58 @@ class SimpleChoice(RandomChoice):
         return choice_array
 
 
-class EmpoweredChoice(ContraceptiveChoice):
+class MidChoice(SimpleChoice):
+    """
+    Default contraceptive choice module.
+    Contraceptive choice is based on
+    """
+    def __init__(self, pars=None, location=None, **kwargs):
+        # Initialize base class - this adds parameters and default data
+        super().__init__(pars=pars, location=location, **kwargs)
 
-    def __init__(self, methods=None, location=None, **kwargs):
-        super().__init__(**kwargs)
-        self.methods = methods or Methods
-
-        # Handle location
+        # Now overwrite the default prob_use parameters with the mid-choice coefficients
         location = location.lower()
         if location == 'kenya':
-            self.contra_use_pars = fplocs.kenya.process_contra_use_pars()
-            self.method_choice_pars = fplocs.kenya.process_simple_method_pars(self.methods)
+            self.contra_use_pars = fplocs.kenya.process_contra_use('mid')  # Process the coefficients
         else:
-            errormsg = f'Location "{location}" is not currently supported for empowerment analyses'
+            errormsg = f'Location "{location}" is not currently ready for using mid-choice coefficients'
             raise NotImplementedError(errormsg)
 
-    def init_method_dist(self, ppl):
-        # TODO look for initial values
-        return self.choose_method(ppl)
+        # Store the age spline
+        self.age_spline = fplocs.kenya.empowerment_age_spline('3')
 
-    def get_prob_use(self, ppl, year=None, inds=None, event=None, ti=None, tiperyear=None):
+        return
+
+    def get_prob_use(self, ppl, year=None, event=None, ti=None, tiperyear=None):
         """
-        Given an array of indices, return an array of probabilities that each woman will use contraception.
-        Probabilities are a function of:
-            - data: age, urban, education, wealth, parity, previous contraceptive use, empowerment metrics
-            - pars: coefficients applied to each of the above
+        Return an array of probabilities that each woman will data_use contraception.
         """
-        p = self.contra_use_pars
-        if inds is None: inds = Ellipsis
-        rhs = p.intercept
-        for vname, vval in p.items():
-            if vname not in ['intercept', 'contraception', 'wealthquintile']:
-                rhs += vval * ppl[vname]
-        rhs += p.contraception * ppl.on_contra[inds]
+        # Figure out which coefficients to data_use
+        if event is None : p = self.contra_use_pars[0]
+        if event == 'pp1': p = self.contra_use_pars[1]
+        if event == 'pp6': p = self.contra_use_pars[2]
+
+        # Initialize with intercept
+        rhs = np.full_like(ppl.age, fill_value=p.intercept)
+
+        # Add all terms that don't involve age
+        for term in ['ever_used_contra', 'edu_attainment', 'urban', 'parity', 'wealthquintile']:  #
+            rhs += p[term] * ppl[term]
+
+        # Add age
+        int_age = ppl.int_age
+        int_age[int_age < fpd.min_age] = fpd.min_age
+        int_age[int_age >= fpd.max_age_preg] = fpd.max_age_preg-1
+        dfa = self.age_spline.loc[int_age]
+        rhs += p.age_factors[0] * dfa['knot_1'].values + p.age_factors[1] * dfa['knot_2'].values + p.age_factors[2] * dfa['knot_3'].values
+        rhs += (p.age_ever_user_factors[0] * dfa['knot_1'].values * ppl.ever_used_contra
+                + p.age_ever_user_factors[1] * dfa['knot_2'].values * ppl.ever_used_contra
+                + p.age_ever_user_factors[2] * dfa['knot_3'].values * ppl.ever_used_contra)
+
+        # Add time trend
+        rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
+
+        # Finish
         prob_use = 1 / (1+np.exp(-rhs))
+
         return prob_use
-
-    def choose_method(self, ppl, inds=None, event=None, jitter=1e-4):
-        """ Choose which method to use """
-
-        # Initialize arrays and get parameters
-        mcp = self.method_choice_pars
-        jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
-        if inds is None: inds = np.arange(len(ppl))
-        n_ppl = len(inds)
-        choice_array = np.empty(n_ppl)
-
-        # Loop over age groups, parity, and methods
-        for key, (age_low, age_high) in fpd.immutable_method_age_map.items():
-            match_low_high = fpu.match_ages(ppl.age[inds], age_low, age_high)
-            for parity in range(7):
-
-                for mname, method in self.methods.items():
-                    # Get people of this age & parity who are using this method
-                    using_this_method = match_low_high & (ppl.parity[inds] == parity) & (ppl.method[inds] == method.idx)
-                    switch_iinds = using_this_method.nonzero()[-1]
-
-                    if len(switch_iinds):
-
-                        # Get probability of choosing each method
-                        these_probs = [v for k, v in mcp[key][parity].items() if k != mname]  # Cannot stay on method
-                        these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
-                        these_probs = np.array(these_probs)/sum(these_probs)  # Renormalize
-                        these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
-
-                        # Adjust method indexing for the methods that were removed
-                        method_inds = np.array([self.methods[m].idx for m in mcp[key][parity].keys()])
-                        choice_array[switch_iinds] = method_inds[these_choices]  # Set values
-
-        return choice_array.astype(int)
-
-    def set_dur_method(self, ppl, method_used=None):
-        """ Placeholder function whereby the mean time on method scales with age """
-
-        dur_method = np.empty(len(ppl))
-        if method_used is None: method_used = ppl.method
-
-        for mname, method in self.methods.items():  # TODO: refactor this so it loops over the methods used by the ppl
-            users = np.nonzero(method_used == method.idx)[-1]
-            n_users = len(users)
-            dist_dict = sc.dcp(method.dur_use)
-            dist_dict['par1'] = dist_dict['par1'] + ppl.age[users]/100
-            dist_dict['par2'] = np.array([dist_dict['par2']]*n_users)
-            dur_method[users] = fpu.sample(**dist_dict, size=n_users)
-
-        dt = ppl.pars['timestep'] / fpd.mpy
-        timesteps_til_update = np.round(dur_method/dt)
-
-        return timesteps_til_update
-

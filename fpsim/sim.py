@@ -106,11 +106,6 @@ class Sim(fpb.BaseSim):
             errormsg = f'Key(s) {mismatches} not found; available keys are {fpp.par_keys}'
             raise sc.KeyNotFoundError(errormsg)
 
-        if isinstance(contraception_module, fpm.EmpoweredChoice) and (empowerment_module is None or education_module is None):
-            errormsg = 'If EmpoweredChoice contraception module is used, empowerment_module and education_module must ' \
-                       'be provided as parameters. '
-            raise ValueError(errormsg)
-
         super().__init__(pars, location=location, **kwargs)  # Initialize and set the parameters as attributes
 
         # Metadata and settings
@@ -449,7 +444,9 @@ class Sim(fpb.BaseSim):
         self.results['perc_contra_intent'][ti] = res.perc_contra_intent
         self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
 
-        # Empowerment
+        # Empowerment metrics
+        # These will all be zero if empowerment module is not provided
+        # Not used except for within kenya_empowerment repo
         self.results['paid_employment'][ti] = res.paid_employment
         self.results['decision_wages'][ti] = res.decision_wages
         self.results['decide_spending_partner'][ti] = res.decide_spending_partner

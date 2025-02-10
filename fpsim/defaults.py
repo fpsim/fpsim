@@ -105,6 +105,8 @@ person_defaults = [
     State('personal_fecundity', 0, int),
 
     # Empowerment - states will remain at these values if use_empowerment is False
+    # NOTE: to use empowerment metrics, please refer to the kenya_empowerment repo
+    # These states will be refactored into a separate module as part of the V3 release.
     State('paid_employment',    0, bool),
     State('decision_wages',     0, bool),
     State('decision_health',    0, bool),

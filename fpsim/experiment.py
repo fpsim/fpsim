@@ -442,8 +442,12 @@ class Experiment(sc.prettyobj):
 
         return
 
-
     def extract_employment(self):
+        """
+        Note: FPsim empowerment metrics are populated and updated in the kenya_empowerment repo
+        This function could be removed, but leaving it here now because script is slated for 
+        removal anyway as part of the V3 release.   
+        """
         # Extract paid work from data
         data_empowerment = self.load_data('empowerment')
         data_empowerment = data_empowerment.iloc[1:-1]
@@ -482,7 +486,6 @@ class Experiment(sc.prettyobj):
         self.model['paid_employment'] = list(percentage_employed.values())
         return
 
-
     def extract_education(self):
         # Extract education from data
         dhs_data_education = self.load_data('education')
@@ -514,7 +517,6 @@ class Experiment(sc.prettyobj):
         self.model['education'] = model_edu_mean
 
         return
-
 
     def compute_fit(self, *args, **kwargs):
         ''' Compute how good the fit is '''

@@ -72,19 +72,19 @@ def test_simple_choice(location='kenya'):
     return sim
 
 
-def test_empowered_choice():
-    sc.heading('Test sim with empowerment')
+def test_mid_choice():
+    """ NOT FUNCTIONAL YET """
+    sc.heading('Test sim with mid level choice module')
 
     # Define new modules
-    ms = fp.EmpoweredChoice(location='kenya')
-    emp = fp.Empowerment(location='kenya')
+    ms = fp.MidChoice(location='kenya')
     edu = fp.Education(location='kenya')
 
     # Define pars
     pars = fp.pars(location='kenya', **par_kwargs)
 
     # Make and run sim
-    s = fp.Sim(pars, contraception_module=ms, empowerment_module=emp, education_module=edu)
+    s = fp.Sim(pars, contraception_module=ms, education_module=edu)
     s.run()
 
     return s
@@ -92,6 +92,6 @@ def test_empowered_choice():
 
 if __name__ == '__main__':
 
-    # s0 = test_simple()
+    s0 = test_simple()
     # s1 = test_simple_choice()
-    s2 = test_empowered_choice()
+    # s2 = test_mid_choice()  # NOT FUNCTIONAL YET

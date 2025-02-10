@@ -98,7 +98,7 @@ def test_change_people_state(emp=False):
                 (sim.people.age < 50) &
                 ~sim.people.has_fin_knowl)
 
-    fin_know = fp.change_people_state('has_fin_knowl', years=2010, new_val=True, eligibility=intv_eligible, prop=0.1, annual=True)
+    fin_know = fp.change_people_state('has_fin_knowl', years=2010, new_val=True, eligibility=intv_eligible, prop=1.0, annual=False)
 
     par_kwargs = dict(n_agents=500, start_year=1990, end_year=2030, seed=1, verbose=1)
     pars = fp.pars(location='kenya', **par_kwargs)
