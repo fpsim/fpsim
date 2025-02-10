@@ -402,7 +402,7 @@ class MidChoice(SimpleChoice):
             raise NotImplementedError(errormsg)
 
         # Store the age spline
-        self.age_spline = fplocs.kenya.empowerment_age_spline('3')
+        self.age_spline = fplocs.kenya.age_spline('3')
 
         return
 

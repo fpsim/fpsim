@@ -602,7 +602,7 @@ def _check_age_endpoints(df):
     return df
 
 
-def empowerment_age_spline(which):
+def age_spline(which):
     return pd.read_csv(thisdir / 'data' / f'age_spline_{which}.csv', index_col=0)
 
 
@@ -923,8 +923,6 @@ def make_pars(seed=None, use_subnational=None):
     pars['urban_prop'] = urban_proportion()
     pars['age_partnership'] = age_partnership()
     pars['wealth_quintile'] = wealth()
-    # pars['fertility_intent'] = fertility_intent_dist()
-    # pars['intent_to_use'] = contraception_intent_dist()
 
 
     kwargs = locals()
