@@ -72,16 +72,16 @@ def test_simple_choice(location='kenya'):
     return sim
 
 
-def test_mid_choice():
-    """ NOT FUNCTIONAL YET """
+def test_mid_choice(location='kenya'):
+    """ Test sim with mid level choice module """
     sc.heading('Test sim with mid level choice module')
 
     # Define new modules
-    ms = fp.MidChoice(location='kenya')
-    edu = fp.Education(location='kenya')
+    ms = fp.MidChoice(location=location)
+    edu = fp.Education(location=location)
 
     # Define pars
-    pars = fp.pars(location='kenya', **par_kwargs)
+    pars = fp.pars(location=location, **par_kwargs)
 
     # Make and run sim
     s = fp.Sim(pars, contraception_module=ms, education_module=edu)
@@ -93,5 +93,6 @@ def test_mid_choice():
 if __name__ == '__main__':
 
     s0 = test_simple()
-    # s1 = test_simple_choice()
-    # s2 = test_mid_choice()  # NOT FUNCTIONAL YET
+    s1 = test_simple_choice('kenya')    # TODO: check with senegal and ethiopia as well
+    s2 = test_mid_choice('kenya')  # TODO: check with senegal and ethiopia as well
+    print('Done.')

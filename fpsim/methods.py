@@ -171,9 +171,9 @@ class SimpleChoice(RandomChoice):
             location = location.lower()
             if location == 'kenya':
                 self.init_method_pars(location, method_choice_df=method_choice_df, method_time_df=method_time_df)
-        else:
-            errormsg = f'Location "{location}" is not currently supported for method-time analyses'
-            raise NotImplementedError(errormsg)
+            else:
+                errormsg = f'Location "{location}" is not currently supported for method-time analyses'
+                raise NotImplementedError(errormsg)
         return
 
     def init_method_pars(self, location, method_choice_df=None, method_time_df=None):
