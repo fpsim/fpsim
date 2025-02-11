@@ -8,6 +8,7 @@ import sciris as sc
 import matplotlib.pyplot as pl
 from . import defaults as fpd
 from . import utils as fpu
+import fpsim as fp
 from .settings import options as fpo
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -897,6 +898,13 @@ class track_as(Analyzer):
     """
 
     def __init__(self):
+        # Check versioning
+        if sc.compareversions(fp, '<3.0'):
+            errormsg = (f'Your current version of FPsim is {fp.__version__}, but this analyzer is slated for release'
+                        f' with v3.0 of FPsim and is not currently functional. If you require age-specific results and'
+                        f' FPsim v3.0 is not released, please contact us at info@starsim.org for assistance.')
+            raise ValueError(errormsg)
+
         # Initialize
         self.results = dict()
         self.init_results()
@@ -1018,7 +1026,8 @@ class track_as(Analyzer):
         """
         Apply the analyzer
         Note: much of the logic won't work because the sim doesn't record the time at which events
-        occur (!), so
+        occur (!), so attributes like ppl.ti_pregnant won't exist. These are all slated to be added
+        as part of the V3 refactor. For now, this is a placeholder.
         """
         ppl = sim.people
 
