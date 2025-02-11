@@ -185,7 +185,6 @@ default_pars = {
     'verbose':              1,      # How much detail to print during the simulation
 
     # Settings - what aspects are being modeled
-    'track_as':             0,      # Whether to track age-specific channels
     'use_subnational':      0,      # Whether to model partnered states- will need to add context-specific data if using
     'use_partnership':      0,      # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
 
@@ -249,7 +248,7 @@ default_pars = {
     'mcpr':                 None,
 
     # Newer parameters, associated with empowerment, but that are not empowerment metrics
-    # NOTE, these are slated to be relocated into the kenya_emporwerment repo
+    # NOTE, these will be None unless running analyses from the kenya_empowerment repo
     'fertility_intent':     None,
     'intent_to_use':        None,
 
