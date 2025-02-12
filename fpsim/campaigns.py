@@ -35,13 +35,14 @@ a = (C_max / C_0) - 1                                                           
 # Logistic growth function for campaign roll-out
 def logistic_campaign(year):
     return C_max / (1 + a * np.exp(-r * (year - t0)))
+    # Generate a range of years and compute coverage
 
-# Generate a range of years and compute coverage
-years = np.arange(start_year, end_year + 1)
-coverage_effect = logistic_campaign(years)
+gradual_scen = None
+for year in range(start_year, end_year + 1):
+    coverage_effect = logistic_campaign(year)
 
-# Define dynamic scenario with logistic campaign roll-out
-scen = fp.make_scen(method='Implants', init_factor=logistic_campaign, year=years)
+        # Define dynamic scenario with logistic campaign roll-out
+    gradual_scen += fp.make_scen(method='Implants', init_factor=coverage_effect, year=year)
 
 # Set up simulation parameters
 pars = fp.pars(location='nuhdss', n_agents=n_agents, start_year=start_year, end_year=end_year)
