@@ -28,12 +28,18 @@ class People(fpb.BasePeople):
         # Initialization
         super().__init__(**kwargs)
 
+        # Allow defaults to be dynamically set
+        person_defaults = fpd.person_defaults
+        if 'person_defaults' in kwargs and kwargs['person_defaults'] is not None:
+            for state_name, val in kwargs['person_defaults'].items():
+                person_defaults[state_name].val = val
+
         self.pars = pars  # Set parameters
         if n is None:
             n = int(self.pars['n_agents'])
 
         # Set default states
-        self.states = fpd.person_defaults
+        self.states = person_defaults
         for state_name, state in self.states.items():
             self[state_name] = state.new(n)
 
@@ -58,18 +64,18 @@ class People(fpb.BasePeople):
 
         # Fertility intent
         has_intent = "fertility_intent"
-        self.fertility_intent   = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        self.fertility_intent   = self.states[has_intent].new(n, person_defaults[has_intent].val)
         self.categorical_intent = self.states["categorical_intent"].new(n, "no")
         # Update distribution of fertility intent with location-specific values if it is present in self.pars
         self.update_fertility_intent(n)
 
         # Intent to use contraception
         has_intent = "intent_to_use"
-        self.intent_to_use = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        self.intent_to_use = self.states[has_intent].new(n, person_defaults[has_intent].val)
         # Update distribution of fertility intent if it is present in self.pars
         self.update_intent_to_use(n)
 
-        self.wealthquintile = self.states["wealthquintile"].new(n, fpd.person_defaults["wealthquintile"].val)
+        self.wealthquintile = self.states["wealthquintile"].new(n, person_defaults["wealthquintile"].val)
         self.update_wealthquintile(n)
 
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
