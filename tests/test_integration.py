@@ -3,22 +3,12 @@ import fpsim as fp
 from fpsim import utils as fpu
 from fpsim import people as fpppl
 from fpsim import methods as fpm
+from fpsim import interventions as fpi
 
 import numpy as np
 import pytest
 import starsim as ss
 
-from fpsim.locations.senegal.senegal import sexual_activity
-
-
-def make_sim_24f(**kwargs):
-    custom_pars = {
-        'start_year': 2000,
-        'end_year': 2001,
-    }
-    sim = fp.Sim(location='test', pars=custom_pars, **kwargs)
-
-    return sim
 
 def custom_init(sim, force=False, age=None, sex=None, empowerment_module=None, education_module=None, person_defaults=None):
     if force or not sim.initialized:
@@ -30,8 +20,8 @@ def custom_init(sim, force=False, age=None, sex=None, empowerment_module=None, e
         sim.initialized = True
     return sim
 
-def test_pregnant_woman():
-    # start out 18f, no contra, no pregnancy, active, fertile, has_intent
+def test_pregnant_women():
+    # start out 24f, no contra, no pregnancy, active, fertile, has_intent
     methods = ss.ndict([
         fpm.Method(name='none', efficacy=0, modern=False, dur_use=fpm.ln(2, 3), label='None'),
         fpm.Method(name='test',     efficacy=0.0, modern=True,  dur_use=fpm.ln(2, 3), label='Test'),
@@ -44,17 +34,24 @@ def test_pregnant_woman():
     debut_age['probs']=np.zeros(35, dtype=float)
     debut_age['probs'][10:20] = 1.0
 
-    sexual_activity = np.zeros(51, dtype=float)
-    sexual_activity[20:30] = 1.0
-
-    sim = make_sim_24f(n_agents=1000, primary_infertility=0, contraception_module=contra_mod, sexual_activity=sexual_activity, debut_age=debut_age)
-    sim = custom_init(sim, age=24, sex=0, person_defaults={'fertility_intent':True})
 
     # force all women to have the same fecundity and be sexually active
     # Note: not all agents will be active at t==0 but will be after t==1
-    sim.people.personal_fecundity[:] = 1
+    sexual_activity = np.zeros(51, dtype=float)
+    sexual_activity[20:30] = 1.0
 
-    #sim.people.fated_debut[:]=0
+    custom_pars = {
+        'start_year': 2000,
+        'end_year': 2001,
+        'n_agents': 1000,
+        'primary_infertility': 0,
+    }
+
+    sim = fp.Sim(pars=custom_pars, contraception_module=contra_mod, sexual_activity=sexual_activity, debut_age=debut_age)
+    sim = custom_init(sim, age=24, sex=0, person_defaults={'fertility_intent':True})
+
+    # Override fecundity to maximize pregnancies and minimize variation during test
+    sim.people.personal_fecundity[:] = 1
 
     sim.run()
 
@@ -89,3 +86,53 @@ def test_pregnant_woman():
 
 
 
+def test_contraception():
+    # start out 24f, on contra, no starting pregnancy, active, fertile, high fecundity.
+    # test 1: Assume contraception 100% effective, 100% uptake -> no pregnancies.
+    # test 2: contraception use restarts after postpartum period
+
+
+    methods = ss.ndict([
+        fpm.Method(name='none', efficacy=0, modern=False, dur_use=fpm.ln(2, 3), label='None'),
+        fpm.Method(name='test',     efficacy=1.0, modern=True,  dur_use=fpm.ln(2, 3), label='Test'),
+    ])
+    contra_mod = fpm.RandomChoice(methods=methods, pars={'p_use': 1.0})
+
+    # force all to have debuted
+    debut_age = {}
+    debut_age['ages']=np.arange(10, 45, dtype=float)
+    debut_age['probs']=np.zeros(35, dtype=float)
+    debut_age['probs'][10:20] = 1.0
+
+    sexual_activity = np.zeros(51, dtype=float)
+    sexual_activity[20:30] = 1.0
+
+    # after 12 months, turn stop using any contraception, so we should see pregnancies after the switch
+    p_use_change = fpi.update_methods(year=2001, p_use=0.0, )
+
+    # after 24 months, we should be seeing pregnancies again so we can reenable contraption use rates and check postpartum uptake
+    p_use_change2 = fpi.update_methods(year=2002, p_use=0.5, )
+
+    custom_pars = {
+        'start_year': 2000,
+        'end_year': 2003,
+        'n_agents': 1000,
+        'primary_infertility': 0,
+    }
+
+    sim = fp.Sim(pars=custom_pars, contraception_module=contra_mod, sexual_activity=sexual_activity, debut_age=debut_age, interventions=[p_use_change, p_use_change2])
+    sim = custom_init(sim, age=24, sex=0, person_defaults={'fertility_intent': False})
+
+    # Override fecundity to maximize pregnancies and minimize variation during test
+    sim.people.personal_fecundity[:] = 1
+
+    sim.run()
+
+    assert sim.results.pregnancies[0:12].sum() == 0, "Expected no pregnancies"
+    assert sim.results.pregnancies[12:].sum() > 0, "Expected pregnancies after contraception switch"
+
+    pp1 = sim.people.filter(sim.people.postpartum_dur==1)
+    assert pp1['on_contra'].sum() == 0, "Expected no contraception use immediately postpartum"
+    pp2plus = sim.people.filter(sim.people.postpartum_dur == 2 )
+    assert 0.55 > pp2plus['on_contra'].sum()/sim.pars['n_agents'] > 0.45, "Expected contraception use rate to be approximately = p_use 1 month after postpartum period"
+    assert (sim.people.on_contra==True).sum() < sim.pars['n_agents'], "Expected some agents to be off of birth control at any given time"
