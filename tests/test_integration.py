@@ -108,10 +108,10 @@ def test_contraception():
     sexual_activity = np.zeros(51, dtype=float)
     sexual_activity[20:30] = 1.0
 
-    # after 12 months, turn stop using any contraception, so we should see pregnancies after the switch
+    # after 12 months, stop using any contraception, so we should see pregnancies after the switch
     p_use_change = fpi.update_methods(year=2001, p_use=0.0, )
 
-    # after 24 months, we should be seeing pregnancies again so we can reenable contraption use rates and check postpartum uptake
+    # after 24 months, we should be seeing pregnancies again so we can reenable contraception use rates and check postpartum uptake
     p_use_change2 = fpi.update_methods(year=2002, p_use=0.5, )
 
     custom_pars = {
@@ -275,7 +275,50 @@ def plot_results(sim):
 
 
 def test_method_selection_dependencies():
-    # previous method -> +
-    # postpartum status -> +
-    # age -> +
-    print("not implemented yet")
+    # set up a bunch of identical women, same age, same history
+    # manually assign a previous method and short method dur
+    # inspect new methods -> should be distributed according to the method mix
+    custom_pars = {
+        'start_year': 2000,
+        'end_year': 2001,
+        'n_agents': 1000,
+        'primary_infertility': 1,  # make sure no pregnancies!
+    }
+
+
+
+    cm_pars = dict(
+        prob_use_trend_par=0.0,  # no change in use trend, so changes should be driven by other factors
+        force_choose=False,
+    )
+    method = fpm.SimpleChoice(pars=cm_pars, location="kenya", methods=sc.dcp(fp.Methods))
+
+    cpr = fp.cpr_by_age()
+    snapshots = fp.snapshot([1,2])
+
+    # force all to have debuted and sexually active
+    debut_age = {
+        'ages': np.arange(10, 45, dtype=float),
+        'probs': np.ones(35, dtype=float)
+    }
+
+    # Note: not all agents will be active at t==0 but will be after t==1
+    sexual_activity = np.ones(51, dtype=float)
+
+    sim1 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity,
+                  debut_age=debut_age, analyzers=[cpr, snapshots])
+
+    # custom init forces age, sex and other person defaults
+    # p_use by age: <18: ~.18, 18-20: ~.49, 20-25: ~.54, 25-35: ~.52, 35-50: ~.32
+    sim1 = custom_init(sim1, age=15, sex=0, person_defaults={'ever_used_contra':True})
+    sim1.run()
+
+    contra_ending_t2 = sim1['analyzers'][1].snapshots['1']['ti_contra'] == 2
+    ending_contra_type = sim1['analyzers'][1].snapshots['1']['method'][contra_ending_t2]
+
+    new_contra_type = sim1['analyzers'][1].snapshots['2']['method'][contra_ending_t2]
+
+    # Compare methods. All should have changed.
+    assert np.all(ending_contra_type != new_contra_type), "expected all agents at ti_contra to change contra method"
+
+
