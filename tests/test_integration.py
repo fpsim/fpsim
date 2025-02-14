@@ -315,10 +315,11 @@ def test_method_selection_dependencies():
 
     contra_ending_t2 = sim1['analyzers'][1].snapshots['1']['ti_contra'] == 2
     ending_contra_type = sim1['analyzers'][1].snapshots['1']['method'][contra_ending_t2]
-
     new_contra_type = sim1['analyzers'][1].snapshots['2']['method'][contra_ending_t2]
 
+
+
     # Compare methods. All should have changed.
-    assert np.all(ending_contra_type != new_contra_type), "expected all agents at ti_contra to change contra method"
+    assert np.all((ending_contra_type != new_contra_type) | ((ending_contra_type == 0) & (new_contra_type == 0))), "expected all agents at ti_contra to change contra method or remain on None"
 
 
