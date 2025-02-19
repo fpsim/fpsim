@@ -1250,3 +1250,6 @@ def make_pars(use_empowerment=None, use_education=None, use_partnership=None, us
         raise NotImplementedError(errmsg)
 
     return pars
+print(make_pars())
+
+

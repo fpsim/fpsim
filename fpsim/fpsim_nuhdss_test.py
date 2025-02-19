@@ -6,7 +6,7 @@ import numpy as np
 
 def run_baseline():
     pars = dict(
-        n_agents   = 756,
+        n_agents   = 5000,
         location   = 'nuhdss',
         start_year = 2012,
         end_year   = 2035,
@@ -15,6 +15,10 @@ def run_baseline():
     sim = fp.Sim(pars)
     sim.run()
     sim.plot()
+
+    return sim 
+    
+
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#
 #------------------------------------------------------------------Static and continous campaign-------------------------------------------------------------------------------------------------------#
@@ -234,15 +238,17 @@ def run_male_inv():
 
 
 
-
 if __name__ == '__main__':
     #run_baseline()
     #run_impl_campaign()
     #run_inj_campaign()
     #run_campaign_coverage_inj()
-    run_all_methods_campaign()
-    #run_campaign_coverage()
+    #run_all_methods_campaign()
+    run_campaign_coverage()
     #run_male_inv()
+   
+    
+   
     
 
 #------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------#  
