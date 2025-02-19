@@ -1,16 +1,9 @@
 {
   "time": {
-<<<<<<< HEAD
     "initialize": 0.002,
-    "run": 6.035,
-    "postprocess": 0.054,
-    "total": 6.091
-=======
-    "initialize": 0.004,
-    "run": 7.07,
+    "run": 7.19,
     "postprocess": 0.048,
-    "total": 7.122
->>>>>>> rc2.0-methodtime
+    "total": 7.241
   },
   "parameters": {
     "n": 10000,
@@ -18,9 +11,5 @@
     "end_year": 2020,
     "timestep": 1
   },
-<<<<<<< HEAD
-  "cpu_performance": 1.1442971924500376
-=======
-  "cpu_performance": 0.5277377462049035
->>>>>>> rc2.0-methodtime
+  "cpu_performance": 0.5200942189127904
 }
