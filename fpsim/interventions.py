@@ -305,11 +305,11 @@ class empowerment_boost(Intervention):
     The state is one of the booleanstate (ie, paid_employment, has_fin_knowl).
 
     Args:
-        years (list, float): The year we want to start the intervention.
+        years (list, float): The years we want to apply the intervention.
                 if years is None, uses start and end years of sim as defaults
-                if years is a number or a list with a single lem,ent, eg, 2000.5, or [2000.5],
+                if years is a number or a list with a single element, eg, 2000.5, or [2000.5],
                 this is interpreted as the start year of the intervention, and the
-                end year of intervention will be the eno of the simulation
+                end year of intervention will be the end of the simulation
         eligibility (callable): callable that returns a filtered version of
                 people eligible to receive the intervention
         state_name   (string): name of the People's state that will be modified
@@ -374,7 +374,7 @@ class empowerment_boost(Intervention):
 
     def check_eligibility(self, sim):
         """
-        Select people who is eligible
+        Select people who are eligible
         """
         can_be_empwrd_ppl = self.eligibility(sim)
         return can_be_empwrd_ppl
@@ -447,11 +447,17 @@ class change_people_state(Intervention):
     point in time.
 
     Args:
-        state_name   (string): name of the People's state that will be modified
-        year         (float): time expressed in years when the change is applied
-        new_val      (float): the new state value eligible people will have
-        annual (bool): whether the increase, prop, represents a "per year" increase, or per time step
-        eligibility  (inds/callable): indices OR callable that returns inds
+        state_name  (string): name of the People's state that will be modified
+        years       (list, float): The year we want to start the intervention.
+                     if years is None, uses start and end years of sim as defaults
+                     if years is a number or a list with a single element, eg, 2000.5, or [2000.5],
+                     this is interpreted as the start year of the intervention, and the
+                     end year of intervention will be the end of the simulation
+        new_val     (bool): the new state value eligible people will have
+        prop        (float): a value between 0 and 1 indicating the x% of eligible people
+                     who will have the new state value
+        annual      (bool): whether the increase, prop, represents a "per year" increase, or per time step
+        eligibility (inds/callable): indices OR callable that returns inds
     """
 
     def __init__(self, state_name, new_val, years=None, eligibility=None, prop=1.0, annual=False):
