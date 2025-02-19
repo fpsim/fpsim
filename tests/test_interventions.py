@@ -23,7 +23,7 @@ def make_sim(**kwargs):
 
 
 def test_intervention_fn():
-    ''' Test interventions '''
+    """ Test defining an intervention as a function """
     sc.heading('Testing intervention can be defined as a function...')
 
     def test_interv(sim):
@@ -110,7 +110,7 @@ def test_change_people_state():
 
     # Change ever user
     prior_use_lift = fp.change_people_state('ever_used_contra', years=2019, new_val=True, eligibility=np.arange(500), prop=1, annual=True)
-    prior_use_gone = fp.change_people_state('ever_used_contra', years=2019, new_val=False, eligibility=np.arange(500), prop=1, annual=True)
+    prior_use_gone = fp.change_people_state('ever_used_contra', years=2020, new_val=False, eligibility=np.arange(500), prop=1, annual=False)
 
     # Make and run sim
     s0 = fp.Sim(pars, **sim_kwargs, label="Baseline")
@@ -146,9 +146,11 @@ def test_change_people_state():
         t = s0.results['t']
         y0 = s0.results['ever_used_contra']
         y1 = s1.results['ever_used_contra']
+        y2 = s2.results['ever_used_contra']
         pl.figure()
         pl.plot(t, y0, label='Baseline')
         pl.plot(t, y1, label='Higher prior use')
+        pl.plot(t, y2, label='Stop prior use')
         pl.legend()
         pl.show()
 
@@ -156,9 +158,10 @@ def test_change_people_state():
 
 
 if __name__ == '__main__':
-    isim   = test_intervention_fn()
-    cpmsim = test_change_par()
-    sim  = test_plot()
+    s0 = test_intervention_fn()
+    s1 = test_change_par()
+    s3 = test_plot()
+    s4, s5, s6 = test_change_people_state()
     print('Done.')
 
 
