@@ -88,6 +88,7 @@ if __name__ == '__main__':
                 par2 = np.exp(method.dur_use['par2'])
                 rv = sps.fisk(c=par1, scale=par2)
 
+            print(f'{method.label} - {age_bin_labels[ai]}: {par1:.2f}, {par2:.2f}: {rv.cdf(12*700)}')
             ax.plot(x/12, rv.pdf(x), color=colors[ai], lw=2, label=age_bin_labels[ai])
 
         if pn==6: ax.legend(loc='best', frameon=False)

@@ -6,7 +6,6 @@ from fpsim import methods as fpm
 from fpsim import interventions as fpi
 
 import numpy as np
-import pytest
 import pylab as pl
 import starsim as ss
 
@@ -19,9 +18,13 @@ def custom_init(sim, force=False, age=None, sex=None, empowerment_module=None, e
         sim.people=fpppl.People(pars=sim.pars, age=age, sex=sex, empowerment_module=empowerment_module, education_module=education_module, person_defaults=person_defaults )  # This step also initializes the empowerment and education modules if provided
         sim.init_contraception()  # Initialize contraceptive methods
         sim.initialized = True
+        sim.pars['verbose'] = -1
     return sim
 
+
 def test_pregnant_women():
+    sc.heading('Test pregnancy and birth outcomes... ')
+
     # start out 24f, no contra, no pregnancy, active, fertile, has_intent
     methods = ss.ndict([
         fpm.Method(name='none', efficacy=0, modern=False, dur_use=fpm.ln(2, 3), label='None'),
@@ -34,7 +37,6 @@ def test_pregnant_women():
     debut_age['ages']=np.arange(10, 45, dtype=float)
     debut_age['probs']=np.zeros(35, dtype=float)
     debut_age['probs'][10:20] = 1.0
-
 
     # force all women to have the same fecundity and be sexually active
     # Note: not all agents will be active at t==0 but will be after t==1
@@ -61,37 +63,44 @@ def test_pregnant_women():
     # all women are 24 and can become pregnant, so we can look at percentages to estimate the
     # expected number of pregnancies, stillborns, living infants, and miscarriages/abortions
     # pregnancy rate: 11.2% per month or approx 80% per year
+    print(f'Checking pregnancy and birth outcomes from {n_agents} women... ')
     assert 0.85 * n_agents > sim.results.pregnancies[0:12].sum() > 0.75 * n_agents, "Expected number of pregnancies not met"
+    print(f'✓ ({sim.results.pregnancies[0:12].sum()} pregnancies, as expected)')
 
     # stillbirth rate: 2.5% of all pregnancies, but only count completed pregnancies
     assert 0.06 * sim.results.pregnancies[0:3].sum() > sim.results.stillbirths[9:12].sum() > 0.01 * sim.results.pregnancies[0:3].sum() , "Expected number of stillbirths not met"
+    print(f'✓ ({sim.results.stillbirths[9:12].sum()} stillbirths, as expected)')
 
     # miscarriage rate: 10% of all pregnancies. Miscarriages are calculated at end of 1st trimester, so pregnancies from months 0-9
     # have miscarriages from months 3-12.
     pregnancies = sim.results.pregnancies[0:9].sum()
     miscarriages = sim.results.miscarriages[3:12].sum()
     assert 0.15 * pregnancies > miscarriages > 0.05 * pregnancies, "Expected number of miscarriages not met"
+    print(f'✓ ({miscarriages} miscarriages, as expected)')
 
     # abortion rate: 8% of all pregnancies
     # abortions occur at same timestep as conception, so all pregnancies were checked for abortions
     pregnancies = sim.results.pregnancies.sum()
     abortions = sim.results.abortions.sum()
     assert 0.13 * pregnancies > abortions > 0.03 * pregnancies, "Expected number of abortions not met"
+    print(f'✓ ({abortions} abortions, as expected)')
 
     # live birth rate: 79.5% of all pregnancies
     # no premature births so all births are full term
     pregnancies = sim.results.pregnancies[0:3].sum()
     live_births = sim.results.births[9:12].sum()
     assert 0.85 * pregnancies > live_births > 0.75 * pregnancies, "Expected number of live births not met"
+    print(f'✓ ({live_births} live births from {pregnancies} pregnancies, as expected)')
 
-
+    return sim
 
 
 def test_contraception():
+    sc.heading('Test contraception prevents pregnancy... ')
+
     # start out 24f, on contra, no starting pregnancy, active, fertile, high fecundity.
     # test 1: Assume contraception 100% effective, 100% uptake -> no pregnancies.
     # test 2: contraception use restarts after postpartum period
-
 
     methods = ss.ndict([
         fpm.Method(name='none', efficacy=0, modern=False, dur_use=fpm.ln(2, 3), label='None'),
@@ -129,14 +138,20 @@ def test_contraception():
 
     sim.run()
 
+    print(f'Checking pregnancy and birth outcomes from {custom_pars["n_agents"]} women... ')
     assert sim.results.pregnancies[0:12].sum() == 0, "Expected no pregnancies"
     assert sim.results.pregnancies[12:].sum() > 0, "Expected pregnancies after contraception switch"
+    print(f'✓ (no pregnancies withh 100% effective contraception)')
 
     pp1 = sim.people.filter(sim.people.postpartum_dur==1)
     assert pp1['on_contra'].sum() == 0, "Expected no contraception use immediately postpartum"
+    print(f'✓ (no contraception use postpartum)')
     pp2plus = sim.people.filter(sim.people.postpartum_dur == 2 )
     assert 0.55 > pp2plus['on_contra'].sum()/len(pp2plus) > 0.45, "Expected contraception use rate to be approximately = p_use 1 month after postpartum period"
     assert (sim.people.on_contra==True).sum() < sim.pars['n_agents'], "Expected some agents to be off of birth control at any given time"
+    print(f'✓ (contraception use rate {pp2plus["on_contra"].sum()/len(pp2plus)}, as expected)')
+
+    return sim
 
 
 def test_simplechoice_contraception_dependencies():
@@ -149,7 +164,7 @@ def test_simplechoice_contraception_dependencies():
     #    used contra previously, all ages.
     # sim3: Previous use impacts
     #    none have used contra. all ages.
-
+    sc.heading('Testing contraception dependencies... ')
 
     custom_pars = {
         'start_year': 2000,
@@ -174,13 +189,23 @@ def test_simplechoice_contraception_dependencies():
     # Note: not all agents will be active at t==0 but will be after t==1
     sexual_activity = np.ones(51, dtype=float)
 
-    sim1 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity, debut_age=debut_age, analyzers=sc.dcp(analyzers))
-
+    # Set up all sims to run in parallel
     # custom init forces age, sex and other person defaults
     # p_use by age: <18: ~.18, 18-20: ~.49, 20-25: ~.54, 25-35: ~.52, 35-50: ~.32
+    sim1 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity, debut_age=debut_age, analyzers=sc.dcp(analyzers))
     sim1 = custom_init(sim1, age=15, sex=0, person_defaults={'ever_used_contra':True})
-    sim1.run()
 
+    sim2 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity, debut_age=debut_age, analyzers=sc.dcp(analyzers))
+    sim2 = custom_init(sim2, sex=0, person_defaults={'ever_used_contra': True})
+
+    sim3 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity, debut_age=debut_age, analyzers=sc.dcp(analyzers))
+    sim3 = custom_init(sim3, sex=0, person_defaults={'ever_used_contra': False})
+
+    # Run all sims
+    msim = fp.parallel(sim1, sim2, sim3)
+    sim1, sim2, sim3 = msim.sims
+
+    # CHECK SIM 1
     # If CPR responded instantly to changes in p_use, then CPR by age should increase from u18->u20, increase from
     # u20->u25, decrease slightly from u25->u35, then decrease more from u35+. However, the rate of change in CPR is
     # more gradual than the change in p_use because the duration of use varies and can be many years long. The direction
@@ -204,23 +229,16 @@ def test_simplechoice_contraception_dependencies():
     o_35_nonzero = cpr_by_age['>35'][np.nonzero(cpr_by_age['>35'])]
     m_o35, b = np.polyfit(np.arange(len(o_35_nonzero)), o_35_nonzero, 1)
 
+    print(f"Checking CPR trends ... ")
     assert m_u20 > 0, "Expected CPR to increase from u20->u25"
     assert m_u25 > 0, "Expected CPR to increase from u25->u35"
     assert m_u35 > 0, "Expected CPR to increase from u35->u35+"
     assert m_o35 < 0, "Expected CPR to decrease from u35->u35+"
-
+    print(f'✓ (CPR trends as expected)')
 
     # Contraception use is more likely if an agent has used contraception before. Sim2 assumes every agent has used
     # contra before, so its initial CPR will be higher than sim3 and all subsequent checks will be more likely to use
     # contraception too.
-    sim2 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity, debut_age=debut_age, analyzers=sc.dcp(analyzers))
-    sim2 = custom_init(sim2, sex=0, person_defaults={'ever_used_contra': True})
-    sim2.run()
-
-    sim3 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity, debut_age=debut_age, analyzers=sc.dcp(analyzers))
-    sim3 = custom_init(sim3, sex=0, person_defaults={'ever_used_contra': False})
-    sim3.run()
-
     # because trend is set to 0 and ages are distributed across the contra age ranges, we expect no trend in CPR over time
     m, b = np.polyfit(sim2.tvec, sim2.results.cpr, 1)
     assert 0.05 > m > -0.05, "Expected no trend in CPR over time, sim 2"
@@ -229,11 +247,66 @@ def test_simplechoice_contraception_dependencies():
     assert 0.05 > m > -0.05, "Expected no trend in CPR over time, sim 3"
 
     # CPR should be higher in sim2 than sim3 at all time steps
+    print(f"Checking CPR is higher if all agents are previous users ... ")
     assert np.all(sim2.results.cpr > sim3.results.cpr), "Expected CPR to be higher in sim2 than sim3"
+    print(f'✓ (CPR is increased by prior contra use)')
 
     plot_results(sim1)
     plot_results(sim2)
     plot_results(sim3)
+
+    return sim1, sim2, sim3
+
+
+def test_method_selection_dependencies():
+    sc.heading('Testing method selection dependencies... ')
+
+    # set up a bunch of identical women, same age, same history
+    # manually assign a previous method and short method dur
+    # inspect new methods -> should be distributed according to the method mix
+    custom_pars = {
+        'start_year': 2000,
+        'end_year': 2001,
+        'n_agents': 1000,
+        'primary_infertility': 1,  # make sure no pregnancies!
+    }
+
+    cm_pars = dict(
+        prob_use_trend_par=0.0,  # no change in use trend, so changes should be driven by other factors
+        force_choose=False,
+    )
+    method = fpm.SimpleChoice(pars=cm_pars, location="kenya", methods=sc.dcp(fp.Methods))
+
+    cpr = fp.cpr_by_age()
+    snapshots = fp.snapshot([1,2])
+
+    # force all to have debuted and sexually active
+    debut_age = {
+        'ages': np.arange(10, 45, dtype=float),
+        'probs': np.ones(35, dtype=float)
+    }
+
+    # Note: not all agents will be active at t==0 but will be after t==1
+    sexual_activity = np.ones(51, dtype=float)
+
+    sim1 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity,
+                  debut_age=debut_age, analyzers=[cpr, snapshots])
+
+    # custom init forces age, sex and other person defaults
+    # p_use by age: <18: ~.18, 18-20: ~.49, 20-25: ~.54, 25-35: ~.52, 35-50: ~.32
+    sim1 = custom_init(sim1, age=15, sex=0, person_defaults={'ever_used_contra':True})
+    sim1.run()
+
+    contra_ending_t2 = sim1['analyzers'][1].snapshots['1']['ti_contra'] == 2
+    ending_contra_type = sim1['analyzers'][1].snapshots['1']['method'][contra_ending_t2]
+    new_contra_type = sim1['analyzers'][1].snapshots['2']['method'][contra_ending_t2]
+
+    # Compare methods. All should have changed.
+    print(f"Checking agents change methods at ti_contra ... ")
+    assert np.all((ending_contra_type != new_contra_type) | ((ending_contra_type == 0) & (new_contra_type == 0))), "expected all agents at ti_contra to change contra method or remain on None"
+    print(f'✓ (all agents change methods)')
+
+    return sim1
 
 
 def plot_results(sim):
@@ -274,52 +347,13 @@ def plot_results(sim):
     pl.show()
 
 
-def test_method_selection_dependencies():
-    # set up a bunch of identical women, same age, same history
-    # manually assign a previous method and short method dur
-    # inspect new methods -> should be distributed according to the method mix
-    custom_pars = {
-        'start_year': 2000,
-        'end_year': 2001,
-        'n_agents': 1000,
-        'primary_infertility': 1,  # make sure no pregnancies!
-    }
+if __name__ == '__main__':
 
-
-
-    cm_pars = dict(
-        prob_use_trend_par=0.0,  # no change in use trend, so changes should be driven by other factors
-        force_choose=False,
-    )
-    method = fpm.SimpleChoice(pars=cm_pars, location="kenya", methods=sc.dcp(fp.Methods))
-
-    cpr = fp.cpr_by_age()
-    snapshots = fp.snapshot([1,2])
-
-    # force all to have debuted and sexually active
-    debut_age = {
-        'ages': np.arange(10, 45, dtype=float),
-        'probs': np.ones(35, dtype=float)
-    }
-
-    # Note: not all agents will be active at t==0 but will be after t==1
-    sexual_activity = np.ones(51, dtype=float)
-
-    sim1 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity,
-                  debut_age=debut_age, analyzers=[cpr, snapshots])
-
-    # custom init forces age, sex and other person defaults
-    # p_use by age: <18: ~.18, 18-20: ~.49, 20-25: ~.54, 25-35: ~.52, 35-50: ~.32
-    sim1 = custom_init(sim1, age=15, sex=0, person_defaults={'ever_used_contra':True})
-    sim1.run()
-
-    contra_ending_t2 = sim1['analyzers'][1].snapshots['1']['ti_contra'] == 2
-    ending_contra_type = sim1['analyzers'][1].snapshots['1']['method'][contra_ending_t2]
-    new_contra_type = sim1['analyzers'][1].snapshots['2']['method'][contra_ending_t2]
-
-
-
-    # Compare methods. All should have changed.
-    assert np.all((ending_contra_type != new_contra_type) | ((ending_contra_type == 0) & (new_contra_type == 0))), "expected all agents at ti_contra to change contra method or remain on None"
+    sc.options(interactive=False)
+    s1 = test_pregnant_women()
+    s2 = test_contraception()
+    s3, s4, s5 = test_simplechoice_contraception_dependencies()
+    s6 = test_method_selection_dependencies()
+    print("All tests passed!")
 
 
