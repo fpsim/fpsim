@@ -109,7 +109,7 @@ def test_change_people_state():
     sim_kwargs = dict(contraception_module=ms)
 
     # Change ever user
-    prior_use_lift = fp.change_people_state('ever_used_contra', years=2019, new_val=True, eligibility=np.arange(500), prop=1, annual=True)
+    prior_use_lift = fp.change_people_state('ever_used_contra', years=2019, new_val=True, eligibility=np.arange(500), prop=1, annual=False)
     prior_use_gone = fp.change_people_state('ever_used_contra', years=2020, new_val=False, eligibility=np.arange(500), prop=1, annual=False)
 
     # Make and run sim
@@ -125,8 +125,9 @@ def test_change_people_state():
     s2_500_used_contra = np.sum(s2.people['ever_used_contra'][0:500])
 
     print(f"Checking change_state CPR trends ... ")
-    assert s1_used_contra > s0_used_contra, f'Changing people state should increase the number of people with who have used contraception, but {s1_used_contra} is not greater than the baseline of {s0_used_contra}'
+    assert s1_used_contra > s0_used_contra, f'Increasing prior use should increase the number of people with who have used contraception, but {s1_used_contra} is not greater than the baseline of {s0_used_contra}'
     assert s2_500_used_contra == 0, f'Changing people state should set prior use to False for the first 500 agents, but {s2_500_used_contra} is not 0'
+    print(f"✓ ({s1_used_contra} > {s0_used_contra})")
 
     # Check user input validation
     with pytest.raises(ValueError):  # Check invalid parameter
