@@ -39,6 +39,7 @@ data.raw <- read_dta(filepath)
 # data manipulation
 All_data <- data.raw %>%
   mutate(age = as.numeric(v012),
+         age_grp = cut(age, c(0, 18, 20, 25, 35, 50)),
          live_births = as.numeric(v219),
          urban = ifelse(v025 == 1, 1, 0), 
          pp.time = v222, # months since last birth
@@ -63,7 +64,25 @@ svydes.pp6 = svydesign(id = ~v001, strata = ~v023, weights = filter.data.pp6$v00
 
 
 
-# contraception function
+# contraception functions
+
+# Contraception simple function
+model.simple <- svyglm(current_contra ~ age_grp * fp_ever_user, 
+                       family = quasibinomial(), 
+                       #design = svydes)
+                       #design = svydes.pp1)
+                       design = svydes.pp6)
+contra_coef.simple <- as.data.frame(summary(model.simple)$coefficients) %>% 
+  mutate(rhs = rownames(.))
+
+# write.csv(contra_coef.simple, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/contra_coef_simple.csv", row.names = F)
+# write.csv(contra_coef.simple, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/contra_coef_simple_pp1.csv", row.names = F)
+# write.csv(contra_coef.simple, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/contra_coef_simple_pp6.csv", row.names = F)
+
+# write.csv(contra_coef.simple, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/contra_coef_simple.csv", row.names = F)
+# write.csv(contra_coef.simple, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/contra_coef_simple_pp1.csv", row.names = F)
+# write.csv(contra_coef.simple, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/contra_coef_simple_pp6.csv", row.names = F)
+
 
 # Contraception mid function (only demographics, no empowerment or history)... no longitudinal or empowerment data needed, could be done with DHS
 model.mid <- svyglm(current_contra ~ ns(age, knots = c(25,40))*fp_ever_user + yrs.edu + live_births + urban + wealthquintile, 
