@@ -780,37 +780,6 @@ def process_contra_use(which):
     return contra_use_pars
 
 
-def mcpr():
-
-    mcpr = {}
-    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
-    mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
-    mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
-
-    return mcpr
-
-
-def process_simple_method_pars(methods):
-    """ Choice of method is based on age and parity """
-    df = pd.read_csv(thisdir / 'data' / 'method_mix.csv')
-    # Awful code to speed pandas up
-    dd = dict()
-    for akey in df.age_grp.unique():
-        dd[akey] = dict()
-        for pkey in df.parity.unique():
-            dd[akey][pkey] = dict()
-            for mlabel in df.method.unique():
-                val = df.loc[(df.age_grp == akey) & (df.parity == pkey) & (df.method == mlabel)].percent.values[0]
-                if mlabel != 'Abstinence':
-                    mname = [m.name for m in methods.values() if m.csv_name == mlabel][0]
-                    dd[akey][pkey][mname] = val
-                else:
-                    abstinence_val = sc.dcp(val)
-            dd[akey][pkey]['othtrad'] += abstinence_val
-
-    return dd
-
-
 def process_markovian_method_choice(methods, df=None):
     """ Choice of method is age and previous method """
     if df is None:
@@ -824,7 +793,7 @@ def process_markovian_method_choice(methods, df=None):
 
     mc = dict()  # This one is a dict because it will be keyed with numbers
     init_dist = sc.objdict()  # Initial distribution of method choice
-    
+
     # Get end index
     ei = 4+len(methods)-1
 
@@ -880,6 +849,16 @@ def process_dur_use(methods, df=None):
                 method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'scale'].values[0]
 
     return methods
+
+
+def mcpr():
+
+    mcpr = {}
+    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
+    mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
+    mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
+
+    return mcpr
 
 
 # %% Make and validate parameters

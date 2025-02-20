@@ -726,6 +726,77 @@ def process_contra_use(which):
     return contra_use_pars
 
 
+def process_markovian_method_choice(methods, df=None):
+    """ Choice of method is age and previous method """
+    if df is None:
+        df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+    csv_map = {method.csv_name: method.name for method in methods.values()}
+    idx_map = {method.csv_name: method.idx for method in methods.values()}
+    idx_df = {}
+    for col in df.columns:
+        if col in csv_map.keys():
+            idx_df[col] = idx_map[col]
+
+    mc = dict()  # This one is a dict because it will be keyed with numbers
+    init_dist = sc.objdict()  # Initial distribution of method choice
+
+    # Get end index
+    ei = 4+len(methods)-1
+
+    for pp in df.postpartum.unique():
+        mc[pp] = sc.objdict()
+        mc[pp].method_idx = np.array(list(idx_df.values()))
+        for akey in df.age_grp.unique():
+            mc[pp][akey] = sc.objdict()
+            thisdf = df.loc[(df.age_grp == akey) & (df.postpartum == pp)]
+            if pp == 1:  # Different logic for immediately postpartum
+                mc[pp][akey] = thisdf.values[0][4:ei].astype(float)  # If this is going to be standard practice, should make it more robust
+            else:
+                from_methods = thisdf.From.unique()
+                for from_method in from_methods:
+                    from_mname = csv_map[from_method]
+                    row = thisdf.loc[thisdf.From == from_method]
+                    mc[pp][akey][from_mname] = row.values[0][4:ei].astype(float)
+
+            # Set initial distributions by age
+            if pp == 0:
+                init_dist[akey] = thisdf.loc[thisdf.From == 'None'].values[0][4:ei].astype(float)
+                init_dist.method_idx = np.array(list(idx_df.values()))
+
+    return mc, init_dist
+
+
+def process_dur_use(methods, df=None):
+    """ Process duration of use parameters"""
+    if df is None:
+        df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+    for method in methods.values():
+        if method.name == 'btl':
+            method.dur_use = dict(dist='lognormal', par1=100, par2=1)
+        else:
+            mlabel = method.csv_name
+
+            thisdf = df.loc[df.method == mlabel]
+            dist = thisdf.functionform.iloc[0]
+            method.dur_use = dict()
+            method.dur_use['age_factors'] = np.append(thisdf.coef.values[2:], 0)
+
+            if dist == 'lognormal':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'meanlog'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'sdlog'].values[0]
+            elif dist in ['gamma']:
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'rate'].values[0]
+            elif dist == 'llogis':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'scale'].values[0]
+
+    return methods
+
+
 def mcpr():
 
     mcpr = {}
