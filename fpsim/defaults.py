@@ -59,16 +59,17 @@ class State:
 
 # Parse locations
 def get_location(location, printmsg=False):
+    default_location = 'kenya'  # Need to change this back to Senegal once parameters have been added
     if not location:
         if printmsg: print('Location not supplied: using parameters from Senegal')
-        location = 'senegal'
+        location = default_location
     location = location.lower()  # Ensure it's lowercase
     if location == 'test':
         if printmsg: print('Running test simulation using parameters from Senegal')
-        location = 'senegal'
+        location = default_location
     if location == 'default':
         if printmsg: print('Running default simulation using parameters from Senegal')
-        location = 'senegal'
+        location = default_location
 
     # Define valid locations
     valid_country_locs = ['senegal', 'kenya', 'ethiopia']
