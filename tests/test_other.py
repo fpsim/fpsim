@@ -165,18 +165,16 @@ def test_track_as(run_track_as):
     Test that track_as can be used to plot age-specific results.
     Not functional in v2.0 of FPsim, will be reinstated in v3.0
     '''
+    pars = fp.pars(location='test')
+    track_as = fp.track_as()
+    sim = fp.Sim(pars=pars, analyzers=track_as)
     if run_track_as:
-        pars = fp.pars(location='test')
-        track_as = fp.track_as()
-        sim = fp.Sim(pars=pars, analyzers=track_as)
         sim.run()
 
         if do_plot:
             sim.plot()
 
-        return sim
-    else:
-        return None
+    return sim
 
 
 # Run all tests
@@ -185,9 +183,9 @@ if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
 
     with sc.timer():
-        opts = test_options()
-        df   = test_to_df()
-        ppl  = test_plot_people()
-        res  = test_samples()
-        method = test_method_usage()
+        # opts = test_options()
+        # df   = test_to_df()
+        # ppl  = test_plot_people()
+        # res  = test_samples()
+        # method = test_method_usage()
         sim = test_track_as()
