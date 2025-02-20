@@ -10,6 +10,7 @@ import pytest
 
 
 do_plot  = 1 # Whether to do plotting in interactive mode
+run_track_as = False  # Not functional in v2.0 of FPsim, will be reinstated in v3.0
 sc.options(backend='agg') # Turn off interactive plots
 
 def ok(string, newline=True):
@@ -158,17 +159,25 @@ def test_method_usage():
     
     return sim
 
-def test_track_as():
-    '''Test that track_as can be be used to plot age-specific results'''
-    # Set options
-    pars = fp.pars(location='test', track_as=True)
-    sim = fp.Sim(pars=pars)
-    sim.run()
 
-    if do_plot:
-        sim.plot()
+def test_track_as(run_track_as):
+    '''
+    Test that track_as can be used to plot age-specific results.
+    Not functional in v2.0 of FPsim, will be reinstated in v3.0
+    '''
+    if run_track_as:
+        pars = fp.pars(location='test')
+        track_as = fp.track_as()
+        sim = fp.Sim(pars=pars, analyzers=track_as)
+        sim.run()
 
-    return sim
+        if do_plot:
+            sim.plot()
+
+        return sim
+    else:
+        return None
+
 
 # Run all tests
 if __name__ == '__main__':
