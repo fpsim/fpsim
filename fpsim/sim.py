@@ -1169,7 +1169,6 @@ class MultiSim(sc.prettyobj):
         See ``sim.plot()`` for additional args.
         """
         fig_args = sc.mergedicts(dict(figsize=(16, 10)), fig_args)
-        no_plot_age = list(fpd.age_specific_channel_bins.keys())[-1]
 
         fig = pl.figure(**fig_args)
         do_show = kwargs.pop('do_show', True)
@@ -1187,9 +1186,9 @@ class MultiSim(sc.prettyobj):
         def get_scale_ceil(channel):
             is_dist = hasattr(self.sims[0].results['acpr'], 'best')  # picking a random channel
             if is_dist:
-                maximum_value = max([max(sim.results[channel].high) for sim in self.sims if no_plot_age not in channel])
+                maximum_value = max([max(sim.results[channel].high) for sim in self.sims])
             else:
-                maximum_value = max([max(sim.results[channel]) for sim in self.sims if no_plot_age not in channel])
+                maximum_value = max([max(sim.results[channel]) for sim in self.sims])
             top = int(np.ceil(maximum_value / 10.0)) * 10  # rounding up to nearest 10
             return top
 
