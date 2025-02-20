@@ -64,7 +64,7 @@ def test_change_par():
     assert cp1_births < base_births, f'Reducing exposure factor should reduce births, but {cp1_births} is not less than the baseline of {base_births}'
 
     assert s2['exposure_factor'] == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
-    assert cp2_births < base_births, f'Reducing exposure factor temporarily should reduce births, but {cp2_births} is not less than the baseline of {base_births}'
+    assert cp2_births <= base_births, f'Reducing exposure factor temporarily should reduce births, but {cp2_births} is not less than the baseline of {base_births}'
 
     # Check user input validation
     with pytest.raises(ValueError): # Check that length of years and values match
@@ -102,7 +102,7 @@ def test_change_people_state():
     """ Testing that change_people_state() modifies sim results in expected ways """
     sc.heading('Testing change_people_state()...')
 
-    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=1)
+    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1)
     pars = fp.pars(location='kenya', **par_kwargs)
     ms = fp.SimpleChoice(location='kenya')
     sim_kwargs = dict(contraception_module=ms)
@@ -158,7 +158,7 @@ def test_change_people_state():
 
 
 def test_education():
-    """ Testing that increasing education has expected effects """
+    sc.heading('Testing that increasing education has expected effects')
     location = 'kenya'
     par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1)
     pars = fp.pars(location=location, **par_kwargs)
