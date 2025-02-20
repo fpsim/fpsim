@@ -310,7 +310,7 @@ class change_people_state(Intervention):
                      if years is a number or a list with a single element, eg, 2000.5, or [2000.5],
                      this is interpreted as the start year of the intervention, and the
                      end year of intervention will be the end of the simulation
-        new_val     (bool): the new state value eligible people will have
+        new_val     (bool, float): the new state value eligible people will have
         prop        (float): a value between 0 and 1 indicating the x% of eligible people
                      who will have the new state value
         annual      (bool): whether the increase, prop, represents a "per year" increase, or per time step

@@ -440,25 +440,32 @@ class Sim(fpb.BaseSim):
         self.results['total_women_fecund'][ti] = res.total_women_fecund * scale
         self.results['method_failures'][ti] = res.method_failures * scale
 
-        # Intent
-        self.results['perc_contra_intent'][ti] = res.perc_contra_intent
-        self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
+        # Education metrics
+        self.results['edu_attainment'][ti] = res.edu_attainment
+        self.results['edu_objective'][ti] = res.edu_objective
 
-        # Empowerment metrics
+        # Intent
         # These will all be zero if empowerment module is not provided
         # Not used except for within kenya_empowerment repo
-        self.results['paid_employment'][ti] = res.paid_employment
-        self.results['decision_wages'][ti] = res.decision_wages
-        self.results['decide_spending_partner'][ti] = res.decide_spending_partner
-        self.results['buy_decision_major'][ti] = res.buy_decision_major
-        self.results['buy_decision_daily'][ti] = res.buy_decision_daily
-        self.results['buy_decision_clothes'][ti] = res.buy_decision_clothes
-        self.results['decision_health'][ti] = res.decision_health
-        self.results['has_savings'][ti] = res.has_savings
-        self.results['has_fin_knowl'][ti] = res.has_fin_knowl
-        self.results['has_fin_goals'][ti] = res.has_fin_goals
-        #self.results['financial_autonomy'][ti] = res.financial_autonomy
-        #self.results['decision_making'][ti] = res.decision_making
+        if self.empowerment_module is not None:
+            self.results['perc_contra_intent'][ti] = res.perc_contra_intent
+            self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
+
+            # Empowerment metrics
+            # These will all be zero if empowerment module is not provided
+            # Not used except for within kenya_empowerment repo
+            self.results['paid_employment'][ti] = res.paid_employment
+            self.results['decision_wages'][ti] = res.decision_wages
+            self.results['decide_spending_partner'][ti] = res.decide_spending_partner
+            self.results['buy_decision_major'][ti] = res.buy_decision_major
+            self.results['buy_decision_daily'][ti] = res.buy_decision_daily
+            self.results['buy_decision_clothes'][ti] = res.buy_decision_clothes
+            self.results['decision_health'][ti] = res.decision_health
+            self.results['has_savings'][ti] = res.has_savings
+            self.results['has_fin_knowl'][ti] = res.has_fin_knowl
+            self.results['has_fin_goals'][ti] = res.has_fin_goals
+            #self.results['financial_autonomy'][ti] = res.financial_autonomy
+            #self.results['decision_making'][ti] = res.decision_making
 
         if self.pars['track_as']:
             for age_specific_channel in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator',

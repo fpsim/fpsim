@@ -1170,9 +1170,14 @@ class People(fpb.BasePeople):
         self.step_results['parity4to5'] = np.sum((self.parity >= 4) & (self.parity <= 5) & self.is_female) / np.sum(self.is_female) * 100
         self.step_results['parity6plus'] = np.sum((self.parity >= 6) & self.is_female) / np.sum(self.is_female) * 100
 
+        # Update wealth and education
         self._step_results_wq()
-        self._step_results_intent()
-        self._step_results_empower()
+        self._step_results_edu()
+
+        # Update intent and empowerment if empowerment module is present
+        if self.empowerment_module is not None:
+            self._step_results_intent()
+            self._step_results_empower()
 
         return self.step_results
 
@@ -1181,6 +1186,16 @@ class People(fpb.BasePeople):
         for i in range(1, 6):
             self.step_results[f'wq{i}'] = (np.sum((self.wealthquintile == i) & self.is_female) / np.sum(self.is_female) * 100)
         return
+
+    @staticmethod
+    def cond_prob(a, b):
+        """ Calculate condictional probability. This should be moved somewhere else. """
+        return np.sum(a & b) / np.sum(b)
+
+    def _step_results_edu(self):
+        denom = self.is_female & self.alive & (self.age >= fpd.min_age) & (self.age < fpd.max_age)
+        self.step_results['edu_objective'] = np.mean(self.filter(denom).edu_objective)
+        self.step_results['edu_attainment'] = np.mean(self.filter(denom).edu_attainment)
 
     def _step_results_empower(self):
         self.step_results['paid_employment'] = (np.sum(self.paid_employment & self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age))/ np.sum(self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age)))*100

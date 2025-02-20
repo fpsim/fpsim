@@ -269,6 +269,17 @@ array_results = sc.autolist(
     'wq3',
     'wq4',
     'wq5',
+    'nonpostpartum',
+    'total_women_fecund',
+    'method_failures',
+    'birthday_fraction',
+    'short_intervals',
+    'secondary_births',
+    'proportion_short_interval',
+    # Education
+    'edu_objective',
+    'edu_attainment',
+    # Empowerment and intent: all zero unless using an empowerment module
     'perc_contra_intent',
     'perc_fertil_intent',
     'paid_employment',
@@ -283,14 +294,7 @@ array_results = sc.autolist(
     "has_fin_goals",
     "financial_autonomy", 
     "decision_making",
-    'nonpostpartum',
-    'total_women_fecund',
-    'method_failures',
-    'birthday_fraction',
-    'short_intervals',
-    'secondary_births',
-    'proportion_short_interval'
-)
+    )
 
 
 for age_group in age_bin_map.keys():

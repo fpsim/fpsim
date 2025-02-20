@@ -3,8 +3,7 @@ Run tests on the interventions.
 """
 
 import sciris as sc
-from numba.cpython.charseq import s1_dtype
-
+import pylab as pl
 import fpsim as fp
 import numpy as np
 import pytest
@@ -158,11 +157,56 @@ def test_change_people_state():
     return s0, s1, s2
 
 
+def test_education():
+    """ Testing that increasing education has expected effects """
+    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=1)
+    pars = fp.pars(location='kenya', **par_kwargs)
+
+    def select_undereducated(sim):
+        """ Select women who want education but have attained less than their goals """
+        is_eligible = ((sim.people.is_female) &
+                       (sim.people.alive)     &
+                       # (sim.people.edu_attainment < sim.people.edu_objective) &
+                       (sim.people.edu_objective > 0))
+        return is_eligible
+
+    edu = fp.Education()
+    s0 = fp.Sim(pars=pars, education_module=edu, label='Baseline')
+
+    change_education = fp.change_people_state(
+                            'edu_attainment',
+                            eligibility=select_undereducated,
+                            years=2010.0,
+                            new_val=15,  # Give all selected women 15 years of education
+                        )
+    edu = fp.Education()
+    s1 = fp.Sim(pars=pars,
+                education_module=edu,
+                interventions=change_education,
+                label='Increased education')
+
+    s0.run()
+    s1.run()
+
+    pl.plot(s0.results.t, s0.results.edu_attainment, label=s0.label)
+    pl.plot(s1.results.t, s1.results.edu_attainment, label=s1.label)
+    pl.xlim([2005, 2012])
+    pl.ylabel('Average years of education among women ')
+    pl.xlabel('Year')
+    pl.legend()
+    pl.show()
+
+    return s0, s1
+
+
 if __name__ == '__main__':
-    s0 = test_intervention_fn()
-    s1 = test_change_par()
-    s3 = test_plot()
-    s4, s5, s6 = test_change_people_state()
+    # s0 = test_intervention_fn()
+    # s1 = test_change_par()
+    # s3 = test_plot()
+    # s4, s5, s6 = test_change_people_state()
+    s7 = test_education()
+    # s7, s8 = test_education()
+
     print('Done.')
 
 
