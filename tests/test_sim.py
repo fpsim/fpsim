@@ -7,12 +7,12 @@ import sciris as sc
 import pylab as pl
 
 # par_kwargs = dict(n_agents=1000, start_year=1960, end_year=2020, seed=1, verbose=1)
-par_kwargs = dict(n_agents=500, start_year=2000, end_year=2010, seed=1, verbose=1)
+par_kwargs = dict(n_agents=500, start_year=2000, end_year=2010, seed=1, verbose=-1)
 
 
 def test_simple():
     sc.heading('Test simplest possible FPsim run')
-    sim = fp.Sim(location='test')
+    sim = fp.Sim(location='kenya')  # NB it should be possible to run without any arguments
     sim.run()
     sim.plot()
     return sim
@@ -72,19 +72,18 @@ def test_simple_choice(location='kenya'):
     return sim
 
 
-def test_empowered_choice():
-    sc.heading('Test sim with empowerment')
+def test_mid_choice(location='kenya'):
+    sc.heading('Test sim with default contraceptive choice module')
 
     # Define new modules
-    ms = fp.EmpoweredChoice(location='kenya')
-    emp = fp.Empowerment(location='kenya')
-    edu = fp.Education(location='kenya')
+    ms = fp.StandardChoice(location=location)
+    edu = fp.Education(location=location)
 
     # Define pars
-    pars = fp.pars(location='kenya', **par_kwargs)
+    pars = fp.pars(location=location, **par_kwargs)
 
     # Make and run sim
-    s = fp.Sim(pars, contraception_module=ms, empowerment_module=emp, education_module=edu)
+    s = fp.Sim(pars, contraception_module=ms, education_module=edu)
     s.run()
 
     return s
@@ -92,6 +91,7 @@ def test_empowered_choice():
 
 if __name__ == '__main__':
 
-    # s0 = test_simple()
-    # s1 = test_simple_choice()
-    s2 = test_empowered_choice()
+    s0 = test_simple()
+    s1 = test_simple_choice('kenya')    # TODO: check with senegal and ethiopia as well
+    s2 = test_mid_choice('kenya')  # TODO: check with senegal and ethiopia as well
+    print('Done.')
