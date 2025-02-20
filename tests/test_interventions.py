@@ -123,10 +123,10 @@ def test_change_people_state():
     s1_used_contra = np.sum(s1.people['ever_used_contra'])
     s2_500_used_contra = np.sum(s2.people['ever_used_contra'][0:500])
 
-    # print(f"Checking change_state CPR trends ... ")
-    # assert s1_used_contra > s0_used_contra, f'Increasing prior use should increase the number of people with who have used contraception, but {s1_used_contra} is not greater than the baseline of {s0_used_contra}'
-    # assert s2_500_used_contra == 0, f'Changing people state should set prior use to False for the first 500 agents, but {s2_500_used_contra} is not 0'
-    # print(f"✓ ({s1_used_contra} > {s0_used_contra})")
+    print(f"Checking change_state CPR trends ... ")
+    assert s1_used_contra > s0_used_contra, f'Increasing prior use should increase the number of people with who have used contraception, but {s1_used_contra} is not greater than the baseline of {s0_used_contra}'
+    assert s2_500_used_contra == 0, f'Changing people state should set prior use to False for the first 500 agents, but {s2_500_used_contra} is not 0'
+    print(f"✓ ({s1_used_contra} > {s0_used_contra})")
 
     # Check user input validation
     with pytest.raises(ValueError):  # Check invalid parameter
