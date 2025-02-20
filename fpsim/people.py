@@ -1189,7 +1189,7 @@ class People(fpb.BasePeople):
 
     @staticmethod
     def cond_prob(a, b):
-        """ Calculate condictional probability. This should be moved somewhere else. """
+        """ Calculate conditional probability. This should be moved somewhere else. """
         return np.sum(a & b) / np.sum(b)
 
     def _step_results_edu(self):
