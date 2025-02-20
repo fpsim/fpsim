@@ -131,10 +131,10 @@ class Sim(fpb.BaseSim):
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
 
         # Add modules, also initialized later
-        # self.contraception_module = contraception_module or fpm.RandomChoice()
-        # self.education_module = education_module
-        self.contraception_module = contraception_module or fpm.StandardChoice(location=location)
-        self.education_module = education_module or fped.Education(location=location)
+        self.contraception_module = contraception_module or fpm.RandomChoice()
+        self.education_module = education_module
+        # self.contraception_module = contraception_module or fpm.StandardChoice(location=location)
+        # self.education_module = education_module or fped.Education(location=location)
         self.empowerment_module = empowerment_module
 
         return
