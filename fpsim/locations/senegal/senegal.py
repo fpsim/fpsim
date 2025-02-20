@@ -548,6 +548,144 @@ def barriers():
     return barriers
 
 
+def age_spline(which):
+    return pd.read_csv(thisdir / 'data' / f'age_spline_{which}.csv', index_col=0)
+
+
+def age_partnership():
+    """ Probabilities of being partnered at age X"""
+    age_partnership_data = pd.read_csv(thisdir / 'data' / 'age_partnership.csv')
+    partnership_dict = {}
+    partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
+    partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
+    return  partnership_dict
+
+
+def wealth():
+    """ Process percent distribution of people in each wealth quintile"""
+    cols = ["quintile", "percent"]
+    wealth_data = pd.read_csv(thisdir / 'data' / 'wealth.csv', header=0, names=cols)
+    return wealth_data
+
+
+# %% Education
+def education_objective(df):
+    """
+    Transforms education objective data from a DataFrame into a numpy array. The DataFrame represents
+    the proportion of women with different education objectives, stratified by urban/rural residence.
+
+    The 'percent' column represents the proportion of women aiming for 'edu' years of education. The data
+    is based on education completed by women over 20 with no children, stratified by urban/rural residence
+    from the Demographic and Health Surveys (DHS).
+
+    Args:
+        df (pd.DataFrame): Contains 'urban', 'edu' and 'percent' columns, with 'edu' ranging from
+                           0 to a maximum value representing years of education.
+
+    Returns:
+        arr (np.array): A 2D array of shape (2, n_edu_objective_years) containing proportions. The first
+                        row corresponds to 'rural' women and the second row to 'urban' women.
+    """
+    arr = df["percent"].to_numpy().reshape(df["urban"].nunique(), df["edu"].nunique())
+    return arr
+
+
+def education_attainment(df):
+    """
+    Transforms education attainment data (from education_initialization.csv) from a DataFrame
+    into a numpy array. The DataFrame represents the average (mean) number of years of
+    education 'edu', a woman aged 'age' has attained/completed.
+
+    Args:
+        df (pd.DataFrame): Contains 'age', 'edu' columns.
+
+    Returns:
+        arr (np.array): A 1D with array with interpolated values of 'edu' years attained.
+
+    NOTE: The data in education_initialization.csv have been extrapolated to cover the age range
+    [0, 99], inclusive range. Here we only interpolate data for the group 15-49 (inclusive range).
+    """
+    # This df has columns
+    # age:age in years and edu: mean years of education
+    df.sort_values(by="age", ascending=True, inplace=True)
+    ages = df["age"].to_numpy()
+    arr  = df["edu"].to_numpy()
+
+    # Get indices of those ages
+    inds = np.array(sc.findinds(ages >= fpd.min_age, ages < fpd.max_age_preg+5)) # interpolate beyond DHS max age to avoid discontinuities
+    arr[inds] = sc.smooth(arr[inds], 3)
+    return arr
+
+
+def education_dropout_probs(df):
+    """
+    Transforms education dropout probabilities (from edu_stop.csv) from a DataFrame
+    into a dictionary. The dataframe will be used as the probability that a woman aged 'age'
+    and with 'parity' number of children, would drop out of school if she is enrolled in
+    education and becomes pregnant.
+
+    The data comes from PMA Datalab and 'percent' represents the probability of stopping/droppping
+    out of education within 1 year of the birth represented in 'parity'.
+        - Of women with a first birth before age 18, 12.6% stopped education within 1 year of that birth.
+        - Of women who had a subsequent (not first) birth before age 18, 14.1% stopped school within 1 year of that birth.
+
+    Args:
+        df (pd.DataFrame): Contains 'age', 'parity' and 'percent' columns.
+
+    Returns:
+       data (dictionary): Dictionary with keys '1' and '2+' indicating a woman's parity. The values are dictionaries,
+           each with keys 'age' and 'percent'.
+    """
+    data = {}
+    for k in df["parity"].unique():
+        data[k] = {"age": None, "percent": None}
+        data[k]["age"] = df["age"].unique()
+        data[k]["percent"] = df["percent"][df["parity"] == k].to_numpy()
+    return data
+
+
+def education_distributions():
+    """
+    Loads and processes all education-related data files. Performs additional interpolation
+    to reduce noise from empirical data.
+
+    Returns:
+        Tuple[dict, dict]: A tuple of two dictionaries:
+            education_data (dict): Contains the unmodified empirical data from CSV files.
+            education_dict (dict): Contains the processed empirical data to use in simulations.
+    """
+
+    # Load empirical data
+    data_path = thisdir / "data"
+
+    education ={"edu_objective":
+                    {"data_file": "edu_objective.csv",
+                     "process_function": education_objective},
+                "edu_attainment":
+                    {"data_file": "edu_initialization.csv",
+                     "process_function": education_attainment},
+                "edu_dropout_probs":
+                    {"data_file": "edu_stop.csv",
+                     "process_function": education_dropout_probs}}
+
+    education_data = dict()
+    education_dict = dict()
+    for edu_key in education.keys():
+        education_data[edu_key] = pd.read_csv(data_path / education[edu_key]["data_file"])
+        education_dict[edu_key] = education[edu_key]["process_function"](education_data[edu_key])
+    education_dict.update({"age_start": 6.0})
+    return education_dict, education_data
+
+
+def process_contra_use_pars():
+    raw_pars = pd.read_csv(thisdir / 'data' / 'contra_coef.csv')
+    pars = sc.objdict()
+    for var_dict in raw_pars.to_dict('records'):
+        var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
+        pars[var_name] = var_dict['Estimate']
+    return pars
+
+
 def process_contra_use(which):
     """
     Process cotraceptive use parameters.

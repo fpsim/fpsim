@@ -59,7 +59,7 @@ class State:
 
 # Parse locations
 def get_location(location, printmsg=False):
-    default_location = 'senegal'  # Need to change this back to Senegal once parameters have been added
+    default_location = 'senegal'
     if not location:
         if printmsg: print('Location not supplied: using parameters from Senegal')
         location = default_location
