@@ -15,6 +15,7 @@ from . import base as fpb
 from . import parameters as fpp
 from . import people as fpppl
 from . import methods as fpm
+from . import education as fped
 
 # Specify all externally visible things this file defines
 __all__ = ['Sim', 'MultiSim', 'parallel']
@@ -128,9 +129,9 @@ class Sim(fpb.BaseSim):
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
 
         # Add modules, also initialized later
-        self.contraception_module = contraception_module or fpm.RandomChoice()
+        self.contraception_module = contraception_module or fpm.StandardChoice()
+        self.education_module = education_module or fped.Education()
         self.empowerment_module = empowerment_module
-        self.education_module = education_module
 
         return
 
