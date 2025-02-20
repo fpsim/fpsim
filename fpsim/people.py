@@ -23,13 +23,14 @@ class People(ss.People):
     Class for all the people in the simulation.
     """
 
-    def __init__(self, n_agents=None, age_data=None, empowerment_module=None, education_module=None, **kwargs):
+    def __init__(self, n_agents=None, age_data=None, pars=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Allow defaults to be dynamically set
         person_defaults = fpd.person_defaults
 
         # Initialization
         super().__init__(n_agents, age_data, extra_states=person_defaults, **kwargs)
+        self.pars = pars
 
         # self.pars = pars  # Set parameters
 
@@ -43,23 +44,27 @@ class People(ss.People):
 
         # Basic demographics
         # _age, _sex = self.get_age_sex(n)
+
+
+        return
+
+    def initialize_state_values(self, pars):
         if not self.pars['use_subnational']:
             _urban = self.get_urban(self.n_agents)
         else:
             _urban = fpsn.get_urban_init_vals(self)
-        # if age is None: age = _age
+
+        # TODO Need hook to set sex distribution
         # if sex is None: sex = _sex
 
-        # self.age = self.states['age'].new(n, age)  # Age of the person in years
-        # self.sex = self.states['sex'].new(n, sex)  # Female (0) or male (1)
-        self.urban = self.states['urban'].new(n, _urban)  # Urban (1) or rural (0)
+        self.urban = _urban  # Urban (1) or rural (0)
 
         # Parameters on sexual and reproductive history
         self.fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], n)
 
         # Fertility intent
         has_intent = "fertility_intent"
-        self.fertility_intent   = self.states[has_intent].new(n, person_defaults[has_intent].val)
+        self.fertility_intent   = fpd.person_defaults["fertility_intent"].val
         self.categorical_intent = self.states["categorical_intent"].new(n, "no")
         # Update distribution of fertility intent with location-specific values if it is present in self.pars
         self.update_fertility_intent(n)
@@ -114,8 +119,6 @@ class People(ss.People):
         if self.pars['use_subnational']:
             fpsn.init_regional_states(self)
             fpsn.init_regional_states(self)
-
-        return
 
     def initialize_circular_buffer(self):
         # Initialize circular buffers to track longitudinal data
