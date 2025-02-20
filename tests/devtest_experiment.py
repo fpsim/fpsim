@@ -1,6 +1,7 @@
-'''
-Test births, conceptions, etc.
-'''
+"""
+Tests related to the experiment class, checking plotting and other functionality.
+These tests are mostly from v2 of FPsim and are slated for removal in v2 or v3.
+"""
 
 import numpy as np
 import sciris as sc

@@ -7,12 +7,12 @@ import sciris as sc
 import pylab as pl
 
 # par_kwargs = dict(n_agents=1000, start_year=1960, end_year=2020, seed=1, verbose=1)
-par_kwargs = dict(n_agents=500, start_year=2000, end_year=2010, seed=1, verbose=1)
+par_kwargs = dict(n_agents=500, start_year=2000, end_year=2010, seed=1, verbose=-1)
 
 
 def test_simple():
     sc.heading('Test simplest possible FPsim run')
-    sim = fp.Sim(location='test')
+    sim = fp.Sim(location='kenya')  # NB it should be possible to run without any arguments
     sim.run()
     sim.plot()
     return sim
@@ -73,11 +73,10 @@ def test_simple_choice(location='kenya'):
 
 
 def test_mid_choice(location='kenya'):
-    """ Test sim with mid level choice module """
-    sc.heading('Test sim with mid level choice module')
+    sc.heading('Test sim with default contraceptive choice module')
 
     # Define new modules
-    ms = fp.MidChoice(location=location)
+    ms = fp.StandardChoice(location=location)
     edu = fp.Education(location=location)
 
     # Define pars

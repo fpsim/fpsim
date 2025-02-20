@@ -57,6 +57,29 @@ class State:
         return arr
 
 
+# Parse locations
+def get_location(location, printmsg=False):
+    default_location = 'senegal'  # Need to change this back to Senegal once parameters have been added
+    if not location:
+        if printmsg: print('Location not supplied: using parameters from Senegal')
+        location = default_location
+    location = location.lower()  # Ensure it's lowercase
+    if location == 'test':
+        if printmsg: print('Running test simulation using parameters from Senegal')
+        location = default_location
+    if location == 'default':
+        if printmsg: print('Running default simulation using parameters from Senegal')
+        location = default_location
+
+    # Define valid locations
+    valid_country_locs = ['senegal', 'kenya', 'ethiopia']
+    if location not in valid_country_locs:
+        errormsg = f'Location "{location}" is not currently supported'
+        raise NotImplementedError(errormsg)
+
+    return location
+
+
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
 # or updated during the course of a simulation.
 person_defaults = [
@@ -251,6 +274,17 @@ array_results = sc.autolist(
     'wq3',
     'wq4',
     'wq5',
+    'nonpostpartum',
+    'total_women_fecund',
+    'method_failures',
+    'birthday_fraction',
+    'short_intervals',
+    'secondary_births',
+    'proportion_short_interval',
+    # Education
+    'edu_objective',
+    'edu_attainment',
+    # Empowerment and intent: all zero unless using an empowerment module
     'perc_contra_intent',
     'perc_fertil_intent',
     'paid_employment',
@@ -265,14 +299,7 @@ array_results = sc.autolist(
     "has_fin_goals",
     "financial_autonomy", 
     "decision_making",
-    'nonpostpartum',
-    'total_women_fecund',
-    'method_failures',
-    'birthday_fraction',
-    'short_intervals',
-    'secondary_births',
-    'proportion_short_interval'
-)
+    )
 
 
 for age_group in age_bin_map.keys():

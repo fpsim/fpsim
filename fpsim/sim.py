@@ -15,6 +15,7 @@ from . import base as fpb
 from . import parameters as fpp
 from . import people as fpppl
 from . import methods as fpm
+from . import education as fped
 
 # Specify all externally visible things this file defines
 __all__ = ['Sim', 'MultiSim', 'parallel']
@@ -96,6 +97,8 @@ class Sim(fpb.BaseSim):
         if location is None:
             if pars is not None and pars.get('location'):
                 location = pars.pop('location')
+        location = fpd.get_location(location, printmsg=True)  # Handle location
+        self.location = location
 
         # Make parameters
         pars = fpp.pars(location=location, **sc.mergedicts(pars, kwargs))  # Update with location-specific parameters
@@ -129,8 +132,10 @@ class Sim(fpb.BaseSim):
 
         # Add modules, also initialized later
         self.contraception_module = contraception_module or fpm.RandomChoice()
-        self.empowerment_module = empowerment_module
         self.education_module = education_module
+        # self.contraception_module = contraception_module or fpm.StandardChoice(location=location)
+        # self.education_module = education_module or fped.Education(location=location)
+        self.empowerment_module = empowerment_module
 
         return
 
@@ -180,7 +185,6 @@ class Sim(fpb.BaseSim):
         """
         self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
                                     empowerment_module=self.empowerment_module, education_module=self.education_module)
-
 
     def init_contraception(self):
         if self.contraception_module is not None:
@@ -290,7 +294,6 @@ class Sim(fpb.BaseSim):
         self.people.ti = self.ti
         self.people.ty = self.ty
         self.people.y = self.y
-
 
         # Step forward people's states and attributes
         self.people.step()
@@ -429,25 +432,32 @@ class Sim(fpb.BaseSim):
         self.results['total_women_fecund'][ti] = res.total_women_fecund * scale
         self.results['method_failures'][ti] = res.method_failures * scale
 
-        # Intent. Note that these will be zero unless running analyses from the kenya_empowerment repo
-        self.results['perc_contra_intent'][ti] = res.perc_contra_intent
-        self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
+        # Education metrics
+        self.results['edu_attainment'][ti] = res.edu_attainment
+        self.results['edu_objective'][ti] = res.edu_objective
 
-        # Empowerment metrics
+        # Intent
         # These will all be zero if empowerment module is not provided
         # Not used except for within kenya_empowerment repo
-        self.results['paid_employment'][ti] = res.paid_employment
-        self.results['decision_wages'][ti] = res.decision_wages
-        self.results['decide_spending_partner'][ti] = res.decide_spending_partner
-        self.results['buy_decision_major'][ti] = res.buy_decision_major
-        self.results['buy_decision_daily'][ti] = res.buy_decision_daily
-        self.results['buy_decision_clothes'][ti] = res.buy_decision_clothes
-        self.results['decision_health'][ti] = res.decision_health
-        self.results['has_savings'][ti] = res.has_savings
-        self.results['has_fin_knowl'][ti] = res.has_fin_knowl
-        self.results['has_fin_goals'][ti] = res.has_fin_goals
-        #self.results['financial_autonomy'][ti] = res.financial_autonomy
-        #self.results['decision_making'][ti] = res.decision_making
+        if self.empowerment_module is not None:
+            self.results['perc_contra_intent'][ti] = res.perc_contra_intent
+            self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
+
+            # Empowerment metrics
+            # These will all be zero if empowerment module is not provided
+            # Not used except for within kenya_empowerment repo
+            self.results['paid_employment'][ti] = res.paid_employment
+            self.results['decision_wages'][ti] = res.decision_wages
+            self.results['decide_spending_partner'][ti] = res.decide_spending_partner
+            self.results['buy_decision_major'][ti] = res.buy_decision_major
+            self.results['buy_decision_daily'][ti] = res.buy_decision_daily
+            self.results['buy_decision_clothes'][ti] = res.buy_decision_clothes
+            self.results['decision_health'][ti] = res.decision_health
+            self.results['has_savings'][ti] = res.has_savings
+            self.results['has_fin_knowl'][ti] = res.has_fin_knowl
+            self.results['has_fin_goals'][ti] = res.has_fin_goals
+            #self.results['financial_autonomy'][ti] = res.financial_autonomy
+            #self.results['decision_making'][ti] = res.decision_making
 
         for agekey in fpd.age_bin_map.keys():
             births_key = f'total_births_{agekey}'

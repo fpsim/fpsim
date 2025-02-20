@@ -28,12 +28,18 @@ class People(fpb.BasePeople):
         # Initialization
         super().__init__(**kwargs)
 
+        # Allow defaults to be dynamically set
+        person_defaults = fpd.person_defaults
+        if 'person_defaults' in kwargs and kwargs['person_defaults'] is not None:
+            for state_name, val in kwargs['person_defaults'].items():
+                person_defaults[state_name].val = val
+
         self.pars = pars  # Set parameters
         if n is None:
             n = int(self.pars['n_agents'])
 
         # Set default states
-        self.states = fpd.person_defaults
+        self.states = person_defaults
         for state_name, state in self.states.items():
             self[state_name] = state.new(n)
 
@@ -58,18 +64,18 @@ class People(fpb.BasePeople):
 
         # Fertility intent
         has_intent = "fertility_intent"
-        self.fertility_intent   = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        self.fertility_intent   = self.states[has_intent].new(n, person_defaults[has_intent].val)
         self.categorical_intent = self.states["categorical_intent"].new(n, "no")
         # Update distribution of fertility intent with location-specific values if it is present in self.pars
         self.update_fertility_intent(n)
 
         # Intent to use contraception
         has_intent = "intent_to_use"
-        self.intent_to_use = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        self.intent_to_use = self.states[has_intent].new(n, person_defaults[has_intent].val)
         # Update distribution of fertility intent if it is present in self.pars
         self.update_intent_to_use(n)
 
-        self.wealthquintile = self.states["wealthquintile"].new(n, fpd.person_defaults["wealthquintile"].val)
+        self.wealthquintile = self.states["wealthquintile"].new(n, person_defaults["wealthquintile"].val)
         self.update_wealthquintile(n)
 
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
@@ -142,7 +148,7 @@ class People(fpb.BasePeople):
         The index of year-ending as of the same date expressed in ti
         or 12-months ago as of the same date.
         """
-        return (self.ti % self.tiperyear)
+        return (self.ti + 1) % self.tiperyear
 
     def get_longitudinal_state(self, state_name):
         """
@@ -1010,9 +1016,14 @@ class People(fpb.BasePeople):
         self.step_results['parity4to5'] = np.sum((self.parity >= 4) & (self.parity <= 5) & self.is_female) / np.sum(self.is_female) * 100
         self.step_results['parity6plus'] = np.sum((self.parity >= 6) & self.is_female) / np.sum(self.is_female) * 100
 
+        # Update wealth and education
         self._step_results_wq()
-        self._step_results_intent()
-        self._step_results_empower()
+        self._step_results_edu()
+
+        # Update intent and empowerment if empowerment module is present
+        if self.empowerment_module is not None:
+            self._step_results_intent()
+            self._step_results_empower()
 
         return self.step_results
 
@@ -1021,6 +1032,16 @@ class People(fpb.BasePeople):
         for i in range(1, 6):
             self.step_results[f'wq{i}'] = (np.sum((self.wealthquintile == i) & self.is_female) / np.sum(self.is_female) * 100)
         return
+
+    @staticmethod
+    def cond_prob(a, b):
+        """ Calculate conditional probability. This should be moved somewhere else. """
+        return np.sum(a & b) / np.sum(b)
+
+    def _step_results_edu(self):
+        denom = self.is_female & self.alive & (self.age >= fpd.min_age) & (self.age < fpd.max_age)
+        self.step_results['edu_objective'] = np.mean(self.filter(denom).edu_objective)
+        self.step_results['edu_attainment'] = np.mean(self.filter(denom).edu_attainment)
 
     def _step_results_empower(self):
         self.step_results['paid_employment'] = (np.sum(self.paid_employment & self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age))/ np.sum(self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age)))*100
