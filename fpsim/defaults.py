@@ -57,6 +57,28 @@ class State:
         return arr
 
 
+# Parse locations
+def get_location(location, printmsg=False):
+    if not location:
+        if printmsg: print('Location not supplied: using parameters from Senegal')
+        location = 'senegal'
+    location = location.lower()  # Ensure it's lowercase
+    if location == 'test':
+        if printmsg: print('Running test simulation using parameters from Senegal')
+        location = 'senegal'
+    if location == 'default':
+        if printmsg: print('Running default simulation using parameters from Senegal')
+        location = 'senegal'
+
+    # Define valid locations
+    valid_country_locs = ['senegal', 'kenya', 'ethiopia']
+    if location not in valid_country_locs:
+        errormsg = f'Location "{location}" is not currently supported'
+        raise NotImplementedError(errormsg)
+
+    return location
+
+
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
 # or updated during the course of a simulation.
 person_defaults = [

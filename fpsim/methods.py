@@ -167,21 +167,17 @@ class SimpleChoice(RandomChoice):
         self.pars.update(kwargs)  # TODO: check
 
         # Handle location
-        if location is not None:
-            location = location.lower()
-            if location == 'kenya':
-                self.init_method_pars(location, method_choice_df=method_choice_df, method_time_df=method_time_df)
-            else:
-                errormsg = f'Location "{location}" is not currently supported for method-time analyses'
-                raise NotImplementedError(errormsg)
+        location = fpd.get_location(location)
+        self.init_method_pars(location, method_choice_df=method_choice_df, method_time_df=method_time_df)
+
         return
 
     def init_method_pars(self, location, method_choice_df=None, method_time_df=None):
-        self.contra_use_pars = fplocs.kenya.process_contra_use('simple')  # Set probability of use
-        method_choice_pars, init_dist = fplocs.kenya.process_markovian_method_choice(self.methods, df=method_choice_df)  # Method choice
+        self.contra_use_pars = getattr(fplocs, location).process_contra_use('simple')  # Set probability of use
+        method_choice_pars, init_dist = getattr(fplocs, location).process_markovian_method_choice(self.methods, df=method_choice_df)  # Method choice
         self.method_choice_pars = method_choice_pars
         self.init_dist = init_dist
-        self.methods = fplocs.kenya.process_dur_use(self.methods, df=method_time_df)  # Reset duration of use
+        self.methods = getattr(fplocs, location).process_dur_use(self.methods, df=method_time_df)  # Reset duration of use
 
         # Handle age bins -- find a more robust way to do this
         self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
@@ -394,15 +390,11 @@ class StandardChoice(SimpleChoice):
         super().__init__(pars=pars, location=location, **kwargs)
 
         # Now overwrite the default prob_use parameters with the mid-choice coefficients
-        location = location.lower()
-        if location == 'kenya':
-            self.contra_use_pars = fplocs.kenya.process_contra_use('mid')  # Process the coefficients
-        else:
-            errormsg = f'Location "{location}" is not currently ready for using mid-choice coefficients'
-            raise NotImplementedError(errormsg)
+        location = fpd.get_location(location)
+        self.contra_use_pars = getattr(fplocs, location).process_contra_use('mid')  # Process the coefficients
 
         # Store the age spline
-        self.age_spline = fplocs.kenya.age_spline('3')
+        self.age_spline = getattr(fplocs, location).age_spline('3')
 
         return
 

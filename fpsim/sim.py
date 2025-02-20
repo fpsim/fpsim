@@ -97,6 +97,8 @@ class Sim(fpb.BaseSim):
         if location is None:
             if pars is not None and pars.get('location'):
                 location = pars.pop('location')
+        location = fpd.get_location(location, printmsg=True)  # Handle location
+        self.location = location
 
         # Make parameters
         pars = fpp.pars(location=location, **sc.mergedicts(pars, kwargs))  # Update with location-specific parameters
@@ -129,8 +131,8 @@ class Sim(fpb.BaseSim):
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
 
         # Add modules, also initialized later
-        self.contraception_module = contraception_module or fpm.StandardChoice()
-        self.education_module = education_module or fped.Education()
+        self.contraception_module = contraception_module or fpm.StandardChoice(location=location)
+        self.education_module = education_module or fped.Education(location=location)
         self.empowerment_module = empowerment_module
 
         return
@@ -192,7 +194,6 @@ class Sim(fpb.BaseSim):
         """
         self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
                                     empowerment_module=self.empowerment_module, education_module=self.education_module)
-
 
     def init_contraception(self):
         if self.contraception_module is not None:
@@ -302,7 +303,6 @@ class Sim(fpb.BaseSim):
         self.people.ti = self.ti
         self.people.ty = self.ty
         self.people.y = self.y
-
 
         # Step forward people's states and attributes
         self.people.step()
