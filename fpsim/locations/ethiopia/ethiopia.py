@@ -611,6 +611,46 @@ def barriers():
     return barriers
 
 
+def process_contra_use(which):
+    """
+    Process cotraceptive use parameters.
+    Args:
+        which: either 'simple' or 'mid'
+    """
+
+    # Read in data
+    alldfs = [
+        pd.read_csv(thisdir / 'data' / f'contra_coef_{which}.csv'),
+        pd.read_csv(thisdir / 'data' / f'contra_coef_{which}_pp1.csv'),
+        pd.read_csv(thisdir / 'data' / f'contra_coef_{which}_pp6.csv'),
+    ]
+
+    contra_use_pars = dict()
+
+    for di, df in enumerate(alldfs):
+        if which == 'mid':
+            contra_use_pars[di] = sc.objdict(
+                intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
+                age_factors=df[df['rhs'].str.contains('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+                ever_used_contra=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
+                edu_attainment=df[df['rhs'].str.contains('edu_attainment')].Estimate.values[0],
+                parity=df[df['rhs'].str.contains('parity')].Estimate.values[0],
+                urban=df[df['rhs'].str.contains('urban')].Estimate.values[0],
+                wealthquintile=df[df['rhs'].str.contains('wealthquintile')].Estimate.values[0],
+                age_ever_user_factors=df[df['rhs'].str.contains('age') & df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+            )
+
+        elif which == 'simple':
+            contra_use_pars[di] = sc.objdict(
+                intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
+                age_factors=df[df['rhs'].str.match('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+                fp_ever_user=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
+                age_ever_user_factors=df[df['rhs'].str.match('age') & df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+            )
+
+    return contra_use_pars
+
+
 def mcpr():
 
     mcpr = {}

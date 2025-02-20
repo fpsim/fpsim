@@ -261,6 +261,9 @@ class People(fpb.BasePeople):
             oc.ever_used_contra = 1
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
+
+        # Change the intent of women who have started to use a contraception method
+        self.intent_to_use[self.on_contra] = False
         return
 
     def update_fertility_intent_by_age(self):
@@ -302,7 +305,6 @@ class People(fpb.BasePeople):
             f_aged_x_inds = f_inds[age_inds == age]  # indices of women of a given age
             prob = intent_pars[age][1]  # Get the probability of having intent
             self.intent_to_use[f_aged_x_inds] = fpu.n_binomial(prob, len(f_aged_x_inds))
-
         return
 
     def update_method(self, year=None, ti=None):
@@ -1091,6 +1093,9 @@ class People(fpb.BasePeople):
         if len(ready):
             ready.update_method()
 
+        # Make sure that women who are on contraception do not have intent to use contraception
+        self.intent_to_use[self.on_contra] = False
+
         methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
         if not methods_ok:
             errormsg = 'Agents not using contraception are not the same as agents who are using None method'
@@ -1112,6 +1117,9 @@ class People(fpb.BasePeople):
         return
 
     def step_empowerment(self):
+        """
+        NOTE: by default this will not be used, but it will be used for analyses run from the kenya_empowerment repo
+        """
         eligible = self.filter(self.is_dhs_age)
         # Women who just turned 15 get assigned a value based on empowerment probs
         bday_15 = eligible.filter((eligible.age > int(fpd.min_age)) & (eligible.age <= int(fpd.min_age) + (self.pars['timestep'] / fpd.mpy)))
@@ -1162,9 +1170,14 @@ class People(fpb.BasePeople):
         self.step_results['parity4to5'] = np.sum((self.parity >= 4) & (self.parity <= 5) & self.is_female) / np.sum(self.is_female) * 100
         self.step_results['parity6plus'] = np.sum((self.parity >= 6) & self.is_female) / np.sum(self.is_female) * 100
 
+        # Update wealth and education
         self._step_results_wq()
-        self._step_results_intent()
-        self._step_results_empower()
+        self._step_results_edu()
+
+        # Update intent and empowerment if empowerment module is present
+        if self.empowerment_module is not None:
+            self._step_results_intent()
+            self._step_results_empower()
 
         return self.step_results
 
@@ -1173,6 +1186,16 @@ class People(fpb.BasePeople):
         for i in range(1, 6):
             self.step_results[f'wq{i}'] = (np.sum((self.wealthquintile == i) & self.is_female) / np.sum(self.is_female) * 100)
         return
+
+    @staticmethod
+    def cond_prob(a, b):
+        """ Calculate conditional probability. This should be moved somewhere else. """
+        return np.sum(a & b) / np.sum(b)
+
+    def _step_results_edu(self):
+        denom = self.is_female & self.alive & (self.age >= fpd.min_age) & (self.age < fpd.max_age)
+        self.step_results['edu_objective'] = np.mean(self.filter(denom).edu_objective)
+        self.step_results['edu_attainment'] = np.mean(self.filter(denom).edu_attainment)
 
     def _step_results_empower(self):
         self.step_results['paid_employment'] = (np.sum(self.paid_employment & self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age))/ np.sum(self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age)))*100

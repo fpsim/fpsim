@@ -12,8 +12,7 @@ from . import defaults as fpd
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state', 'change_initiation_prob', 'change_initiation',
-           'empowerment_boost']
+__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state', 'change_initiation_prob', 'change_initiation']
 
 
 class Intervention:
@@ -299,148 +298,6 @@ class change_par(Intervention):
         return
 
 
-class empowerment_boost(Intervention):
-    """
-    Intervention that increases the number of women who have an empowerment state == True.
-    The state is one of the booleanstate (ie, paid_employment, has_fin_knowl).
-
-    Args:
-        years (list, float): The years we want to apply the intervention.
-                if years is None, uses start and end years of sim as defaults
-                if years is a number or a list with a single element, eg, 2000.5, or [2000.5],
-                this is interpreted as the start year of the intervention, and the
-                end year of intervention will be the end of the simulation
-        eligibility (callable): callable that returns a filtered version of
-                people eligible to receive the intervention
-        state_name   (string): name of the People's state that will be modified
-        perc (float): a value between 0 and 1 indicating the x% extra of women
-                who will have the empowerment metric
-        annual (bool): whether the increase, perc, represents a "per year"
-                increase.
-        """
-
-    def __init__(self, years=None, eligibility=None, perc=0.0, annual=True, state_name="paid_employment",
-                 force_theoretical=False):
-        super().__init__()
-        self.state_name = state_name
-        self.years = years
-        self.eligibility = eligibility
-        self.perc = perc
-        self.annual = annual
-        self.annual_perc = None
-        self.force_theoretical = force_theoretical
-        self.current_women_empowered = None  # current number of women whose empowerment state == True
-
-        # Initial value of women empowered (ie, state_name == True) at the start of the intervention. Tracked for validation.
-        self.init_women_empowered = None
-        # Theoretical number of empowered women we should have by the end of the intervention period, if
-        # nothing else affected the dynamics of the state. Tracked for validation.
-        self.expected_women_empowered = None
-        return
-
-    def initialize(self, sim=None):
-        super().initialize()
-
-        # Lastly, adjust the probability by the sim's timestep, if it's an annual probability
-        if self.annual:
-            # per timestep/monthly growth rate or perc of eligible women who will be "empowered"
-            self.annual_perc = self.perc
-            self.perc = ((1 + self.annual_perc) ** sim.dt) - 1
-        # Validate years and values
-        if self.years is None:
-            # f'Intervention start and end years not provided. Will use sim start an end years'
-            self.years = [sim['start_year'], sim['end_year']]
-        if sc.isnumber(self.years) or len(self.years) == 1:
-            self.years = sc.promotetolist(self.years)
-            # Assumes that start year has been specified, append end of the simulation as end year of the intervention
-            self.years.append(sim['end_year'])
-
-        min_year = min(self.years)
-        max_year = max(self.years)
-        if min_year < sim['start_year']:
-            errormsg = f'Intervention start {min_year} is before the start of the simulation.'
-            raise ValueError(errormsg)
-        if max_year > sim['end_year']:
-            errormsg = f'Intervention end {max_year} is after the end of the simulation.'
-            raise ValueError(errormsg)
-        if self.years != sorted(self.years):
-            errormsg = f'Years {self.years} should be monotonically increasing'
-            raise ValueError(errormsg)
-
-        if self.eligibility is None:
-            self.eligibility = self.default_eligibility
-
-        return
-
-    def check_eligibility(self, sim):
-        """
-        Select people who are eligible
-        """
-        can_be_empwrd_ppl = self.eligibility(sim)
-        return can_be_empwrd_ppl
-
-    def default_eligibility(self, sim):
-        ppl = sim.people
-        eligible_ppl = ppl.filter((ppl.sex == 0) &
-                                   ppl.alive &  # living women
-                                  (ppl.age >= fpd.min_age) & (ppl.age < fpd.max_age_preg)
-                                  )
-        return eligible_ppl
-
-    def apply(self, sim):
-        ti = sim.ti
-        eligible_ppl = self.check_eligibility(sim)
-        # Save theoretical number based on the value of women on contraception at start of intervention
-        if self.years[0] == sim.y:
-            self.expected_women_empowered = (eligible_ppl[self.state_name]).sum()
-            self.init_women_empowered = self.expected_women_empowered
-
-        # Apply intervention within this time range
-        if self.years[0] <= sim.y <= self.years[1]:  # Inclusive range
-            self.current_women_empowered = (eligible_ppl[self.state_name]).sum()
-
-            # Save theoretical number based on the value of women on contraception at start of intervention
-            nnew_empowered = self.perc * self.expected_women_empowered
-
-            # NOTE: TEMPORARY: force specified increase
-            # how many more women should be added per time step
-            # However, if the current number of women 'empowered' is >> than the expected value, this
-            # intervention does nothing. The forcing ocurrs in one particular direction, making it incomplete.
-            # If the forcing had to be fully function, when there are more women than the expected value
-            # this intervention should additionaly 'reset' the state
-            if self.force_theoretical:
-                additional_women_empowered = self.expected_women_empowered - self.current_women_empowered
-                if additional_women_empowered < 0:
-                    additional_women_empowered = 0
-                new_empowered = nnew_empowered + additional_women_empowered
-            else:
-                new_empowered = self.perc * self.current_women_empowered
-
-            self.expected_women_empowered += nnew_empowered
-
-            if not new_empowered:
-                raise ValueError(
-                    "For the given parameters (n_agents, and perc increase) we won't see an effect. "
-                    "Consider increasing the number of agents.")
-
-            # Eligible population: the ones who are not empowered
-            can_be_empowered = eligible_ppl.filter(~(eligible_ppl[self.state_name]))
-            n_eligible = len(can_be_empowered)
-
-            if n_eligible:
-                if n_eligible < new_empowered:
-                    print(f"There are fewer eligible women ({n_eligible}) than "
-                          f"the number of women who should be empowered ({new_empowered}).")
-                    new_empowered = n_eligible
-                # Of eligible women, select who will actually be be empowered (their empowerment state to True)
-                p_selected = new_empowered * np.ones(n_eligible) / n_eligible
-                vals =  fpu.binomial_arr(p_selected)
-                setattr(can_be_empowered, self.state_name, vals)
-            else:
-                print(f"Ran out of eligible women to empowered.")
-        return
-
-
 class change_people_state(Intervention):
     """
     Intervention to modify values of a People's boolean state at one specific
@@ -453,7 +310,7 @@ class change_people_state(Intervention):
                      if years is a number or a list with a single element, eg, 2000.5, or [2000.5],
                      this is interpreted as the start year of the intervention, and the
                      end year of intervention will be the end of the simulation
-        new_val     (bool): the new state value eligible people will have
+        new_val     (bool, float): the new state value eligible people will have
         prop        (float): a value between 0 and 1 indicating the x% of eligible people
                      who will have the new state value
         annual      (bool): whether the increase, prop, represents a "per year" increase, or per time step
@@ -592,9 +449,9 @@ class update_methods(Intervention):
         super().initialize()
         self._validate()
         par_name = None
-        if self.p_use is not None and isinstance(sim.people.contraception_module, (fpm.SimpleChoice, fpm.EmpoweredChoice)):
+        if self.p_use is not None and isinstance(sim.people.contraception_module, fpm.SimpleChoice):
             par_name = 'p_use'
-        if self.method_mix is not None and isinstance(sim.people.contraception_module, (fpm.SimpleChoice, fpm.EmpoweredChoice)):
+        if self.method_mix is not None and isinstance(sim.people.contraception_module, fpm.SimpleChoice, ):
             par_name = 'method_mix'
 
         if par_name is not None:

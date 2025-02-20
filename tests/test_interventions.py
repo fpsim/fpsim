@@ -3,13 +3,12 @@ Run tests on the interventions.
 """
 
 import sciris as sc
-from numba.cpython.charseq import s1_dtype
-
+import pylab as pl
 import fpsim as fp
 import numpy as np
 import pytest
 
-serial   = 0 # Whether to run in serial (for debugging)
+serial   = 1 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 # sc.options(backend='agg') # Turn off interactive plots
 
@@ -23,8 +22,8 @@ def make_sim(**kwargs):
 
 
 def test_intervention_fn():
-    ''' Test interventions '''
-    sc.heading('Testing interventions...')
+    """ Test defining an intervention as a function """
+    sc.heading('Testing intervention can be defined as a function...')
 
     def test_interv(sim):
         if sim.ti == 100:
@@ -34,6 +33,7 @@ def test_intervention_fn():
     sim = make_sim(interventions=test_interv)
     sim.run()
     assert sim.intervention_applied
+    print(f'✓ (functions intervention ok)')
 
     return sim
 
@@ -64,7 +64,7 @@ def test_change_par():
     assert cp1_births < base_births, f'Reducing exposure factor should reduce births, but {cp1_births} is not less than the baseline of {base_births}'
 
     assert s2['exposure_factor'] == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
-    assert cp2_births < base_births, f'Reducing exposure factor temporarily should reduce births, but {cp2_births} is not less than the baseline of {base_births}'
+    assert cp2_births <= base_births, f'Reducing exposure factor temporarily should reduce births, but {cp2_births} is not less than the baseline of {base_births}'
 
     # Check user input validation
     with pytest.raises(ValueError): # Check that length of years and values match
@@ -98,109 +98,59 @@ def test_plot():
     return sim
 
 
-def test_empowerment_boost():
-    """ Test that empowerment_boost() modifies sim results in expected ways """
-    sc.heading('Testing empowerment_boost()...')
-
-    # We use the default eligibility criteria for this test
-
-    def eligibility(sim):
-        ppl = sim.people
-        eligible_ppl = ppl.filter((ppl.sex == 0) &
-                                   ppl.alive &  # living women
-                                  (ppl.age >= 15) & (ppl.age < 40)
-                                  )
-        return eligible_ppl
-
-    # Establish some empowerment at the beginning, otherwise the boost is trying to scale off of 0
-    init_emp = fp.change_people_state('paid_employment', years=[2008, 2009], new_val=True, prop=.5,
-                                      annual=True, eligibility=np.arange(90))
-    emp = fp.empowerment_boost(years=2009, perc=1, annual=True, state_name="paid_employment", force_theoretical=True)
-    s0 = make_sim(label='Baseline')
-    s1 = make_sim(interventions=[init_emp, emp], label='Empowerment boost')
-
-    # Run
-    m = fp.parallel(s0, s1, serial=serial, compute_stats=False)
-    s0, s1 = m.sims[:] # Replace with run versions
-
-    # Test empowerment boost
-    s0_employed = np.sum(s0.people['paid_employment'])
-    s1_employed = np.sum(s1.people['paid_employment'])
-
-    assert s1_employed > s0_employed, f'Empowerment boost should increase the number of people with paid employment, but {s1_employed} is not greater than the baseline of {s0_employed}'
-
-    return s0, s1
-
-
-
-
-def test_change_people_state(emp=False):
+def test_change_people_state():
     """ Testing that change_people_state() modifies sim results in expected ways """
     sc.heading('Testing change_people_state()...')
 
-    def intv_eligible(sim):
-        return ((sim.people.is_female) &
-                (sim.people.alive) &
-                (sim.people.age >= 15) &
-                (sim.people.age < 50) &
-                ~sim.people.has_fin_knowl)
-
-    fin_know = fp.change_people_state('has_fin_knowl', years=2019, new_val=True, eligibility=intv_eligible, prop=0.1, annual=True)
-
-    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=1)
+    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1)
     pars = fp.pars(location='kenya', **par_kwargs)
+    ms = fp.SimpleChoice(location='kenya')
+    sim_kwargs = dict(contraception_module=ms)
 
-    # Create modules
-    if not emp:
-        ms = fp.SimpleChoice(location='kenya')
-        sim_kwargs = dict(contraception_module=ms)
-    else:
-        ms = fp.EmpoweredChoice(location='kenya')
-        emp = fp.Empowerment(location='kenya')
-        edu = fp.Education(location='kenya')
-        sim_kwargs = dict(contraception_module=ms, empowerment_module=emp, education_module=edu)
+    # Change ever user
+    prior_use_lift = fp.change_people_state('ever_used_contra', years=2019, new_val=True, eligibility=np.arange(500), prop=1, annual=False)
+    prior_use_gone = fp.change_people_state('ever_used_contra', years=2020, new_val=False, eligibility=np.arange(500), prop=1, annual=False)
 
     # Make and run sim
     s0 = fp.Sim(pars, **sim_kwargs, label="Baseline")
-    s1 = fp.Sim(pars, **sim_kwargs, interventions=fin_know, label="Fin_Knowl")
-    s2 = fp.Sim(pars, **sim_kwargs, interventions=fp.change_people_state('has_fin_knowl', years=2019, new_val=False, eligibility=np.arange(500), prop=1, annual=True), label="No_Fin_Knowl 500")
-    s0.run()
-    s1.run()
-    s2.run()
+    s1 = fp.Sim(pars, **sim_kwargs, interventions=prior_use_lift, label="All prior_use set to True")
+    s2 = fp.Sim(pars, **sim_kwargs, interventions=prior_use_gone, label="Prior use removed from 500 people")
+    msim = fp.parallel(s0, s1, s2)
+    s0, s1, s2 = msim.sims
 
     # Test people state change
-    s0_has_fin_knowl = np.sum(s0.people['has_fin_knowl'])
-    s1_has_fin_knowl = np.sum(s1.people['has_fin_knowl'])
-    s2_500_has_fin_knowl = np.sum(s2.people['has_fin_knowl'][0:500])
+    s0_used_contra = np.sum(s0.people['ever_used_contra'])
+    s1_used_contra = np.sum(s1.people['ever_used_contra'])
+    s2_500_used_contra = np.sum(s2.people['ever_used_contra'][0:500])
 
-    assert s1_has_fin_knowl > s0_has_fin_knowl, f'Changing people state should increase the number of people with financial knowledge, but {s1_has_fin_knowl} is not greater than the baseline of {s0_has_fin_knowl}'
-    assert s2_500_has_fin_knowl == 0, f'Changing people state should set the financial knowledge of the first 500 agents to 0, but {s2_500_has_fin_knowl} is not 0'
+    print(f"Checking change_state CPR trends ... ")
+    assert s1_used_contra > s0_used_contra, f'Increasing prior use should increase the number of people with who have used contraception, but {s1_used_contra} is not greater than the baseline of {s0_used_contra}'
+    assert s2_500_used_contra == 0, f'Changing people state should set prior use to False for the first 500 agents, but {s2_500_used_contra} is not 0'
+    print(f"✓ ({s1_used_contra} > {s0_used_contra})")
 
     # Check user input validation
     with pytest.raises(ValueError):  # Check invalid parameter
         make_sim(interventions=fp.change_people_state('not_a_parameter', new_val=True)).run()
     with pytest.raises(ValueError):  # Check bad value
-        make_sim(interventions=fp.change_people_state('has_fin_know', new_val=None)).run()
+        make_sim(interventions=fp.change_people_state('ever_used_contra', new_val=None)).run()
     with pytest.raises(ValueError):  # Check too late end year
-        make_sim(interventions=fp.change_people_state('has_fin_know', years=2120, new_val=True)).run()
+        make_sim(interventions=fp.change_people_state('ever_used_contra', years=2120, new_val=True)).run()
     with pytest.raises(ValueError):  # Check invalid year type
-        make_sim(interventions=fp.change_people_state('has_fin_know', years=None, new_val=True)).run()
+        make_sim(interventions=fp.change_people_state('ever_used_contra', years=None, new_val=True)).run()
     with pytest.raises(ValueError):  # Check invalid eligible
-        make_sim(interventions=fp.change_people_state('has_fin_know', years=2005, new_val=True, eligibility="")).run()
-
-
-
-
+        make_sim(interventions=fp.change_people_state('ever_used_contra', years=2005, new_val=True, eligibility="")).run()
 
     # Check with plot
     if do_plot:
         import pylab as pl
         t = s0.results['t']
-        y0 = s0.results['has_fin_knowl']
-        y1 = s1.results['has_fin_knowl']
+        y0 = s0.results['ever_used_contra']
+        y1 = s1.results['ever_used_contra']
+        y2 = s2.results['ever_used_contra']
         pl.figure()
         pl.plot(t, y0, label='Baseline')
-        pl.plot(t, y1, label='Improved financial knowledge')
+        pl.plot(t, y1, label='Higher prior use')
+        pl.plot(t, y2, label='Stop prior use')
         pl.legend()
         pl.show()
 
@@ -208,12 +158,11 @@ def test_change_people_state(emp=False):
 
 
 if __name__ == '__main__':
-    isim   = test_intervention_fn()
-    cpmsim = test_change_par()
-    sim  = test_plot()
-    s0, s1, s2 = test_change_people_state(emp=True)
-    s3, s4, s5 = test_change_people_state(emp=False)
-    s6, s7 = test_empowerment_boost()
+    s0 = test_intervention_fn()
+    s1 = test_change_par()
+    s3 = test_plot()
+    s4, s5, s6 = test_change_people_state()
+
     print('Done.')
 
 

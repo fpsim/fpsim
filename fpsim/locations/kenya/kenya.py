@@ -49,7 +49,7 @@ def filenames():
     files['methods'] = 'mix.csv'
     files['afb'] = 'afb.table.csv'
     files['use'] = 'use.csv'
-    files['empowerment'] = 'empowerment.csv'
+    # files['empowerment'] = 'empowerment.csv'
     files['education'] = 'edu_initialization.csv'
     return files
 
@@ -602,171 +602,7 @@ def _check_age_endpoints(df):
     return df
 
 
-def get_empowerment_loadings():
-    """
-    Loading coefficients to estimate composite measures for:
-     - (1) decision making and
-     - (2) financial autonomy
-
-    Bilbiographic ref:
-    https://www.tandfonline.com/doi/full/10.1080/13545701.2024.2339979?src=
-
-
-    """
-
-    df = pd.read_csv(thisdir / 'data' / 'empower_cfa_loadings.csv')
-    loadings = df.set_index('empowerment_var')['loading_coef'].to_dict()
-    return loadings
-
-
-def calculate_empwr_composites(empwr_data, empwr_pars):
-    dm_cols = ["buy_decision_major", "buy_decision_daily",
-               "buy_decision_clothes", "decision_health"]
-
-    fa_cols = ["has_savings", "has_fin_knowl", "has_fin_goals"]
-
-    fa = np.zeros(len(empwr_pars["avail_ages"]), dtype=np.float64)
-    dm = np.zeros_like(fa, dtype=np.float64)
-
-    col = ".mean"
-    for metric in fa_cols:
-        probs = empwr_data[metric+col].to_numpy()
-        vals = fpu.binomial_arr(probs).astype(float)
-        temp = vals * empwr_pars["loadings"][metric]
-        fa += temp
-
-    for metric in dm_cols:
-        probs = empwr_data[metric+col].to_numpy()
-        vals = fpu.binomial_arr(probs).astype(float)
-        dm += vals * empwr_pars["loadings"][metric]
-    empwr_data["financial_autonomy.mean"] = fa
-    empwr_data["decision_making.mean"] = dm
-    return empwr_data
-
-
-# Empowerment metrics
-def make_empowerment_pars(seed=None, return_data=False):
-    """
-    Produce intial distributions of empowerment attributes
-    based on latest DHS-8 IR 2022 dataset and PMA Household/Female surveys
-    from 2019, 2020 and 2022.
-
-    Because DHS data covers the age group from 15 to 49 (inclusive range),
-    in this function we:
-    - (1) interpolate data to reduce noise; and
-    - (2) extrapolate to cover the age range (0, 100) needed
-          to populate the corresponding attributes of each individual agent
-          at the start of a simulation.
-
-
-    By default, interpolation and extrapolation use
-    a nonlinear logistic-based function (a product of sigmoids).
-
-    Arguments:
-        seed (int): random seed used to generate a new 'empirical' dataset
-        using the standard error of the mean (se) specified in the csv files.
-
-        regression_type (str): specifies the function to use to peform
-        regression on the empirical data, usually done to extrapolate ages beyond
-        the 15-49 range.
-
-    Returns:
-        empowerment_dict (dict): A dictionary with the processed data ready
-            for fpsim simulations.
-        empowerment_data (dict): A dictionary with the preprocessed data loaded
-            from the csv files in thisdir/data
-    """
-    from scipy import optimize
-
-    # Load empirical data
-    empowerment_data = pd.read_csv(thisdir / 'data' / 'empowerment.csv')
-    empwr_cols = [col for col in empowerment_data.columns if not col.endswith('.se') and not col == "age"]
-    mean_cols = {col: col + '.mean' for col in empwr_cols}
-    empowerment_data.rename(columns=mean_cols, inplace=True)
-    # Output dict
-    empowerment_pars = {}
-
-    if seed is None:
-        seed = 42
-    fpu.set_seed(seed)
-
-    data_points = {col: [] for col in empwr_cols}
-    ages = empowerment_data["age"].to_numpy()
-    for col in empwr_cols:
-        loc   = empowerment_data[f"{col}.mean"]
-        scale = empowerment_data[f"{col}.se"]
-        # Use the standard error to capture the uncertainty in the mean eastimates of each metric for each age
-        empowerment_pars[col] = np.random.normal(loc=loc, scale=scale)
-
-    empowerment_pars["avail_ages"] = ages           # available ages in empowerment data
-    empowerment_pars["avail_metrics"] = empwr_cols  # empowerment metrics available in the csv file, does not include the composite metrics
-
-    # Estimate composites for decision making (dm) and financial autonomy (fa)
-    # and add them to the empowerment pars
-    empowerment_pars["loadings"] = get_empowerment_loadings()
-    empowerment_data = calculate_empwr_composites(empowerment_data, empowerment_pars)
-
-    if return_data:
-        return empowerment_pars, empowerment_data
-    return empowerment_pars
-
-
-def fertility_intent_dist():
-    """Add additional metrics from PMA Household/Female surveys"""
-    df = pd.read_csv(thisdir / 'data' / 'fertility_intent.csv')
-
-    data = {}
-    for row in df.itertuples(index=False):
-        intent = row.fertility_intent
-        age = row.age
-        freq = row.freq
-        data.setdefault(age, {})[intent] = freq
-    return data
-
-
-def contraception_intent_dist():
-    """Add additional metrics from PMA Household/Female surveys"""
-
-    df = pd.read_csv(thisdir / 'data' / 'contra_intent.csv')
-
-    data = {}
-    for row in df.itertuples(index=False):
-        intent = row.intent_contra
-        age = row.age
-        freq = row.freq
-        data.setdefault(age, {})[intent] = freq
-    return data
-
-
-def contraception_intent_update_pars():
-    """ Regression coefficients to update intent to use contraception"""
-    raw_pars = pd.read_csv(thisdir / 'data' / 'contra_intent_coef.csv')
-    pars = sc.objdict()
-    metrics = raw_pars.lhs.unique()
-    for metric in metrics:
-        pars[metric] = sc.objdict()
-        thisdf = raw_pars.loc[raw_pars.lhs == metric]
-        for var_dict in thisdf.to_dict('records'):
-            var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
-            pars[metric][var_name] = var_dict['Estimate']
-    return pars
-
-
-def empowerment_update_pars():
-    """ Regression coefficients used to update empowerment attributes"""
-    raw_pars = pd.read_csv(thisdir / 'data' / 'empower_coef.csv')
-    pars = sc.objdict()
-    metrics = raw_pars.lhs.unique()
-    for metric in metrics:
-        pars[metric] = sc.objdict()
-        thisdf = raw_pars.loc[raw_pars.lhs == metric]
-        for var_dict in thisdf.to_dict('records'):
-            var_name = (var_dict['rhs'].replace('_0', '_prev').replace('(', '').replace(')', '').replace('contraception','on_contra').lower())
-            pars[metric][var_name] = var_dict['Estimate']
-    return pars
-
-
-def empowerment_age_spline(which):
+def age_spline(which):
     return pd.read_csv(thisdir / 'data' / f'age_spline_{which}.csv', index_col=0)
 
 
@@ -904,22 +740,43 @@ def process_contra_use_pars():
     return pars
 
 
-def process_contra_use_simple():
+def process_contra_use(which):
+    """
+    Process cotraceptive use parameters.
+    Args:
+        which: either 'simple' or 'mid'
+    """
+
     # Read in data
     alldfs = [
-        pd.read_csv(thisdir / 'data' / 'contra_coef_simple.csv'),
-        pd.read_csv(thisdir / 'data' / 'contra_coef_simple_pp1.csv'),
-        pd.read_csv(thisdir / 'data' / 'contra_coef_simple_pp6.csv'),
+        pd.read_csv(thisdir / 'data' / f'contra_coef_{which}.csv'),
+        pd.read_csv(thisdir / 'data' / f'contra_coef_{which}_pp1.csv'),
+        pd.read_csv(thisdir / 'data' / f'contra_coef_{which}_pp6.csv'),
     ]
 
     contra_use_pars = dict()
+
     for di, df in enumerate(alldfs):
-        contra_use_pars[di] = sc.objdict(
-            intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
-            age_factors=df[df['rhs'].str.match('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
-            fp_ever_user=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
-            age_ever_user_factors=df[df['rhs'].str.match('age') & df['rhs'].str.contains('fp_ever_user')].Estimate.values,
-        )
+        if which == 'mid':
+            contra_use_pars[di] = sc.objdict(
+                intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
+                age_factors=df[df['rhs'].str.contains('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+                ever_used_contra=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
+                edu_attainment=df[df['rhs'].str.contains('edu_attainment')].Estimate.values[0],
+                parity=df[df['rhs'].str.contains('parity')].Estimate.values[0],
+                urban=df[df['rhs'].str.contains('urban')].Estimate.values[0],
+                wealthquintile=df[df['rhs'].str.contains('wealthquintile')].Estimate.values[0],
+                age_ever_user_factors=df[df['rhs'].str.contains('age') & df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+            )
+
+        elif which == 'simple':
+            contra_use_pars[di] = sc.objdict(
+                intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
+                age_factors=df[df['rhs'].str.match('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+                fp_ever_user=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
+                age_ever_user_factors=df[df['rhs'].str.match('age') & df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+            )
+
     return contra_use_pars
 
 
@@ -1066,8 +923,6 @@ def make_pars(seed=None, use_subnational=None):
     pars['urban_prop'] = urban_proportion()
     pars['age_partnership'] = age_partnership()
     pars['wealth_quintile'] = wealth()
-    pars['fertility_intent'] = fertility_intent_dist()
-    pars['intent_to_use'] = contraception_intent_dist()
 
 
     kwargs = locals()
