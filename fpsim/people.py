@@ -10,6 +10,7 @@ from . import defaults as fpd
 from . import base as fpb
 from . import demographics as fpdmg
 from . import subnational as fpsn
+import starsim as ss
 
 # Specify all externally visible things this file defines
 __all__ = ['People']
@@ -17,46 +18,40 @@ __all__ = ['People']
 
 # %% Define classes
 
-class People(fpb.BasePeople):
+class People(ss.People):
     """
     Class for all the people in the simulation.
     """
 
-    def __init__(self, pars, n=None, age=None, sex=None,
-                 empowerment_module=None, education_module=None, **kwargs):
-
-        # Initialization
-        super().__init__(**kwargs)
+    def __init__(self, n_agents=None, age_data=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Allow defaults to be dynamically set
         person_defaults = fpd.person_defaults
-        if 'person_defaults' in kwargs and kwargs['person_defaults'] is not None:
-            for state_name, val in kwargs['person_defaults'].items():
-                person_defaults[state_name].val = val
 
-        self.pars = pars  # Set parameters
-        if n is None:
-            n = int(self.pars['n_agents'])
+        # Initialization
+        super().__init__(n_agents, age_data, extra_states=person_defaults, **kwargs)
 
-        # Set default states
-        self.states = person_defaults
-        for state_name, state in self.states.items():
-            self[state_name] = state.new(n)
+        # self.pars = pars  # Set parameters
+
+        # # Set default states
+        # self.states = person_defaults
+        # for state_name, state in self.states.items():
+        #     self[state_name] = state.new(n)
 
         # Overwrite some states with alternative values
-        self.uid = np.arange(n)
+        # self.uid = np.arange(n)
 
         # Basic demographics
-        _age, _sex = self.get_age_sex(n)
+        # _age, _sex = self.get_age_sex(n)
         if not self.pars['use_subnational']:
-            _urban = self.get_urban(n)
+            _urban = self.get_urban(self.n_agents)
         else:
             _urban = fpsn.get_urban_init_vals(self)
-        if age is None: age = _age
-        if sex is None: sex = _sex
+        # if age is None: age = _age
+        # if sex is None: sex = _sex
 
-        self.age = self.states['age'].new(n, age)  # Age of the person in years
-        self.sex = self.states['sex'].new(n, sex)  # Female (0) or male (1)
+        # self.age = self.states['age'].new(n, age)  # Age of the person in years
+        # self.sex = self.states['sex'].new(n, sex)  # Female (0) or male (1)
         self.urban = self.states['urban'].new(n, _urban)  # Urban (1) or rural (0)
 
         # Parameters on sexual and reproductive history

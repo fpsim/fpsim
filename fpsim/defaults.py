@@ -84,11 +84,7 @@ def get_location(location, printmsg=False):
 # or updated during the course of a simulation.
 person_defaults = [
     # Basic demographics
-    State('uid',                -1, int),
-    State('age',                0, float),
     State('age_by_group',       0, float),
-    State('sex',                0, bool),
-    State('alive',              1, bool),
 
     # Contraception
     State('on_contra',          0, bool),  # whether she's on contraception
