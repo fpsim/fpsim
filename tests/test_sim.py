@@ -73,11 +73,10 @@ def test_simple_choice(location='kenya'):
 
 
 def test_mid_choice(location='kenya'):
-    """ Test sim with mid level choice module """
-    sc.heading('Test sim with mid level choice module')
+    sc.heading('Test sim with default contraceptive choice module')
 
     # Define new modules
-    ms = fp.MidChoice(location=location)
+    ms = fp.StandardChoice(location=location)
     edu = fp.Education(location=location)
 
     # Define pars

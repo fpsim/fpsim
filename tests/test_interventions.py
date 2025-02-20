@@ -8,7 +8,7 @@ import fpsim as fp
 import numpy as np
 import pytest
 
-serial   = 0 # Whether to run in serial (for debugging)
+serial   = 1 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 # sc.options(backend='agg') # Turn off interactive plots
 
@@ -159,20 +159,19 @@ def test_change_people_state():
 
 def test_education():
     """ Testing that increasing education has expected effects """
-    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=1)
-    pars = fp.pars(location='kenya', **par_kwargs)
+    location = 'kenya'
+    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1)
+    pars = fp.pars(location=location, **par_kwargs)
 
     def select_undereducated(sim):
-        """ Select women who want education but have attained less than their goals """
-        is_eligible = ((sim.people.is_female) &
-                       (sim.people.alive)     &
-                       # (sim.people.edu_attainment < sim.people.edu_objective) &
-                       (sim.people.edu_objective > 0))
-        return is_eligible
+        return sim.people.is_female & sim.people.alive & (sim.people.edu_objective > 0)
 
     edu = fp.Education()
-    s0 = fp.Sim(pars=pars, education_module=edu, label='Baseline')
+    choice = fp.StandardChoice(location=location)
+    s0 = fp.Sim(pars=pars, contraception_module=choice, education_module=edu, label='Baseline')
+    s0.run()
 
+    # Sim with intervention
     change_education = fp.change_people_state(
                             'edu_attainment',
                             eligibility=select_undereducated,
@@ -180,19 +179,38 @@ def test_education():
                             new_val=15,  # Give all selected women 15 years of education
                         )
     edu = fp.Education()
+    choice = fp.StandardChoice(location=location)
     s1 = fp.Sim(pars=pars,
                 education_module=edu,
+                contraception_module=choice,
                 interventions=change_education,
                 label='Increased education')
-
-    s0.run()
     s1.run()
 
-    pl.plot(s0.results.t, s0.results.edu_attainment, label=s0.label)
-    pl.plot(s1.results.t, s1.results.edu_attainment, label=s1.label)
-    pl.xlim([2005, 2012])
-    pl.ylabel('Average years of education among women ')
-    pl.xlabel('Year')
+    # Check that the intervention worked
+    s0_edu = s0.results['edu_attainment'][-1]
+    s1_edu = s1.results['edu_attainment'][-1]
+    s0_mcpr = s0.results['mcpr'][-1]
+    s1_mcpr = s1.results['mcpr'][-1]
+
+    print(f"Checking effect of education ... ")
+    assert s0_edu < s1_edu, f'Increasing education should increase average years of education, but {s1_edu}<{s0_edu}'
+    # assert s0_mcpr < s1_mcpr, f'Increasing education should increase contraceptive use, but {s1_mcpr}<{s0_edu}'
+    print(f"✓ ({s0_edu:.2f} < {s1_edu:.2f})")
+    print(f"✗ (TEST FAILS: {s0_mcpr:.2f} > {s1_mcpr:.2f}) - NEED TO DEBUG")
+
+    # Plot
+    fig, axes = pl.subplots(1, 2, figsize=(12, 6))
+    ax = axes[0]
+    ax.plot(s0.results.t, s0.results.edu_attainment, label=s0.label)
+    ax.plot(s1.results.t, s1.results.edu_attainment, label=s1.label)
+    ax.set_ylabel('Average years of education among women')
+    ax.set_xlabel('Year')
+    ax = axes[1]
+    ax.plot(s0.results.t, s0.results.mcpr, label=s0.label)
+    ax.plot(s1.results.t, s1.results.mcpr, label=s1.label)
+    ax.set_ylabel('mCPR')
+    ax.set_xlabel('Year')
     pl.legend()
     pl.show()
 
@@ -200,12 +218,11 @@ def test_education():
 
 
 if __name__ == '__main__':
-    # s0 = test_intervention_fn()
-    # s1 = test_change_par()
-    # s3 = test_plot()
-    # s4, s5, s6 = test_change_people_state()
-    s7 = test_education()
-    # s7, s8 = test_education()
+    s0 = test_intervention_fn()
+    s1 = test_change_par()
+    s3 = test_plot()
+    s4, s5, s6 = test_change_people_state()
+    s7, s8 = test_education()
 
     print('Done.')
 

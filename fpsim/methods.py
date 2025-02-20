@@ -15,7 +15,7 @@ from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs
 
-__all__ = ['Method', 'Methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'MidChoice']
+__all__ = ['Method', 'Methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
 
 
 # %% Base definition of contraceptive methods -- can be overwritten by locations
@@ -384,10 +384,10 @@ class SimpleChoice(RandomChoice):
         return choice_array
 
 
-class MidChoice(SimpleChoice):
+class StandardChoice(SimpleChoice):
     """
     Default contraceptive choice module.
-    Contraceptive choice is based on
+    Contraceptive choice is based on age, education, wealth, parity, and prior use.
     """
     def __init__(self, pars=None, location=None, **kwargs):
         # Initialize base class - this adds parameters and default data
