@@ -1,0 +1,1981 @@
+year,region,method,perc,freq
+2000,Addis Ababa,Condoms,2.7,0.027
+2001,Addis Ababa,Condoms,2.58,0.0258
+2002,Addis Ababa,Condoms,2.46,0.0246
+2003,Addis Ababa,Condoms,2.34,0.0234
+2004,Addis Ababa,Condoms,2.22,0.0222
+2005,Addis Ababa,Condoms,2.1,0.021
+2006,Addis Ababa,Condoms,2.1,0.021
+2007,Addis Ababa,Condoms,2.1,0.021
+2008,Addis Ababa,Condoms,2.1,0.021
+2009,Addis Ababa,Condoms,2.1,0.021
+2010,Addis Ababa,Condoms,2.1,0.021
+2011,Addis Ababa,Condoms,2.1,0.021
+2012,Addis Ababa,Condoms,1.96,0.0196
+2013,Addis Ababa,Condoms,1.82,0.0182
+2014,Addis Ababa,Condoms,1.68,0.0168
+2015,Addis Ababa,Condoms,1.54,0.0154
+2016,Addis Ababa,Condoms,1.4,0.014
+2017,Addis Ababa,Condoms,1.2,0.012
+2018,Addis Ababa,Condoms,1,0.01
+2019,Addis Ababa,Condoms,0.8,0.008
+2000,Addis Ababa,Implants,0.3,0.003
+2001,Addis Ababa,Implants,0.38,0.0038
+2002,Addis Ababa,Implants,0.46,0.0046
+2003,Addis Ababa,Implants,0.54,0.0054
+2004,Addis Ababa,Implants,0.62,0.0062
+2005,Addis Ababa,Implants,0.7,0.007
+2006,Addis Ababa,Implants,0.816666667,0.008166667
+2007,Addis Ababa,Implants,0.933333333,0.009333333
+2008,Addis Ababa,Implants,1.05,0.0105
+2009,Addis Ababa,Implants,1.166666667,0.011666667
+2010,Addis Ababa,Implants,1.283333333,0.012833333
+2011,Addis Ababa,Implants,1.4,0.014
+2012,Addis Ababa,Implants,2.42,0.0242
+2013,Addis Ababa,Implants,3.44,0.0344
+2014,Addis Ababa,Implants,4.46,0.0446
+2015,Addis Ababa,Implants,5.48,0.0548
+2016,Addis Ababa,Implants,6.5,0.065
+2017,Addis Ababa,Implants,6.566666667,0.065666667
+2018,Addis Ababa,Implants,6.633333333,0.066333333
+2019,Addis Ababa,Implants,6.7,0.067
+2000,Addis Ababa,Injectables,4.8,0.048
+2001,Addis Ababa,Injectables,5.36,0.0536
+2002,Addis Ababa,Injectables,5.92,0.0592
+2003,Addis Ababa,Injectables,6.48,0.0648
+2004,Addis Ababa,Injectables,7.04,0.0704
+2005,Addis Ababa,Injectables,7.6,0.076
+2006,Addis Ababa,Injectables,8.8,0.088
+2007,Addis Ababa,Injectables,10,0.1
+2008,Addis Ababa,Injectables,11.2,0.112
+2009,Addis Ababa,Injectables,12.4,0.124
+2010,Addis Ababa,Injectables,13.6,0.136
+2011,Addis Ababa,Injectables,14.8,0.148
+2012,Addis Ababa,Injectables,13.36,0.1336
+2013,Addis Ababa,Injectables,11.92,0.1192
+2014,Addis Ababa,Injectables,10.48,0.1048
+2015,Addis Ababa,Injectables,9.04,0.0904
+2016,Addis Ababa,Injectables,7.6,0.076
+2017,Addis Ababa,Injectables,8.1,0.081
+2018,Addis Ababa,Injectables,8.6,0.086
+2019,Addis Ababa,Injectables,9.1,0.091
+2000,Addis Ababa,IUDs,1.3,0.013
+2001,Addis Ababa,IUDs,1.26,0.0126
+2002,Addis Ababa,IUDs,1.22,0.0122
+2003,Addis Ababa,IUDs,1.18,0.0118
+2004,Addis Ababa,IUDs,1.14,0.0114
+2005,Addis Ababa,IUDs,1.1,0.011
+2006,Addis Ababa,IUDs,1.083333333,0.010833333
+2007,Addis Ababa,IUDs,1.066666667,0.010666667
+2008,Addis Ababa,IUDs,1.05,0.0105
+2009,Addis Ababa,IUDs,1.033333333,0.010333333
+2010,Addis Ababa,IUDs,1.016666667,0.010166667
+2011,Addis Ababa,IUDs,1,0.01
+2012,Addis Ababa,IUDs,1.56,0.0156
+2013,Addis Ababa,IUDs,2.12,0.0212
+2014,Addis Ababa,IUDs,2.68,0.0268
+2015,Addis Ababa,IUDs,3.24,0.0324
+2016,Addis Ababa,IUDs,3.8,0.038
+2017,Addis Ababa,IUDs,3.366666667,0.033666667
+2018,Addis Ababa,IUDs,2.933333333,0.029333333
+2019,Addis Ababa,IUDs,2.5,0.025
+2000,Addis Ababa,Other modern,0,0
+2001,Addis Ababa,Other modern,0.08,8.00E-04
+2002,Addis Ababa,Other modern,0.16,0.0016
+2003,Addis Ababa,Other modern,0.24,0.0024
+2004,Addis Ababa,Other modern,0.32,0.0032
+2005,Addis Ababa,Other modern,0.4,0.004
+2006,Addis Ababa,Other modern,0.333333333,0.003333333
+2007,Addis Ababa,Other modern,0.266666667,0.002666667
+2008,Addis Ababa,Other modern,0.2,0.002
+2009,Addis Ababa,Other modern,0.133333333,0.001333333
+2010,Addis Ababa,Other modern,0.066666667,0.000666667
+2011,Addis Ababa,Other modern,0,0
+2012,Addis Ababa,Other modern,0.06,6.00E-04
+2013,Addis Ababa,Other modern,0.12,0.0012
+2014,Addis Ababa,Other modern,0.18,0.0018
+2015,Addis Ababa,Other modern,0.24,0.0024
+2016,Addis Ababa,Other modern,0.3,0.003
+2017,Addis Ababa,Other modern,0.6,0.006
+2018,Addis Ababa,Other modern,0.9,0.009
+2019,Addis Ababa,Other modern,1.2,0.012
+2000,Addis Ababa,Other traditional,4.7,0.047
+2001,Addis Ababa,Other traditional,4.48,0.0448
+2002,Addis Ababa,Other traditional,4.26,0.0426
+2003,Addis Ababa,Other traditional,4.04,0.0404
+2004,Addis Ababa,Other traditional,3.82,0.0382
+2005,Addis Ababa,Other traditional,3.6,0.036
+2006,Addis Ababa,Other traditional,3.366666667,0.033666667
+2007,Addis Ababa,Other traditional,3.133333333,0.031333333
+2008,Addis Ababa,Other traditional,2.9,0.029
+2009,Addis Ababa,Other traditional,2.666666667,0.026666667
+2010,Addis Ababa,Other traditional,2.433333333,0.024333333
+2011,Addis Ababa,Other traditional,2.2,0.022
+2012,Addis Ababa,Other traditional,2.24,0.0224
+2013,Addis Ababa,Other traditional,2.28,0.0228
+2014,Addis Ababa,Other traditional,2.32,0.0232
+2015,Addis Ababa,Other traditional,2.36,0.0236
+2016,Addis Ababa,Other traditional,2.4,0.024
+2017,Addis Ababa,Other traditional,2.066666667,0.020666667
+2018,Addis Ababa,Other traditional,1.733333333,0.017333333
+2019,Addis Ababa,Other traditional,1.4,0.014
+2000,Addis Ababa,Pill,5.2,0.052
+2001,Addis Ababa,Pill,4.88,0.0488
+2002,Addis Ababa,Pill,4.56,0.0456
+2003,Addis Ababa,Pill,4.24,0.0424
+2004,Addis Ababa,Pill,3.92,0.0392
+2005,Addis Ababa,Pill,3.6,0.036
+2006,Addis Ababa,Pill,3.766666667,0.037666667
+2007,Addis Ababa,Pill,3.933333333,0.039333333
+2008,Addis Ababa,Pill,4.1,0.041
+2009,Addis Ababa,Pill,4.266666667,0.042666667
+2010,Addis Ababa,Pill,4.433333333,0.044333333
+2011,Addis Ababa,Pill,4.6,0.046
+2012,Addis Ababa,Pill,4.34,0.0434
+2013,Addis Ababa,Pill,4.08,0.0408
+2014,Addis Ababa,Pill,3.82,0.0382
+2015,Addis Ababa,Pill,3.56,0.0356
+2016,Addis Ababa,Pill,3.3,0.033
+2017,Addis Ababa,Pill,3.7,0.037
+2018,Addis Ababa,Pill,4.1,0.041
+2019,Addis Ababa,Pill,4.5,0.045
+2000,Addis Ababa,BTL,1.3,0.013
+2001,Addis Ababa,BTL,1.2,0.012
+2002,Addis Ababa,BTL,1.1,0.011
+2003,Addis Ababa,BTL,1,0.01
+2004,Addis Ababa,BTL,0.9,0.009
+2005,Addis Ababa,BTL,0.8,0.008
+2006,Addis Ababa,BTL,0.816666667,0.008166667
+2007,Addis Ababa,BTL,0.833333333,0.008333333
+2008,Addis Ababa,BTL,0.85,0.0085
+2009,Addis Ababa,BTL,0.866666667,0.008666667
+2010,Addis Ababa,BTL,0.883333333,0.008833333
+2011,Addis Ababa,BTL,0.9,0.009
+2012,Addis Ababa,BTL,0.76,0.0076
+2013,Addis Ababa,BTL,0.62,0.0062
+2014,Addis Ababa,BTL,0.48,0.0048
+2015,Addis Ababa,BTL,0.34,0.0034
+2016,Addis Ababa,BTL,0.2,0.002
+2017,Addis Ababa,BTL,0.133333333,0.001333333
+2018,Addis Ababa,BTL,0.066666667,0.000666667
+2019,Addis Ababa,BTL,0,0
+2000,Addis Ababa,Withdrawal,0.6,0.006
+2001,Addis Ababa,Withdrawal,0.62,0.0062
+2002,Addis Ababa,Withdrawal,0.64,0.0064
+2003,Addis Ababa,Withdrawal,0.66,0.0066
+2004,Addis Ababa,Withdrawal,0.68,0.0068
+2005,Addis Ababa,Withdrawal,0.7,0.007
+2006,Addis Ababa,Withdrawal,0.666666667,0.006666667
+2007,Addis Ababa,Withdrawal,0.633333333,0.006333333
+2008,Addis Ababa,Withdrawal,0.6,0.006
+2009,Addis Ababa,Withdrawal,0.566666667,0.005666667
+2010,Addis Ababa,Withdrawal,0.533333333,0.005333333
+2011,Addis Ababa,Withdrawal,0.5,0.005
+2012,Addis Ababa,Withdrawal,0.48,0.0048
+2013,Addis Ababa,Withdrawal,0.46,0.0046
+2014,Addis Ababa,Withdrawal,0.44,0.0044
+2015,Addis Ababa,Withdrawal,0.42,0.0042
+2016,Addis Ababa,Withdrawal,0.4,0.004
+2017,Addis Ababa,Withdrawal,0.266666667,0.002666667
+2018,Addis Ababa,Withdrawal,0.133333333,0.001333333
+2019,Addis Ababa,Withdrawal,0,0
+2000,Afar,Condoms,0.3,0.003
+2001,Afar,Condoms,0.48,0.0048
+2002,Afar,Condoms,0.66,0.0066
+2003,Afar,Condoms,0.84,0.0084
+2004,Afar,Condoms,1.02,0.0102
+2005,Afar,Condoms,1.2,0.012
+2006,Afar,Condoms,1.033333333,0.010333333
+2007,Afar,Condoms,0.866666667,0.008666667
+2008,Afar,Condoms,0.7,0.007
+2009,Afar,Condoms,0.533333333,0.005333333
+2010,Afar,Condoms,0.366666667,0.003666667
+2011,Afar,Condoms,0.2,0.002
+2012,Afar,Condoms,0.2,0.002
+2013,Afar,Condoms,0.2,0.002
+2014,Afar,Condoms,0.2,0.002
+2015,Afar,Condoms,0.2,0.002
+2016,Afar,Condoms,0.2,0.002
+2017,Afar,Condoms,0.2,0.002
+2018,Afar,Condoms,0.2,0.002
+2019,Afar,Condoms,0.2,0.002
+2000,Afar,Implants,0,0
+2001,Afar,Implants,0,0
+2002,Afar,Implants,0,0
+2003,Afar,Implants,0,0
+2004,Afar,Implants,0,0
+2005,Afar,Implants,0,0
+2006,Afar,Implants,0.016666667,0.000166667
+2007,Afar,Implants,0.033333333,0.000333333
+2008,Afar,Implants,0.05,5.00E-04
+2009,Afar,Implants,0.066666667,0.000666667
+2010,Afar,Implants,0.083333333,0.000833333
+2011,Afar,Implants,0.1,0.001
+2012,Afar,Implants,0.32,0.0032
+2013,Afar,Implants,0.54,0.0054
+2014,Afar,Implants,0.76,0.0076
+2015,Afar,Implants,0.98,0.0098
+2016,Afar,Implants,1.2,0.012
+2017,Afar,Implants,1.2,0.012
+2018,Afar,Implants,1.2,0.012
+2019,Afar,Implants,1.2,0.012
+2000,Afar,Injectables,1.7,0.017
+2001,Afar,Injectables,2.08,0.0208
+2002,Afar,Injectables,2.46,0.0246
+2003,Afar,Injectables,2.84,0.0284
+2004,Afar,Injectables,3.22,0.0322
+2005,Afar,Injectables,3.6,0.036
+2006,Afar,Injectables,4.066666667,0.040666667
+2007,Afar,Injectables,4.533333333,0.045333333
+2008,Afar,Injectables,5,0.05
+2009,Afar,Injectables,5.466666667,0.054666667
+2010,Afar,Injectables,5.933333333,0.059333333
+2011,Afar,Injectables,6.4,0.064
+2012,Afar,Injectables,6.7,0.067
+2013,Afar,Injectables,7,0.07
+2014,Afar,Injectables,7.3,0.073
+2015,Afar,Injectables,7.6,0.076
+2016,Afar,Injectables,7.9,0.079
+2017,Afar,Injectables,7.5,0.075
+2018,Afar,Injectables,7.1,0.071
+2019,Afar,Injectables,6.7,0.067
+2000,Afar,IUDs,0,0
+2001,Afar,IUDs,0,0
+2002,Afar,IUDs,0,0
+2003,Afar,IUDs,0,0
+2004,Afar,IUDs,0,0
+2005,Afar,IUDs,0,0
+2006,Afar,IUDs,0.016666667,0.000166667
+2007,Afar,IUDs,0.033333333,0.000333333
+2008,Afar,IUDs,0.05,5.00E-04
+2009,Afar,IUDs,0.066666667,0.000666667
+2010,Afar,IUDs,0.083333333,0.000833333
+2011,Afar,IUDs,0.1,0.001
+2012,Afar,IUDs,0.1,0.001
+2013,Afar,IUDs,0.1,0.001
+2014,Afar,IUDs,0.1,0.001
+2015,Afar,IUDs,0.1,0.001
+2016,Afar,IUDs,0.1,0.001
+2017,Afar,IUDs,0.266666667,0.002666667
+2018,Afar,IUDs,0.433333333,0.004333333
+2019,Afar,IUDs,0.6,0.006
+2000,Afar,Other modern,0,0
+2001,Afar,Other modern,0,0
+2002,Afar,Other modern,0,0
+2003,Afar,Other modern,0,0
+2004,Afar,Other modern,0,0
+2005,Afar,Other modern,0,0
+2006,Afar,Other modern,0,0
+2007,Afar,Other modern,0,0
+2008,Afar,Other modern,0,0
+2009,Afar,Other modern,0,0
+2010,Afar,Other modern,0,0
+2011,Afar,Other modern,0,0
+2012,Afar,Other modern,0,0
+2013,Afar,Other modern,0,0
+2014,Afar,Other modern,0,0
+2015,Afar,Other modern,0,0
+2016,Afar,Other modern,0,0
+2017,Afar,Other modern,0.166666667,0.001666667
+2018,Afar,Other modern,0.333333333,0.003333333
+2019,Afar,Other modern,0.5,0.005
+2000,Afar,Other traditional,0.3,0.003
+2001,Afar,Other traditional,0.36,0.0036
+2002,Afar,Other traditional,0.42,0.0042
+2003,Afar,Other traditional,0.48,0.0048
+2004,Afar,Other traditional,0.54,0.0054
+2005,Afar,Other traditional,0.6,0.006
+2006,Afar,Other traditional,0.533333333,0.005333333
+2007,Afar,Other traditional,0.466666667,0.004666667
+2008,Afar,Other traditional,0.4,0.004
+2009,Afar,Other traditional,0.333333333,0.003333333
+2010,Afar,Other traditional,0.266666667,0.002666667
+2011,Afar,Other traditional,0.2,0.002
+2012,Afar,Other traditional,0.16,0.0016
+2013,Afar,Other traditional,0.12,0.0012
+2014,Afar,Other traditional,0.08,8.00E-04
+2015,Afar,Other traditional,0.04,4.00E-04
+2016,Afar,Other traditional,0,0
+2017,Afar,Other traditional,0,0
+2018,Afar,Other traditional,0,0
+2019,Afar,Other traditional,0,0
+2000,Afar,Pill,3.9,0.039
+2001,Afar,Pill,3.32,0.0332
+2002,Afar,Pill,2.74,0.0274
+2003,Afar,Pill,2.16,0.0216
+2004,Afar,Pill,1.58,0.0158
+2005,Afar,Pill,1,0.01
+2006,Afar,Pill,0.983333333,0.009833333
+2007,Afar,Pill,0.966666667,0.009666667
+2008,Afar,Pill,0.95,0.0095
+2009,Afar,Pill,0.933333333,0.009333333
+2010,Afar,Pill,0.916666667,0.009166667
+2011,Afar,Pill,0.9,0.009
+2012,Afar,Pill,0.8,0.008
+2013,Afar,Pill,0.7,0.007
+2014,Afar,Pill,0.6,0.006
+2015,Afar,Pill,0.5,0.005
+2016,Afar,Pill,0.4,0.004
+2017,Afar,Pill,0.9,0.009
+2018,Afar,Pill,1.4,0.014
+2019,Afar,Pill,1.9,0.019
+2000,Afar,BTL,0.5,0.005
+2001,Afar,BTL,0.4,0.004
+2002,Afar,BTL,0.3,0.003
+2003,Afar,BTL,0.2,0.002
+2004,Afar,BTL,0.1,0.001
+2005,Afar,BTL,0,0
+2006,Afar,BTL,0,0
+2007,Afar,BTL,0,0
+2008,Afar,BTL,0,0
+2009,Afar,BTL,0,0
+2010,Afar,BTL,0,0
+2011,Afar,BTL,0,0
+2012,Afar,BTL,0,0
+2013,Afar,BTL,0,0
+2014,Afar,BTL,0,0
+2015,Afar,BTL,0,0
+2016,Afar,BTL,0,0
+2017,Afar,BTL,0,0
+2018,Afar,BTL,0,0
+2019,Afar,BTL,0,0
+2000,Afar,Withdrawal,0,0
+2001,Afar,Withdrawal,0,0
+2002,Afar,Withdrawal,0,0
+2003,Afar,Withdrawal,0,0
+2004,Afar,Withdrawal,0,0
+2005,Afar,Withdrawal,0,0
+2006,Afar,Withdrawal,0.016666667,0.000166667
+2007,Afar,Withdrawal,0.033333333,0.000333333
+2008,Afar,Withdrawal,0.05,5.00E-04
+2009,Afar,Withdrawal,0.066666667,0.000666667
+2010,Afar,Withdrawal,0.083333333,0.000833333
+2011,Afar,Withdrawal,0.1,0.001
+2012,Afar,Withdrawal,0.08,8.00E-04
+2013,Afar,Withdrawal,0.06,6.00E-04
+2014,Afar,Withdrawal,0.04,4.00E-04
+2015,Afar,Withdrawal,0.02,2.00E-04
+2016,Afar,Withdrawal,0,0
+2017,Afar,Withdrawal,0,0
+2018,Afar,Withdrawal,0,0
+2019,Afar,Withdrawal,0,0
+2000,Amhara,Condoms,0.1,0.001
+2001,Amhara,Condoms,0.1,0.001
+2002,Amhara,Condoms,0.1,0.001
+2003,Amhara,Condoms,0.1,0.001
+2004,Amhara,Condoms,0.1,0.001
+2005,Amhara,Condoms,0.1,0.001
+2006,Amhara,Condoms,0.083333333,0.000833333
+2007,Amhara,Condoms,0.066666667,0.000666667
+2008,Amhara,Condoms,0.05,5.00E-04
+2009,Amhara,Condoms,0.033333333,0.000333333
+2010,Amhara,Condoms,0.016666667,0.000166667
+2011,Amhara,Condoms,0,0
+2012,Amhara,Condoms,0,0
+2013,Amhara,Condoms,0,0
+2014,Amhara,Condoms,0,0
+2015,Amhara,Condoms,0,0
+2016,Amhara,Condoms,0,0
+2017,Amhara,Condoms,0,0
+2018,Amhara,Condoms,0,0
+2019,Amhara,Condoms,0,0
+2000,Amhara,Implants,0,0
+2001,Amhara,Implants,0.02,2.00E-04
+2002,Amhara,Implants,0.04,4.00E-04
+2003,Amhara,Implants,0.06,6.00E-04
+2004,Amhara,Implants,0.08,8.00E-04
+2005,Amhara,Implants,0.1,0.001
+2006,Amhara,Implants,0.516666667,0.005166667
+2007,Amhara,Implants,0.933333333,0.009333333
+2008,Amhara,Implants,1.35,0.0135
+2009,Amhara,Implants,1.766666667,0.017666667
+2010,Amhara,Implants,2.183333333,0.021833333
+2011,Amhara,Implants,2.6,0.026
+2012,Amhara,Implants,3.9,0.039
+2013,Amhara,Implants,5.2,0.052
+2014,Amhara,Implants,6.5,0.065
+2015,Amhara,Implants,7.8,0.078
+2016,Amhara,Implants,9.1,0.091
+2017,Amhara,Implants,8.566666667,0.085666667
+2018,Amhara,Implants,8.033333333,0.080333333
+2019,Amhara,Implants,7.5,0.075
+2000,Amhara,Injectables,2.6,0.026
+2001,Amhara,Injectables,3.74,0.0374
+2002,Amhara,Injectables,4.88,0.0488
+2003,Amhara,Injectables,6.02,0.0602
+2004,Amhara,Injectables,7.16,0.0716
+2005,Amhara,Injectables,8.3,0.083
+2006,Amhara,Injectables,9.95,0.0995
+2007,Amhara,Injectables,11.6,0.116
+2008,Amhara,Injectables,13.25,0.1325
+2009,Amhara,Injectables,14.9,0.149
+2010,Amhara,Injectables,16.55,0.1655
+2011,Amhara,Injectables,18.2,0.182
+2012,Amhara,Injectables,18.7,0.187
+2013,Amhara,Injectables,19.2,0.192
+2014,Amhara,Injectables,19.7,0.197
+2015,Amhara,Injectables,20.2,0.202
+2016,Amhara,Injectables,20.7,0.207
+2017,Amhara,Injectables,22.03333333,0.220333333
+2018,Amhara,Injectables,23.36666667,0.233666667
+2019,Amhara,Injectables,24.7,0.247
+2000,Amhara,IUDs,0,0
+2001,Amhara,IUDs,0.02,2.00E-04
+2002,Amhara,IUDs,0.04,4.00E-04
+2003,Amhara,IUDs,0.06,6.00E-04
+2004,Amhara,IUDs,0.08,8.00E-04
+2005,Amhara,IUDs,0.1,0.001
+2006,Amhara,IUDs,0.116666667,0.001166667
+2007,Amhara,IUDs,0.133333333,0.001333333
+2008,Amhara,IUDs,0.15,0.0015
+2009,Amhara,IUDs,0.166666667,0.001666667
+2010,Amhara,IUDs,0.183333333,0.001833333
+2011,Amhara,IUDs,0.2,0.002
+2012,Amhara,IUDs,0.58,0.0058
+2013,Amhara,IUDs,0.96,0.0096
+2014,Amhara,IUDs,1.34,0.0134
+2015,Amhara,IUDs,1.72,0.0172
+2016,Amhara,IUDs,2.1,0.021
+2017,Amhara,IUDs,1.7,0.017
+2018,Amhara,IUDs,1.3,0.013
+2019,Amhara,IUDs,0.9,0.009
+2000,Amhara,Other modern,0,0
+2001,Amhara,Other modern,0,0
+2002,Amhara,Other modern,0,0
+2003,Amhara,Other modern,0,0
+2004,Amhara,Other modern,0,0
+2005,Amhara,Other modern,0,0
+2006,Amhara,Other modern,0.016666667,0.000166667
+2007,Amhara,Other modern,0.033333333,0.000333333
+2008,Amhara,Other modern,0.05,5.00E-04
+2009,Amhara,Other modern,0.066666667,0.000666667
+2010,Amhara,Other modern,0.083333333,0.000833333
+2011,Amhara,Other modern,0.1,0.001
+2012,Amhara,Other modern,0.1,0.001
+2013,Amhara,Other modern,0.1,0.001
+2014,Amhara,Other modern,0.1,0.001
+2015,Amhara,Other modern,0.1,0.001
+2016,Amhara,Other modern,0.1,0.001
+2017,Amhara,Other modern,0.133333333,0.001333333
+2018,Amhara,Other modern,0.166666667,0.001666667
+2019,Amhara,Other modern,0.2,0.002
+2000,Amhara,Other traditional,0.6,0.006
+2001,Amhara,Other traditional,0.52,0.0052
+2002,Amhara,Other traditional,0.44,0.0044
+2003,Amhara,Other traditional,0.36,0.0036
+2004,Amhara,Other traditional,0.28,0.0028
+2005,Amhara,Other traditional,0.2,0.002
+2006,Amhara,Other traditional,0.233333333,0.002333333
+2007,Amhara,Other traditional,0.266666667,0.002666667
+2008,Amhara,Other traditional,0.3,0.003
+2009,Amhara,Other traditional,0.333333333,0.003333333
+2010,Amhara,Other traditional,0.366666667,0.003666667
+2011,Amhara,Other traditional,0.4,0.004
+2012,Amhara,Other traditional,0.36,0.0036
+2013,Amhara,Other traditional,0.32,0.0032
+2014,Amhara,Other traditional,0.28,0.0028
+2015,Amhara,Other traditional,0.24,0.0024
+2016,Amhara,Other traditional,0.2,0.002
+2017,Amhara,Other traditional,0.133333333,0.001333333
+2018,Amhara,Other traditional,0.066666667,0.000666667
+2019,Amhara,Other traditional,0,0
+2000,Amhara,Pill,2.6,0.026
+2001,Amhara,Pill,2.58,0.0258
+2002,Amhara,Pill,2.56,0.0256
+2003,Amhara,Pill,2.54,0.0254
+2004,Amhara,Pill,2.52,0.0252
+2005,Amhara,Pill,2.5,0.025
+2006,Amhara,Pill,2.266666667,0.022666667
+2007,Amhara,Pill,2.033333333,0.020333333
+2008,Amhara,Pill,1.8,0.018
+2009,Amhara,Pill,1.566666667,0.015666667
+2010,Amhara,Pill,1.333333333,0.013333333
+2011,Amhara,Pill,1.1,0.011
+2012,Amhara,Pill,1.16,0.0116
+2013,Amhara,Pill,1.22,0.0122
+2014,Amhara,Pill,1.28,0.0128
+2015,Amhara,Pill,1.34,0.0134
+2016,Amhara,Pill,1.4,0.014
+2017,Amhara,Pill,1.3,0.013
+2018,Amhara,Pill,1.2,0.012
+2019,Amhara,Pill,1.1,0.011
+2000,Amhara,BTL,0.1,0.001
+2001,Amhara,BTL,0.1,0.001
+2002,Amhara,BTL,0.1,0.001
+2003,Amhara,BTL,0.1,0.001
+2004,Amhara,BTL,0.1,0.001
+2005,Amhara,BTL,0.1,0.001
+2006,Amhara,BTL,0.15,0.0015
+2007,Amhara,BTL,0.2,0.002
+2008,Amhara,BTL,0.25,0.0025
+2009,Amhara,BTL,0.3,0.003
+2010,Amhara,BTL,0.35,0.0035
+2011,Amhara,BTL,0.4,0.004
+2012,Amhara,BTL,0.4,0.004
+2013,Amhara,BTL,0.4,0.004
+2014,Amhara,BTL,0.4,0.004
+2015,Amhara,BTL,0.4,0.004
+2016,Amhara,BTL,0.4,0.004
+2017,Amhara,BTL,0.3,0.003
+2018,Amhara,BTL,0.2,0.002
+2019,Amhara,BTL,0.1,0.001
+2000,Amhara,Withdrawal,0,0
+2001,Amhara,Withdrawal,0.02,2.00E-04
+2002,Amhara,Withdrawal,0.04,4.00E-04
+2003,Amhara,Withdrawal,0.06,6.00E-04
+2004,Amhara,Withdrawal,0.08,8.00E-04
+2005,Amhara,Withdrawal,0.1,0.001
+2006,Amhara,Withdrawal,0.116666667,0.001166667
+2007,Amhara,Withdrawal,0.133333333,0.001333333
+2008,Amhara,Withdrawal,0.15,0.0015
+2009,Amhara,Withdrawal,0.166666667,0.001666667
+2010,Amhara,Withdrawal,0.183333333,0.001833333
+2011,Amhara,Withdrawal,0.2,0.002
+2012,Amhara,Withdrawal,0.18,0.0018
+2013,Amhara,Withdrawal,0.16,0.0016
+2014,Amhara,Withdrawal,0.14,0.0014
+2015,Amhara,Withdrawal,0.12,0.0012
+2016,Amhara,Withdrawal,0.1,0.001
+2017,Amhara,Withdrawal,0.066666667,0.000666667
+2018,Amhara,Withdrawal,0.033333333,0.000333333
+2019,Amhara,Withdrawal,0,0
+2000,Benishangul-Gumuz,Condoms,0.2,0.002
+2001,Benishangul-Gumuz,Condoms,0.24,0.0024
+2002,Benishangul-Gumuz,Condoms,0.28,0.0028
+2003,Benishangul-Gumuz,Condoms,0.32,0.0032
+2004,Benishangul-Gumuz,Condoms,0.36,0.0036
+2005,Benishangul-Gumuz,Condoms,0.4,0.004
+2006,Benishangul-Gumuz,Condoms,0.45,0.0045
+2007,Benishangul-Gumuz,Condoms,0.5,0.005
+2008,Benishangul-Gumuz,Condoms,0.55,0.0055
+2009,Benishangul-Gumuz,Condoms,0.6,0.006
+2010,Benishangul-Gumuz,Condoms,0.65,0.0065
+2011,Benishangul-Gumuz,Condoms,0.7,0.007
+2012,Benishangul-Gumuz,Condoms,0.56,0.0056
+2013,Benishangul-Gumuz,Condoms,0.42,0.0042
+2014,Benishangul-Gumuz,Condoms,0.28,0.0028
+2015,Benishangul-Gumuz,Condoms,0.14,0.0014
+2016,Benishangul-Gumuz,Condoms,0,0
+2017,Benishangul-Gumuz,Condoms,0,0
+2018,Benishangul-Gumuz,Condoms,0,0
+2019,Benishangul-Gumuz,Condoms,0,0
+2000,Benishangul-Gumuz,Implants,0,0
+2001,Benishangul-Gumuz,Implants,0,0
+2002,Benishangul-Gumuz,Implants,0,0
+2003,Benishangul-Gumuz,Implants,0,0
+2004,Benishangul-Gumuz,Implants,0,0
+2005,Benishangul-Gumuz,Implants,0,0
+2006,Benishangul-Gumuz,Implants,0.2,0.002
+2007,Benishangul-Gumuz,Implants,0.4,0.004
+2008,Benishangul-Gumuz,Implants,0.6,0.006
+2009,Benishangul-Gumuz,Implants,0.8,0.008
+2010,Benishangul-Gumuz,Implants,1,0.01
+2011,Benishangul-Gumuz,Implants,1.2,0.012
+2012,Benishangul-Gumuz,Implants,1.94,0.0194
+2013,Benishangul-Gumuz,Implants,2.68,0.0268
+2014,Benishangul-Gumuz,Implants,3.42,0.0342
+2015,Benishangul-Gumuz,Implants,4.16,0.0416
+2016,Benishangul-Gumuz,Implants,4.9,0.049
+2017,Benishangul-Gumuz,Implants,6.966666667,0.069666667
+2018,Benishangul-Gumuz,Implants,9.033333333,0.090333333
+2019,Benishangul-Gumuz,Implants,11.1,0.111
+2000,Benishangul-Gumuz,Injectables,4.1,0.041
+2001,Benishangul-Gumuz,Injectables,4.64,0.0464
+2002,Benishangul-Gumuz,Injectables,5.18,0.0518
+2003,Benishangul-Gumuz,Injectables,5.72,0.0572
+2004,Benishangul-Gumuz,Injectables,6.26,0.0626
+2005,Benishangul-Gumuz,Injectables,6.8,0.068
+2006,Benishangul-Gumuz,Injectables,8.266666667,0.082666667
+2007,Benishangul-Gumuz,Injectables,9.733333333,0.097333333
+2008,Benishangul-Gumuz,Injectables,11.2,0.112
+2009,Benishangul-Gumuz,Injectables,12.66666667,0.126666667
+2010,Benishangul-Gumuz,Injectables,14.13333333,0.141333333
+2011,Benishangul-Gumuz,Injectables,15.6,0.156
+2012,Benishangul-Gumuz,Injectables,15.42,0.1542
+2013,Benishangul-Gumuz,Injectables,15.24,0.1524
+2014,Benishangul-Gumuz,Injectables,15.06,0.1506
+2015,Benishangul-Gumuz,Injectables,14.88,0.1488
+2016,Benishangul-Gumuz,Injectables,14.7,0.147
+2017,Benishangul-Gumuz,Injectables,13.83333333,0.138333333
+2018,Benishangul-Gumuz,Injectables,12.96666667,0.129666667
+2019,Benishangul-Gumuz,Injectables,12.1,0.121
+2000,Benishangul-Gumuz,IUDs,0,0
+2001,Benishangul-Gumuz,IUDs,0,0
+2002,Benishangul-Gumuz,IUDs,0,0
+2003,Benishangul-Gumuz,IUDs,0,0
+2004,Benishangul-Gumuz,IUDs,0,0
+2005,Benishangul-Gumuz,IUDs,0,0
+2006,Benishangul-Gumuz,IUDs,0,0
+2007,Benishangul-Gumuz,IUDs,0,0
+2008,Benishangul-Gumuz,IUDs,0,0
+2009,Benishangul-Gumuz,IUDs,0,0
+2010,Benishangul-Gumuz,IUDs,0,0
+2011,Benishangul-Gumuz,IUDs,0,0
+2012,Benishangul-Gumuz,IUDs,0.26,0.0026
+2013,Benishangul-Gumuz,IUDs,0.52,0.0052
+2014,Benishangul-Gumuz,IUDs,0.78,0.0078
+2015,Benishangul-Gumuz,IUDs,1.04,0.0104
+2016,Benishangul-Gumuz,IUDs,1.3,0.013
+2017,Benishangul-Gumuz,IUDs,1.366666667,0.013666667
+2018,Benishangul-Gumuz,IUDs,1.433333333,0.014333333
+2019,Benishangul-Gumuz,IUDs,1.5,0.015
+2000,Benishangul-Gumuz,Other modern,0,0
+2001,Benishangul-Gumuz,Other modern,0.02,2.00E-04
+2002,Benishangul-Gumuz,Other modern,0.04,4.00E-04
+2003,Benishangul-Gumuz,Other modern,0.06,6.00E-04
+2004,Benishangul-Gumuz,Other modern,0.08,8.00E-04
+2005,Benishangul-Gumuz,Other modern,0.1,0.001
+2006,Benishangul-Gumuz,Other modern,0.083333333,0.000833333
+2007,Benishangul-Gumuz,Other modern,0.066666667,0.000666667
+2008,Benishangul-Gumuz,Other modern,0.05,5.00E-04
+2009,Benishangul-Gumuz,Other modern,0.033333333,0.000333333
+2010,Benishangul-Gumuz,Other modern,0.016666667,0.000166667
+2011,Benishangul-Gumuz,Other modern,0,0
+2012,Benishangul-Gumuz,Other modern,0.02,2.00E-04
+2013,Benishangul-Gumuz,Other modern,0.04,4.00E-04
+2014,Benishangul-Gumuz,Other modern,0.06,6.00E-04
+2015,Benishangul-Gumuz,Other modern,0.08,8.00E-04
+2016,Benishangul-Gumuz,Other modern,0.1,0.001
+2017,Benishangul-Gumuz,Other modern,0.266666667,0.002666667
+2018,Benishangul-Gumuz,Other modern,0.433333333,0.004333333
+2019,Benishangul-Gumuz,Other modern,0.6,0.006
+2000,Benishangul-Gumuz,Other traditional,0.3,0.003
+2001,Benishangul-Gumuz,Other traditional,0.34,0.0034
+2002,Benishangul-Gumuz,Other traditional,0.38,0.0038
+2003,Benishangul-Gumuz,Other traditional,0.42,0.0042
+2004,Benishangul-Gumuz,Other traditional,0.46,0.0046
+2005,Benishangul-Gumuz,Other traditional,0.5,0.005
+2006,Benishangul-Gumuz,Other traditional,0.516666667,0.005166667
+2007,Benishangul-Gumuz,Other traditional,0.533333333,0.005333333
+2008,Benishangul-Gumuz,Other traditional,0.55,0.0055
+2009,Benishangul-Gumuz,Other traditional,0.566666667,0.005666667
+2010,Benishangul-Gumuz,Other traditional,0.583333333,0.005833333
+2011,Benishangul-Gumuz,Other traditional,0.6,0.006
+2012,Benishangul-Gumuz,Other traditional,0.5,0.005
+2013,Benishangul-Gumuz,Other traditional,0.4,0.004
+2014,Benishangul-Gumuz,Other traditional,0.3,0.003
+2015,Benishangul-Gumuz,Other traditional,0.2,0.002
+2016,Benishangul-Gumuz,Other traditional,0.1,0.001
+2017,Benishangul-Gumuz,Other traditional,0.5,0.005
+2018,Benishangul-Gumuz,Other traditional,0.9,0.009
+2019,Benishangul-Gumuz,Other traditional,1.3,0.013
+2000,Benishangul-Gumuz,Pill,1.6,0.016
+2001,Benishangul-Gumuz,Pill,1.48,0.0148
+2002,Benishangul-Gumuz,Pill,1.36,0.0136
+2003,Benishangul-Gumuz,Pill,1.24,0.0124
+2004,Benishangul-Gumuz,Pill,1.12,0.0112
+2005,Benishangul-Gumuz,Pill,1,0.01
+2006,Benishangul-Gumuz,Pill,1.15,0.0115
+2007,Benishangul-Gumuz,Pill,1.3,0.013
+2008,Benishangul-Gumuz,Pill,1.45,0.0145
+2009,Benishangul-Gumuz,Pill,1.6,0.016
+2010,Benishangul-Gumuz,Pill,1.75,0.0175
+2011,Benishangul-Gumuz,Pill,1.9,0.019
+2012,Benishangul-Gumuz,Pill,1.66,0.0166
+2013,Benishangul-Gumuz,Pill,1.42,0.0142
+2014,Benishangul-Gumuz,Pill,1.18,0.0118
+2015,Benishangul-Gumuz,Pill,0.94,0.0094
+2016,Benishangul-Gumuz,Pill,0.7,0.007
+2017,Benishangul-Gumuz,Pill,0.7,0.007
+2018,Benishangul-Gumuz,Pill,0.7,0.007
+2019,Benishangul-Gumuz,Pill,0.7,0.007
+2000,Benishangul-Gumuz,BTL,0.4,0.004
+2001,Benishangul-Gumuz,BTL,0.36,0.0036
+2002,Benishangul-Gumuz,BTL,0.32,0.0032
+2003,Benishangul-Gumuz,BTL,0.28,0.0028
+2004,Benishangul-Gumuz,BTL,0.24,0.0024
+2005,Benishangul-Gumuz,BTL,0.2,0.002
+2006,Benishangul-Gumuz,BTL,0.233333333,0.002333333
+2007,Benishangul-Gumuz,BTL,0.266666667,0.002666667
+2008,Benishangul-Gumuz,BTL,0.3,0.003
+2009,Benishangul-Gumuz,BTL,0.333333333,0.003333333
+2010,Benishangul-Gumuz,BTL,0.366666667,0.003666667
+2011,Benishangul-Gumuz,BTL,0.4,0.004
+2012,Benishangul-Gumuz,BTL,0.34,0.0034
+2013,Benishangul-Gumuz,BTL,0.28,0.0028
+2014,Benishangul-Gumuz,BTL,0.22,0.0022
+2015,Benishangul-Gumuz,BTL,0.16,0.0016
+2016,Benishangul-Gumuz,BTL,0.1,0.001
+2017,Benishangul-Gumuz,BTL,0.066666667,0.000666667
+2018,Benishangul-Gumuz,BTL,0.033333333,0.000333333
+2019,Benishangul-Gumuz,BTL,0,0
+2000,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2001,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2002,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2003,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2004,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2005,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2006,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2007,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2008,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2009,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2010,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2011,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2012,Benishangul-Gumuz,Withdrawal,0.08,8.00E-04
+2013,Benishangul-Gumuz,Withdrawal,0.06,6.00E-04
+2014,Benishangul-Gumuz,Withdrawal,0.04,4.00E-04
+2015,Benishangul-Gumuz,Withdrawal,0.02,2.00E-04
+2016,Benishangul-Gumuz,Withdrawal,0,0
+2017,Benishangul-Gumuz,Withdrawal,0.033333333,0.000333333
+2018,Benishangul-Gumuz,Withdrawal,0.066666667,0.000666667
+2019,Benishangul-Gumuz,Withdrawal,0.1,0.001
+2000,Dire Dawa,Condoms,1.9,0.019
+2001,Dire Dawa,Condoms,1.82,0.0182
+2002,Dire Dawa,Condoms,1.74,0.0174
+2003,Dire Dawa,Condoms,1.66,0.0166
+2004,Dire Dawa,Condoms,1.58,0.0158
+2005,Dire Dawa,Condoms,1.5,0.015
+2006,Dire Dawa,Condoms,1.5,0.015
+2007,Dire Dawa,Condoms,1.5,0.015
+2008,Dire Dawa,Condoms,1.5,0.015
+2009,Dire Dawa,Condoms,1.5,0.015
+2010,Dire Dawa,Condoms,1.5,0.015
+2011,Dire Dawa,Condoms,1.5,0.015
+2012,Dire Dawa,Condoms,1.3,0.013
+2013,Dire Dawa,Condoms,1.1,0.011
+2014,Dire Dawa,Condoms,0.9,0.009
+2015,Dire Dawa,Condoms,0.7,0.007
+2016,Dire Dawa,Condoms,0.5,0.005
+2017,Dire Dawa,Condoms,0.533333333,0.005333333
+2018,Dire Dawa,Condoms,0.566666667,0.005666667
+2019,Dire Dawa,Condoms,0.6,0.006
+2000,Dire Dawa,Implants,0.5,0.005
+2001,Dire Dawa,Implants,0.5,0.005
+2002,Dire Dawa,Implants,0.5,0.005
+2003,Dire Dawa,Implants,0.5,0.005
+2004,Dire Dawa,Implants,0.5,0.005
+2005,Dire Dawa,Implants,0.5,0.005
+2006,Dire Dawa,Implants,1.2,0.012
+2007,Dire Dawa,Implants,1.9,0.019
+2008,Dire Dawa,Implants,2.6,0.026
+2009,Dire Dawa,Implants,3.3,0.033
+2010,Dire Dawa,Implants,4,0.04
+2011,Dire Dawa,Implants,4.7,0.047
+2012,Dire Dawa,Implants,5.38,0.0538
+2013,Dire Dawa,Implants,6.06,0.0606
+2014,Dire Dawa,Implants,6.74,0.0674
+2015,Dire Dawa,Implants,7.42,0.0742
+2016,Dire Dawa,Implants,8.1,0.081
+2017,Dire Dawa,Implants,7.8,0.078
+2018,Dire Dawa,Implants,7.5,0.075
+2019,Dire Dawa,Implants,7.2,0.072
+2000,Dire Dawa,Injectables,5.7,0.057
+2001,Dire Dawa,Injectables,7.08,0.0708
+2002,Dire Dawa,Injectables,8.46,0.0846
+2003,Dire Dawa,Injectables,9.84,0.0984
+2004,Dire Dawa,Injectables,11.22,0.1122
+2005,Dire Dawa,Injectables,12.6,0.126
+2006,Dire Dawa,Injectables,12.01666667,0.120166667
+2007,Dire Dawa,Injectables,11.43333333,0.114333333
+2008,Dire Dawa,Injectables,10.85,0.1085
+2009,Dire Dawa,Injectables,10.26666667,0.102666667
+2010,Dire Dawa,Injectables,9.683333333,0.096833333
+2011,Dire Dawa,Injectables,9.1,0.091
+2012,Dire Dawa,Injectables,8.62,0.0862
+2013,Dire Dawa,Injectables,8.14,0.0814
+2014,Dire Dawa,Injectables,7.66,0.0766
+2015,Dire Dawa,Injectables,7.18,0.0718
+2016,Dire Dawa,Injectables,6.7,0.067
+2017,Dire Dawa,Injectables,6.1,0.061
+2018,Dire Dawa,Injectables,5.5,0.055
+2019,Dire Dawa,Injectables,4.9,0.049
+2000,Dire Dawa,IUDs,1,0.01
+2001,Dire Dawa,IUDs,0.86,0.0086
+2002,Dire Dawa,IUDs,0.72,0.0072
+2003,Dire Dawa,IUDs,0.58,0.0058
+2004,Dire Dawa,IUDs,0.44,0.0044
+2005,Dire Dawa,IUDs,0.3,0.003
+2006,Dire Dawa,IUDs,0.35,0.0035
+2007,Dire Dawa,IUDs,0.4,0.004
+2008,Dire Dawa,IUDs,0.45,0.0045
+2009,Dire Dawa,IUDs,0.5,0.005
+2010,Dire Dawa,IUDs,0.55,0.0055
+2011,Dire Dawa,IUDs,0.6,0.006
+2012,Dire Dawa,IUDs,0.66,0.0066
+2013,Dire Dawa,IUDs,0.72,0.0072
+2014,Dire Dawa,IUDs,0.78,0.0078
+2015,Dire Dawa,IUDs,0.84,0.0084
+2016,Dire Dawa,IUDs,0.9,0.009
+2017,Dire Dawa,IUDs,0.766666667,0.007666667
+2018,Dire Dawa,IUDs,0.633333333,0.006333333
+2019,Dire Dawa,IUDs,0.5,0.005
+2000,Dire Dawa,Other modern,0,0
+2001,Dire Dawa,Other modern,0,0
+2002,Dire Dawa,Other modern,0,0
+2003,Dire Dawa,Other modern,0,0
+2004,Dire Dawa,Other modern,0,0
+2005,Dire Dawa,Other modern,0,0
+2006,Dire Dawa,Other modern,0.05,5.00E-04
+2007,Dire Dawa,Other modern,0.1,0.001
+2008,Dire Dawa,Other modern,0.15,0.0015
+2009,Dire Dawa,Other modern,0.2,0.002
+2010,Dire Dawa,Other modern,0.25,0.0025
+2011,Dire Dawa,Other modern,0.3,0.003
+2012,Dire Dawa,Other modern,0.36,0.0036
+2013,Dire Dawa,Other modern,0.42,0.0042
+2014,Dire Dawa,Other modern,0.48,0.0048
+2015,Dire Dawa,Other modern,0.54,0.0054
+2016,Dire Dawa,Other modern,0.6,0.006
+2017,Dire Dawa,Other modern,0.9,0.009
+2018,Dire Dawa,Other modern,1.2,0.012
+2019,Dire Dawa,Other modern,1.5,0.015
+2000,Dire Dawa,Other traditional,3.5,0.035
+2001,Dire Dawa,Other traditional,3.04,0.0304
+2002,Dire Dawa,Other traditional,2.58,0.0258
+2003,Dire Dawa,Other traditional,2.12,0.0212
+2004,Dire Dawa,Other traditional,1.66,0.0166
+2005,Dire Dawa,Other traditional,1.2,0.012
+2006,Dire Dawa,Other traditional,1.216666667,0.012166667
+2007,Dire Dawa,Other traditional,1.233333333,0.012333333
+2008,Dire Dawa,Other traditional,1.25,0.0125
+2009,Dire Dawa,Other traditional,1.266666667,0.012666667
+2010,Dire Dawa,Other traditional,1.283333333,0.012833333
+2011,Dire Dawa,Other traditional,1.3,0.013
+2012,Dire Dawa,Other traditional,1.2,0.012
+2013,Dire Dawa,Other traditional,1.1,0.011
+2014,Dire Dawa,Other traditional,1,0.01
+2015,Dire Dawa,Other traditional,0.9,0.009
+2016,Dire Dawa,Other traditional,0.8,0.008
+2017,Dire Dawa,Other traditional,0.633333333,0.006333333
+2018,Dire Dawa,Other traditional,0.466666667,0.004666667
+2019,Dire Dawa,Other traditional,0.3,0.003
+2000,Dire Dawa,Pill,5.3,0.053
+2001,Dire Dawa,Pill,5,0.05
+2002,Dire Dawa,Pill,4.7,0.047
+2003,Dire Dawa,Pill,4.4,0.044
+2004,Dire Dawa,Pill,4.1,0.041
+2005,Dire Dawa,Pill,3.8,0.038
+2006,Dire Dawa,Pill,3.7,0.037
+2007,Dire Dawa,Pill,3.6,0.036
+2008,Dire Dawa,Pill,3.5,0.035
+2009,Dire Dawa,Pill,3.4,0.034
+2010,Dire Dawa,Pill,3.3,0.033
+2011,Dire Dawa,Pill,3.2,0.032
+2012,Dire Dawa,Pill,2.96,0.0296
+2013,Dire Dawa,Pill,2.72,0.0272
+2014,Dire Dawa,Pill,2.48,0.0248
+2015,Dire Dawa,Pill,2.24,0.0224
+2016,Dire Dawa,Pill,2,0.02
+2017,Dire Dawa,Pill,2.433333333,0.024333333
+2018,Dire Dawa,Pill,2.866666667,0.028666667
+2019,Dire Dawa,Pill,3.3,0.033
+2000,Dire Dawa,BTL,0.1,0.001
+2001,Dire Dawa,BTL,0.1,0.001
+2002,Dire Dawa,BTL,0.1,0.001
+2003,Dire Dawa,BTL,0.1,0.001
+2004,Dire Dawa,BTL,0.1,0.001
+2005,Dire Dawa,BTL,0.1,0.001
+2006,Dire Dawa,BTL,0.1,0.001
+2007,Dire Dawa,BTL,0.1,0.001
+2008,Dire Dawa,BTL,0.1,0.001
+2009,Dire Dawa,BTL,0.1,0.001
+2010,Dire Dawa,BTL,0.1,0.001
+2011,Dire Dawa,BTL,0.1,0.001
+2012,Dire Dawa,BTL,0.08,8.00E-04
+2013,Dire Dawa,BTL,0.06,6.00E-04
+2014,Dire Dawa,BTL,0.04,4.00E-04
+2015,Dire Dawa,BTL,0.02,2.00E-04
+2016,Dire Dawa,BTL,0,0
+2017,Dire Dawa,BTL,0.066666667,0.000666667
+2018,Dire Dawa,BTL,0.133333333,0.001333333
+2019,Dire Dawa,BTL,0.2,0.002
+2000,Dire Dawa,Withdrawal,0.2,0.002
+2001,Dire Dawa,Withdrawal,0.18,0.0018
+2002,Dire Dawa,Withdrawal,0.16,0.0016
+2003,Dire Dawa,Withdrawal,0.14,0.0014
+2004,Dire Dawa,Withdrawal,0.12,0.0012
+2005,Dire Dawa,Withdrawal,0.1,0.001
+2006,Dire Dawa,Withdrawal,0.1,0.001
+2007,Dire Dawa,Withdrawal,0.1,0.001
+2008,Dire Dawa,Withdrawal,0.1,0.001
+2009,Dire Dawa,Withdrawal,0.1,0.001
+2010,Dire Dawa,Withdrawal,0.1,0.001
+2011,Dire Dawa,Withdrawal,0.1,0.001
+2012,Dire Dawa,Withdrawal,0.08,8.00E-04
+2013,Dire Dawa,Withdrawal,0.06,6.00E-04
+2014,Dire Dawa,Withdrawal,0.04,4.00E-04
+2015,Dire Dawa,Withdrawal,0.02,2.00E-04
+2016,Dire Dawa,Withdrawal,0,0
+2017,Dire Dawa,Withdrawal,0,0
+2018,Dire Dawa,Withdrawal,0,0
+2019,Dire Dawa,Withdrawal,0,0
+2000,Gambela,Condoms,0.2,0.002
+2001,Gambela,Condoms,0.26,0.0026
+2002,Gambela,Condoms,0.32,0.0032
+2003,Gambela,Condoms,0.38,0.0038
+2004,Gambela,Condoms,0.44,0.0044
+2005,Gambela,Condoms,0.5,0.005
+2006,Gambela,Condoms,1.05,0.0105
+2007,Gambela,Condoms,1.6,0.016
+2008,Gambela,Condoms,2.15,0.0215
+2009,Gambela,Condoms,2.7,0.027
+2010,Gambela,Condoms,3.25,0.0325
+2011,Gambela,Condoms,3.8,0.038
+2012,Gambela,Condoms,3.2,0.032
+2013,Gambela,Condoms,2.6,0.026
+2014,Gambela,Condoms,2,0.02
+2015,Gambela,Condoms,1.4,0.014
+2016,Gambela,Condoms,0.8,0.008
+2017,Gambela,Condoms,0.566666667,0.005666667
+2018,Gambela,Condoms,0.333333333,0.003333333
+2019,Gambela,Condoms,0.1,0.001
+2000,Gambela,Implants,0,0
+2001,Gambela,Implants,0,0
+2002,Gambela,Implants,0,0
+2003,Gambela,Implants,0,0
+2004,Gambela,Implants,0,0
+2005,Gambela,Implants,0,0
+2006,Gambela,Implants,0.1,0.001
+2007,Gambela,Implants,0.2,0.002
+2008,Gambela,Implants,0.3,0.003
+2009,Gambela,Implants,0.4,0.004
+2010,Gambela,Implants,0.5,0.005
+2011,Gambela,Implants,0.6,0.006
+2012,Gambela,Implants,0.76,0.0076
+2013,Gambela,Implants,0.92,0.0092
+2014,Gambela,Implants,1.08,0.0108
+2015,Gambela,Implants,1.24,0.0124
+2016,Gambela,Implants,1.4,0.014
+2017,Gambela,Implants,1.133333333,0.011333333
+2018,Gambela,Implants,0.866666667,0.008666667
+2019,Gambela,Implants,0.6,0.006
+2000,Gambela,Injectables,3.5,0.035
+2001,Gambela,Injectables,4.68,0.0468
+2002,Gambela,Injectables,5.86,0.0586
+2003,Gambela,Injectables,7.04,0.0704
+2004,Gambela,Injectables,8.22,0.0822
+2005,Gambela,Injectables,9.4,0.094
+2006,Gambela,Injectables,11.83333333,0.118333333
+2007,Gambela,Injectables,14.26666667,0.142666667
+2008,Gambela,Injectables,16.7,0.167
+2009,Gambela,Injectables,19.13333333,0.191333333
+2010,Gambela,Injectables,21.56666667,0.215666667
+2011,Gambela,Injectables,24,0.24
+2012,Gambela,Injectables,23.4,0.234
+2013,Gambela,Injectables,22.8,0.228
+2014,Gambela,Injectables,22.2,0.222
+2015,Gambela,Injectables,21.6,0.216
+2016,Gambela,Injectables,21,0.21
+2017,Gambela,Injectables,20.83333333,0.208333333
+2018,Gambela,Injectables,20.66666667,0.206666667
+2019,Gambela,Injectables,20.5,0.205
+2000,Gambela,IUDs,0,0
+2001,Gambela,IUDs,0,0
+2002,Gambela,IUDs,0,0
+2003,Gambela,IUDs,0,0
+2004,Gambela,IUDs,0,0
+2005,Gambela,IUDs,0,0
+2006,Gambela,IUDs,0.066666667,0.000666667
+2007,Gambela,IUDs,0.133333333,0.001333333
+2008,Gambela,IUDs,0.2,0.002
+2009,Gambela,IUDs,0.266666667,0.002666667
+2010,Gambela,IUDs,0.333333333,0.003333333
+2011,Gambela,IUDs,0.4,0.004
+2012,Gambela,IUDs,0.42,0.0042
+2013,Gambela,IUDs,0.44,0.0044
+2014,Gambela,IUDs,0.46,0.0046
+2015,Gambela,IUDs,0.48,0.0048
+2016,Gambela,IUDs,0.5,0.005
+2017,Gambela,IUDs,0.4,0.004
+2018,Gambela,IUDs,0.3,0.003
+2019,Gambela,IUDs,0.2,0.002
+2000,Gambela,Other modern,0,0
+2001,Gambela,Other modern,0,0
+2002,Gambela,Other modern,0,0
+2003,Gambela,Other modern,0,0
+2004,Gambela,Other modern,0,0
+2005,Gambela,Other modern,0,0
+2006,Gambela,Other modern,0,0
+2007,Gambela,Other modern,0,0
+2008,Gambela,Other modern,0,0
+2009,Gambela,Other modern,0,0
+2010,Gambela,Other modern,0,0
+2011,Gambela,Other modern,0,0
+2012,Gambela,Other modern,0.04,4.00E-04
+2013,Gambela,Other modern,0.08,8.00E-04
+2014,Gambela,Other modern,0.12,0.0012
+2015,Gambela,Other modern,0.16,0.0016
+2016,Gambela,Other modern,0.2,0.002
+2017,Gambela,Other modern,0.133333333,0.001333333
+2018,Gambela,Other modern,0.066666667,0.000666667
+2019,Gambela,Other modern,0,0
+2000,Gambela,Other traditional,0.9,0.009
+2001,Gambela,Other traditional,0.76,0.0076
+2002,Gambela,Other traditional,0.62,0.0062
+2003,Gambela,Other traditional,0.48,0.0048
+2004,Gambela,Other traditional,0.34,0.0034
+2005,Gambela,Other traditional,0.2,0.002
+2006,Gambela,Other traditional,0.25,0.0025
+2007,Gambela,Other traditional,0.3,0.003
+2008,Gambela,Other traditional,0.35,0.0035
+2009,Gambela,Other traditional,0.4,0.004
+2010,Gambela,Other traditional,0.45,0.0045
+2011,Gambela,Other traditional,0.5,0.005
+2012,Gambela,Other traditional,0.4,0.004
+2013,Gambela,Other traditional,0.3,0.003
+2014,Gambela,Other traditional,0.2,0.002
+2015,Gambela,Other traditional,0.1,0.001
+2016,Gambela,Other traditional,0,0
+2017,Gambela,Other traditional,0.133333333,0.001333333
+2018,Gambela,Other traditional,0.266666667,0.002666667
+2019,Gambela,Other traditional,0.4,0.004
+2000,Gambela,Pill,6,0.06
+2001,Gambela,Pill,5.22,0.0522
+2002,Gambela,Pill,4.44,0.0444
+2003,Gambela,Pill,3.66,0.0366
+2004,Gambela,Pill,2.88,0.0288
+2005,Gambela,Pill,2.1,0.021
+2006,Gambela,Pill,2.35,0.0235
+2007,Gambela,Pill,2.6,0.026
+2008,Gambela,Pill,2.85,0.0285
+2009,Gambela,Pill,3.1,0.031
+2010,Gambela,Pill,3.35,0.0335
+2011,Gambela,Pill,3.6,0.036
+2012,Gambela,Pill,3.44,0.0344
+2013,Gambela,Pill,3.28,0.0328
+2014,Gambela,Pill,3.12,0.0312
+2015,Gambela,Pill,2.96,0.0296
+2016,Gambela,Pill,2.8,0.028
+2017,Gambela,Pill,2.433333333,0.024333333
+2018,Gambela,Pill,2.066666667,0.020666667
+2019,Gambela,Pill,1.7,0.017
+2000,Gambela,BTL,0.3,0.003
+2001,Gambela,BTL,0.24,0.0024
+2002,Gambela,BTL,0.18,0.0018
+2003,Gambela,BTL,0.12,0.0012
+2004,Gambela,BTL,0.06,6.00E-04
+2005,Gambela,BTL,0,0
+2006,Gambela,BTL,0.05,5.00E-04
+2007,Gambela,BTL,0.1,0.001
+2008,Gambela,BTL,0.15,0.0015
+2009,Gambela,BTL,0.2,0.002
+2010,Gambela,BTL,0.25,0.0025
+2011,Gambela,BTL,0.3,0.003
+2012,Gambela,BTL,0.24,0.0024
+2013,Gambela,BTL,0.18,0.0018
+2014,Gambela,BTL,0.12,0.0012
+2015,Gambela,BTL,0.06,6.00E-04
+2016,Gambela,BTL,0,0
+2017,Gambela,BTL,0,0
+2018,Gambela,BTL,0,0
+2019,Gambela,BTL,0,0
+2000,Gambela,Withdrawal,0,0
+2001,Gambela,Withdrawal,0,0
+2002,Gambela,Withdrawal,0,0
+2003,Gambela,Withdrawal,0,0
+2004,Gambela,Withdrawal,0,0
+2005,Gambela,Withdrawal,0,0
+2006,Gambela,Withdrawal,0,0
+2007,Gambela,Withdrawal,0,0
+2008,Gambela,Withdrawal,0,0
+2009,Gambela,Withdrawal,0,0
+2010,Gambela,Withdrawal,0,0
+2011,Gambela,Withdrawal,0,0
+2012,Gambela,Withdrawal,0,0
+2013,Gambela,Withdrawal,0,0
+2014,Gambela,Withdrawal,0,0
+2015,Gambela,Withdrawal,0,0
+2016,Gambela,Withdrawal,0,0
+2017,Gambela,Withdrawal,0,0
+2018,Gambela,Withdrawal,0,0
+2019,Gambela,Withdrawal,0,0
+2000,Harari,Condoms,1.9,0.019
+2001,Harari,Condoms,1.74,0.0174
+2002,Harari,Condoms,1.58,0.0158
+2003,Harari,Condoms,1.42,0.0142
+2004,Harari,Condoms,1.26,0.0126
+2005,Harari,Condoms,1.1,0.011
+2006,Harari,Condoms,1.116666667,0.011166667
+2007,Harari,Condoms,1.133333333,0.011333333
+2008,Harari,Condoms,1.15,0.0115
+2009,Harari,Condoms,1.166666667,0.011666667
+2010,Harari,Condoms,1.183333333,0.011833333
+2011,Harari,Condoms,1.2,0.012
+2012,Harari,Condoms,1.04,0.0104
+2013,Harari,Condoms,0.88,0.0088
+2014,Harari,Condoms,0.72,0.0072
+2015,Harari,Condoms,0.56,0.0056
+2016,Harari,Condoms,0.4,0.004
+2017,Harari,Condoms,0.533333333,0.005333333
+2018,Harari,Condoms,0.666666667,0.006666667
+2019,Harari,Condoms,0.8,0.008
+2000,Harari,Implants,0.5,0.005
+2001,Harari,Implants,0.4,0.004
+2002,Harari,Implants,0.3,0.003
+2003,Harari,Implants,0.2,0.002
+2004,Harari,Implants,0.1,0.001
+2005,Harari,Implants,0,0
+2006,Harari,Implants,0.333333333,0.003333333
+2007,Harari,Implants,0.666666667,0.006666667
+2008,Harari,Implants,1,0.01
+2009,Harari,Implants,1.333333333,0.013333333
+2010,Harari,Implants,1.666666667,0.016666667
+2011,Harari,Implants,2,0.02
+2012,Harari,Implants,2.76,0.0276
+2013,Harari,Implants,3.52,0.0352
+2014,Harari,Implants,4.28,0.0428
+2015,Harari,Implants,5.04,0.0504
+2016,Harari,Implants,5.8,0.058
+2017,Harari,Implants,6.166666667,0.061666667
+2018,Harari,Implants,6.533333333,0.065333333
+2019,Harari,Implants,6.9,0.069
+2000,Harari,Injectables,4.1,0.041
+2001,Harari,Injectables,5.66,0.0566
+2002,Harari,Injectables,7.22,0.0722
+2003,Harari,Injectables,8.78,0.0878
+2004,Harari,Injectables,10.34,0.1034
+2005,Harari,Injectables,11.9,0.119
+2006,Harari,Injectables,11.85,0.1185
+2007,Harari,Injectables,11.8,0.118
+2008,Harari,Injectables,11.75,0.1175
+2009,Harari,Injectables,11.7,0.117
+2010,Harari,Injectables,11.65,0.1165
+2011,Harari,Injectables,11.6,0.116
+2012,Harari,Injectables,10.9,0.109
+2013,Harari,Injectables,10.2,0.102
+2014,Harari,Injectables,9.5,0.095
+2015,Harari,Injectables,8.8,0.088
+2016,Harari,Injectables,8.1,0.081
+2017,Harari,Injectables,7.5,0.075
+2018,Harari,Injectables,6.9,0.069
+2019,Harari,Injectables,6.3,0.063
+2000,Harari,IUDs,0.4,0.004
+2001,Harari,IUDs,0.5,0.005
+2002,Harari,IUDs,0.6,0.006
+2003,Harari,IUDs,0.7,0.007
+2004,Harari,IUDs,0.8,0.008
+2005,Harari,IUDs,0.9,0.009
+2006,Harari,IUDs,0.883333333,0.008833333
+2007,Harari,IUDs,0.866666667,0.008666667
+2008,Harari,IUDs,0.85,0.0085
+2009,Harari,IUDs,0.833333333,0.008333333
+2010,Harari,IUDs,0.816666667,0.008166667
+2011,Harari,IUDs,0.8,0.008
+2012,Harari,IUDs,0.96,0.0096
+2013,Harari,IUDs,1.12,0.0112
+2014,Harari,IUDs,1.28,0.0128
+2015,Harari,IUDs,1.44,0.0144
+2016,Harari,IUDs,1.6,0.016
+2017,Harari,IUDs,1.333333333,0.013333333
+2018,Harari,IUDs,1.066666667,0.010666667
+2019,Harari,IUDs,0.8,0.008
+2000,Harari,Other modern,0,0
+2001,Harari,Other modern,0.08,8.00E-04
+2002,Harari,Other modern,0.16,0.0016
+2003,Harari,Other modern,0.24,0.0024
+2004,Harari,Other modern,0.32,0.0032
+2005,Harari,Other modern,0.4,0.004
+2006,Harari,Other modern,0.35,0.0035
+2007,Harari,Other modern,0.3,0.003
+2008,Harari,Other modern,0.25,0.0025
+2009,Harari,Other modern,0.2,0.002
+2010,Harari,Other modern,0.15,0.0015
+2011,Harari,Other modern,0.1,0.001
+2012,Harari,Other modern,0.24,0.0024
+2013,Harari,Other modern,0.38,0.0038
+2014,Harari,Other modern,0.52,0.0052
+2015,Harari,Other modern,0.66,0.0066
+2016,Harari,Other modern,0.8,0.008
+2017,Harari,Other modern,1.2,0.012
+2018,Harari,Other modern,1.6,0.016
+2019,Harari,Other modern,2,0.02
+2000,Harari,Other traditional,2,0.02
+2001,Harari,Other traditional,2.12,0.0212
+2002,Harari,Other traditional,2.24,0.0224
+2003,Harari,Other traditional,2.36,0.0236
+2004,Harari,Other traditional,2.48,0.0248
+2005,Harari,Other traditional,2.6,0.026
+2006,Harari,Other traditional,2.5,0.025
+2007,Harari,Other traditional,2.4,0.024
+2008,Harari,Other traditional,2.3,0.023
+2009,Harari,Other traditional,2.2,0.022
+2010,Harari,Other traditional,2.1,0.021
+2011,Harari,Other traditional,2,0.02
+2012,Harari,Other traditional,1.62,0.0162
+2013,Harari,Other traditional,1.24,0.0124
+2014,Harari,Other traditional,0.86,0.0086
+2015,Harari,Other traditional,0.48,0.0048
+2016,Harari,Other traditional,0.1,0.001
+2017,Harari,Other traditional,0.5,0.005
+2018,Harari,Other traditional,0.9,0.009
+2019,Harari,Other traditional,1.3,0.013
+2000,Harari,Pill,5,0.05
+2001,Harari,Pill,4.68,0.0468
+2002,Harari,Pill,4.36,0.0436
+2003,Harari,Pill,4.04,0.0404
+2004,Harari,Pill,3.72,0.0372
+2005,Harari,Pill,3.4,0.034
+2006,Harari,Pill,3.533333333,0.035333333
+2007,Harari,Pill,3.666666667,0.036666667
+2008,Harari,Pill,3.8,0.038
+2009,Harari,Pill,3.933333333,0.039333333
+2010,Harari,Pill,4.066666667,0.040666667
+2011,Harari,Pill,4.2,0.042
+2012,Harari,Pill,4.04,0.0404
+2013,Harari,Pill,3.88,0.0388
+2014,Harari,Pill,3.72,0.0372
+2015,Harari,Pill,3.56,0.0356
+2016,Harari,Pill,3.4,0.034
+2017,Harari,Pill,3.066666667,0.030666667
+2018,Harari,Pill,2.733333333,0.027333333
+2019,Harari,Pill,2.4,0.024
+2000,Harari,BTL,0.4,0.004
+2001,Harari,BTL,0.34,0.0034
+2002,Harari,BTL,0.28,0.0028
+2003,Harari,BTL,0.22,0.0022
+2004,Harari,BTL,0.16,0.0016
+2005,Harari,BTL,0.1,0.001
+2006,Harari,BTL,0.116666667,0.001166667
+2007,Harari,BTL,0.133333333,0.001333333
+2008,Harari,BTL,0.15,0.0015
+2009,Harari,BTL,0.166666667,0.001666667
+2010,Harari,BTL,0.183333333,0.001833333
+2011,Harari,BTL,0.2,0.002
+2012,Harari,BTL,0.16,0.0016
+2013,Harari,BTL,0.12,0.0012
+2014,Harari,BTL,0.08,8.00E-04
+2015,Harari,BTL,0.04,4.00E-04
+2016,Harari,BTL,0,0
+2017,Harari,BTL,0.033333333,0.000333333
+2018,Harari,BTL,0.066666667,0.000666667
+2019,Harari,BTL,0.1,0.001
+2000,Harari,Withdrawal,0.3,0.003
+2001,Harari,Withdrawal,0.26,0.0026
+2002,Harari,Withdrawal,0.22,0.0022
+2003,Harari,Withdrawal,0.18,0.0018
+2004,Harari,Withdrawal,0.14,0.0014
+2005,Harari,Withdrawal,0.1,0.001
+2006,Harari,Withdrawal,0.133333333,0.001333333
+2007,Harari,Withdrawal,0.166666667,0.001666667
+2008,Harari,Withdrawal,0.2,0.002
+2009,Harari,Withdrawal,0.233333333,0.002333333
+2010,Harari,Withdrawal,0.266666667,0.002666667
+2011,Harari,Withdrawal,0.3,0.003
+2012,Harari,Withdrawal,0.24,0.0024
+2013,Harari,Withdrawal,0.18,0.0018
+2014,Harari,Withdrawal,0.12,0.0012
+2015,Harari,Withdrawal,0.06,6.00E-04
+2016,Harari,Withdrawal,0,0
+2017,Harari,Withdrawal,0,0
+2018,Harari,Withdrawal,0,0
+2019,Harari,Withdrawal,0,0
+2000,Oromia,Condoms,0.3,0.003
+2001,Oromia,Condoms,0.28,0.0028
+2002,Oromia,Condoms,0.26,0.0026
+2003,Oromia,Condoms,0.24,0.0024
+2004,Oromia,Condoms,0.22,0.0022
+2005,Oromia,Condoms,0.2,0.002
+2006,Oromia,Condoms,0.183333333,0.001833333
+2007,Oromia,Condoms,0.166666667,0.001666667
+2008,Oromia,Condoms,0.15,0.0015
+2009,Oromia,Condoms,0.133333333,0.001333333
+2010,Oromia,Condoms,0.116666667,0.001166667
+2011,Oromia,Condoms,0.1,0.001
+2012,Oromia,Condoms,0.08,8.00E-04
+2013,Oromia,Condoms,0.06,6.00E-04
+2014,Oromia,Condoms,0.04,4.00E-04
+2015,Oromia,Condoms,0.02,2.00E-04
+2016,Oromia,Condoms,0,0
+2017,Oromia,Condoms,0,0
+2018,Oromia,Condoms,0,0
+2019,Oromia,Condoms,0,0
+2000,Oromia,Implants,0,0
+2001,Oromia,Implants,0,0
+2002,Oromia,Implants,0,0
+2003,Oromia,Implants,0,0
+2004,Oromia,Implants,0,0
+2005,Oromia,Implants,0,0
+2006,Oromia,Implants,0.4,0.004
+2007,Oromia,Implants,0.8,0.008
+2008,Oromia,Implants,1.2,0.012
+2009,Oromia,Implants,1.6,0.016
+2010,Oromia,Implants,2,0.02
+2011,Oromia,Implants,2.4,0.024
+2012,Oromia,Implants,2.68,0.0268
+2013,Oromia,Implants,2.96,0.0296
+2014,Oromia,Implants,3.24,0.0324
+2015,Oromia,Implants,3.52,0.0352
+2016,Oromia,Implants,3.8,0.038
+2017,Oromia,Implants,4.266666667,0.042666667
+2018,Oromia,Implants,4.733333333,0.047333333
+2019,Oromia,Implants,5.2,0.052
+2000,Oromia,Injectables,1.1,0.011
+2001,Oromia,Injectables,2.08,0.0208
+2002,Oromia,Injectables,3.06,0.0306
+2003,Oromia,Injectables,4.04,0.0404
+2004,Oromia,Injectables,5.02,0.0502
+2005,Oromia,Injectables,6,0.06
+2006,Oromia,Injectables,7.183333333,0.071833333
+2007,Oromia,Injectables,8.366666667,0.083666667
+2008,Oromia,Injectables,9.55,0.0955
+2009,Oromia,Injectables,10.73333333,0.107333333
+2010,Oromia,Injectables,11.91666667,0.119166667
+2011,Oromia,Injectables,13.1,0.131
+2012,Oromia,Injectables,13.36,0.1336
+2013,Oromia,Injectables,13.62,0.1362
+2014,Oromia,Injectables,13.88,0.1388
+2015,Oromia,Injectables,14.14,0.1414
+2016,Oromia,Injectables,14.4,0.144
+2017,Oromia,Injectables,15.7,0.157
+2018,Oromia,Injectables,17,0.17
+2019,Oromia,Injectables,18.3,0.183
+2000,Oromia,IUDs,0,0
+2001,Oromia,IUDs,0.02,2.00E-04
+2002,Oromia,IUDs,0.04,4.00E-04
+2003,Oromia,IUDs,0.06,6.00E-04
+2004,Oromia,IUDs,0.08,8.00E-04
+2005,Oromia,IUDs,0.1,0.001
+2006,Oromia,IUDs,0.116666667,0.001166667
+2007,Oromia,IUDs,0.133333333,0.001333333
+2008,Oromia,IUDs,0.15,0.0015
+2009,Oromia,IUDs,0.166666667,0.001666667
+2010,Oromia,IUDs,0.183333333,0.001833333
+2011,Oromia,IUDs,0.2,0.002
+2012,Oromia,IUDs,0.42,0.0042
+2013,Oromia,IUDs,0.64,0.0064
+2014,Oromia,IUDs,0.86,0.0086
+2015,Oromia,IUDs,1.08,0.0108
+2016,Oromia,IUDs,1.3,0.013
+2017,Oromia,IUDs,1.233333333,0.012333333
+2018,Oromia,IUDs,1.166666667,0.011666667
+2019,Oromia,IUDs,1.1,0.011
+2000,Oromia,Other modern,0,0
+2001,Oromia,Other modern,0.04,4.00E-04
+2002,Oromia,Other modern,0.08,8.00E-04
+2003,Oromia,Other modern,0.12,0.0012
+2004,Oromia,Other modern,0.16,0.0016
+2005,Oromia,Other modern,0.2,0.002
+2006,Oromia,Other modern,0.166666667,0.001666667
+2007,Oromia,Other modern,0.133333333,0.001333333
+2008,Oromia,Other modern,0.1,0.001
+2009,Oromia,Other modern,0.066666667,0.000666667
+2010,Oromia,Other modern,0.033333333,0.000333333
+2011,Oromia,Other modern,0,0
+2012,Oromia,Other modern,0.04,4.00E-04
+2013,Oromia,Other modern,0.08,8.00E-04
+2014,Oromia,Other modern,0.12,0.0012
+2015,Oromia,Other modern,0.16,0.0016
+2016,Oromia,Other modern,0.2,0.002
+2017,Oromia,Other modern,0.433333333,0.004333333
+2018,Oromia,Other modern,0.666666667,0.006666667
+2019,Oromia,Other modern,0.9,0.009
+2000,Oromia,Other traditional,1.3,0.013
+2001,Oromia,Other traditional,1.12,0.0112
+2002,Oromia,Other traditional,0.94,0.0094
+2003,Oromia,Other traditional,0.76,0.0076
+2004,Oromia,Other traditional,0.58,0.0058
+2005,Oromia,Other traditional,0.4,0.004
+2006,Oromia,Other traditional,0.466666667,0.004666667
+2007,Oromia,Other traditional,0.533333333,0.005333333
+2008,Oromia,Other traditional,0.6,0.006
+2009,Oromia,Other traditional,0.666666667,0.006666667
+2010,Oromia,Other traditional,0.733333333,0.007333333
+2011,Oromia,Other traditional,0.8,0.008
+2012,Oromia,Other traditional,0.7,0.007
+2013,Oromia,Other traditional,0.6,0.006
+2014,Oromia,Other traditional,0.5,0.005
+2015,Oromia,Other traditional,0.4,0.004
+2016,Oromia,Other traditional,0.3,0.003
+2017,Oromia,Other traditional,0.533333333,0.005333333
+2018,Oromia,Other traditional,0.766666667,0.007666667
+2019,Oromia,Other traditional,1,0.01
+2000,Oromia,Pill,1.3,0.013
+2001,Oromia,Pill,1.5,0.015
+2002,Oromia,Pill,1.7,0.017
+2003,Oromia,Pill,1.9,0.019
+2004,Oromia,Pill,2.1,0.021
+2005,Oromia,Pill,2.3,0.023
+2006,Oromia,Pill,2.183333333,0.021833333
+2007,Oromia,Pill,2.066666667,0.020666667
+2008,Oromia,Pill,1.95,0.0195
+2009,Oromia,Pill,1.833333333,0.018333333
+2010,Oromia,Pill,1.716666667,0.017166667
+2011,Oromia,Pill,1.6,0.016
+2012,Oromia,Pill,1.48,0.0148
+2013,Oromia,Pill,1.36,0.0136
+2014,Oromia,Pill,1.24,0.0124
+2015,Oromia,Pill,1.12,0.0112
+2016,Oromia,Pill,1,0.01
+2017,Oromia,Pill,1.133333333,0.011333333
+2018,Oromia,Pill,1.266666667,0.012666667
+2019,Oromia,Pill,1.4,0.014
+2000,Oromia,BTL,0.2,0.002
+2001,Oromia,BTL,0.2,0.002
+2002,Oromia,BTL,0.2,0.002
+2003,Oromia,BTL,0.2,0.002
+2004,Oromia,BTL,0.2,0.002
+2005,Oromia,BTL,0.2,0.002
+2006,Oromia,BTL,0.216666667,0.002166667
+2007,Oromia,BTL,0.233333333,0.002333333
+2008,Oromia,BTL,0.25,0.0025
+2009,Oromia,BTL,0.266666667,0.002666667
+2010,Oromia,BTL,0.283333333,0.002833333
+2011,Oromia,BTL,0.3,0.003
+2012,Oromia,BTL,0.26,0.0026
+2013,Oromia,BTL,0.22,0.0022
+2014,Oromia,BTL,0.18,0.0018
+2015,Oromia,BTL,0.14,0.0014
+2016,Oromia,BTL,0.1,0.001
+2017,Oromia,BTL,0.266666667,0.002666667
+2018,Oromia,BTL,0.433333333,0.004333333
+2019,Oromia,BTL,0.6,0.006
+2000,Oromia,Withdrawal,0.2,0.002
+2001,Oromia,Withdrawal,0.2,0.002
+2002,Oromia,Withdrawal,0.2,0.002
+2003,Oromia,Withdrawal,0.2,0.002
+2004,Oromia,Withdrawal,0.2,0.002
+2005,Oromia,Withdrawal,0.2,0.002
+2006,Oromia,Withdrawal,0.2,0.002
+2007,Oromia,Withdrawal,0.2,0.002
+2008,Oromia,Withdrawal,0.2,0.002
+2009,Oromia,Withdrawal,0.2,0.002
+2010,Oromia,Withdrawal,0.2,0.002
+2011,Oromia,Withdrawal,0.2,0.002
+2012,Oromia,Withdrawal,0.16,0.0016
+2013,Oromia,Withdrawal,0.12,0.0012
+2014,Oromia,Withdrawal,0.08,8.00E-04
+2015,Oromia,Withdrawal,0.04,4.00E-04
+2016,Oromia,Withdrawal,0,0
+2017,Oromia,Withdrawal,0.133333333,0.001333333
+2018,Oromia,Withdrawal,0.266666667,0.002666667
+2019,Oromia,Withdrawal,0.4,0.004
+2000,SNNPR,Condoms,0.4,0.004
+2001,SNNPR,Condoms,0.36,0.0036
+2002,SNNPR,Condoms,0.32,0.0032
+2003,SNNPR,Condoms,0.28,0.0028
+2004,SNNPR,Condoms,0.24,0.0024
+2005,SNNPR,Condoms,0.2,0.002
+2006,SNNPR,Condoms,0.216666667,0.002166667
+2007,SNNPR,Condoms,0.233333333,0.002333333
+2008,SNNPR,Condoms,0.25,0.0025
+2009,SNNPR,Condoms,0.266666667,0.002666667
+2010,SNNPR,Condoms,0.283333333,0.002833333
+2011,SNNPR,Condoms,0.3,0.003
+2012,SNNPR,Condoms,0.24,0.0024
+2013,SNNPR,Condoms,0.18,0.0018
+2014,SNNPR,Condoms,0.12,0.0012
+2015,SNNPR,Condoms,0.06,6.00E-04
+2016,SNNPR,Condoms,0,0
+2017,SNNPR,Condoms,0.033333333,0.000333333
+2018,SNNPR,Condoms,0.066666667,0.000666667
+2019,SNNPR,Condoms,0.1,0.001
+2000,SNNPR,Implants,0,0
+2001,SNNPR,Implants,0.04,4.00E-04
+2002,SNNPR,Implants,0.08,8.00E-04
+2003,SNNPR,Implants,0.12,0.0012
+2004,SNNPR,Implants,0.16,0.0016
+2005,SNNPR,Implants,0.2,0.002
+2006,SNNPR,Implants,0.483333333,0.004833333
+2007,SNNPR,Implants,0.766666667,0.007666667
+2008,SNNPR,Implants,1.05,0.0105
+2009,SNNPR,Implants,1.333333333,0.013333333
+2010,SNNPR,Implants,1.616666667,0.016166667
+2011,SNNPR,Implants,1.9,0.019
+2012,SNNPR,Implants,2.62,0.0262
+2013,SNNPR,Implants,3.34,0.0334
+2014,SNNPR,Implants,4.06,0.0406
+2015,SNNPR,Implants,4.78,0.0478
+2016,SNNPR,Implants,5.5,0.055
+2017,SNNPR,Implants,5.466666667,0.054666667
+2018,SNNPR,Implants,5.433333333,0.054333333
+2019,SNNPR,Implants,5.4,0.054
+2000,SNNPR,Injectables,2,0.02
+2001,SNNPR,Injectables,2.82,0.0282
+2002,SNNPR,Injectables,3.64,0.0364
+2003,SNNPR,Injectables,4.46,0.0446
+2004,SNNPR,Injectables,5.28,0.0528
+2005,SNNPR,Injectables,6.1,0.061
+2006,SNNPR,Injectables,7.216666667,0.072166667
+2007,SNNPR,Injectables,8.333333333,0.083333333
+2008,SNNPR,Injectables,9.45,0.0945
+2009,SNNPR,Injectables,10.56666667,0.105666667
+2010,SNNPR,Injectables,11.68333333,0.116833333
+2011,SNNPR,Injectables,12.8,0.128
+2012,SNNPR,Injectables,13.92,0.1392
+2013,SNNPR,Injectables,15.04,0.1504
+2014,SNNPR,Injectables,16.16,0.1616
+2015,SNNPR,Injectables,17.28,0.1728
+2016,SNNPR,Injectables,18.4,0.184
+2017,SNNPR,Injectables,20.06666667,0.200666667
+2018,SNNPR,Injectables,21.73333333,0.217333333
+2019,SNNPR,Injectables,23.4,0.234
+2000,SNNPR,IUDs,0,0
+2001,SNNPR,IUDs,0,0
+2002,SNNPR,IUDs,0,0
+2003,SNNPR,IUDs,0,0
+2004,SNNPR,IUDs,0,0
+2005,SNNPR,IUDs,0,0
+2006,SNNPR,IUDs,0.033333333,0.000333333
+2007,SNNPR,IUDs,0.066666667,0.000666667
+2008,SNNPR,IUDs,0.1,0.001
+2009,SNNPR,IUDs,0.133333333,0.001333333
+2010,SNNPR,IUDs,0.166666667,0.001666667
+2011,SNNPR,IUDs,0.2,0.002
+2012,SNNPR,IUDs,0.32,0.0032
+2013,SNNPR,IUDs,0.44,0.0044
+2014,SNNPR,IUDs,0.56,0.0056
+2015,SNNPR,IUDs,0.68,0.0068
+2016,SNNPR,IUDs,0.8,0.008
+2017,SNNPR,IUDs,0.866666667,0.008666667
+2018,SNNPR,IUDs,0.933333333,0.009333333
+2019,SNNPR,IUDs,1,0.01
+2000,SNNPR,Other modern,0,0
+2001,SNNPR,Other modern,0.02,2.00E-04
+2002,SNNPR,Other modern,0.04,4.00E-04
+2003,SNNPR,Other modern,0.06,6.00E-04
+2004,SNNPR,Other modern,0.08,8.00E-04
+2005,SNNPR,Other modern,0.1,0.001
+2006,SNNPR,Other modern,0.083333333,0.000833333
+2007,SNNPR,Other modern,0.066666667,0.000666667
+2008,SNNPR,Other modern,0.05,5.00E-04
+2009,SNNPR,Other modern,0.033333333,0.000333333
+2010,SNNPR,Other modern,0.016666667,0.000166667
+2011,SNNPR,Other modern,0,0
+2012,SNNPR,Other modern,0.04,4.00E-04
+2013,SNNPR,Other modern,0.08,8.00E-04
+2014,SNNPR,Other modern,0.12,0.0012
+2015,SNNPR,Other modern,0.16,0.0016
+2016,SNNPR,Other modern,0.2,0.002
+2017,SNNPR,Other modern,0.2,0.002
+2018,SNNPR,Other modern,0.2,0.002
+2019,SNNPR,Other modern,0.2,0.002
+2000,SNNPR,Other traditional,0.7,0.007
+2001,SNNPR,Other traditional,0.6,0.006
+2002,SNNPR,Other traditional,0.5,0.005
+2003,SNNPR,Other traditional,0.4,0.004
+2004,SNNPR,Other traditional,0.3,0.003
+2005,SNNPR,Other traditional,0.2,0.002
+2006,SNNPR,Other traditional,0.25,0.0025
+2007,SNNPR,Other traditional,0.3,0.003
+2008,SNNPR,Other traditional,0.35,0.0035
+2009,SNNPR,Other traditional,0.4,0.004
+2010,SNNPR,Other traditional,0.45,0.0045
+2011,SNNPR,Other traditional,0.5,0.005
+2012,SNNPR,Other traditional,0.42,0.0042
+2013,SNNPR,Other traditional,0.34,0.0034
+2014,SNNPR,Other traditional,0.26,0.0026
+2015,SNNPR,Other traditional,0.18,0.0018
+2016,SNNPR,Other traditional,0.1,0.001
+2017,SNNPR,Other traditional,0.1,0.001
+2018,SNNPR,Other traditional,0.1,0.001
+2019,SNNPR,Other traditional,0.1,0.001
+2000,SNNPR,Pill,1.2,0.012
+2001,SNNPR,Pill,1.22,0.0122
+2002,SNNPR,Pill,1.24,0.0124
+2003,SNNPR,Pill,1.26,0.0126
+2004,SNNPR,Pill,1.28,0.0128
+2005,SNNPR,Pill,1.3,0.013
+2006,SNNPR,Pill,1.25,0.0125
+2007,SNNPR,Pill,1.2,0.012
+2008,SNNPR,Pill,1.15,0.0115
+2009,SNNPR,Pill,1.1,0.011
+2010,SNNPR,Pill,1.05,0.0105
+2011,SNNPR,Pill,1,0.01
+2012,SNNPR,Pill,1,0.01
+2013,SNNPR,Pill,1,0.01
+2014,SNNPR,Pill,1,0.01
+2015,SNNPR,Pill,1,0.01
+2016,SNNPR,Pill,1,0.01
+2017,SNNPR,Pill,0.966666667,0.009666667
+2018,SNNPR,Pill,0.933333333,0.009333333
+2019,SNNPR,Pill,0.9,0.009
+2000,SNNPR,BTL,0.1,0.001
+2001,SNNPR,BTL,0.08,8.00E-04
+2002,SNNPR,BTL,0.06,6.00E-04
+2003,SNNPR,BTL,0.04,4.00E-04
+2004,SNNPR,BTL,0.02,2.00E-04
+2005,SNNPR,BTL,0,0
+2006,SNNPR,BTL,0.05,5.00E-04
+2007,SNNPR,BTL,0.1,0.001
+2008,SNNPR,BTL,0.15,0.0015
+2009,SNNPR,BTL,0.2,0.002
+2010,SNNPR,BTL,0.25,0.0025
+2011,SNNPR,BTL,0.3,0.003
+2012,SNNPR,BTL,0.36,0.0036
+2013,SNNPR,BTL,0.42,0.0042
+2014,SNNPR,BTL,0.48,0.0048
+2015,SNNPR,BTL,0.54,0.0054
+2016,SNNPR,BTL,0.6,0.006
+2017,SNNPR,BTL,0.466666667,0.004666667
+2018,SNNPR,BTL,0.333333333,0.003333333
+2019,SNNPR,BTL,0.2,0.002
+2000,SNNPR,Withdrawal,0.2,0.002
+2001,SNNPR,Withdrawal,0.18,0.0018
+2002,SNNPR,Withdrawal,0.16,0.0016
+2003,SNNPR,Withdrawal,0.14,0.0014
+2004,SNNPR,Withdrawal,0.12,0.0012
+2005,SNNPR,Withdrawal,0.1,0.001
+2006,SNNPR,Withdrawal,0.116666667,0.001166667
+2007,SNNPR,Withdrawal,0.133333333,0.001333333
+2008,SNNPR,Withdrawal,0.15,0.0015
+2009,SNNPR,Withdrawal,0.166666667,0.001666667
+2010,SNNPR,Withdrawal,0.183333333,0.001833333
+2011,SNNPR,Withdrawal,0.2,0.002
+2012,SNNPR,Withdrawal,0.18,0.0018
+2013,SNNPR,Withdrawal,0.16,0.0016
+2014,SNNPR,Withdrawal,0.14,0.0014
+2015,SNNPR,Withdrawal,0.12,0.0012
+2016,SNNPR,Withdrawal,0.1,0.001
+2017,SNNPR,Withdrawal,0.133333333,0.001333333
+2018,SNNPR,Withdrawal,0.166666667,0.001666667
+2019,SNNPR,Withdrawal,0.2,0.002
+2000,Somali,Condoms,0.6,0.006
+2001,Somali,Condoms,0.48,0.0048
+2002,Somali,Condoms,0.36,0.0036
+2003,Somali,Condoms,0.24,0.0024
+2004,Somali,Condoms,0.12,0.0012
+2005,Somali,Condoms,0,0
+2006,Somali,Condoms,0.05,5.00E-04
+2007,Somali,Condoms,0.1,0.001
+2008,Somali,Condoms,0.15,0.0015
+2009,Somali,Condoms,0.2,0.002
+2010,Somali,Condoms,0.25,0.0025
+2011,Somali,Condoms,0.3,0.003
+2012,Somali,Condoms,0.24,0.0024
+2013,Somali,Condoms,0.18,0.0018
+2014,Somali,Condoms,0.12,0.0012
+2015,Somali,Condoms,0.06,6.00E-04
+2016,Somali,Condoms,0,0
+2017,Somali,Condoms,0,0
+2018,Somali,Condoms,0,0
+2019,Somali,Condoms,0,0
+2000,Somali,Implants,0,0
+2001,Somali,Implants,0,0
+2002,Somali,Implants,0,0
+2003,Somali,Implants,0,0
+2004,Somali,Implants,0,0
+2005,Somali,Implants,0,0
+2006,Somali,Implants,0.066666667,0.000666667
+2007,Somali,Implants,0.133333333,0.001333333
+2008,Somali,Implants,0.2,0.002
+2009,Somali,Implants,0.266666667,0.002666667
+2010,Somali,Implants,0.333333333,0.003333333
+2011,Somali,Implants,0.4,0.004
+2012,Somali,Implants,0.34,0.0034
+2013,Somali,Implants,0.28,0.0028
+2014,Somali,Implants,0.22,0.0022
+2015,Somali,Implants,0.16,0.0016
+2016,Somali,Implants,0.1,0.001
+2017,Somali,Implants,0.166666667,0.001666667
+2018,Somali,Implants,0.233333333,0.002333333
+2019,Somali,Implants,0.3,0.003
+2000,Somali,Injectables,0.4,0.004
+2001,Somali,Injectables,0.72,0.0072
+2002,Somali,Injectables,1.04,0.0104
+2003,Somali,Injectables,1.36,0.0136
+2004,Somali,Injectables,1.68,0.0168
+2005,Somali,Injectables,2,0.02
+2006,Somali,Injectables,1.95,0.0195
+2007,Somali,Injectables,1.9,0.019
+2008,Somali,Injectables,1.85,0.0185
+2009,Somali,Injectables,1.8,0.018
+2010,Somali,Injectables,1.75,0.0175
+2011,Somali,Injectables,1.7,0.017
+2012,Somali,Injectables,1.44,0.0144
+2013,Somali,Injectables,1.18,0.0118
+2014,Somali,Injectables,0.92,0.0092
+2015,Somali,Injectables,0.66,0.0066
+2016,Somali,Injectables,0.4,0.004
+2017,Somali,Injectables,0.7,0.007
+2018,Somali,Injectables,1,0.01
+2019,Somali,Injectables,1.3,0.013
+2000,Somali,IUDs,0,0
+2001,Somali,IUDs,0,0
+2002,Somali,IUDs,0,0
+2003,Somali,IUDs,0,0
+2004,Somali,IUDs,0,0
+2005,Somali,IUDs,0,0
+2006,Somali,IUDs,0.016666667,0.000166667
+2007,Somali,IUDs,0.033333333,0.000333333
+2008,Somali,IUDs,0.05,5.00E-04
+2009,Somali,IUDs,0.066666667,0.000666667
+2010,Somali,IUDs,0.083333333,0.000833333
+2011,Somali,IUDs,0.1,0.001
+2012,Somali,IUDs,0.1,0.001
+2013,Somali,IUDs,0.1,0.001
+2014,Somali,IUDs,0.1,0.001
+2015,Somali,IUDs,0.1,0.001
+2016,Somali,IUDs,0.1,0.001
+2017,Somali,IUDs,0.066666667,0.000666667
+2018,Somali,IUDs,0.033333333,0.000333333
+2019,Somali,IUDs,0,0
+2000,Somali,Other modern,0,0
+2001,Somali,Other modern,0,0
+2002,Somali,Other modern,0,0
+2003,Somali,Other modern,0,0
+2004,Somali,Other modern,0,0
+2005,Somali,Other modern,0,0
+2006,Somali,Other modern,0,0
+2007,Somali,Other modern,0,0
+2008,Somali,Other modern,0,0
+2009,Somali,Other modern,0,0
+2010,Somali,Other modern,0,0
+2011,Somali,Other modern,0,0
+2012,Somali,Other modern,0.02,2.00E-04
+2013,Somali,Other modern,0.04,4.00E-04
+2014,Somali,Other modern,0.06,6.00E-04
+2015,Somali,Other modern,0.08,8.00E-04
+2016,Somali,Other modern,0.1,0.001
+2017,Somali,Other modern,0.233333333,0.002333333
+2018,Somali,Other modern,0.366666667,0.003666667
+2019,Somali,Other modern,0.5,0.005
+2000,Somali,Other traditional,0.5,0.005
+2001,Somali,Other traditional,0.46,0.0046
+2002,Somali,Other traditional,0.42,0.0042
+2003,Somali,Other traditional,0.38,0.0038
+2004,Somali,Other traditional,0.34,0.0034
+2005,Somali,Other traditional,0.3,0.003
+2006,Somali,Other traditional,0.3,0.003
+2007,Somali,Other traditional,0.3,0.003
+2008,Somali,Other traditional,0.3,0.003
+2009,Somali,Other traditional,0.3,0.003
+2010,Somali,Other traditional,0.3,0.003
+2011,Somali,Other traditional,0.3,0.003
+2012,Somali,Other traditional,0.24,0.0024
+2013,Somali,Other traditional,0.18,0.0018
+2014,Somali,Other traditional,0.12,0.0012
+2015,Somali,Other traditional,0.06,6.00E-04
+2016,Somali,Other traditional,0,0
+2017,Somali,Other traditional,0,0
+2018,Somali,Other traditional,0,0
+2019,Somali,Other traditional,0,0
+2000,Somali,Pill,1.7,0.017
+2001,Somali,Pill,1.36,0.0136
+2002,Somali,Pill,1.02,0.0102
+2003,Somali,Pill,0.68,0.0068
+2004,Somali,Pill,0.34,0.0034
+2005,Somali,Pill,0,0
+2006,Somali,Pill,0.1,0.001
+2007,Somali,Pill,0.2,0.002
+2008,Somali,Pill,0.3,0.003
+2009,Somali,Pill,0.4,0.004
+2010,Somali,Pill,0.5,0.005
+2011,Somali,Pill,0.6,0.006
+2012,Somali,Pill,0.54,0.0054
+2013,Somali,Pill,0.48,0.0048
+2014,Somali,Pill,0.42,0.0042
+2015,Somali,Pill,0.36,0.0036
+2016,Somali,Pill,0.3,0.003
+2017,Somali,Pill,0.433333333,0.004333333
+2018,Somali,Pill,0.566666667,0.005666667
+2019,Somali,Pill,0.7,0.007
+2000,Somali,BTL,0.2,0.002
+2001,Somali,BTL,0.16,0.0016
+2002,Somali,BTL,0.12,0.0012
+2003,Somali,BTL,0.08,8.00E-04
+2004,Somali,BTL,0.04,4.00E-04
+2005,Somali,BTL,0,0
+2006,Somali,BTL,0,0
+2007,Somali,BTL,0,0
+2008,Somali,BTL,0,0
+2009,Somali,BTL,0,0
+2010,Somali,BTL,0,0
+2011,Somali,BTL,0,0
+2012,Somali,BTL,0,0
+2013,Somali,BTL,0,0
+2014,Somali,BTL,0,0
+2015,Somali,BTL,0,0
+2016,Somali,BTL,0,0
+2017,Somali,BTL,0,0
+2018,Somali,BTL,0,0
+2019,Somali,BTL,0,0
+2000,Somali,Withdrawal,0,0
+2001,Somali,Withdrawal,0,0
+2002,Somali,Withdrawal,0,0
+2003,Somali,Withdrawal,0,0
+2004,Somali,Withdrawal,0,0
+2005,Somali,Withdrawal,0,0
+2006,Somali,Withdrawal,0,0
+2007,Somali,Withdrawal,0,0
+2008,Somali,Withdrawal,0,0
+2009,Somali,Withdrawal,0,0
+2010,Somali,Withdrawal,0,0
+2011,Somali,Withdrawal,0,0
+2012,Somali,Withdrawal,0.02,2.00E-04
+2013,Somali,Withdrawal,0.04,4.00E-04
+2014,Somali,Withdrawal,0.06,6.00E-04
+2015,Somali,Withdrawal,0.08,8.00E-04
+2016,Somali,Withdrawal,0.1,0.001
+2017,Somali,Withdrawal,0.066666667,0.000666667
+2018,Somali,Withdrawal,0.033333333,0.000333333
+2019,Somali,Withdrawal,0,0
+2000,Tigray,Condoms,0.5,0.005
+2001,Tigray,Condoms,0.42,0.0042
+2002,Tigray,Condoms,0.34,0.0034
+2003,Tigray,Condoms,0.26,0.0026
+2004,Tigray,Condoms,0.18,0.0018
+2005,Tigray,Condoms,0.1,0.001
+2006,Tigray,Condoms,0.2,0.002
+2007,Tigray,Condoms,0.3,0.003
+2008,Tigray,Condoms,0.4,0.004
+2009,Tigray,Condoms,0.5,0.005
+2010,Tigray,Condoms,0.6,0.006
+2011,Tigray,Condoms,0.7,0.007
+2012,Tigray,Condoms,0.6,0.006
+2013,Tigray,Condoms,0.5,0.005
+2014,Tigray,Condoms,0.4,0.004
+2015,Tigray,Condoms,0.3,0.003
+2016,Tigray,Condoms,0.2,0.002
+2017,Tigray,Condoms,0.533333333,0.005333333
+2018,Tigray,Condoms,0.866666667,0.008666667
+2019,Tigray,Condoms,1.2,0.012
+2000,Tigray,Implants,0,0
+2001,Tigray,Implants,0.02,2.00E-04
+2002,Tigray,Implants,0.04,4.00E-04
+2003,Tigray,Implants,0.06,6.00E-04
+2004,Tigray,Implants,0.08,8.00E-04
+2005,Tigray,Implants,0.1,0.001
+2006,Tigray,Implants,0.666666667,0.006666667
+2007,Tigray,Implants,1.233333333,0.012333333
+2008,Tigray,Implants,1.8,0.018
+2009,Tigray,Implants,2.366666667,0.023666667
+2010,Tigray,Implants,2.933333333,0.029333333
+2011,Tigray,Implants,3.5,0.035
+2012,Tigray,Implants,4.32,0.0432
+2013,Tigray,Implants,5.14,0.0514
+2014,Tigray,Implants,5.96,0.0596
+2015,Tigray,Implants,6.78,0.0678
+2016,Tigray,Implants,7.6,0.076
+2017,Tigray,Implants,8.5,0.085
+2018,Tigray,Implants,9.4,0.094
+2019,Tigray,Implants,10.3,0.103
+2000,Tigray,Injectables,4.3,0.043
+2001,Tigray,Injectables,5.22,0.0522
+2002,Tigray,Injectables,6.14,0.0614
+2003,Tigray,Injectables,7.06,0.0706
+2004,Tigray,Injectables,7.98,0.0798
+2005,Tigray,Injectables,8.9,0.089
+2006,Tigray,Injectables,9.05,0.0905
+2007,Tigray,Injectables,9.2,0.092
+2008,Tigray,Injectables,9.35,0.0935
+2009,Tigray,Injectables,9.5,0.095
+2010,Tigray,Injectables,9.65,0.0965
+2011,Tigray,Injectables,9.8,0.098
+2012,Tigray,Injectables,10.56,0.1056
+2013,Tigray,Injectables,11.32,0.1132
+2014,Tigray,Injectables,12.08,0.1208
+2015,Tigray,Injectables,12.84,0.1284
+2016,Tigray,Injectables,13.6,0.136
+2017,Tigray,Injectables,12.73333333,0.127333333
+2018,Tigray,Injectables,11.86666667,0.118666667
+2019,Tigray,Injectables,11,0.11
+2000,Tigray,IUDs,0,0
+2001,Tigray,IUDs,0,0
+2002,Tigray,IUDs,0,0
+2003,Tigray,IUDs,0,0
+2004,Tigray,IUDs,0,0
+2005,Tigray,IUDs,0,0
+2006,Tigray,IUDs,0,0
+2007,Tigray,IUDs,0,0
+2008,Tigray,IUDs,0,0
+2009,Tigray,IUDs,0,0
+2010,Tigray,IUDs,0,0
+2011,Tigray,IUDs,0,0
+2012,Tigray,IUDs,0.14,0.0014
+2013,Tigray,IUDs,0.28,0.0028
+2014,Tigray,IUDs,0.42,0.0042
+2015,Tigray,IUDs,0.56,0.0056
+2016,Tigray,IUDs,0.7,0.007
+2017,Tigray,IUDs,0.7,0.007
+2018,Tigray,IUDs,0.7,0.007
+2019,Tigray,IUDs,0.7,0.007
+2000,Tigray,Other modern,0,0
+2001,Tigray,Other modern,0,0
+2002,Tigray,Other modern,0,0
+2003,Tigray,Other modern,0,0
+2004,Tigray,Other modern,0,0
+2005,Tigray,Other modern,0,0
+2006,Tigray,Other modern,0,0
+2007,Tigray,Other modern,0,0
+2008,Tigray,Other modern,0,0
+2009,Tigray,Other modern,0,0
+2010,Tigray,Other modern,0,0
+2011,Tigray,Other modern,0,0
+2012,Tigray,Other modern,0.04,4.00E-04
+2013,Tigray,Other modern,0.08,8.00E-04
+2014,Tigray,Other modern,0.12,0.0012
+2015,Tigray,Other modern,0.16,0.0016
+2016,Tigray,Other modern,0.2,0.002
+2017,Tigray,Other modern,0.266666667,0.002666667
+2018,Tigray,Other modern,0.333333333,0.003333333
+2019,Tigray,Other modern,0.4,0.004
+2000,Tigray,Other traditional,0.5,0.005
+2001,Tigray,Other traditional,0.44,0.0044
+2002,Tigray,Other traditional,0.38,0.0038
+2003,Tigray,Other traditional,0.32,0.0032
+2004,Tigray,Other traditional,0.26,0.0026
+2005,Tigray,Other traditional,0.2,0.002
+2006,Tigray,Other traditional,0.266666667,0.002666667
+2007,Tigray,Other traditional,0.333333333,0.003333333
+2008,Tigray,Other traditional,0.4,0.004
+2009,Tigray,Other traditional,0.466666667,0.004666667
+2010,Tigray,Other traditional,0.533333333,0.005333333
+2011,Tigray,Other traditional,0.6,0.006
+2012,Tigray,Other traditional,0.62,0.0062
+2013,Tigray,Other traditional,0.64,0.0064
+2014,Tigray,Other traditional,0.66,0.0066
+2015,Tigray,Other traditional,0.68,0.0068
+2016,Tigray,Other traditional,0.7,0.007
+2017,Tigray,Other traditional,0.566666667,0.005666667
+2018,Tigray,Other traditional,0.433333333,0.004333333
+2019,Tigray,Other traditional,0.3,0.003
+2000,Tigray,Pill,1.5,0.015
+2001,Tigray,Pill,1.58,0.0158
+2002,Tigray,Pill,1.66,0.0166
+2003,Tigray,Pill,1.74,0.0174
+2004,Tigray,Pill,1.82,0.0182
+2005,Tigray,Pill,1.9,0.019
+2006,Tigray,Pill,1.8,0.018
+2007,Tigray,Pill,1.7,0.017
+2008,Tigray,Pill,1.6,0.016
+2009,Tigray,Pill,1.5,0.015
+2010,Tigray,Pill,1.4,0.014
+2011,Tigray,Pill,1.3,0.013
+2012,Tigray,Pill,1.46,0.0146
+2013,Tigray,Pill,1.62,0.0162
+2014,Tigray,Pill,1.78,0.0178
+2015,Tigray,Pill,1.94,0.0194
+2016,Tigray,Pill,2.1,0.021
+2017,Tigray,Pill,2.266666667,0.022666667
+2018,Tigray,Pill,2.433333333,0.024333333
+2019,Tigray,Pill,2.6,0.026
+2000,Tigray,BTL,0.1,0.001
+2001,Tigray,BTL,0.08,8.00E-04
+2002,Tigray,BTL,0.06,6.00E-04
+2003,Tigray,BTL,0.04,4.00E-04
+2004,Tigray,BTL,0.02,2.00E-04
+2005,Tigray,BTL,0,0
+2006,Tigray,BTL,0.016666667,0.000166667
+2007,Tigray,BTL,0.033333333,0.000333333
+2008,Tigray,BTL,0.05,5.00E-04
+2009,Tigray,BTL,0.066666667,0.000666667
+2010,Tigray,BTL,0.083333333,0.000833333
+2011,Tigray,BTL,0.1,0.001
+2012,Tigray,BTL,0.1,0.001
+2013,Tigray,BTL,0.1,0.001
+2014,Tigray,BTL,0.1,0.001
+2015,Tigray,BTL,0.1,0.001
+2016,Tigray,BTL,0.1,0.001
+2017,Tigray,BTL,0.066666667,0.000666667
+2018,Tigray,BTL,0.033333333,0.000333333
+2019,Tigray,BTL,0,0
+2000,Tigray,Withdrawal,0.1,0.001
+2001,Tigray,Withdrawal,0.08,8.00E-04
+2002,Tigray,Withdrawal,0.06,6.00E-04
+2003,Tigray,Withdrawal,0.04,4.00E-04
+2004,Tigray,Withdrawal,0.02,2.00E-04
+2005,Tigray,Withdrawal,0,0
+2006,Tigray,Withdrawal,0,0
+2007,Tigray,Withdrawal,0,0
+2008,Tigray,Withdrawal,0,0
+2009,Tigray,Withdrawal,0,0
+2010,Tigray,Withdrawal,0,0
+2011,Tigray,Withdrawal,0,0
+2012,Tigray,Withdrawal,0.02,2.00E-04
+2013,Tigray,Withdrawal,0.04,4.00E-04
+2014,Tigray,Withdrawal,0.06,6.00E-04
+2015,Tigray,Withdrawal,0.08,8.00E-04
+2016,Tigray,Withdrawal,0.1,0.001
+2017,Tigray,Withdrawal,0.133333333,0.001333333
+2018,Tigray,Withdrawal,0.166666667,0.001666667
+2019,Tigray,Withdrawal,0.2,0.002
