@@ -82,7 +82,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = 'FPsim'
-copyright = f'2022 - {datetime.today().year}, Bill & Melinda Gates Foundation. All rights reserved.\nThese docs were built for {project} version {fp.__version__}\n'
+copyright = f'2022 - {datetime.today().year}, Gates Foundation. All rights reserved.\nThese docs were built for {project} version {fp.__version__}\n'
 author = 'Institute for Disease Modeling'
 
 # The version info for the project you're documenting, acts as replacement for
