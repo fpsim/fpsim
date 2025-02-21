@@ -37,7 +37,6 @@ lines[1] = "=============\n" # Ensure the heading is the right length
 with open(filename, "w") as f: # Write new file
     f.writelines(lines)
 
-
 # -- General configuration ---------------------------------------------------
 
 # If your documentation needs a minimal Sphinx version, state it here.
@@ -62,7 +61,6 @@ autodoc_default_options = {
 }
 
 autodoc_mock_imports = []
-
 
 napoleon_google_docstring = True
 
@@ -94,7 +92,6 @@ author = 'Institute for Disease Modeling'
 # The versions
 version = fp.__version__
 release = fp.__version__
-
 
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
