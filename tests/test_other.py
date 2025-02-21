@@ -158,6 +158,18 @@ def test_method_usage():
     
     return sim
 
+def test_track_as():
+    '''Test that track_as can be be used to plot age-specific results'''
+    # Set options
+    pars = fp.pars(location='test', track_as=True)
+    sim = fp.Sim(pars=pars)
+    sim.run()
+
+    if do_plot:
+        sim.plot()
+
+    return sim
+
 # Run all tests
 if __name__ == '__main__':
 
@@ -169,3 +181,4 @@ if __name__ == '__main__':
         ppl  = test_plot_people()
         res  = test_samples()
         method = test_method_usage()
+        sim = test_track_as()

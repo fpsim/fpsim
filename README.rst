@@ -5,7 +5,7 @@ This repository contains the code for the Institute for Disease Modeling's famil
 
 **FPsim is currently under development**.
 
-User Guide
+User guide
 ------------
 FPsim is designed as an open-source tool for family planning research. 
 However, it is not a silver bullet tool. It is designed to answer
@@ -20,7 +20,7 @@ Before using FPsim, please refer to the following guidelines:
  * FPsim cannot predict exogenous events. Use caution when interpreting and presenting results. For example, FPsim cannot predict regional conflicts or pandemics, nor their impacts on FP services.
 
 
-Repo Structure
+Repo structure
 --------------
 
 The structure is as follows:
@@ -60,7 +60,7 @@ Please follow the starsim style guide at: https://github.com/amath-idm/styleguid
 * If your issue has more than two distinct tasks associated with it, please include a check list in the text, so that we can track which components of the issue have been resolved and which need to be supported. 
 * If your issue is a bug that was not caught by test, and includes a specific expected value that can be hard-checked, please either include or request a test patch so that a test fails due to the bug
 
-**Pull Requests**
+**Pull requests**
 
 * ALL PRs should be linked to at least one issue. As above, if you're working on a PR and there's no issue associated with it, you can create an issue. However, before doing so, ask yourself if it really needs to be done. 
 * All PRs should have another person assigned for review. If assigned to more than one person, use the comment section to assign an issue owner/main reviewer. Use your best judgement here, as roles shift, but in general: 
@@ -86,7 +86,7 @@ Please follow the starsim style guide at: https://github.com/amath-idm/styleguid
 
 **Testing**
 
-* Development and Debugging
+* Development and debugging
 
     - Developers are responsible for ensuring the functionality of new features they develop
            - Debugging and testing code are core features of ensuring functionality
@@ -94,7 +94,7 @@ Please follow the starsim style guide at: https://github.com/amath-idm/styleguid
            - Ensure new features are compatible with introducing a novel method in scenarios
            - Use example_scens.py to quickly debug your new feature during development
 
-* Test Coverage       
+* Test coverage       
     - Every time a new feature is added, the developer should develop a unittest which checks the basic implementation of the feature
     - A unittest is simply a function starting with "test" that implements a feature as succinctly as possibly, and checks the expected output with an assertion
     - If you're having trouble starting a unittest feel free to look at some examples `here <https://github.com/amath-idm/fp_analyses/blob/master/tests/test_scenarios.py>`_

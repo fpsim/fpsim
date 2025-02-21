@@ -1,0 +1,265 @@
+﻿region,month,perc
+Addis Ababa,0,0.2804486
+Addis Ababa,1,0
+Addis Ababa,2,0.4280513
+Addis Ababa,3,0.5819274
+Addis Ababa,4,0.7363533
+Addis Ababa,5,0.7753635
+Addis Ababa,6,0.8967487
+Addis Ababa,7,0.9451912
+Addis Ababa,8,0.7157481
+Addis Ababa,9,0.7606989
+Addis Ababa,10,0.6545089
+Addis Ababa,11,0.491917
+Addis Ababa,12,0.9371189
+Addis Ababa,13,0.4345163
+Addis Ababa,14,0.718272
+Addis Ababa,15,0.5769147
+Addis Ababa,16,0.5983957
+Addis Ababa,17,1
+Addis Ababa,18,0.7650677
+Addis Ababa,19,0.7391624
+Addis Ababa,20,0.6923765
+Addis Ababa,21,0.7672215
+Addis Ababa,22,1
+Addis Ababa,23,0.7470624
+Afar,0,0
+Afar,1,0.3223262
+Afar,2,0.6493627
+Afar,3,0.4746272
+Afar,4,0.9809865
+Afar,5,0.7868865
+Afar,6,0.8223376
+Afar,7,0.6789928
+Afar,8,0.7423513
+Afar,9,0.7324598
+Afar,10,0.7412934
+Afar,11,0.6886834
+Afar,12,0.6908301
+Afar,13,0.6040435
+Afar,14,0.7196817
+Afar,15,0.8518509
+Afar,16,0.6400381
+Afar,17,0.820258
+Afar,18,0.5683755
+Afar,19,0.7129655
+Afar,20,0.6568757
+Afar,21,0.4463903
+Afar,22,1
+Afar,23,1
+Amhara,0,0.3387818
+Amhara,1,0.4372472
+Amhara,2,0.5614647
+Amhara,3,0.65269
+Amhara,4,0.7673594
+Amhara,5,0.6759703
+Amhara,6,0.7347912
+Amhara,7,0.7907014
+Amhara,8,0.9111799
+Amhara,9,0.6272359
+Amhara,10,0.8331559
+Amhara,11,0.8064375
+Amhara,12,0.8994676
+Amhara,13,1
+Amhara,14,0.9637834
+Amhara,15,0.8516251
+Amhara,16,0.8936795
+Amhara,17,0.83398
+Amhara,18,0.7160442
+Amhara,19,0.7807041
+Amhara,20,0.8707079
+Amhara,21,0.9169371
+Amhara,22,0.9305917
+Amhara,23,0.6328865
+Benishangul-Gumuz,0,0.1681034
+Benishangul-Gumuz,1,0.2217912
+Benishangul-Gumuz,2,0.6564353
+Benishangul-Gumuz,3,0.9223433
+Benishangul-Gumuz,4,0.7725343
+Benishangul-Gumuz,5,0.8492458
+Benishangul-Gumuz,6,0.8336415
+Benishangul-Gumuz,7,0.9218911
+Benishangul-Gumuz,8,0.5644177
+Benishangul-Gumuz,9,0.8411147
+Benishangul-Gumuz,10,0.8926165
+Benishangul-Gumuz,11,0.8030505
+Benishangul-Gumuz,12,0.8460035
+Benishangul-Gumuz,13,0.950196
+Benishangul-Gumuz,14,0.9155294
+Benishangul-Gumuz,15,1
+Benishangul-Gumuz,16,0.582251
+Benishangul-Gumuz,17,0.8919627
+Benishangul-Gumuz,18,0.7934396
+Benishangul-Gumuz,19,0.6494441
+Benishangul-Gumuz,20,0.8558342
+Benishangul-Gumuz,21,0.8811209
+Benishangul-Gumuz,22,0.9242123
+Benishangul-Gumuz,23,0.8618504
+Dire Dawa,0,0
+Dire Dawa,1,0.14895
+Dire Dawa,2,0.76252
+Dire Dawa,3,0.6538367
+Dire Dawa,4,0.7674337
+Dire Dawa,5,0.4050001
+Dire Dawa,6,0.7729598
+Dire Dawa,7,0.8160694
+Dire Dawa,8,0.4408882
+Dire Dawa,9,0.6916138
+Dire Dawa,10,1
+Dire Dawa,11,0.6339258
+Dire Dawa,12,0.6085146
+Dire Dawa,13,0.6785091
+Dire Dawa,14,0.5562305
+Dire Dawa,15,0.7476011
+Dire Dawa,16,0.8710142
+Dire Dawa,17,0.4825061
+Dire Dawa,18,0.8497725
+Dire Dawa,19,0.9190647
+Dire Dawa,20,0.7530446
+Dire Dawa,21,0.8465058
+Dire Dawa,22,0.8907623
+Dire Dawa,23,0.7766797
+Gambela,0,0.5585877
+Gambela,1,0
+Gambela,2,0.197882
+Gambela,3,0.1273544
+Gambela,4,0.1103051
+Gambela,5,0.1703413
+Gambela,6,0.1766581
+Gambela,7,0.1718203
+Gambela,8,0.4528261
+Gambela,9,0.3356543
+Gambela,10,0.9241026
+Gambela,11,0.633644
+Gambela,12,0.7322791
+Gambela,13,0.4449532
+Gambela,14,0.640911
+Gambela,15,0.3252555
+Gambela,16,0.2091304
+Gambela,17,0.3709538
+Gambela,18,0.2376833
+Gambela,19,0.36581
+Gambela,20,0.4242279
+Gambela,21,0.4958984
+Gambela,22,0.5918981
+Gambela,23,0.5781614
+Harari,0,0.3123413
+Harari,1,0
+Harari,2,0.4393147
+Harari,3,0.5074279
+Harari,4,0.8215597
+Harari,5,0.8107035
+Harari,6,0.6745515
+Harari,7,0.9416324
+Harari,8,0.7514294
+Harari,9,0.863521
+Harari,10,0.7628808
+Harari,11,0.7931485
+Harari,12,0.6710355
+Harari,13,0.4499932
+Harari,14,0.7042034
+Harari,15,0.6562766
+Harari,16,0.6149828
+Harari,17,0.6024381
+Harari,18,0.7646666
+Harari,19,0.6235931
+Harari,20,1
+Harari,21,0.8975032
+Harari,22,0.8727782
+Harari,23,0.7186116
+Oromia,0,0.182728
+Oromia,1,0.3395765
+Oromia,2,0.426188
+Oromia,3,0.6339997
+Oromia,4,0.8116705
+Oromia,5,0.6735643
+Oromia,6,0.7953593
+Oromia,7,0.7498792
+Oromia,8,0.865727
+Oromia,9,0.9268694
+Oromia,10,0.9371165
+Oromia,11,0.9106617
+Oromia,12,0.8816431
+Oromia,13,0.8749873
+Oromia,14,0.7103799
+Oromia,15,0.8221634
+Oromia,16,0.8971176
+Oromia,17,0.8692124
+Oromia,18,0.8457374
+Oromia,19,0.8813365
+Oromia,20,0.832719
+Oromia,21,0.6389842
+Oromia,22,0.8921599
+Oromia,23,0.8919376
+SNNPR,0,0.09503922
+SNNPR,1,0.31554378
+SNNPR,2,0.59410268
+SNNPR,3,0.69602929
+SNNPR,4,0.74563008
+SNNPR,5,0.64462635
+SNNPR,6,0.67789927
+SNNPR,7,0.85102724
+SNNPR,8,0.87425998
+SNNPR,9,0.8659033
+SNNPR,10,1
+SNNPR,11,0.73174777
+SNNPR,12,0.86320471
+SNNPR,13,0.80607797
+SNNPR,14,0.84597561
+SNNPR,15,0.84634982
+SNNPR,16,0.74478382
+SNNPR,17,1
+SNNPR,18,0.79228171
+SNNPR,19,0.75814427
+SNNPR,20,0.84132735
+SNNPR,21,0.85223432
+SNNPR,22,0.56285595
+SNNPR,23,1
+Somali,0,0.1457906
+Somali,1,0.2904325
+Somali,2,0.5930469
+Somali,3,0.5899873
+Somali,4,0.6899372
+Somali,5,0.7635109
+Somali,6,0.8645158
+Somali,7,0.8522905
+Somali,8,0.7667816
+Somali,9,0.839076
+Somali,10,0.7217281
+Somali,11,0.7322381
+Somali,12,0.8036779
+Somali,13,0.7134293
+Somali,14,0.5078993
+Somali,15,0.5156399
+Somali,16,0.5196
+Somali,17,0.5090785
+Somali,18,0.6734621
+Somali,19,0.6134804
+Somali,20,0.708033
+Somali,21,0.8568932
+Somali,22,1
+Somali,23,0.924201
+Tigray,0,0.17126575
+Tigray,1,0.08569548
+Tigray,2,0.26344346
+Tigray,3,0.58561094
+Tigray,4,0.79395448
+Tigray,5,0.61585176
+Tigray,6,0.65568242
+Tigray,7,0.8498663
+Tigray,8,0.71558029
+Tigray,9,0.70319912
+Tigray,10,0.84660792
+Tigray,11,0.853039
+Tigray,12,0.56112777
+Tigray,13,0.59793824
+Tigray,14,0.59646258
+Tigray,15,0.49524523
+Tigray,16,0.53182279
+Tigray,17,0.64128621
+Tigray,18,0.66582803
+Tigray,19,0.77040514
+Tigray,20,0.69324975
+Tigray,21,0.89666255
+Tigray,22,0.6314171
+Tigray,23,0.68438634

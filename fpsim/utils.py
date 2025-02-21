@@ -10,7 +10,16 @@ from . import version as fpv
 
 
 # Specify all externally visible things this file defines
-__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample']
+__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample', 'match_ages']
+__all__ += ['DuplicateNameException']
+
+
+@nb.jit((nb.float64[:], nb.float64, nb.float64), cache=True, nopython=True)
+def match_ages(age, age_low, age_high):
+    ''' Find ages between age low and age_high '''
+    match_low  = (age >= age_low)
+    match_high = (age <  age_high)
+    return match_low & match_high
 
 
 def set_seed(seed=None):
@@ -271,3 +280,82 @@ def logistic_5p(x, a, b, c, d, e):
     '''
 
     return d + ((a - d)/(1.0 + np.exp(b*(x-c)))**e)
+
+
+def logistic_5p_dfun(x, a, b, c, d, e):
+    '''
+    Derivative of the 5 paraemter logistic function, same parameters
+    '''
+    return b*(a - d)*e*np.exp(b*(-c + x))*(1.0 + np.exp(b*(-c + x)))**(-1.0 - e)
+
+
+def sigmoid_product(x, a1, b1, a2, b2):
+    '''
+    A product of two sigmoid functions. A monotonically increasing sigmoidal curve,
+    followed by a monotonically decreasing sigmoidal curve.
+
+    Current form produces  0 <= f(x) <= 1
+    '''
+    max_exp = 709
+    x1 = np.clip(a1 - b1*x, -max_exp, max_exp)
+    x2 = np.clip(a2 - b2*x, -max_exp, max_exp)
+    return (1.0 / (1.0 + np.exp(x1))) * (1.0 / (1.0 + np.exp(x2)))
+
+
+def gompertz(x, a, b, c):
+    '''
+    Compute the Gompertz function for a given set of parameters.
+    This function is used for describing mortality and ageing-like processes.
+
+    See:
+    https://en.wikipedia.org/wiki/Gompertz_function
+
+    The Gompertz function is defined as:
+    f(x) = a * exp(-b * exp(-c * x))
+
+    Parameters:
+    x (array-like): The array of x values at which the function is evaluated
+    a (float): The asymptote of the function as x approaches infinity.
+    b (float): Displacement along the x-axis
+    c (float): The growth rate
+
+    Returns:
+    y : (ndarray)
+        An array of y values corresponding to the gomeprtz function
+        evaluated at the input x values.
+    """
+    '''
+    return a*np.exp(-b*np.exp(-c*x))
+
+
+def gompertz_dfun(x, a, b, c):
+    '''
+    Compute the derivative of the Gompertz function with respect to x for a given set of parameters.
+
+    The derivative of the Gompertz function is defined as:
+    f'(x) = a * b * c * exp(-(b / exp(c * x)) - c * x)
+
+    Parameters:
+    x (array-like): The array of x values at which the function is evaluated
+    a (float): The asymptote of the Gompertz function as x approaches infinity.
+    b (float): Displacement along the x-axis
+    c (float): The growth rate
+
+    Returns:
+    ndarray: An array of derivative values corresponding to the input x values.
+    '''
+    return a*b*c*np.exp(-(b/np.exp(c*x)) - c*x)
+
+
+#% Exceptions
+
+class DuplicateNameException(Exception):
+    """
+    Raised when either multiple instances of Module or State, or of any other type
+    passed to ndict have duplicate names."""
+
+
+    def __init__(self, obj):
+        msg = f"A {type(obj)} with name `{obj.name}` has already been added."
+        super().__init__(msg)
+        return

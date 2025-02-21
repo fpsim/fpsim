@@ -21,7 +21,7 @@ calib_pars = dict(
 )
 
 location = 'kenya'
-spacing_file = 'birth_spacing_dhs.csv'  # Kenya DHS birth spacing data
+spacing_file = 'data/birth_spacing_dhs.csv'  # Kenya DHS birth spacing data
 
 do_save_figs = 1
 
