@@ -23,14 +23,26 @@ class People(ss.People):
     Class for all the people in the simulation.
     """
 
-    def __init__(self, n_agents=None, age_data=None, pars=None, empowerment_module=None, education_module=None, **kwargs):
+    def __init__(self, n_agents=None, age_data=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Allow defaults to be dynamically set
         person_defaults = fpd.person_defaults
+        max_parity = fpd.max_parity
 
         # Initialization
         super().__init__(n_agents, age_data, extra_states=person_defaults, **kwargs)
-        self.pars = pars
+
+        # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
+        # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and
+        # pregnancy outcomes.
+        self.child_inds = np.full(max_parity, -1, int),
+        self.birth_ages = np.full(max_parity, np.nan, float),  # Ages at time of live births
+        self.stillborn_ages = np.full(max_parity, np.nan, float),  # Ages at time of stillbirths
+        self.miscarriage_ages = np.full(max_parity, np.nan, float),  # Ages at time of miscarriages
+        self.abortion_ages = np.full(max_parity, np.nan, float),  # Ages at time of abortions
+        # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
+
+
 
         # self.pars = pars  # Set parameters
 
@@ -48,7 +60,9 @@ class People(ss.People):
 
         return
 
-    def initialize_state_values(self, pars):
+    def init_vals(self):
+        pars = self.sim.pars
+
         if not self.pars['use_subnational']:
             _urban = self.get_urban(self.n_agents)
         else:
@@ -60,18 +74,18 @@ class People(ss.People):
         self.urban = _urban  # Urban (1) or rural (0)
 
         # Parameters on sexual and reproductive history
-        self.fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], n)
+        self.fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], self.n_agents)
 
         # Fertility intent
         has_intent = "fertility_intent"
-        self.fertility_intent   = fpd.person_defaults["fertility_intent"].val
-        self.categorical_intent = self.states["categorical_intent"].new(n, "no")
+        # self.fertility_intent   = fpd.person_defaults["fertility_intent"].val
+        # self.categorical_intent = self.states["categorical_intent"].new(n, "no")
         # Update distribution of fertility intent with location-specific values if it is present in self.pars
         self.update_fertility_intent(n)
 
         # Intent to use contraception
         has_intent = "intent_to_use"
-        self.intent_to_use = self.states[has_intent].new(n, person_defaults[has_intent].val)
+        # self.intent_to_use = self.states[has_intent].new(n, person_defaults[has_intent].val)
         # Update distribution of fertility intent if it is present in self.pars
         self.update_intent_to_use(n)
 
