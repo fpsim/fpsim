@@ -1002,6 +1002,7 @@ class People(fpb.BasePeople):
             no_methods_acpr=0,
             contra_access=0,
             new_users=0,
+            switchers=0,
             ever_used_contra=0,
             urban_women=0,
             as_stillbirths=[],
@@ -1113,6 +1114,7 @@ class People(fpb.BasePeople):
         # Update methods for those who are eligible
         if len(ready):
             ready.update_method()
+            self.step_results['switchers'] = len(ready)  # Track how many people switch methods (incl on/off)
 
         # Make sure that women who are on contraception do not have intent to use contraception
         self.intent_to_use[self.on_contra] = False
