@@ -78,6 +78,7 @@ def test_scale():
     msim = fp.parallel(s1, s2)
     s1, s2 = msim.sims
 
+
     # Tests
     orig = s1.results.total_births.sum()
     expected = scale*orig
