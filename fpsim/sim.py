@@ -8,6 +8,7 @@ import pylab as pl
 import seaborn as sns
 import sciris as sc
 import pandas as pd
+import starsim as ss
 from .settings import options as fpo
 from . import utils as fpu
 from . import defaults as fpd
@@ -67,7 +68,7 @@ def tidy_up(fig, do_show=None, do_save=None, filename=None):
 
 # %% Sim class
 
-class Sim(fpb.BaseSim):
+class Sim(ss.Sim):
     """
     The Sim class handles the running of the simulation. This class handles the mechanics
     of the actual simulation, while BaseSim takes care of housekeeping (saving,
@@ -89,73 +90,83 @@ class Sim(fpb.BaseSim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, pars=None, location=None, label=None, track_children=False, regional=False,
+    def __init__(self, sim_pars=None, fp_pars=None, people=None, location=None, label=None, track_children=False, regional=False,
                  contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
+        if sim_pars is None:
+            sim_pars = {}
+        new_sim_pars = ss.make_pars()
 
-        pars = sc.dcp(pars)
+        # sim_pars['pop_scale'] = sim_pars['total_pop'] / sim_pars['n_agents'] if sim_pars['total_pop'] is not None else 1 # scale should be calculated in advance
+
+        new_sim_pars.update(sim_pars)
+        super().__init__(new_sim_pars, **kwargs)  # Initialize and set the parameters as attributes
+
+        fp_pars = sc.dcp(fp_pars)
+
         # Handle location
         if location is None:
-            if pars is not None and pars.get('location'):
-                location = pars.pop('location')
+            if fp_pars is not None and fp_pars.get('location'):
+                location = fp_pars.pop('location')
         location = fpd.get_location(location, printmsg=True)  # Handle location
         self.location = location
 
         # Make parameters
-        pars = fpp.pars(location=location, **sc.mergedicts(pars, kwargs))  # Update with location-specific parameters
+        self.fp_pars = fpp.pars(location=location, **sc.mergedicts(fp_pars, kwargs), validate=False)  # Update with location-specific parameters
 
         # Validate and initialize
-        mismatches = [key for key in kwargs.keys() if key not in fpp.par_keys]
-        if len(mismatches):
-            errormsg = f'Key(s) {mismatches} not found; available keys are {fpp.par_keys}'
-            raise sc.KeyNotFoundError(errormsg)
+        #mismatches = [key for key in kwargs.keys() if key not in fpp.par_keys]
+        #if len(mismatches):
+        #    errormsg = f'Key(s) {mismatches} not found; available keys are {fpp.par_keys}'
+        #    raise sc.KeyNotFoundError(errormsg)
 
-        super().__init__(pars, location=location, **kwargs)  # Initialize and set the parameters as attributes
+
+
+
 
         # Metadata and settings
-        self.initialized = False
-        self.already_run = False
         self.test_mode = False
-        self.label = label
-        self.track_children = track_children
-        self.regional = regional
-        self.ti = None  # The current timestep of the simulation
-        self.scale = pars['scaled_pop'] / pars['n_agents'] if pars['scaled_pop'] is not None else 1
+        self.fp_pars['track_children'] = track_children
+        self.fp_pars['regional'] = regional
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
 
         # Add a new parameter to pars that determines the size of the circular buffer
-        self.pars['tiperyear'] = self.tiperyear
+        # self.fp_pars['tiperyear'] = self.tiperyear
+        self.fp_pars['tiperyear'] = ss.time_ratio(self.pars.unit, self.pars.dt, 'year', 1) # todo might be backwards
 
         # People and results - intialized later
-        self.results = {}
-        self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
+        # self.results = {}
+        # self.people = people  # Sims are generally constructed without people, since People construction is time-consuming
 
         # Add modules, also initialized later
-        self.contraception_module = contraception_module or fpm.RandomChoice()
-        self.education_module = education_module
+        self.fp_pars['contraception_module'] = contraception_module or fpm.RandomChoice()
+        self.fp_pars['education_module'] = education_module
         # self.contraception_module = contraception_module or fpm.StandardChoice(location=location)
         # self.education_module = education_module or fped.Education(location=location)
-        self.empowerment_module = empowerment_module
+        self.fp_pars['empowerment_module'] = empowerment_module
 
         return
 
     # Basic properties
     @property
     def ty(self):
-        return self.ind2year(self.ti)  # years elapsed since beginning of sim (ie, 25.75... )
+        # return self.ind2year(self.ti)  # years elapsed since beginning of sim (ie, 25.75... )
+        return self.t.tvec[self.ti]  # years elapsed since beginning of sim (ie, 25.75... )
 
     @property
     def y(self):
-        return self.ind2calendar(self.ti)  # y is calendar year of timestep (ie, 1975.75)
+        # return self.ind2calendar(self.ti)  # y is calendar year of timestep (ie, 1975.75)
+        return self.t.yearvec[self.ti]
 
-    def initialize(self, force=False):
+    def init(self, force=False):
         """ Fully initialize the Sim with people and result storage"""
         if force or not self.initialized:
-            self.ti = 0  # The current time index
-            fpu.set_seed(self['seed'])
-            self.init_results()
-            self.init_people()  # This step also initializes the empowerment and education modules if provided
-            self.init_contraception()  # Initialize contraceptive methods
+            super().init(force=force)
+            #self.ti = 0  # The current time index
+            #fpu.set_seed(self['seed'])
+            #self.init_results()
+            #self.init_people()  # This step also initializes the empowerment and education modules if provided
+            self.init_contraception()  # Initialize contraceptive methods. v3 will refactor this to other modules
         return self
 
     def init_results(self):
@@ -163,39 +174,59 @@ class Sim(fpb.BaseSim):
         Initialize result storage. Most default results are either arrays or lists; these are
         all stored in defaults.py. Any other results with different formats can also be added here.
         """
+        super().init_results()  # Initialize the base results
+
+        kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
+
         for key in fpd.array_results:
-            self.results[key] = np.zeros(int(self.npts))
+            self.results += ss.Result(key, label=key, **kw)
+            # self.results[key] = np.zeros(int(self.npts))
+
+
+        # TODO verify all below results are actually Results objects. They may need to be converted to States until they're
+        # moved to their final module homes. Some of these arrays should be much shorter than the simulation length
 
         for key in fpd.list_results:
-            self.results[key] = []
+            self.results += ss.Result(key, label=key, **kw)
+            # self.results[key] = []
 
         # Store age-specific fertility rates
-        self.results['asfr'] = {}
-        self.results['method_usage'] = []
+        # self.results += ss.Result('asfr', label='asfr', **kw)
+        # self.results['asfr'] = {}
+        self.results += ss.Result('method_usage', label='method_usage', **kw)
+        # self.results['method_usage'] = []
         for key in fpd.age_bin_map.keys():
-            self.results['asfr'][key] = []
-            self.results[f"tfr_{key}"] = []
+            self.results += ss.Result(f'asfr_{key}', label=f'asfr_{key}', **kw)
+            self.results += ss.Result(f'tfr_{key}', label=f'tfr_{key}', **kw)
+            # self.results[f'asfr_{key}'] = []
+            # self.results[f"tfr_{key}"] = []
 
+        # Store age-specific mortality rates, TODO move to analyzer
         if self.pars['track_as']:
-            self.results['imr_age_by_group'] = []
-            self.results['mmr_age_by_group'] = []
-            self.results['stillbirth_ages'] = []
+            self.results += ss.Result('imr_age_by_group', label='imr_age_by_group', **kw)
+            self.results += ss.Result('mmr_age_by_group', label='mmr_age_by_group', **kw)
+            self.results += ss.Result('stillbirth_ages', label='stillbirth_ages', **kw)
+            # self.results['imr_age_by_group'] = []
+            # self.results['mmr_age_by_group'] = []
+            # self.results['stillbirth_ages'] = []
             for age_specific_channel in fpd.by_age_results:
                 for age_group in fpd.age_specific_channel_bins:
                     if 'numerator' in age_specific_channel or 'denominator' in age_specific_channel or 'as_' in age_specific_channel:
-                        self.results[age_specific_channel] = []
+                        # self.results[age_specific_channel] = []
+                        self.results += ss.Result(age_specific_channel, label=age_specific_channel, **kw)
                     else:
-                        self.results[f"{age_specific_channel}_{age_group}"] = []
+                        self.results += ss.Result(f"{age_specific_channel}_{age_group}", label=f"{age_specific_channel}_{age_group}", **kw)
+                        # self.results[f"{age_specific_channel}_{age_group}"] = []
 
         return
 
-    def init_people(self):
-        """
-        Initialize people by calling the People constructor and initialization methods.
-        See people.py for details of people construction.
-        """
-        self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
-                                    empowerment_module=self.empowerment_module, education_module=self.education_module)
+    # def init_people(self):
+    #     """
+    #     Initialize people by calling the People constructor and initialization methods.
+    #     See people.py for details of people construction.
+    #     """
+    #     self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
+    #                                 empowerment_module=self.empowerment_module, education_module=self.education_module)
 
     def init_contraception(self):
         if self.contraception_module is not None:
@@ -345,7 +376,7 @@ class Sim(fpb.BaseSim):
         T = sc.timer()
         if verbose is None:
             verbose = self['verbose']
-        self.initialize()
+        self.init()
         if self.already_run:
             errormsg = 'Cannot re-run an already run sim; please recreate or copy prior to a run'
             raise RuntimeError(errormsg)

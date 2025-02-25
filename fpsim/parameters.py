@@ -178,9 +178,10 @@ default_pars = {
     'location':             None,   # CONTEXT-SPECIFIC ####
     'n_agents':             1_000,  # Number of agents
     'scaled_pop':           None,   # Scaled population / total population size
-    'start_year':           1960,   # Start year of simulation
-    'end_year':             2020,   # End year of simulation
-    'timestep':             1,      # The simulation timestep in months
+    'start':                1960,   # Start year of simulation
+    'stop':                 2020,   # End year of simulation
+    'dt':                   1/12,      # The simulation timestep in 'unit's
+    'unit':                 'year',   # The unit of time for the simulation
     'seed':                 1,      # Random seed
     'verbose':              1,      # How much detail to print during the simulation
 
