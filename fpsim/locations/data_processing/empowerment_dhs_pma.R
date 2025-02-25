@@ -17,7 +17,13 @@ library(withr)
 
 # individual recode
 data.raw <- read_dta("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/KEIR8ADT/KEIR8AFL.DTA") # Kenya
-data.raw <- read_dta("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/SN_2018_ContinuousDHS_10072020_1835_122388/SNIR80DT/SNIR80FL.DTA") # Senegal
+
+# Senegal
+filepath <- file.path("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/IR_all/SNIR8BDT/SNIR8BFL.DTA")
+#Ethiopia
+filepath <- file.path("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/IR_all/ETIR71DT/ETIR71FL.DTA")
+# -- Load all the data
+data.raw <- read_dta(filepath)
 
 # -- Clean data -- #
 data <- data.raw %>%
@@ -195,4 +201,5 @@ table.wealth <- as.data.frame(svytable(~v190, svydes1)) %>%
   mutate(percent = Freq/sum(Freq)) %>%
   rename(wealth.quint = v190) %>% select(-Freq)
 # write.csv(table.wealth, "fpsim/locations/kenya/wealth.csv", row.names = F)
-# write.csv(table.wealth, "fpsim/locations/senegal/wealth.csv", row.names = F)
+write.csv(table.partnership, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/wealth.csv", row.names = F)
+write.csv(table.partnership, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/wealth.csv", row.names = F)

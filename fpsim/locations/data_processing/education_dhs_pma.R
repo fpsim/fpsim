@@ -29,6 +29,10 @@ dhs_dir <- "DHS"
 survey_dir <- "KEIR8BDT"
 filename <- "KEIR8BFL.DTA"
 filepath <- file.path(home_dir, dhs_dir, survey_dir, filename)
+# Senegal
+filepath <- file.path("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/IR_all/SNIR8BDT/SNIR8BFL.DTA")
+#Ethiopia
+filepath <- file.path("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/IR_all/ETIR71DT/ETIR71FL.DTA")
 
 # -- Load all the data
 data.raw <- read_dta(filepath)
@@ -270,7 +274,9 @@ stop.school$parity <- as.factor(stop.school$parity)
 # -- Write files -- #
 fpsim_dir <- "fpsim" # replace with path to your root directory of fpsim
 locations_dir <- "fpsim/locations"
-country_dir <- "kenya"
+# country_dir <- "kenya"
+# country_dir <- "senegal"
+country_dir <- "ethiopia"
 data_dir <- "data"
 country_data_path <-
   file.path(home_dir, fpsim_dir, locations_dir, country_dir, data_dir)

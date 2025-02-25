@@ -105,9 +105,17 @@ contra_coef.mid <- as.data.frame(summary(model.mid)$coefficients) %>%
 # write.csv(contra_coef.mid, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/contra_coef_mid_pp6.csv", row.names = F)
 
 # create csv for age splines
+splines <- as.data.frame(ns(c(15:49), knots = c(25)))
+names(splines) <- c("knot_1", "knot_2")
+splines$age <- c(15:49)
+write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/splines_25.csv", row.names = F)
+write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/splines_25.csv", row.names = F)
+write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/splines_25.csv", row.names = F)
+
 splines <- as.data.frame(ns(c(15:49), knots = c(25,40)))
 names(splines) <- c("knot_1", "knot_2","knot_3")
-write.csv(splines, "splines_25_40.csv", row.names = F)
+splines$age <- c(15:49)
+write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/splines_25_40.csv", row.names = F)
 write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/splines_25_40.csv", row.names = F)
 write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/splines_25_40.csv", row.names = F)
 
