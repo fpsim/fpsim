@@ -335,7 +335,7 @@ list_results = sc.autolist(
     'mmr',
     'imr',
     'birthday_fraction',
-    'method_usage',
+    # 'method_usage',
 )
 
 # Map between key names in results and annualised results, some of them are different
