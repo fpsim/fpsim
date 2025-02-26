@@ -103,6 +103,7 @@ def test_mcpr():
         ax.set_xlabel('Year')
         ax.legend()
     fig.tight_layout()
+    pl.show()
 
     fig, ax = pl.subplots(1, 1, figsize=(12, 6))
     ax.plot(sims[0].results.t, sims[0].results.mcpr, label=sims[0].label)
