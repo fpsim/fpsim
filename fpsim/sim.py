@@ -140,7 +140,7 @@ class Sim(ss.Sim):
         # Add a new parameter to pars that determines the size of the circular buffer
         # self.fp_pars['tiperyear'] = self.tiperyear
         unit = self.pars.unit if self.pars.unit != "" else 'year'
-        self.fp_pars['tiperyear'] = ss.time_ratio(unit, self.pars.dt, 'year', 1) # todo might be backwards
+        self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt) # todo might be backwards
 
         # People and results - intialized later
         # self.results = {}
@@ -238,7 +238,7 @@ class Sim(ss.Sim):
 
     def init_contraception(self):
         if self.fp_pars['contraception_module'] is not None:
-            self.people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
+            self.people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.fp_pars['contraception_module'])
         return
 
     def update_mortality(self):

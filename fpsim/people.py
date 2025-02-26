@@ -63,6 +63,8 @@ class People(ss.People):
         return
 
     def init_vals(self):
+        super().init_vals()
+
         pars = self.sim.pars
 
         if not self.sim.fp_pars['use_subnational']:
@@ -130,7 +132,7 @@ class People(ss.People):
         # Store keys
         self._keys = [s.name for s in self.states.values()]
 
-        if self.pars['use_subnational']:
+        if self.sim.fp_pars['use_subnational']:
             fpsn.init_regional_states(self)
             fpsn.init_regional_states(self)
 
@@ -143,16 +145,16 @@ class People(ss.People):
 
         for key in longitude_keys:
             current = getattr(self, key)  # Current value of this attribute
-            self.longitude[key] = np.full((self.sim.pars.n_agents, self.tiperyear), current[0])
+            self.longitude[key] = np.full((self.sim.pars.n_agents, int(self.sim.fp_pars['tiperyear'])), current[0])
         return
 
-    @property
-    def dt(self):
-        return self.pars['timestep'] / fpd.mpy
+    # @property
+    # def dt(self):
+    #     return self.sim.pars['dr'] / fpd.mpy
 
-    @property
-    def tiperyear(self):
-        return self.pars['tiperyear']
+    # @property
+    # def tiperyear(self):
+    #     return self.tiperyear
 
     @property
     def yei(self):
@@ -237,12 +239,12 @@ class People(ss.People):
         """
         Initialise the counter to determine when girls/women will have to first choose a method.
         """
-        inds = sc.findinds((self.female == True) * (self.age < self.pars['age_limit_fecundity']))
-        time_to_debut = (self.fated_debut[inds]-self.age[inds])/self.dt
+        inds = (self.female == True) * (self.age < self.sim.fp_pars['age_limit_fecundity'])
+        time_to_debut = (self.fated_debut[inds]-self.age[inds])/self.sim.t.dt
         self.ti_contra[inds] = np.maximum(time_to_debut, 0)
         # Validation
         time_to_set_contra = self.ti_contra[inds] == 0
-        if not np.array_equal(((self.age[inds] - self.fated_debut[inds]) > -self.dt), time_to_set_contra):
+        if not np.array_equal(((self.age[inds] - self.fated_debut[inds]) > -self.sim.t.dt), time_to_set_contra):
             errormsg = 'Should be choosing contraception for everyone past fated debut age.'
             raise ValueError(errormsg)
         return
