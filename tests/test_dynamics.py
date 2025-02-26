@@ -69,9 +69,9 @@ def test_mcpr():
         sims += make_sim(intvs=change_state, label=f'Increased {covar.pplattr}')
 
     # Run
-    for sim in sims: sim.run()
-    # m = fp.parallel(*sims, serial=serial, compute_stats=False)
-    # sims = m.sims[:]  # Replace with run versions
+    # for sim in sims: sim.run()
+    m = fp.parallel(*sims, serial=serial, compute_stats=False)
+    sims = m.sims[:]  # Replace with run versions
 
     # Firstly, check that changing the people attributes has registered in the relevant results metrics as expected
     for ri, covar in enumerate(covars):
@@ -102,6 +102,7 @@ def test_mcpr():
         ax.set_title(f'{covar.pplattr}')
         ax.set_xlabel('Year')
         ax.legend()
+    fig.tight_layout()
 
     fig, ax = pl.subplots(1, 1, figsize=(12, 6))
     ax.plot(sims[0].results.t, sims[0].results.mcpr, label=sims[0].label)
@@ -110,6 +111,7 @@ def test_mcpr():
     ax.set_ylabel('mCPR')
     ax.set_xlabel('Year')
     pl.legend()
+    fig.tight_layout()
     pl.show()
 
     return sims
