@@ -282,7 +282,7 @@ array_results = sc.autolist(
     'nonpostpartum',
     'total_women_fecund',
     'method_failures',
-    'birthday_fraction',
+    # 'birthday_fraction', in both list results and here, not sure where the correct spot is
     'short_intervals',
     'secondary_births',
     'proportion_short_interval',
