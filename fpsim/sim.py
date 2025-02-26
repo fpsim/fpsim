@@ -90,15 +90,22 @@ class Sim(ss.Sim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, sim_pars=None, fp_pars=None, people=None, location=None, label=None, track_children=False, regional=False,
-                 contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
+    def __init__(self, sim_pars=None, fp_pars=None, location=None, track_children=False, regional=False,
+                 contraception_module=None, empowerment_module=None, education_module=None,
+                 label=None, people=None, demographics=None, diseases=None, networks=None,
+                 interventions=None, analyzers=None, connectors=None, copy_inputs=True, data=None, **kwargs):
         if sim_pars is None:
             sim_pars = {}
         new_sim_pars = ss.make_pars()
 
+        args = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
+                    interventions=interventions, analyzers=analyzers, connectors=connectors)
+        args = {key:val for key,val in args.items() if val is not None} # Remove None inputs
+        input_pars = sc.mergedicts(sim_pars, args, kwargs, _copy=copy_inputs)
+
         # sim_pars['pop_scale'] = sim_pars['total_pop'] / sim_pars['n_agents'] if sim_pars['total_pop'] is not None else 1 # scale should be calculated in advance
 
-        new_sim_pars.update(sim_pars)
+        new_sim_pars.update(input_pars)
         super().__init__(new_sim_pars, **kwargs)  # Initialize and set the parameters as attributes
 
         fp_pars = sc.dcp(fp_pars)
@@ -132,7 +139,8 @@ class Sim(ss.Sim):
 
         # Add a new parameter to pars that determines the size of the circular buffer
         # self.fp_pars['tiperyear'] = self.tiperyear
-        self.fp_pars['tiperyear'] = ss.time_ratio(self.pars.unit, self.pars.dt, 'year', 1) # todo might be backwards
+        unit = self.pars.unit if self.pars.unit != "" else 'year'
+        self.fp_pars['tiperyear'] = ss.time_ratio(unit, self.pars.dt, 'year', 1) # todo might be backwards
 
         # People and results - intialized later
         # self.results = {}
@@ -202,7 +210,7 @@ class Sim(ss.Sim):
             # self.results[f"tfr_{key}"] = []
 
         # Store age-specific mortality rates, TODO move to analyzer
-        if self.pars['track_as']:
+        if self.fp_pars['track_as']:
             self.results += ss.Result('imr_age_by_group', label='imr_age_by_group', **kw)
             self.results += ss.Result('mmr_age_by_group', label='mmr_age_by_group', **kw)
             self.results += ss.Result('stillbirth_ages', label='stillbirth_ages', **kw)
@@ -229,7 +237,7 @@ class Sim(ss.Sim):
     #                                 empowerment_module=self.empowerment_module, education_module=self.education_module)
 
     def init_contraception(self):
-        if self.contraception_module is not None:
+        if self.fp_pars['contraception_module'] is not None:
             self.people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
         return
 
