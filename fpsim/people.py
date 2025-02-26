@@ -42,7 +42,9 @@ class People(ss.People):
         self.abortion_ages = np.full(max_parity, np.nan, float),  # Ages at time of abortions
         # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
 
-
+        # Empowerment and education
+        self.empowerment_module = empowerment_module
+        self.education_module = education_module
 
         # self.pars = pars  # Set parameters
 
