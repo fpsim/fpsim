@@ -412,6 +412,7 @@ class Sim(fpb.BaseSim):
         self.results['contra_access'][ti] = res.contra_access
         self.results['new_users'][ti] = res.new_users
         self.results['ever_used_contra'][ti] = res.ever_used_contra
+        self.results['switchers'][ti] = res.switchers
         self.results['urban_women'][ti] = res.urban_women
         self.results['mcpr'][ti] = sc.safedivide(res.on_methods_mcpr, (res.no_methods_mcpr + res.on_methods_mcpr))
         self.results['cpr'][ti] = sc.safedivide(res.on_methods_cpr, (res.no_methods_cpr + res.on_methods_cpr))

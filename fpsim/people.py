@@ -716,27 +716,48 @@ class People(fpb.BasePeople):
             stillborn.lactating = False  # Set agents of stillbith to not lactate
             self.step_results['stillbirths'] = len(stillborn)
 
+            live = deliv.filter(~is_stillborn)
+
+            # Increment parity for live births
+            is_twin = live.binomial(self.pars['twins_prob'])
+            twin = live.filter(is_twin) # Handle twins
+            self.step_results['births'] += 2 * len(twin)  # only add births to population if born alive
+            single = live.filter(~is_twin)  # Handle singles
+            self.step_results['births'] += len(single)
+
             # Record ages of agents when live births / stillbirths occur
             all_ppl = self.unfilter()
-            live = deliv.filter(~is_stillborn)
-            for parity in np.unique(live.parity):
-                inds = live.inds[live.parity == parity]
+            for parity in np.unique(single.parity):
+                inds = single.inds[single.parity == parity]
                 all_ppl.birth_ages[inds, parity] = all_ppl.age[inds]
+                if parity == 0: all_ppl.first_birth_age[inds] = all_ppl.age[inds]
+            for parity in np.unique(twin.parity):
+                inds = twin.inds[twin.parity == parity]
+                all_ppl.birth_ages[inds, parity] = all_ppl.age[inds]
+                all_ppl.birth_ages[inds, parity+1] = all_ppl.age[inds]  # Record twin birth
                 if parity == 0: all_ppl.first_birth_age[inds] = all_ppl.age[inds]
             for parity in np.unique(stillborn.parity):
                 inds = stillborn.inds[stillborn.parity == parity]
                 all_ppl.stillborn_ages[inds, parity] = all_ppl.age[inds]
 
-            # Handle twins
-            is_twin = live.binomial(self.pars['twins_prob'])
-            twin = live.filter(is_twin)
-            self.step_results['births'] += 2 * len(twin)  # only add births to population if born alive
+            single.parity += 1
             twin.parity += 2  # Add 2 because matching DHS "total children ever born (alive) v201"
 
-            # Handle singles
-            single = live.filter(~is_twin)
-            self.step_results['births'] += len(single)
-            single.parity += 1
+            # Calculate short intervals
+            prev_birth_single = single.filter(single.parity > 1)
+            prev_birth_twins = twin.filter(twin.parity > 2)
+            if len(prev_birth_single):
+                pidx = prev_birth_single.parity - 1
+                all_ints = prev_birth_single.birth_ages[:, pidx] - prev_birth_single.birth_ages[:, pidx-1]
+                latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
+                short_ints = np.count_nonzero(latest_ints < (self.pars['short_int']/fpd.mpy))
+                self.step_results['short_intervals'] += short_ints
+            if len(prev_birth_twins):
+                pidx = prev_birth_twins.parity - 2
+                all_ints = prev_birth_twins.birth_ages[:, pidx] - prev_birth_twins.birth_ages[:, pidx-1]
+                latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
+                short_ints = np.count_nonzero(latest_ints < (self.pars['short_int']/fpd.mpy))
+                self.step_results['short_intervals'] += short_ints
 
             # Calculate total births
             self.step_results['total_births'] = len(stillborn) + self.step_results['births']
@@ -850,6 +871,7 @@ class People(fpb.BasePeople):
             no_methods_acpr=0,
             contra_access=0,
             new_users=0,
+            switchers=0,
             ever_used_contra=0,
             urban_women=0,
             as_stillbirths=[],
@@ -943,6 +965,7 @@ class People(fpb.BasePeople):
         # Update methods for those who are eligible
         if len(ready):
             ready.update_method()
+            self.step_results['switchers'] = len(ready)  # Track how many people switch methods (incl on/off)
 
         # Make sure that women who are on contraception do not have intent to use contraception
         self.intent_to_use[self.on_contra] = False
