@@ -62,7 +62,6 @@ for (i in 1:length(temp)){
 data.raw <- bind_rows(datalist)
 rm(dat, datalist)
 
-
 # -- Survival analysis data organization -- #
 data.surv <- data.raw %>%
   mutate(cc = str_sub(v000,1,2),
@@ -87,8 +86,8 @@ data.surv <- data.raw %>%
   unnest(c(method)) %>%                                                                                     # create long format
   group_by(obs) %>% mutate(month = row_number(),                                                            # create variable for month from beginning of calendar
                            age = age - (79-month)/12,                                                       # adjust for age in calendar
-                           age_grp = cut(age, c(0,20,25,35,50)),                                            # define age groups
-                           age_grp_fact = factor(age_grp,levels=c('(20,25]','(0,20]','(25,35]','(35,50]')), # factor age group
+                           age_grp = cut(age, c(0,18,20,25,35,50)),                                            # define age groups
+                           age_grp_fact = factor(age_grp,levels=c('(20,25]','(0,18]','(18,20]','(25,35]','(35,50]')), # factor age group
                            new.method = ifelse(method != lag(method,1) | month == 1,1,0),                   # Indicator for a month where a new method is started (the first month of a switch/discontinue), with methods including pregnant, none, etc
                            method.month = rowid(method, cumsum(new.method == 1)),                           # Months on individual method    
                            on_method = ifelse(method %in% c("1", "2", "3", "5", "9", "N", "W", "M"), 1, 0), # Identify relevant methods
@@ -107,8 +106,8 @@ data.surv <- data.raw %>%
   mutate(method = factor(method, levels = c("0",    "1",    "2",   "3",          "5",      "9",          "N",       "W",          "M"),
                          labels = c("None", "Pill", "IUD", "Injectable", "Condom", "Withdrawal", "Implant", "Other.trad", "Other.mod"))) %>%
   select(Country, obs, v000, v021, v022, wt, age, age_grp, age_grp_fact, parity, edu, wealth_index, urban, cumulative_method_months, unique_methods_count, method, month, method.month, discontinued) 
-# write.csv(data.surv, "C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/WRICH/Contraceptive choices/timeonmethod_2025-01-21.csv", row.names = F)
-# data.surv <- read.csv("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/WRICH/Contraceptive choices/timeonmethod_2025-01-21.csv")
+ write.csv(data.surv, "C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/WRICH/Contraceptive choices/timeonmethod_fpsim.csv", row.names = F)
+# data.surv <- read.csv("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/WRICH/Contraceptive choices/timeonmethod_fpsim.csv")
 
 # data set to use
 dat <- data.surv
@@ -136,7 +135,7 @@ for (c in unique(dat$Country)) {
     best_dist <- NULL
     
     # loop through each distribution
-    for (d in c("exponential", "weibull", "llogis", "lnorm", "gompertz", "gamma")) {
+    for (d in c("exponential", "weibull", "llogis", "lnorm", "gamma")) {
       df_method <- df_method[order(df_method$obs), ]
       df.first.switch <- df_method[!duplicated(df_method$obs), ] # use only first switch
       aft <- tryCatch(
@@ -160,9 +159,8 @@ for (c in unique(dat$Country)) {
   }
 }
 
-# saveRDS(results, file = "C:/Users/maritazi/Documents/Projects/fp_data_analysis/Results/results_list_ageonly.rds") # model with only age group as a predictor
-# saveRDS(results, file = "Results/results_list_2025-01-24.rds") # 1/21 results are all switches, 1/24 results are first switches
-# results <- readRDS("Results/results_list_2025-01-24.rds")
+saveRDS(results, file = "C:/Users/maritazi/Documents/Projects/fp_data_analysis/Results/results_list_fpsim.rds") # model with only age group as a predictor
+# results <- readRDS("C:/Users/maritazi/Documents/Projects/fp_data_analysis/Results/results_list_fpsim.rds") # model with only age group as a predictor
 
 
 # --------------- Take out estimates and save
@@ -191,7 +189,7 @@ coef_fpsim <- coef_res %>%
   select(estimate = est, coef, se, method, functionform, country) 
 
 write.csv(filter(coef_fpsim, country == "Kenya"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/method_time_coefficients.csv", row.names = F)
-write.csv(filter(coef_fpsim, country == "senegal"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/method_time_coefficients.csv", row.names = F)
-write.csv(filter(coef_fpsim, country == "ethiopia"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/method_time_coefficients.csv", row.names = F)
+write.csv(filter(coef_fpsim, country == "Senegal"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/method_time_coefficients.csv", row.names = F)
+write.csv(filter(coef_fpsim, country == "Ethiopia"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/method_time_coefficients.csv", row.names = F)
 
 

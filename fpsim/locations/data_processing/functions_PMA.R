@@ -30,7 +30,7 @@ library(boot)
 # duplicate dataset to increase sample size... so we have a 1-2 time and 2-3 time
 data.edit <- recoded.datasets %>% # filtered dataset from just wave 2-3 and rename to 1-2 and label time b
   filter(wave != 1) %>% mutate(wave = case_when(wave == 2 ~ 1, wave == 3 ~ 2), time = "b")
-filter_data <- All_data %>%
+filter_data <- data.edit %>%
   filter(wave != 3) %>% mutate(time = "a") %>% # filter to timepoint 102 and label a
   bind_rows(data.edit) %>% # add back in other timepoint
   # to wide 
@@ -40,6 +40,10 @@ filter_data <- All_data %>%
          EA_ID = ifelse(is.na(EA_ID_2), EA_ID_1, EA_ID_2)) %>%
   filter(!is.na(EA_ID)) 
   # refuse sex only waves 1 and 3, and no variation, so taking that one out
+
+#set reverence level for edu
+filter_data$edu.level_1 <- relevel(as.factor(filter_data$edu.level_1), ref = "None")
+filter_data$edu.level_2 <- relevel(as.factor(filter_data$edu.level_2), ref = "None")
 
 # create dataset for postpartum and not
 filter.data.notpp <- filter_data %>% filter((pp.time_2>6 | is.na(pp.time_2)) & pregnant_2 == 0)
@@ -59,22 +63,34 @@ svydes.pp6 <- svydesign(id = ~EA_ID, strata = ~strata, weights =  ~FQweight, dat
 
 
 # contraception function
+# Contraception simple function
+model.simple <- svyglm(current_contra_2 ~ age_grp_2 * fp_ever_user_2, 
+                       family = quasibinomial(), 
+                       #design = svydes)
+                       #design = svydes.pp1)
+                       design = svydes.pp6)
+contra_coef.simple <- as.data.frame(summary(model.simple)$coefficients) %>% 
+  mutate(rhs = rownames(.))
+# write.csv(contra_coef.simple, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/contra_coef_simple.csv", row.names = F)
+# write.csv(contra_coef.simple, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/contra_coef_simple_pp1.csv", row.names = F)
+# write.csv(contra_coef.simple, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/contra_coef_simple_pp6.csv", row.names = F)
 
 # Contraception mid function (only demographics, no empowerment or history)... no longitudinal or empowerment data needed, could be done with DHS
-model.mid <- svyglm(current_contra_2 ~ ns(age_2, knots = c(25,40))*fp_ever_user_2 + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
-                     family = quasibinomial(), 
-                     design = svydes)
-                     #design = svydes.pp1)
-                     #design = svydes.pp6)
+# model.mid <- svyglm(current_contra_2 ~ ns(age_2, knots = c(25,40))*fp_ever_user_2 + yrs.edu_2 + live_births_2 + urban_2 + wealthquintile_2, 
+model.mid <- svyglm(current_contra_2 ~ ns(age_2, knots = c(25,40))*fp_ever_user_2 + edu.level_2 + live_births_2 + urban_2 + wealthquintile_2, 
+                    family = quasibinomial(), 
+                    # design = svydes)
+                    design = svydes.pp1)
+                    # design = svydes.pp6)
 contra_coef.mid <- as.data.frame(summary(model.mid)$coefficients) %>% 
   mutate(rhs = rownames(.)) %>%
   mutate(rhs = gsub("_2", "", gsub("live_births", "parity",                                                   
                                    gsub("yrs.edu","edu_attainment",
                                         gsub("current_contra", "contraception", rhs)))))
 
-# write.csv(contra_coef.mid, "fpsim/locations/kenya/contra_coef_mid.csv", row.names = F)
-# write.csv(contra_coef.mid, "fpsim/locations/kenya/contra_coef_mid_pp1.csv", row.names = F)
-# write.csv(contra_coef.mid, "fpsim/locations/kenya/contra_coef_mid_pp6.csv", row.names = F)
+# write.csv(contra_coef.mid, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/contra_coef_mid.csv", row.names = F)
+# write.csv(contra_coef.mid, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/contra_coef_mid_pp1.csv", row.names = F)
+# write.csv(contra_coef.mid, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/contra_coef_mid_pp6.csv", row.names = F)
 
 
 
