@@ -84,6 +84,7 @@ def test_mid_choice(location='kenya'):
 
     # Make and run sim
     s = fp.Sim(pars, contraception_module=ms, education_module=edu)
+    s.run()
 
     return s
 

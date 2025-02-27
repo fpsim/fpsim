@@ -762,7 +762,7 @@ def process_contra_use(which):
                 intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
                 age_factors=df[df['rhs'].str.contains('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
                 ever_used_contra=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
-                edu_attainment=df[df['rhs'].str.contains('edu_attainment')].Estimate.values[0],
+                edu_factors=df[df['rhs'].str.contains('edu')].Estimate.values,
                 parity=df[df['rhs'].str.contains('parity')].Estimate.values[0],
                 urban=df[df['rhs'].str.contains('urban')].Estimate.values[0],
                 wealthquintile=df[df['rhs'].str.contains('wealthquintile')].Estimate.values[0],

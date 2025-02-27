@@ -212,7 +212,7 @@ class SimpleChoice(RandomChoice):
         if event == 'pp1': p = self.contra_use_pars[1]
         if event == 'pp6': p = self.contra_use_pars[2]
 
-        # Calculate probability of use
+        # Initialize probability of use
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
         age_bins = np.digitize(ppl.age, self.age_bins)
         for ai, ab in enumerate(self.age_bins):
@@ -415,8 +415,8 @@ class StandardChoice(SimpleChoice):
         # Initialize with intercept
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
 
-        # Add all terms that don't involve age
-        for term in ['ever_used_contra', 'edu_attainment', 'urban', 'parity', 'wealthquintile']:  #
+        # Add all terms that don't involve age/education level factors
+        for term in ['ever_used_contra', 'urban', 'parity', 'wealthquintile']:
             rhs += p[term] * ppl[term]
 
         # Add age
@@ -428,6 +428,11 @@ class StandardChoice(SimpleChoice):
         rhs += (p.age_ever_user_factors[0] * dfa['knot_1'].values * ppl.ever_used_contra
                 + p.age_ever_user_factors[1] * dfa['knot_2'].values * ppl.ever_used_contra
                 + p.age_ever_user_factors[2] * dfa['knot_3'].values * ppl.ever_used_contra)
+
+        # Add education levels
+        primary = (ppl.edu_attainment > 1) & (ppl.edu_attainment <= 6)
+        secondary = ppl.edu_attainment > 6
+        rhs += p.edu_factors[0] * primary + p.edu_factors[1] * secondary
 
         # Add time trend
         rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
