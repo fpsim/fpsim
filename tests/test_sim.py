@@ -26,17 +26,13 @@ def test_simple_choice():
     sims = sc.autolist()
     for location in ['kenya', 'ethiopia', 'senegal']:
         pars = fp.pars(location=location, **par_kwargs)
-        cm_pars = dict(
-            prob_use_trend_par=0.1,
-            force_choose=False,
-            method_weights=np.array([0.1, 2, 0.5, 0.5, 2, 1, 1.5, 0.5, 5])
-        )
-        method_choice = fp.SimpleChoice(pars=cm_pars, location=location, methods=sc.dcp(fp.Methods))
+        method_choice = fp.SimpleChoice(location=location, methods=sc.dcp(fp.Methods))
         sim = fp.Sim(pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
         sims += sim
 
     for sim in sims:
         sim.run()
+        print(f'✓ (successfully ran SimpleChoice for {sim.location})')
 
         # Plots
         fig, axes = pl.subplots(2, 2, figsize=(10, 7))
@@ -90,14 +86,14 @@ def test_mid_choice():
 
     for sim in sims:
         sim.run()
-        print(f'✓ (successfully ran {sim.location})')
+        print(f'✓ (successfully ran StandardChoice for {sim.location})')
 
     return sims
 
 
 if __name__ == '__main__':
 
-    # s0 = test_simple()
+    s0 = test_simple()
     sims1 = test_simple_choice()
     sims2 = test_mid_choice()
     print('Done.')
