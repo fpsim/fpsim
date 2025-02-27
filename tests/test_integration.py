@@ -250,7 +250,9 @@ def test_simplechoice_contraception_dependencies():
 
     # CPR should be higher in sim2 than sim3 at all time steps
     print(f"Checking CPR is higher if all agents are previous users ... ")
-    assert np.all(sim2.results.cpr > sim3.results.cpr), "Expected CPR to be higher in sim2 than sim3"
+    diffs = np.nonzero((sim2.results.cpr - sim3.results.cpr) <0)[-1]
+    diffyears = sim2.results['t'][diffs]
+    assert np.all(sim2.results.cpr > sim3.results.cpr), f"Expected CPR to be higher in sim2 than sim3 but they differ: {diffs}, {diffyears}"
     print(f'✓ (CPR is increased by prior contra use)')
 
     plot_results(sim1)

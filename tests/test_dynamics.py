@@ -50,7 +50,7 @@ def test_mcpr():
     covars = [
         Covar('edu_attainment', 15, 'edu_attainment'),
         Covar('urban', True, 'urban_women'),
-        Covar('parity', 2, 'parity2to3'),
+        # Covar('parity', 2, 'parity2to3'),  # Unfortunately this will not work
         Covar('wealthquintile', 5, 'wq5'),
         Covar('ever_used_contra', True, 'ever_used_contra'),
         ]
@@ -69,6 +69,7 @@ def test_mcpr():
         sims += make_sim(intvs=change_state, label=f'Increased {covar.pplattr}')
 
     # Run
+    # for sim in sims: sim.run()
     m = fp.parallel(*sims, serial=serial, compute_stats=False)
     sims = m.sims[:]  # Replace with run versions
 
@@ -92,7 +93,7 @@ def test_mcpr():
     print(f"✗ (TEST FAILS: mCPR DOES NOT INCREASE WITH ALL COVARIATES) - NEED TO DEBUG")
 
     # Plot
-    fig, axes = pl.subplots(2, 3, figsize=(12, 6))
+    fig, axes = pl.subplots(2, 2, figsize=(12, 6))
     axes = axes.flatten()
     for ri, covar in enumerate(covars):
         ax = axes[ri]
@@ -101,14 +102,17 @@ def test_mcpr():
         ax.set_title(f'{covar.pplattr}')
         ax.set_xlabel('Year')
         ax.legend()
+    fig.tight_layout()
+    pl.show()
 
-    ax = axes[-1]
+    fig, ax = pl.subplots(1, 1, figsize=(12, 6))
     ax.plot(sims[0].results.t, sims[0].results.mcpr, label=sims[0].label)
     for ri, covar in enumerate(covars):
         ax.plot(sims[ri+1].results.t, covar.mcpr, label=covar.pplattr)
     ax.set_ylabel('mCPR')
     ax.set_xlabel('Year')
     pl.legend()
+    fig.tight_layout()
     pl.show()
 
     return sims

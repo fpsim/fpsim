@@ -548,14 +548,7 @@ class People(fpb.BasePeople):
 
         # Make selected agents pregnant
         preg.make_pregnant()
-        if self.pars['track_as']:
-            pregnant_boolean = np.full(len(self), False)
-            pregnant_boolean[np.searchsorted(self.uid, preg.uid)] = True
-            pregnant_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='pregnancies',
-                                                    numerators=[pregnant_boolean], denominators=None)
 
-            for key in pregnant_age_split:
-                self.step_results[key] = pregnant_age_split[key]
         return
 
     def make_pregnant(self):
@@ -723,13 +716,6 @@ class People(fpb.BasePeople):
             stillborn.lactating = False  # Set agents of stillbith to not lactate
             self.step_results['stillbirths'] = len(stillborn)
 
-            if self.pars['track_as']:
-                stillbirth_boolean = np.full(len(self), False)
-                stillbirth_boolean[np.searchsorted(self.uid, stillborn.uid)] = True
-
-                self.step_results['stillbirth_ages'] = self.age_by_group
-                self.step_results['as_stillbirths'] = stillbirth_boolean
-
             live = deliv.filter(~is_stillborn)
 
             # Increment parity for live births
@@ -782,39 +768,9 @@ class People(fpb.BasePeople):
                 birth_bins = np.sum(match_low_high)
                 self.step_results['birth_bins'][key] += birth_bins
 
-            if self.pars['track_as']:
-                total_women_delivering = np.full(len(self), False)
-                total_women_delivering[np.searchsorted(self.uid, live.uid)] = True
-                self.step_results['mmr_age_by_group'] = self.age_by_group
-
             # Check mortality
             maternal_deaths = live.check_maternal_mortality()  # Mothers of only live babies eligible to match definition of maternal mortality ratio
-            if self.pars['track_as']:
-                maternal_deaths_bool = np.full(len(self), False)
-                maternal_deaths_bool[np.searchsorted(self.uid, maternal_deaths.uid)] = True
-
-                total_infants_bool = np.full(len(self), False)
-                total_infants_bool[np.searchsorted(self.uid, live.uid)] = True
-
             i_death = live.check_infant_mortality()
-
-            # Save infant deaths and totals into age buckets
-            if self.pars['track_as']:
-                infant_deaths_bool = np.full(len(self), False)
-                infant_deaths_bool[np.searchsorted(self.uid, i_death.uid)] = True
-                self.step_results[
-                    'imr_age_by_group'] = self.age_by_group  # age groups have to be in same context as imr
-
-                self.step_results[
-                    'imr_numerator'] = infant_deaths_bool  # we need to track these over time to be summed by year
-                self.step_results['imr_denominator'] = total_infants_bool
-                self.step_results['mmr_numerator'] = maternal_deaths_bool
-                self.step_results['mmr_denominator'] = total_women_delivering
-
-                live_births_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='births',
-                                                           numerators=[total_women_delivering], denominators=None)
-                for key in live_births_age_split:
-                    self.step_results[key] = live_births_age_split[key]
 
         return
 
@@ -836,78 +792,6 @@ class People(fpb.BasePeople):
             self.step_results['age_bin_totals'][key] += len(this_age_bin)
         return
 
-    def log_age_split(self, binned_ages_t, channel, numerators, denominators=None):
-        """
-        Method called if age-specific results are being tracked. Separates results by age.
-        """
-        counts_dict = {}
-        results_dict = {}
-        if denominators is not None:  # true when we are calculating rates (like cpr)
-            for timestep_index in range(len(binned_ages_t)):
-                if len(denominators[timestep_index]) == 0:
-                    counts_dict[f"age_true_counts_{timestep_index}"] = {}
-                    counts_dict[f"age_false_counts_{timestep_index}"] = {}
-                else:
-                    binned_ages = binned_ages_t[timestep_index]
-                    binned_ages_true = binned_ages[
-                        np.logical_and(numerators[timestep_index], denominators[timestep_index])]
-                    if len(numerators[timestep_index]) == 0:
-                        binned_ages_false = []  # ~[] doesnt make sense
-                    else:
-                        binned_ages_false = binned_ages[
-                            np.logical_and(~numerators[timestep_index], denominators[timestep_index])]
-
-                    counts_dict[f"age_true_counts_{timestep_index}"] = dict(
-                        zip(*np.unique(binned_ages_true, return_counts=True)))
-                    counts_dict[f"age_false_counts_{timestep_index}"] = dict(
-                        zip(*np.unique(binned_ages_false, return_counts=True)))
-
-            age_true_counts = {}
-            age_false_counts = {}
-            for age_counts_dict_key in counts_dict:
-                for index in counts_dict[age_counts_dict_key]:
-                    age_true_counts[index] = 0 if index not in age_true_counts else age_true_counts[index]
-                    age_false_counts[index] = 0 if index not in age_false_counts else age_false_counts[index]
-                    if 'false' in age_counts_dict_key:
-                        age_false_counts[index] += counts_dict[age_counts_dict_key][index]
-                    else:
-                        age_true_counts[index] += counts_dict[age_counts_dict_key][index]
-
-            for index, age_str in enumerate(fpd.age_specific_channel_bins):
-                scale = 1
-                if channel == "imr":
-                    scale = 1000
-                elif channel == "mmr":
-                    scale = 100000
-                if index not in age_true_counts:
-                    results_dict[f"{channel}_{age_str}"] = 0
-                elif index in age_true_counts and index not in age_false_counts:
-                    results_dict[f"{channel}_{age_str}"] = 1.0 * scale
-                else:
-                    results_dict[f"{channel}_{age_str}"] = (age_true_counts[index] / (
-                            age_true_counts[index] + age_false_counts[index])) * scale
-        else:  # true when we are calculating counts (like pregnancies)
-            for timestep_index in range(len(binned_ages_t)):
-                if len(numerators[timestep_index]) == 0:
-                    counts_dict[f"age_counts_{timestep_index}"] = {}
-                else:
-                    binned_ages = binned_ages_t[timestep_index]
-                    binned_ages_true = binned_ages[numerators[timestep_index]]
-                    counts_dict[f"age_counts_{timestep_index}"] = dict(
-                        zip(*np.unique(binned_ages_true, return_counts=True)))
-            age_true_counts = {}
-            for age_counts_dict_key in counts_dict:
-                for index in counts_dict[age_counts_dict_key]:
-                    age_true_counts[index] = 0 if index not in age_true_counts else age_true_counts[index]
-                    age_true_counts[index] += counts_dict[age_counts_dict_key][index]
-
-            for index, age_str in enumerate(fpd.age_specific_channel_bins):
-                if index not in age_true_counts:
-                    results_dict[f"{channel}_{age_str}"] = 0
-                else:
-                    results_dict[f"{channel}_{age_str}"] = age_true_counts[index]
-        return results_dict
-
     def track_mcpr(self):
         """
         Track for purposes of calculating mCPR at the end of the timestep after all people are updated
@@ -925,11 +809,6 @@ class People(fpb.BasePeople):
         self.step_results['no_methods_mcpr'] += no_method_mcpr
         self.step_results['on_methods_mcpr'] += on_method_mcpr
 
-        if self.pars['track_as']:
-            as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='mcpr',
-                                                numerators=[numerator], denominators=[denominator])
-            for key in as_result_dict:
-                self.step_results[key] = as_result_dict[key]
         return
 
     def track_cpr(self):
@@ -947,11 +826,6 @@ class People(fpb.BasePeople):
         self.step_results['no_methods_cpr'] += no_method_cpr
         self.step_results['on_methods_cpr'] += on_method_cpr
 
-        if self.pars['track_as']:
-            as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='cpr',
-                                                numerators=[numerator], denominators=[denominator])
-            for key in as_result_dict:
-                self.step_results[key] = as_result_dict[key]
         return
 
     def track_acpr(self):
@@ -969,11 +843,6 @@ class People(fpb.BasePeople):
         self.step_results['no_methods_acpr'] += no_method_cpr
         self.step_results['on_methods_acpr'] += on_method_cpr
 
-        if self.pars['track_as']:
-            as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='acpr',
-                                                numerators=[numerator], denominators=[denominator])
-            for key in as_result_dict:
-                self.step_results[key] = as_result_dict[key]
         return
 
     def birthday_filter(self):
@@ -1034,24 +903,6 @@ class People(fpb.BasePeople):
             mmr_age_by_group=[],
             stillbirth_ages=[]
         )
-
-        if self.pars['track_as']:
-            as_keys = dict(
-                as_stillbirths=[],
-                imr_numerator=[],
-                imr_denominator=[],
-                mmr_numerator=[],
-                mmr_denominator=[],
-                imr_age_by_group=[],
-                mmr_age_by_group=[],
-                stillbirth_ages=[]
-            )
-            self.step_results.update(as_keys)
-
-            as_channels = ['acpr', 'cpr', 'mcpr', 'stillbirths', "births", "pregnancies"]
-            for age_specific_channel in as_channels:
-                for age_range in fpd.age_specific_channel_bins:
-                    self.step_results[f"{age_specific_channel}_{age_range}"] = 0
 
         for key in fpd.age_bin_map.keys():
             self.step_results['birth_bins'][key] = 0
@@ -1170,11 +1021,6 @@ class People(fpb.BasePeople):
         alive_now = self.filter(self.alive)
         # Age person at end of timestep after tabulating results
         alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
-
-        # Storing ages by method age group
-        age_bins = [0] + [max(fpd.age_specific_channel_bins[key]) for key in
-                          fpd.age_specific_channel_bins]
-        self.age_by_group = np.digitize(self.age, age_bins) - 1
         return
 
     def get_step_results(self):
