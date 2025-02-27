@@ -163,6 +163,7 @@ for (c in unique(dat$Country)) {
 # saveRDS(results, file = "C:/Users/maritazi/Documents/Projects/fp_data_analysis/Results/results_list_ageonly.rds") # model with only age group as a predictor
 # saveRDS(results, file = "Results/results_list_2025-01-24.rds") # 1/21 results are all switches, 1/24 results are first switches
 # results <- readRDS("Results/results_list_2025-01-24.rds")
+# results <- readRDS("C:/Users/maritazi/Documents/Projects/fp_data_analysis/Results/results_list_ageonly.rds") # model with only age group as a predictor
 
 
 # --------------- Take out estimates and save
@@ -191,7 +192,7 @@ coef_fpsim <- coef_res %>%
   select(estimate = est, coef, se, method, functionform, country) 
 
 write.csv(filter(coef_fpsim, country == "Kenya"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/method_time_coefficients.csv", row.names = F)
-write.csv(filter(coef_fpsim, country == "senegal"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/method_time_coefficients.csv", row.names = F)
-write.csv(filter(coef_fpsim, country == "ethiopia"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/method_time_coefficients.csv", row.names = F)
+write.csv(filter(coef_fpsim, country == "Senegal"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/method_time_coefficients.csv", row.names = F)
+write.csv(filter(coef_fpsim, country == "Ethiopia"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/method_time_coefficients.csv", row.names = F)
 
 
