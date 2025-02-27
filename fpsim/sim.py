@@ -340,10 +340,10 @@ class Sim(ss.Sim):
         # Update mortality probabilities for year of sim
         self.update_mortality()
 
-        # Update the people
-        self.people.ti = self.ti
-        self.people.ty = self.ty
-        self.people.y = self.y
+        # # Update the people
+        # self.people.ti = self.ti
+        # self.people.ty = self.ty
+        # self.people.y = self.y
 
         # Step forward people's states and attributes
         self.people.step()
@@ -377,57 +377,59 @@ class Sim(ss.Sim):
 
         return res
 
-    def run(self, verbose=None):
-        """ Run the simulation """
-
-        # Initialize -- reset settings and results
-        T = sc.timer()
-        if verbose is None:
-            verbose = self['verbose']
-        self.init()
-        if self.already_run:
-            errormsg = 'Cannot re-run an already run sim; please recreate or copy prior to a run'
-            raise RuntimeError(errormsg)
-
-        # Main simulation loop
-        for ti in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
-
-            self.ti = ti
-
-            # Print progress
-            elapsed = T.toc(output=True)
-            if verbose:
-                simlabel = f'"{self.label}": ' if self.label else ''
-                string = f'  Running {simlabel}{self.y:0.0f} of {self["end_year"]} ({ti:2.0f}/{self.npts}) ({elapsed:0.2f} s) '
-                if verbose >= 2:
-                    sc.heading(string)
-                elif verbose > 0:
-                    if not (self.ty % int(1.0 / verbose)):
-                        sc.progressbar(self.ti + 1, self.npts, label=string, length=20, newline=True)
-
-            self.step()
-
-        # Finalize people
-        self.finalize_people()
-
-        # Finalize results, interventions and analyzers
-        self.finalize_results()
-        self.finalize_interventions()
-        self.finalize_analyzers()
-
-        if verbose:
-            print(f'Final population size: {self.n}.')
-            elapsed = T.toc(output=True)
-            print(f'Run finished for "{self.label}" after {elapsed:0.1f} s')
-
-        self.summary = sc.objdict()
-        self.summary.births = np.sum(self.results['births'])
-        self.summary.deaths = np.sum(self.results['deaths'])
-        self.summary.final = self.results['pop_size'][-1]
-
-        self.already_run = True
-
-        return self
+    # def run(self, verbose=None):
+    #     """ Run the simulation """
+    #
+    #     super().run()
+    #
+    #     # Initialize -- reset settings and results
+    #     T = sc.timer()
+    #     if verbose is None:
+    #         verbose = self['verbose']
+    #     self.init()
+    #     if self.already_run:
+    #         errormsg = 'Cannot re-run an already run sim; please recreate or copy prior to a run'
+    #         raise RuntimeError(errormsg)
+    #
+    #     # Main simulation loop
+    #     for ti in range(self.npts):  # Range over number of timesteps in simulation (ie, 0 to 261 steps)
+    #
+    #         self.ti = ti
+    #
+    #         # Print progress
+    #         elapsed = T.toc(output=True)
+    #         if verbose:
+    #             simlabel = f'"{self.label}": ' if self.label else ''
+    #             string = f'  Running {simlabel}{self.y:0.0f} of {self["end_year"]} ({ti:2.0f}/{self.npts}) ({elapsed:0.2f} s) '
+    #             if verbose >= 2:
+    #                 sc.heading(string)
+    #             elif verbose > 0:
+    #                 if not (self.ty % int(1.0 / verbose)):
+    #                     sc.progressbar(self.ti + 1, self.npts, label=string, length=20, newline=True)
+    #
+    #         self.step()
+    #
+    #     # Finalize people
+    #     self.finalize_people()
+    #
+    #     # Finalize results, interventions and analyzers
+    #     self.finalize_results()
+    #     self.finalize_interventions()
+    #     self.finalize_analyzers()
+    #
+    #     if verbose:
+    #         print(f'Final population size: {self.n}.')
+    #         elapsed = T.toc(output=True)
+    #         print(f'Run finished for "{self.label}" after {elapsed:0.1f} s')
+    #
+    #     self.summary = sc.objdict()
+    #     self.summary.births = np.sum(self.results['births'])
+    #     self.summary.deaths = np.sum(self.results['deaths'])
+    #     self.summary.final = self.results['pop_size'][-1]
+    #
+    #     self.already_run = True
+    #
+    #     return self
 
     def update_results(self, res, ti):
         percent0to5 = (res.pp0to5 / res.total_women_fecund) * 100

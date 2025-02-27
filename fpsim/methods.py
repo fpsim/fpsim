@@ -118,14 +118,15 @@ class ContraceptiveChoice:
     def get_contra_users(self, ppl, year=None, event=None, ti=None, tiperyear=None):
         """ Select contraception users, return boolean array """
         prob_use = self.get_prob_use(ppl, event=event, year=year, ti=ti, tiperyear=tiperyear)
-        uses_contra_bool = fpu.binomial_arr(prob_use)
+        uses_contra_bool = fpu.binomial_arr(prob_use) # todo replace with ss dist
         return uses_contra_bool
 
     def choose_method(self, ppl, event=None):
         pass
 
-    def set_dur_method(self, ppl, method_used=None):
-        dt = ppl.pars['timestep'] / fpd.mpy
+    def set_dur_method(self, ppl, dt_year, method_used=None):
+        # todo make this aware of starsim time units. right now assumes average_dur_use is in months and timestep par is in months
+        dt = dt_year * fpd.mpy # convert dt in years to months
         timesteps_til_update = np.full(len(ppl), np.round(self.average_dur_use/dt), dtype=int)
         return timesteps_til_update
 
