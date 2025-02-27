@@ -5,6 +5,7 @@ Test running sims
 import fpsim as fp
 import sciris as sc
 import pylab as pl
+import numpy as np
 
 # par_kwargs = dict(n_agents=1000, start_year=1960, end_year=2020, seed=1, verbose=1)
 par_kwargs = dict(n_agents=500, start_year=2000, end_year=2010, seed=1, verbose=-1)
@@ -18,80 +19,85 @@ def test_simple():
     return sim
 
 
-def test_simple_choice(location='kenya'):
+def test_simple_choice():
     sc.heading('Method choice is based on age & previous method')
 
     # Make & run sim
-    import numpy as np
-    pars = fp.pars(location=location, **par_kwargs)
-    cm_pars = dict(
-        prob_use_trend_par=0.1,
-        force_choose=False,
-        method_weights=np.array([0.1, 2, 0.5, 0.5, 2, 1, 1.5, 0.5, 5])
-    )
-    method_choice = fp.SimpleChoice(pars=cm_pars, location=location, methods=sc.dcp(fp.Methods))
-    sim = fp.Sim(pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
-    sim.run()
+    sims = sc.autolist()
+    for location in ['kenya', 'ethiopia', 'senegal']:
+        pars = fp.pars(location=location, **par_kwargs)
+        cm_pars = dict(
+            prob_use_trend_par=0.1,
+            force_choose=False,
+            method_weights=np.array([0.1, 2, 0.5, 0.5, 2, 1, 1.5, 0.5, 5])
+        )
+        method_choice = fp.SimpleChoice(pars=cm_pars, location=location, methods=sc.dcp(fp.Methods))
+        sim = fp.Sim(pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
+        sims += sim
 
-    # Plots
-    fig, axes = pl.subplots(2, 2, figsize=(10, 7))
-    axes = axes.ravel()
-    age_bins = [18, 20, 25, 35, 50]
-    colors = sc.vectocolor(age_bins)
-    cind = 0
+    for sim in sims:
+        sim.run()
 
-    # mCPR
-    ax = axes[0]
-    ax.plot(sim.results.t, sim.results.cpr)
-    ax.set_ylim([0, 1])
-    ax.set_ylabel('CPR')
-    ax.set_title('CPR')
+        # Plots
+        fig, axes = pl.subplots(2, 2, figsize=(10, 7))
+        axes = axes.ravel()
+        age_bins = [18, 20, 25, 35, 50]
+        colors = sc.vectocolor(age_bins)
+        cind = 0
 
-    # mCPR by age
-    ax = axes[1]
-    for alabel, ares in sim['analyzers'].results.items():
-        ax.plot(sim.results.t, ares, label=alabel, color=colors[cind])
-        cind += 1
-    ax.legend(loc='best', frameon=False)
-    ax.set_ylim([0, 1])
-    ax.set_ylabel('CPR')
-    ax.set_title('CPR')
+        # mCPR
+        ax = axes[0]
+        ax.plot(sim.results.t, sim.results.cpr)
+        ax.set_ylim([0, 1])
+        ax.set_ylabel('CPR')
+        ax.set_title('CPR')
 
-    # Plot method mix
-    ax = axes[2]
-    oc = sim.people.filter(sim.people.on_contra)
-    method_props = [sc.safedivide(len(oc.filter(oc.method == i)), len(oc)) for i in range(1, 10)]
-    method_labels = [m.name for m in sim.contraception_module.methods.values() if m.label != 'None']
-    ax.bar(method_labels, method_props)
-    ax.set_ylabel('Proportion among all users')
-    ax.set_title('Contraceptive mix')
+        # mCPR by age
+        ax = axes[1]
+        for alabel, ares in sim['analyzers'].results.items():
+            ax.plot(sim.results.t, ares, label=alabel, color=colors[cind])
+            cind += 1
+        ax.legend(loc='best', frameon=False)
+        ax.set_ylim([0, 1])
+        ax.set_ylabel('CPR')
+        ax.set_title('CPR')
 
-    sc.figlayout()
-    pl.show()
+        # Plot method mix
+        ax = axes[2]
+        oc = sim.people.filter(sim.people.on_contra)
+        method_props = [sc.safedivide(len(oc.filter(oc.method == i)), len(oc)) for i in range(1, 10)]
+        method_labels = [m.name for m in sim.contraception_module.methods.values() if m.label != 'None']
+        ax.bar(method_labels, method_props)
+        ax.set_ylabel('Proportion among all users')
+        ax.set_title('Contraceptive mix')
 
-    return sim
+        sc.figlayout()
+        pl.show()
+
+    return sims
 
 
-def test_mid_choice(location='kenya'):
-    sc.heading('Test sim with default contraceptive choice module')
+def test_mid_choice():
+    sc.heading('Test sims with default contraceptive choice module')
 
-    # Define new modules
-    ms = fp.StandardChoice(location=location, methods=sc.dcp(fp.Methods))
-    edu = fp.Education(location=location)
+    sims = sc.autolist()
+    for location in ['kenya', 'ethiopia', 'senegal']:
+        ms = fp.StandardChoice(location=location, methods=sc.dcp(fp.Methods))
+        edu = fp.Education(location=location)
+        pars = fp.pars(location=location, **par_kwargs)
+        s = fp.Sim(pars, contraception_module=ms, education_module=edu)
+        sims += s
 
-    # Define pars
-    pars = fp.pars(location=location, **par_kwargs)
+    for sim in sims:
+        sim.run()
+        print(f'✓ (successfully ran {sim.location})')
 
-    # Make and run sim
-    s = fp.Sim(pars, contraception_module=ms, education_module=edu)
-    s.run()
-
-    return s
+    return sims
 
 
 if __name__ == '__main__':
 
     # s0 = test_simple()
-    # s1 = test_simple_choice('ethiopia')
-    s2 = test_mid_choice('senegal')         # TODO: check with senegal and ethiopia as well
+    sims1 = test_simple_choice()
+    sims2 = test_mid_choice()
     print('Done.')
