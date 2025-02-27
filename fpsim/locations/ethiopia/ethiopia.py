@@ -842,10 +842,11 @@ def process_dur_use(methods, df=None):
             thisdf = df.loc[df.method == mlabel]
             dist = thisdf.functionform.iloc[0]
             method.dur_use = dict()
-            method.dur_use['age_factors'] = np.append(thisdf.coef.values[2:], 0)
+            age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
+            method.dur_use['age_factors'] = np.append(thisdf.estimate.values[age_ind:], 0)
 
             if dist in ['lognormal', 'lnorm']:
-                method.dur_use['dist'] = dist
+                method.dur_use['dist'] = 'lognormal'
                 method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
                 method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
             elif dist in ['gamma']:
@@ -856,6 +857,14 @@ def process_dur_use(methods, df=None):
                 method.dur_use['dist'] = dist
                 method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
                 method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
+            elif dist == 'weibull':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
+            elif dist == 'exponential':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'rate'].values[0]
+                method.dur_use['par2'] = None
             else:
                 errormsg = f"Duration of use distribution {dist} not recognized"
                 raise ValueError(errormsg)

@@ -12,7 +12,7 @@ par_kwargs = dict(n_agents=500, start_year=2000, end_year=2010, seed=1, verbose=
 
 def test_simple():
     sc.heading('Test simplest possible FPsim run')
-    sim = fp.Sim()  # NB it should be possible to run without any arguments
+    sim = fp.Sim()
     sim.run()
     sim.plot()
     return sim
@@ -90,7 +90,7 @@ def test_mid_choice(location='kenya'):
 
 if __name__ == '__main__':
 
-    # s0 = test_simple()
-    s1 = test_simple_choice('senegal')      # TODO: check with senegal and ethiopia as well
+    s0 = test_simple()
+    s1 = test_simple_choice('ethiopia')
     # s2 = test_mid_choice('kenya')         # TODO: check with senegal and ethiopia as well
     print('Done.')
