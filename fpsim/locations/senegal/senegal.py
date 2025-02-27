@@ -549,7 +549,7 @@ def barriers():
 
 
 def age_spline(which):
-    pd.read_csv(thisdir / 'data' / f'splines_{which}.csv', index_col=0)
+    return pd.read_csv(thisdir / 'data' / f'splines_{which}.csv', index_col=0)
 
 
 def age_partnership():
