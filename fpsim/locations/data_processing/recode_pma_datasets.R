@@ -13,7 +13,7 @@ library(survey)
 
 
 home_dir <-
-  path.expand("~")   # replace with your own path to the DTA file
+  path.expand("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/WRICH/Data") # replace with your own path to the DTA file
 pma_dir <- "PMA"  # Replace with your own data directory structure
 survey_dir <-
   "Kenya"  # Replace with your own data directory structure
@@ -205,6 +205,10 @@ recoded.datasets <- data.raw %>%
         "University"
       )
     ),
+    edu.level = factor(case_when(yrs_school == "Never Attended" ~"None", 
+                                 yrs_school == "Primary" ~"Primary", 
+                                 yrs_school %in% c("Post-Primary/Vocational", "Secondary/'A' Level","College (Middle Level)", "University") ~"Secondary"), 
+                       levels = c("None", "Primary", "Secondary")), 
     live_births = ifelse(ever_birth == 0, 0, birth_events),
     urban = ifelse(ur == 1, 1, 0),
     edu_cat = ordered(school),

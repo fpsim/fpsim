@@ -46,6 +46,8 @@ All_data <- data.raw %>%
          pregnant = v213,
          fp_ever_user = ifelse(v302a %in% c(1,2), 1, 0),
          yrs.edu = ifelse(v133 == 98, NA, v133),
+         edu.level = factor(case_when(v106 == 0 ~"None", v106 == 1 ~"Primary", v106 %in% c(2,3) ~"Secondary"), 
+                               levels = c("None", "Primary", "Secondary")), # cuts are generally around 5/6 and 12/13
          wealthquintile = v190,
          current_contra = ifelse(v312 == 0, 0, 1))
 
@@ -85,8 +87,9 @@ contra_coef.simple <- as.data.frame(summary(model.simple)$coefficients) %>%
 
 
 # Contraception mid function (only demographics, no empowerment or history)... no longitudinal or empowerment data needed, could be done with DHS
-model.mid <- svyglm(current_contra ~ ns(age, knots = c(25,40))*fp_ever_user + yrs.edu + live_births + urban + wealthquintile, 
-                     family = quasibinomial(), 
+#model.mid <- svyglm(current_contra ~ ns(age, knots = c(25,40))*fp_ever_user + yrs.edu + live_births + urban + wealthquintile, 
+model.mid <- svyglm(current_contra ~ ns(age, knots = c(25,40))*fp_ever_user + edu.level + live_births + urban + wealthquintile, 
+                    family = quasibinomial(), 
                      design = svydes)
                      #design = svydes.pp1)
                      #design = svydes.pp6)
