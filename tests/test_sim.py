@@ -91,6 +91,6 @@ def test_mid_choice(location='kenya'):
 if __name__ == '__main__':
 
     # s0 = test_simple()
-    s1 = test_simple_choice('kenya')      # TODO: check with senegal and ethiopia as well
+    s1 = test_simple_choice('senegal')      # TODO: check with senegal and ethiopia as well
     # s2 = test_mid_choice('kenya')         # TODO: check with senegal and ethiopia as well
     print('Done.')

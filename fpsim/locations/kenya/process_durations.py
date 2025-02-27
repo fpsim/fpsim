@@ -39,21 +39,21 @@ def process_data():
         thisdf = dur_raw.loc[(dur_raw.method == mlabel)]
         dist = thisdf.functionform.iloc[0]
 
-        method.age_bin_vals = thisdf.coef.values[2:]
+        method.age_bin_vals = thisdf.estimate.values[2:]
         method.age_bin_edges = [18, 20, 25, 35, 50]
 
-        if dist == 'lognormal':
-            method.dur_use['dist'] = dist
-            method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'meanlog'].values[0]
-            method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'sdlog'].values[0]
+        if dist in ['lognormal', 'lnorm']:
+            method.dur_use['dist'] = 'lognormal'
+            method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
+            method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
         elif dist in ['gamma']:
             method.dur_use['dist'] = dist
-            method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
-            method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'rate'].values[0]
+            method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+            method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'rate'].values[0]
         elif dist == 'llogis':
             method.dur_use['dist'] = dist
-            method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
-            method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'scale'].values[0]
+            method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+            method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
 
     return methods
 
@@ -72,8 +72,8 @@ if __name__ == '__main__':
     for pn, method in enumerate(methods.values()):
         ax = axes[pn]
         for ai, ab in enumerate(method.age_bin_edges):
-            par1 = np.exp(method.dur_use['par1'] + method.age_bin_vals[ai])
-            par2 = np.exp(method.dur_use['par2'])
+            # par1 = np.exp(method.dur_use['par1'] + method.age_bin_vals[ai])
+            # par2 = np.exp(method.dur_use['par2'])
 
             if method.dur_use['dist'] == 'lognormal':
                 par1 = method.dur_use['par1'] + method.age_bin_vals[ai]
@@ -87,6 +87,7 @@ if __name__ == '__main__':
                 par1 = np.exp(method.dur_use['par1'] + method.age_bin_vals[ai])
                 par2 = np.exp(method.dur_use['par2'])
                 rv = sps.fisk(c=par1, scale=par2)
+
 
             print(f'{method.label} - {age_bin_labels[ai]}: {par1:.2f}, {par2:.2f}: {rv.cdf(12*700)}')
             ax.plot(x/12, rv.pdf(x), color=colors[ai], lw=2, label=age_bin_labels[ai])

@@ -844,18 +844,21 @@ def process_dur_use(methods, df=None):
             method.dur_use = dict()
             method.dur_use['age_factors'] = np.append(thisdf.coef.values[2:], 0)
 
-            if dist == 'lognormal':
+            if dist in ['lognormal', 'lnorm']:
                 method.dur_use['dist'] = dist
-                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'meanlog'].values[0]
-                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'sdlog'].values[0]
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
+                method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
             elif dist in ['gamma']:
                 method.dur_use['dist'] = dist
-                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
-                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'rate'].values[0]
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'rate'].values[0]
             elif dist == 'llogis':
                 method.dur_use['dist'] = dist
-                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
-                method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'scale'].values[0]
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
+            else:
+                errormsg = f"Duration of use distribution {dist} not recognized"
+                raise ValueError(errormsg)
 
     return methods
 
