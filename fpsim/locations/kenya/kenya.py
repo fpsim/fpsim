@@ -603,7 +603,10 @@ def _check_age_endpoints(df):
 
 
 def age_spline(which):
-    return pd.read_csv(thisdir / 'data' / f'splines_{which}.csv', index_col=0)
+    d = pd.read_csv(thisdir / 'data' / f'splines_{which}.csv')
+    # Set the age as the index
+    d.index = d.age
+    return d
 
 
 def age_partnership():
