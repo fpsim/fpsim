@@ -235,24 +235,6 @@ method_youth_age_map = {
     '>25': [26, max_age+1]
 }
 
-age_specific_channel_bins = method_youth_age_map
-
-by_age_results = sc.autolist(
-    'acpr',
-    'cpr',
-    'mcpr',
-    'pregnancies',
-    'births',
-    'imr_numerator',
-    'imr_denominator',
-    'mmr_numerator',
-    'mmr_denominator',
-    'imr',
-    'mmr',
-    'as_stillbirths',
-    'stillbirths',
-)
-
 array_results = sc.autolist(
     't',
     'pop_size_months',
@@ -279,6 +261,7 @@ array_results = sc.autolist(
     'cpr',
     'acpr',
     'ever_used_contra',
+    'switchers',
     'urban_women',
     'pp0to5',
     'pp6to11',

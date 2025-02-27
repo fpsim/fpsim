@@ -76,7 +76,7 @@ def test_mid_choice(location='kenya'):
     sc.heading('Test sim with default contraceptive choice module')
 
     # Define new modules
-    ms = fp.StandardChoice(location=location)
+    ms = fp.StandardChoice(location=location, methods=sc.dcp(fp.Methods))
     edu = fp.Education(location=location)
 
     # Define pars
@@ -84,14 +84,13 @@ def test_mid_choice(location='kenya'):
 
     # Make and run sim
     s = fp.Sim(pars, contraception_module=ms, education_module=edu)
-    s.run()
 
     return s
 
 
 if __name__ == '__main__':
 
-    s0 = test_simple()
-    s1 = test_simple_choice('kenya')      # TODO: check with senegal and ethiopia as well
-    s2 = test_mid_choice('kenya')         # TODO: check with senegal and ethiopia as well
+    # s0 = test_simple()
+    s1 = test_simple_choice('senegal')      # TODO: check with senegal and ethiopia as well
+    # s2 = test_mid_choice('kenya')         # TODO: check with senegal and ethiopia as well
     print('Done.')

@@ -8,13 +8,14 @@ import sciris as sc
 import matplotlib.pyplot as pl
 from . import defaults as fpd
 from . import utils as fpu
+import fpsim as fp
 from .settings import options as fpo
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
 
 
 #%% Generic analyzer classes
-__all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder']
+__all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder', 'track_as']
 # Specific analyzers
 __all__ += ['education_recorder']
 # Analyzers for debugging
@@ -721,55 +722,6 @@ class age_pyramids(Analyzer):
         return fig
 
 
-class track_switching(Analyzer):
-
-    def __init__(self):
-        super().__init__()
-        self.results = sc.objdict()
-
-    def initialize(self, sim):
-        n_methods = len(sim.methods)
-        keys = [
-            'switching_events_annual',
-            'switching_events_postpartum',
-            'switching_events_<18',
-            'switching_events_18-20',
-            'switching_events_21-25',
-            'switching_events_26-35',
-            'switching_events_>35',
-            'switching_events_pp_<18',
-            'switching_events_pp_18-20',
-            'switching_events_pp_21-25',
-            'switching_events_pp_26-35',
-            'switching_events_pp_>35',
-        ]
-        for key in keys:
-            self.results[key] = {}  # CK: TODO: refactor
-            for p in range(sim.npts):
-                self.results[key][p] = np.zeros((n_methods, n_methods), dtype=int)
-
-    def apply(self, sim):
-        # Store results of number of switching events in each age group
-        ti = sim.ti
-        r = sim.results
-        scale = sim['scaled_pop'] / sim['n_agents']
-        switch_events = r.pop('switching')
-        self.results['switching_events_<18'][ti] = scale * r.switching_annual['<18']
-        self.results['switching_events_18-20'][ti] = scale * r.switching_annual['18-20']
-        self.results['switching_events_21-25'][ti] = scale * r.switching_annual['21-25']
-        self.results['switching_events_26-35'][ti] = scale * r.switching_annual['26-35']
-        self.results['switching_events_>35'][ti] = scale * r.switching_annual['>35']
-        self.results['switching_events_pp_<18'][ti] = scale * r.switching_postpartum['<18']
-        self.results['switching_events_pp_18-20'][ti] = scale * r.switching_postpartum['18-20']
-        self.results['switching_events_pp_21-25'][ti] = scale * r.switching_postpartum['21-25']
-        self.results['switching_events_pp_26-35'][ti] = scale * r.switching_postpartum['26-35']
-        self.results['switching_events_pp_>35'][ti] = scale * r.switching_postpartum['>35']
-        self.results['switching_events_annual'][ti] = scale * switch_events['annual']
-        self.results['switching_events_postpartum'][ti] = scale * switch_events['postpartum']
-
-        return
-
-
 class method_mix_over_time(Analyzer):
     """
     Tracks the number of women on each method available
@@ -889,3 +841,212 @@ class state_tracker(Analyzer):
             ax3.set_ylabel(f'Number of women alive, aged {self.min_age}-{self.max_age}', color=colors[2])
         fig.tight_layout()
         return fig
+
+
+class track_as(Analyzer):
+    """
+    Analyzer for tracking age-specific results
+    """
+
+    def __init__(self):
+        # Check versioning
+        if sc.compareversions(fp, '<3.0'):
+            errormsg = (f'Your current version of FPsim is {fp.__version__}, but this analyzer is slated for release'
+                        f' with v3.0 of FPsim and is not currently functional. If you require age-specific results and'
+                        f' FPsim v3.0 is not released, please contact us at info@starsim.org for assistance.')
+            raise ValueError(errormsg)
+
+        # Initialize
+        self.results = dict()
+        self.init_results()
+        self.reskeys = [
+            'imr_numerator',
+            'imr_denominator',
+            'mmr_numerator',
+            'mmr_denominator',
+            'as_stillbirths',
+            'imr_age_by_group',
+            'mmr_age_by_group',
+            'stillbirth_ages',
+            'acpr',
+            'cpr',
+            'mcpr',
+            'pregnancies',
+            'births'
+        ]
+        self.age_bins = {
+            '<16': [10, 16],
+            '16-17': [16, 18],
+            '18-19': [18, 20],
+            '20-22': [20, 23],
+            '23-25': [23, 26],
+            '>25': [26, 100]
+        }
+        return
+
+    def init_results(self):
+        self.results['imr_age_by_group'] = []
+        self.results['mmr_age_by_group'] = []
+        self.results['stillbirth_ages'] = []
+        for rk in self.reskeys:
+            for ab in self.age_bins:
+                if 'numerator' in rk or 'denominator' in rk or 'as_' in rk:
+                    self.results[rk] = []
+                else:
+                    self.results[f"{rk}_{ab}"] = []
+        return
+
+    def age_by_group(self, ppl):
+        # Storing ages by method age group
+        age_bins = [0] + [max(self.age_bins[key]) for key in self.age_bins]
+        return np.digitize(ppl.age, age_bins) - 1
+
+    def log_age_split(self, binned_ages_t, channel, numerators, denominators=None):
+        """
+        Method called if age-specific results are being tracked. Separates results by age.
+        """
+        counts_dict = {}
+        results_dict = {}
+        if denominators is not None:  # true when we are calculating rates (like cpr)
+            for timestep_index in range(len(binned_ages_t)):
+                if len(denominators[timestep_index]) == 0:
+                    counts_dict[f"age_true_counts_{timestep_index}"] = {}
+                    counts_dict[f"age_false_counts_{timestep_index}"] = {}
+                else:
+                    binned_ages = binned_ages_t[timestep_index]
+                    binned_ages_true = binned_ages[
+                        np.logical_and(numerators[timestep_index], denominators[timestep_index])]
+                    if len(numerators[timestep_index]) == 0:
+                        binned_ages_false = []  # ~[] doesnt make sense
+                    else:
+                        binned_ages_false = binned_ages[
+                            np.logical_and(~numerators[timestep_index], denominators[timestep_index])]
+
+                    counts_dict[f"age_true_counts_{timestep_index}"] = dict(
+                        zip(*np.unique(binned_ages_true, return_counts=True)))
+                    counts_dict[f"age_false_counts_{timestep_index}"] = dict(
+                        zip(*np.unique(binned_ages_false, return_counts=True)))
+
+            age_true_counts = {}
+            age_false_counts = {}
+            for age_counts_dict_key in counts_dict:
+                for index in counts_dict[age_counts_dict_key]:
+                    age_true_counts[index] = 0 if index not in age_true_counts else age_true_counts[index]
+                    age_false_counts[index] = 0 if index not in age_false_counts else age_false_counts[index]
+                    if 'false' in age_counts_dict_key:
+                        age_false_counts[index] += counts_dict[age_counts_dict_key][index]
+                    else:
+                        age_true_counts[index] += counts_dict[age_counts_dict_key][index]
+
+            for index, age_str in enumerate(self.reskeys):
+                scale = 1
+                if channel == "imr":
+                    scale = 1000
+                elif channel == "mmr":
+                    scale = 100000
+                if index not in age_true_counts:
+                    results_dict[f"{channel}_{age_str}"] = 0
+                elif index in age_true_counts and index not in age_false_counts:
+                    results_dict[f"{channel}_{age_str}"] = 1.0 * scale
+                else:
+                    results_dict[f"{channel}_{age_str}"] = (age_true_counts[index] / (
+                            age_true_counts[index] + age_false_counts[index])) * scale
+        else:  # true when we are calculating counts (like pregnancies)
+            for timestep_index in range(len(binned_ages_t)):
+                if len(numerators[timestep_index]) == 0:
+                    counts_dict[f"age_counts_{timestep_index}"] = {}
+                else:
+                    binned_ages = binned_ages_t[timestep_index]
+                    binned_ages_true = binned_ages[numerators[timestep_index]]
+                    counts_dict[f"age_counts_{timestep_index}"] = dict(
+                        zip(*np.unique(binned_ages_true, return_counts=True)))
+            age_true_counts = {}
+            for age_counts_dict_key in counts_dict:
+                for index in counts_dict[age_counts_dict_key]:
+                    age_true_counts[index] = 0 if index not in age_true_counts else age_true_counts[index]
+                    age_true_counts[index] += counts_dict[age_counts_dict_key][index]
+
+            for index, age_str in enumerate(self.reskeys):
+                if index not in age_true_counts:
+                    results_dict[f"{channel}_{age_str}"] = 0
+                else:
+                    results_dict[f"{channel}_{age_str}"] = age_true_counts[index]
+        return results_dict
+
+    def apply(self, sim):
+        """
+        Apply the analyzer
+        Note: much of the logic won't work because the sim doesn't record the time at which events
+        occur (!), so attributes like ppl.ti_pregnant won't exist. These are all slated to be added
+        as part of the V3 refactor. For now, this is a placeholder.
+        """
+        ppl = sim.people
+
+        # Pregnancies
+        preg = ppl.filter(ppl.ti_pregnant == sim.ti)
+        pregnant_boolean = np.full(len(ppl), False)
+        pregnant_boolean[np.searchsorted(ppl.uid, preg.uid)] = True
+        pregnant_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='pregnancies',
+                                                numerators=[pregnant_boolean], denominators=None)
+        for key in pregnant_age_split:
+            self.results[key] = pregnant_age_split[key]
+
+        # Stillborns
+        stillborn = ppl.filter(ppl.ti_stillbirth == sim.ti)
+        stillbirth_boolean = np.full(len(ppl), False)
+        stillbirth_boolean[np.searchsorted(ppl.uid, stillborn.uid)] = True
+        self.results['stillbirth_ages'] = self.age_by_group
+        self.results['as_stillbirths'] = stillbirth_boolean
+
+        # Live births
+        live = ppl.filter(ppl.ti_live_birth == sim.ti)
+        total_women_delivering = np.full(len(ppl), False)
+        total_women_delivering[np.searchsorted(ppl.uid, live.uid)] = True
+        self.results['mmr_age_by_group'] = self.age_by_group
+
+        live_births_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='births',
+                                                   numerators=[total_women_delivering], denominators=None)
+        for key in live_births_age_split:
+            self.results[key] = live_births_age_split[key]
+
+        # MCPR
+        modern_methods_num = [idx for idx, m in enumerate(ppl.contraception_module.methods.values()) if m.modern]
+        method_age = (ppl.pars['method_age'] <= ppl.age)
+        fecund_age = ppl.age < ppl.pars['age_limit_fecundity']
+        denominator = method_age * fecund_age * ppl.is_female * ppl.alive
+        numerator = np.isin(ppl.method, modern_methods_num)
+        as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='mcpr',
+                                            numerators=[numerator], denominators=[denominator])
+        for key in as_result_dict:
+            self.results[key] = as_result_dict[key]
+
+        # CPR
+        denominator = ((ppl.pars['method_age'] <= ppl.age) * (ppl.age < ppl.pars['age_limit_fecundity']) * (
+                ppl.sex == 0) * ppl.alive)
+        numerator = ppl.method != 0
+        as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='cpr',
+                                            numerators=[numerator], denominators=[denominator])
+        for key in as_result_dict:
+            self.results[key] = as_result_dict[key]
+
+        # ACPR
+        denominator = ((ppl.pars['method_age'] <= ppl.age) * (ppl.age < ppl.pars['age_limit_fecundity']) * (
+                ppl.sex == 0) * (ppl.pregnant == 0) * (ppl.sexually_active == 1) * ppl.alive)
+        numerator = ppl.method != 0
+
+        as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='acpr',
+                                            numerators=[numerator], denominators=[denominator])
+        for key in as_result_dict:
+            self.results[key] = as_result_dict[key]
+
+        # Additional stillbirth results
+        stillbirths_results_dict = self.log_age_split(binned_ages_t=self.results['stillbirth_ages'],
+                                                             channel='stillbirths',
+                                                             numerators=self.results['as_stillbirths'],
+                                                             denominators=None)
+
+        for age_key in self.age_bins:
+            self.results[f"stillbirths_{age_key}"].append(
+                stillbirths_results_dict[f"stillbirths_{age_key}"])
+
+        return
