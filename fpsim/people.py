@@ -10,6 +10,7 @@ from . import defaults as fpd
 from . import base as fpb
 from . import demographics as fpdmg
 from . import subnational as fpsn
+import starsim as ss
 
 # Specify all externally visible things this file defines
 __all__ = ['People']
@@ -17,84 +18,99 @@ __all__ = ['People']
 
 # %% Define classes
 
-class People(fpb.BasePeople):
+class People(ss.People):
     """
     Class for all the people in the simulation.
     """
 
-    def __init__(self, pars, n=None, age=None, sex=None,
-                 empowerment_module=None, education_module=None, **kwargs):
-
-        # Initialization
-        super().__init__(**kwargs)
+    def __init__(self, n_agents=None, age_data=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Allow defaults to be dynamically set
         person_defaults = fpd.person_defaults
-        if 'person_defaults' in kwargs and kwargs['person_defaults'] is not None:
-            for state_name, val in kwargs['person_defaults'].items():
-                person_defaults[state_name].val = val
+        max_parity = fpd.max_parity
 
-        self.pars = pars  # Set parameters
-        if n is None:
-            n = int(self.pars['n_agents'])
+        # Initialization
+        super().__init__(n_agents, age_data, extra_states=person_defaults, **kwargs)
 
-        # Set default states
-        self.states = person_defaults
-        for state_name, state in self.states.items():
-            self[state_name] = state.new(n)
-
-        # Overwrite some states with alternative values
-        self.uid = np.arange(n)
-
-        # Basic demographics
-        _age, _sex = self.get_age_sex(n)
-        if not self.pars['use_subnational']:
-            _urban = self.get_urban(n)
-        else:
-            _urban = fpsn.get_urban_init_vals(self)
-        if age is None: age = _age
-        if sex is None: sex = _sex
-
-        self.age = self.states['age'].new(n, age)  # Age of the person in years
-        self.sex = self.states['sex'].new(n, sex)  # Female (0) or male (1)
-        self.urban = self.states['urban'].new(n, _urban)  # Urban (1) or rural (0)
-
-        # Parameters on sexual and reproductive history
-        self.fertile = fpu.n_binomial(1 - self.pars['primary_infertility'], n)
-
-        # Fertility intent
-        has_intent = "fertility_intent"
-        self.fertility_intent   = self.states[has_intent].new(n, person_defaults[has_intent].val)
-        self.categorical_intent = self.states["categorical_intent"].new(n, "no")
-        # Update distribution of fertility intent with location-specific values if it is present in self.pars
-        self.update_fertility_intent(n)
-
-        # Intent to use contraception
-        has_intent = "intent_to_use"
-        self.intent_to_use = self.states[has_intent].new(n, person_defaults[has_intent].val)
-        # Update distribution of fertility intent if it is present in self.pars
-        self.update_intent_to_use(n)
-
-        self.wealthquintile = self.states["wealthquintile"].new(n, person_defaults["wealthquintile"].val)
-        self.update_wealthquintile(n)
-
-        # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        if not self.pars['use_subnational']:
-            self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
-        else:
-            self.fated_debut = fpsn.get_debut_init_vals(self)
-
-        # Fecundity variation
-        fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
-        fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
-        self.personal_fecundity = np.random.random(n) * fac
-
-        # Initialise ti_contra based on age and fated debut
-        self.update_time_to_choose()
+        # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
+        # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and
+        # pregnancy outcomes.
+        self.child_inds = np.full(max_parity, -1, int),
+        self.birth_ages = np.full(max_parity, np.nan, float),  # Ages at time of live births
+        self.stillborn_ages = np.full(max_parity, np.nan, float),  # Ages at time of stillbirths
+        self.miscarriage_ages = np.full(max_parity, np.nan, float),  # Ages at time of miscarriages
+        self.abortion_ages = np.full(max_parity, np.nan, float),  # Ages at time of abortions
+        # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
 
         # Empowerment and education
         self.empowerment_module = empowerment_module
         self.education_module = education_module
+
+        # self.pars = pars  # Set parameters
+
+        # # Set default states
+        # self.states = person_defaults
+        # for state_name, state in self.states.items():
+        #     self[state_name] = state.new(n)
+
+        # Overwrite some states with alternative values
+        # self.uid = np.arange(n)
+
+        # Basic demographics
+        # _age, _sex = self.get_age_sex(n)
+
+
+        return
+
+    def init_vals(self):
+        super().init_vals()
+
+        pars = self.sim.pars
+
+        if not self.sim.fp_pars['use_subnational']:
+            _urban = self.get_urban(pars.n_agents)
+        else:
+            _urban = fpsn.get_urban_init_vals(self)
+
+        # TODO Need hook to set sex distribution
+        # if sex is None: sex = _sex
+
+        self.urban = _urban  # Urban (1) or rural (0)
+
+        # Parameters on sexual and reproductive history
+        self.fertile = fpu.n_binomial(1 - self.sim.fp_pars['primary_infertility'], pars.n_agents) # todo replace with ss dist
+
+        # Fertility intent
+        has_intent = "fertility_intent"
+        # self.fertility_intent   = fpd.person_defaults["fertility_intent"].val
+        # self.categorical_intent = self.states["categorical_intent"].new(n, "no")
+        # Update distribution of fertility intent with location-specific values if it is present in self.pars
+        self.update_fertility_intent()
+
+        # Intent to use contraception
+        has_intent = "intent_to_use"
+        # self.intent_to_use = self.states[has_intent].new(n, person_defaults[has_intent].val)
+        # Update distribution of fertility intent if it is present in self.pars
+        self.update_intent_to_use()
+
+        # self.wealthquintile = self.states["wealthquintile"].new(n, person_defaults["wealthquintile"].val)
+        self.update_wealthquintile()
+
+        # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
+        if not self.sim.fp_pars['use_subnational']:
+            self.fated_debut = self.sim.fp_pars['debut_age']['ages'][fpu.n_multinomial(self.sim.fp_pars['debut_age']['probs'], self.sim.pars.n_agents)]
+        else:
+            self.fated_debut = fpsn.get_debut_init_vals(self)
+
+        # Fecundity variation
+        fv = [self.sim.fp_pars['fecundity_var_low'], self.sim.fp_pars['fecundity_var_high']]
+        fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
+        self.personal_fecundity = np.random.random(self.sim.pars.n_agents) * fac # todo replace
+
+        # Initialise ti_contra based on age and fated debut
+        self.update_time_to_choose()
+
+        # Initialize empowerment and education mods.
         if self.empowerment_module is not None:
             self.empowerment_module.initialize(self.filter(self.is_female))
 
@@ -102,7 +118,7 @@ class People(fpb.BasePeople):
             self.education_module.initialize(self)
 
         # Partnership
-        if self.pars['use_partnership']:
+        if self.sim.fp_pars['use_partnership']:
             fpdmg.init_partnership_states(self)
 
         # Handle circular buffer to keep track of historical data
@@ -111,16 +127,14 @@ class People(fpb.BasePeople):
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
-        self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
+        self.barrier = fpu.n_multinomial(self.sim.fp_pars['barriers'][:], self.sim.pars.n_agents)
 
         # Store keys
         self._keys = [s.name for s in self.states.values()]
 
-        if self.pars['use_subnational']:
+        if self.sim.fp_pars['use_subnational']:
             fpsn.init_regional_states(self)
             fpsn.init_regional_states(self)
-
-        return
 
     def initialize_circular_buffer(self):
         # Initialize circular buffers to track longitudinal data
@@ -131,16 +145,16 @@ class People(fpb.BasePeople):
 
         for key in longitude_keys:
             current = getattr(self, key)  # Current value of this attribute
-            self.longitude[key] = np.full((self.n, self.tiperyear), current[0])
+            self.longitude[key] = np.full((self.sim.pars.n_agents, int(self.sim.fp_pars['tiperyear'])), current[0])
         return
 
-    @property
-    def dt(self):
-        return self.pars['timestep'] / fpd.mpy
+    # @property
+    # def dt(self):
+    #     return self.sim.pars['dr'] / fpd.mpy
 
-    @property
-    def tiperyear(self):
-        return self.pars['tiperyear']
+    # @property
+    # def tiperyear(self):
+    #     return self.tiperyear
 
     @property
     def yei(self):
@@ -169,8 +183,9 @@ class People(fpb.BasePeople):
 
     def get_urban(self, n):
         """ Get initial distribution of urban """
-        urban_prop = self.pars['urban_prop']
-        urban = fpu.n_binomial(urban_prop, n)
+        n_agents = self.sim.pars['n_agents']
+        urban_prop = self.sim.fp_pars['urban_prop']
+        urban = fpu.n_binomial(urban_prop, n_agents) # todo replace with ss dist
         return urban
 
     def get_age_sex(self, n):
@@ -200,23 +215,23 @@ class People(fpb.BasePeople):
 
         return ages, sexes
 
-    def update_fertility_intent(self, n):
-        if self.pars['fertility_intent'] is None:
+    def update_fertility_intent(self):
+        if self.sim.fp_pars['fertility_intent'] is None:
             return
         self.update_fertility_intent_by_age()
         return
 
-    def update_intent_to_use(self, n):
-        if self.pars['intent_to_use'] is None:
+    def update_intent_to_use(self):
+        if self.sim.fp_pars['intent_to_use'] is None:
             return
         self.update_intent_to_use_by_age()
         return
 
-    def update_wealthquintile(self, n):
-        if self.pars['wealth_quintile'] is None:
+    def update_wealthquintile(self):
+        if self.sim.fp_pars['wealth_quintile'] is None:
             return
-        wq_probs = self.pars['wealth_quintile']['percent']
-        vals = np.random.choice(len(wq_probs), size=n, p=wq_probs)+1
+        wq_probs = self.sim.fp_pars['wealth_quintile']['percent']
+        vals = np.random.choice(len(wq_probs), size=self.sim.pars['n_agents'], p=wq_probs)+1 # todo replace with ss dist
         self.wealthquintile = vals
         return
 
@@ -224,12 +239,12 @@ class People(fpb.BasePeople):
         """
         Initialise the counter to determine when girls/women will have to first choose a method.
         """
-        inds = sc.findinds((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
-        time_to_debut = (self.fated_debut[inds]-self.age[inds])/self.dt
+        inds = (self.female == True) * (self.age < self.sim.fp_pars['age_limit_fecundity'])
+        time_to_debut = (self.fated_debut[inds]-self.age[inds])/self.sim.t.dt
         self.ti_contra[inds] = np.maximum(time_to_debut, 0)
         # Validation
         time_to_set_contra = self.ti_contra[inds] == 0
-        if not np.array_equal(((self.age[inds] - self.fated_debut[inds]) > -self.dt), time_to_set_contra):
+        if not np.array_equal(((self.age[inds] - self.fated_debut[inds]) > -self.sim.t.dt), time_to_set_contra):
             errormsg = 'Should be choosing contraception for everyone past fated debut age.'
             raise ValueError(errormsg)
         return
@@ -242,11 +257,11 @@ class People(fpb.BasePeople):
 
         #TODO: rename to something that indicates this method is used for initialisation
         """
-        fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
+        fecund = (self.female == True) * (self.age < self.sim.fp_pars['age_limit_fecundity'])
         # NOTE: PSL: This line effectively "initialises" whether a woman is sexually active or not.
         # Because of the current initialisation flow, it's not possible to initialise the
         # sexually_active state in the init constructor.
-        fecund.check_sexually_active()
+        self.check_sexually_active(fecund)
         fecund.update_time_to_choose()
 
         # Check whether have reached the time to choose
@@ -440,7 +455,7 @@ class People(fpb.BasePeople):
         first_timers.partnered = True
         return
 
-    def check_sexually_active(self):
+    def check_sexually_active(self, inds):
         """
         Decide if agent is sexually active based either time-on-postpartum month
         or their age if not postpartum.
@@ -449,42 +464,42 @@ class People(fpb.BasePeople):
         general age-based data from DHS.
         """
         # Set postpartum probabilities
-        match_low = self.postpartum_dur >= 0
-        match_high = self.postpartum_dur <= self.pars['postpartum_dur']
-        pp_match = self.postpartum * match_low * match_high
-        non_pp_match = ((self.age >= self.fated_debut) * (~pp_match))
-        pp = self.filter(pp_match)
-        non_pp = self.filter(non_pp_match)
+        match_low = (self.postpartum_dur >= 0)
+        match_high = (self.postpartum_dur <= self.sim.fp_pars['postpartum_dur'])
+        pp_match = inds & (self.postpartum & match_low & match_high)
+        non_pp_match = inds & (self.age >= self.fated_debut) & (~pp_match)
+        pp = pp_match.uids
+        non_pp = non_pp_match.uids
 
         # Adjust for postpartum women's birth spacing preferences
         if len(pp):
-            pref = self.pars['spacing_pref']  # Shorten since used a lot
-            spacing_bins = pp.postpartum_dur / pref['interval']  # Main calculation: divide the duration by the interval
+            pref = self.sim.fp_pars['spacing_pref']  # Shorten since used a lot
+            spacing_bins = self.postpartum_dur[pp] / pref['interval']  # Main calculation: divide the duration by the interval
             spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int)  # Bound by longest bin
-            probs_pp = self.pars['sexual_activity_pp']['percent_active'][pp.postpartum_dur]
+            probs_pp = self.sim.fp_pars['sexual_activity_pp']['percent_active'][self.postpartum_dur[pp]]
             # Adjust the probability: check the overall probability with print(pref['preference'][spacing_bins].mean())
             probs_pp *= pref['preference'][spacing_bins]
-            pp.sexually_active = fpu.binomial_arr(probs_pp)
+            self.sexually_active[pp] = fpu.binomial_arr(probs_pp)
 
         # Set non-postpartum probabilities
         if len(non_pp):
-            probs_non_pp = self.pars['sexual_activity'][non_pp.int_age]
-            non_pp.sexually_active = fpu.binomial_arr(probs_non_pp)
+            probs_non_pp = self.sim.fp_pars['sexual_activity'][self.int_age[non_pp]]
+            self.sexually_active[non_pp] = fpu.binomial_arr(probs_non_pp)
 
             # Set debut to True if sexually active for the first time
             # Record agent age at sexual debut in their memory
-            never_sex = non_pp.sexual_debut == 0
-            now_active = non_pp.sexually_active == 1
-            first_debut = non_pp.filter(now_active * never_sex)
-            first_debut.sexual_debut = True
-            first_debut.sexual_debut_age = first_debut.age
+            never_sex = self.sexual_debut[non_pp] == 0
+            now_active = self.sexually_active[non_pp] == 1
+            first_debut = non_pp[now_active & never_sex]
+            self.sexual_debut[first_debut] = True
+            self.sexual_debut_age[first_debut] = self.age[first_debut]
 
-        active_sex = self.sexually_active == 1
-        debuted = self.sexual_debut == 1
-        active = self.filter(active_sex * debuted)
-        inactive = self.filter(~active_sex * debuted)
-        active.months_inactive = 0
-        inactive.months_inactive += 1
+        active_sex = inds & (self.sexually_active == 1)
+        debuted = inds & (self.sexual_debut == 1)
+        active = (active_sex & debuted)
+        inactive = (~active_sex & debuted)
+        self.months_inactive[active] = 0
+        self.months_inactive[inactive] += 1
 
         return
 
@@ -1240,3 +1255,9 @@ class People(fpb.BasePeople):
         self.step_results['perc_contra_intent'] = (np.sum(self.alive & self.is_female & self.intent_to_use) / self.n_female) * 100
         self.step_results['perc_fertil_intent'] = (np.sum(self.alive & self.is_female & self.fertility_intent) / self.n_female) * 100
         return
+
+
+    @property
+    def int_age(self):
+        ''' Return ages as an integer '''
+        return np.array(self.age, dtype=np.int64)
