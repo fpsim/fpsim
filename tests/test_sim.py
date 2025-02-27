@@ -12,7 +12,7 @@ par_kwargs = dict(n_agents=500, start_year=2000, end_year=2010, seed=1, verbose=
 
 def test_simple():
     sc.heading('Test simplest possible FPsim run')
-    sim = fp.Sim(location='kenya')  # NB it should be possible to run without any arguments
+    sim = fp.Sim()  # NB it should be possible to run without any arguments
     sim.run()
     sim.plot()
     return sim
@@ -60,7 +60,7 @@ def test_simple_choice(location='kenya'):
     # Plot method mix
     ax = axes[2]
     oc = sim.people.filter(sim.people.on_contra)
-    method_props = [len(oc.filter(oc.method == i))/len(oc) for i in range(1, 10)]
+    method_props = [sc.safedivide(len(oc.filter(oc.method == i)), len(oc)) for i in range(1, 10)]
     method_labels = [m.name for m in sim.contraception_module.methods.values() if m.label != 'None']
     ax.bar(method_labels, method_props)
     ax.set_ylabel('Proportion among all users')
@@ -90,7 +90,7 @@ def test_mid_choice(location='kenya'):
 
 if __name__ == '__main__':
 
-    s0 = test_simple()
-    s1 = test_simple_choice('kenya')    # TODO: check with senegal and ethiopia as well
-    s2 = test_mid_choice('kenya')  # TODO: check with senegal and ethiopia as well
+    # s0 = test_simple()
+    s1 = test_simple_choice('kenya')      # TODO: check with senegal and ethiopia as well
+    # s2 = test_mid_choice('kenya')         # TODO: check with senegal and ethiopia as well
     print('Done.')

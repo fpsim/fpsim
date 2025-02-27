@@ -29,8 +29,7 @@ data.raw <- with_dir(data.path, {read_dta("SN_2018_ContinuousDHS_10072020_1835_1
 data.raw <- with_dir(data.path, {read_dta("KE_2014_DHS_09162022_2324_122388/KEIR72DT/KEIR72FL.DTA")}) 
 
 # Ethiopia
-data.raw <- with_dir(data.path, {read_dta("ETIR71DT/ETIR71FL.DTA")}) %>% 
-  bind_rows(with_dir(data.path, {read_dta("ETIR81DT/ETIR81FL.DTA")}))
+data.raw <- with_dir(data.path, {read_dta("IR_all/ETIR71DT/ETIR71FL.DTA")})
 
 # -- Data manipulation -- #
 # keep only calendar data, age, and parity
@@ -83,6 +82,24 @@ matrices <- data %>%
   spread(To, Freq, fill = 0) %>% filter(rowSums(.[5:14], na.rm = T) > 0) %>%                                # spread to wide format by each method, for missing fill with 0, for some reason adding columns with 0 for everything so filtered those out
   filter(!(From == "F.sterilization" & F.sterilization == 0)) %>%                                           # one woman in <18 is going from sterilization to none and there's no other women in that category so filter her out)
   mutate(group = paste0("grp", postpartum, age_grp)) %>% as.data.table()                                    # create a group variable and make into a data table for matrix manipulation
+
+# create matrix for switching methods at the end of time on method
+matrices_switch <- data %>%
+  mutate(postpartum = case_when(month.a == "Birth" ~ "1", pp.6 == F & termination == F ~ "No"), From = month.a, To = month.b) %>%
+  filter(!is.na(postpartum)) %>%                                                                            # Not using months 1-5 postpartum
+  bind_rows(data %>% filter(month.a == "Birth" & !is.na(month.6) & month.6 != "Lac.Am" & month.6 != "Termination" & month.6 != "Pregnant") %>%  # Duplicate pp rows so we can have 6 month pp timepoint
+              mutate(postpartum = "6", age_grp = age_grp.6, From = month.b, To = month.6)) %>%              # For the 6 month pp matrices, replace age group with age group at the 6 month point
+  filter(!(postpartum == "No" & sex.active > 311)) %>%                                                      # Filter out women in the non-postartum matrix who have not has sex in the past year+
+  filter(!(postpartum == 6 & From != "None")) %>%                                                           # Only want from none for 6 mo pp
+  filter(From != To) %>%                                                                                    # Take out same to same
+  filter(To != "None") %>%                                                                                  # Don't want discontinuation in here
+  group_by(postpartum, From, age_grp) %>% mutate(n = sum(wt)) %>% ungroup %>%                               # sum total in 'from' each method
+  group_by(postpartum, From, To, n, age_grp) %>% summarise(Freq = sum(wt)) %>% mutate(Freq = Freq/n) %>% ungroup %>%
+  spread(To, Freq, fill = 0)  %>%                                                                           # spread to wide format by each method, for missing fill with 0
+  mutate(group = paste0("grp", postpartum, age_grp)) %>% as.data.table()                                    # create a group variable and make into a data table for matrix manipulation
+# write.csv(matrices_switch, "fpsim/locations/kenya/method_mix_matrix_switch.csv", row.names = F) 
+# write.csv(matrices_switch, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/method_mix_matrix_switch.csv", row.names = F) 
+# write.csv(matrices_switch, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/method_mix_matrix_switch.csv", row.names = F) 
 
 
 npdata <- matrices[postpartum == "No"]

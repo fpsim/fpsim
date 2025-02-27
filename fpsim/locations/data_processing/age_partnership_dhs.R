@@ -15,6 +15,10 @@ dhs_dir <- "DHS"
 survey_dir <-"KEIR8BDT"
 filename <- "KEIR8BFL.DTA"
 filepath <- file.path(home_dir, dhs_dir, survey_dir, filename)
+# Senegal
+filepath <- file.path("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/IR_all/SNIR8BDT/SNIR8BFL.DTA")
+#Ethiopia
+filepath <- file.path("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/IR_all/ETIR71DT/ETIR71FL.DTA")
 
 # -- Load the data
 data.raw <- read_dta(filepath)
@@ -30,7 +34,6 @@ svydesign_obj = svydesign(id = data$v001, strata=data$v023, weights = data$v005/
 table.partnership <- as.data.frame(svytable(~age_partner, svydesign_obj)) %>%
   mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
 
-
 home_dir <- path.expand("~")   # replace with your own path to the DTA file
 fpsim_dir <- "fpsim"           # path to root directory of fpsim
 locations_dir <- "fpsim/locations"
@@ -41,3 +44,5 @@ country_data_path <- file.path(home_dir, fpsim_dir, locations, country_dir, data
 
 # -- Save file --# Note that this will replace the default *.csv file for the specified country
 write.csv(table.partnerership, country_data_path, row.names = F)
+write.csv(table.partnership, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/age_partnership.csv", row.names = F)
+write.csv(table.partnership, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/age_partnership.csv", row.names = F)
