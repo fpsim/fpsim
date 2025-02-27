@@ -257,11 +257,11 @@ class People(ss.People):
 
         #TODO: rename to something that indicates this method is used for initialisation
         """
-        fecund = self.filter((self.sex == 0) * (self.age < self.pars['age_limit_fecundity']))
+        fecund = (self.female == True) * (self.age < self.sim.fp_pars['age_limit_fecundity'])
         # NOTE: PSL: This line effectively "initialises" whether a woman is sexually active or not.
         # Because of the current initialisation flow, it's not possible to initialise the
         # sexually_active state in the init constructor.
-        fecund.check_sexually_active()
+        self.check_sexually_active(fecund)
         fecund.update_time_to_choose()
 
         # Check whether have reached the time to choose
@@ -455,7 +455,7 @@ class People(ss.People):
         first_timers.partnered = True
         return
 
-    def check_sexually_active(self):
+    def check_sexually_active(self, inds):
         """
         Decide if agent is sexually active based either time-on-postpartum month
         or their age if not postpartum.
@@ -464,42 +464,42 @@ class People(ss.People):
         general age-based data from DHS.
         """
         # Set postpartum probabilities
-        match_low = self.postpartum_dur >= 0
-        match_high = self.postpartum_dur <= self.pars['postpartum_dur']
-        pp_match = self.postpartum * match_low * match_high
-        non_pp_match = ((self.age >= self.fated_debut) * (~pp_match))
-        pp = self.filter(pp_match)
-        non_pp = self.filter(non_pp_match)
+        match_low = (self.postpartum_dur >= 0)
+        match_high = (self.postpartum_dur <= self.sim.fp_pars['postpartum_dur'])
+        pp_match = inds & (self.postpartum & match_low & match_high)
+        non_pp_match = inds & (self.age >= self.fated_debut) & (~pp_match)
+        pp = pp_match.uids
+        non_pp = non_pp_match.uids
 
         # Adjust for postpartum women's birth spacing preferences
         if len(pp):
-            pref = self.pars['spacing_pref']  # Shorten since used a lot
-            spacing_bins = pp.postpartum_dur / pref['interval']  # Main calculation: divide the duration by the interval
+            pref = self.sim.fp_pars['spacing_pref']  # Shorten since used a lot
+            spacing_bins = self.postpartum_dur[pp] / pref['interval']  # Main calculation: divide the duration by the interval
             spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int)  # Bound by longest bin
-            probs_pp = self.pars['sexual_activity_pp']['percent_active'][pp.postpartum_dur]
+            probs_pp = self.sim.fp_pars['sexual_activity_pp']['percent_active'][self.postpartum_dur[pp]]
             # Adjust the probability: check the overall probability with print(pref['preference'][spacing_bins].mean())
             probs_pp *= pref['preference'][spacing_bins]
-            pp.sexually_active = fpu.binomial_arr(probs_pp)
+            self.sexually_active[pp] = fpu.binomial_arr(probs_pp)
 
         # Set non-postpartum probabilities
         if len(non_pp):
-            probs_non_pp = self.pars['sexual_activity'][non_pp.int_age]
-            non_pp.sexually_active = fpu.binomial_arr(probs_non_pp)
+            probs_non_pp = self.sim.fp_pars['sexual_activity'][self.int_age[non_pp]]
+            self.sexually_active[non_pp] = fpu.binomial_arr(probs_non_pp)
 
             # Set debut to True if sexually active for the first time
             # Record agent age at sexual debut in their memory
-            never_sex = non_pp.sexual_debut == 0
-            now_active = non_pp.sexually_active == 1
-            first_debut = non_pp.filter(now_active * never_sex)
-            first_debut.sexual_debut = True
-            first_debut.sexual_debut_age = first_debut.age
+            never_sex = self.sexual_debut[non_pp] == 0
+            now_active = self.sexually_active[non_pp] == 1
+            first_debut = non_pp[now_active & never_sex]
+            self.sexual_debut[first_debut] = True
+            self.sexual_debut_age[first_debut] = self.age[first_debut]
 
-        active_sex = self.sexually_active == 1
-        debuted = self.sexual_debut == 1
-        active = self.filter(active_sex * debuted)
-        inactive = self.filter(~active_sex * debuted)
-        active.months_inactive = 0
-        inactive.months_inactive += 1
+        active_sex = inds & (self.sexually_active == 1)
+        debuted = inds & (self.sexual_debut == 1)
+        active = (active_sex & debuted)
+        inactive = (~active_sex & debuted)
+        self.months_inactive[active] = 0
+        self.months_inactive[inactive] += 1
 
         return
 
@@ -1232,3 +1232,9 @@ class People(ss.People):
         self.step_results['perc_contra_intent'] = (np.sum(self.alive & self.is_female & self.intent_to_use) / self.n_female) * 100
         self.step_results['perc_fertil_intent'] = (np.sum(self.alive & self.is_female & self.fertility_intent) / self.n_female) * 100
         return
+
+
+    @property
+    def int_age(self):
+        ''' Return ages as an integer '''
+        return np.array(self.age, dtype=np.int64)
