@@ -93,5 +93,5 @@ if __name__ == '__main__':
 
     # s0 = test_simple()
     # s1 = test_simple_choice('ethiopia')
-    s2 = test_mid_choice('kenya')         # TODO: check with senegal and ethiopia as well
+    s2 = test_mid_choice('senegal')         # TODO: check with senegal and ethiopia as well
     print('Done.')

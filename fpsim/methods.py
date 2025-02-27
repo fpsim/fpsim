@@ -399,7 +399,7 @@ class StandardChoice(SimpleChoice):
         self.contra_use_pars = getattr(fplocs, location).process_contra_use('mid')  # Process the coefficients
 
         # Store the age spline
-        self.age_spline = getattr(fplocs, location).age_spline('3')
+        self.age_spline = getattr(fplocs, location).age_spline('25_40')
 
         return
 
