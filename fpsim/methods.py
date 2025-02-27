@@ -230,49 +230,54 @@ class SimpleChoice(RandomChoice):
 
     @staticmethod
     def _lognormal_dpars(dur_use, ai):
-        par1 = dur_use['par1'] + dur_use['age_factors'][ai]
-        par2 = np.exp(dur_use['par2'])
+        par1 = np.exp(dur_use['par1'])  # par1 is the 'meanlog' from the csv file. exp(par1) is the 'scale' parameter
+        par2 = np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
         return par1, par2
-
-    @staticmethod
-    def _lognormal_make_dict(dur_use, par1, par2):
-        """
-        Map par1 and par2 from duration use, to par1 and par2 needed
-        by fpu.sample
-        """
-        # NOTE:TODO: fix me, after lognorm distribution has been consolidated in utils.py
-        return dict(dist='lognorm_sps', par1=par2, par2=np.exp(par1))
 
     @staticmethod
     def _llogis_dpars(dur_use, ai):
-        par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
-        par2 = np.exp(dur_use['par2'])
+        par1 = np.exp(dur_use['par1'])
+        par2 = np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
         return par1, par2
 
     @staticmethod
-    def _llogis_make_dict(dur_use, par1, par2):
-        return dict(dist=dur_use['dist'], par1=par1, par2=par2)
+    def _weibull_dpars(dur_use, ai):
+        par1 = dur_use['par1']
+        par2 = dur_use['par2'] + dur_use['age_factors'][ai]
+        return par1, par2
+
+    @staticmethod
+    def _exp_dpars(dur_use, ai):
+        par1 = 1/np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
+        return par1, None
 
     @staticmethod
     def _gamma_dpars(dur_use, ai):
         par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
-        par2 = np.exp(method.dur_use['par2'])
+        par2 = 1/np.exp(method.dur_use['par2'])
         return par1, par2
 
     @staticmethod
-    def _gamma_make_dict(dur_use, par1, par2):
-        return dict(dist=dur_use['dist'], par1=par1, par2=1/par2)
+    def _make_dict(dur_use, par1, par2):
+        if dur_use['dist'] == 'lognormal':
+            return dict(dist='lognorm_sps', par1=par1, par2=par2)
+        else:
+            return dict(dist=dur_use['dist'], par1=par1, par2=par2)
 
     def _get_dist_funs(self, dist_name):
         if dist_name == 'lognormal':
-            return self._lognormal_dpars, self._lognormal_make_dict
+            return self._lognormal_dpars, self._make_dict
         elif dist_name == 'gamma':
-            return self._gamma_dpars, self._gamma_make_dict
+            return self._gamma_dpars, self._make_dict
         elif dist_name == 'llogis':
-            return self._llogis_dpars, self._llogis_make_dict
-        else :
+            return self._llogis_dpars, self._make_dict
+        elif dist_name == 'weibull':
+            return self._weibull_dpars, self._make_dict
+        elif dist_name == 'exponential':
+            return self._exp_dpars, self._make_dict
+        else:
             raise ValueError(
-                'Unrecognized distribution type for duration of use')
+                f'Unrecognized distribution type {dist_name} for duration of use')
 
     def set_dur_method(self, ppl, method_used=None):
         """ Time on method depends on age and method """
@@ -287,7 +292,7 @@ class SimpleChoice(RandomChoice):
 
             if isinstance(dur_use, dict):
                 # NOTE: List of available/supported distros can be a property of the class?
-                if not (dur_use['dist'] in ['lognormal', 'gamma', 'llogis']):
+                if not (dur_use['dist'] in ['lognormal', 'gamma', 'llogis', 'exponential', 'weibull']):
                     # bail early
                     raise ValueError(
                         'Unrecognized distribution type for duration of use')

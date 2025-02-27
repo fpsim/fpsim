@@ -14,6 +14,7 @@ estimate,coef,se,method,functionform,country
 -1.058931091,"age_grp_fact(35,50]",0.193280391,Pill,exponential,Senegal
 1.839860691,shape,0.305368731,IUD,gamma,Senegal
 0.087662323,rate,0.03293348,IUD,gamma,Senegal
+0.18125711,"age_grp_fact(0,18]",0.607958607,IUD,gamma,Senegal
 0.18125711,"age_grp_fact(18,20]",0.607958607,IUD,gamma,Senegal
 0,"age_grp_fact(20,25]",0,IUD,gamma,Senegal
 -0.333538527,"age_grp_fact(25,35]",0.331117981,IUD,gamma,Senegal
@@ -54,8 +55,8 @@ estimate,coef,se,method,functionform,country
 0.348780479,"age_grp_fact(35,50]",0.42472716,Other.trad,weibull,Senegal
 3.967603562,shape,3.264906552,Other.mod,gamma,Senegal
 0.020053552,rate,0.429465487,Other.mod,gamma,Senegal
-0.605087394,"age_grp_fact(0,18]",0.171810805,Injectable,gamma,Senegal
-0.157885296,"age_grp_fact(18,20]",0.141181813,Injectable,gamma,Senegal
-0,"age_grp_fact(20,25]",0,Injectable,gamma,Senegal
+0.605087394,"age_grp_fact(0,18]",0.171810805,Other.mod,gamma,Senegal
+0.157885296,"age_grp_fact(18,20]",0.141181813,Other.mod,gamma,Senegal
+0,"age_grp_fact(20,25]",0,Other.mod,gamma,Senegal
 1.872679143,"age_grp_fact(25,35]",21.33620174,Other.mod,gamma,Senegal
 -2.323159609,"age_grp_fact(35,50]",132.3248413,Other.mod,gamma,Senegal

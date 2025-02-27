@@ -37,9 +37,16 @@ def process_data():
         mlabel = method.csv_name
 
         thisdf = dur_raw.loc[(dur_raw.method == mlabel)]
-        dist = thisdf.functionform.iloc[0]
+        try:
+            dist = thisdf.functionform.iloc[0]
+        except:
+            print(f'No functionform for {method.label}')
 
-        method.age_bin_vals = thisdf.estimate.values[2:]
+        age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
+        method.age_bin_vals = thisdf.estimate.values[age_ind:]
+        if len(method.age_bin_vals) != 5:
+            errormsg = f'Error: {method.label} has {len(method.age_bin_vals)} age bins, expected 5'
+            raise ValueError(errormsg)
         method.age_bin_edges = [18, 20, 25, 35, 50]
 
         if dist in ['lognormal', 'lnorm']:
@@ -54,6 +61,14 @@ def process_data():
             method.dur_use['dist'] = dist
             method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
             method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
+        elif dist == 'weibull':
+            method.dur_use['dist'] = dist
+            method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+            method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
+        elif dist == 'exponential':
+            method.dur_use['dist'] = dist
+            method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'rate'].values[0]
+            method.dur_use['par2'] = None
 
     return methods
 
@@ -76,23 +91,35 @@ if __name__ == '__main__':
             # par2 = np.exp(method.dur_use['par2'])
 
             if method.dur_use['dist'] == 'lognormal':
-                par1 = method.dur_use['par1'] + method.age_bin_vals[ai]
-                par2 = np.exp(method.dur_use['par2'])
-                rv = sps.lognorm(par2, 0, np.exp(par1))
-            if method.dur_use['dist'] == 'gamma':
-                par1 = np.exp(method.dur_use['par1'] + method.age_bin_vals[ai])
-                par2 = np.exp(method.dur_use['par2'])
+                par1 = np.exp(method.dur_use['par1'])
+                par2 = np.exp(method.dur_use['par2'] + method.age_bin_vals[ai])
+                rv = sps.lognorm(s=par2, loc=0, scale=par1)
+            elif method.dur_use['dist'] == 'gamma':
+                par1 = np.exp(method.dur_use['par1'])
+                par2 = np.exp(method.dur_use['par2'] + method.age_bin_vals[ai])
                 rv = sps.gamma(par1, scale=1/par2)
-            if method.dur_use['dist'] == 'llogis':
-                par1 = np.exp(method.dur_use['par1'] + method.age_bin_vals[ai])
-                par2 = np.exp(method.dur_use['par2'])
+            elif method.dur_use['dist'] == 'llogis':
+                par1 = np.exp(method.dur_use['par1'])
+                par2 = np.exp(method.dur_use['par2'] + method.age_bin_vals[ai])
                 rv = sps.fisk(c=par1, scale=par2)
+            elif method.dur_use['dist'] == 'weibull':
+                par1 = method.dur_use['par1']
+                par2 = method.dur_use['par2'] + method.age_bin_vals[ai]
+                rv = sps.weibull_min(c=par1, scale=par2)
+            elif method.dur_use['dist'] == 'exponential':
+                par1 = np.exp(method.dur_use['par1'] + method.age_bin_vals[ai])
+                par2 = None
+                rv = sps.expon(scale=1/par1)
+            else:
+                raise NotImplementedError(f'Distribution {method.dur_use["dist"]} not implemented')
 
-
-            print(f'{method.label} - {age_bin_labels[ai]}: {par1:.2f}, {par2:.2f}: {rv.cdf(12*700)}')
+            if par2 is not None:
+                print(f'{method.label} - {age_bin_labels[ai]}: {par1:.2f}, {par2:.2f}: {rv.cdf(12*700)}')
+            else:
+                print(f'{method.label} - {age_bin_labels[ai]}: {par1:.2f}: {rv.cdf(12*700)}')
             ax.plot(x/12, rv.pdf(x), color=colors[ai], lw=2, label=age_bin_labels[ai])
 
-        if pn==6: ax.legend(loc='best', frameon=False)
+        if pn == 6: ax.legend(loc='best', frameon=False)
 
         ax.set_xlabel('Duration of use')
         ax.set_ylabel('Density')
