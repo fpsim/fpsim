@@ -1,3 +1,8 @@
+"""
+Test different components of the simulation behave as expected
+"""
+
+# Imports
 import sciris as sc
 import fpsim as fp
 from fpsim import utils as fpu
@@ -9,6 +14,7 @@ import numpy as np
 import pylab as pl
 import starsim as ss
 
+serial = 1  # For testing purposes
 
 def custom_init(sim, force=False, age=None, sex=None, empowerment_module=None, education_module=None, person_defaults=None):
     if force or not sim.initialized:
@@ -202,7 +208,7 @@ def test_simplechoice_contraception_dependencies():
     sim3 = custom_init(sim3, sex=0, person_defaults={'ever_used_contra': False})
 
     # Run all sims
-    msim = fp.parallel(sim1, sim2, sim3)
+    msim = fp.parallel(sim1, sim2, sim3, serial=serial, compute_stats=False)
     sim1, sim2, sim3 = msim.sims
 
     # CHECK SIM 1

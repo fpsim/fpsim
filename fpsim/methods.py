@@ -323,7 +323,7 @@ class SimpleChoice(RandomChoice):
                 raise ValueError(errormsg)
 
         dt = ppl.pars['timestep'] / fpd.mpy
-        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, None)
+        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, 100*12)  # Include a maximum. Durs seem way too high
 
         return timesteps_til_update
 
