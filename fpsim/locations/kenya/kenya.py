@@ -474,7 +474,7 @@ def exposure_age():
     '''
     # Previously set to all 1's
     exposure_correction_age = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
-                                        [1, 1, 1,  1 ,   .4, 1.3, 1.5 ,.8, .8, .5, .3, .5, .5]])
+                                        [1, 1, 1,  1,   .6,  1.5, 2.2,  3.2, 2.5, .3, .3, .3, .3]])
 
     exposure_age_interp = data2interp(exposure_correction_age, fpd.spline_preg_ages)
 
@@ -502,25 +502,19 @@ def birth_spacing_pref():
     '''
     # Previously all values set to default of 1
     postpartum_spacing = np.array([
-        [0, .3],
-        [3, .3],
-        [6, .3],
-        [9, .3],
-        [12, .2],
-        [15, .2],
-        [18, .2],
-        [21, .2],
-        [24, .2],
-        [27, .01],
-        [30, .01],
-        [33, .01],
-        [36, .01],
-        [39, .01],
-        [42, .01],
-        [45, .25],
-        [48, 1.5],
-        [51, 1.5],
-        [54, 1.5],
+        [0, .4],
+        [3, .4],
+        [6, .4],
+        [9, .4],
+        [12, .15],
+        [15, .15],
+        [18, .15],
+        [21, .15],
+        [24, .15],
+        [27, 1],
+        [30, 1],
+        [33, 1],
+        [36, 1],
     ])
 
     # Calculate the intervals and check they're all the same
