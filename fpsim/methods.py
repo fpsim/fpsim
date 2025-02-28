@@ -212,7 +212,7 @@ class SimpleChoice(RandomChoice):
         if event == 'pp1': p = self.contra_use_pars[1]
         if event == 'pp6': p = self.contra_use_pars[2]
 
-        # Calculate probability of use
+        # Initialize probability of use
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
         age_bins = np.digitize(ppl.age, self.age_bins)
         for ai, ab in enumerate(self.age_bins):
@@ -230,49 +230,54 @@ class SimpleChoice(RandomChoice):
 
     @staticmethod
     def _lognormal_dpars(dur_use, ai):
-        par1 = dur_use['par1'] + dur_use['age_factors'][ai]
-        par2 = np.exp(dur_use['par2'])
+        par1 = np.exp(dur_use['par1'])  # par1 is the 'meanlog' from the csv file. exp(par1) is the 'scale' parameter
+        par2 = np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
         return par1, par2
-
-    @staticmethod
-    def _lognormal_make_dict(dur_use, par1, par2):
-        """
-        Map par1 and par2 from duration use, to par1 and par2 needed
-        by fpu.sample
-        """
-        # NOTE:TODO: fix me, after lognorm distribution has been consolidated in utils.py
-        return dict(dist='lognorm_sps', par1=par2, par2=np.exp(par1))
 
     @staticmethod
     def _llogis_dpars(dur_use, ai):
-        par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
-        par2 = np.exp(dur_use['par2'])
+        par1 = np.exp(dur_use['par1'])
+        par2 = np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
         return par1, par2
 
     @staticmethod
-    def _llogis_make_dict(dur_use, par1, par2):
-        return dict(dist=dur_use['dist'], par1=par1, par2=par2)
+    def _weibull_dpars(dur_use, ai):
+        par1 = dur_use['par1']
+        par2 = dur_use['par2'] + dur_use['age_factors'][ai]
+        return par1, par2
+
+    @staticmethod
+    def _exp_dpars(dur_use, ai):
+        par1 = 1/np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
+        return par1, None
 
     @staticmethod
     def _gamma_dpars(dur_use, ai):
         par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
-        par2 = np.exp(method.dur_use['par2'])
+        par2 = 1/np.exp(method.dur_use['par2'])
         return par1, par2
 
     @staticmethod
-    def _gamma_make_dict(dur_use, par1, par2):
-        return dict(dist=dur_use['dist'], par1=par1, par2=1/par2)
+    def _make_dict(dur_use, par1, par2):
+        if dur_use['dist'] == 'lognormal':
+            return dict(dist='lognorm_sps', par1=par1, par2=par2)
+        else:
+            return dict(dist=dur_use['dist'], par1=par1, par2=par2)
 
     def _get_dist_funs(self, dist_name):
         if dist_name == 'lognormal':
-            return self._lognormal_dpars, self._lognormal_make_dict
+            return self._lognormal_dpars, self._make_dict
         elif dist_name == 'gamma':
-            return self._gamma_dpars, self._gamma_make_dict
+            return self._gamma_dpars, self._make_dict
         elif dist_name == 'llogis':
-            return self._llogis_dpars, self._llogis_make_dict
-        else :
+            return self._llogis_dpars, self._make_dict
+        elif dist_name == 'weibull':
+            return self._weibull_dpars, self._make_dict
+        elif dist_name == 'exponential':
+            return self._exp_dpars, self._make_dict
+        else:
             raise ValueError(
-                'Unrecognized distribution type for duration of use')
+                f'Unrecognized distribution type {dist_name} for duration of use')
 
     def set_dur_method(self, ppl, method_used=None):
         """ Time on method depends on age and method """
@@ -287,7 +292,7 @@ class SimpleChoice(RandomChoice):
 
             if isinstance(dur_use, dict):
                 # NOTE: List of available/supported distros can be a property of the class?
-                if not (dur_use['dist'] in ['lognormal', 'gamma', 'llogis']):
+                if not (dur_use['dist'] in ['lognormal', 'gamma', 'llogis', 'exponential', 'weibull']):
                     # bail early
                     raise ValueError(
                         'Unrecognized distribution type for duration of use')
@@ -318,7 +323,7 @@ class SimpleChoice(RandomChoice):
                 raise ValueError(errormsg)
 
         dt = ppl.pars['timestep'] / fpd.mpy
-        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, None)
+        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, 100*12)  # Include a maximum. Durs seem way too high
 
         return timesteps_til_update
 
@@ -394,7 +399,7 @@ class StandardChoice(SimpleChoice):
         self.contra_use_pars = getattr(fplocs, location).process_contra_use('mid')  # Process the coefficients
 
         # Store the age spline
-        self.age_spline = getattr(fplocs, location).age_spline('3')
+        self.age_spline = getattr(fplocs, location).age_spline('25_40')
 
         return
 
@@ -410,8 +415,8 @@ class StandardChoice(SimpleChoice):
         # Initialize with intercept
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
 
-        # Add all terms that don't involve age
-        for term in ['ever_used_contra', 'edu_attainment', 'urban', 'parity', 'wealthquintile']:  #
+        # Add all terms that don't involve age/education level factors
+        for term in ['ever_used_contra', 'urban', 'parity', 'wealthquintile']:
             rhs += p[term] * ppl[term]
 
         # Add age
@@ -423,6 +428,11 @@ class StandardChoice(SimpleChoice):
         rhs += (p.age_ever_user_factors[0] * dfa['knot_1'].values * ppl.ever_used_contra
                 + p.age_ever_user_factors[1] * dfa['knot_2'].values * ppl.ever_used_contra
                 + p.age_ever_user_factors[2] * dfa['knot_3'].values * ppl.ever_used_contra)
+
+        # Add education levels
+        primary = (ppl.edu_attainment > 1) & (ppl.edu_attainment <= 6)
+        secondary = ppl.edu_attainment > 6
+        rhs += p.edu_factors[0] * primary + p.edu_factors[1] * secondary
 
         # Add time trend
         rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
