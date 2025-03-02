@@ -47,11 +47,10 @@ def test_mid_choice():
         s = fp.Sim(pars, contraception_module=ms, education_module=edu)
         sims += s
 
-    for sim in sims:
-        sim.run()
-        print(f'✓ (successfully ran StandardChoice for {sim.location})')
+    m = fp.parallel(sims, serial=serial, compute_stats=False)
+    print(f'✓ (successfully ran StandardChoice)')
 
-    return sims
+    return m.sims
 
 
 if __name__ == '__main__':
