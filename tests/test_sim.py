@@ -4,12 +4,11 @@ Test running sims
 
 import fpsim as fp
 import sciris as sc
-import pylab as pl
-import numpy as np
+
 
 # par_kwargs = dict(n_agents=1000, start_year=1960, end_year=2020, seed=1, verbose=1)
 par_kwargs = dict(n_agents=500, start_year=2000, end_year=2010, seed=1, verbose=-1)
-serial = 1  # Whether to run in serial (for debugging)
+serial = 0  # Whether to run in serial (for debugging)
 
 
 def test_simple():
