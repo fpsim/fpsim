@@ -255,7 +255,7 @@ class SimpleChoice(RandomChoice):
     @staticmethod
     def _gamma_dpars(dur_use, ai):
         par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
-        par2 = 1/np.exp(method.dur_use['par2'])
+        par2 = 1/np.exp(dur_use['par2'])
         return par1, par2
 
     @staticmethod
