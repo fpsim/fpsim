@@ -22,12 +22,12 @@ def ok(string):
     return sc.printgreen(f'✓ {string}\n')
 
 
-def make_sims(interventions):
+def make_sims(interventions, contraception_module=None):
     ''' Make simulations with particular interventions '''
     simlist = sc.autolist()
     for intv in interventions:
         pars = fp.pars('test', interventions=intv)
-        simlist += fp.Sim(pars=pars)
+        simlist += fp.Sim(pars=pars, contraception_module=contraception_module)
     return simlist
 
 
@@ -64,24 +64,22 @@ def test_update_methods():
 
     sc.heading('Testing updating method properties...')
 
-    # Higher contraceptive use
-    p_use = 0.99  # Counterintuitive, need to fix!
-
     # Make new durations representing longer-lasting IUDs, injectables, and implants
     new_durs = {
         'IUDs': 10,
         'Implants': 10,
     }
+    p_use = 0.99
 
     # Change the method mix
-    method_mix=np.array([0.05, 0.3, 0.3, 0.05, 0, 0, 0.3, 0, 0])
+    method_mix = np.array([0.05, 0.3, 0.3, 0.05, 0, 0, 0.3, 0, 0])
 
     # Make interventions
     no_contra = fp.update_methods(2000, p_use=0.0)
     hi_contr = fp.update_methods(int_year, p_use=p_use, dur_use=new_durs, method_mix=method_mix)
 
     # Make and run sims
-    simlist = make_sims([no_contra, hi_contr])
+    simlist = make_sims([no_contra, hi_contr], contraception_module=fp.RandomChoice())
     msim = fp.MultiSim(sims=simlist)
     msim.run(serial=serial)
 
@@ -99,6 +97,7 @@ def test_update_methods():
     ok(f'Changes to method parameters resulted in fewer births, as expected ({scenario_births} < {baseline_births})')
 
     return msim
+
 
 def test_scenarios():
     def run_scenario(scen, plot=do_plot, plot_as=do_plot_as):
