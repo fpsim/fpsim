@@ -837,7 +837,7 @@ def process_dur_use(methods, df=None):
             dist = thisdf.functionform.iloc[0]
             method.dur_use = dict()
             age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
-            method.dur_use['age_factors'] = np.append(thisdf.estimate.values[age_ind:], 0)
+            method.dur_use['age_factors'] = thisdf.estimate.values[age_ind:]
 
             if dist in ['lognormal', 'lnorm']:
                 method.dur_use['dist'] = 'lognormal'

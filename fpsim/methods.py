@@ -285,45 +285,45 @@ class SimpleChoice(RandomChoice):
         dur_method = np.zeros(len(ppl), dtype=float)
         if method_used is None: method_used = ppl.method
 
+        if hasattr(ppl, 'ti') and ppl.ti == 1:
+            print('stop')
+
         for mname, method in self.methods.items():
             dur_use = method.dur_use
             users = np.nonzero(method_used == method.idx)[-1]
             n_users = len(users)
 
-            if isinstance(dur_use, dict):
-                # NOTE: List of available/supported distros can be a property of the class?
-                if not (dur_use['dist'] in ['lognormal', 'gamma', 'llogis', 'exponential', 'weibull']):
-                    # bail early
-                    raise ValueError(
-                        'Unrecognized distribution type for duration of use')
+            if n_users:
+                if isinstance(dur_use, dict):
+                    # NOTE: List of available/supported distros can be a property of the class?
+                    if not (dur_use['dist'] in ['lognormal', 'gamma', 'llogis', 'exponential', 'weibull']):
+                        # bail early
+                        raise ValueError(
+                            'Unrecognized distribution type for duration of use')
 
-                if 'age_factors' in dur_use.keys():
-                    age_bins = np.digitize(ppl.age, self.age_bins)
-                    par1 = np.zeros(n_users)
-                    par2 = np.zeros(n_users)
+                    if 'age_factors' in dur_use.keys():
+                        # Get functions based on distro and set for every agent
+                        dist_pars_fun, make_dist_dict = self._get_dist_funs(dur_use['dist'])
+                        age_bins = np.digitize(ppl.age, self.age_bins)
+                        par1, par2 = dist_pars_fun(dur_use, age_bins)
 
-                    # Get functions based on distro
-                    dist_pars_fun, make_dist_dict = self._get_dist_funs(dur_use['dist'])
+                        # Transform to parameters needed by fpsim distributions
+                        dist_dict = make_dist_dict(dur_use, par1, par2)
+                    else:
+                        par1 = dur_use['par1']
+                        par2 = dur_use['par2']
+                        dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
 
-                    # First set parameters for every agent
-                    for ai, ab in enumerate(self.age_bins):
-                        par1[age_bins[users] == ai], par2 = dist_pars_fun(dur_use, ai)
-                    # Transform to parameters needed by fpsim distributions
-                    dist_dict = make_dist_dict(dur_use, par1, par2)
+                    # Draw samples of how many months women use this method
+                    dur_method[users] = fpu.sample(**dist_dict, size=n_users)
+
+                elif sc.isnumber(dur_use):
+                    dur_method[users] = dur_use
                 else:
-                    par1 = dur_use['par1']
-                    par2 = dur_use['par2']
-                    dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
-                # Draw samples
-                dur_method[users] = fpu.sample(**dist_dict, size=n_users)
-            elif sc.isnumber(dur_use):
-                dur_method[users] = dur_use
-            else:
-                errormsg = 'Unrecognized type for duration of use: expecting a distribution dict or a number'
-                raise ValueError(errormsg)
+                    errormsg = 'Unrecognized type for duration of use: expecting a distribution dict or a number'
+                    raise ValueError(errormsg)
 
-        dt = ppl.pars['timestep'] / fpd.mpy
-        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, 100*12)  # Include a maximum. Durs seem way too high
+        timesteps_til_update = np.clip(np.round(dur_method), 1, 100*12)  # Include a maximum. Durs seem way too high
 
         return timesteps_til_update
 
