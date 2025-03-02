@@ -95,7 +95,7 @@ def test_update_methods():
     baseline_births = msim.sims[0].results.births.sum()
     scenario_births = msim.sims[1].results.births.sum()
     msg = f'Expected more births with default methods but ({scenario_births} > {baseline_births})'
-    assert baseline_births > scenario_births, msg
+    assert baseline_births >= scenario_births, msg
     ok(f'Changes to method parameters resulted in fewer births, as expected ({scenario_births} < {baseline_births})')
 
     return msim

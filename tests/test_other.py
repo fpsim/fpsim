@@ -9,7 +9,7 @@ import fpsim as fp
 import pytest
 
 
-do_plot  = 1 # Whether to do plotting in interactive mode
+do_plot  = 0 # Whether to do plotting in interactive mode
 run_track_as = False  # Not functional in v2.0 of FPsim, will be reinstated in v3.0
 sc.options(backend='agg') # Turn off interactive plots
 

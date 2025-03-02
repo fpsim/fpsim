@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 serial   = 1 # Whether to run in serial (for debugging)
-do_plot  = 1 # Whether to do plotting in interactive mode
+do_plot  = 0 # Whether to do plotting in interactive mode
 # sc.options(backend='agg') # Turn off interactive plots
 
 
@@ -115,7 +115,7 @@ def test_change_people_state():
     s0 = fp.Sim(pars, **sim_kwargs, label="Baseline")
     s1 = fp.Sim(pars, **sim_kwargs, interventions=prior_use_lift, label="All prior_use set to True")
     s2 = fp.Sim(pars, **sim_kwargs, interventions=prior_use_gone, label="Prior use removed from 500 people")
-    msim = fp.parallel(s0, s1, s2)
+    msim = fp.parallel(s0, s1, s2, serial=serial)
     s0, s1, s2 = msim.sims
 
     # Test people state change

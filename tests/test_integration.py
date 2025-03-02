@@ -15,6 +15,7 @@ import pylab as pl
 import starsim as ss
 
 serial = 1  # For testing purposes
+do_plot = 0
 
 def custom_init(sim, force=False, age=None, sex=None, empowerment_module=None, education_module=None, person_defaults=None):
     if force or not sim.initialized:
@@ -160,7 +161,7 @@ def test_contraception():
     return sim
 
 
-def test_simplechoice_contraception_dependencies():
+def test_simplechoice_contraception_dependencies(do_plot=do_plot):
     # There are a number of different factors that affect contraception use, including previous use, age, etc.
     # All agents are women, initialized at age 15, all active, all infertile.
     # sim1: Age impacts
@@ -261,9 +262,10 @@ def test_simplechoice_contraception_dependencies():
     assert np.all(sim2.results.cpr > sim3.results.cpr), f"Expected CPR to be higher in sim2 than sim3 but they differ: {diffs}, {diffyears}"
     print(f'✓ (CPR is increased by prior contra use)')
 
-    plot_results(sim1)
-    plot_results(sim2)
-    plot_results(sim3)
+    if do_plot:
+        plot_results(sim1)
+        plot_results(sim2)
+        plot_results(sim3)
 
     return sim1, sim2, sim3
 
