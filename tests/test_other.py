@@ -181,7 +181,7 @@ def test_method_usage():
 # Run all tests
 if __name__ == '__main__':
 
-    sc.options(backend=None) # Turn on interactive plots
+    # sc.options(backend=None) # Turn on interactive plots
 
     with sc.timer():
         opts = test_options()
