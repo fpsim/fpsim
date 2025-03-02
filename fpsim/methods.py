@@ -161,6 +161,7 @@ class SimpleChoice(RandomChoice):
             prob_use_trend_par=0.0,
             force_choose=False,  # Whether to force non-users to choose a method
             method_weights=np.ones(self.n_methods),
+            max_dur=100*fpd.mpy,  # Maximum duration of use in months
         )
         updated_pars = sc.mergedicts(default_pars, pars)
         self.pars = sc.mergedicts(self.pars, updated_pars)
@@ -285,9 +286,6 @@ class SimpleChoice(RandomChoice):
         dur_method = np.zeros(len(ppl), dtype=float)
         if method_used is None: method_used = ppl.method
 
-        if hasattr(ppl, 'ti') and ppl.ti == 1:
-            print('stop')
-
         for mname, method in self.methods.items():
             dur_use = method.dur_use
             users = np.nonzero(method_used == method.idx)[-1]
@@ -304,7 +302,7 @@ class SimpleChoice(RandomChoice):
                     if 'age_factors' in dur_use.keys():
                         # Get functions based on distro and set for every agent
                         dist_pars_fun, make_dist_dict = self._get_dist_funs(dur_use['dist'])
-                        age_bins = np.digitize(ppl.age, self.age_bins)
+                        age_bins = np.digitize(ppl.age[users], self.age_bins)
                         par1, par2 = dist_pars_fun(dur_use, age_bins)
 
                         # Transform to parameters needed by fpsim distributions
@@ -323,7 +321,7 @@ class SimpleChoice(RandomChoice):
                     errormsg = 'Unrecognized type for duration of use: expecting a distribution dict or a number'
                     raise ValueError(errormsg)
 
-        timesteps_til_update = np.clip(np.round(dur_method), 1, 100*12)  # Include a maximum. Durs seem way too high
+        timesteps_til_update = np.clip(np.round(dur_method), 1, self.pars['max_dur'])  # Include a maximum. Durs seem way too high
 
         return timesteps_til_update
 
