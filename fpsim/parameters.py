@@ -173,17 +173,21 @@ class Pars(dict):
 # All parameters that don't vary across geographies are defined explicitly here.
 # Keys for all location-specific parameters are also defined here with None values.
 
-default_pars = {
-    # Basic parameters
-    'location':             None,   # CONTEXT-SPECIFIC ####
+default_sim_pars = {
     'n_agents':             1_000,  # Number of agents
-    'scaled_pop':           None,   # Scaled population / total population size
+    'pop_scale':            None,   # Scaled population / total population size
     'start':                1960,   # Start year of simulation
     'stop':                 2020,   # End year of simulation
     'dt':                   1/12,      # The simulation timestep in 'unit's
     'unit':                 'year',   # The unit of time for the simulation
-    'seed':                 1,      # Random seed
+    'rand_seed':            1,      # Random seed
     'verbose':              1,      # How much detail to print during the simulation
+
+}
+
+default_pars = {
+    # Basic parameters
+    'location':             None,   # CONTEXT-SPECIFIC ####
 
     # Settings - what aspects are being modeled
     'use_subnational':      0,      # Whether to model partnered states- will need to add context-specific data if using
@@ -263,6 +267,7 @@ default_pars = {
 
 # Shortcut for accessing default keys
 par_keys = default_pars.keys()
+sim_par_keys = default_sim_pars.keys()
 
 
 def pars(location=None, validate=True, die=True, update=True, **kwargs):
@@ -293,10 +298,10 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     location = fpd.get_location(location)  # Handle location
 
     # Initialize parameter dict, which will be updated with location data
-    pars = sc.mergedicts(default_pars, kwargs, _copy=True)  # Merge all pars with kwargs and copy
+    pars = sc.mergedicts(default_sim_pars, default_pars, kwargs, _copy=True)  # Merge all pars with kwargs and copy
 
     # Pull out values needed for the location-specific make_pars functions
-    loc_kwargs = dict(seed=pars['seed'])
+    loc_kwargs = dict(seed=pars['rand_seed'])
     location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
     pars = sc.mergedicts(pars, location_pars)
 

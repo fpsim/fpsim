@@ -114,7 +114,7 @@ class People(ss.People):
 
         # Initialize empowerment and education mods.
         if self.empowerment_module is not None:
-            self.empowerment_module.initialize(self.filter(self.is_female))
+            self.empowerment_module.initialize(self.female.uids)
 
         if self.education_module is not None:
             self.education_module.initialize(self)

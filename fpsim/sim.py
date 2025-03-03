@@ -97,6 +97,8 @@ class Sim(ss.Sim):
         if sim_pars is None:
             sim_pars = {}
         new_sim_pars = ss.make_pars()
+        fpsim_default_pars = fpp.default_sim_pars
+        new_sim_pars.update(fpsim_default_pars)
 
         args = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
@@ -169,6 +171,10 @@ class Sim(ss.Sim):
     def init(self, force=False):
         """ Fully initialize the Sim with people and result storage"""
         if force or not self.initialized:
+
+            if self.pars.people is None:
+                self.pars.people = fpppl.People(n_agents=1000)
+
             super().init(force=force)
             #self.ti = 0  # The current time index
             #fpu.set_seed(self['seed'])
@@ -540,6 +546,10 @@ class Sim(ss.Sim):
             self.results['tfr_rates'].append(
                 tfr * 5)  # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
 
+    def finalize(self):
+        self.finalize_results()
+        super().finalize()
+
     def finalize_results(self):
         # Convert all results to Numpy arrays
         for key, arr in self.results.items():
@@ -685,8 +695,8 @@ class Sim(ss.Sim):
                 nrows, ncols = 2, 3
 
             res = self.results  # Shorten since heavily used
-            agelim = ('-'.join([str(self.pars['low_age_short_int']), str(
-                self.pars['high_age_short_int'])]))  ## age limit to be added to the title of short birth interval plot
+            agelim = ('-'.join([str(self.fp_pars['low_age_short_int']), str(
+                self.fp_pars['high_age_short_int'])]))  ## age limit to be added to the title of short birth interval plot
 
             if isinstance(to_plot, dict):
                 pass
@@ -775,7 +785,7 @@ class Sim(ss.Sim):
                         'cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'proportion_short_interval_' in key) and 'by_year' not in key:
                     percent_keys = percent_keys + list(to_plot.keys())
                 if key in percent_keys and key != 'method_usage':
-                    y *= 100
+                    y = y * 100 # why doesn't *= syntax work here? Is it overloaded on Result objects?
                     if is_dist:
                         low *= 100
                         high *= 100
@@ -884,7 +894,7 @@ class Sim(ss.Sim):
         unique, counts = np.unique(filtered_methods, return_counts=True)
         count_dict = dict(zip(unique, counts))
 
-        result = [0] * (len(self.pars['methods']['eff']))
+        result = [0] * (len(self.fp_pars['methods']['eff']))
         for method in count_dict:
             result[method] = count_dict[method] / len(filtered_methods)
 
@@ -903,7 +913,7 @@ class Sim(ss.Sim):
         Returns:
             pandas.DataFrame with columns ["Percentage", "Method", "Sim", "Seed"] and optionally "Year" if timeseries
         """
-        inv_method_map = {index: name for name, index in self.pars['methods']['map'].items()}
+        inv_method_map = {index: name for name, index in self.fp_pars['methods']['map'].items()}
 
         def get_df_from_result(method_list):
             df_dict = {"Percentage": [], "Method": [], "Sim": [], "Seed": []}
@@ -912,7 +922,7 @@ class Sim(ss.Sim):
                     df_dict["Percentage"].append(100 * prop)
                     df_dict['Method'].append(inv_method_map[method_index])
                     df_dict['Sim'].append(self.label)
-                    df_dict['Seed'].append(self.pars['seed'])
+                    df_dict['Seed'].append(self.pars['rand_seed'])
 
             return pd.DataFrame(df_dict)
 
