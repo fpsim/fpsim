@@ -808,7 +808,7 @@ class People(ss.People):
             for parity in np.unique(self.parity[twin]):
                 inds = twin[self.parity[twin] == parity]
                 self.birth_ages[inds, parity] = self.age[inds]
-                self.birth_ages[inds, parity+1] = self.age[inds]
+                self.birth_ages[inds, parity + 1] = self.age[inds]
                 if parity == 0: self.first_birth_age[inds] = self.age[inds]
             for parity in np.unique(self.parity[stillborn]):
                 inds = stillborn[self.parity[stillborn] == parity]
