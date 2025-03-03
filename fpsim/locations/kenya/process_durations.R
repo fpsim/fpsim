@@ -14,10 +14,10 @@ times <- seq(0, 12*10, length.out = 100)
 # Gamma plots: injectables & other traditional
 # These ones look ok and are the same as the python versions
 #################################################
-thismethod = 'Injectable'
+thismethod = 'Other.trad'  # Injectable, IUD
 thisdf <- method_time_coefficients %>% filter(method == thismethod)
-age_factors <- thisdf$coef[3:7]
-rate <- exp(thisdf$coef[2])
+age_factors <- thisdf$estimate[3:7]
+shape <- exp(thisdf$estimate[2])
 
 # Create empty dataframe
 data <- data.frame(times = numeric(0), y = numeric(0), age = factor(), shape=numeric(0))
@@ -26,7 +26,7 @@ data <- data.frame(times = numeric(0), y = numeric(0), age = factor(), shape=num
 for (i in 1:5) {
   age_label = age_groups[i]
   age_factor = age_factors[i]
-  shape <- exp(thisdf$coef[1] + age_factor)
+  rate <- exp(thisdf$estimate[1] + age_factor)
   y <- dgamma(times, shape = shape, rate = rate)
   data <- rbind(data, data.frame(times = times / 12, y = y, shape = shape, age=as.factor(age_label)))
 }
@@ -37,6 +37,37 @@ g <- ggplot(data) +
   labs(title = thismethod, x = "Duration of use", y = "PDF", color = "Age") +
   theme_minimal()  
 g
+
+
+#################################################
+# WEIBULL plots: None, Implants, Other traditional
+# Need help
+#################################################
+thismethod = 'None'  # Other.trad, Implant
+thisdf <- method_time_coefficients %>% filter(method == thismethod)
+age_factors <- thisdf$estimate[3:7]
+shape <- exp(thisdf$estimate[1])
+
+# Create empty dataframe
+data <- data.frame(times = numeric(0), y = numeric(0), age = factor(), shape=numeric(0))
+
+# Loop through the shapes and calculate the gamma pdf
+for (i in 1:5) {
+  age_label = age_groups[i]
+  age_factor = age_factors[i]
+  scale <- exp(thisdf$estimate[2] + age_factor)
+  y <- dweibull(times, shape = shape, scale = scale)
+  data <- rbind(data, data.frame(times = times / 12, y = y, shape = shape, age=as.factor(age_label)))
+}
+
+# Plot 
+g <- ggplot(data) +
+  geom_line(aes(x = times, y = y, color = age)) +
+  labs(title = thismethod, x = "Duration of use", y = "PDF", color = "Age") +
+  theme_minimal()  
+g
+
+
 
 
 #################################################

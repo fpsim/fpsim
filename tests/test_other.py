@@ -181,12 +181,11 @@ def test_method_usage():
 # Run all tests
 if __name__ == '__main__':
 
-    sc.options(backend=None) # Turn on interactive plots
+    # sc.options(backend=None) # Turn on interactive plots
 
-    with sc.timer():
-        opts = test_options()
-        df   = test_to_df()
-        ppl  = test_plot_people()
-        res  = test_samples()
-        method = test_method_usage()
-        # sim = test_track_as(run_track_as)
+    opts = test_options()
+    df   = test_to_df()
+    ppl  = test_plot_people()
+    res  = test_samples()
+    method = test_method_usage()
+    # sim = test_track_as(run_track_as)

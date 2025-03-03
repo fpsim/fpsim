@@ -5,12 +5,11 @@ Test dynamics within FPsim related to contraceptive use, method choice, and dura
 import sciris as sc
 import pylab as pl
 import fpsim as fp
-import numpy as np
-
+import matplotlib.pyplot as plt
+# import matplotlib
+# matplotlib.rcParams['backend'] = 'MacOSX'
 
 serial   = 1 # Whether to run in serial (for debugging)
-do_plot  = 1 # Whether to do plotting in interactive mode
-# sc.options(backend='agg') # Turn off interactive plots
 
 
 def make_sim_parts():
@@ -93,7 +92,7 @@ def test_mcpr():
     print(f"✗ (TEST FAILS: mCPR DOES NOT INCREASE WITH ALL COVARIATES) - NEED TO DEBUG")
 
     # Plot
-    fig, axes = pl.subplots(2, 2, figsize=(12, 6))
+    fig, axes = plt.subplots(2, 2, figsize=(12, 6))
     axes = axes.flatten()
     for ri, covar in enumerate(covars):
         ax = axes[ri]
@@ -103,17 +102,17 @@ def test_mcpr():
         ax.set_xlabel('Year')
         ax.legend()
     fig.tight_layout()
-    pl.show()
+    plt.show()
 
-    fig, ax = pl.subplots(1, 1, figsize=(12, 6))
+    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
     ax.plot(sims[0].results.t, sims[0].results.mcpr, label=sims[0].label)
     for ri, covar in enumerate(covars):
         ax.plot(sims[ri+1].results.t, covar.mcpr, label=covar.pplattr)
     ax.set_ylabel('mCPR')
     ax.set_xlabel('Year')
-    pl.legend()
+    plt.legend()
     fig.tight_layout()
-    pl.show()
+    plt.show()
 
     return sims
 
@@ -139,7 +138,7 @@ def test_durations():
     print(f"Checking effect of durations ... ")
     base = sum(sim_base.results.switchers)
     short = sum(sim_short.results.switchers)
-    assert base < short, f'Shorted durations should mean more switching, but {short}<{base}'
+    assert base < short, f'Shorter durations should mean more switching, but {short}<{base}'
     print(f"✓ ({base:.2f} < {short:.2f})")
 
     return [sim_base, sim_short]
