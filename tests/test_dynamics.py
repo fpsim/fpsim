@@ -41,7 +41,7 @@ def make_sim(label='Baseline', intvs=None, analyzers=None, location=None, **kwar
     return sim
 
 
-def test_mcpr(location=None):
+def test_mcpr(location=None, do_plot=False):
     sc.heading('Testing that mCPR changes as expected with its covariates...')
 
     # Create covariate changes
@@ -113,27 +113,28 @@ def test_mcpr(location=None):
     print(f"✗ (TEST FAILS: mCPR DOES NOT INCREASE WITH ALL COVARIATES) - NEED TO DEBUG")
 
     # Plot
-    fig, axes = plt.subplots(2, 2, figsize=(12, 6))
-    axes = axes.flatten()
-    for ri, covar in enumerate(covars):
-        ax = axes[ri]
-        ax.plot(sims[0].results.t, covar.base, label='Baseline')
-        ax.plot(sims[ri+1].results.t, covar.intv, label=f'Increased {covar.pplattr}')
-        ax.set_title(f'{covar.pplattr}')
-        ax.set_xlabel('Year')
-        ax.legend()
-    fig.tight_layout()
-    plt.show()
+    if do_plot:
+        fig, axes = plt.subplots(2, 2, figsize=(12, 6))
+        axes = axes.flatten()
+        for ri, covar in enumerate(covars):
+            ax = axes[ri]
+            ax.plot(sims[0].results.t, covar.base, label='Baseline')
+            ax.plot(sims[ri+1].results.t, covar.intv, label=f'Increased {covar.pplattr}')
+            ax.set_title(f'{covar.pplattr}')
+            ax.set_xlabel('Year')
+            ax.legend()
+        fig.tight_layout()
+        plt.show()
 
-    fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-    ax.plot(sims[0].results.t, sims[0].results.mcpr, label=sims[0].label)
-    for ri, covar in enumerate(covars):
-        ax.plot(sims[ri+1].results.t, covar.mcpr, label=covar.pplattr)
-    ax.set_ylabel('mCPR')
-    ax.set_xlabel('Year')
-    plt.legend()
-    fig.tight_layout()
-    plt.show()
+        fig, ax = plt.subplots(1, 1, figsize=(12, 6))
+        ax.plot(sims[0].results.t, sims[0].results.mcpr, label=sims[0].label)
+        for ri, covar in enumerate(covars):
+            ax.plot(sims[ri+1].results.t, covar.mcpr, label=covar.pplattr)
+        ax.set_ylabel('mCPR')
+        ax.set_xlabel('Year')
+        plt.legend()
+        fig.tight_layout()
+        plt.show()
 
     return sims
 
@@ -168,7 +169,7 @@ def test_durations(location=None):
 
 if __name__ == '__main__':
 
-    sims1 = test_mcpr()
+    sims1 = test_mcpr(do_plot=False)
     sims2 = test_durations()
 
     print('Done.')
