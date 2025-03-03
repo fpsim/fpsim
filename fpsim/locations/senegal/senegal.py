@@ -680,6 +680,15 @@ def education_distributions():
     return education_dict, education_data
 
 
+def process_contra_use_pars():
+    raw_pars = pd.read_csv(thisdir / 'data' / 'contra_coef.csv')
+    pars = sc.objdict()
+    for var_dict in raw_pars.to_dict('records'):
+        var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
+        pars[var_name] = var_dict['Estimate']
+    return pars
+
+
 def process_contra_use(which):
     """
     Process cotraceptive use parameters.
