@@ -11,6 +11,7 @@ serial   = 1 # Whether to run in serial (for debugging)
 
 
 def make_sim_parts(location=None, new_p_use_pars=True):
+    location = 'kenya'
     par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1)
     pars = fp.pars(location=location, **par_kwargs)
     edu = fp.Education(location=location)
