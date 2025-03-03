@@ -17,13 +17,13 @@ import starsim as ss
 serial = 1  # For testing purposes
 
 
-def custom_init(sim, force=False, age=None, sex=None, empowerment_module=None, education_module=None, person_defaults=None):
+def custom_init(sim, force=False, init_contra=True, age=None, sex=None, empowerment_module=None, education_module=None, person_defaults=None):
     if force or not sim.initialized:
         sim.ti = 0  # The current time index
         fpu.set_seed(sim['seed'])
         sim.init_results()
         sim.people=fpppl.People(pars=sim.pars, age=age, sex=sex, empowerment_module=empowerment_module, education_module=education_module, person_defaults=person_defaults )  # This step also initializes the empowerment and education modules if provided
-        sim.init_contraception()  # Initialize contraceptive methods
+        if init_contra: sim.init_contraception()  # Initialize contraceptive methods
         sim.initialized = True
         sim.pars['verbose'] = -1
     return sim
@@ -330,7 +330,10 @@ def test_education_preg():
 
     sim_preg = fp.Sim(pars=pars)
     edu_preg = fp.Education()
-    sim_preg = custom_init(sim_preg, age=15, sex=0, education_module=edu_preg, person_defaults={'pregnant': True, 'on_contra': False})
+    sim_preg = custom_init(sim_preg, init_contra=False, age=15, sex=0, education_module=edu_preg, person_defaults={'pregnant': True, 'on_contra': False, 'method': 0, 'ti_contra': 12})
+    cm = fp.StandardChoice()
+    sim_preg.contraception_module = cm
+    sim_preg.people.contraception_module = cm
 
     m = fp.parallel([sim_base, sim_preg], serial=serial, compute_stats=False)
     sim_base, sim_preg = m.sims[:]  # Replace with run versions
