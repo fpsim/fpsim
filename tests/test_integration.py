@@ -330,7 +330,7 @@ def test_education_preg():
 
     sim_preg = fp.Sim(pars=pars)
     edu_preg = fp.Education()
-    sim_preg = custom_init(sim_preg, age=15, sex=0, education_module=edu_preg, person_defaults={'pregnant': True})
+    sim_preg = custom_init(sim_preg, age=15, sex=0, education_module=edu_preg, person_defaults={'pregnant': True, 'on_contra': False})
 
     m = fp.parallel([sim_base, sim_preg], serial=serial, compute_stats=False)
     sim_base, sim_preg = m.sims[:]  # Replace with run versions
