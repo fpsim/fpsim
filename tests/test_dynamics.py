@@ -168,8 +168,8 @@ def test_durations(location=None):
 
 if __name__ == '__main__':
 
-    # sims1 = test_mcpr()
-    # sims2 = test_durations()
+    sims1 = test_mcpr()
+    sims2 = test_durations()
 
     print('Done.')
 
