@@ -6,7 +6,7 @@ import sciris as sc
 import fpsim as fp
 
 serial  = 0
-do_plot = 1
+do_plot = 0
 sc.options(backend='agg') # Turn off interactive plots
 
 

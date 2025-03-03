@@ -41,9 +41,6 @@ def test_null(do_plot=do_plot):
         assert n == 0, f'Expecting {key} to be 0, not {n}'
         ok(f'{key} was 0, as expected')
 
-    if do_plot:
-        sim.plot()
-
     return sim
 
 

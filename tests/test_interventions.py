@@ -9,7 +9,7 @@ import numpy as np
 import pytest
 
 serial   = 1 # Whether to run in serial (for debugging)
-do_plot  = 1 # Whether to do plotting in interactive mode
+do_plot  = 0 # Whether to do plotting in interactive mode
 # sc.options(backend='agg') # Turn off interactive plots
 
 

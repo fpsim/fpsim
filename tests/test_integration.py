@@ -16,13 +16,14 @@ import starsim as ss
 
 serial = 1  # For testing purposes
 
-def custom_init(sim, force=False, age=None, sex=None, empowerment_module=None, education_module=None, person_defaults=None):
+
+def custom_init(sim, force=False, init_contra=True, age=None, sex=None, empowerment_module=None, education_module=None, person_defaults=None):
     if force or not sim.initialized:
         sim.ti = 0  # The current time index
         fpu.set_seed(sim['seed'])
         sim.init_results()
         sim.people=fpppl.People(pars=sim.pars, age=age, sex=sex, empowerment_module=empowerment_module, education_module=education_module, person_defaults=person_defaults )  # This step also initializes the empowerment and education modules if provided
-        sim.init_contraception()  # Initialize contraceptive methods
+        if init_contra: sim.init_contraception()  # Initialize contraceptive methods
         sim.initialized = True
         sim.pars['verbose'] = -1
     return sim
@@ -34,7 +35,7 @@ def test_pregnant_women():
     # start out 24f, no contra, no pregnancy, active, fertile, has_intent
     methods = ss.ndict([
         fpm.Method(name='none', efficacy=0, modern=False, dur_use=fpm.ln(2, 3), label='None'),
-        fpm.Method(name='test',     efficacy=0.0, modern=True,  dur_use=fpm.ln(2, 3), label='Test'),
+        fpm.Method(name='test', efficacy=0.0, modern=True,  dur_use=fpm.ln(2, 3), label='Test'),
     ])
     contra_mod = fpm.RandomChoice(methods=methods)
 
@@ -319,6 +320,36 @@ def test_method_selection_dependencies():
     return sim1
 
 
+def test_education_preg():
+    sc.heading('Testing that lower fertility rate leads to more education...')
+
+    pars = dict(start_year=2000, end_year=2010, n_agents=1000, verbose=0.1)
+    sim_base = fp.Sim(pars=pars)
+    edu_base = fp.Education()
+    sim_base = custom_init(sim_base, age=15, sex=0, education_module=edu_base)
+
+    sim_preg = fp.Sim(pars=pars)
+    edu_preg = fp.Education()
+    sim_preg = custom_init(sim_preg, init_contra=False, age=15, sex=0, education_module=edu_preg, person_defaults={'pregnant': True, 'on_contra': False, 'method': 0, 'ti_contra': 12})
+    cm = fp.StandardChoice()
+    sim_preg.contraception_module = cm
+    sim_preg.people.contraception_module = cm
+
+    m = fp.parallel([sim_base, sim_preg], serial=serial, compute_stats=False)
+    sim_base, sim_preg = m.sims[:]  # Replace with run versions
+
+    # Check that education has increased
+    base_edu = sim_base.results.edu_attainment[-1]
+    preg_edu = sim_preg.results.edu_attainment[-1]
+    base_births = sum(sim_base.results.births)
+    preg_births = sum(sim_preg.results.births)
+    assert base_births < preg_births, f'With more pregnancy there should be more births, but {preg_births}<{base_births}'
+    assert preg_edu < base_edu, f'With more pregnancy there should be lower education levels, but {preg_edu}>{base_edu}'
+    print(f"✓ (Higher teen pregnancy ({preg_births:.0f} vs {base_births:.0f}) -> less education ({preg_edu:.2f} < {base_edu:.2f}))")
+
+    return sim_base, sim_preg
+
+
 def plot_results(sim):
     # Plots
     fig, axes = pl.subplots(2, 2, figsize=(10, 7))
@@ -364,6 +395,7 @@ if __name__ == '__main__':
     s2 = test_contraception()
     s3, s4, s5 = test_simplechoice_contraception_dependencies()
     s6 = test_method_selection_dependencies()
+    s7, s8 = test_education_preg()
     print("All tests passed!")
 
 
