@@ -254,11 +254,11 @@ class Sim(ss.Sim):
             'stillbirth_rate': 'stillbirth',
         }
 
-        self['mortality_probs'] = {}
+        self.fp_pars['mortality_probs'] = {}
         for key1, key2 in mapping.items():
-            ind = sc.findnearest(self[key1]['year'], self.y)
-            val = self[key1]['probs'][ind]
-            self['mortality_probs'][key2] = val
+            ind = sc.findnearest(self.fp_pars[key1]['year'], self.y)
+            val = self.fp_pars[key1]['probs'][ind]
+            self.fp_pars['mortality_probs'][key2] = val
 
         return
 
@@ -334,11 +334,16 @@ class Sim(ss.Sim):
         new_people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
         self.people += new_people
 
+    def start_step(self):
+        super().start_step()
+        self.update_mortality()
+        self.people.step()
+
     def step(self):
         """ Update logic of a single time step """
 
         # Update mortality probabilities for year of sim
-        self.update_mortality()
+        # self.update_mortality()
 
         # # Update the people
         # self.people.ti = self.ti
@@ -346,10 +351,10 @@ class Sim(ss.Sim):
         # self.people.y = self.y
 
         # Step forward people's states and attributes
-        self.people.step()
+        # self.people.step()
 
         # Apply interventions
-        self.apply_interventions()
+        #self.apply_interventions()
 
         # Populate the circular buffers with data from Peoples states that
         # are needed for methods/classes that use historical data (eg, need previous year's data)
