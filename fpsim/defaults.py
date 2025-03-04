@@ -6,6 +6,7 @@ import numpy as np
 import sciris as sc
 import starsim as ss
 import fpsim.settings as fps
+import fpsim.arrays as fpa
 
 from . import base as fpb
 
@@ -161,6 +162,17 @@ person_defaults = [
     ss.FloatArr('edu_interrupted', default=0),
     ss.FloatArr('edu_completed', default=0),
     ss.FloatArr('edu_started', default=0),
+
+    # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
+    # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and
+    # pregnancy outcomes.
+    #self.child_inds = np.full(max_parity, -1, int),
+    fpa.MultiFloat('birth_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of live births
+    fpa.MultiFloat('stillborn_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of stillbirths
+    fpa.MultiFloat('miscarriage_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of miscarriages
+    fpa.MultiFloat('abortion_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of abortions
+    # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
+
 
 
 ]
