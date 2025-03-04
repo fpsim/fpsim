@@ -510,10 +510,15 @@ class People(ss.People):
             pref = self.sim.fp_pars['spacing_pref']  # Shorten since used a lot
             spacing_bins = self.postpartum_dur[pp] / pref['interval']  # Main calculation: divide the duration by the interval
             spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int)  # Bound by longest bin
-            probs_pp = self.sim.fp_pars['sexual_activity_pp']['percent_active'][self.postpartum_dur[pp]]
+            probs_pp = self.sim.fp_pars['sexual_activity_pp']['percent_active'][(self.postpartum_dur[pp]).astype(int)]
             # Adjust the probability: check the overall probability with print(pref['preference'][spacing_bins].mean())
             probs_pp *= pref['preference'][spacing_bins]
-            self.sexually_active[pp] = fpu.binomial_arr(probs_pp)
+            # self.sexually_active[pp] = fpu.binomial_arr(probs_pp)
+            self.binom.set(p=probs_pp)
+            sexually_active, sexually_inactive = self.binom.filter(pp, both=True)
+            self.sexually_active[sexually_inactive] = False
+            self.sexually_active[sexually_active] = True
+
 
         # Set non-postpartum probabilities
         if len(non_pp):
@@ -637,12 +642,12 @@ class People(ss.People):
         max_lam_dur = self.sim.fp_pars['max_lam_dur']
         lam_candidates = uids[(self.postpartum[uids]) * (self.postpartum_dur[uids] <= max_lam_dur)]
         if len(lam_candidates) > 0:
-            probs = self.sim.fp_pars['lactational_amenorrhea']['rate'][self.postpartum_dur[lam_candidates]]
+            probs = self.sim.fp_pars['lactational_amenorrhea']['rate'][(self.postpartum_dur[lam_candidates]).astype(int)]
 
             self.binom.set(p=probs)
-            self.lam[lam_candidates] = self.binom.filter(lam_candidates)
-
-        # lam_candidates.lam = lam_candidates.binomial(probs)
+            lam_true, lam_false = self.binom.filter(lam_candidates, both=True)
+            self.lam[lam_false] = False
+            self.lam[lam_true] = True
 
         not_postpartum = uids[self.postpartum[uids] == 0]
         over5mo = self.postpartum_dur[uids] > max_lam_dur
@@ -761,7 +766,7 @@ class People(ss.People):
 
         self.sim.results['infant_deaths'][self.sim.ti] += len(death)
         self.reset_breastfeeding(death)
-        self.ti_contra[death] = self.ti + 1  # Trigger update to contraceptive choices following infant death
+        self.ti_contra[death] = self.sim.ti + 1  # Trigger update to contraceptive choices following infant death
         return death
 
     def process_delivery(self, uids):
@@ -806,21 +811,23 @@ class People(ss.People):
             self.sim.results['births'][self.sim.ti] += 2 * len(twin)  # only add births to population if born alive
             self.sim.results['births'][self.sim.ti] += len(single)
 
-
             # Record ages of agents when live births / stillbirths occur
             for parity in np.unique(self.parity[single]):
                 #todo verify the indices align between birth_ages and uids
-                inds = single[self.parity[single] == parity]
-                self.birth_ages[inds, parity] = self.age[inds]
-                if parity == 0: self.first_birth_age[inds] = self.age[inds]
+                single_uids = single[self.parity[single] == parity]
+                for uid in single_uids:
+                    self.birth_ages[ss.uids(uid)][int(parity)] = self.age[ss.uids(uid)]
+                if parity == 0: self.first_birth_age[single_uids] = self.age[single_uids]
             for parity in np.unique(self.parity[twin]):
-                inds = twin[self.parity[twin] == parity]
-                self.birth_ages[inds, parity] = self.age[inds]
-                self.birth_ages[inds, parity + 1] = self.age[inds]
-                if parity == 0: self.first_birth_age[inds] = self.age[inds]
+                twin_uids = twin[self.parity[twin] == parity]
+                for uid in twin_uids:
+                    self.birth_ages[uid][int(parity)] = self.age[uid]
+                    self.birth_ages[uid][int(parity) + 1] = self.age[uid]
+                if parity == 0: self.first_birth_age[twin_uids] = self.age[twin_uids]
             for parity in np.unique(self.parity[stillborn]):
-                inds = stillborn[self.parity[stillborn] == parity]
-                self.stillborn_ages[inds, parity] = self.age[inds]
+                uids = stillborn[self.parity[stillborn] == parity]
+                for uid in uids:
+                    self.stillborn_ages[uid][int(parity)] = self.age[uid]
 
             self.parity[single] += 1
             self.parity[twin] += 2  # Add 2 because matching DHS "total children ever born (alive) v201"
@@ -829,26 +836,29 @@ class People(ss.People):
             prev_birth_single = single[self.parity[single] > 1]
             prev_birth_twins = twin[self.parity[twin] > 2]
             if len(prev_birth_single):
-                pidx = self.parity[prev_birth_single] - 1
-                all_ints = self.birth_ages[prev_birth_single][:, pidx] - self.birth_ages[prev_birth_single][:, pidx-1]
+                pidx = (self.parity[prev_birth_single] - 1).astype(int)
+                all_ints = [self.birth_ages[r][pidx] - self.birth_ages[r][pidx-1] for r in prev_birth_single]
+                #all_ints = self.birth_ages[prev_birth_single][pidx] - self.birth_ages[prev_birth_single][pidx-1]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
                 short_ints = np.count_nonzero(latest_ints < (self.sim.fp_pars['short_int']/fpd.mpy))
                 self.sim.results['short_intervals'][self.sim.ti] += short_ints
             if len(prev_birth_twins):
-                pidx = self.parity[prev_birth_twins] - 2
-                all_ints = self.birth_ages[prev_birth_twins][:, pidx] - self.birth_ages[prev_birth_twins][:, pidx-1]
+                pidx = (self.parity[prev_birth_twins] - 2).astype(int)
+                all_ints = [self.birth_ages[r][pidx] - self.birth_ages[r][pidx-1] for r in prev_birth_twins]
+                #all_ints = self.birth_ages[prev_birth_twins][:, pidx] - self.birth_ages[prev_birth_twins][:, pidx-1]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
                 short_ints = np.count_nonzero(latest_ints < (self.sim.fp_pars['short_int']/fpd.mpy))
                 self.sim.results['short_intervals'][self.sim.ti] += short_ints
 
             # Calculate total births
-            self.sim.results['total_births'][self.sim.ti] = len(stillborn) + self.step_results['births']
+            self.sim.results['total_births'][self.sim.ti] = len(stillborn) + self.sim.results['births'][self.sim.ti]
 
             live_age = self.age[live]
             for key, (age_low, age_high) in fpd.age_bin_map.items():
-                match_low_high = fpu.match_ages(live_age, age_low, age_high)
-                birth_bins = np.sum(match_low_high)
-                self.sim.results['birth_bins'][key][self.sim.ti] += birth_bins
+                match_low_high = live[(self.age[live] >=age_low) & (self.age[live] < age_high)]
+                birth_bins = len(match_low_high)
+
+                self.sim.results[f'total_births_{key}'][self.sim.ti] += birth_bins
 
             # Check mortality
             maternal_deaths = self.check_maternal_mortality(live)  # Mothers of only live babies eligible to match definition of maternal mortality ratio
