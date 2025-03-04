@@ -173,7 +173,7 @@ class Sim(ss.Sim):
         if force or not self.initialized:
 
             if self.pars.people is None:
-                self.pars.people = fpppl.People(n_agents=1000)
+                self.pars.people = fpppl.People(n_agents=1000, age_data=self.fp_pars['age_pyramid'])
 
             super().init(force=force)
             #self.ti = 0  # The current time index
