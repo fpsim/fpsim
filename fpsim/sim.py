@@ -202,18 +202,15 @@ class Sim(ss.Sim):
 
         for key in fpd.list_results:
             self.results += ss.Result(key, label=key, **kw)
-            # self.results[key] = []
 
         # Store age-specific fertility rates
-        # self.results += ss.Result('asfr', label='asfr', **kw)
-        # self.results['asfr'] = {}
         self.results += ss.Result('method_usage', label='method_usage', **kw)
         # self.results['method_usage'] = []
         for key in fpd.age_bin_map.keys():
             self.results += ss.Result(f'asfr_{key}', label=f'asfr_{key}', **kw)
             self.results += ss.Result(f'tfr_{key}', label=f'tfr_{key}', **kw)
-            # self.results[f'asfr_{key}'] = []
-            # self.results[f"tfr_{key}"] = []
+            self.results[f'asfr_{key}'] = []
+            self.results[f"tfr_{key}"] = []
 
         return
 
@@ -251,17 +248,7 @@ class Sim(ss.Sim):
 
         return
 
-    def update_mothers(self):
-        """
-        Add link between newly added individuals and their mothers
-        TODO: move to People?
-        """
-        all_ppl = self.people.unfilter()
-        for mother_index, postpartum in enumerate(all_ppl.postpartum):
-            if postpartum and all_ppl.postpartum_dur[mother_index] < 2:
-                for child in all_ppl.children[mother_index]:
-                    all_ppl.mothers[child] = mother_index
-        return
+
 
     def apply_interventions(self):
         """ Apply each intervention in the model """
@@ -328,48 +315,33 @@ class Sim(ss.Sim):
         self.update_mortality()
         self.people.step()
 
-    def step(self):
-        """ Update logic of a single time step """
-
-        # Update mortality probabilities for year of sim
-        # self.update_mortality()
-
-        # # Update the people
-        # self.people.ti = self.ti
-        # self.people.ty = self.ty
-        # self.people.y = self.y
-
-        # Step forward people's states and attributes
-        # self.people.step()
-
-        # Apply interventions
-        #self.apply_interventions()
-
+        # todo move to analyzer
         # Populate the circular buffers with data from Peoples states that
         # are needed for methods/classes that use historical data (eg, need previous year's data)
-        self.people.update_history_buffer()
+        # self.people.update_history_buffer()
+
+    # def step(self):
+    #     """ Update logic of a single time step """
 
         # Count results for this step
-        step_results = self.people.get_step_results()
+        #step_results = self.people.get_step_results()
 
         # Store results
-        res = sc.dictobj(**step_results)
-        self.update_results(res, self.ti)
+        #res = sc.dictobj(**step_results)
+        #self.update_results(res, self.ti)
 
         # Add births
-        n_new_people = res.births - res.infant_deaths  # Do not add agents who died before age 1 to population
-        if n_new_people > 0: self.grow_population(n_new_people)
+        # n_new_people = res.births - res.infant_deaths  # Do not add agents who died before age 1 to population
+        # if n_new_people > 0: self.grow_population(n_new_people)
 
-        # Update mothers
-        if self.track_children:
-            self.update_mothers()
 
-        # Lastly, update analyzers. Needs to happen at the end of the sim as they report on events from this timestep
-        self.apply_analyzers()
 
-        self.people.step_age()
-
-        return res
+        # # Lastly, update analyzers. Needs to happen at the end of the sim as they report on events from this timestep
+        # self.apply_analyzers()
+        #
+        # self.people.step_age()
+        #
+        # return res
 
     # def run(self, verbose=None):
     #     """ Run the simulation """
@@ -425,126 +397,126 @@ class Sim(ss.Sim):
     #
     #     return self
 
-    def update_results(self, res, ti):
-        percent0to5 = (res.pp0to5 / res.total_women_fecund) * 100
-        percent6to11 = (res.pp6to11 / res.total_women_fecund) * 100
-        percent12to23 = (res.pp12to23 / res.total_women_fecund) * 100
-        nonpostpartum = ((res.total_women_fecund - res.pp0to5 - res.pp6to11 - res.pp12to23) / res.total_women_fecund) * 100
-
-        # Store results
-        if self['scaled_pop']:
-            scale = self['scaled_pop'] / self['n_agents']
-        else:
-            scale = 1
-        self.results['t'][ti] = self.tvec[ti]
-        self.results['pop_size_months'][ti] = self.n * scale
-        self.results['births'][ti] = res.births * scale
-        self.results['deaths'][ti] = res.deaths * scale
-        self.results['stillbirths'][ti] = res.stillbirths * scale
-        self.results['miscarriages'][ti] = res.miscarriages * scale
-        self.results['abortions'][ti] = res.abortions * scale
-        self.results['short_intervals'][ti] = res.short_intervals * scale
-        self.results['secondary_births'][ti] = res.secondary_births * scale
-        self.results['pregnancies'][ti] = res.pregnancies * scale
-        self.results['total_births'][ti] = res.total_births * scale
-        self.results['maternal_deaths'][ti] = res.maternal_deaths * scale
-        self.results['infant_deaths'][ti] = res.infant_deaths * scale
-        self.results['on_methods_mcpr'][ti] = res.on_methods_mcpr
-        self.results['no_methods_mcpr'][ti] = res.no_methods_mcpr
-        self.results['on_methods_cpr'][ti] = res.on_methods_cpr
-        self.results['no_methods_cpr'][ti] = res.no_methods_cpr
-        self.results['on_methods_acpr'][ti] = res.on_methods_acpr
-        self.results['no_methods_acpr'][ti] = res.no_methods_acpr
-        self.results['contra_access'][ti] = res.contra_access
-        self.results['new_users'][ti] = res.new_users
-        self.results['ever_used_contra'][ti] = res.ever_used_contra
-        self.results['switchers'][ti] = res.switchers
-        self.results['urban_women'][ti] = res.urban_women
-        self.results['mcpr'][ti] = sc.safedivide(res.on_methods_mcpr, (res.no_methods_mcpr + res.on_methods_mcpr))
-        self.results['cpr'][ti] = sc.safedivide(res.on_methods_cpr, (res.no_methods_cpr + res.on_methods_cpr))
-        self.results['acpr'][ti] = sc.safedivide(res.on_methods_acpr, (res.no_methods_acpr + res.on_methods_acpr))
-        self.results['pp0to5'][ti] = percent0to5
-        self.results['pp6to11'][ti] = percent6to11
-        self.results['pp12to23'][ti] = percent12to23
-        self.results['parity0to1'][ti] = res.parity0to1
-        self.results['parity2to3'][ti] = res.parity2to3
-        self.results['parity4to5'][ti] = res.parity4to5
-        self.results['parity6plus'][ti] = res.parity6plus
-        self.results['wq1'][ti] = res.wq1
-        self.results['wq2'][ti] = res.wq2
-        self.results['wq3'][ti] = res.wq3
-        self.results['wq4'][ti] = res.wq4
-        self.results['wq5'][ti] = res.wq5
-        self.results['nonpostpartum'][ti] = nonpostpartum
-        self.results['total_women_fecund'][ti] = res.total_women_fecund * scale
-        self.results['method_failures'][ti] = res.method_failures * scale
-
-        # Education metrics
-        self.results['edu_attainment'][ti] = res.edu_attainment
-        self.results['edu_objective'][ti] = res.edu_objective
-
-        # Intent
-        # These will all be zero if empowerment module is not provided
-        # Not used except for within kenya_empowerment repo
-        if self.empowerment_module is not None:
-            self.results['perc_contra_intent'][ti] = res.perc_contra_intent
-            self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
-
-            # Empowerment metrics
-            # These will all be zero if empowerment module is not provided
-            # Not used except for within kenya_empowerment repo
-            self.results['paid_employment'][ti] = res.paid_employment
-            self.results['decision_wages'][ti] = res.decision_wages
-            self.results['decide_spending_partner'][ti] = res.decide_spending_partner
-            self.results['buy_decision_major'][ti] = res.buy_decision_major
-            self.results['buy_decision_daily'][ti] = res.buy_decision_daily
-            self.results['buy_decision_clothes'][ti] = res.buy_decision_clothes
-            self.results['decision_health'][ti] = res.decision_health
-            self.results['has_savings'][ti] = res.has_savings
-            self.results['has_fin_knowl'][ti] = res.has_fin_knowl
-            self.results['has_fin_goals'][ti] = res.has_fin_goals
-            #self.results['financial_autonomy'][ti] = res.financial_autonomy
-            #self.results['decision_making'][ti] = res.decision_making
-
-        for agekey in fpd.age_bin_map.keys():
-            births_key = f'total_births_{agekey}'
-            women_key = f'total_women_{agekey}'
-            self.results[births_key][ti] = res.birth_bins[
-                                              agekey] * scale  # Store results of total births per age bin for ASFR
-            self.results[women_key][ti] = res.age_bin_totals[
-                                             agekey] * scale  # Store results of total fecund women per age bin for ASFR
-
-        scale = self.scale
-        time_months = int(self.ti * self.pars["timestep"])  # time since the beginning of the sim, expresse in months
-        # Calculate metrics over the last year in the model and save whole years and stats to an array
-        if (time_months >= fpd.mpy) and (time_months % fpd.mpy) == 0:  # Start calculating annual metrics after we have at least 1 year of data
-            self.results['tfr_years'].append(self.y-1.0)  # Substract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
-            stop_index = self.ti
-            start_index = stop_index - self.tiperyear
-            for res_name, new_res_name in fpd.to_annualize.items():
-                res_over_year = self.annualize_results(res_name, start_index, stop_index)
-                annual_res_name = f'{new_res_name}_over_year'
-                self.results[annual_res_name].append(res_over_year)
-
-            # self.results['method_usage'].append(self.compute_method_usage())  # only want this per year
-            self.results['pop_size'].append(scale * self.n)  # CK: TODO: replace with arrays
-            self.results['mcpr_by_year'].append(self.results['mcpr'][ti])
-            self.results['cpr_by_year'].append(self.results['cpr'][ti])
-
-            # Calculate annual ratios
-            self.calculate_annual_ratios()
-
-            tfr = 0
-            for key in fpd.age_bin_map.keys():
-                age_bin_births_year = np.sum(self.results['total_births_' + key][start_index:stop_index])
-                age_bin_total_women_year = self.results['total_women_' + key][stop_index]
-                age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
-                self.results['asfr'][key].append(age_bin_births_per_woman * 1000)
-                self.results[f'tfr_{key}'].append(age_bin_births_per_woman * 1000)
-                tfr += age_bin_births_per_woman  # CK: TODO: check if this is right
-
-            self.results['tfr_rates'].append(
-                tfr * 5)  # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
+    # def update_results(self, res, ti):
+    #     percent0to5 = (res.pp0to5 / res.total_women_fecund) * 100
+    #     percent6to11 = (res.pp6to11 / res.total_women_fecund) * 100
+    #     percent12to23 = (res.pp12to23 / res.total_women_fecund) * 100
+    #     nonpostpartum = ((res.total_women_fecund - res.pp0to5 - res.pp6to11 - res.pp12to23) / res.total_women_fecund) * 100
+    #
+    #     # Store results
+    #     if self['scaled_pop']:
+    #         scale = self['scaled_pop'] / self['n_agents']
+    #     else:
+    #         scale = 1
+    #     self.results['t'][ti] = self.tvec[ti]
+    #     self.results['pop_size_months'][ti] = self.n * scale
+    #     self.results['births'][ti] = res.births * scale
+    #     self.results['deaths'][ti] = res.deaths * scale
+    #     self.results['stillbirths'][ti] = res.stillbirths * scale
+    #     self.results['miscarriages'][ti] = res.miscarriages * scale
+    #     self.results['abortions'][ti] = res.abortions * scale
+    #     self.results['short_intervals'][ti] = res.short_intervals * scale
+    #     self.results['secondary_births'][ti] = res.secondary_births * scale
+    #     self.results['pregnancies'][ti] = res.pregnancies * scale
+    #     self.results['total_births'][ti] = res.total_births * scale
+    #     self.results['maternal_deaths'][ti] = res.maternal_deaths * scale
+    #     self.results['infant_deaths'][ti] = res.infant_deaths * scale
+    #     self.results['on_methods_mcpr'][ti] = res.on_methods_mcpr
+    #     self.results['no_methods_mcpr'][ti] = res.no_methods_mcpr
+    #     self.results['on_methods_cpr'][ti] = res.on_methods_cpr
+    #     self.results['no_methods_cpr'][ti] = res.no_methods_cpr
+    #     self.results['on_methods_acpr'][ti] = res.on_methods_acpr
+    #     self.results['no_methods_acpr'][ti] = res.no_methods_acpr
+    #     self.results['contra_access'][ti] = res.contra_access
+    #     self.results['new_users'][ti] = res.new_users
+    #     self.results['ever_used_contra'][ti] = res.ever_used_contra
+    #     self.results['switchers'][ti] = res.switchers
+    #     self.results['urban_women'][ti] = res.urban_women
+    #     self.results['mcpr'][ti] = sc.safedivide(res.on_methods_mcpr, (res.no_methods_mcpr + res.on_methods_mcpr))
+    #     self.results['cpr'][ti] = sc.safedivide(res.on_methods_cpr, (res.no_methods_cpr + res.on_methods_cpr))
+    #     self.results['acpr'][ti] = sc.safedivide(res.on_methods_acpr, (res.no_methods_acpr + res.on_methods_acpr))
+    #     self.results['pp0to5'][ti] = percent0to5
+    #     self.results['pp6to11'][ti] = percent6to11
+    #     self.results['pp12to23'][ti] = percent12to23
+    #     self.results['parity0to1'][ti] = res.parity0to1
+    #     self.results['parity2to3'][ti] = res.parity2to3
+    #     self.results['parity4to5'][ti] = res.parity4to5
+    #     self.results['parity6plus'][ti] = res.parity6plus
+    #     self.results['wq1'][ti] = res.wq1
+    #     self.results['wq2'][ti] = res.wq2
+    #     self.results['wq3'][ti] = res.wq3
+    #     self.results['wq4'][ti] = res.wq4
+    #     self.results['wq5'][ti] = res.wq5
+    #     self.results['nonpostpartum'][ti] = nonpostpartum
+    #     self.results['total_women_fecund'][ti] = res.total_women_fecund * scale
+    #     self.results['method_failures'][ti] = res.method_failures * scale
+    #
+    #     # Education metrics
+    #     self.results['edu_attainment'][ti] = res.edu_attainment
+    #     self.results['edu_objective'][ti] = res.edu_objective
+    #
+    #     # Intent
+    #     # These will all be zero if empowerment module is not provided
+    #     # Not used except for within kenya_empowerment repo
+    #     if self.empowerment_module is not None:
+    #         self.results['perc_contra_intent'][ti] = res.perc_contra_intent
+    #         self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
+    #
+    #         # Empowerment metrics
+    #         # These will all be zero if empowerment module is not provided
+    #         # Not used except for within kenya_empowerment repo
+    #         self.results['paid_employment'][ti] = res.paid_employment
+    #         self.results['decision_wages'][ti] = res.decision_wages
+    #         self.results['decide_spending_partner'][ti] = res.decide_spending_partner
+    #         self.results['buy_decision_major'][ti] = res.buy_decision_major
+    #         self.results['buy_decision_daily'][ti] = res.buy_decision_daily
+    #         self.results['buy_decision_clothes'][ti] = res.buy_decision_clothes
+    #         self.results['decision_health'][ti] = res.decision_health
+    #         self.results['has_savings'][ti] = res.has_savings
+    #         self.results['has_fin_knowl'][ti] = res.has_fin_knowl
+    #         self.results['has_fin_goals'][ti] = res.has_fin_goals
+    #         #self.results['financial_autonomy'][ti] = res.financial_autonomy
+    #         #self.results['decision_making'][ti] = res.decision_making
+    #
+    #     for agekey in fpd.age_bin_map.keys():
+    #         births_key = f'total_births_{agekey}'
+    #         women_key = f'total_women_{agekey}'
+    #         self.results[births_key][ti] = res.birth_bins[
+    #                                           agekey] * scale  # Store results of total births per age bin for ASFR
+    #         self.results[women_key][ti] = res.age_bin_totals[
+    #                                          agekey] * scale  # Store results of total fecund women per age bin for ASFR
+    #
+    #     scale = self.scale
+    #     time_months = int(self.ti * self.pars["timestep"])  # time since the beginning of the sim, expresse in months
+    #     # Calculate metrics over the last year in the model and save whole years and stats to an array
+    #     if (time_months >= fpd.mpy) and (time_months % fpd.mpy) == 0:  # Start calculating annual metrics after we have at least 1 year of data
+    #         self.results['tfr_years'].append(self.y-1.0)  # Substract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
+    #         stop_index = self.ti
+    #         start_index = stop_index - self.tiperyear
+    #         for res_name, new_res_name in fpd.to_annualize.items():
+    #             res_over_year = self.annualize_results(res_name, start_index, stop_index)
+    #             annual_res_name = f'{new_res_name}_over_year'
+    #             self.results[annual_res_name].append(res_over_year)
+    #
+    #         # self.results['method_usage'].append(self.compute_method_usage())  # only want this per year
+    #         self.results['pop_size'].append(scale * self.n)  # CK: TODO: replace with arrays
+    #         self.results['mcpr_by_year'].append(self.results['mcpr'][ti])
+    #         self.results['cpr_by_year'].append(self.results['cpr'][ti])
+    #
+    #         # Calculate annual ratios
+    #         self.calculate_annual_ratios()
+    #
+    #         tfr = 0
+    #         for key in fpd.age_bin_map.keys():
+    #             age_bin_births_year = np.sum(self.results['total_births_' + key][start_index:stop_index])
+    #             age_bin_total_women_year = self.results['total_women_' + key][stop_index]
+    #             age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
+    #             self.results['asfr'][key].append(age_bin_births_per_woman * 1000)
+    #             self.results[f'tfr_{key}'].append(age_bin_births_per_woman * 1000)
+    #             tfr += age_bin_births_per_woman  # CK: TODO: check if this is right
+    #
+    #         self.results['tfr_rates'].append(
+    #             tfr * 5)  # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
 
     def finalize(self):
         self.finalize_results()
@@ -624,31 +596,6 @@ class Sim(ss.Sim):
         pp.fillna(0, inplace=True)
         return pp
 
-    def to_df(self, include_range=False):
-        """
-        Export all sim results to a dataframe
-        
-        Args:
-            include_range (bool): if True, and if the sim results have best, high, and low, then export all of them; else just best
-        """
-        raw_res = sc.odict(defaultdict=list)
-        for reskey in self.results.keys():
-            res = self.results[reskey]
-            if isinstance(res, dict):
-                for blh, blhres in res.items():  # Best, low, high
-                    if len(blhres) == self.npts:
-                        if not include_range and blh != 'best':
-                            continue
-                        if include_range:
-                            blhkey = f'{reskey}_{blh}'
-                        else:
-                            blhkey = reskey
-                        raw_res[blhkey] += blhres.tolist()
-            elif sc.isarray(res) and len(res) == self.npts:
-                raw_res[reskey] += res.tolist()
-        df = pd.DataFrame(raw_res)
-        self.df = df
-        return df
 
     # Function to scale all y-axes in fig based on input channel
     @staticmethod
