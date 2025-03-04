@@ -32,16 +32,7 @@ class People(ss.People):
         # Initialization
         super().__init__(n_agents, age_data, extra_states=person_defaults, **kwargs)
 
-        # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
-        # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and
-        # pregnancy outcomes.
-        self.child_inds = np.full(max_parity, -1, int),
-        self.birth_ages = np.full(max_parity, np.nan, float),  # Ages at time of live births
-        self.stillborn_ages = np.full(max_parity, np.nan, float),  # Ages at time of stillbirths
-        self.test = ss.Arr('test', dtype=np.ndarray, default=np.full(max_parity, np.nan, float))
-        self.miscarriage_ages = np.full(max_parity, np.nan, float),  # Ages at time of miscarriages
-        self.abortion_ages = np.full(max_parity, np.nan, float),  # Ages at time of abortions
-        # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
+
 
         # Empowerment and education
         self.empowerment_module = empowerment_module
@@ -81,7 +72,7 @@ class People(ss.People):
         self.urban[self.auids] = _urban  # Urban (1) or rural (0)
 
         # Parameters on sexual and reproductive history
-        self.fertile = fpu.n_binomial(1 - self.sim.fp_pars['primary_infertility'], pars.n_agents) # todo replace with ss dist
+        self.fertile[self.auids] = fpu.n_binomial(1 - self.sim.fp_pars['primary_infertility'], pars.n_agents) # todo replace with ss dist
 
         # Fertility intent
         has_intent = "fertility_intent"
@@ -101,9 +92,9 @@ class People(ss.People):
 
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
         if not self.sim.fp_pars['use_subnational']:
-            self.fated_debut = self.sim.fp_pars['debut_age']['ages'][fpu.n_multinomial(self.sim.fp_pars['debut_age']['probs'], self.sim.pars.n_agents)]
+            self.fated_debut[self.auids] = self.sim.fp_pars['debut_age']['ages'][fpu.n_multinomial(self.sim.fp_pars['debut_age']['probs'], self.sim.pars.n_agents)]
         else:
-            self.fated_debut = fpsn.get_debut_init_vals(self)
+            self.fated_debut[self.auids] = fpsn.get_debut_init_vals(self)
 
         # Fecundity variation
         fv = [self.sim.fp_pars['fecundity_var_low'], self.sim.fp_pars['fecundity_var_high']]
