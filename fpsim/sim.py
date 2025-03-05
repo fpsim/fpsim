@@ -190,37 +190,30 @@ class Sim(ss.Sim):
         """
         super().init_results()  # Initialize the base results
 
-        kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
+        kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int)
 
-        for key in fpd.array_results:
-            self.results += ss.Result(key, label=key, **kw)
-            # self.results[key] = np.zeros(int(self.npts))
+        for key in fpd.scaling_array_results:
+            self.results += ss.Result(key, label=key, scale=True, **kw)
 
+        for key in fpd.nonscaling_array_results:
+            self.results += ss.Result(key, label=key, scale=False, **kw)
 
         # TODO verify all below results are actually Results objects. They may need to be converted to States until they're
         # moved to their final module homes. Some of these arrays should be much shorter than the simulation length
 
         for key in fpd.list_results:
-            self.results += ss.Result(key, label=key, **kw)
+            # self.results += ss.Result(key, label=key, **kw)
+            self.results[key] = []
 
         # Store age-specific fertility rates
-        self.results += ss.Result('method_usage', label='method_usage', **kw)
-        # self.results['method_usage'] = []
+        #self.results += ss.Result('method_usage', label='method_usage', **kw)
+        self.results['asfr'] = {}
         for key in fpd.age_bin_map.keys():
-            self.results += ss.Result(f'asfr_{key}', label=f'asfr_{key}', **kw)
-            self.results += ss.Result(f'tfr_{key}', label=f'tfr_{key}', **kw)
-            self.results[f'asfr_{key}'] = []
+            self.results[f'asfr'][key] = []
             self.results[f"tfr_{key}"] = []
 
         return
 
-    # def init_people(self):
-    #     """
-    #     Initialize people by calling the People constructor and initialization methods.
-    #     See people.py for details of people construction.
-    #     """
-    #     self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
-    #                                 empowerment_module=self.empowerment_module, education_module=self.education_module)
 
     def init_contraception(self):
         if self.fp_pars['contraception_module'] is not None:
@@ -547,20 +540,7 @@ class Sim(ss.Sim):
         # Convert to an objdict for easier access
         self.results = sc.objdict(self.results)
 
-    def annualize_results(self, key, start_index, stop_index):
-        return self.scale * np.sum(self.results[key][start_index:stop_index])
 
-    def calculate_annual_ratios(self):
-        live_births_over_year = self.results['live_births_over_year'][-1]
-
-        maternal_mortality_ratio = sc.safedivide(self.results['maternal_deaths_over_year'][-1], live_births_over_year) * 100000
-        self.results['mmr'].append(maternal_mortality_ratio)
-
-        infant_mortality_rate = sc.safedivide(self.results['infant_deaths_over_year'][-1], live_births_over_year) * 1000
-        self.results['imr'].append(infant_mortality_rate)
-
-        self.results['proportion_short_interval_by_year'].append(sc.safedivide(self.results['short_intervals_over_year'][-1], self.results['secondary_births_over_year'][-1]))
-        return
 
     def store_postpartum(self):
         """
@@ -716,7 +696,7 @@ class Sim(ss.Sim):
 
                 # Figure out x axis
                 years = res['tfr_years']
-                timepoints = res['t']  # Likewise
+                timepoints = res.timevec  # Likewise
                 x = None
                 for x_opt in [years, timepoints]:
                     if len(y) == len(x_opt):
