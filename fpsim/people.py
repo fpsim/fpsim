@@ -600,9 +600,6 @@ class People(ss.People):
         self.binom.set(p=pars['abortion_prob'])
         abort, preg = self.binom.filter(conceived, both=True)
 
-        #abort = conceived.filter(is_abort)
-        #preg = conceived.filter(~is_abort)
-
         # Update states
         n_aborts = len(abort)
         self.sim.results['abortions'][self.sim.ti] = n_aborts
@@ -1160,6 +1157,55 @@ class People(ss.People):
             self._step_results_intent()
             self._step_results_empower()
 
+
+        time_months = int(np.round(self.sim.ti * self.sim.t.dt_year * fpd.mpy))  # time since the beginning of the sim, expresse in months
+
+        # Start calculating annual metrics after we have at least 1 year of data. These are annual metrics, and so are not the same dimensions as a standard results object.
+        if (time_months >= fpd.mpy) and (time_months % fpd.mpy) == 0:
+                res['tfr_years'].append(self.sim.t.yearvec[ti]-1.0)  # Subtract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
+                stop_index = ti
+                start_index = int(stop_index - self.sim.fp_pars['tiperyear'])
+                for res_name, new_res_name in fpd.to_annualize.items():
+                    res_over_year = self.annualize_results(res_name, start_index, stop_index)
+                    annual_res_name = f'{new_res_name}_over_year'
+                    res[annual_res_name].append(res_over_year)
+
+                # res['method_usage'].append(self.compute_method_usage())  # only want this per year
+                res['mcpr_by_year'].append(res['mcpr'][ti])
+                res['cpr_by_year'].append(res['cpr'][ti])
+
+                # Calculate annual ratios
+                self.calculate_annual_ratios()
+
+                tfr = 0
+                for key in fpd.age_bin_map.keys():
+                    age_bin_births_year = np.sum(res['total_births_' + key][start_index:stop_index])
+                    age_bin_total_women_year = res['total_women_' + key][stop_index]
+                    age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
+                    res[f'asfr'][key].append(age_bin_births_per_woman * 1000)
+                    res[f'tfr_{key}'].append(age_bin_births_per_woman * 1000)
+                    tfr += age_bin_births_per_woman
+                res['tfr_rates'].append(tfr * 5)  # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
+
+        return
+
+
+    def annualize_results(self, key, start_index, stop_index):
+        return np.sum(self.sim.results[key][start_index:stop_index])
+
+
+    def calculate_annual_ratios(self):
+
+        # these were all keyed to [-1], but I don't think that makes sense anymore. changing to [self.sim.ti]
+        live_births_over_year = self.sim.results['live_births_over_year'][-1]
+
+        maternal_mortality_ratio = sc.safedivide(self.sim.results['maternal_deaths_over_year'][-1], live_births_over_year) * 100000
+        self.sim.results['mmr'].append(maternal_mortality_ratio)
+
+        infant_mortality_rate = sc.safedivide(self.sim.results['infant_deaths_over_year'][-1], live_births_over_year) * 1000
+        self.sim.results['imr'].append(infant_mortality_rate)
+
+        self.sim.results['proportion_short_interval_by_year'].append(sc.safedivide(self.sim.results['short_intervals_over_year'][-1], self.sim.results['secondary_births_over_year'][-1]))
         return
 
     def _step_results_wq(self):
@@ -1208,13 +1254,7 @@ class People(ss.People):
     #     percent12to23 = (res.pp12to23 / res.total_women_fecund) * 100
     #     nonpostpartum = ((res.total_women_fecund - res.pp0to5 - res.pp6to11 - res.pp12to23) / res.total_women_fecund) * 100
     #
-    #     # Store results
-    #     if self.sim.pars['pop_scale']:
-    #         scale = self.sim.pars['pop_scale']
-    #     else:
-    #         scale = 1
-    #     res['t'][ti] = self.sim.t.yearvec[ti]
-    #     res['pop_size_months'][ti] = self.n * scale
+
     #     res['births'][ti] = res.births * scale
     #     res['deaths'][ti] = res.deaths * scale
     #     res['stillbirths'][ti] = res.stillbirths * scale
