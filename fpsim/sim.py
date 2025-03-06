@@ -190,17 +190,16 @@ class Sim(ss.Sim):
         """
         super().init_results()  # Initialize the base results
 
-        kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int)
+        scaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
 
         for key in fpd.scaling_array_results:
-            self.results += ss.Result(key, label=key, scale=True, **kw)
+            self.results += ss.Result(key, label=key, **scaling_kw)
 
+        nonscaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=float, scale=False)
         for key in fpd.nonscaling_array_results:
-            self.results += ss.Result(key, label=key, scale=False, **kw)
+            self.results += ss.Result(key, label=key, **nonscaling_kw)
 
-        # TODO verify all below results are actually Results objects. They may need to be converted to States until they're
-        # moved to their final module homes. Some of these arrays should be much shorter than the simulation length
-
+        # TODO convert the below to Results objects with the correct shape and dtype
         for key in fpd.list_results:
             # self.results += ss.Result(key, label=key, **kw)
             self.results[key] = []

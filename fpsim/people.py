@@ -367,10 +367,10 @@ class People(ss.People):
                         self.on_contra[must_use] = True
                         # pp0.step_results['contra_access'] += len(must_use)
                         # is it okay to use self instead of pp0 for step results?
-                        self.step_results['contra_access'] += len(must_use)
+                        self.sim.results['contra_access'][self.sim.ti] += len(must_use)
                         self.method[must_use] = cm.choose_method(must_use)
                         self.ever_used_contra[must_use] = 1
-                        self.step_results['new_users'] += np.count_nonzero(self.method[must_use])
+                        self.sim.results['new_users'][self.sim.ti] += np.count_nonzero(self.method[must_use])
 
                 else:
                     choosers = pp0
@@ -470,7 +470,7 @@ class People(ss.People):
             self.postpartum[died] = False,
             self.lam[died] = False,
             self.breastfeed_dur[died] = 0,
-            # self.step_results['deaths'] += len(died)
+            self.sim.results['deaths'][self.sim.ti] += len(died)
             self.request_death(died)
 
         return
@@ -1157,6 +1157,21 @@ class People(ss.People):
             self._step_results_intent()
             self._step_results_empower()
 
+        percent0to5 = (res.pp0to5[ti] / res.total_women_fecund[ti]) * 100
+        percent6to11 = (res.pp6to11[ti] / res.total_women_fecund[ti]) * 100
+        percent12to23 = (res.pp12to23[ti] / res.total_women_fecund[ti]) * 100
+        nonpostpartum = ((res.total_women_fecund[ti] - res.pp0to5[ti] - res.pp6to11[ti] - res.pp12to23[ti]) / res.total_women_fecund[ti]) * 100
+
+        # Store results
+        res['mcpr'][ti] = sc.safedivide(res.on_methods_mcpr[ti], (res.no_methods_mcpr[ti] + res.on_methods_mcpr[ti]))
+        res['cpr'][ti] = sc.safedivide(res.on_methods_cpr[ti], (res.no_methods_cpr[ti] + res.on_methods_cpr[ti]))
+        res['acpr'][ti] = sc.safedivide(res.on_methods_acpr[ti], (res.no_methods_acpr[ti] + res.on_methods_acpr[ti]))
+        res['pp0to5'][ti] = percent0to5
+        res['pp6to11'][ti] = percent6to11
+        res['pp12to23'][ti] = percent12to23
+        res['nonpostpartum'][ti] = nonpostpartum
+
+
 
         time_months = int(np.round(self.sim.ti * self.sim.t.dt_year * fpd.mpy))  # time since the beginning of the sim, expresse in months
 
@@ -1195,8 +1210,6 @@ class People(ss.People):
 
 
     def calculate_annual_ratios(self):
-
-        # these were all keyed to [-1], but I don't think that makes sense anymore. changing to [self.sim.ti]
         live_births_over_year = self.sim.results['live_births_over_year'][-1]
 
         maternal_mortality_ratio = sc.safedivide(self.sim.results['maternal_deaths_over_year'][-1], live_births_over_year) * 100000
