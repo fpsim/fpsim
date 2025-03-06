@@ -105,8 +105,6 @@ class Sim(ss.Sim):
         args = {key:val for key,val in args.items() if val is not None} # Remove None inputs
         input_pars = sc.mergedicts(sim_pars, args, kwargs, _copy=copy_inputs)
 
-        # sim_pars['pop_scale'] = sim_pars['total_pop'] / sim_pars['n_agents'] if sim_pars['total_pop'] is not None else 1 # scale should be calculated in advance
-
         new_sim_pars.update(input_pars)
         super().__init__(new_sim_pars, **kwargs)  # Initialize and set the parameters as attributes
 
@@ -121,16 +119,6 @@ class Sim(ss.Sim):
 
         # Make parameters
         self.fp_pars = fpp.pars(location=location, **sc.mergedicts(fp_pars, kwargs), validate=False)  # Update with location-specific parameters
-
-        # Validate and initialize
-        #mismatches = [key for key in kwargs.keys() if key not in fpp.par_keys]
-        #if len(mismatches):
-        #    errormsg = f'Key(s) {mismatches} not found; available keys are {fpp.par_keys}'
-        #    raise sc.KeyNotFoundError(errormsg)
-
-
-
-
 
         # Metadata and settings
         self.test_mode = False
@@ -168,6 +156,7 @@ class Sim(ss.Sim):
         # return self.ind2calendar(self.ti)  # y is calendar year of timestep (ie, 1975.75)
         return self.t.yearvec[self.ti]
 
+
     def init(self, force=False):
         """ Fully initialize the Sim with people and result storage"""
         if force or not self.initialized:
@@ -176,12 +165,9 @@ class Sim(ss.Sim):
                 self.pars.people = fpppl.People(n_agents=1000, age_data=self.fp_pars['age_pyramid'])
 
             super().init(force=force)
-            #self.ti = 0  # The current time index
-            #fpu.set_seed(self['seed'])
-            #self.init_results()
-            #self.init_people()  # This step also initializes the empowerment and education modules if provided
             self.init_contraception()  # Initialize contraceptive methods. v3 will refactor this to other modules
         return self
+
 
     def init_results(self):
         """
