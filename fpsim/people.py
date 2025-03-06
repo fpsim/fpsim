@@ -849,7 +849,10 @@ class People(ss.People):
             maternal_deaths = self.check_maternal_mortality(live)  # Mothers of only live babies eligible to match definition of maternal mortality ratio
             i_death = self.check_infant_mortality(live)
 
-            self.grow(len(live) - len(i_death))
+            new_uids = self.grow(len(live) - len(i_death))
+            self.age[new_uids] = 0
+            # if len(new_uids) > 0:
+            #     print(new_uids)
 
         return
 
