@@ -91,7 +91,6 @@ person_defaults = [
     ss.FloatArr('barrier', default=0),
     ss.State('ever_used_contra', default=False),  # Ever been on contraception. 0 for never having used
 
-
     # Sexual and reproductive history
     ss.FloatArr('parity', default=0),
     ss.State('pregnant', default=False),

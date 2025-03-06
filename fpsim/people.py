@@ -23,14 +23,19 @@ class People(ss.People):
     Class for all the people in the simulation.
     """
 
-    def __init__(self, n_agents=None, age_data=None, empowerment_module=None, education_module=None, **kwargs):
+    def __init__(self, n_agents=None, age_pyramid=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Allow defaults to be dynamically set
         person_defaults = fpd.person_defaults
 
+        ages = age_pyramid[:, 0]
+        age_counts = age_pyramid[:, 1] + age_pyramid[:, 2]
+        age_data = np.array([ages, age_counts]).T
+
+        f_frac = age_pyramid[:, 2].sum() / age_pyramid[:, 1:3].sum()
         # Initialization
         super().__init__(n_agents, age_data, extra_states=person_defaults, **kwargs)
-
+        self.female.default.set(p=f_frac)
         # Empowerment and education
         self.empowerment_module = empowerment_module
         self.education_module = education_module
@@ -225,7 +230,8 @@ class People(ss.People):
 
         time_to_debut = (self.fated_debut[fecund]-self.age[fecund])/self.sim.t.dt
 
-        self.ti_contra[fecund] = np.maximum(time_to_debut, 0)
+        # If ti_contra is less than one timestep away, we want to also set it to 0 so floor time_to_debut.
+        self.ti_contra[fecund] = np.maximum(np.floor(time_to_debut), 0)
 
         # Validation
         time_to_set_contra = self.ti_contra[fecund] == 0
@@ -726,7 +732,6 @@ class People(ss.People):
         # death = self.filter(is_death)
         death = self.binom.filter(uids)
         self.request_death(death)
-        # death.alive = False
         self.sim.results['maternal_deaths'][self.sim.ti] += len(death)
         self.sim.results['deaths'][self.sim.ti] += len(death)
         return death
