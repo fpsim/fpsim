@@ -791,7 +791,11 @@ def process_dur_use(methods, df=None):
                 method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'rate'].values[0]
             elif dist == 'llogis':
                 method.dur_use['dist'] = dist
-                method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+                try:
+                    method.dur_use['par1'] = thisdf.coef[thisdf.estimate == 'shape'].values[0]
+                except:
+                    print('here')
+
                 method.dur_use['par2'] = thisdf.coef[thisdf.estimate == 'scale'].values[0]
 
     return methods
