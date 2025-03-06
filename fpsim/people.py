@@ -27,32 +27,15 @@ class People(ss.People):
 
         # Allow defaults to be dynamically set
         person_defaults = fpd.person_defaults
-        max_parity = fpd.max_parity
 
         # Initialization
         super().__init__(n_agents, age_data, extra_states=person_defaults, **kwargs)
-
-
 
         # Empowerment and education
         self.empowerment_module = empowerment_module
         self.education_module = education_module
 
         self.binom = ss.bernoulli(p=0.5)
-
-        # self.pars = pars  # Set parameters
-
-        # # Set default states
-        # self.states = person_defaults
-        # for state_name, state in self.states.items():
-        #     self[state_name] = state.new(n)
-
-        # Overwrite some states with alternative values
-        # self.uid = np.arange(n)
-
-        # Basic demographics
-        # _age, _sex = self.get_age_sex(n)
-
 
         return
 
@@ -945,62 +928,6 @@ class People(ss.People):
         had_bday = uids[(age_diff <= self.sim.t.dt_year)]
         return had_bday
 
-    def reset_step_results(self):
-        self.step_results = dict(
-            deaths=0,
-            births=0,
-            stillbirths=0,
-            total_births=0,
-            short_intervals=0,
-            secondary_births=0,
-            maternal_deaths=0,
-            infant_deaths=0,
-            on_methods_mcpr=0,
-            no_methods_mcpr=0,
-            on_methods_cpr=0,
-            no_methods_cpr=0,
-            on_methods_acpr=0,
-            no_methods_acpr=0,
-            contra_access=0,
-            new_users=0,
-            switchers=0,
-            ever_used_contra=0,
-            urban_women=0,
-            as_stillbirths=[],
-            imr_numerator=[],
-            imr_denominator=[],
-            mmr_numerator=[],
-            mmr_denominator=[],
-            pp0to5=0,
-            pp6to11=0,
-            pp12to23=0,
-            parity0to1=0,
-            parity2to3=0,
-            parity4to5=0,
-            parity6plus=0,
-            wq1=0,
-            wq2=0,
-            wq3=0,
-            wq4=0,
-            wq5=0,
-            total_women_fecund=0,
-            pregnancies=0,
-            method_failures=0,
-            birthday_fraction=None,
-            birth_bins={},
-            age_bin_totals={},
-            switching_annual={},
-            switching_postpartum={},
-            imr_age_by_group=[],
-            mmr_age_by_group=[],
-            stillbirth_ages=[]
-        )
-
-        for key in fpd.age_bin_map.keys():
-            self.step_results['birth_bins'][key] = 0
-            self.step_results['age_bin_totals'][key] = 0
-
-        return
 
     # todo move to longitudinal analyzer
     # def update_history_buffer(self):
@@ -1117,17 +1044,6 @@ class People(ss.People):
         self.education_module.update(self)
         return
 
-    # todo not sure where this should go, do we eliminate it?
-    def step_age(self):
-        """
-        Advance people's age at at end of timestep after tabulating results
-        and update the age_by_group, based on the new age distribution to
-        quantify results in the next time step.
-        """
-        # alive_now = self.filter(self.alive)
-        # Age person at end of timestep after tabulating results
-        # alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
-        return
 
     def update_results(self):
         """Calculate and return the results for this specific time step"""
