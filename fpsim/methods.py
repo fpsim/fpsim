@@ -84,9 +84,9 @@ class ContraceptiveChoice:
     def init_method_dist(self, ppl):
         pass
 
-    def get_prob_use(self, ppl, year=None, event=None, ti=None, tiperyear=None):
+    def get_prob_use(self, ppl, uids, year=None, event=None, ti=None, tiperyear=None):
         """ Assign probabilities that each woman will use contraception """
-        prob_use = np.full(len(ppl), fill_value=self.pars['p_use'], dtype=float)
+        prob_use = np.full(len(uids), fill_value=self.pars['p_use'], dtype=float)
         return prob_use
 
     def get_method_by_label(self, method_label):
@@ -115,19 +115,19 @@ class ContraceptiveChoice:
         method = self.get_method_by_label(method_label)
         del self.methods[method.name]
 
-    def get_contra_users(self, ppl, year=None, event=None, ti=None, tiperyear=None):
+    def get_contra_users(self, ppl, uids, year=None, event=None, ti=None, tiperyear=None):
         """ Select contraception users, return boolean array """
-        prob_use = self.get_prob_use(ppl, event=event, year=year, ti=ti, tiperyear=tiperyear)
+        prob_use = self.get_prob_use(ppl, uids, event=event, year=year, ti=ti, tiperyear=tiperyear)
         uses_contra_bool = fpu.binomial_arr(prob_use) # todo replace with ss dist
         return uses_contra_bool
 
-    def choose_method(self, ppl, event=None):
+    def choose_method(self, ppl, uids, event=None):
         pass
 
-    def set_dur_method(self, ppl, dt_year, method_used=None):
+    def set_dur_method(self, ppl, uids, dt_year, method_used=None):
         # todo make this aware of starsim time units. right now assumes average_dur_use is in years and timestep par is in years
         dt = dt_year
-        timesteps_til_update = np.full(len(ppl), np.round(self.average_dur_use/dt), dtype=int)
+        timesteps_til_update = np.full(len(uids), np.round(self.average_dur_use/dt), dtype=int)
         return timesteps_til_update
 
 
@@ -147,8 +147,8 @@ class RandomChoice(ContraceptiveChoice):
     def init_method_dist(self, ppl):
         return self.choose_method(ppl)
 
-    def choose_method(self, ppl, event=None):
-        choice_arr = np.random.choice(np.arange(1, self.n_methods+1), size=len(ppl), p=self.pars['method_mix'])
+    def choose_method(self, ppl, uids, event=None):
+        choice_arr = np.random.choice(np.arange(1, self.n_methods+1), size=len(uids), p=self.pars['method_mix'])
         return choice_arr.astype(int)
 
 
@@ -184,13 +184,13 @@ class SimpleChoice(RandomChoice):
         self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
         return
 
-    def init_method_dist(self, ppl):
+    def init_method_dist(self, ppl, uids):
         if self.init_dist is not None:
-            choice_array = np.zeros(len(ppl))
+            choice_array = np.zeros(len(uids))
 
             # Loop over age groups and methods
             for key, (age_low, age_high) in fpd.method_age_map.items():
-                this_age_bools = fpu.match_ages(ppl.age, age_low, age_high)
+                this_age_bools = (ppl.age[uids] >= age_low) & (ppl.age[uids] < age_high) # fpu.match_ages(ppl.age[uids], age_low, age_high)
                 ppl_this_age = this_age_bools.nonzero()[-1]
                 if len(ppl_this_age) > 0:
                     these_probs = self.init_dist[key]
@@ -204,7 +204,7 @@ class SimpleChoice(RandomChoice):
             errormsg = f'Distribution of contraceptive choices has not been provided.'
             raise ValueError(errormsg)
 
-    def get_prob_use(self, ppl, year=None, event=None, ti=None, tiperyear=None):
+    def get_prob_use(self, ppl, uids, year=None, event=None, ti=None, tiperyear=None):
         """
         Return an array of probabilities that each woman will use contraception.
         """
@@ -214,13 +214,13 @@ class SimpleChoice(RandomChoice):
         if event == 'pp6': p = self.contra_use_pars[2]
 
         # Calculate probability of use
-        rhs = np.full_like(ppl.age, fill_value=p.intercept)
-        age_bins = np.digitize(ppl.age, self.age_bins)
+        rhs = np.full_like(ppl.age[uids], fill_value=p.intercept)
+        age_bins = np.digitize(ppl.age[uids], self.age_bins)
         for ai, ab in enumerate(self.age_bins):
             rhs[age_bins == ai] += p.age_factors[ai]
             if ai > 1:
-                rhs[(age_bins == ai) & ppl.ever_used_contra] += p.age_ever_user_factors[ai-1]
-        rhs[ppl.ever_used_contra] += p.fp_ever_user
+                rhs[(age_bins == ai) & ppl.ever_used_contra[uids]] += p.age_ever_user_factors[ai-1]
+        rhs[ppl.ever_used_contra[uids]] += p.fp_ever_user
 
         # The yearly trend
         rhs += (year - self.pars['prob_use_year']) * self.pars['prob_use_trend_par']
@@ -275,11 +275,11 @@ class SimpleChoice(RandomChoice):
             raise ValueError(
                 'Unrecognized distribution type for duration of use')
 
-    def set_dur_method(self, ppl, method_used=None):
+    def set_dur_method(self, ppl, uids, method_used=None):
         """ Time on method depends on age and method """
 
-        dur_method = np.zeros(len(ppl), dtype=float)
-        if method_used is None: method_used = ppl.method
+        dur_method = np.zeros(len(uids), dtype=float)
+        if method_used is None: method_used = ppl.method[uids]
 
         for mname, method in self.methods.items():
             dur_use = method.dur_use
@@ -294,7 +294,7 @@ class SimpleChoice(RandomChoice):
                         'Unrecognized distribution type for duration of use')
 
                 if 'age_factors' in dur_use.keys():
-                    age_bins = np.digitize(ppl.age, self.age_bins)
+                    age_bins = np.digitize(ppl.age[uids], self.age_bins)
                     par1 = np.zeros(n_users)
                     par2 = np.zeros(n_users)
 
@@ -318,13 +318,13 @@ class SimpleChoice(RandomChoice):
                 errormsg = 'Unrecognized type for duration of use: expecting a distribution dict or a number'
                 raise ValueError(errormsg)
 
-        dt = ppl.pars['timestep'] / fpd.mpy
+        dt = ppl.sim.t.dt_year
         timesteps_til_update = np.clip(np.round(dur_method/dt), 1, None)
 
         return timesteps_til_update
 
-    def choose_method(self, ppl, event=None, jitter=1e-4):
-        if event == 'pp1': return self.choose_method_post_birth(ppl)
+    def choose_method(self, ppl, uids, event=None, jitter=1e-4):
+        if event == 'pp1': return self.choose_method_post_birth(ppl, uids)
 
         else:
             if event is None:  mcp = self.method_choice_pars[0]
@@ -332,15 +332,15 @@ class SimpleChoice(RandomChoice):
 
             # Initialize arrays and get parameters
             jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
-            choice_array = np.zeros(len(ppl))
+            choice_array = np.zeros(len(uids))
 
             # Loop over age groups and methods
             for key, (age_low, age_high) in fpd.method_age_map.items():
-                match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
+                match_low_high = (ppl.age[uids] >= age_low) & (ppl.age[uids] < age_high)
 
                 for mname, method in self.methods.items():
                     # Get people of this age who are using this method
-                    using_this_method = match_low_high & (ppl.method == method.idx)
+                    using_this_method = match_low_high & (ppl.method[uids] == method.idx)
                     switch_iinds = using_this_method.nonzero()[-1]
 
                     if len(switch_iinds):
@@ -360,14 +360,14 @@ class SimpleChoice(RandomChoice):
 
         return choice_array.astype(int)
 
-    def choose_method_post_birth(self, ppl, jitter=1e-4):
+    def choose_method_post_birth(self, ppl, uids, jitter=1e-4):
         mcp = self.method_choice_pars[1]
         jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
-        choice_array = np.zeros(len(ppl))
+        choice_array = np.zeros(len(uids))
 
         # Loop over age groups and methods
         for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
+            match_low_high = fpu.match_ages(ppl.age[uids], age_low, age_high)
             switch_iinds = match_low_high.nonzero()[-1]
 
             if len(switch_iinds):
