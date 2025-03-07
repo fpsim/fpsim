@@ -7,7 +7,7 @@ import sciris as sc
 from . import utils as fpu
 from . import defaults as fpd
 
-__all__ = ['Pars', 'pars', 'default_pars']
+__all__ = ['Pars', 'pars', 'default_pars', 'default_sim_pars']
 
 
 # %% Pars (parameters) class
@@ -87,7 +87,7 @@ class Pars(dict):
             update (bool): whether to update the method and age maps
         '''
         # Check that keys are correct
-        valid_keys = set(default_pars.keys())
+        valid_keys = set(list(default_pars.keys())+list(default_sim_pars.keys()))
         keys = set(self.keys())
         if keys != valid_keys:
             diff1 = valid_keys - keys
@@ -292,8 +292,8 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     if location == 'test':
         kwargs.setdefault('n_agents', 100)
         kwargs.setdefault('verbose', 0)
-        kwargs.setdefault('start_year', 2000)
-        kwargs.setdefault('end_year', 2010)
+        kwargs.setdefault('start', 2000)
+        kwargs.setdefault('stop', 2010)
 
     # Handle location
     location = fpd.get_location(location)  # Handle location
