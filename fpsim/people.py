@@ -253,35 +253,40 @@ class People(ss.People):
                     self.mothers[uids][child] = mother_index
         return
 
-    def decide_contraception(self, ti=None, year=None, contraception_module=None):
+    def decide_contraception(self, uids=None, ti=None, year=None, contraception_module=None):
         """
         Decide who will start using contraception, when, which contraception method and the
         duration on that method. This method is called by the simulation to initialise the
         people object at the beginning of the simulation and new people born during the simulation.
 
         #TODO: rename to something that indicates this method is used for initialisation
+        #Todo remove excess input params
         """
-        fecund = (self.female==True) & (self.age < self.sim.fp_pars['age_limit_fecundity'])
+        if uids is None:
+            uids = self.auids
+
+        fecund = (self.female[uids]==True) & (self.age[uids] < self.sim.fp_pars['age_limit_fecundity'])
+        fecund_uids = uids[fecund]
         # NOTE: PSL: This line effectively "initialises" whether a woman is sexually active or not.
         # Because of the current initialisation flow, it's not possible to initialise the
         # sexually_active state in the init constructor.
-        self.check_sexually_active(fecund.uids)
+        self.check_sexually_active(fecund_uids)
         # fecund.update_time_to_choose()
-        self.update_time_to_choose(fecund.uids)
+        self.update_time_to_choose(fecund_uids)
 
         # Check whether have reached the time to choose
-        time_to_set_contra = (self.ti_contra == 0) & fecund
+        time_to_set_contra_uids = fecund_uids[(self.ti_contra[fecund_uids] == 0)]
         # contra_choosers = (time_to_set_contra)
 
         if contraception_module is not None:
             self.contraception_module = contraception_module
-            self.on_contra[time_to_set_contra] = contraception_module.get_contra_users(time_to_set_contra.uids, year=year, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
+            self.on_contra[time_to_set_contra_uids] = contraception_module.get_contra_users(time_to_set_contra_uids, year=year, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
             # oc = contra_choosers.filter(contra_choosers.on_contra)
-            oc = time_to_set_contra & (self.on_contra == True)
-            self.method[oc] = contraception_module.init_method_dist(oc.uids)
-            self.ever_used_contra[oc] = 1
-            method_dur = contraception_module.set_dur_method(time_to_set_contra.uids, self.sim.t.dt_year)
-            self.ti_contra[time_to_set_contra] = ti + method_dur
+            oc_uids = time_to_set_contra_uids[(self.on_contra[time_to_set_contra_uids] == True)]
+            self.method[oc_uids] = contraception_module.init_method_dist(oc_uids)
+            self.ever_used_contra[oc_uids] = 1
+            method_dur = contraception_module.set_dur_method(time_to_set_contra_uids, self.sim.t.dt_year)
+            self.ti_contra[time_to_set_contra_uids] = ti + method_dur
 
         # Change the intent of women who have started to use a contraception method
         self.intent_to_use[self.on_contra] = False
@@ -851,6 +856,9 @@ class People(ss.People):
 
             new_uids = self.grow(len(live) - len(i_death))
             self.age[new_uids] = 0
+            self.decide_contraception(uids=new_uids, ti=self.sim.ti, year=self.sim.y, contraception_module=self.contraception_module)
+
+
             # if len(new_uids) > 0:
             #     print(new_uids)
 
