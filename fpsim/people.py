@@ -1322,3 +1322,12 @@ class People(ss.People):
         if uids is None:
             uids = self.auids
         return np.minimum(self.int_age(uids), fpd.max_age_preg)
+
+    def update_post(self):
+        """ Final updates at the very end of the timestep """
+        sim = self.sim
+        if sim.pars.use_aging:
+            self.age[self.alive.uids] += sim.t.dt_year
+            # there is a max age for some of the stats, so if we exceed that, reset it
+            self.age[self.alive.uids] = np.minimum(self.age[self.alive.uids], self.sim.fp_pars['max_age'])
+        return
