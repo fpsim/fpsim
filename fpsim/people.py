@@ -280,12 +280,12 @@ class People(ss.People):
 
         if contraception_module is not None:
             self.contraception_module = contraception_module
-            self.on_contra[time_to_set_contra_uids] = contraception_module.get_contra_users(time_to_set_contra_uids, year=year, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
+            self.on_contra[time_to_set_contra_uids] = contraception_module.get_contra_users(self, time_to_set_contra_uids, year=year, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
             # oc = contra_choosers.filter(contra_choosers.on_contra)
             oc_uids = time_to_set_contra_uids[(self.on_contra[time_to_set_contra_uids] == True)]
-            self.method[oc_uids] = contraception_module.init_method_dist(oc_uids)
+            self.method[oc_uids] = contraception_module.init_method_dist(self, oc_uids)
             self.ever_used_contra[oc_uids] = 1
-            method_dur = contraception_module.set_dur_method(time_to_set_contra_uids, self.sim.t.dt_year)
+            method_dur = contraception_module.set_dur_method(self, time_to_set_contra_uids, self.sim.t.dt_year)
             self.ti_contra[time_to_set_contra_uids] = ti + method_dur
 
         # Change the intent of women who have started to use a contraception method
@@ -372,7 +372,7 @@ class People(ss.People):
                 # Get previous users and see whether they will switch methods or stop using
                 if len(choosers):
 
-                    self.on_contra[choosers] = cm.get_contra_users(choosers, year=year, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
+                    self.on_contra[choosers] = cm.get_contra_users(self, choosers, year=year, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
                     self.ever_used_contra[choosers] = self.ever_used_contra[choosers] | self.on_contra[choosers]
 
                     # Divide people into those that keep using contraception vs those that stop
@@ -384,7 +384,7 @@ class People(ss.People):
 
                     # For those who keep using, choose their next method
                     if len(switching_contra):
-                        self.method[switching_contra] = cm.choose_method(switching_contra)
+                        self.method[switching_contra] = cm.choose_method(self, switching_contra)
                         self.sim.results['new_users'][self.sim.ti] += np.count_nonzero(self.method[switching_contra])
 
                     # For those who stop using, set method to zero
@@ -407,7 +407,7 @@ class People(ss.People):
                     if self.on_contra[pp].any():
                         errormsg = 'Postpartum women should not currently be using contraception.'
                         raise ValueError(errormsg)
-                    self.on_contra[pp] = cm.get_contra_users(pp, year=year, event=event, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
+                    self.on_contra[pp] = cm.get_contra_users(self, pp, year=year, event=event, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
                     on_contra = pp[self.on_contra[pp]]
                     off_contra = pp[~self.on_contra[pp]]
                     self.sim.results['contra_access'][self.sim.ti] += len(on_contra)
@@ -425,7 +425,7 @@ class People(ss.People):
             # Set duration of use for everyone, and reset the time they'll next update
             durs_fixed = (self.postpartum_dur[uids] == 1) & (self.method[uids] == 0)
             update_durs = uids[~durs_fixed]
-            self.ti_contra[update_durs] = ti + cm.set_dur_method(update_durs, self.sim.t.dt_year)
+            self.ti_contra[update_durs] = ti + cm.set_dur_method(self, update_durs, self.sim.t.dt_year)
 
         return
 
@@ -543,7 +543,6 @@ class People(ss.People):
         if uids is None:
             uids = self.auids
 
-        #all_ppl = self.unfilter()  # For complex array operations
         active_uids = uids[(self.sexually_active[uids] & self.fertile[uids])]
         lam = self.lam[active_uids]
         lam_uids = active_uids[lam]
@@ -570,7 +569,7 @@ class People(ss.People):
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from PRESTO data
         #nullip = active.filter(active.parity == 0)  # Nulliparous
         nullip = self.parity[active_uids] == 0
-        nullip_uids = active_uids[self.parity[active_uids] == 0]
+        nullip_uids = active_uids[nullip]
         preg_probs[nullip] *= pars['fecundity_ratio_nullip'][self.int_age_clip(nullip_uids)]
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity.
