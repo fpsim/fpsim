@@ -83,7 +83,7 @@ def test_mid_choice(location='kenya'):
     pars = fp.pars(location=location, **par_kwargs)
 
     # Make and run sim
-    s = fp.Sim(pars, contraception_module=ms, education_module=edu)
+    s = fp.Sim(sim_pars=par_kwargs, fp_pars=pars, contraception_module=ms, education_module=edu)
 
     return s
 

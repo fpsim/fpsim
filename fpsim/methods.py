@@ -399,7 +399,7 @@ class StandardChoice(SimpleChoice):
 
         return
 
-    def get_prob_use(self, ppl, year=None, event=None, ti=None, tiperyear=None):
+    def get_prob_use(self, ppl, uids, year=None, event=None, ti=None, tiperyear=None):
         """
         Return an array of probabilities that each woman will data_use contraception.
         """
@@ -409,21 +409,21 @@ class StandardChoice(SimpleChoice):
         if event == 'pp6': p = self.contra_use_pars[2]
 
         # Initialize with intercept
-        rhs = np.full_like(ppl.age, fill_value=p.intercept)
+        rhs = np.full_like(ppl.uids, fill_value=p.intercept)
 
         # Add all terms that don't involve age
         for term in ['ever_used_contra', 'edu_attainment', 'urban', 'parity', 'wealthquintile']:  #
-            rhs += p[term] * ppl[term]
+            rhs += p[term] * ppl[term][uids]
 
         # Add age
-        int_age = ppl.int_age
+        int_age = ppl.int_age[uids]
         int_age[int_age < fpd.min_age] = fpd.min_age
         int_age[int_age >= fpd.max_age_preg] = fpd.max_age_preg-1
         dfa = self.age_spline.loc[int_age]
         rhs += p.age_factors[0] * dfa['knot_1'].values + p.age_factors[1] * dfa['knot_2'].values + p.age_factors[2] * dfa['knot_3'].values
-        rhs += (p.age_ever_user_factors[0] * dfa['knot_1'].values * ppl.ever_used_contra
-                + p.age_ever_user_factors[1] * dfa['knot_2'].values * ppl.ever_used_contra
-                + p.age_ever_user_factors[2] * dfa['knot_3'].values * ppl.ever_used_contra)
+        rhs += (p.age_ever_user_factors[0] * dfa['knot_1'].values * ppl.ever_used_contra[uids]
+                + p.age_ever_user_factors[1] * dfa['knot_2'].values * ppl.ever_used_contra[uids]
+                + p.age_ever_user_factors[2] * dfa['knot_3'].values * ppl.ever_used_contra[uids])
 
         # Add time trend
         rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
