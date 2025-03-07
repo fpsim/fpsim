@@ -12,6 +12,7 @@ import fpsim as fp
 from .settings import options as fpo
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
+import starsim as ss
 
 
 #%% Generic analyzer classes
@@ -151,29 +152,31 @@ class snapshot(Analyzer):
         return
 
 
-class cpr_by_age(Analyzer):
+class cpr_by_age(ss.Analyzer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)   # Initialize the Analyzer object
         self.age_bins = [v[1] for v in fpd.method_age_map.values()]
-        self.results = None
         return
 
-    def initialize(self, sim):
-        super().initialize()
-        self.results = {k: np.zeros(sim.npts) for k in fpd.method_age_map.keys()}
-        self.total = np.zeros(sim.npts)
+    def init_results(self):
+        super().init_results()
+        for k in fpd.method_age_map.keys():
 
-    def apply(self, sim):
-        ppl = sim.people
+            self.define_results(ss.Result(name=k,dtype=float, scale=False))
+        self.define_results(ss.Result(name='total',dtype=float, scale=False))
+        return
+
+    def step(self):
+        ppl = self.sim.people
         for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
-            denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
+            match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
+            denom_conds = match_low_high * (ppl.female) * ppl.alive
             num_conds = denom_conds * (ppl.method != 0)
-            self.results[key][sim.ti] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
+            self.results[key][self.sim.ti] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
 
-        total_denom_conds = (ppl.sex == 0) * ppl.alive
+        total_denom_conds = (ppl.female) * ppl.alive
         total_num_conds = total_denom_conds * (ppl.method != 0)
-        self.total[sim.ti] = sc.safedivide(np.count_nonzero(total_num_conds), np.count_nonzero(total_denom_conds))
+        self.results['total'][self.sim.ti] = sc.safedivide(np.count_nonzero(total_num_conds), np.count_nonzero(total_denom_conds))
         return
 
 
