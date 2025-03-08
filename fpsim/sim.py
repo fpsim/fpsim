@@ -130,7 +130,7 @@ class Sim(ss.Sim):
         # Add a new parameter to pars that determines the size of the circular buffer
         # self.fp_pars['tiperyear'] = self.tiperyear
         unit = self.pars.unit if self.pars.unit != "" else 'year'
-        self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt) # todo might be backwards
+        self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
 
         # People and results - intialized later
         # self.results = {}
@@ -277,16 +277,16 @@ class Sim(ss.Sim):
         if not self.track_children:
             delattr(self.people, "mothers")
 
-    def grow_population(self, n_new_people):
-        """Expand population size"""
-        # Births
-        new_people = fpppl.People(
-                    pars=self.pars, n=n_new_people, age=0,
-                    education_module=self.education_module,
-                    empowerment_module=self.empowerment_module
-                    )
-        new_people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
-        self.people += new_people
+    # def grow_population(self, n_new_people):
+    #     """Expand population size"""
+    #     # Births
+    #     new_people = fpppl.People(
+    #                 pars=self.pars, n=n_new_people, age=0,
+    #                 education_module=self.education_module,
+    #                 empowerment_module=self.empowerment_module
+    #                 )
+    #     new_people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
+    #     self.people += new_people
 
     def start_step(self):
         super().start_step()

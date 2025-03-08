@@ -32,7 +32,7 @@ def test_null(do_plot=do_plot):
     for key in ['age_mortality', 'maternal_mortality', 'infant_mortality']:
         pars[key]['probs'] *= 0
 
-    sim = fp.Sim(pars)
+    sim = fp.Sim(fp_pars=pars)
     sim.run()
 
     # Tests
@@ -48,16 +48,16 @@ def test_null(do_plot=do_plot):
 
 
 def test_timestep():
-    pars = fp.pars('test')
-
+    fp_pars = fp.pars('test')
+    sim_pars = {}
     # Set options
-    pars['n_agents'] = 500   # Small population size
-    pars['end_year'] = 2020  # 1961 - 2020 is the normal date range
-    pars['exposure_factor'] = 0.5  # Overall scale factor on probability of becoming pregnant
+    sim_pars['n_agents'] = 500   # Small population size
+    sim_pars['stop'] = 2020  # 1961 - 2020 is the normal date range
+    fp_pars['exposure_factor'] = 0.5  # Overall scale factor on probability of becoming pregnant
 
     for timestep in range(1, 13):
-        pars['timestep'] = timestep
-        sim = fp.Sim(pars=pars)
+        sim_pars['dt'] = timestep/12
+        sim = fp.Sim(sim_pars=sc.dcp(sim_pars), fp_pars=sc.dcp(fp_pars))
         sim.run()
         ok(f'simulation ran for timestep {timestep}')
 

@@ -144,8 +144,8 @@ class RandomChoice(ContraceptiveChoice):
         self.init_dist = self.pars['method_mix']
         return
 
-    def init_method_dist(self, ppl):
-        return self.choose_method(ppl)
+    def init_method_dist(self, ppl, uids):
+        return self.choose_method(ppl, uids)
 
     def choose_method(self, ppl, uids, event=None):
         choice_arr = np.random.choice(np.arange(1, self.n_methods+1), size=len(uids), p=self.pars['method_mix'])

@@ -26,7 +26,7 @@ class People(ss.People):
     def __init__(self, n_agents=None, age_pyramid=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Allow defaults to be dynamically set
-        person_defaults = fpd.person_defaults
+        person_defaults = sc.dcp(fpd.person_defaults)
 
         ages = age_pyramid[:, 0]
         age_counts = age_pyramid[:, 1] + age_pyramid[:, 2]
