@@ -8,6 +8,7 @@ import sciris as sc
 import fpsim as fp
 import pylab as pl
 import pytest
+import starsim as ss
 
 do_plot = True
 sc.options(backend='agg') # Turn off interactive plots
@@ -72,10 +73,10 @@ def test_scale():
     scale = 2
 
     # Make and run sims
-    pars = fp.pars('test')
-    s1 = fp.Sim(pars, scaled_pop=orig_pop)
-    s2 = fp.Sim(pars, scaled_pop=scale*orig_pop)
-    msim = fp.parallel(s1, s2)
+    fp_pars = fp.pars('test')
+    s1 = fp.Sim(fp_pars=fp_pars)
+    s2 = fp.Sim(fp_pars=fp_pars, pop_scale=scale)
+    msim = ss.parallel([s1, s2], shrink=False)
     s1, s2 = msim.sims
 
 
@@ -105,14 +106,14 @@ def test_method_changes():
     choice.add_method(new_method)
     s1 = fp.Sim(location='test', contraception_module=choice)
     s1.run()
-    assert len(s1.contraception_module.methods) == n+1, 'Method was not added'
+    assert len(s1.fp_pars['contraception_module'].methods) == n+1, 'Method was not added'
     ok(f'Methods had expected length after addition ({n+1})')
 
     # Test remove method
     choice.remove_method('Injectables')
     s2 = fp.Sim(location='test', contraception_module=choice)
     s2.run()
-    assert len(s2.contraception_module.methods) == n, 'Methods was not removed'
+    assert len(s2.fp_pars['contraception_module'].methods) == n, 'Methods was not removed'
     ok(f'Methods have expected length after removal ({n})')
 
     # Test method efficacy
@@ -171,14 +172,14 @@ def test_save_load():
 def test_long_params():
     sc.heading('Test longitudinal params')
     # Define pars
-    pars = fp.pars(location='kenya')
+    fp_pars = fp.pars(location='kenya')
 
     # Make and run sim
-    s = fp.Sim(pars)
+    s = fp.Sim(fp_pars=fp_pars)
     s.run()
 
     expected_rows = len(s.people)
-    expected_cols = s.tiperyear
+    expected_cols = s.fp_pars['tiperyear']
 
     for key in s.people.longitude.keys():
         df = s.people.longitude[key]
