@@ -193,3 +193,43 @@ write.csv(filter(coef_fpsim, country == "Senegal"), "C:/Users/maritazi/Documents
 write.csv(filter(coef_fpsim, country == "Ethiopia"), "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/method_time_coefficients.csv", row.names = F)
 
 
+# Check PDFs
+time_range <- seq(1, 100, by = 1)
+values <- NULL
+for (c in setdiff(names(results), "Comoros")) {
+  for (m in names(results[[c]])) {
+    for (age_group in c("age_grp_fact(0,18]","age_grp_fact(18,20]","age_grp_fact(20,25]", "age_grp_fact(25,35]","age_grp_fact(35,50]")) {
+      coefs <-  results[[c]][[m]]$model$coefficients
+      dist_name <- results[[c]][[m]]$best_distribution
+      if (dist_name == "exponential") {
+        val <- data.frame(pdf = dexp(time_range, rate = exp(coefs[1]+ coalesce(coefs[age_group], 0))))# %>% mutate(country = c, method = m, age = age_group)) # + coalesce(coefs[age_group], 0)
+      } else if (dist_name == "weibull") {
+        val <- data.frame(pdf = dweibull(time_range, shape = exp(coefs[1]), scale = exp(coefs[2]+ coalesce(coefs[age_group], 0))))
+      } else if (dist_name == "llogis") {
+        val <- data.frame(pdf = dllogis(time_range, shape = exp(coefs[1]), scale = exp(coefs[2]+ coalesce(coefs[age_group], 0))))
+      } else if (dist_name == "lnorm") {
+        val <- data.frame(pdf = dlnorm(time_range, meanlog = (coefs[1]+ coalesce(coefs[age_group], 0)), sdlog = exp(coefs[2]))) 
+      } else if (dist_name == "gompertz") {
+        val <- data.frame(pdf = dgompertz(time_range, shape = coefs[1], rate = exp(coefs[2]+ coalesce(coefs[age_group], 0))))
+      } else if (dist_name == "genf") {
+        val <- data.frame(pdf = dgenf(time_range, mu = coefs[1] + coalesce(coefs[age_group], 0), sigma = (coefs[2] ), Q = coefs[3], P = exp(coefs[4])))
+      } else if (dist_name == "gamma") {
+        val <- data.frame(pdf = dgamma(time_range, shape = exp(coefs[1]), scale = 1/exp(coefs[2]+ coalesce(coefs[age_group], 0))))
+      }
+      val <- val %>% mutate(country = c, method = m, age = age_group, time = time_range, dist = dist_name)
+      values <- rbind(values, val)    }
+  }}
+
+
+# Plot PDFs
+values %>%
+  filter(country %in% c("Kenya", "Senegal", "Ethiopia")) %>%
+  ggplot() +
+  geom_line(aes(x = time, y = pdf, color = age)) +
+  facet_grid(method ~ country, scales = "free_y") +
+  labs(title = "Probability Density Functions (PDFs) by Distribution and Age Group",
+       x = "Time (months)",
+       y = "Density",
+       color = "Age Group") +
+  theme_minimal()
+
