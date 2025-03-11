@@ -325,18 +325,21 @@ def test_method_selection_dependencies():
 def test_education_preg():
     sc.heading('Testing that lower fertility rate leads to more education...')
 
-    pars = dict(start_year=2000, end_year=2010, n_agents=1000, verbose=0.1)
-    sim_base = fp.Sim(pars=pars)
-    edu_base = fp.Education()
-    sim_base = custom_init(sim_base, age=15, sex=0, education_module=edu_base)
+    def make_sim(pregnant=False):
+        pars = dict(start_year=2000, end_year=2010, n_agents=1000, verbose=0.1)
+        sim = fp.Sim(pars=pars)
+        sim.initialize()
+        sim.people.age[:] = 15
+        sim.people.sex[:] = 0
+        if pregnant:
+            sim.people.pregnant[:] = True
+            sim.people.method[:] = 0
+            sim.people.on_contra[:] = False
+            sim.people.ti_contra[:] = 12
+        return sim
 
-    sim_preg = fp.Sim(pars=pars)
-    edu_preg = fp.Education()
-    sim_preg = custom_init(sim_preg, init_contra=False, age=15, sex=0, education_module=edu_preg, person_defaults={'pregnant': True, 'on_contra': False, 'method': 0, 'ti_contra': 12})
-    cm = fp.StandardChoice()
-    sim_preg.contraception_module = cm
-    sim_preg.people.contraception_module = cm
-
+    sim_base = make_sim()
+    sim_preg = make_sim(pregnant=True)
     m = fp.parallel([sim_base, sim_preg], serial=serial, compute_stats=False)
     sim_base, sim_preg = m.sims[:]  # Replace with run versions
 
@@ -349,8 +352,8 @@ def test_education_preg():
     assert preg_edu < base_edu, f'With more pregnancy there should be lower education levels, but {preg_edu}>{base_edu}'
     print(f"✓ (Higher teen pregnancy ({preg_births:.0f} vs {base_births:.0f}) -> less education ({preg_edu:.2f} < {base_edu:.2f}))")
 
-    return sim_base, sim_preg
-
+    return
+    
 
 def plot_results(sim):
     # Plots
