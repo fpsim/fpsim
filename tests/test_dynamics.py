@@ -147,7 +147,7 @@ def test_durations(location=None):
 
     pars, choice, edu = make_sim_parts(location=location)
     short_choice = sc.dcp(choice)
-    for m in short_choice.methods.values(): m.dur_use = dict(dist='lognormal', par1=1, par2=1)
+    for m in short_choice.methods.values(): m.dur_use = dict(dist='unif', par1=1, par2=2)
     sim_short = fp.Sim(
         pars=pars, contraception_module=short_choice, education_module=edu,
         label='Short durations')
