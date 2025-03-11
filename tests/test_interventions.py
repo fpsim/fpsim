@@ -78,9 +78,6 @@ def test_change_par():
     with pytest.raises(ValueError): # Check invalid year type
         make_sim(interventions=fp.change_par('exposure_factor', years=None, vals=-1)).run()
 
-    if do_plot:
-        m.plot()
-
     return m
 
 
@@ -93,8 +90,6 @@ def test_plot():
     um3 = fp.update_methods(year=2010, method_mix=[0.9, 0.1, 0, 0, 0, 0, 0, 0, 0])
     sim = make_sim(interventions=[cp, um1, um2, um3]).run()
 
-    if do_plot:
-        sim.plot()
     return sim
 
 
@@ -140,19 +135,6 @@ def test_change_people_state():
     with pytest.raises(ValueError):  # Check invalid eligible
         make_sim(interventions=fp.change_people_state('ever_used_contra', years=2005, new_val=True, eligibility="")).run()
 
-    # Check with plot
-    if do_plot:
-        import pylab as pl
-        t = s0.results['t']
-        y0 = s0.results['ever_used_contra']
-        y1 = s1.results['ever_used_contra']
-        y2 = s2.results['ever_used_contra']
-        pl.figure()
-        pl.plot(t, y0, label='Baseline')
-        pl.plot(t, y1, label='Higher prior use')
-        pl.plot(t, y2, label='Stop prior use')
-        pl.legend()
-        pl.show()
 
     return s0, s1, s2
 
