@@ -6,7 +6,7 @@ import sciris as sc
 import pylab as pl
 import fpsim as fp
 import numpy as np
-# import pytest
+import pytest
 
 serial   = 1 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
@@ -17,7 +17,7 @@ def make_sim(**kwargs):
     '''
     Define a default simulation for testing the baseline.
     '''
-    sim = fp.Sim(**kwargs)
+    sim = fp.Sim(location='test', **kwargs)
     return sim
 
 
