@@ -15,7 +15,7 @@ from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs
 
-__all__ = ['Method', 'Methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
+__all__ = ['Method', 'make_methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
 
 
 # %% Base definition of contraceptive methods -- can be overwritten by locations
@@ -34,35 +34,42 @@ class Method:
 def ln(a, b): return dict(dist='lognormal', par1=a, par2=b)
 
 
-method_list = [
-    Method(name='none',     efficacy=0,     modern=False, dur_use=ln(2, 3), label='None'),
-    Method(name='pill',     efficacy=0.945, modern=True,  dur_use=ln(2, 3), label='Pill'),
-    Method(name='iud',      efficacy=0.986, modern=True, dur_use=ln(5, 3), label='IUDs', csv_name='IUD'),
-    Method(name='inj',      efficacy=0.983, modern=True, dur_use=ln(2, 3), label='Injectables', csv_name='Injectable'),
-    Method(name='cond',     efficacy=0.946, modern=True,  dur_use=ln(1, 3), label='Condoms', csv_name='Condom'),
-    Method(name='btl',      efficacy=0.995, modern=True, dur_use=ln(50, 3), label='BTL', csv_name='F.sterilization'),
-    Method(name='wdraw',    efficacy=0.866, modern=False, dur_use=ln(1, 3), label='Withdrawal', csv_name='Withdrawal'), #     # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-    Method(name='impl',     efficacy=0.994, modern=True, dur_use=ln(2, 3), label='Implants', csv_name='Implant'),
-    Method(name='othtrad',  efficacy=0.861, modern=False, dur_use=ln(1, 3), label='Other traditional', csv_name='Other.trad'),
-    Method(name='othmod',   efficacy=0.880, modern=True, dur_use=ln(1, 3), label='Other modern', csv_name='Other.mod'),
-]
+def make_methods():
 
-idx = 0
-for method in method_list:
-    method.idx = idx
-    idx += 1
+    method_list = [
+        Method(name='none',     efficacy=0,     modern=False, dur_use=ln(2, 3), label='None'),
+        Method(name='pill',     efficacy=0.945, modern=True,  dur_use=ln(2, 3), label='Pill'),
+        Method(name='iud',      efficacy=0.986, modern=True, dur_use=ln(5, 3), label='IUDs', csv_name='IUD'),
+        Method(name='inj',      efficacy=0.983, modern=True, dur_use=ln(2, 3), label='Injectables', csv_name='Injectable'),
+        Method(name='cond',     efficacy=0.946, modern=True,  dur_use=ln(1, 3), label='Condoms', csv_name='Condom'),
+        Method(name='btl',      efficacy=0.995, modern=True, dur_use=ln(50, 3), label='BTL', csv_name='F.sterilization'),
+        Method(name='wdraw',    efficacy=0.866, modern=False, dur_use=ln(1, 3), label='Withdrawal', csv_name='Withdrawal'), #     # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+        Method(name='impl',     efficacy=0.994, modern=True, dur_use=ln(2, 3), label='Implants', csv_name='Implant'),
+        Method(name='othtrad',  efficacy=0.861, modern=False, dur_use=ln(1, 3), label='Other traditional', csv_name='Other.trad'),
+        Method(name='othmod',   efficacy=0.880, modern=True, dur_use=ln(1, 3), label='Other modern', csv_name='Other.mod'),
+    ]
 
-method_map = {method.label: method.idx for method in method_list}
-Methods = ss.ndict(method_list, type=Method)
-SimpleMethods = sc.dcp(Methods)
-# for m in SimpleMethods.values(): m.dur_use = 1
+    idx = 0
+    for method in method_list:
+        method.idx = idx
+        idx += 1
+
+    method_map = {method.label: method.idx for method in method_list}
+    Methods = ss.ndict(method_list, type=Method)
+
+    m = sc.prettyobj()
+    m.method_list = sc.dcp(method_list)
+    m.method_map = sc.dcp(method_map)
+    m.Methods = sc.dcp(Methods)
+    return m
+
 
 
 # %% Define classes to contain information about the way women choose contraception
 
 class ContraceptiveChoice:
     def __init__(self, methods=None, pars=None, **kwargs):
-        self.methods = methods or SimpleMethods
+        self.methods = methods or make_methods().Methods
         self.__dict__.update(kwargs)
         self.n_options = len(self.methods)
         self.n_methods = len([m for m in self.methods if m != 'none'])
@@ -161,6 +168,7 @@ class SimpleChoice(RandomChoice):
             prob_use_trend_par=0.0,
             force_choose=False,  # Whether to force non-users to choose a method
             method_weights=np.ones(self.n_methods),
+            max_dur=100*fpd.mpy,  # Maximum duration of use in months
         )
         updated_pars = sc.mergedicts(default_pars, pars)
         self.pars = sc.mergedicts(self.pars, updated_pars)
@@ -212,7 +220,7 @@ class SimpleChoice(RandomChoice):
         if event == 'pp1': p = self.contra_use_pars[1]
         if event == 'pp6': p = self.contra_use_pars[2]
 
-        # Calculate probability of use
+        # Initialize probability of use
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
         age_bins = np.digitize(ppl.age, self.age_bins)
         for ai, ab in enumerate(self.age_bins):
@@ -230,49 +238,51 @@ class SimpleChoice(RandomChoice):
 
     @staticmethod
     def _lognormal_dpars(dur_use, ai):
-        par1 = dur_use['par1'] + dur_use['age_factors'][ai]
-        par2 = np.exp(dur_use['par2'])
+        par1 = np.exp(dur_use['par1'])  # par1 is the 'meanlog' from the csv file. exp(par1) is the 'scale' parameter
+        par2 = np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
         return par1, par2
-
-    @staticmethod
-    def _lognormal_make_dict(dur_use, par1, par2):
-        """
-        Map par1 and par2 from duration use, to par1 and par2 needed
-        by fpu.sample
-        """
-        # NOTE:TODO: fix me, after lognorm distribution has been consolidated in utils.py
-        return dict(dist='lognorm_sps', par1=par2, par2=np.exp(par1))
 
     @staticmethod
     def _llogis_dpars(dur_use, ai):
-        par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
-        par2 = np.exp(dur_use['par2'])
+        par1 = np.exp(dur_use['par1'])
+        par2 = np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
         return par1, par2
 
     @staticmethod
-    def _llogis_make_dict(dur_use, par1, par2):
-        return dict(dist=dur_use['dist'], par1=par1, par2=par2)
+    def _weibull_dpars(dur_use, ai):
+        par1 = dur_use['par1']
+        par2 = dur_use['par2'] + dur_use['age_factors'][ai]
+        return par1, par2
+
+    @staticmethod
+    def _exp_dpars(dur_use, ai):
+        par1 = 1/np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
+        return par1, None
 
     @staticmethod
     def _gamma_dpars(dur_use, ai):
-        par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
-        par2 = np.exp(method.dur_use['par2'])
+        par1 = np.exp(dur_use['par1'])
+        par2 = 1/np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
         return par1, par2
 
     @staticmethod
-    def _gamma_make_dict(dur_use, par1, par2):
-        return dict(dist=dur_use['dist'], par1=par1, par2=1/par2)
+    def _make_dict(dur_use, par1, par2):
+        return dict(dist=dur_use['dist'], par1=par1, par2=par2)
 
     def _get_dist_funs(self, dist_name):
-        if dist_name == 'lognormal':
-            return self._lognormal_dpars, self._lognormal_make_dict
+        if dist_name == 'lognormal_sps':
+            return self._lognormal_dpars, self._make_dict
         elif dist_name == 'gamma':
-            return self._gamma_dpars, self._gamma_make_dict
+            return self._gamma_dpars, self._make_dict
         elif dist_name == 'llogis':
-            return self._llogis_dpars, self._llogis_make_dict
-        else :
+            return self._llogis_dpars, self._make_dict
+        elif dist_name == 'weibull':
+            return self._weibull_dpars, self._make_dict
+        elif dist_name == 'exponential':
+            return self._exp_dpars, self._make_dict
+        else:
             raise ValueError(
-                'Unrecognized distribution type for duration of use')
+                f'Unrecognized distribution type {dist_name} for duration of use')
 
     def set_dur_method(self, ppl, method_used=None):
         """ Time on method depends on age and method """
@@ -285,40 +295,37 @@ class SimpleChoice(RandomChoice):
             users = np.nonzero(method_used == method.idx)[-1]
             n_users = len(users)
 
-            if isinstance(dur_use, dict):
-                # NOTE: List of available/supported distros can be a property of the class?
-                if not (dur_use['dist'] in ['lognormal', 'gamma', 'llogis']):
-                    # bail early
-                    raise ValueError(
-                        'Unrecognized distribution type for duration of use')
+            if n_users:
+                if isinstance(dur_use, dict):
+                    # NOTE: List of available/supported distros can be a property of the class?
+                    if not (dur_use['dist'] in ['lognormal_sps', 'gamma', 'llogis', 'exponential', 'weibull', 'unif']):
+                        # bail early
+                        raise ValueError(
+                            f'Unrecognized distribution type for duration of use: {dur_use["dist"]}')
 
-                if 'age_factors' in dur_use.keys():
-                    age_bins = np.digitize(ppl.age, self.age_bins)
-                    par1 = np.zeros(n_users)
-                    par2 = np.zeros(n_users)
+                    if 'age_factors' in dur_use.keys():
+                        # Get functions based on distro and set for every agent
+                        dist_pars_fun, make_dist_dict = self._get_dist_funs(dur_use['dist'])
+                        age_bins = np.digitize(ppl.age[users], self.age_bins)
+                        par1, par2 = dist_pars_fun(dur_use, age_bins)
 
-                    # Get functions based on distro
-                    dist_pars_fun, make_dist_dict = self._get_dist_funs(dur_use['dist'])
+                        # Transform to parameters needed by fpsim distributions
+                        dist_dict = make_dist_dict(dur_use, par1, par2)
+                    else:
+                        par1 = dur_use['par1']
+                        par2 = dur_use['par2']
+                        dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
 
-                    # First set parameters for every agent
-                    for ai, ab in enumerate(self.age_bins):
-                        par1[age_bins[users] == ai], par2 = dist_pars_fun(dur_use, ai)
-                    # Transform to parameters needed by fpsim distributions
-                    dist_dict = make_dist_dict(dur_use, par1, par2)
+                    # Draw samples of how many months women use this method
+                    dur_method[users] = fpu.sample(**dist_dict, size=n_users)
+
+                elif sc.isnumber(dur_use):
+                    dur_method[users] = dur_use
                 else:
-                    par1 = dur_use['par1']
-                    par2 = dur_use['par2']
-                    dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
-                # Draw samples
-                dur_method[users] = fpu.sample(**dist_dict, size=n_users)
-            elif sc.isnumber(dur_use):
-                dur_method[users] = dur_use
-            else:
-                errormsg = 'Unrecognized type for duration of use: expecting a distribution dict or a number'
-                raise ValueError(errormsg)
+                    errormsg = 'Unrecognized type for duration of use: expecting a distribution dict or a number'
+                    raise ValueError(errormsg)
 
-        dt = ppl.pars['timestep'] / fpd.mpy
-        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, None)
+        timesteps_til_update = np.clip(np.round(dur_method), 1, self.pars['max_dur'])  # Include a maximum. Durs seem way too high
 
         return timesteps_til_update
 
@@ -348,7 +355,11 @@ class SimpleChoice(RandomChoice):
                         if mname == 'btl':
                             choice_array[switch_iinds] = method.idx  # Continue, can't actually stop this method
                         else:
-                            these_probs = mcp[key][mname]  # Cannot stay on method
+                            try:
+                                these_probs = mcp[key][mname]  # Cannot stay on method
+                            except:
+                                errormsg = f'Cannot find {key} in method switch for {mname}!'
+                                raise ValueError(errormsg)
                             these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
                             these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
                             these_probs = these_probs/sum(these_probs)  # Renormalize
@@ -394,7 +405,7 @@ class StandardChoice(SimpleChoice):
         self.contra_use_pars = getattr(fplocs, location).process_contra_use('mid')  # Process the coefficients
 
         # Store the age spline
-        self.age_spline = getattr(fplocs, location).age_spline('3')
+        self.age_spline = getattr(fplocs, location).age_spline('25_40')
 
         return
 
@@ -410,8 +421,8 @@ class StandardChoice(SimpleChoice):
         # Initialize with intercept
         rhs = np.full_like(ppl.age, fill_value=p.intercept)
 
-        # Add all terms that don't involve age
-        for term in ['ever_used_contra', 'edu_attainment', 'urban', 'parity', 'wealthquintile']:  #
+        # Add all terms that don't involve age/education level factors
+        for term in ['ever_used_contra', 'urban', 'parity', 'wealthquintile']:
             rhs += p[term] * ppl[term]
 
         # Add age
@@ -423,6 +434,11 @@ class StandardChoice(SimpleChoice):
         rhs += (p.age_ever_user_factors[0] * dfa['knot_1'].values * ppl.ever_used_contra
                 + p.age_ever_user_factors[1] * dfa['knot_2'].values * ppl.ever_used_contra
                 + p.age_ever_user_factors[2] * dfa['knot_3'].values * ppl.ever_used_contra)
+
+        # Add education levels
+        primary = (ppl.edu_attainment > 1) & (ppl.edu_attainment <= 6)
+        secondary = ppl.edu_attainment > 6
+        rhs += p.edu_factors[0] * primary + p.edu_factors[1] * secondary
 
         # Add time trend
         rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']

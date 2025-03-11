@@ -312,6 +312,7 @@ class People(fpb.BasePeople):
         cm = self.contraception_module
         if year is None: year = self.y
         if ti is None: ti = self.ti
+
         if cm is not None:
 
             # If people are 1 or 6m postpartum, we use different parameters for updating their contraceptive decisions
@@ -346,14 +347,14 @@ class People(fpb.BasePeople):
                     choosers.ever_used_contra = choosers.ever_used_contra | choosers.on_contra
 
                     # Divide people into those that keep using contraception vs those that stop
-                    switching_contra = choosers.filter(choosers.on_contra)
+                    continuing_contra = choosers.filter(choosers.on_contra)
                     stopping_contra = choosers.filter(~choosers.on_contra)
-                    pp0.step_results['contra_access'] += len(switching_contra)
+                    pp0.step_results['contra_access'] += len(continuing_contra)
 
                     # For those who keep using, choose their next method
-                    if len(switching_contra):
-                        switching_contra.method = cm.choose_method(switching_contra)
-                        choosers.step_results['new_users'] += np.count_nonzero(switching_contra.method)
+                    if len(continuing_contra):
+                        continuing_contra.method = cm.choose_method(continuing_contra)
+                        choosers.step_results['new_users'] += np.count_nonzero(continuing_contra.method)
 
                     # For those who stop using, set method to zero
                     if len(stopping_contra):
@@ -393,7 +394,13 @@ class People(fpb.BasePeople):
             # Set duration of use for everyone, and reset the time they'll next update
             durs_fixed = (self.postpartum_dur == 1) & (self.method == 0)
             update_durs = self.filter(~durs_fixed)
-            update_durs.ti_contra = ti + cm.set_dur_method(update_durs)
+            dur_methods = cm.set_dur_method(update_durs)
+
+            # Check validity
+            if (dur_methods < 0).any():
+                raise ValueError('Negative duration of method use')
+
+            update_durs.ti_contra = ti + dur_methods
 
         return
 

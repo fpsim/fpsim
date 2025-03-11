@@ -10,8 +10,9 @@ from fpsim import defaults as fpd
 from fpsim import utils as fpu
 # %% Housekeeping
 
-thisdir = sc.thispath(__file__)  # For loading CSV files
-
+def this_dir():
+    thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
+    return thisdir
 
 def scalar_pars():
     scalar_pars = {
@@ -86,7 +87,7 @@ def age_pyramid():
 
 def urban_proportion():
     """Load information about the proportion of people who live in an urban setting"""
-    urban_data = pd.read_csv(thisdir / 'data' / 'urban.csv')
+    urban_data = pd.read_csv(this_dir() / 'data' / 'urban.csv')
     return urban_data["mean"][0]  # Return this value as a float
 
 
@@ -101,8 +102,8 @@ def age_mortality():
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     '''
     data_year = 2010
-    mortality_data = pd.read_csv(thisdir / 'data' / 'mortality_prob.csv')
-    mortality_trend = pd.read_csv(thisdir / 'data' / 'mortality_trend.csv')
+    mortality_data = pd.read_csv(this_dir() / 'data' / 'mortality_prob.csv')
+    mortality_trend = pd.read_csv(this_dir() / 'data' / 'mortality_trend.csv')
 
     mortality = {
         'ages': mortality_data['age'].to_numpy(),
@@ -603,12 +604,15 @@ def _check_age_endpoints(df):
 
 
 def age_spline(which):
-    return pd.read_csv(thisdir / 'data' / f'age_spline_{which}.csv', index_col=0)
+    d = pd.read_csv(this_dir() / 'data' / f'splines_{which}.csv')
+    # Set the age as the index
+    d.index = d.age
+    return d
 
 
 def age_partnership():
     """ Probabilities of being partnered at age X"""
-    age_partnership_data = pd.read_csv(thisdir / 'data' / 'age_partnership.csv')
+    age_partnership_data = pd.read_csv(this_dir() / 'data' / 'age_partnership.csv')
     partnership_dict = {}
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
@@ -618,7 +622,7 @@ def age_partnership():
 def wealth():
     """ Process percent distribution of people in each wealth quintile"""
     cols = ["quintile", "percent"]
-    wealth_data = pd.read_csv(thisdir / 'data' / 'wealth.csv', header=0, names=cols)
+    wealth_data = pd.read_csv(this_dir() / 'data' / 'wealth.csv', header=0, names=cols)
     return wealth_data
 
 
@@ -710,7 +714,7 @@ def education_distributions():
     """
 
     # Load empirical data
-    data_path = thisdir / "data"
+    data_path = this_dir() / "data"
 
     education ={"edu_objective":
                     {"data_file": "edu_objective.csv",
@@ -732,7 +736,7 @@ def education_distributions():
 
 
 def process_contra_use_pars():
-    raw_pars = pd.read_csv(thisdir / 'data' / 'contra_coef.csv')
+    raw_pars = pd.read_csv(this_dir() / 'data' / 'contra_coef.csv')
     pars = sc.objdict()
     for var_dict in raw_pars.to_dict('records'):
         var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
@@ -749,9 +753,9 @@ def process_contra_use(which):
 
     # Read in data
     alldfs = [
-        pd.read_csv(thisdir / 'data' / f'contra_coef_{which}.csv'),
-        pd.read_csv(thisdir / 'data' / f'contra_coef_{which}_pp1.csv'),
-        pd.read_csv(thisdir / 'data' / f'contra_coef_{which}_pp6.csv'),
+        pd.read_csv(this_dir() / 'data' / f'contra_coef_{which}.csv'),
+        pd.read_csv(this_dir() / 'data' / f'contra_coef_{which}_pp1.csv'),
+        pd.read_csv(this_dir() / 'data' / f'contra_coef_{which}_pp6.csv'),
     ]
 
     contra_use_pars = dict()
@@ -762,7 +766,7 @@ def process_contra_use(which):
                 intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
                 age_factors=df[df['rhs'].str.contains('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
                 ever_used_contra=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
-                edu_attainment=df[df['rhs'].str.contains('edu_attainment')].Estimate.values[0],
+                edu_factors=df[df['rhs'].str.contains('edu')].Estimate.values,
                 parity=df[df['rhs'].str.contains('parity')].Estimate.values[0],
                 urban=df[df['rhs'].str.contains('urban')].Estimate.values[0],
                 wealthquintile=df[df['rhs'].str.contains('wealthquintile')].Estimate.values[0],
@@ -783,7 +787,7 @@ def process_contra_use(which):
 def process_markovian_method_choice(methods, df=None):
     """ Choice of method is age and previous method """
     if df is None:
-        df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+        df = pd.read_csv(this_dir() / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
     csv_map = {method.csv_name: method.name for method in methods.values()}
     idx_map = {method.csv_name: method.idx for method in methods.values()}
     idx_df = {}
@@ -823,20 +827,21 @@ def process_markovian_method_choice(methods, df=None):
 def process_dur_use(methods, df=None):
     """ Process duration of use parameters"""
     if df is None:
-        df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+        df = pd.read_csv(this_dir() / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
     for method in methods.values():
         if method.name == 'btl':
-            method.dur_use = dict(dist='lognormal', par1=100, par2=1)
+            method.dur_use = dict(dist='unif', par1=1000, par2=1200)
         else:
             mlabel = method.csv_name
 
             thisdf = df.loc[df.method == mlabel]
             dist = thisdf.functionform.iloc[0]
             method.dur_use = dict()
-            method.dur_use['age_factors'] = np.append(thisdf.coef.values[2:], 0)
+            age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
+            method.dur_use['age_factors'] = thisdf.estimate.values[age_ind:]
 
             if dist in ['lognormal', 'lnorm']:
-                method.dur_use['dist'] = dist
+                method.dur_use['dist'] = 'lognormal_sps'
                 method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
                 method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
             elif dist in ['gamma']:
@@ -847,6 +852,14 @@ def process_dur_use(methods, df=None):
                 method.dur_use['dist'] = dist
                 method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
                 method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
+            elif dist == 'weibull':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
+            elif dist == 'exponential':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'rate'].values[0]
+                method.dur_use['par2'] = None
             else:
                 errormsg = f"Duration of use distribution {dist} not recognized"
                 raise ValueError(errormsg)
@@ -857,7 +870,7 @@ def process_dur_use(methods, df=None):
 def mcpr():
 
     mcpr = {}
-    cpr_data = pd.read_csv(thisdir / 'data' / 'cpr.csv')
+    cpr_data = pd.read_csv(this_dir() / 'data' / 'cpr.csv')
     mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
     mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
 

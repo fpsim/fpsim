@@ -16,16 +16,9 @@ from . import locations as fplocs
 class Education:
     def __init__(self, location=None):
         # Handle location
-        if location is None:
-            print(f'Warning: location for Education module not set - using Kenya as default')
-            location = 'kenya'
-        location = location.lower()
-        if location == 'kenya':
-            education_dict, _ = fplocs.kenya.education_distributions()  # This function returns extrapolated and raw data
-            self.pars = education_dict
-        else:
-            errormsg = f'Location "{location}" is not currently supported for education analyses'
-            raise NotImplementedError(errormsg)
+        location = fpd.get_location(location)
+        education_dict, _ = getattr(fplocs, location).education_distributions()  # This function returns extrapolated and raw data
+        self.pars = education_dict
         return
 
     def initialize(self, ppl):
