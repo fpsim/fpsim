@@ -13,10 +13,7 @@ import scipy.stats as sps
 
 if __name__ == '__main__':
 
-    location = 'kenya'
-    # methods = sc.dcp(fp.make_methods().Methods)
-    # durs = pd.read_csv(f'{location}/data/method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
-    # methods = getattr(fplocs, location).process_dur_use(methods, df=durs)  # Reset duration of use
+    location = 'ethiopia'
     cm = fp.SimpleChoice(location=location)
     methods = cm.methods
 
