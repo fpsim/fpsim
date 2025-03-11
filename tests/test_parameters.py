@@ -7,7 +7,7 @@ import numpy as np
 import sciris as sc
 import fpsim as fp
 import pylab as pl
-import pytest
+# import pytest
 
 do_plot = True
 sc.options(backend='agg') # Turn off interactive plots
@@ -196,3 +196,4 @@ if __name__ == '__main__':
         meths   = test_method_changes()
         pars    = test_validation()
         p2      = test_save_load()
+        long    = test_long_params()
