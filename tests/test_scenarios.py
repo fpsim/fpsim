@@ -10,7 +10,7 @@ from fpsim import defaults as fpd
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-serial   = 0 # Whether to run in serial (for debugging)
+serial   = 1 # Whether to run in serial (for debugging)
 do_plot  = 0 # Whether to do plotting in interactive mode
 do_plot_as = 0 # Whether or not to plot all age-specific channels
 default_ages = list(fpd.method_age_map.keys())
@@ -187,6 +187,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        msim1  = test_update_methods_eff()
-        msim2  = test_update_methods()
+        # msim1  = test_update_methods_eff()
+        # msim2  = test_update_methods()
         scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
