@@ -10,8 +10,7 @@ import numpy as np
 serial   = 1 # Whether to run in serial (for debugging)
 
 
-def make_sim_parts(location=None, new_p_use_pars=True):
-    location = 'kenya'
+def make_sim_parts(location='ethiopia', new_p_use_pars=False):
     par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1)
     pars = fp.pars(location=location, **par_kwargs)
     edu = fp.Education(location=location)
@@ -20,7 +19,7 @@ def make_sim_parts(location=None, new_p_use_pars=True):
         choice.contra_use_pars[0] = sc.objdict(
             intercept=np.log(1/9),  # Baseline prob = 0.1
             age_factors=np.array([.5,  1, -.5]),  # p_use increase until 39 then decreases
-            ever_used_contra=0,  # Ever used
+            ever_used_contra=1,  # Ever used
             edu_factors=np.array([2, 4]),
             parity=0,
             urban=3,
@@ -66,18 +65,20 @@ def test_mcpr(location=None, do_plot=False):
     # Create interventions and sims
     sims = sc.autolist()
     def select_women(sim): return sim.people.is_female & sim.people.alive
-    zero_states = sc.autolist()
 
-    for covar in covars:
-        zero_states += fp.change_people_state(
-                            covar.pplattr,
-                            eligibility=select_women,
-                            years=2000.0,
-                            new_val=covar.val0,
-                        )
+    def make_zeros():
+        zero_states = sc.autolist()
+        for covar in covars:
+            zero_states += fp.change_people_state(
+                                covar.pplattr,
+                                eligibility=select_women,
+                                years=2000.0,
+                                new_val=covar.val0,
+                            )
+        return zero_states
 
     # Make baseline sim
-    sims += make_sim(intvs=zero_states, location=location, label='Baseline')
+    sims += make_sim(intvs=make_zeros(), location=location, label='Baseline')
 
     for covar in covars:
         change_state = fp.change_people_state(
@@ -86,7 +87,7 @@ def test_mcpr(location=None, do_plot=False):
                             years=2010.0,
                             new_val=covar.val,
                         )
-        sims += make_sim(intvs=change_state, location=location, label=f'Increased {covar.pplattr}')
+        sims += make_sim(intvs=make_zeros()+[change_state], location=location, label=f'Increased {covar.pplattr}')
 
     # Run
     # for sim in sims: sim.run()
@@ -168,7 +169,7 @@ def test_durations(location=None):
 
 if __name__ == '__main__':
 
-    sims1 = test_mcpr(do_plot=False)
+    sims1 = test_mcpr(do_plot=True)
     sims2 = test_durations()
 
     print('Done.')
