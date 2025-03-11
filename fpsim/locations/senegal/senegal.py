@@ -732,7 +732,7 @@ def process_contra_use(which):
 def process_markovian_method_choice(methods, df=None):
     """ Choice of method is age and previous method """
     if df is None:
-        df = pd.read_csv(thisdir / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+        df = pd.read_csv('data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
     csv_map = {method.csv_name: method.name for method in methods.values()}
     idx_map = {method.csv_name: method.idx for method in methods.values()}
     idx_df = {}
