@@ -106,7 +106,7 @@ data.surv <- data.raw %>%
   mutate(method = factor(method, levels = c("0",    "1",    "2",   "3",          "5",      "9",          "N",       "W",          "M"),
                          labels = c("None", "Pill", "IUD", "Injectable", "Condom", "Withdrawal", "Implant", "Other.trad", "Other.mod"))) %>%
   select(Country, obs, v000, v021, v022, wt, age, age_grp, age_grp_fact, parity, edu, wealth_index, urban, cumulative_method_months, unique_methods_count, method, month, method.month, discontinued) 
- write.csv(data.surv, "C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/WRICH/Contraceptive choices/timeonmethod_fpsim.csv", row.names = F)
+# write.csv(data.surv, "C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/WRICH/Contraceptive choices/timeonmethod_fpsim.csv", row.names = F)
 # data.surv <- read.csv("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/WRICH/Contraceptive choices/timeonmethod_fpsim.csv")
 
 # data set to use
@@ -127,7 +127,7 @@ for (c in unique(dat$Country)) {
   
   # loop through each method
   for (m in c("None", "Pill", "IUD", "Injectable", "Condom", "Withdrawal", "Implant", "Other.trad", "Other.mod")) {
-    df_method <- df_country[df_country$method == m, ]
+    df_method <- df_country[!is.na(df_country$method) & df_country$method == m, ]
     if (nrow(df_method) == 0) next
     
     lowest_aic <- Inf
@@ -174,7 +174,7 @@ for (c in names(results)) {
       model_summary <- model_info$model
       
       # Extract estimates, SEs, CIs
-      res <- as.data.frame(model_summary$res)
+      res <- as.data.frame(model_summary$res.t)
       output <- res %>%
         mutate(coef = rownames(res),
                country = c,

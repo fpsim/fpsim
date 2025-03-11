@@ -72,7 +72,7 @@ class Sim(fpb.BaseSim):
     The Sim class handles the running of the simulation. This class handles the mechanics
     of the actual simulation, while BaseSim takes care of housekeeping (saving,
     loading, exporting, etc.). Please see the BaseSim class for additional methods.
-    
+
     When a Sim is initialized, it triggers the creation of the population. Methods related
     to creating, initializing, and updating people can be found in the People class.
 
@@ -131,8 +131,8 @@ class Sim(fpb.BaseSim):
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
 
         # Add modules, also initialized later
-        self.contraception_module = contraception_module or fpm.StandardChoice(location=location)
-        self.education_module = education_module or fped.Education(location=location)
+        self.contraception_module = contraception_module or sc.dcp(fpm.StandardChoice(location=location))
+        self.education_module = education_module or sc.dcp(fped.Education(location=location))
         self.empowerment_module = empowerment_module
 
         return
@@ -575,7 +575,7 @@ class Sim(fpb.BaseSim):
     def to_df(self, include_range=False):
         """
         Export all sim results to a dataframe
-        
+
         Args:
             include_range (bool): if True, and if the sim results have best, high, and low, then export all of them; else just best
         """
@@ -911,7 +911,7 @@ class MultiSim(sc.prettyobj):
                 base_sim = sims
                 sims = None
             elif isinstance(sims, list):
-                base_sim = sims[0]
+                base_sim = sc.dcp(sims[0]) # Copy so we don't accidentally overwrite with compute_stats()
             else:
                 errormsg = f'If base_sim is not supplied, sims must be either a single sim (treated as base_sim) or a list of sims, not {type(sims)}'
                 raise TypeError(errormsg)

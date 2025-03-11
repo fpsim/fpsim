@@ -174,7 +174,7 @@ def test_simplechoice_contraception_dependencies():
 
     custom_pars = {
         'start_year': 2000,
-        'end_year': 2040,
+        'end_year': 2010,
         'n_agents': 1000,
         'primary_infertility': 1, # make sure no pregnancies!
     }
@@ -183,7 +183,7 @@ def test_simplechoice_contraception_dependencies():
         prob_use_trend_par=0.0, # no change in use trend, so changes should be driven by other factors
         force_choose=False,
     )
-    method = fpm.SimpleChoice(pars=cm_pars, location="kenya", methods=sc.dcp(fp.Methods))
+    method = fpm.SimpleChoice(pars=cm_pars, location="kenya")
     analyzers = fp.cpr_by_age()
 
     # force all to have debuted and sexually active
@@ -198,7 +198,9 @@ def test_simplechoice_contraception_dependencies():
     # Set up all sims to run in parallel
     # custom init forces age, sex and other person defaults
     # p_use by age: <18: ~.18, 18-20: ~.49, 20-25: ~.54, 25-35: ~.52, 35-50: ~.32
-    sim1 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity, debut_age=debut_age, analyzers=sc.dcp(analyzers))
+    pars1 = sc.dcp(custom_pars)
+    pars1['end_year'] = 2040  # run for 40 years to see how age impacts use
+    sim1 = fp.Sim(location="kenya", pars=pars1, contraception_module=sc.dcp(method), sexual_activity=sexual_activity, debut_age=debut_age, analyzers=sc.dcp(analyzers))
     sim1 = custom_init(sim1, age=15, sex=0, person_defaults={'ever_used_contra':True})
 
     sim2 = fp.Sim(location="kenya", pars=custom_pars, contraception_module=sc.dcp(method), sexual_activity=sexual_activity, debut_age=debut_age, analyzers=sc.dcp(analyzers))
@@ -285,7 +287,7 @@ def test_method_selection_dependencies():
         prob_use_trend_par=0.0,  # no change in use trend, so changes should be driven by other factors
         force_choose=False,
     )
-    method = fpm.SimpleChoice(pars=cm_pars, location="kenya", methods=sc.dcp(fp.Methods))
+    method = fpm.SimpleChoice(pars=cm_pars, location="kenya")
 
     cpr = fp.cpr_by_age()
     snapshots = fp.snapshot([1,2])
