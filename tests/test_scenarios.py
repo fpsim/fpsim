@@ -5,7 +5,7 @@ Run tests on the Scenarios class.
 import numpy as np
 import sciris as sc
 import fpsim as fp
-import pytest
+# import pytest
 from fpsim import defaults as fpd
 
 # Global settings
@@ -22,12 +22,12 @@ def ok(string):
     return sc.printgreen(f'✓ {string}\n')
 
 
-def make_sims(interventions, contraception_module=None):
+def make_sims(interventions):
     ''' Make simulations with particular interventions '''
     simlist = sc.autolist()
     for intv in interventions:
         pars = fp.pars('test', interventions=intv)
-        simlist += fp.Sim(pars=pars, contraception_module=contraception_module)
+        simlist += fp.Sim(pars=pars)
     return simlist
 
 
@@ -187,6 +187,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # msim1  = test_update_methods_eff()
-        # msim2  = test_update_methods()
+        msim1  = test_update_methods_eff()
+        msim2  = test_update_methods()
         scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
