@@ -8,7 +8,7 @@ import fpsim as fp
 import numpy as np
 import pytest
 
-serial   = 1 # Whether to run in serial (for debugging)
+serial   = 0 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 # sc.options(backend='agg') # Turn off interactive plots
 
@@ -140,10 +140,10 @@ def test_change_people_state():
 
 
 if __name__ == '__main__':
-    s0 = test_intervention_fn()
+    # s0 = test_intervention_fn()
     s1 = test_change_par()
-    s3 = test_plot()
-    s4, s5, s6 = test_change_people_state()
+    # s3 = test_plot()
+    # s4, s5, s6 = test_change_people_state()
 
     print('Done.')
 
