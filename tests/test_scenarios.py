@@ -24,10 +24,13 @@ def ok(string):
 
 def make_sims(interventions, contraception_module=None):
     ''' Make simulations with particular interventions '''
-    simlist = sc.autolist()
+    simlist = []
     for intv in interventions:
         pars = fp.pars('test', interventions=intv)
-        simlist += fp.Sim(pars=pars, contraception_module=contraception_module)
+        simlist.append(
+            fp.Sim(
+                pars=sc.dcp(pars),
+                contraception_module=sc.dcp(contraception_module)))
     return simlist
 
 
