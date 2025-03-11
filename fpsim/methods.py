@@ -354,7 +354,7 @@ class SimpleChoice(RandomChoice):
                             try:
                                 these_probs = mcp[key][mname]  # Cannot stay on method
                             except:
-                                errormsg = f'Cannot find {key} in method switch!'
+                                errormsg = f'Cannot find {key} in method switch for {mname}!'
                                 raise ValueError(errormsg)
                             these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
                             these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
