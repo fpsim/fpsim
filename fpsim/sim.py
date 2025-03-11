@@ -154,6 +154,7 @@ class Sim(fpb.BaseSim):
             self.init_results()
             self.init_people()  # This step also initializes the empowerment and education modules if provided
             self.init_contraception()  # Initialize contraceptive methods
+        self.initialized = True
         return self
 
     def init_results(self):

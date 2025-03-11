@@ -352,8 +352,8 @@ def test_education_preg():
     assert preg_edu < base_edu, f'With more pregnancy there should be lower education levels, but {preg_edu}>{base_edu}'
     print(f"✓ (Higher teen pregnancy ({preg_births:.0f} vs {base_births:.0f}) -> less education ({preg_edu:.2f} < {base_edu:.2f}))")
 
-    return
-    
+    return sim_base, sim_preg
+
 
 def plot_results(sim):
     # Plots
