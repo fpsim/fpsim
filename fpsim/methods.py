@@ -178,6 +178,8 @@ class SimpleChoice(RandomChoice):
         method_choice_pars, init_dist = getattr(fplocs, location).process_markovian_method_choice(self.methods, df=method_choice_df)  # Method choice
         self.method_choice_pars = method_choice_pars
         self.init_dist = init_dist
+        for key,temp in self.method_choice_pars.items():
+            assert len(temp.keys()) == 9, f'INIT ERROR, {len(temp.keys())}, {key}'
         self.methods = getattr(fplocs, location).process_dur_use(self.methods, df=method_time_df)  # Reset duration of use
 
         # Handle age bins -- find a more robust way to do this
@@ -198,10 +200,10 @@ class SimpleChoice(RandomChoice):
                     these_probs = these_probs/np.sum(these_probs)  # Renormalize
                     these_choices = fpu.n_multinomial(these_probs, len(ppl_this_age))  # Choose
                     # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
-                    choice_array[this_age_bools] = np.array(list(self.init_dist.method_idx))[these_choices]
+                    choice_array[this_age_bools] = np.array(list(self.init_dist['method_idx']))[these_choices]
             return choice_array.astype(int)
         else:
-            errormsg = f'Distribution of contraceptive choices has not been provided.'
+            errormsg = 'Distribution of contraceptive choices has not been provided.'
             raise ValueError(errormsg)
 
     def get_prob_use(self, ppl, year=None, event=None, ti=None, tiperyear=None):
@@ -329,8 +331,8 @@ class SimpleChoice(RandomChoice):
         if event == 'pp1': return self.choose_method_post_birth(ppl)
 
         else:
-            if event is None:  mcp = self.method_choice_pars[0]
-            if event == 'pp6': mcp = self.method_choice_pars[6]
+            if event is None:  mcp = dict(sc.dcp(self.method_choice_pars[0])) # CK: temp
+            if event == 'pp6': mcp = dict(sc.dcp(self.method_choice_pars[6]))
 
             # Initialize arrays and get parameters
             jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
@@ -338,6 +340,9 @@ class SimpleChoice(RandomChoice):
 
             # Loop over age groups and methods
             for key, (age_low, age_high) in fpd.method_age_map.items():
+                temp = mcp[key]
+                keys = temp.keys()
+                assert len(keys) == 9, f'No, {len(keys)}, {event}, {key}, {keys}'
                 match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
 
                 for mname, method in self.methods.items():
@@ -358,12 +363,12 @@ class SimpleChoice(RandomChoice):
                             these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
 
                             # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
-                            choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
+                            choice_array[switch_iinds] = np.array(list(mcp['method_idx']))[these_choices]
 
         return choice_array.astype(int)
 
     def choose_method_post_birth(self, ppl, jitter=1e-4):
-        mcp = self.method_choice_pars[1]
+        mcp = dict(sc.dcp(self.method_choice_pars[1]))
         jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
         choice_array = np.zeros(len(ppl))
 
@@ -378,7 +383,7 @@ class SimpleChoice(RandomChoice):
                 these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
                 these_probs = these_probs/sum(these_probs)  # Renormalize
                 these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
-                choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
+                choice_array[switch_iinds] = np.array(list(mcp['method_idx']))[these_choices]
 
         return choice_array
 

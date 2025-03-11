@@ -257,7 +257,7 @@ def stillbirth():
     '''
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
-    
+
     Age adjustments come from an extension of Noori et al., which were conducted June 2022.
     '''
 
@@ -747,8 +747,8 @@ def process_markovian_method_choice(methods, df=None):
     ei = 4+len(methods)-1
 
     for pp in df.postpartum.unique():
-        mc[pp] = sc.objdict()
-        mc[pp].method_idx = np.array(list(idx_df.values()))
+        mc[pp] = dict()
+        mc[pp]['method_idx'] = np.array(list(idx_df.values()))
         for akey in df.age_grp.unique():
             mc[pp][akey] = sc.objdict()
             thisdf = df.loc[(df.age_grp == akey) & (df.postpartum == pp)]

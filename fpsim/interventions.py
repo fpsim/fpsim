@@ -503,7 +503,8 @@ class update_methods(Intervention):
             # Change in switching matrix
             if self.method_choice_pars is not None:
                 print(f'Changed contraceptive switching matrix in year {sim.y}')
-                sim.people.contraception_module.method_choice_pars = self.method_choice_pars
+                print('TEMP')
+                # sim.people.contraception_module.method_choice_pars = self.method_choice_pars
                 
         return
 
