@@ -7,7 +7,7 @@ import sciris as sc
 import pylab as pl
 
 # par_kwargs = dict(n_agents=1000, start_year=1960, end_year=2020, seed=1, verbose=1)
-par_kwargs = dict(n_agents=500, start=2000, stop=2010, rand_seed=1, verbose=-1)
+par_kwargs = dict(n_agents=500, start=2000, stop=2010, unit='year', dt=1/12, rand_seed=1, verbose=-1)
 
 
 def test_simple():
@@ -23,7 +23,7 @@ def test_simple_choice(location='kenya'):
 
     # Make & run sim
     import numpy as np
-    pars = fp.pars(location=location, **par_kwargs)
+    pars = fp.default_pars
     cm_pars = dict(
         prob_use_trend_par=0.1,
         force_choose=False,
@@ -80,7 +80,9 @@ def test_mid_choice(location='kenya'):
     edu = fp.Education(location=location)
 
     # Define pars
-    pars = fp.pars(location=location, **par_kwargs)
+    # pars = fp.pars(location=location, **par_kwargs)
+    pars = fp.default_pars
+    pars['location'] = location
 
     # Make and run sim
     s = fp.Sim(sim_pars=par_kwargs, fp_pars=pars, contraception_module=ms, education_module=edu)

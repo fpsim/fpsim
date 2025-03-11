@@ -141,14 +141,14 @@ def test_validation():
     with pytest.raises(ValueError):
         p = sc.dcp(pars)
         p['not_a_par'] = 4
-        p.validate()
+        fp.validate(fp.default_pars, p)
     ok('Invalid name was caught by validation')
 
     # Missing value not allowed
     with pytest.raises(ValueError):
         p = sc.dcp(pars)
         p.pop('exposure_factor')
-        p.validate()
+        fp.validate(fp.default_pars, p)
     ok('Missing parameter was caught by validation')
 
     return pars
@@ -160,9 +160,9 @@ def test_save_load():
     filename = 'tmp_pars.json'
 
     pars = fp.pars()
-    pars.to_json(filename)
+    fp.pars_to_json(pars, filename)
     assert os.path.exists(filename), 'Did not write file to disk'
-    pars.from_json(filename)
+    fp.pars_from_json(filename)
     os.remove(filename)
     ok('pars.from_json() and pars.to_json() work')
 

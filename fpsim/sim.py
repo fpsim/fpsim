@@ -90,35 +90,32 @@ class Sim(ss.Sim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, sim_pars=None, fp_pars=None, location=None, track_children=False, regional=False,
+    def __init__(self, sim_pars={}, fp_pars={}, location=None, track_children=False, regional=False,
                  contraception_module=None, empowerment_module=None, education_module=None,
                  label=None, people=None, demographics=None, diseases=None, networks=None,
                  interventions=None, analyzers=None, connectors=None, copy_inputs=True, data=None, **kwargs):
-        if sim_pars is None:
-            sim_pars = {}
-        new_sim_pars = ss.make_pars()
-        fpsim_default_pars = fpp.default_sim_pars
-        new_sim_pars.update(fpsim_default_pars)
 
+        new_sim_pars = ss.make_pars() # get starsim default sim pars
+        fpsim_default_sim_pars = fpp.default_sim_pars # get fpsim default sim pars
+        new_sim_pars.update(fpsim_default_sim_pars) # update starsim default sim pars with fpsim default sim pars
+
+        # add all inputs except fp-specific pars to the sim pars
         args = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         args = {key:val for key,val in args.items() if val is not None} # Remove None inputs
         input_pars = sc.mergedicts(sim_pars, args, kwargs, _copy=copy_inputs)
-
-        new_sim_pars.update(input_pars)
+        new_sim_pars.update(input_pars) # update with input pars to override defaults
         super().__init__(new_sim_pars, **kwargs)  # Initialize and set the parameters as attributes
 
-        fp_pars = sc.dcp(fp_pars)
+        # get the default fp pars
 
-        # Handle location
-        if location is None:
-            if fp_pars is not None and fp_pars.get('location'):
-                location = fp_pars.pop('location')
-        location = fpd.get_location(location, printmsg=True)  # Handle location
-        self.location = location
 
-        # Make parameters
-        self.fp_pars = fpp.pars(location=location, **sc.mergedicts(fp_pars, kwargs), validate=False)  # Update with location-specific parameters
+        # location is explicitly provided, so pop the default out of the list
+        if fp_pars and 'location' in fp_pars and location is None:
+            location = fp_pars.pop('location')
+        self.fp_pars = fpp.pars(location, self.pars.rand_seed, **fp_pars)
+
+        fpp.validate(fpp.default_pars, self.fp_pars)  # Validate the FP parameters
 
         # Metadata and settings
         self.test_mode = False
@@ -128,19 +125,12 @@ class Sim(ss.Sim):
         self.summary = None
 
         # Add a new parameter to pars that determines the size of the circular buffer
-        # self.fp_pars['tiperyear'] = self.tiperyear
         unit = self.pars.unit if self.pars.unit != "" else 'year'
         self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
-
-        # People and results - intialized later
-        # self.results = {}
-        # self.people = people  # Sims are generally constructed without people, since People construction is time-consuming
 
         # Add modules, also initialized later
         self.fp_pars['contraception_module'] = contraception_module or fpm.RandomChoice()
         self.fp_pars['education_module'] = education_module
-        # self.contraception_module = contraception_module or fpm.StandardChoice(location=location)
-        # self.education_module = education_module or fped.Education(location=location)
         self.fp_pars['empowerment_module'] = empowerment_module
 
         return
@@ -148,12 +138,10 @@ class Sim(ss.Sim):
     # Basic properties
     @property
     def ty(self):
-        # return self.ind2year(self.ti)  # years elapsed since beginning of sim (ie, 25.75... )
         return self.t.tvec[self.ti]  # years elapsed since beginning of sim (ie, 25.75... )
 
     @property
     def y(self):
-        # return self.ind2calendar(self.ti)  # y is calendar year of timestep (ie, 1975.75)
         return self.t.yearvec[self.ti]
 
 
@@ -228,54 +216,54 @@ class Sim(ss.Sim):
 
 
 
-    def apply_interventions(self):
-        """ Apply each intervention in the model """
-        from . import interventions as fpi  # To avoid circular import
-        for i, intervention in enumerate(sc.tolist(self['interventions'])):
-            if isinstance(intervention, fpi.Intervention):
-                if not intervention.initialized:  # pragma: no cover
-                    intervention.initialize(self)
-                intervention.apply(self)  # If it's an intervention, call the apply() method
-            elif callable(intervention):
-                intervention(self)  # If it's a function, call it directly
-            else:  # pragma: no cover
-                errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object: it is {type(intervention)}'
-                raise TypeError(errormsg)
-        return
+    # def apply_interventions(self):
+    #     """ Apply each intervention in the model """
+    #     from . import interventions as fpi  # To avoid circular import
+    #     for i, intervention in enumerate(sc.tolist(self['interventions'])):
+    #         if isinstance(intervention, fpi.Intervention):
+    #             if not intervention.initialized:  # pragma: no cover
+    #                 intervention.initialize(self)
+    #             intervention.apply(self)  # If it's an intervention, call the apply() method
+    #         elif callable(intervention):
+    #             intervention(self)  # If it's a function, call it directly
+    #         else:  # pragma: no cover
+    #             errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object: it is {type(intervention)}'
+    #             raise TypeError(errormsg)
+    #     return
+    #
+    # def apply_analyzers(self):
+    #     """ Apply each analyzer in the model """
+    #     from . import analyzers as fpa  # To avoid circular import
+    #     for i, analyzer in enumerate(sc.tolist(self['analyzers'])):
+    #         if isinstance(analyzer, fpa.Analyzer):
+    #             if not analyzer.initialized:  # pragma: no cover
+    #                 analyzer.initialize(self)
+    #             analyzer.apply(self)  # If it's an intervention, call the apply() method
+    #         elif callable(analyzer):
+    #             analyzer(self)  # If it's a function, call it directly
+    #         else:  # pragma: no cover
+    #             errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object: it is {type(analyzer)}'
+    #             raise TypeError(errormsg)
+    #     return
 
-    def apply_analyzers(self):
-        """ Apply each analyzer in the model """
-        from . import analyzers as fpa  # To avoid circular import
-        for i, analyzer in enumerate(sc.tolist(self['analyzers'])):
-            if isinstance(analyzer, fpa.Analyzer):
-                if not analyzer.initialized:  # pragma: no cover
-                    analyzer.initialize(self)
-                analyzer.apply(self)  # If it's an intervention, call the apply() method
-            elif callable(analyzer):
-                analyzer(self)  # If it's a function, call it directly
-            else:  # pragma: no cover
-                errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object: it is {type(analyzer)}'
-                raise TypeError(errormsg)
-        return
-
-    def finalize_interventions(self):
-        """ Make any final updates to interventions (e.g. to shrink) """
-        from . import interventions as fpi  # To avoid circular import
-        for intervention in sc.tolist(self['interventions']):
-            if isinstance(intervention, fpi.Intervention):
-                intervention.finalize(self)
-
-    def finalize_analyzers(self):
-        """ Make any final updates to analyzers (e.g. to shrink) """
-        from . import analyzers as fpa  # To avoid circular import
-        for analyzer in sc.tolist(self['analyzers']):
-            if isinstance(analyzer, fpa.Analyzer):
-                analyzer.finalize(self)
-
-    def finalize_people(self):
-        """Clean up and reset people's attributes at the end of a time step"""
-        if not self.track_children:
-            delattr(self.people, "mothers")
+    # def finalize_interventions(self):
+    #     """ Make any final updates to interventions (e.g. to shrink) """
+    #     from . import interventions as fpi  # To avoid circular import
+    #     for intervention in sc.tolist(self['interventions']):
+    #         if isinstance(intervention, fpi.Intervention):
+    #             intervention.finalize(self)
+    #
+    # def finalize_analyzers(self):
+    #     """ Make any final updates to analyzers (e.g. to shrink) """
+    #     from . import analyzers as fpa  # To avoid circular import
+    #     for analyzer in sc.tolist(self['analyzers']):
+    #         if isinstance(analyzer, fpa.Analyzer):
+    #             analyzer.finalize(self)
+    #
+    # def finalize_people(self):
+    #     """Clean up and reset people's attributes at the end of a time step"""
+    #     if not self.track_children:
+    #         delattr(self.people, "mothers")
 
     # def grow_population(self, n_new_people):
     #     """Expand population size"""
