@@ -785,7 +785,11 @@ def process_dur_use(methods, df=None):
             thisdf = df.loc[df.method == mlabel]
             dist = thisdf.functionform.iloc[0]
             method.dur_use = dict()
-            age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
+            try:
+                age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
+            except:
+                errormsg = f'Duration of use coefficients for age not found, method {method.name}'
+                raise ValueError(errormsg)
             method.dur_use['age_factors'] = thisdf.estimate.values[age_ind:]
 
             if dist in ['lognormal', 'lnorm']:
