@@ -5,7 +5,7 @@ Run tests on the Scenarios class.
 import numpy as np
 import sciris as sc
 import fpsim as fp
-# import pytest
+import pytest
 from fpsim import defaults as fpd
 
 # Global settings
@@ -22,12 +22,12 @@ def ok(string):
     return sc.printgreen(f'✓ {string}\n')
 
 
-def make_sims(interventions):
+def make_sims(interventions, contraception_module=None):
     ''' Make simulations with particular interventions '''
     simlist = sc.autolist()
     for intv in interventions:
         pars = fp.pars('test', interventions=intv)
-        simlist += fp.Sim(pars=pars)
+        simlist += fp.Sim(pars=pars, contraception_module=contraception_module)
     return simlist
 
 
