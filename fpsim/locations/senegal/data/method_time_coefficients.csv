@@ -14,6 +14,7 @@ estimate,coef,se,method,functionform,country
 -1.058931091,"age_grp_fact(35,50]",0.193280391,Pill,exponential,Senegal
 0.609689857,shape,0.165973833,IUD,gamma,Senegal
 -2.43426309,rate,0.375685693,IUD,gamma,Senegal
+0.18125711,"age_grp_fact(0,18]",0.607958607,IUD,gamma,Senegal
 0.18125711,"age_grp_fact(18,20]",0.607958607,IUD,gamma,Senegal
 0,"age_grp_fact(20,25]",0,IUD,gamma,Senegal
 -0.333538527,"age_grp_fact(25,35]",0.331117981,IUD,gamma,Senegal
