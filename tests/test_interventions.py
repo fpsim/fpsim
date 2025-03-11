@@ -6,7 +6,7 @@ import sciris as sc
 import pylab as pl
 import fpsim as fp
 import numpy as np
-import pytest
+# import pytest
 
 serial   = 1 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
@@ -88,7 +88,7 @@ def test_plot():
     um1 = fp.update_methods(year=2005, eff={'Injectables': 1.0})
     um2 = fp.update_methods(year=2008, p_use=0.5)
     um3 = fp.update_methods(year=2010, method_mix=[0.9, 0.1, 0, 0, 0, 0, 0, 0, 0])
-    sim = make_sim(interventions=[cp, um1, um2, um3]).run()
+    sim = make_sim(contraception_module=fp.RandomChoice(), interventions=[cp, um1, um2, um3]).run()
 
     return sim
 
@@ -141,9 +141,9 @@ def test_change_people_state():
 
 if __name__ == '__main__':
     s0 = test_intervention_fn()
-    # s1 = test_change_par()
-    # s3 = test_plot()
-    # s4, s5, s6 = test_change_people_state()
+    s1 = test_change_par()
+    s3 = test_plot()
+    s4, s5, s6 = test_change_people_state()
 
     print('Done.')
 
