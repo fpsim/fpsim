@@ -17,7 +17,7 @@ def make_sim(**kwargs):
     '''
     Define a default simulation for testing the baseline.
     '''
-    sim = fp.Sim(location='test', **kwargs)
+    sim = fp.Sim(**kwargs)
     return sim
 
 
@@ -141,9 +141,9 @@ def test_change_people_state():
 
 if __name__ == '__main__':
     s0 = test_intervention_fn()
-    s1 = test_change_par()
-    s3 = test_plot()
-    s4, s5, s6 = test_change_people_state()
+    # s1 = test_change_par()
+    # s3 = test_plot()
+    # s4, s5, s6 = test_change_people_state()
 
     print('Done.')
 
