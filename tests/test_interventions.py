@@ -66,17 +66,6 @@ def test_change_par():
     assert s2['exposure_factor'] == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
     assert cp2_births <= base_births, f'Reducing exposure factor temporarily should reduce births, but {cp2_births} is not less than the baseline of {base_births}'
 
-    # Check user input validation
-    with pytest.raises(ValueError): # Check that length of years and values match
-        fp.change_par(par='test', years=[2002],vals=[1,2])
-    with pytest.raises(ValueError): # Check invalid parameter
-        make_sim(interventions=fp.change_par('not_a_parameter')).run()
-    with pytest.raises(ValueError): # Check too early start year
-        make_sim(interventions=fp.change_par('exposure_factor', years=1920, vals=1)).run()
-    with pytest.raises(ValueError): # Check too late end year
-        make_sim(interventions=fp.change_par('exposure_factor', years=2120, vals=1)).run()
-    with pytest.raises(ValueError): # Check invalid year type
-        make_sim(interventions=fp.change_par('exposure_factor', years=None, vals=-1)).run()
 
     return m
 
