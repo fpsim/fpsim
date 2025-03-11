@@ -53,4 +53,4 @@ postpartum,From,n,age_grp,Pill,IUD,Injectable,Condom,F.sterilization,Withdrawal,
 0,Other.mod,2.345857,18-20,0,0,0,1,0,0,0,0,0,grpNo18-20
 0,Other.mod,4.691714,20-25,0,0,0,1,0,0,0,0,0,grpNo20-25
 0,Other.mod,0,<18,0,0,0,1,0,0,0,0,0,grpNo<18
-0,Other.mod,0,18-20,0,0,0,1,0,0,0,0,0,grpNo18-20
+0,Other.mod,0,>35,0,0,0,0,0,0,0,1,0,grpNo>35
