@@ -351,7 +351,11 @@ class SimpleChoice(RandomChoice):
                         if mname == 'btl':
                             choice_array[switch_iinds] = method.idx  # Continue, can't actually stop this method
                         else:
-                            these_probs = mcp[key][mname]  # Cannot stay on method
+                            try:
+                                these_probs = mcp[key][mname]  # Cannot stay on method
+                            except:
+                                errormsg = f'Cannot find {key} in method switch!'
+                                raise ValueError(errormsg)
                             these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
                             these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
                             these_probs = these_probs/sum(these_probs)  # Renormalize
