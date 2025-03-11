@@ -24,10 +24,13 @@ def ok(string):
 
 def make_sims(interventions, contraception_module=None):
     ''' Make simulations with particular interventions '''
-    simlist = sc.autolist()
+    simlist = []
     for intv in interventions:
         pars = fp.pars('test', interventions=intv)
-        simlist += fp.Sim(pars=pars, contraception_module=contraception_module)
+        simlist.append(
+            fp.Sim(
+                pars=sc.dcp(pars),
+                contraception_module=sc.dcp(contraception_module)))
     return simlist
 
 
@@ -138,7 +141,7 @@ def test_scenarios():
     low_inj_eff = 0.9
     scen1 = fp.make_scen(label='More effective pill', year=int_year, eff={'Pill':high_inj_eff})
     scen2 = fp.make_scen(label='Less effective pill', year=int_year, eff={'Pill':low_inj_eff})
-    
+
     scens_scenario_list = run_scenario([scen1, scen2])
 
     eff1 = scens_scenario_list.msim.sims[0].contraception_module.methods['pill'].efficacy
@@ -173,7 +176,7 @@ def test_scenarios():
             sim_val = sum(sim_results[sim_key])
         else:
             sim_val = np.mean(sim_results[sim_key])
-            
+
         assert scenario_val == sim_val, f"From sim results {sim_key} is {sim_val} while in scenarios {scenario_key} is {scenario_val}"
         ok(f"Results for {scenario_key} and {sim_key} match")
 
@@ -184,7 +187,7 @@ def test_scenarios():
 
     # check rates
     for keys in [("tfr", "tfr_rates"), ("mcpr", "mcpr")]:
-        compare_results(keys[0], keys[1], is_sum=False) 
+        compare_results(keys[0], keys[1], is_sum=False)
 
 
 if __name__ == '__main__':

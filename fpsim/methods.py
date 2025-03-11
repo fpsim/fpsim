@@ -15,7 +15,7 @@ from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs
 
-__all__ = ['Method', 'Methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
+__all__ = ['Method', 'make_methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
 
 
 # %% Base definition of contraceptive methods -- can be overwritten by locations
@@ -34,35 +34,42 @@ class Method:
 def ln(a, b): return dict(dist='lognormal', par1=a, par2=b)
 
 
-method_list = [
-    Method(name='none',     efficacy=0,     modern=False, dur_use=ln(2, 3), label='None'),
-    Method(name='pill',     efficacy=0.945, modern=True,  dur_use=ln(2, 3), label='Pill'),
-    Method(name='iud',      efficacy=0.986, modern=True, dur_use=ln(5, 3), label='IUDs', csv_name='IUD'),
-    Method(name='inj',      efficacy=0.983, modern=True, dur_use=ln(2, 3), label='Injectables', csv_name='Injectable'),
-    Method(name='cond',     efficacy=0.946, modern=True,  dur_use=ln(1, 3), label='Condoms', csv_name='Condom'),
-    Method(name='btl',      efficacy=0.995, modern=True, dur_use=ln(50, 3), label='BTL', csv_name='F.sterilization'),
-    Method(name='wdraw',    efficacy=0.866, modern=False, dur_use=ln(1, 3), label='Withdrawal', csv_name='Withdrawal'), #     # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
-    Method(name='impl',     efficacy=0.994, modern=True, dur_use=ln(2, 3), label='Implants', csv_name='Implant'),
-    Method(name='othtrad',  efficacy=0.861, modern=False, dur_use=ln(1, 3), label='Other traditional', csv_name='Other.trad'),
-    Method(name='othmod',   efficacy=0.880, modern=True, dur_use=ln(1, 3), label='Other modern', csv_name='Other.mod'),
-]
+def make_methods():
 
-idx = 0
-for method in method_list:
-    method.idx = idx
-    idx += 1
+    method_list = [
+        Method(name='none',     efficacy=0,     modern=False, dur_use=ln(2, 3), label='None'),
+        Method(name='pill',     efficacy=0.945, modern=True,  dur_use=ln(2, 3), label='Pill'),
+        Method(name='iud',      efficacy=0.986, modern=True, dur_use=ln(5, 3), label='IUDs', csv_name='IUD'),
+        Method(name='inj',      efficacy=0.983, modern=True, dur_use=ln(2, 3), label='Injectables', csv_name='Injectable'),
+        Method(name='cond',     efficacy=0.946, modern=True,  dur_use=ln(1, 3), label='Condoms', csv_name='Condom'),
+        Method(name='btl',      efficacy=0.995, modern=True, dur_use=ln(50, 3), label='BTL', csv_name='F.sterilization'),
+        Method(name='wdraw',    efficacy=0.866, modern=False, dur_use=ln(1, 3), label='Withdrawal', csv_name='Withdrawal'), #     # 1/2 periodic abstinence, 1/2 other traditional approx.  Using rate from periodic abstinence
+        Method(name='impl',     efficacy=0.994, modern=True, dur_use=ln(2, 3), label='Implants', csv_name='Implant'),
+        Method(name='othtrad',  efficacy=0.861, modern=False, dur_use=ln(1, 3), label='Other traditional', csv_name='Other.trad'),
+        Method(name='othmod',   efficacy=0.880, modern=True, dur_use=ln(1, 3), label='Other modern', csv_name='Other.mod'),
+    ]
 
-method_map = {method.label: method.idx for method in method_list}
-Methods = ss.ndict(method_list, type=Method)
-SimpleMethods = sc.dcp(Methods)
-# for m in SimpleMethods.values(): m.dur_use = 1
+    idx = 0
+    for method in method_list:
+        method.idx = idx
+        idx += 1
+
+    method_map = {method.label: method.idx for method in method_list}
+    Methods = ss.ndict(method_list, type=Method)
+
+    m = sc.prettyobj()
+    m.method_list = sc.dcp(method_list)
+    m.method_map = sc.dcp(method_map)
+    m.Methods = sc.dcp(Methods)
+    return m
+
 
 
 # %% Define classes to contain information about the way women choose contraception
 
 class ContraceptiveChoice:
     def __init__(self, methods=None, pars=None, **kwargs):
-        self.methods = methods or SimpleMethods
+        self.methods = methods or make_methods().Methods
         self.__dict__.update(kwargs)
         self.n_options = len(self.methods)
         self.n_methods = len([m for m in self.methods if m != 'none'])

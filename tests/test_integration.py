@@ -183,7 +183,7 @@ def test_simplechoice_contraception_dependencies():
         prob_use_trend_par=0.0, # no change in use trend, so changes should be driven by other factors
         force_choose=False,
     )
-    method = fpm.SimpleChoice(pars=cm_pars, location="kenya", methods=sc.dcp(fp.Methods))
+    method = fpm.SimpleChoice(pars=cm_pars, location="kenya")
     analyzers = fp.cpr_by_age()
 
     # force all to have debuted and sexually active
@@ -287,7 +287,7 @@ def test_method_selection_dependencies():
         prob_use_trend_par=0.0,  # no change in use trend, so changes should be driven by other factors
         force_choose=False,
     )
-    method = fpm.SimpleChoice(pars=cm_pars, location="kenya", methods=sc.dcp(fp.Methods))
+    method = fpm.SimpleChoice(pars=cm_pars, location="kenya")
 
     cpr = fp.cpr_by_age()
     snapshots = fp.snapshot([1,2])
