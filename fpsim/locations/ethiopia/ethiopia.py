@@ -612,7 +612,10 @@ def barriers():
 
 
 def age_spline(which):
-    return pd.read_csv(thisdir / 'data' / f'age_spline_{which}.csv', index_col=0)
+    d = pd.read_csv(thisdir / 'data' / f'splines_{which}.csv')
+    # Set the age as the index
+    d.index = d.age
+    return d
 
 
 def age_partnership():
@@ -771,7 +774,7 @@ def process_contra_use(which):
                 intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
                 age_factors=df[df['rhs'].str.contains('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
                 ever_used_contra=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
-                edu_attainment=df[df['rhs'].str.contains('edu_attainment')].Estimate.values[0],
+                edu_factors=df[df['rhs'].str.contains('edu')].Estimate.values,
                 parity=df[df['rhs'].str.contains('parity')].Estimate.values[0],
                 urban=df[df['rhs'].str.contains('urban')].Estimate.values[0],
                 wealthquintile=df[df['rhs'].str.contains('wealthquintile')].Estimate.values[0],
@@ -835,17 +838,18 @@ def process_dur_use(methods, df=None):
         df = pd.read_csv(thisdir / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
     for method in methods.values():
         if method.name == 'btl':
-            method.dur_use = dict(dist='lognormal', par1=100, par2=1)
+            method.dur_use = dict(dist='unif', par1=1000, par2=1200)
         else:
             mlabel = method.csv_name
 
             thisdf = df.loc[df.method == mlabel]
             dist = thisdf.functionform.iloc[0]
             method.dur_use = dict()
-            method.dur_use['age_factors'] = np.append(thisdf.coef.values[2:], 0)
+            age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
+            method.dur_use['age_factors'] = thisdf.estimate.values[age_ind:]
 
             if dist in ['lognormal', 'lnorm']:
-                method.dur_use['dist'] = dist
+                method.dur_use['dist'] = 'lognormal_sps'
                 method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
                 method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
             elif dist in ['gamma']:
@@ -856,6 +860,14 @@ def process_dur_use(methods, df=None):
                 method.dur_use['dist'] = dist
                 method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
                 method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
+            elif dist == 'weibull':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
+            elif dist == 'exponential':
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'rate'].values[0]
+                method.dur_use['par2'] = None
             else:
                 errormsg = f"Duration of use distribution {dist} not recognized"
                 raise ValueError(errormsg)
