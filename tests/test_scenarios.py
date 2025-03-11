@@ -136,7 +136,7 @@ def test_scenarios():
     low_inj_eff = 0.9
     scen1 = fp.make_scen(label='More effective pill', year=int_year, eff={'Pill':high_inj_eff})
     scen2 = fp.make_scen(label='Less effective pill', year=int_year, eff={'Pill':low_inj_eff})
-    
+
     scens_scenario_list = run_scenario([scen1, scen2])
 
     eff1 = scens_scenario_list.msim.sims[0].contraception_module.methods['pill'].efficacy
@@ -153,7 +153,7 @@ def test_scenarios():
 
     with pytest.raises(TypeError):
         invalid_scens1 = fp.Scenarios(location='test')
-        invalid_scens1.add_scen(invalid_scen1)        
+        invalid_scens1.add_scen(invalid_scen1)
 
     with pytest.raises(ValueError):
         invalid_scens = fp.Scenarios(location='test')
@@ -170,7 +170,7 @@ def test_scenarios():
             sim_val = sum(sim_results[sim_key])
         else:
             sim_val = np.mean(sim_results[sim_key])
-            
+
         assert scenario_val == sim_val, f"From sim results {sim_key} is {sim_val} while in scenarios {scenario_key} is {scenario_val}"
 
     # check sums
@@ -180,13 +180,13 @@ def test_scenarios():
 
     # check rates
     for keys in [("tfr", "tfr_rates"), ("mcpr", "mcpr")]:
-        compare_results(keys[0], keys[1], is_sum=False) 
+        compare_results(keys[0], keys[1], is_sum=False)
 
 
 if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # msim1  = test_update_methods_eff()
-        # msim2  = test_update_methods()
+        msim1  = test_update_methods_eff()
+        msim2  = test_update_methods()
         scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
