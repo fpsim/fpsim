@@ -7,7 +7,7 @@ import numpy as np
 import sciris as sc
 import fpsim as fp
 import pylab as pl
-# import pytest
+import pytest
 
 do_plot = True
 sc.options(backend='agg') # Turn off interactive plots
