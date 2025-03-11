@@ -5,7 +5,7 @@ Run tests on the Scenarios class.
 import numpy as np
 import sciris as sc
 import fpsim as fp
-# import pytest
+import pytest
 from fpsim import defaults as fpd
 
 # Global settings
@@ -124,6 +124,7 @@ def test_scenarios():
     scens_repeat = fp.Scenarios(location='test', repeats=2, scens=scen, start_year=int_year)
     scens_repeat.run(serial=serial)
     assert len(scens_repeat.msim.sims) == 2, f"Should be {2} sims in scens object but found {len(scens_repeat.msim.sims)}"
+    ok('Scenarios repeated as expected')
 
     eff1 = scens_repeat.msim.sims[0].contraception_module.methods['pill'].efficacy
     eff2 = scens_repeat.msim.sims[1].contraception_module.methods['pill'].efficacy
@@ -131,6 +132,7 @@ def test_scenarios():
 
     for efficacy in [eff1, eff2]:
         assert efficacy == high_inj_eff, f"Repeated efficacy scenarios do not match"
+        ok(f'Efficacy of pill is {efficacy}')
 
     '''Checks that inputting scenarios as list has same result as adding them separately'''
     low_inj_eff = 0.9
@@ -146,6 +148,7 @@ def test_scenarios():
 
     assert eff1 == high_inj_eff, f"Efficacy of pill using scenarios list should be {high_inj_eff}, not {eff1}"
     assert eff2 == low_inj_eff, f"Efficacy of pill using scenarios list should be {low_inj_eff}, not {eff2}"
+    ok(f'First scenario list efficacy is {high_inj_eff}, second scenario list efficacy is {low_inj_eff}')
 
     '''Checks that we can't add invalid scenarios'''
     invalid_scen1 = dict(invalid_key='Should fail')
@@ -153,7 +156,7 @@ def test_scenarios():
 
     with pytest.raises(TypeError):
         invalid_scens1 = fp.Scenarios(location='test')
-        invalid_scens1.add_scen(invalid_scen1)        
+        invalid_scens1.add_scen(invalid_scen1)
 
     with pytest.raises(ValueError):
         invalid_scens = fp.Scenarios(location='test')
@@ -172,6 +175,7 @@ def test_scenarios():
             sim_val = np.mean(sim_results[sim_key])
             
         assert scenario_val == sim_val, f"From sim results {sim_key} is {sim_val} while in scenarios {scenario_key} is {scenario_val}"
+        ok(f"Results for {scenario_key} and {sim_key} match")
 
     # check sums
     for keys in [("births", "births"), ("fails", "method_failures_over_year"), ("popsize", "pop_size"),
@@ -187,6 +191,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        msim1  = test_update_methods_eff()
-        msim2  = test_update_methods()
+        # msim1  = test_update_methods_eff()
+        # msim2  = test_update_methods()
         scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
