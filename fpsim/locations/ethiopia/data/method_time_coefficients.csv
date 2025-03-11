@@ -44,8 +44,8 @@ estimate,coef,se,method,functionform,country
 0.488372629,shape,0.039969441,Implant,weibull,Ethiopia
 3.590975666,scale,0.057006316,Implant,weibull,Ethiopia
 -0.329211486,"age_grp_fact(0,18]",0.128888605,Implant,weibull,Ethiopia
-0,"age_grp_fact(20,25]",0,Implant,weibull,Ethiopia
 -0.331178792,"age_grp_fact(18,20]",0.113320548,Implant,weibull,Ethiopia
+0,"age_grp_fact(20,25]",0,Implant,weibull,Ethiopia
 0.403816358,"age_grp_fact(25,35]",0.075692604,Implant,weibull,Ethiopia
 0.517806615,"age_grp_fact(35,50]",0.105153198,Implant,weibull,Ethiopia
 0.477832016,shape,0.120153347,Other.trad,llogis,Ethiopia
