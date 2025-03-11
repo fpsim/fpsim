@@ -57,10 +57,10 @@ class People(ss.People):
         # TODO Need hook to set sex distribution
         # if sex is None: sex = _sex
 
-        self.urban[self.auids] = _urban  # Urban (1) or rural (0)
+        self.urban[self.alive.uids] = _urban  # Urban (1) or rural (0)
 
         # Parameters on sexual and reproductive history
-        self.fertile[self.auids] = fpu.n_binomial(1 - self.sim.fp_pars['primary_infertility'], pars.n_agents) # todo replace with ss dist
+        self.fertile[self.alive.uids] = fpu.n_binomial(1 - self.sim.fp_pars['primary_infertility'], pars.n_agents) # todo replace with ss dist
 
         # Fertility intent
         has_intent = "fertility_intent"
@@ -80,9 +80,9 @@ class People(ss.People):
 
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
         if not self.sim.fp_pars['use_subnational']:
-            self.fated_debut[self.auids] = self.sim.fp_pars['debut_age']['ages'][fpu.n_multinomial(self.sim.fp_pars['debut_age']['probs'], self.sim.pars.n_agents)]
+            self.fated_debut[self.alive.uids] = self.sim.fp_pars['debut_age']['ages'][fpu.n_multinomial(self.sim.fp_pars['debut_age']['probs'], self.sim.pars.n_agents)]
         else:
-            self.fated_debut[self.auids] = fpsn.get_debut_init_vals(self)
+            self.fated_debut[self.alive.uids] = fpsn.get_debut_init_vals(self)
 
         # Fecundity variation
         fv = [self.sim.fp_pars['fecundity_var_low'], self.sim.fp_pars['fecundity_var_high']]
@@ -215,7 +215,7 @@ class People(ss.People):
             return
         wq_probs = self.sim.fp_pars['wealth_quintile']['percent']
         vals = np.random.choice(len(wq_probs), size=self.sim.pars['n_agents'], p=wq_probs)+1 # todo replace with ss dist
-        self.wealthquintile[self.auids] = vals
+        self.wealthquintile[self.alive.uids] = vals
         return
 
     def update_time_to_choose(self, uids=None):
@@ -224,7 +224,7 @@ class People(ss.People):
         """
 
         if uids is None:
-            uids = self.auids
+            uids = self.alive.uids
 
         fecund = uids[(self.female[uids] == True) & (self.age[uids] < self.sim.fp_pars['age_limit_fecundity'])]
 
@@ -245,7 +245,7 @@ class People(ss.People):
         Add link between newly added individuals and their mothers
         """
         if uids is None:
-            uids = self.auids
+            uids = self.alive.uids
 
         for mother_index, postpartum in enumerate(uids[self.postpartum[uids]]):
             if postpartum and self.postpartum_dur[uids][mother_index] < 2:
@@ -263,7 +263,7 @@ class People(ss.People):
         #Todo remove excess input params
         """
         if uids is None:
-            uids = self.auids
+            uids = self.alive.uids
 
         fecund = (self.female[uids]==True) & (self.age[uids] < self.sim.fp_pars['age_limit_fecundity'])
         fecund_uids = uids[fecund]
@@ -490,7 +490,7 @@ class People(ss.People):
         """
 
         if uids is None:
-            uids = self.auids
+            uids = self.alive.uids
 
         # Set postpartum probabilities
         match_low = (self.postpartum_dur[uids] >= 0)
@@ -541,7 +541,7 @@ class People(ss.People):
         Decide if person (female) becomes pregnant at a timestep.
         """
         if uids is None:
-            uids = self.auids
+            uids = self.alive.uids
 
         active_uids = uids[(self.sexually_active[uids] & self.fertile[uids])]
         lam = self.lam[active_uids]
@@ -869,7 +869,7 @@ class People(ss.People):
         Count how many total live women in each 5-year age bin 10-50, for tabulating ASFR
         """
         if uids is None:
-            uids = self.auids
+            uids = self.alive.uids
 
         for key, (age_low, age_high) in fpd.age_bin_map.items():
             this_age_bin = uids[(self.age[uids] >= age_low) & (self.age[uids] < age_high)]
@@ -938,7 +938,7 @@ class People(ss.People):
         Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
         annualy, but not based on a calendar year, rather every year on an agent's bday."""
         if uids is None:
-            uids = self.auids
+            uids = self.alive.uids
         age_diff = self.age[uids] - self.int_age(uids)
         had_bday = uids[(age_diff <= self.sim.t.dt_year)]
         return had_bday
@@ -968,7 +968,7 @@ class People(ss.People):
         #alive_start = self.filter(self.alive)
         #alive_start.decide_death_outcome()     # Decide if person dies at this t in the simulation
         #alive_check = self.filter(self.alive)  # Reselect live agents after exposure to general mortality
-        self.decide_death_outcome(self.auids)
+        self.decide_death_outcome(self.alive.uids)
 
         # Update pregnancy with maternal mortality outcome
         preg = self.pregnant.uids # no longer needed because by default results are filtered by alive
@@ -1312,14 +1312,14 @@ class People(ss.People):
     def int_age(self, uids):
         ''' Return ages as an integer '''
         if uids is None:
-            uids = self.auids
+            uids = self.alive.uids
         return np.array(self.age[uids], dtype=np.int64)
 
 
     def int_age_clip(self, uids):
         ''' Return ages as integers, clipped to maximum allowable age for pregnancy '''
         if uids is None:
-            uids = self.auids
+            uids = self.alive.uids
         return np.minimum(self.int_age(uids), fpd.max_age_preg)
 
     def update_post(self):

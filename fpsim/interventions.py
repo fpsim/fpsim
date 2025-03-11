@@ -391,7 +391,7 @@ class change_people_state(ss.Intervention):
 
         return eligible_uids
 
-     def step(self):
+    def step(self):
         if self.pars.years[0] <= self.sim.y <= self.pars.years[1]:  # Inclusive range
             eligible_uids = self.check_eligibility()
             self.sim.people[self.pars.state_name][eligible_uids] = self.pars.new_val

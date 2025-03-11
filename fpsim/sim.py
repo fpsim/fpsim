@@ -105,9 +105,12 @@ class Sim(ss.Sim):
         args = {key:val for key,val in args.items() if val is not None} # Remove None inputs
 
         # remap old parameter names to the new names
-        sim_pars['start'] = sim_pars.pop('start_year', 'start')
-        sim_pars['stop'] = sim_pars.pop('end_year', 'stop')
-        sim_pars['rand_seed'] = sim_pars.pop('seed', 'rand_seed')
+        if 'start_year' in sim_pars:
+            sim_pars['start'] = sim_pars.pop('start_year')
+        if 'end_year' in sim_pars:
+            sim_pars['stop'] = sim_pars.pop('end_year')
+        if 'seed' in sim_pars:
+            sim_pars['rand_seed'] = sim_pars.pop('seed')
 
         input_pars = sc.mergedicts(sim_pars, args, _copy=copy_inputs, **kwargs)
         new_sim_pars.update(input_pars) # update with input pars to override defaults

@@ -67,7 +67,7 @@ class Education:
 
     def update(self, ppl, uids):
         if uids is None:
-            uids = ppl.auids
+            uids = ppl.alive.uids
         self.start_education(ppl, uids)  # Check if anyone needs to start school
         self.advance_education(ppl, uids)  # Advance attainment, determine who reaches their objective, who dropouts, who has their education interrupted
         self.resume_education(ppl, uids)  # Determine who goes back to school after an interruption
