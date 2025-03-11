@@ -166,7 +166,6 @@ def test_durations(location=None):
     return [sim_base, sim_short]
 
 
-
 if __name__ == '__main__':
 
     sims1 = test_mcpr(do_plot=False)

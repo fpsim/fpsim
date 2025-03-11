@@ -778,7 +778,7 @@ def process_dur_use(methods, df=None):
         df = pd.read_csv(this_dir() / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
     for method in methods.values():
         if method.name == 'btl':
-            method.dur_use = dict(dist='lognormal', par1=100, par2=1)
+            method.dur_use = dict(dist='unif', par1=1000, par2=1200)
         else:
             mlabel = method.csv_name
 
@@ -793,7 +793,7 @@ def process_dur_use(methods, df=None):
             method.dur_use['age_factors'] = thisdf.estimate.values[age_ind:]
 
             if dist in ['lognormal', 'lnorm']:
-                method.dur_use['dist'] = 'lognormal'
+                method.dur_use['dist'] = 'lognormal_sps'
                 method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
                 method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
             elif dist in ['gamma']:

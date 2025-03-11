@@ -261,19 +261,16 @@ class SimpleChoice(RandomChoice):
 
     @staticmethod
     def _gamma_dpars(dur_use, ai):
-        par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
-        par2 = 1/np.exp(dur_use['par2'])
+        par1 = np.exp(dur_use['par1'])
+        par2 = 1/np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
         return par1, par2
 
     @staticmethod
     def _make_dict(dur_use, par1, par2):
-        if dur_use['dist'] == 'lognormal':
-            return dict(dist='lognorm_sps', par1=par1, par2=par2)
-        else:
-            return dict(dist=dur_use['dist'], par1=par1, par2=par2)
+        return dict(dist=dur_use['dist'], par1=par1, par2=par2)
 
     def _get_dist_funs(self, dist_name):
-        if dist_name == 'lognormal':
+        if dist_name == 'lognormal_sps':
             return self._lognormal_dpars, self._make_dict
         elif dist_name == 'gamma':
             return self._gamma_dpars, self._make_dict
@@ -301,10 +298,10 @@ class SimpleChoice(RandomChoice):
             if n_users:
                 if isinstance(dur_use, dict):
                     # NOTE: List of available/supported distros can be a property of the class?
-                    if not (dur_use['dist'] in ['lognormal', 'gamma', 'llogis', 'exponential', 'weibull']):
+                    if not (dur_use['dist'] in ['lognormal_sps', 'gamma', 'llogis', 'exponential', 'weibull', 'unif']):
                         # bail early
                         raise ValueError(
-                            'Unrecognized distribution type for duration of use')
+                            f'Unrecognized distribution type for duration of use: {dur_use["dist"]}')
 
                     if 'age_factors' in dur_use.keys():
                         # Get functions based on distro and set for every agent
