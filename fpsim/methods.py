@@ -15,7 +15,7 @@ from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs
 
-__all__ = ['Method', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
+__all__ = ['Method', 'make_methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
 
 
 # %% Base definition of contraceptive methods -- can be overwritten by locations
@@ -33,7 +33,8 @@ class Method:
 # Helper function for setting lognormals
 def ln(a, b): return dict(dist='lognormal', par1=a, par2=b)
 
-def m():
+
+def make_methods():
 
     method_list = [
         Method(name='none',     efficacy=0,     modern=False, dur_use=ln(2, 3), label='None'),
@@ -53,10 +54,8 @@ def m():
         method.idx = idx
         idx += 1
 
-
     method_map = {method.label: method.idx for method in method_list}
     Methods = ss.ndict(method_list, type=Method)
-    # SimpleMethods = sc.dcp(Methods)
 
     m = sc.prettyobj()
     m.method_list = sc.dcp(method_list)
@@ -64,14 +63,13 @@ def m():
     m.Methods = sc.dcp(Methods)
     return m
 
-# for m in SimpleMethods.values(): m.dur_use = 1
 
 
 # %% Define classes to contain information about the way women choose contraception
 
 class ContraceptiveChoice:
     def __init__(self, methods=None, pars=None, **kwargs):
-        self.methods = methods or m().Methods
+        self.methods = methods or make_methods().Methods
         self.__dict__.update(kwargs)
         self.n_options = len(self.methods)
         self.n_methods = len([m for m in self.methods if m != 'none'])
