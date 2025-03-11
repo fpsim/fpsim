@@ -738,7 +738,6 @@ def process_markovian_method_choice(methods, df=None):
     csv_map = {method.csv_name: method.name for method in methods.values()}
     idx_map = {method.csv_name: method.idx for method in methods.values()}
 
-    print('DEBUGGGG:', len(csv_map), csv_map.keys())
     idx_df = {}
     for col in df.columns:
         if col in csv_map.keys():
