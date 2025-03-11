@@ -5,7 +5,7 @@ Run tests on the Scenarios class.
 import numpy as np
 import sciris as sc
 import fpsim as fp
-import pytest
+# import pytest
 from fpsim import defaults as fpd
 
 # Global settings
@@ -81,7 +81,7 @@ def test_update_methods():
     # Make and run sims
     simlist = make_sims([no_contra, hi_contr], contraception_module=fp.RandomChoice())
     msim = fp.MultiSim(sims=simlist)
-    msim.run(serial=serial)
+    msim.run(serial=serial, compute_stats=False)
 
     # Test that all the parameters were correctly updated
     assert msim.sims[1].contraception_module.pars['p_use'] == p_use
@@ -187,6 +187,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        msim1  = test_update_methods_eff()
+        # msim1  = test_update_methods_eff()
         msim2  = test_update_methods()
-        scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
+        # scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
