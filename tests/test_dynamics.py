@@ -16,16 +16,16 @@ do_plot  = 1 # Whether to do plotting in interactive mode
 def make_sim_parts():
     location = 'kenya'
     par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1)
-    pars = fp.pars(location=location, **par_kwargs)
+    pars = fp.pars(location=location)
     edu = fp.Education(location=location)
     choice = fp.StandardChoice(location=location)
-    return pars, choice, edu
+    return par_kwargs, pars, choice, edu
 
 
 def make_sim(label='Baseline', intvs=None, analyzers=None, **kwargs):
-    pars, choice, edu = make_sim_parts()
+    sim_pars, pars, choice, edu = make_sim_parts()
     sim = fp.Sim(
-        pars=pars, contraception_module=choice, education_module=edu,
+        sim_pars=sim_pars, fp_pars=pars, contraception_module=choice, education_module=edu,
         label=label, interventions=intvs, analyzers=analyzers, **kwargs
         )
     return sim
@@ -58,7 +58,7 @@ def test_mcpr():
     # Create interventions and sims
     for covar in covars:
 
-        def select_women(sim): return sim.people.is_female & sim.people.alive
+        def select_women(sim): return sim.people.female.uids
 
         change_state = fp.change_people_state(
                             covar.pplattr,
@@ -97,8 +97,8 @@ def test_mcpr():
     axes = axes.flatten()
     for ri, covar in enumerate(covars):
         ax = axes[ri]
-        ax.plot(sims[0].results.t, covar.base, label='Baseline')
-        ax.plot(sims[ri+1].results.t, covar.intv, label=f'Increased {covar.pplattr}')
+        ax.plot(sims[0].results.timevec, covar.base, label='Baseline')
+        ax.plot(sims[ri+1].results.timevec, covar.intv, label=f'Increased {covar.pplattr}')
         ax.set_title(f'{covar.pplattr}')
         ax.set_xlabel('Year')
         ax.legend()
@@ -106,9 +106,9 @@ def test_mcpr():
     pl.show()
 
     fig, ax = pl.subplots(1, 1, figsize=(12, 6))
-    ax.plot(sims[0].results.t, sims[0].results.mcpr, label=sims[0].label)
+    ax.plot(sims[0].results.timevec, sims[0].results.mcpr, label=sims[0].label)
     for ri, covar in enumerate(covars):
-        ax.plot(sims[ri+1].results.t, covar.mcpr, label=covar.pplattr)
+        ax.plot(sims[ri+1].results.timevec, covar.mcpr, label=covar.pplattr)
     ax.set_ylabel('mCPR')
     ax.set_xlabel('Year')
     pl.legend()

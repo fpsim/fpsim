@@ -103,7 +103,13 @@ class Sim(ss.Sim):
         args = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         args = {key:val for key,val in args.items() if val is not None} # Remove None inputs
-        input_pars = sc.mergedicts(sim_pars, args, kwargs, _copy=copy_inputs)
+
+        # remap old parameter names to the new names
+        sim_pars['start'] = sim_pars.pop('start_year', 'start')
+        sim_pars['stop'] = sim_pars.pop('end_year', 'stop')
+        sim_pars['rand_seed'] = sim_pars.pop('seed', 'rand_seed')
+
+        input_pars = sc.mergedicts(sim_pars, args, _copy=copy_inputs, **kwargs)
         new_sim_pars.update(input_pars) # update with input pars to override defaults
         super().__init__(new_sim_pars, **kwargs)  # Initialize and set the parameters as attributes
 

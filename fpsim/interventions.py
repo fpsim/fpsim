@@ -5,6 +5,7 @@ defined by the user by inheriting from these classes.
 import numpy as np
 import pylab as pl
 import sciris as sc
+import starsim as ss
 import inspect
 from . import utils as fpu
 from . import methods as fpm
@@ -298,7 +299,7 @@ class change_par(Intervention):
         return
 
 
-class change_people_state(Intervention):
+class change_people_state(ss.Intervention):
     """
     Intervention to modify values of a People's boolean state at one specific
     point in time.
@@ -319,93 +320,81 @@ class change_people_state(Intervention):
 
     def __init__(self, state_name, new_val, years=None, eligibility=None, prop=1.0, annual=False):
         super().__init__()
-        self.state_name = state_name
-        self.years = years
-        self.eligibility = eligibility
+        self.define_pars(
+            state_name=state_name,
+            new_val=new_val,
+            years=years,
+            eligibility=eligibility,
+            prop=prop,
+            annual=annual
+        )
 
-        self.prop = prop
-        self.annual = annual
         self.annual_perc = None
-        self.new_val = new_val
-
-        self.applied = False
         return
 
-    def initialize(self, sim=None):
-        super().initialize()
+    def init_pre(self, sim):
+        super().init_pre(sim)
         self._validate_pars()
 
         # Lastly, adjust the probability by the sim's timestep, if it's an annual probability
-        if self.annual:
+        if self.pars.annual:
             # per timestep/monthly growth rate or perc of eligible women who will be made to choose contraception
-            self.annual_perc = self.prop
-            self.prop = ((1 + self.annual_perc) ** sim.dt)-1
+            self.annual_perc = self.pars.prop
+            self.pars.prop = ((1 + self.annual_perc) ** sim.dt)-1
         # Validate years and values
-        if self.years is None:
+        if self.pars.years is None:
             # f'Intervention start and end years not provided. Will use sim start an end years'
-            self.years = [sim['start_year'], sim['end_year']]
-        if sc.isnumber(self.years) or len(self.years) == 1:
-            self.years = sc.promotetolist(self.years)
+            self.pars.years = [sim.pars['start'], sim.pars['stop']]
+        if sc.isnumber(self.pars.years) or len(self.pars.years) == 1:
+            self.pars.years = sc.promotetolist(self.pars.years)
             # Assumes that start year has been specified, append end of the simulation as end year of the intervention
-            self.years.append(sim['end_year'])
+            self.pars.years.append(sim.pars['stop'])
 
-        min_year = min(self.years)
-        max_year = max(self.years)
-        if min_year < sim['start_year']:
+        min_year = min(self.pars.years)
+        max_year = max(self.pars.years)
+        if min_year < sim.pars['start']:
             errormsg = f'Intervention start {min_year} is before the start of the simulation.'
             raise ValueError(errormsg)
-        if max_year > sim['end_year']:
+        if max_year > sim.pars['stop']:
             errormsg = f'Intervention end {max_year} is after the end of the simulation.'
             raise ValueError(errormsg)
-        if self.years != sorted(self.years):
-            errormsg = f'Years {self.years} should be monotonically increasing'
+        if self.pars.years != sorted(self.pars.years):
+            errormsg = f'Years {self.pars.years} should be monotonically increasing'
             raise ValueError(errormsg)
 
         return
 
     def _validate_pars(self):
         # Validation
-        if self.state_name is None:
+        if self.pars.state_name is None:
             errormsg = 'A state name must be supplied.'
             raise ValueError(errormsg)
-        if self.new_val is None:
+        if self.pars.new_val is None:
             errormsg = 'A new value must be supplied.'
             raise ValueError(errormsg)
-        if self.eligibility is None:
+        if self.pars.eligibility is None:
             errormsg = 'Eligibility needs to be provided'
             raise ValueError(errormsg)
         return
 
-    def check_eligibility(self, sim):
+    def check_eligibility(self):
         """
-        Return an array of indices of agents eligible
+        Return an array of uids of agents eligible
         """
-        if callable(self.eligibility):
-            is_eligible = self.eligibility(sim)
-        elif sc.isarray(self.eligibility):
-            eligible_inds = self.eligibility
-            is_eligible = np.zeros(len(sim.people), dtype=bool)
-            is_eligible[eligible_inds] = True
+        if callable(self.pars.eligibility):
+            eligible_uids = self.pars.eligibility(self.sim)
+        elif sc.isarray(self.pars.eligibility):
+            eligible_uids = self.pars.eligibility
         else:
-            errormsg = 'Eligibility must be a function or an array of indices'
+            errormsg = 'Eligibility must be a function or an array of uids'
             raise ValueError(errormsg)
 
-        return is_eligible
+        return eligible_uids
 
-    def select_people(self, is_eligible):
-        """
-        Select people using
-        """
-        eligible_inds = sc.findinds(is_eligible)
-        is_selected = fpu.n_binomial(self.prop, len(eligible_inds))
-        selected_inds = eligible_inds[is_selected]
-        return selected_inds
-
-    def apply(self, sim):
-        if self.years[0] <= sim.y <= self.years[1]:  # Inclusive range
-            is_eligible = self.check_eligibility(sim)
-            selected_inds = self.select_people(is_eligible)
-            sim.people[self.state_name][selected_inds] = self.new_val
+     def step(self):
+        if self.pars.years[0] <= self.sim.y <= self.pars.years[1]:  # Inclusive range
+            eligible_uids = self.check_eligibility()
+            self.sim.people[self.pars.state_name][eligible_uids] = self.pars.new_val
         return
 
 

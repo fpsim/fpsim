@@ -409,14 +409,14 @@ class StandardChoice(SimpleChoice):
         if event == 'pp6': p = self.contra_use_pars[2]
 
         # Initialize with intercept
-        rhs = np.full_like(ppl.uids, fill_value=p.intercept)
+        rhs = np.full_like(ppl.age[uids], fill_value=p.intercept)
 
         # Add all terms that don't involve age
         for term in ['ever_used_contra', 'edu_attainment', 'urban', 'parity', 'wealthquintile']:  #
             rhs += p[term] * ppl[term][uids]
 
         # Add age
-        int_age = ppl.int_age[uids]
+        int_age = ppl.int_age(uids)
         int_age[int_age < fpd.min_age] = fpd.min_age
         int_age[int_age >= fpd.max_age_preg] = fpd.max_age_preg-1
         dfa = self.age_spline.loc[int_age]
