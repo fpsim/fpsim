@@ -6,7 +6,6 @@ import sciris as sc
 import pylab as pl
 import fpsim as fp
 import numpy as np
-import pytest
 
 serial   = 0 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
@@ -117,9 +116,9 @@ def test_change_people_state():
 
 if __name__ == '__main__':
     s0 = test_intervention_fn()
-    s1 = test_change_par()
-    s3 = test_plot()
-    s4, s5, s6 = test_change_people_state()
+    # s1 = test_change_par()
+    # s3 = test_plot()
+    # s4, s5, s6 = test_change_people_state()
 
     print('Done.')
 
