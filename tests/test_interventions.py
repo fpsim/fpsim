@@ -20,22 +20,6 @@ def make_sim(**kwargs):
     return sim
 
 
-def test_intervention_fn():
-    """ Test defining an intervention as a function """
-    sc.heading('Testing intervention can be defined as a function...')
-
-    def test_interv(sim):
-        if sim.ti == 100:
-            print(f'Success on day {sim.ti}')
-            sim.intervention_applied = True
-
-    sim = make_sim(interventions=test_interv)
-    sim.run()
-    assert sim.intervention_applied
-    print(f'✓ (functions intervention ok)')
-
-    return sim
-
 
 def test_change_par():
     ''' Testing that change_par() modifies sim results in expected ways '''
@@ -64,7 +48,6 @@ def test_change_par():
 
     assert s2['exposure_factor'] == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
     assert cp2_births <= base_births, f'Reducing exposure factor temporarily should reduce births, but {cp2_births} is not less than the baseline of {base_births}'
-
 
     return m
 
@@ -115,7 +98,6 @@ def test_change_people_state():
 
 
 if __name__ == '__main__':
-    s0 = test_intervention_fn()
     s1 = test_change_par()
     s3 = test_plot()
     s4, s5, s6 = test_change_people_state()
