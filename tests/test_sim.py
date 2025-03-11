@@ -25,7 +25,7 @@ def test_simple_choice():
     sims = sc.autolist()
     for location in ['kenya', 'ethiopia', 'senegal']:
         pars = fp.pars(location=location, **par_kwargs)
-        method_choice = fp.SimpleChoice(location=location, methods=sc.dcp(fp.Methods))
+        method_choice = fp.SimpleChoice(location=location)
         sim = fp.Sim(pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
         sims += sim
 
@@ -40,7 +40,7 @@ def test_mid_choice():
 
     sims = sc.autolist()
     for location in ['kenya', 'ethiopia', 'senegal']:
-        ms = fp.StandardChoice(location=location, methods=sc.dcp(fp.Methods))
+        ms = fp.StandardChoice(location=location)
         edu = fp.Education(location=location)
         pars = fp.pars(location=location, **par_kwargs)
         s = fp.Sim(pars, contraception_module=ms, education_module=edu)
