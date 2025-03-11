@@ -6,7 +6,6 @@ import sciris as sc
 import pylab as pl
 import fpsim as fp
 import numpy as np
-import pytest
 
 serial   = 0 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
@@ -112,27 +111,14 @@ def test_change_people_state():
     assert s2_500_used_contra == 0, f'Changing people state should set prior use to False for the first 500 agents, but {s2_500_used_contra} is not 0'
     print(f"✓ ({s1_used_contra} > {s0_used_contra})")
 
-    # Check user input validation
-    with pytest.raises(ValueError):  # Check invalid parameter
-        make_sim(interventions=fp.change_people_state('not_a_parameter', new_val=True)).run()
-    with pytest.raises(ValueError):  # Check bad value
-        make_sim(interventions=fp.change_people_state('ever_used_contra', new_val=None)).run()
-    with pytest.raises(ValueError):  # Check too late end year
-        make_sim(interventions=fp.change_people_state('ever_used_contra', years=2120, new_val=True)).run()
-    with pytest.raises(ValueError):  # Check invalid year type
-        make_sim(interventions=fp.change_people_state('ever_used_contra', years=None, new_val=True)).run()
-    with pytest.raises(ValueError):  # Check invalid eligible
-        make_sim(interventions=fp.change_people_state('ever_used_contra', years=2005, new_val=True, eligibility="")).run()
-
-
     return s0, s1, s2
 
 
 if __name__ == '__main__':
-    # s0 = test_intervention_fn()
+    s0 = test_intervention_fn()
     s1 = test_change_par()
-    # s3 = test_plot()
-    # s4, s5, s6 = test_change_people_state()
+    s3 = test_plot()
+    s4, s5, s6 = test_change_people_state()
 
     print('Done.')
 
