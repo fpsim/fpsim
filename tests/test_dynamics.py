@@ -124,11 +124,11 @@ def test_durations():
     # Create parameters and modules
     sim_base = make_sim()
 
-    pars, choice, edu = make_sim_parts()
+    sim_pars, pars, choice, edu = make_sim_parts()
     short_choice = sc.dcp(choice)
     for m in short_choice.methods.values(): m.dur_use = dict(dist='lognormal', par1=1, par2=1)
     sim_short = fp.Sim(
-        pars=pars, contraception_module=short_choice, education_module=edu,
+        sim_pars=sim_pars, fp_pars=pars, contraception_module=short_choice, education_module=edu,
         label='Short durations')
 
     # Run sims
