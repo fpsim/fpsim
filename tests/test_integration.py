@@ -9,18 +9,31 @@ import numpy as np
 import pylab as pl
 import starsim as ss
 
+#
+# def custom_init(sim, force=False, age=None, sex=None, empowerment_module=None, education_module=None, person_defaults=None):
+#     if force or not sim.initialized:
+#         sim.ti = 0  # The current time index
+#         fpu.set_seed(sim['seed'])
+#         sim.init_results()
+#         sim.people=fpppl.People(age_pyramid=sim.fp_pars['age_pyramid'], sex=sex, empowerment_module=empowerment_module, education_module=education_module, person_defaults=person_defaults )  # This step also initializes the empowerment and education modules if provided
+#         sim.init_contraception()  # Initialize contraceptive methods
+#         sim.initialized = True
+#         sim.pars['verbose'] = -1
+#     return sim
 
-def custom_init(sim, force=False, age=None, sex=None, empowerment_module=None, education_module=None, person_defaults=None):
-    if force or not sim.initialized:
-        sim.ti = 0  # The current time index
-        fpu.set_seed(sim['seed'])
-        sim.init_results()
-        sim.people=fpppl.People(age_pyramid=sim.fp_pars['age_pyramid'], sex=sex, empowerment_module=empowerment_module, education_module=education_module, person_defaults=person_defaults )  # This step also initializes the empowerment and education modules if provided
-        sim.init_contraception()  # Initialize contraceptive methods
-        sim.initialized = True
-        sim.pars['verbose'] = -1
-    return sim
+f24_age_pyramid = np.ndarray(shape=(3, 3), dtype=float)
+f24_age_pyramid[0, :] = [0, 0, 0]
+f24_age_pyramid[1, :] = [24, 0, 100]
+f24_age_pyramid[2, :] = [24.01, 0, 0]
 
+f15_age_pyramid = np.ndarray(shape=(3, 3), dtype=float)
+f15_age_pyramid[0, :] = [0, 0, 0]
+f15_age_pyramid[1, :] = [15, 0, 100]
+f15_age_pyramid[2, :] = [15.01, 0, 0]
+
+f_age_pyramid = np.ndarray(shape=(2,3), dtype=float)
+f_age_pyramid[0,:] = [0, 100, 100]
+f_age_pyramid[0,:] = [75, 100, 100]
 
 def test_pregnant_women():
     sc.heading('Test pregnancy and birth outcomes... ')
@@ -47,11 +60,18 @@ def test_pregnant_women():
         'start_year': 2000,
         'end_year': 2001,
         'n_agents': 1000,
-        'primary_infertility': 0,
     }
 
-    sim = fp.Sim(pars=custom_pars, contraception_module=contra_mod, sexual_activity=sexual_activity, debut_age=debut_age)
-    sim = custom_init(sim, age=24, sex=0, person_defaults={'fertility_intent':True})
+    fp_pars = {
+        'age_pyramid': f24_age_pyramid,
+        'debut_age': debut_age,
+        'primary_infertility': 0,
+        'sexual_activity': sexual_activity,
+        'fertility_intent': True,
+    }
+
+    sim = fp.Sim(sim_pars=custom_pars, fp_pars=fp_pars, contraception_module=contra_mod)
+    sim.init()
 
     # Override fecundity to maximize pregnancies and minimize variation during test
     sim.people.personal_fecundity[:] = 1
@@ -127,11 +147,17 @@ def test_contraception():
         'start_year': 2000,
         'end_year': 2003,
         'n_agents': 1000,
-        'primary_infertility': 0,
     }
 
-    sim = fp.Sim(pars=custom_pars, contraception_module=contra_mod, sexual_activity=sexual_activity, debut_age=debut_age, interventions=[p_use_change, p_use_change2])
-    sim = custom_init(sim, age=24, sex=0, person_defaults={'fertility_intent': False})
+    fp_pars = {
+        'age_pyramid': f24_age_pyramid,
+        'debut_age': debut_age,
+        'primary_infertility': 0,
+        'sexual_activity': sexual_activity,
+        'fertility_intent': False,
+    }
+
+    sim = fp.Sim(pars=custom_pars, fp_pars=fp_pars, contraception_module=contra_mod, interventions=[p_use_change, p_use_change2])
 
     # Override fecundity to maximize pregnancies and minimize variation during test
     sim.people.personal_fecundity[:] = 1
@@ -170,7 +196,17 @@ def test_simplechoice_contraception_dependencies():
         'start_year': 2000,
         'end_year': 2040,
         'n_agents': 1000,
+    }
+
+    # force all to have debuted and sexually active
+    debut_age = {
+        'ages': np.arange(10, 49, dtype=float),
+        'probs': np.ones(35, dtype=float)
+    }
+
+    fp_pars = {
         'primary_infertility': 1, # make sure no pregnancies!
+        'debut_age': debut_age,
     }
 
     cm_pars = dict(
@@ -180,11 +216,7 @@ def test_simplechoice_contraception_dependencies():
     method = fpm.SimpleChoice(pars=cm_pars, location="kenya", methods=sc.dcp(fp.Methods))
     analyzers = fp.cpr_by_age()
 
-    # force all to have debuted and sexually active
-    debut_age = {
-        'ages': np.arange(10, 49, dtype=float),
-        'probs': np.ones(35, dtype=float)
-    }
+
 
     # Note: not all agents will be active at t==0 but will be after t==1
     sexual_activity = np.ones(51, dtype=float)
