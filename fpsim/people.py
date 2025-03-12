@@ -21,6 +21,8 @@ __all__ = ['People']
 class People(ss.People):
     """
     Class for all the people in the simulation.
+
+    Age pyramid is a 2d array with columns: age, male count, female count
     """
 
     def __init__(self, n_agents=None, age_pyramid=None, empowerment_module=None, education_module=None, **kwargs):
@@ -285,7 +287,7 @@ class People(ss.People):
             oc_uids = time_to_set_contra_uids[(self.on_contra[time_to_set_contra_uids] == True)]
             self.method[oc_uids] = contraception_module.init_method_dist(self, oc_uids)
             self.ever_used_contra[oc_uids] = 1
-            method_dur = contraception_module.set_dur_method(self, time_to_set_contra_uids, self.sim.t.dt_year)
+            method_dur = contraception_module.set_dur_method(self, time_to_set_contra_uids)
             self.ti_contra[time_to_set_contra_uids] = ti + method_dur
 
         # Change the intent of women who have started to use a contraception method
@@ -425,7 +427,7 @@ class People(ss.People):
             # Set duration of use for everyone, and reset the time they'll next update
             durs_fixed = (self.postpartum_dur[uids] == 1) & (self.method[uids] == 0)
             update_durs = uids[~durs_fixed]
-            self.ti_contra[update_durs] = ti + cm.set_dur_method(self, update_durs, self.sim.t.dt_year)
+            self.ti_contra[update_durs] = ti + cm.set_dur_method(self, update_durs)
 
         return
 

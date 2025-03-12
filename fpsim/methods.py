@@ -124,9 +124,9 @@ class ContraceptiveChoice:
     def choose_method(self, ppl, uids, event=None):
         pass
 
-    def set_dur_method(self, ppl, uids, dt_year, method_used=None):
+    def set_dur_method(self, ppl, uids, method_used=None):
         # todo make this aware of starsim time units. right now assumes average_dur_use is in years and timestep par is in years
-        dt = dt_year
+        dt = ppl.sim.t.dt_year
         timesteps_til_update = np.full(len(uids), np.round(self.average_dur_use/dt), dtype=int)
         return timesteps_til_update
 
