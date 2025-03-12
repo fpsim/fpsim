@@ -168,7 +168,8 @@ def pars(location=None, rand_seed=None, **kwargs):
     from . import locations as fplocs
     loc_kwargs = dict(seed=rand_seed)
     locpars = getattr(fplocs, location).make_pars(**loc_kwargs)
-    pars = sc.mergedicts(pars, locpars, _copy=True, **kwargs,)
+    pars.update(sc.dcp(locpars))
+    pars.update(**kwargs)
 
     validate(default_pars, pars)
 

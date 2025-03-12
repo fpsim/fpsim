@@ -23,13 +23,13 @@ def test_simple_choice(location='kenya'):
 
     # Make & run sim
     import numpy as np
-    pars = fp.default_pars
     cm_pars = dict(
         prob_use_trend_par=0.1,
         force_choose=False,
         method_weights=np.array([0.1, 2, 0.5, 0.5, 2, 1, 1.5, 0.5, 5])
     )
     method_choice = fp.SimpleChoice(pars=cm_pars, location=location, methods=sc.dcp(fp.Methods))
+    pars = {'location': location}
     sim = fp.Sim(sim_pars=par_kwargs, fp_pars=pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
     sim.run()
 
@@ -81,8 +81,7 @@ def test_mid_choice(location='kenya'):
 
     # Define pars
     # pars = fp.pars(location=location, **par_kwargs)
-    pars = fp.default_pars
-    pars['location'] = location
+    pars = {'location': location}
 
     # Make and run sim
     s = fp.Sim(sim_pars=par_kwargs, fp_pars=pars, contraception_module=ms, education_module=edu)

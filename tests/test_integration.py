@@ -15,7 +15,7 @@ def custom_init(sim, force=False, age=None, sex=None, empowerment_module=None, e
         sim.ti = 0  # The current time index
         fpu.set_seed(sim['seed'])
         sim.init_results()
-        sim.people=fpppl.People(pars=sim.pars, age=age, sex=sex, empowerment_module=empowerment_module, education_module=education_module, person_defaults=person_defaults )  # This step also initializes the empowerment and education modules if provided
+        sim.people=fpppl.People(age_pyramid=sim.fp_pars['age_pyramid'], sex=sex, empowerment_module=empowerment_module, education_module=education_module, person_defaults=person_defaults )  # This step also initializes the empowerment and education modules if provided
         sim.init_contraception()  # Initialize contraceptive methods
         sim.initialized = True
         sim.pars['verbose'] = -1

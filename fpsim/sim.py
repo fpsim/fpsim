@@ -120,6 +120,7 @@ class Sim(ss.Sim):
 
 
         # location is explicitly provided, so pop the default out of the list
+        fp_pars = sc.dcp(fp_pars)
         if fp_pars and 'location' in fp_pars and location is None:
             location = fp_pars.pop('location')
         self.fp_pars = fpp.pars(location, self.pars.rand_seed, **fp_pars)
