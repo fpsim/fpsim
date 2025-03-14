@@ -179,7 +179,7 @@ class People(ss.People):
             :param n: number of people
             :return: arrays of length n containing their ages and sexes
         """
-        pyramid = self.pars['age_pyramid']
+        pyramid = self.sim.fp_pars['age_pyramid']
         m_frac = pyramid[:, 1].sum() / pyramid[:, 1:3].sum()
 
         ages = np.zeros(n)
@@ -188,7 +188,7 @@ class People(ss.People):
         m_inds = sc.findinds(sexes == 1)
 
         age_data_min = pyramid[:, 0]
-        age_data_max = np.append(pyramid[1:, 0], self.pars['max_age'])
+        age_data_max = np.append(pyramid[1:, 0], self.sim.fp_pars['max_age'])
         age_data_range = age_data_max - age_data_min
         for i, inds in enumerate([m_inds, f_inds]):
             if len(inds):
@@ -294,45 +294,49 @@ class People(ss.People):
         self.intent_to_use[self.on_contra] = False
         return
 
-    def update_fertility_intent_by_age(self):
+    def update_fertility_intent_by_age(self, uids=None):
         """
         In the absence of other factors, fertilty intent changes as a function of age
         each year on a woman’s birthday
         """
-        intent_pars = self.pars['fertility_intent']
+        intent_pars = self.sim.fp_pars['fertility_intent']
+        if uids is None:
+            uids = self.alive.uids
 
-        f_inds = sc.findinds(self.is_female)
-        f_ages = self.age[f_inds]
+        f_uids = uids[(self.female[uids])]
+        f_ages = self.age[f_uids]
         age_inds = fpu.digitize_ages_1yr(f_ages)
         for age in intent_pars.keys():
-            aged_x_inds = f_inds[age_inds == age]
+            aged_x_uids = f_uids[age_inds == age]
             fi_cats = list(intent_pars[age].keys())  # all ages have the same intent categories
             probs = np.array(list(intent_pars[age].values()))
-            ci = np.random.choice(fi_cats, aged_x_inds.size, p=probs)
-            self.categorical_intent[aged_x_inds] = ci
+            ci = np.random.choice(fi_cats, aged_x_uids.size, p=probs)
+            self.categorical_intent[aged_x_uids] = ci
 
-        self.fertility_intent[sc.findinds(self.categorical_intent == "yes")] = True
-        self.fertility_intent[sc.findinds((self.categorical_intent == "no") |
+        self.fertility_intent[(self.categorical_intent == "yes")] = True
+        self.fertility_intent[((self.categorical_intent == "no") |
                                           (self.categorical_intent == "cannot"))] = False
         return
 
-    def update_intent_to_use_by_age(self):
+    def update_intent_to_use_by_age(self, uids=None):
         """
         In the absence of other factors, intent to use contraception
         can change as a function of age each year on a woman’s birthday.
 
         This function is also used to initialise the State intent_to_use
         """
-        intent_pars = self.pars['intent_to_use']
+        intent_pars = self.sim.fp_pars['intent_to_use']
+        if uids is None:
+            uids = self.alive.uids
 
-        f_inds = sc.findinds(self.is_female)
-        f_ages = self.age[f_inds]
+        f_uids = uids[(self.female)]
+        f_ages = self.age[f_uids]
         age_inds = fpu.digitize_ages_1yr(f_ages)
 
         for age in intent_pars.keys():
-            f_aged_x_inds = f_inds[age_inds == age]  # indices of women of a given age
+            f_aged_x_uids = f_uids[age_inds == age]  # indices of women of a given age
             prob = intent_pars[age][1]  # Get the probability of having intent
-            self.intent_to_use[f_aged_x_inds] = fpu.n_binomial(prob, len(f_aged_x_inds))
+            self.intent_to_use[f_aged_x_uids] = fpu.n_binomial(prob, len(f_aged_x_uids))
         return
 
     def update_method(self, uids, year=None, ti=None):
@@ -416,7 +420,7 @@ class People(ss.People):
 
                     # Set method for those who use contraception
                     if len(on_contra):
-                        self.method[on_contra] = cm.choose_method(on_contra, event=event)
+                        self.method[on_contra] = cm.choose_method(self, on_contra, event=event)
                         self.ever_used_contra[on_contra] = 1
 
                     if len(off_contra):
@@ -684,7 +688,7 @@ class People(ss.People):
             # this_pp_bin = postpart.filter((postpart.postpartum_dur >= pp_low) * (postpart.postpartum_dur < pp_high))
             this_pp_bin = postpart[(self.postpartum_dur[postpart] >= pp_low) & (self.postpartum_dur[postpart] < pp_high)]
             self.sim.results[key][self.sim.ti] += len(this_pp_bin)
-        self.postpartum_dur[postpart] += self.sim.t.dt_year
+        self.postpartum_dur[postpart] += self.sim.t.dt_year * fpd.mpy
 
         return
 
@@ -988,7 +992,7 @@ class People(ss.People):
         lact = fecund[self.lactating[fecund] == True]
 
         # Update empowerment states, and empowerment-related states
-        #alive_now_f = self.filter(self.is_female & self.alive)
+        #alive_now_f = self.filter(self.female & self.alive)
 
         if self.empowerment_module is not None: self.step_empowerment(self.female.uids)
         if self.education_module is not None: self.step_education(self.female.uids)
@@ -1043,18 +1047,21 @@ class People(ss.People):
         """
         NOTE: by default this will not be used, but it will be used for analyses run from the kenya_empowerment repo
         """
-        eligible = self.filter(self.is_dhs_age)
+        eligible_uids = (self.is_dhs_age).uids
         # Women who just turned 15 get assigned a value based on empowerment probs
-        bday_15 = eligible.filter((eligible.age > int(fpd.min_age)) & (eligible.age <= int(fpd.min_age) + (self.pars['timestep'] / fpd.mpy)))
-        if len(bday_15):
-            self.empowerment_module.update_empwr_states(bday_15)
+        bday_15_uids = eligible_uids[
+            ((self.age[eligible_uids] > int(fpd.min_age)) &
+             (self.age[eligible_uids] <= int(fpd.min_age) +
+              (self.sim.fp_pars['timestep'] / fpd.mpy)))]
+        if len(bday_15_uids):
+            self.empowerment_module.update_empwr_states(bday_15_uids)
         # Update states on her bday, based on coefficients
-        bday = eligible.birthday_filter()
+        bday = self.birthday_filter(eligible_uids)
         if len(bday):
             # The empowerment module will update the empowerment states and intent to use
             self.empowerment_module.update(bday)
             # Update fertility intent on her bday, together with empowerment updates
-            bday.update_fertility_intent_by_age()
+            self.update_fertility_intent_by_age(bday)
         return
 
     def step_education(self):
@@ -1171,24 +1178,24 @@ class People(ss.People):
         self.sim.results['edu_attainment'][self.sim.ti] = np.mean(self.edu_attainment[denom])
 
     def _step_results_empower(self):
-        self.sim.results['paid_employment'][self.sim.ti] = (np.sum(self.paid_employment & self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age))/ np.sum(self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age)))*100
-        self.sim.results['decision_wages'][self.sim.ti] = (np.sum(self.decision_wages & self.is_female & self.alive & (self.age>=fpd.min_age) & (self.age<fpd.max_age)) / np.sum(self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age)))*100
-        self.sim.results['decide_spending_partner'][self.sim.ti] = (np.sum(self.decide_spending_partner & self.is_female & self.alive) / (self.n_female))*100
-        self.sim.results['buy_decision_major'][self.sim.ti] = (np.sum(self.buy_decision_major & self.is_female & self.alive) / (self.n_female))*100
-        self.sim.results['buy_decision_daily'][self.sim.ti] = (np.sum(self.buy_decision_daily & self.is_female & self.alive) / (self.n_female))*100
-        self.sim.results['buy_decision_clothes'][self.sim.ti] = (np.sum(self.buy_decision_clothes & self.is_female & self.alive) / (self.n_female))*100
-        self.sim.results['decision_health'][self.sim.ti] = (np.sum(self.decision_health & self.is_female & self.alive) / (self.n_female))*100
-        self.sim.results['has_savings'][self.sim.ti] = (np.sum(self.has_savings & self.is_female & self.alive) / (self.n_female))*100
-        self.sim.results['has_fin_knowl'][self.sim.ti] = (np.sum(self.has_fin_knowl & self.is_female & self.alive) / (self.n_female))*100
-        self.sim.results['has_fin_goals'][self.sim.ti] = (np.sum(self.has_fin_goals & self.is_female & self.alive) / (self.n_female))*100
-        #self.sim.results['financial_autonomy'] = (np.sum(self.financial_autonomy & self.is_female & self.alive) / (self.n_female)) # incorrect type, need to fiure it out
-        #self.sim.results['decision_making'] = (np.sum(self.decision_making & self.is_female & self.alive) / (self.n_female))
+        self.sim.results['paid_employment'][self.sim.ti] = (np.sum(self.paid_employment & self.female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age))/ np.sum(self.female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age)))*100
+        self.sim.results['decision_wages'][self.sim.ti] = (np.sum(self.decision_wages & self.female & self.alive & (self.age>=fpd.min_age) & (self.age<fpd.max_age)) / np.sum(self.female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age)))*100
+        self.sim.results['decide_spending_partner'][self.sim.ti] = (np.sum(self.decide_spending_partner & self.female & self.alive) / (self.n_female))*100
+        self.sim.results['buy_decision_major'][self.sim.ti] = (np.sum(self.buy_decision_major & self.female & self.alive) / (self.n_female))*100
+        self.sim.results['buy_decision_daily'][self.sim.ti] = (np.sum(self.buy_decision_daily & self.female & self.alive) / (self.n_female))*100
+        self.sim.results['buy_decision_clothes'][self.sim.ti] = (np.sum(self.buy_decision_clothes & self.female & self.alive) / (self.n_female))*100
+        self.sim.results['decision_health'][self.sim.ti] = (np.sum(self.decision_health & self.female & self.alive) / (self.n_female))*100
+        self.sim.results['has_savings'][self.sim.ti] = (np.sum(self.has_savings & self.female & self.alive) / (self.n_female))*100
+        self.sim.results['has_fin_knowl'][self.sim.ti] = (np.sum(self.has_fin_knowl & self.female & self.alive) / (self.n_female))*100
+        self.sim.results['has_fin_goals'][self.sim.ti] = (np.sum(self.has_fin_goals & self.female & self.alive) / (self.n_female))*100
+        #self.sim.results['financial_autonomy'] = (np.sum(self.financial_autonomy & self.female & self.alive) / (self.n_female)) # incorrect type, need to fiure it out
+        #self.sim.results['decision_making'] = (np.sum(self.decision_making & self.female & self.alive) / (self.n_female))
         return
 
     def _step_results_intent(self):
         """ Calculate percentage of living women who have intent to use contraception and intent to become pregnant in the next 12 months"""
-        self.sim.results['perc_contra_intent'][self.sim.ti] = (np.sum(self.alive & self.is_female & self.intent_to_use) / self.n_female) * 100
-        self.sim.results['perc_fertil_intent'][self.sim.ti] = (np.sum(self.alive & self.is_female & self.fertility_intent) / self.n_female) * 100
+        self.sim.results['perc_contra_intent'][self.sim.ti] = (np.sum(self.alive & self.female & self.intent_to_use) / self.n_female) * 100
+        self.sim.results['perc_fertil_intent'][self.sim.ti] = (np.sum(self.alive & self.female & self.fertility_intent) / self.n_female) * 100
         return
 
     # def update_results(self):
