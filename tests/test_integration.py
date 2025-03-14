@@ -67,7 +67,6 @@ def test_pregnant_women():
         'debut_age': debut_age,
         'primary_infertility': 0,
         'sexual_activity': sexual_activity,
-        'fertility_intent': True,
     }
 
     sim = fp.Sim(sim_pars=custom_pars, fp_pars=fp_pars, contraception_module=contra_mod)
@@ -138,10 +137,10 @@ def test_contraception():
     sexual_activity[20:30] = 1.0
 
     # after 12 months, stop using any contraception, so we should see pregnancies after the switch
-    p_use_change = fpi.update_methods(year=2001, p_use=0.0, )
+    p_use_change = fpi.update_methods(year=2001, p_use=0.0, name="stopcontra", label="stop contraception")
 
     # after 24 months, we should be seeing pregnancies again so we can reenable contraception use rates and check postpartum uptake
-    p_use_change2 = fpi.update_methods(year=2002, p_use=0.5, )
+    p_use_change2 = fpi.update_methods(year=2002, p_use=0.5, name="restartcontra", label="restart contraception")
 
     custom_pars = {
         'start_year': 2000,
@@ -154,11 +153,10 @@ def test_contraception():
         'debut_age': debut_age,
         'primary_infertility': 0,
         'sexual_activity': sexual_activity,
-        'fertility_intent': False,
     }
 
-    sim = fp.Sim(pars=custom_pars, fp_pars=fp_pars, contraception_module=contra_mod, interventions=[p_use_change, p_use_change2])
-
+    sim = fp.Sim(sim_pars=custom_pars, fp_pars=fp_pars, contraception_module=contra_mod, interventions=[p_use_change, p_use_change2])
+    sim.init()
     # Override fecundity to maximize pregnancies and minimize variation during test
     sim.people.personal_fecundity[:] = 1
 
@@ -169,13 +167,13 @@ def test_contraception():
     assert sim.results.pregnancies[12:].sum() > 0, "Expected pregnancies after contraception switch"
     print(f'✓ (no pregnancies with 100% effective contraception)')
 
-    pp1 = sim.people.filter(sim.people.postpartum_dur==1)
-    assert pp1['on_contra'].sum() == 0, "Expected no contraception use immediately postpartum"
+    pp1 = (sim.people.postpartum_dur==1).uids
+    assert sim.people.on_contra[pp1].sum() == 0, "Expected no contraception use immediately postpartum"
     print(f'✓ (no contraception use postpartum)')
-    pp2plus = sim.people.filter(sim.people.postpartum_dur == 2 )
-    assert 0.55 > pp2plus['on_contra'].sum()/len(pp2plus) > 0.45, "Expected contraception use rate to be approximately = p_use 1 month after postpartum period"
+    pp2plus = (sim.people.postpartum_dur == 2).uids
+    assert 0.55 > sim.people.on_contra[pp2plus].sum()/len(pp2plus) > 0.45, "Expected contraception use rate to be approximately = p_use 1 month after postpartum period"
     assert (sim.people.on_contra==True).sum() < sim.pars['n_agents'], "Expected some agents to be off of birth control at any given time"
-    print(f'✓ (contraception use rate {(pp2plus["on_contra"].sum()/len(pp2plus)):.2f}, as expected)')
+    print(f'✓ (contraception use rate {sim.people.on_contra[pp2plus].sum()/len(pp2plus):.2f}, as expected)')
 
     return sim
 
