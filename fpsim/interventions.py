@@ -398,7 +398,7 @@ class change_people_state(ss.Intervention):
         return
 
 
-class update_methods(Intervention):
+class update_methods(ss.Intervention):
     """
     Intervention to modify method efficacy and/or switching matrix.
 
@@ -422,30 +422,34 @@ class update_methods(Intervention):
 
     """
 
-    def __init__(self, year, eff=None, dur_use=None, p_use=None, method_mix=None, method_choice_pars=None, verbose=False):
-        super().__init__()
-        self.year    = year
-        self.eff     = eff
-        self.dur_use = dur_use
-        self.p_use = p_use
-        self.method_mix = method_mix
-        self.method_choice_pars = method_choice_pars
-        self.verbose = verbose
+    def __init__(self, year, eff=None, dur_use=None, p_use=None, method_mix=None, method_choice_pars=None, verbose=False, **kwargs):
+        super().__init__(**kwargs)
+        self.define_pars(
+            year=year,
+            eff=eff,
+            dur_use=dur_use,
+            p_use=p_use,
+            method_mix=method_mix,
+            method_choice_pars=method_choice_pars,
+            verbose=verbose
+        )
+
         self.applied = False
         return
 
-    def initialize(self, sim=None):
-        super().initialize()
+
+    def init_pre(self, sim):
+        super().init_pre(sim)
         self._validate()
         par_name = None
-        if self.p_use is not None and isinstance(sim.people.contraception_module, fpm.SimpleChoice):
+        if self.pars.p_use is not None and isinstance(sim.fp_pars['contraception_module'], fpm.SimpleChoice):
             par_name = 'p_use'
-        if self.method_mix is not None and isinstance(sim.people.contraception_module, fpm.SimpleChoice, ):
+        if self.pars.method_mix is not None and isinstance(sim.fp_pars['contraception_module'], fpm.SimpleChoice, ):
             par_name = 'method_mix'
 
         if par_name is not None:
             errormsg = (
-                f"Contraceptive module  {type(sim.people.contraception_module)} does not have `{par_name}` parameter. "
+                f"Contraceptive module  {type(sim.fp_pars['contraception_module'])} does not have `{par_name}` parameter. "
                 f"For this type of module, the probability of contraceptive use depends on people attributes and can't be reset using this intervention.")
             print(errormsg)
 
@@ -453,46 +457,46 @@ class update_methods(Intervention):
 
     def _validate(self):
         # Validation
-        if self.year is None:
+        if self.pars.year is None:
             errormsg = 'A year must be supplied'
             raise ValueError(errormsg)
-        if self.eff is None and self.dur_use is None and self.p_use is None and self.method_mix is None and self.method_choice_pars is None:
+        if self.pars.eff is None and self.pars.dur_use is None and self.pars.p_use is None and self.pars.method_mix is None and self.pars.method_choice_pars is None:
             errormsg = 'Either efficacy, durations of use, probability of use, or method mix must be supplied'
             raise ValueError(errormsg)
         return
 
-    def apply(self, sim):
+    def step(self):
         """
         Applies the efficacy or contraceptive uptake changes if it is the specified year
         based on scenario specifications.
         """
 
-        if not self.applied and sim.y >= self.year:
+        if not self.applied and self.sim.y >= self.pars.year:
             self.applied = True # Ensure we don't apply this more than once
 
             # Implement efficacy
-            if self.eff is not None:
-                for k, rawval in self.eff.items():
-                    sim.contraception_module.update_efficacy(method_label=k, new_efficacy=rawval)
+            if self.pars.eff is not None:
+                for k, rawval in self.pars.eff.items():
+                    self.sim.fp_pars.contraception_module.update_efficacy(method_label=k, new_efficacy=rawval)
 
             # Implement changes in duration of use
-            if self.dur_use is not None:
-                for k, rawval in self.dur_use.items():
-                    sim.contraception_module.update_duration(method_label=k, new_duration=rawval)
+            if self.pars.dur_use is not None:
+                for k, rawval in self.pars.dur_use.items():
+                    self.sim.fp_pars.contraception_module.update_duration(method_label=k, new_duration=rawval)
 
             # Change in probability of use
-            if self.p_use is not None:
-                sim.people.contraception_module.pars['p_use'] = self.p_use
+            if self.pars.p_use is not None:
+                self.sim.fp_pars['contraception_module'].pars['p_use'] = self.pars.p_use
 
             # Change in method mix
-            if self.method_mix is not None:
-                this_mix = self.method_mix / np.sum(self.method_mix) # Renormalise in case they are not adding up to 1
-                sim.people.contraception_module.pars['method_mix'] = this_mix
+            if self.pars.method_mix is not None:
+                this_mix = self.pars.method_mix / np.sum(self.pars.method_mix) # Renormalise in case they are not adding up to 1
+                self.sim.fp_pars['contraception_module'].pars['method_mix'] = this_mix
             
             # Change in switching matrix
-            if self.method_choice_pars is not None:
-                print(f'Changed contraceptive switching matrix in year {sim.y}')
-                sim.people.contraception_module.method_choice_pars = self.method_choice_pars
+            if self.pars.method_choice_pars is not None:
+                print(f'Changed contraceptive switching matrix in year {self.sim.y}')
+                self.sim.fp_pars['contraception_module'].method_choice_pars = self.pars.method_choice_pars
                 
         return
 
