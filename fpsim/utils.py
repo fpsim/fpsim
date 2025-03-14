@@ -15,7 +15,7 @@ __all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample', 'match_ages']
 __all__ += ['DuplicateNameException']
 
 
-@nb.jit((nb.float32[:], nb.float32, nb.float32), cache=True, nopython=True)
+@nb.jit((nb.float64[:], nb.float64, nb.float64), cache=True, nopython=True)
 def match_ages(age, age_low, age_high):
     ''' Find ages between age low and age_high '''
     match_low  = (age >= age_low)
@@ -34,7 +34,7 @@ def digitize_ages_1yr(ages):
     return np.digitize(ages, age_cutoffs) - 1
 
 
-@nb.jit((nb.float32[:], nb.float32[:]), cache=True, nopython=True)
+@nb.jit((nb.float64[:], nb.float64[:]), cache=True, nopython=True)
 def digitize_ages(ages, age_group_lb):
     """
     This function returns the 0-based indices of the age bins passed in age_group_lb
@@ -58,31 +58,31 @@ def set_seed(seed=None):
     return
 
 
-@nb.njit((nb.float32,), cache=True)  # These types can also be declared as a dict, but performance is much slower...?
+@nb.njit((nb.float64,), cache=True)  # These types can also be declared as a dict, but performance is much slower...?
 def bt(prob):
     ''' A simple Bernoulli (binomial) trial '''
     return np.random.random() < prob  # Or rnd.random() < prob, np.random.binomial(1, prob), which seems slower
 
 
-@nb.njit((nb.float32, nb.int64), cache=True)
+@nb.njit((nb.float64, nb.int64), cache=True)
 def bc(prob, repeats):
     ''' A binomial count '''
     return np.random.binomial(repeats, prob)  # Or (np.random.rand(repeats) < prob).sum()
 
 
-@nb.njit((nb.float32, nb.int64), cache=True)
+@nb.njit((nb.float64, nb.int64), cache=True)
 def rbt(prob, repeats):
     ''' A repeated Bernoulli (binomial) trial '''
     return np.random.binomial(repeats, prob) > 0  # Or (np.random.rand(repeats) < prob).any()
 
 
-@nb.njit((nb.float32[:],), cache=True)
+@nb.njit((nb.float64[:],), cache=True)
 def mt(probs):
     ''' A multinomial trial '''
     return np.searchsorted(np.cumsum(probs), np.random.random())
 
 
-@nb.njit((nb.float32[:], nb.int64), cache=True)
+@nb.njit((nb.float64[:], nb.int64), cache=True)
 def n_multinomial(probs, n):
     '''
     An array of multinomial trials.
@@ -145,7 +145,7 @@ def annprob2ts(prob_annual, timestep=1):
 
 
 
-@nb.njit((nb.float32[:], nb.float64, nb.float64), cache=True)
+@nb.njit((nb.float64[:], nb.float64, nb.float64), cache=True)
 def numba_miscarriage_prob(miscarriage_rates, age, resolution):
     '''Run interpolation eval to check for probability of miscarriage here'''
     miscarriage_prob = miscarriage_rates[int(round(age*resolution))]
