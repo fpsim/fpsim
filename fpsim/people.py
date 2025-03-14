@@ -668,7 +668,7 @@ class People(ss.People):
         breastfeed_finished = uids[self.breastfeed_dur[uids] >= breastfeed_durs]
         breastfeed_continue = uids[self.breastfeed_dur[uids] < breastfeed_durs]
         self.reset_breastfeeding(breastfeed_finished)
-        self.breastfeed_dur[breastfeed_continue] += self.sim.t.dt_year
+        self.breastfeed_dur[breastfeed_continue] += self.sim.t.dt_year * fpd.mpy
         return
 
     def update_postpartum(self, uids):
