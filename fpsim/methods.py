@@ -238,8 +238,8 @@ class SimpleChoice(RandomChoice):
 
     @staticmethod
     def _lognormal_dpars(dur_use, ai):
-        par1 = np.exp(dur_use['par1'])  # par1 is the 'meanlog' from the csv file. exp(par1) is the 'scale' parameter
-        par2 = np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
+        par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])  # par1 is the 'meanlog' from the csv file. exp(par1) is the 'scale' parameter
+        par2 = np.exp(dur_use['par2'])
         return par1, par2
 
     @staticmethod
@@ -250,8 +250,8 @@ class SimpleChoice(RandomChoice):
 
     @staticmethod
     def _weibull_dpars(dur_use, ai):
-        par1 = dur_use['par1']
-        par2 = dur_use['par2'] + dur_use['age_factors'][ai]
+        par1 = np.exp(dur_use['par1'])
+        par2 = np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
         return par1, par2
 
     @staticmethod
