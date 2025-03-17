@@ -175,7 +175,7 @@ def test_simplechoice_contraception_dependencies():
 
     custom_pars = {
         'start_year': 2000,
-        'end_year': 2010,
+        'end_year': 2005,
         'n_agents': 1000,
         'primary_infertility': 1, # make sure no pregnancies!
     }
