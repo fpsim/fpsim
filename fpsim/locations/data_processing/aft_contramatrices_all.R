@@ -202,7 +202,7 @@ for (c in setdiff(names(results), "Comoros")) {
       coefs <-  results[[c]][[m]]$model$coefficients
       dist_name <- results[[c]][[m]]$best_distribution
       if (dist_name == "exponential") {
-        val <- data.frame(pdf = dexp(time_range, rate = exp(coefs[1]+ coalesce(coefs[age_group], 0))))# %>% mutate(country = c, method = m, age = age_group)) # + coalesce(coefs[age_group], 0)
+        val <- data.frame(pdf = dexp(time_range, rate = exp(coefs[1]+ coalesce(coefs[age_group], 0))))
       } else if (dist_name == "weibull") {
         val <- data.frame(pdf = dweibull(time_range, shape = exp(coefs[1]), scale = exp(coefs[2]+ coalesce(coefs[age_group], 0))))
       } else if (dist_name == "llogis") {
@@ -223,7 +223,7 @@ for (c in setdiff(names(results), "Comoros")) {
 
 # Plot PDFs
 values %>%
-  filter(country %in% c("Kenya", "Senegal", "Ethiopia")) %>%
+  filter(country %in% c("Ethiopia", "Kenya", "Senegal")) %>%
   ggplot() +
   geom_line(aes(x = time, y = pdf, color = age)) +
   facet_grid(method ~ country, scales = "free_y") +
@@ -233,3 +233,110 @@ values %>%
        color = "Age Group") +
   theme_minimal()
 
+
+###### Get PDFs using the package directly so that we can compare what we are doing and make sure it's right
+library(mvtnorm)
+source("summary.flexsurvreg.R")
+source("flexsurvreg.R")
+values2 <- NULL
+for (c in c("Kenya","Ethiopia","Senegal")) {
+  for (m in names(results[[c]])) {
+    x = results[[c]][[m]]$model
+    newdata = data.frame(age_grp_fact = x$covdata$xlev)
+    dist_name <- results[[c]][[m]]$best_distribution
+    X <- newdata_to_X(x = x, newdata = newdata)
+    args <- xt_to_fnargs(x = x, X = X, t = time_range, quantiles, start = 0, type = "survival", cross = T)
+    if (dist_name == "exponential") {
+      val <- x$dfns$d(args$t, rate = args$rate) 
+    } else if (dist_name %in% c("weibull", "llogis")) {
+      val <- x$dfns$d(args$t, scale = args$scale, shape = args$shape) 
+    } else if (dist_name == "lnorm") {
+      val <- x$dfns$d(args$t, meanlog = args$meanlog, sdlog = args$sdlog)
+    } else if (dist_name == "genf") {
+      val <- x$dfns$d(args$t, mu = args$mu, sigma = args$sigma, Q = args$Q, P = args$P) 
+    } else if (dist_name %in% c("gamma", "gompertz")) {
+      val <- x$dfns$d(args$t, rate = args$rate, shape = args$shape) 
+    }
+    val <- data.frame(pdf2 = val, time = rep(time_range, nrow(newdata)), age = rep(unique(newdata$age_grp_fact) , each = 100), dist = dist_name, country = c, method = m)
+    values2 <- rbind(values2, val)
+  }}
+
+
+# plot manual and package together to verify that manual is right
+values %>%
+  left_join(values2 %>% mutate(age = paste0("age_grp_fact",age))) %>%
+  filter(country %in% c("Ethiopia")) %>%
+  ggplot() +
+  geom_line(aes(x = time, y = pdf, color = age)) +
+  geom_line(aes(x = time, y = pdf2, color = age), linetype = "dashed") +
+  facet_wrap(~method, scale = "free") +
+  #facet_grid(method ~ country, scales = "free_y") +
+  labs(title = "Probability Density Functions (PDFs) by Distribution and Age Group",
+       x = "Time (months)",
+       y = "Density",
+       color = "Age Group") +
+  theme_minimal()
+
+
+# compare to FPsim
+process_fp_sim <- function(file_path, country_name) {
+  fp.sim <- read.csv(file_path, header = FALSE, stringsAsFactors = FALSE)
+  
+  methods <- fp.sim[1, ]
+  ages <- fp.sim[2, ]
+  fp.sim <- fp.sim[-c(1,2), ]
+  colnames(fp.sim) <- paste0(methods, "_", ages)
+  
+  fp.sim_long <- fp.sim %>%
+    pivot_longer(cols = -Method_Age, names_to = "M_A", values_to = "pdf") %>%
+    separate(M_A, into = c("method", "age_grp"), sep = "_", extra = "merge") %>%
+    mutate(pdf = as.numeric(pdf),
+           country = country_name,
+           time = as.numeric(Method_Age),
+           method = recode(method,
+                           "cond" = "Condom",
+                           "impl" = "Implant",
+                           "inj" = "Injectable",
+                           "iud" = "IUD",
+                           "none" = "None",
+                           "othmod" = "Other.mod",
+                           "othtrad" = "Other.trad",
+                           "pill" = "Pill",
+                           "wdraw" = "Withdrawal"),
+           age = recode(age_grp,
+                        "18" = "age_grp_fact(0,18]",
+                        "20" = "age_grp_fact(18,20]",
+                        "25" = "age_grp_fact(20,25]",
+                        "35" = "age_grp_fact(25,35]",
+                        "50" = "age_grp_fact(35,50]")) %>%
+  select(-Method_Age,-age_grp)
+
+return(fp.sim_long)
+}
+
+# File paths
+senegal_path <- "C:/Users/maritazi/downloads/duration_dists_senegal.csv"
+kenya_path <- "C:/Users/maritazi/downloads/duration_dists_kenya.csv"
+ethiopia_path <- "C:/Users/maritazi/downloads/duration_dists_ethiopia.csv"
+
+# Process each dataset
+senegal_data <- process_fp_sim(senegal_path, "Senegal")
+kenya_data <- process_fp_sim(kenya_path, "Kenya")
+ethiopia_data <- process_fp_sim(ethiopia_path, "Ethiopia")
+
+# Combine all datasets
+all_countries_data <- bind_rows(senegal_data, kenya_data, ethiopia_data)
+
+# plot manual and package together to verify that FPsim is right
+values %>% mutate(source = "R") %>%
+  bind_rows(all_countries_data %>% mutate(source = "Python")) %>%
+  filter(country %in% c("Ethiopia", "Kenya", "Senegal")) %>%
+  filter(time>0 & time<100) %>%
+  ggplot() +
+  geom_line(aes(x = time, y = pdf, color = age, linetype = source)) +
+  facet_grid(method ~ country, scales = "free_y") +
+  labs(title = "Probability Density Functions (PDFs) by Distribution and Age Group",
+       x = "Time (months)",
+       y = "Density",
+       color = "Age Group") +
+  theme_minimal()
