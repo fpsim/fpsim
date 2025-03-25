@@ -45,7 +45,7 @@ def test_options():
 def test_to_df():
     sc.heading('Testing other sim methods...')
 
-    sim = fp.Sim(location='test').run()
+    sim = fp.Sim().run()
     sim.brief()
     ok('sim.brief() worked')
 
@@ -62,7 +62,7 @@ def test_to_df():
 def test_plot_people():
     sc.heading('Test plotting people...')
 
-    sim = fp.Sim(location='test').run()
+    sim = fp.Sim().run()
 
     if do_plot:
         sim.people.plot()
@@ -146,7 +146,7 @@ def test_samples(do_plot=False, verbose=True):
 
 def test_method_usage():
     '''Test that method usage proportions add to 1 and correspond to population'''
-    sim = fp.Sim(location='test')
+    sim = fp.Sim()
     sim.run() 
     for timestep, proportions in enumerate(sim.results['method_usage']):
         assert np.isclose(sum(proportions), 1, atol=0.0001)
@@ -181,12 +181,11 @@ def test_method_usage():
 # Run all tests
 if __name__ == '__main__':
 
-    sc.options(backend=None) # Turn on interactive plots
+    # sc.options(backend=None) # Turn on interactive plots
 
-    with sc.timer():
-        opts = test_options()
-        df   = test_to_df()
-        ppl  = test_plot_people()
-        res  = test_samples()
-        method = test_method_usage()
-        # sim = test_track_as(run_track_as)
+    opts = test_options()
+    df   = test_to_df()
+    ppl  = test_plot_people()
+    res  = test_samples()
+    method = test_method_usage()
+    # sim = test_track_as(run_track_as)

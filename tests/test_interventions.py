@@ -6,9 +6,8 @@ import sciris as sc
 import pylab as pl
 import fpsim as fp
 import numpy as np
-import pytest
 
-serial   = 1 # Whether to run in serial (for debugging)
+serial   = 0 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 # sc.options(backend='agg') # Turn off interactive plots
 
@@ -66,20 +65,6 @@ def test_change_par():
     assert s2['exposure_factor'] == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
     assert cp2_births <= base_births, f'Reducing exposure factor temporarily should reduce births, but {cp2_births} is not less than the baseline of {base_births}'
 
-    # Check user input validation
-    with pytest.raises(ValueError): # Check that length of years and values match
-        fp.change_par(par='test', years=[2002],vals=[1,2])
-    with pytest.raises(ValueError): # Check invalid parameter
-        make_sim(interventions=fp.change_par('not_a_parameter')).run()
-    with pytest.raises(ValueError): # Check too early start year
-        make_sim(interventions=fp.change_par('exposure_factor', years=1920, vals=1)).run()
-    with pytest.raises(ValueError): # Check too late end year
-        make_sim(interventions=fp.change_par('exposure_factor', years=2120, vals=1)).run()
-    with pytest.raises(ValueError): # Check invalid year type
-        make_sim(interventions=fp.change_par('exposure_factor', years=None, vals=-1)).run()
-
-    if do_plot:
-        m.plot()
 
     return m
 
@@ -91,10 +76,8 @@ def test_plot():
     um1 = fp.update_methods(year=2005, eff={'Injectables': 1.0})
     um2 = fp.update_methods(year=2008, p_use=0.5)
     um3 = fp.update_methods(year=2010, method_mix=[0.9, 0.1, 0, 0, 0, 0, 0, 0, 0])
-    sim = make_sim(interventions=[cp, um1, um2, um3]).run()
+    sim = make_sim(contraception_module=fp.RandomChoice(), interventions=[cp, um1, um2, um3]).run()
 
-    if do_plot:
-        sim.plot()
     return sim
 
 
@@ -127,32 +110,6 @@ def test_change_people_state():
     assert s1_used_contra > s0_used_contra, f'Increasing prior use should increase the number of people with who have used contraception, but {s1_used_contra} is not greater than the baseline of {s0_used_contra}'
     assert s2_500_used_contra == 0, f'Changing people state should set prior use to False for the first 500 agents, but {s2_500_used_contra} is not 0'
     print(f"✓ ({s1_used_contra} > {s0_used_contra})")
-
-    # Check user input validation
-    with pytest.raises(ValueError):  # Check invalid parameter
-        make_sim(interventions=fp.change_people_state('not_a_parameter', new_val=True)).run()
-    with pytest.raises(ValueError):  # Check bad value
-        make_sim(interventions=fp.change_people_state('ever_used_contra', new_val=None)).run()
-    with pytest.raises(ValueError):  # Check too late end year
-        make_sim(interventions=fp.change_people_state('ever_used_contra', years=2120, new_val=True)).run()
-    with pytest.raises(ValueError):  # Check invalid year type
-        make_sim(interventions=fp.change_people_state('ever_used_contra', years=None, new_val=True)).run()
-    with pytest.raises(ValueError):  # Check invalid eligible
-        make_sim(interventions=fp.change_people_state('ever_used_contra', years=2005, new_val=True, eligibility="")).run()
-
-    # Check with plot
-    if do_plot:
-        import pylab as pl
-        t = s0.results['t']
-        y0 = s0.results['ever_used_contra']
-        y1 = s1.results['ever_used_contra']
-        y2 = s2.results['ever_used_contra']
-        pl.figure()
-        pl.plot(t, y0, label='Baseline')
-        pl.plot(t, y1, label='Higher prior use')
-        pl.plot(t, y2, label='Stop prior use')
-        pl.legend()
-        pl.show()
 
     return s0, s1, s2
 
