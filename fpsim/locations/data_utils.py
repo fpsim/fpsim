@@ -488,9 +488,11 @@ def process_contra_use(which, location):
             )
 
         elif which == 'simple':
+            age_factors = df[df['rhs'].str.match('age') & ~df['rhs'].str.contains('prior_userTRUE')].Estimate.values
+            age_factors = np.insert(age_factors, 0, 0)  # Add a zero for the 0-18 group
             contra_use_pars[di] = sc.objdict(
                 intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
-                age_factors=df[df['rhs'].str.match('age') & ~df['rhs'].str.contains('prior_userTRUE')].Estimate.values,
+                age_factors=age_factors,
                 fp_ever_user=df[df['rhs'].str.contains('prior_userTRUE') & ~df['rhs'].str.contains('age')].Estimate.values[0],
                 age_ever_user_factors=df[df['rhs'].str.match('age') & df['rhs'].str.contains('prior_userTRUE')].Estimate.values,
             )
