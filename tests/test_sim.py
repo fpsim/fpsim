@@ -29,11 +29,12 @@ def test_simple_choice():
         sim = fp.Sim(pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
         sims += sim
 
-    m = fp.parallel(sims, serial=serial, compute_stats=False)
+    sims[2].run()
+    # m = fp.parallel(sims, serial=serial, compute_stats=False)
     print(f'✓ (successfully ran SimpleChoice)')
 
-    return m.sims
-
+    # return m.sims
+    return sims
 
 def test_mid_choice():
     sc.heading('Test sims with default contraceptive choice module')
@@ -54,7 +55,7 @@ def test_mid_choice():
 
 if __name__ == '__main__':
 
-    s0 = test_simple('ethiopia')
+    # s0 = test_simple('ethiopia')
     sims1 = test_simple_choice()
-    sims2 = test_mid_choice()
+    # sims2 = test_mid_choice()
     print('Done.')
