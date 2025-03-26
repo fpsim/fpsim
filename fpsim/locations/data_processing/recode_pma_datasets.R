@@ -113,6 +113,7 @@ recoded.datasets <- data.raw %>%
     wge_sex_eff_tell_no,
     wge_sex_eff_avoid,
     current_contra = current_user,
+    calendar_c1_full,
     ever_birth,
     birth_events,
     work_12mo,
