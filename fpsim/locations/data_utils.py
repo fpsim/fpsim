@@ -87,7 +87,7 @@ def age_spline(which):
 
 def age_partnership(location):
     """ Probabilities of being partnered at age X"""
-    age_partnership_data = pd.read_csv(this_dir() / 'data' / 'age_partnership.csv')
+    age_partnership_data = pd.read_csv(this_dir() / location / 'data' / 'age_partnership.csv')
     partnership_dict = {}
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
@@ -336,7 +336,7 @@ def birth_spacing_pref(location):
     df = pd.read_csv(this_dir() / location / 'data' / 'birth_spacing_pref.csv')
 
     # Calculate the intervals and check they're all the same
-    intervals = np.diff(df['weights'].values)
+    intervals = np.diff(df['month'].values)
     interval = intervals[0]
     assert np.all(
         intervals == interval), f'In order to be computed in an array, birth spacing preference bins must be equal width, not {intervals}'

@@ -17,7 +17,7 @@ class Education:
     def __init__(self, location=None):
         # Handle location
         location = fpd.get_location(location)
-        education_dict, _ = getattr(fplocs, location).education_distributions()  # This function returns extrapolated and raw data
+        education_dict, _ = fplocs.data_utils.education_distributions(location)  # This function returns extrapolated and raw data
         self.pars = education_dict
         return
 
