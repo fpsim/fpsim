@@ -8,7 +8,9 @@ import sciris as sc
 from scipy import interpolate as si
 from fpsim import defaults as fpd
 from fpsim import utils as fpu
-# %% Housekeeping
+
+
+# %% Housekeeping and utility functions
 
 def this_dir():
     thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
@@ -23,73 +25,6 @@ def data2interp(data, ages, normalize=False):
         interp = np.minimum(1, np.maximum(0, interp))
     return interp
 
-
-def filenames(location):
-    ''' Data files for use with calibration, etc -- not needed for running a sim '''
-    files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'data'
-    files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
-    files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
-    files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
-    files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2014 or PMA 2022
-    files['spacing'] = 'birth_spacing_dhs.csv'
-    files['methods'] = 'mix.csv'
-    files['afb'] = 'afb.table.csv'
-    files['use'] = 'use.csv'
-    # files['empowerment'] = 'empowerment.csv'
-    files['education'] = 'edu_initialization.csv'
-    return files
-
-
-# %% Demographics and pregnancy outcome
-
-def urban_proportion(location):
-    """Load information about the proportion of people who live in an urban setting"""
-    urban_data = pd.read_csv(this_dir() / 'data' / 'urban.csv')
-    return urban_data["mean"][0]  # Return this value as a float
-
-
-def age_mortality(location):
-    '''
-    Age-dependent mortality rates taken from UN World Population Prospects 2022.  From probability of dying each year.
-    https://population.un.org/wpp/
-    Used CSV WPP2022_Life_Table_Complete_Medium_Female_1950-2021, Kenya, 2010
-    Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Kenya, 2010
-    Mortality rate trend from crude death rate per 1000 people, also from UN Data Portal, 1950-2030:
-    https://population.un.org/dataportal/data/indicators/59/locations/404/start/1950/end/2030/table/pivotbylocation
-    Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
-    '''
-    data_year = 2010
-    mortality_data = pd.read_csv(this_dir() / location / 'data' / 'mortality_prob.csv')
-    mortality_trend = pd.read_csv(this_dir() / 'data' / 'mortality_trend.csv')
-
-    mortality = {
-        'ages': mortality_data['age'].to_numpy(),
-        'm': mortality_data['male'].to_numpy(),
-        'f': mortality_data['female'].to_numpy()
-    }
-
-    mortality['year'] = mortality_trend['year'].to_numpy()
-    mortality['probs'] = mortality_trend['crude_death_rate'].to_numpy()
-    trend_ind = np.where(mortality['year'] == data_year)
-    trend_val = mortality['probs'][trend_ind]
-
-    mortality['probs'] /= trend_val  # Normalize around data year for trending
-    m_mortality_spline_model = si.splrep(x=mortality['ages'],
-                                         y=mortality['m'])  # Create a spline of mortality along known age bins
-    f_mortality_spline_model = si.splrep(x=mortality['ages'], y=mortality['f'])
-    m_mortality_spline = si.splev(fpd.spline_ages,
-                                  m_mortality_spline_model)  # Evaluate the spline along the range of ages in the model with resolution
-    f_mortality_spline = si.splev(fpd.spline_ages, f_mortality_spline_model)
-    m_mortality_spline = np.minimum(1, np.maximum(0, m_mortality_spline))  # Normalize
-    f_mortality_spline = np.minimum(1, np.maximum(0, f_mortality_spline))
-
-    mortality['m_spline'] = m_mortality_spline
-    mortality['f_spline'] = f_mortality_spline
-
-    return mortality
 
 
 def _check_age_endpoints(df):
@@ -141,8 +76,10 @@ def _check_age_endpoints(df):
     return df
 
 
-def age_spline(which, location):
-    d = pd.read_csv(this_dir() / 'data' / f'splines_{which}.csv')
+# %% Demographics
+
+def age_spline(which):
+    d = pd.read_csv(this_dir() / f'splines_{which}.csv')
     # Set the age as the index
     d.index = d.age
     return d
@@ -160,8 +97,256 @@ def age_partnership(location):
 def wealth(location):
     """ Process percent distribution of people in each wealth quintile"""
     cols = ["quintile", "percent"]
-    wealth_data = pd.read_csv(this_dir() / 'data' / 'wealth.csv', header=0, names=cols)
+    wealth_data = pd.read_csv(this_dir() / location / 'data' / 'wealth.csv', header=0, names=cols)
     return wealth_data
+
+
+def urban_proportion(location):
+    """Load information about the proportion of people who live in an urban setting"""
+    urban_data = pd.read_csv(this_dir() / location / 'data' / 'urban.csv')
+    return urban_data["mean"][0]  # Return this value as a float
+
+
+def age_pyramid(location):
+    """Load age pyramid data"""
+    age_pyramid_data = pd.read_csv(this_dir() / location / 'data' / 'age_pyramid.csv')
+    pyramid = age_pyramid_data.to_numpy()
+    return pyramid
+
+
+# %% Mortality
+def age_mortality(location, data_year=None):
+    """
+    Age-dependent mortality rates taken from UN World Population Prospects 2022.  From probability of dying each year.
+    https://population.un.org/wpp/
+    Used CSV WPP2022_Life_Table_Complete_Medium_Female_1950-2021, Kenya, 2010
+    Used CSV WPP2022_Life_Table_Complete_Medium_Male_1950-2021, Kenya, 2010
+    Mortality rate trend from crude death rate per 1000 people, also from UN Data Portal, 1950-2030:
+    https://population.un.org/dataportal/data/indicators/59/locations/404/start/1950/end/2030/table/pivotbylocation
+    Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
+    """
+    mortality_data = pd.read_csv(this_dir() / location / 'data' / 'mortality_prob.csv')
+    mortality_trend = pd.read_csv(this_dir() / location / 'data' / 'mortality_trend.csv')
+
+    if data_year is None:
+        error_msg = "Please provide a data year to calculate mortality rates"
+        raise ValueError(error_msg)
+
+    mortality = {
+        'ages': mortality_data['age'].to_numpy(),
+        'm': mortality_data['male'].to_numpy(),
+        'f': mortality_data['female'].to_numpy()
+    }
+
+    mortality['year'] = mortality_trend['year'].to_numpy()
+    mortality['probs'] = mortality_trend['crude_death_rate'].to_numpy()
+    trend_ind = np.where(mortality['year'] == data_year)
+    trend_val = mortality['probs'][trend_ind]
+
+    mortality['probs'] /= trend_val  # Normalize around data year for trending
+    m_mortality_spline_model = si.splrep(x=mortality['ages'],
+                                         y=mortality['m'])  # Create a spline of mortality along known age bins
+    f_mortality_spline_model = si.splrep(x=mortality['ages'], y=mortality['f'])
+    m_mortality_spline = si.splev(fpd.spline_ages,
+                                  m_mortality_spline_model)  # Evaluate the spline along the range of ages in the model with resolution
+    f_mortality_spline = si.splev(fpd.spline_ages, f_mortality_spline_model)
+    m_mortality_spline = np.minimum(1, np.maximum(0, m_mortality_spline))  # Normalize
+    f_mortality_spline = np.minimum(1, np.maximum(0, f_mortality_spline))
+
+    mortality['m_spline'] = m_mortality_spline
+    mortality['f_spline'] = f_mortality_spline
+
+    return mortality
+
+
+def maternal_mortality(location):
+    """
+    From World Bank indicators for maternal mortality ratio (modeled estimate) per 100,000 live births:
+    https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
+
+    For Senegal, data is risk of maternal death assessed at each pregnancy. Data from Huchon et al. (2013)
+    prospective study on risk of maternal death in Senegal and Mali.
+    Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
+    or its management (excluding accidental or incidental causes) during pregnancy and childbirth or within
+    42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
+    expressed per 100,000 live births, for a specified time period.
+    """
+    df = pd.read_csv(this_dir() / location / 'data' / 'maternal_mortality.csv')
+    maternal_mortality = {}
+    maternal_mortality['year'] = df['year'].values
+    maternal_mortality['probs'] = df['probs'].values / 100000  # ratio per 100,000 live births
+    return maternal_mortality
+
+
+def infant_mortality(location):
+    '''
+    From World Bank indicators for infant mortality (< 1 year) for Kenya, per 1000 live births
+    From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
+    Adolescent increased risk of infant mortality gradient taken
+    from Noori et al for Sub-Saharan African from 2014-2018.  Odds ratios with age 23-25 as reference group:
+    https://www.medrxiv.org/content/10.1101/2021.06.10.21258227v1
+    '''
+    df = pd.read_csv(this_dir() / location / 'data' / 'infant_mortality.csv')
+
+    infant_mortality = {}
+    infant_mortality['year'] = df['year'].values
+    infant_mortality['probs'] = df['probs'].values / 1000  # Rate per 1000 live births, used after stillbirth is filtered out
+    infant_mortality['ages'] = np.array([16, 17, 19, 22, 25, 50])
+    infant_mortality['age_probs'] = np.array([2.28, 1.63, 1.3, 1.12, 1.0, 1.0])
+
+    return infant_mortality
+
+
+# %% Pregnancy and birth outcomes
+def miscarriage():
+    """
+    Returns a linear interpolation of the likelihood of a miscarriage
+    by age, taken from data from Magnus et al BMJ 2019: https://pubmed.ncbi.nlm.nih.gov/30894356/
+    Data to be fed into likelihood of continuing a pregnancy once initialized in model
+    Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
+    """
+    miscarriage_rates = np.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
+                                  [1, 1, 0.569, 0.167, 0.112, 0.097, 0.108, 0.167, 0.332, 0.569, 0.569]])
+    miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
+    return miscarriage_interp
+
+
+def stillbirth(location):
+    '''
+    From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
+    https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
+    Age adjustments come from an extension of Noori et al., which were conducted June 2022.
+    '''
+    df = pd.read_csv(this_dir() / location / 'data' / 'stillbirths.csv')
+    stillbirth_rate = {}
+    stillbirth_rate['year'] = df['year'].values
+    stillbirth_rate['probs'] =df['probs'].values / 1000  # Rate per 1000 total births
+    stillbirth_rate['ages'] = np.array([15, 16, 17, 19, 20, 28, 31, 36, 50])
+    stillbirth_rate['age_probs'] = np.array([3.27, 1.64, 1.85, 1.39, 0.89, 1.0, 1.5, 1.55, 1.78])  # odds ratios
+
+    return stillbirth_rate
+
+
+# %% Fecundity and conception
+def female_age_fecundity():
+    '''
+    Use fecundity rates from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+    Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
+    45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds
+    '''
+    fecundity = {
+        'bins': np.array([0., 5, 10, 15, 20, 25, 28, 31, 34, 37, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
+        'f': np.array([0., 0, 0, 65, 70.8, 79.3, 77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
+    fecundity[
+        'f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
+
+    fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
+    fecundity_interp = fecundity_interp_model(fpd.spline_preg_ages)
+    fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp))  # Normalize to avoid negative or >1 values
+
+    return fecundity_interp
+
+
+def fecundity_ratio_nullip():
+    '''
+    Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
+    from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
+    Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
+    '''
+    fecundity_ratio_nullip = np.array([[0, 5, 10, 12.5, 15, 18, 20,   25,   30,   34,   37,   40, 45, 50],
+                                       [1, 1,  1,    1,  1,  1,  1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
+    fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
+
+    return fecundity_nullip_interp
+
+
+def lactational_amenorrhea(location):
+    '''
+    Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
+    Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
+    as those women continue to be postpartum insusceptible.
+    Kenya: From DHS Kenya 2014 calendar data
+    Ethiopia: From DHS Ethiopia 2016 calendar data
+    Senegal: From DHS Senegal calendar data
+    '''
+    df = pd.read_csv(this_dir() / location / 'data' / 'lam.csv')
+    lactational_amenorrhea = {}
+    lactational_amenorrhea['month'] = df['month'].values
+    lactational_amenorrhea['rate'] = df['rate'].values
+    return lactational_amenorrhea
+
+
+def sexual_activity(location):
+    '''
+    Returns a linear interpolation of rates of female sexual activity, defined as
+    percentage women who have had sex within the last four weeks.
+    From STAT Compiler DHS https://www.statcompiler.com/en/
+    Using indicator "Timing of sexual intercourse"
+    Includes women who have had sex "within the last four weeks"
+    Excludes women who answer "never had sex", probabilities are only applied to agents who have sexually debuted
+    Data taken from DHS, no trend over years for now
+    Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
+    '''
+    df = pd.read_csv(this_dir() / location / 'data' / 'sexually_active.csv')
+    sexually_active = df['probs'].values / 100  # Convert from percent to rate per woman
+    activity_ages = df['age'].values
+    activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active)
+    activity_interp = activity_interp_model(fpd.spline_preg_ages)  # Evaluate interpolation along resolution of ages
+
+    return activity_interp
+
+
+def sexual_activity_pp(location):
+    '''
+    Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
+    Uses 2014 Kenya DHS individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
+    Data is weighted.
+    Limited to 23 months postpartum (can use any limit you want 0-23 max)
+    Postpartum month 0 refers to the first month after delivery
+    TODO-- Add code for processing this for other countries to data_processing
+    '''
+    df = pd.read_csv(this_dir() / location / 'data' / 'sexually_active_pp.csv')
+    postpartum_activity = {}
+    postpartum_activity['month'] = df['month'].values
+    postpartum_activity['percent_active'] = df['probs'].values
+    return postpartum_activity
+
+
+def debut_age(location):
+    """
+    Returns an array of weighted probabilities of sexual debut by a certain age 10-45.
+    Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
+    Use sexual_debut_age_probs.py under locations/data_processing to output for other DHS countries
+    """
+    df = pd.read_csv(this_dir() / location / 'data' / 'debut_age.csv')
+    debut_age = {}
+    debut_age['ages'] = df['age'].values
+    debut_age['probs'] = df['probs'].values
+
+    return debut_age
+
+
+def birth_spacing_pref(location):
+    '''
+    Returns an array of birth spacing preferences by closest postpartum month.
+    Applied to postpartum pregnancy likelihoods.
+
+    NOTE: spacing bins must be uniform!
+    '''
+    df = pd.read_csv(this_dir() / location / 'data' / 'birth_spacing_pref.csv')
+
+    # Calculate the intervals and check they're all the same
+    intervals = np.diff(df['weights'].values)
+    interval = intervals[0]
+    assert np.all(
+        intervals == interval), f'In order to be computed in an array, birth spacing preference bins must be equal width, not {intervals}'
+    pref_spacing = {}
+    pref_spacing['interval'] = interval  # Store the interval (which we've just checked is always the same)
+    pref_spacing['n_bins'] = len(intervals)  # Actually n_bins - 1, but we're counting 0 so it's OK
+    pref_spacing['months'] = df['month'].values
+    pref_spacing['preference'] = df['weights'].values  # Store the actual birth spacing data
+
+    return pref_spacing
 
 
 # %% Education
@@ -252,7 +437,7 @@ def education_distributions(location):
     """
 
     # Load empirical data
-    data_path = this_dir() / "data"
+    data_path = this_dir() / location / "data"
 
     education ={"edu_objective":
                     {"data_file": "edu_objective.csv",
@@ -272,15 +457,6 @@ def education_distributions(location):
     education_dict.update({"age_start": 6.0})
     return education_dict, education_data
 
-
-def process_contra_use_pars(location):
-    raw_pars = pd.read_csv(this_dir() / 'data' / 'contra_coef.csv')
-    pars = sc.objdict()
-    for var_dict in raw_pars.to_dict('records'):
-        var_name = var_dict['rhs'].replace('_0', '').replace('(', '').replace(')', '').lower()
-        pars[var_name] = var_dict['Estimate']
-    return pars
-
  
 def process_contra_use(which, location):
     """
@@ -291,9 +467,9 @@ def process_contra_use(which, location):
 
     # Read in data
     alldfs = [
-        pd.read_csv(this_dir() / 'data' / f'contra_coef_{which}.csv'),
-        pd.read_csv(this_dir() / 'data' / f'contra_coef_{which}_pp1.csv'),
-        pd.read_csv(this_dir() / 'data' / f'contra_coef_{which}_pp6.csv'),
+        pd.read_csv(this_dir() / location / 'data' / f'contra_coef_{which}.csv'),
+        pd.read_csv(this_dir() / location / 'data' / f'contra_coef_{which}_pp1.csv'),
+        pd.read_csv(this_dir() / location / 'data' / f'contra_coef_{which}_pp6.csv'),
     ]
 
     contra_use_pars = dict()
@@ -302,21 +478,21 @@ def process_contra_use(which, location):
         if which == 'mid':
             contra_use_pars[di] = sc.objdict(
                 intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
-                age_factors=df[df['rhs'].str.contains('age') & ~df['rhs'].str.contains('prior_userTRUE')].Estimate.values,
-                ever_used_contra=df[df['rhs'].str.contains('prior_userTRUE') & ~df['rhs'].str.contains('age')].Estimate.values[0],
+                age_factors=df[df['rhs'].str.contains('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
+                ever_used_contra=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
                 edu_factors=df[df['rhs'].str.contains('edu')].Estimate.values,
                 parity=df[df['rhs'].str.contains('parity')].Estimate.values[0],
                 urban=df[df['rhs'].str.contains('urban')].Estimate.values[0],
                 wealthquintile=df[df['rhs'].str.contains('wealthquintile')].Estimate.values[0],
-                age_ever_user_factors=df[df['rhs'].str.contains('age') & df['rhs'].str.contains('prior_userTRUE')].Estimate.values,
+                age_ever_user_factors=df[df['rhs'].str.contains('age') & df['rhs'].str.contains('fp_ever_user')].Estimate.values,
             )
 
         elif which == 'simple':
             contra_use_pars[di] = sc.objdict(
                 intercept=df[df['rhs'].str.contains('Intercept')].Estimate.values[0],
                 age_factors=df[df['rhs'].str.match('age') & ~df['rhs'].str.contains('fp_ever_user')].Estimate.values,
-                fp_ever_user=df[df['rhs'].str.contains('prior_userTRUE') & ~df['rhs'].str.contains('age')].Estimate.values[0],
-                age_ever_user_factors=df[df['rhs'].str.match('age') & df['rhs'].str.contains('prior_userTRUE')].Estimate.values,
+                fp_ever_user=df[df['rhs'].str.contains('fp_ever_user') & ~df['rhs'].str.contains('age')].Estimate.values[0],
+                age_ever_user_factors=df[df['rhs'].str.match('age') & df['rhs'].str.contains('fp_ever_user')].Estimate.values,
             )
 
     return contra_use_pars
@@ -325,7 +501,7 @@ def process_contra_use(which, location):
 def process_markovian_method_choice(methods, location, df=None):
     """ Choice of method is age and previous method """
     if df is None:
-        df = pd.read_csv(this_dir() / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+        df = pd.read_csv(this_dir() / location / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
     csv_map = {method.csv_name: method.name for method in methods.values()}
     idx_map = {method.csv_name: method.idx for method in methods.values()}
     idx_df = {}
@@ -365,7 +541,7 @@ def process_markovian_method_choice(methods, location, df=None):
 def process_dur_use(methods, location, df=None):
     """ Process duration of use parameters"""
     if df is None:
-        df = pd.read_csv(this_dir() / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+        df = pd.read_csv(this_dir() / location / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
     for method in methods.values():
         if method.name == 'btl':
             method.dur_use = dict(dist='unif', par1=1000, par2=1200)
@@ -408,9 +584,10 @@ def process_dur_use(methods, location, df=None):
 def mcpr(location):
 
     mcpr = {}
-    cpr_data = pd.read_csv(this_dir() / 'data' / 'cpr.csv')
+    cpr_data = pd.read_csv(this_dir() / location / 'data' / 'cpr.csv')
     mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
     mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
 
     return mcpr
+
 
