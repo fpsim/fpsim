@@ -181,11 +181,11 @@ class SimpleChoice(RandomChoice):
         return
 
     def init_method_pars(self, location, method_choice_df=None, method_time_df=None):
-        self.contra_use_pars = getattr(fplocs, location).process_contra_use('simple')  # Set probability of use
-        method_choice_pars, init_dist = getattr(fplocs, location).process_markovian_method_choice(self.methods, df=method_choice_df)  # Method choice
+        self.contra_use_pars = fplocs.data_utils.process_contra_use('simple', location)  # Set probability of use
+        method_choice_pars, init_dist = fplocs.data_utils.process_markovian_method_choice(self.methods, location, df=method_choice_df)  # Method choice
         self.method_choice_pars = method_choice_pars
         self.init_dist = init_dist
-        self.methods = getattr(fplocs, location).process_dur_use(self.methods, df=method_time_df)  # Reset duration of use
+        self.methods = fplocs.data_utils.process_dur_use(self.methods, location, df=method_time_df)  # Reset duration of use
 
         # Handle age bins -- find a more robust way to do this
         self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
@@ -402,10 +402,10 @@ class StandardChoice(SimpleChoice):
 
         # Now overwrite the default prob_use parameters with the mid-choice coefficients
         location = fpd.get_location(location)
-        self.contra_use_pars = getattr(fplocs, location).process_contra_use('mid')  # Process the coefficients
+        self.contra_use_pars = fplocs.data_utils.process_contra_use('mid', location)  # Process the coefficients
 
         # Store the age spline
-        self.age_spline = getattr(fplocs, location).age_spline('25_40')
+        self.age_spline = fplocs.data_utils.age_spline('25_40')
 
         return
 
