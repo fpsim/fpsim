@@ -87,7 +87,7 @@ recoded.datasets <- data.raw %>%
     pregnant,
     future_user_not_current,
     future_user_pregnant,
-    fp_ever_user,
+    fp_ever_used,
     mar_decision,
     starts_with("wait_birth"),
     months_pregnant,
@@ -113,6 +113,7 @@ recoded.datasets <- data.raw %>%
     wge_sex_eff_tell_no,
     wge_sex_eff_avoid,
     current_contra = current_user,
+    calendar_c1_full,
     ever_birth,
     birth_events,
     work_12mo,
@@ -166,7 +167,7 @@ recoded.datasets <- data.raw %>%
       "money_knowledge_where_yn",
       "financial_goal_yn",
       "who_earns_more",
-      "fp_ever_user",
+      "fp_ever_used",
       "mar_decision",
       "partner_overall",
       "why_not_decision",
@@ -367,6 +368,10 @@ recoded.datasets <- data.raw %>%
       method.nonhormonal == 1 ~ "Non-hormonal",
       .default = "None"
     ),
+    
+    # renae ever user
+    fp_ever_user = fp_ever_used,
+    
     # indicator for intention to use contraception (assumed yes if currently using)
     intent_contra = case_when(
       future_user_not_current == 1 |
