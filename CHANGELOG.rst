@@ -8,6 +8,10 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 1.0.4 (2024-08-19)
+---------------------------
+- Fixes issue 310 (Removes legacy use_subnational logic)
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/392>`_
 
 Version 2.0.0 (2024-08-31)
 ---------------------------

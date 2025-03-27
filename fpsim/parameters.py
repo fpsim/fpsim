@@ -185,8 +185,17 @@ default_pars = {
     'verbose':              1,      # How much detail to print during the simulation
 
     # Settings - what aspects are being modeled
+<<<<<<< HEAD
     'use_subnational':      0,      # Whether to model partnered states- will need to add context-specific data if using
     'use_partnership':      0,      # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
+=======
+    'track_switching':      0,      # Whether to track method switching
+    'track_as':             0,      # Whether to track age-specific channels
+    'use_urban':            0,      # Whether to model urban setting state - will need to add context-specific data if using
+    'use_partnership':      0,      # Whether to model partnered states- will need to add context-specific data if using
+    'use_empowerment':      0,      # Whether to model empowerment - will need to add context-specific data if using
+    'use_education':        0,      # Whether to model education, requires use_urban==True for kenya - will need to add context-specific data if using
+>>>>>>> main
 
     # Age limits (in years)
     'method_age':           15,
@@ -253,11 +262,6 @@ default_pars = {
     'intent_to_use':        None,
 
     'region':               None,
-    'lactational_amenorrhea_region': None,
-    'sexual_activity_region':       None,
-    'sexual_activity_pp_region':    None,
-    'debut_age_region':             None,
-    'barriers_region':              None,
 }
 
 # Shortcut for accessing default keys
@@ -295,8 +299,27 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
     pars = sc.mergedicts(default_pars, kwargs, _copy=True)  # Merge all pars with kwargs and copy
 
     # Pull out values needed for the location-specific make_pars functions
+<<<<<<< HEAD
     loc_kwargs = dict(seed=pars['seed'])
     location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
+=======
+    loc_kwargs = dict(use_empowerment = pars['use_empowerment'],
+                      use_education   = pars['use_education'],
+                      use_partnership = pars['use_partnership'],
+                      seed            = pars['seed'])
+
+    # Define valid locations
+    if location == 'default':
+        location = 'senegal'
+    valid_locs = dir(fplocs)
+
+    # Get parameters for this location
+    if location in valid_locs:
+        location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
+    else: # Else, error
+        errormsg = f'Location "{location}" is not currently supported'
+        raise NotImplementedError(errormsg)
+>>>>>>> main
     pars = sc.mergedicts(pars, location_pars)
 
     # TODO: regional locations not supported yet
