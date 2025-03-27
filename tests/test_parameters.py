@@ -41,9 +41,6 @@ def test_null(do_plot=do_plot):
         assert n == 0, f'Expecting {key} to be 0, not {n}'
         ok(f'{key} was 0, as expected')
 
-    if do_plot:
-        sim.plot()
-
     return sim
 
 
@@ -116,7 +113,7 @@ def test_method_changes():
     ok(f'Methods have expected length after removal ({n})')
 
     # Test method efficacy
-    methods = sc.dcp(fp.Methods)
+    methods = sc.dcp(fp.make_methods().Methods) # TEMP
     for method in methods.values():
         if method.name != 0: method.efficacy = 1  # Make all methods totally effective
     choice = fp.RandomChoice(pars=dict(p_use=1), methods=methods)
@@ -171,7 +168,7 @@ def test_save_load():
 def test_long_params():
     sc.heading('Test longitudinal params')
     # Define pars
-    pars = fp.pars(location='kenya')
+    pars = fp.pars(location='senegal')
 
     # Make and run sim
     s = fp.Sim(pars)
@@ -196,3 +193,4 @@ if __name__ == '__main__':
         meths   = test_method_changes()
         pars    = test_validation()
         p2      = test_save_load()
+        long    = test_long_params()
