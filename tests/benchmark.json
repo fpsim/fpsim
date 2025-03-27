@@ -1,9 +1,9 @@
 {
   "time": {
-    "initialize": 0.002,
-    "run": 14.408,
-    "postprocess": 0.058,
-    "total": 14.467
+    "initialize": 0.003,
+    "run": 12.361,
+    "postprocess": 0.054,
+    "total": 12.418
   },
   "parameters": {
     "n": 10000,
@@ -11,5 +11,5 @@
     "end_year": 2020,
     "timestep": 1
   },
-  "cpu_performance": 0.4484918837151616
+  "cpu_performance": 0.5122665991637126
 }
