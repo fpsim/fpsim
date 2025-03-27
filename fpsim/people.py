@@ -9,7 +9,6 @@ from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
 from . import demographics as fpdmg
-from . import subnational as fpsn
 
 # Specify all externally visible things this file defines
 __all__ = ['People']
@@ -48,10 +47,7 @@ class People(fpb.BasePeople):
 
         # Basic demographics
         _age, _sex = self.get_age_sex(n)
-        if not self.pars['use_subnational']:
-            _urban = self.get_urban(n)
-        else:
-            _urban = fpsn.get_urban_init_vals(self)
+        _urban = self.get_urban(n)
         if age is None: age = _age
         if sex is None: sex = _sex
 
@@ -78,11 +74,8 @@ class People(fpb.BasePeople):
         self.wealthquintile = self.states["wealthquintile"].new(n, person_defaults["wealthquintile"].val)
         self.update_wealthquintile(n)
 
-        # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        if not self.pars['use_subnational']:
-            self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
-        else:
-            self.fated_debut = fpsn.get_debut_init_vals(self)
+        # Default initialization for fated_debut
+        self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
 
         # Fecundity variation
         fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
@@ -115,10 +108,6 @@ class People(fpb.BasePeople):
 
         # Store keys
         self._keys = [s.name for s in self.states.values()]
-
-        if self.pars['use_subnational']:
-            fpsn.init_regional_states(self)
-            fpsn.init_regional_states(self)
 
         return
 
@@ -961,8 +950,7 @@ class People(fpb.BasePeople):
         # Figure out who to update methods for
         ready = nonpreg.filter(nonpreg.ti_contra <= self.ti)
 
-        # Check if has reached their age at first partnership and set partnered attribute to True.
-        # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
+        # Check who has reached their age at first partnership and set partnered attribute to True.
         alive_now.start_partnership()
 
         # Complete all updates. Note that these happen in a particular order!
@@ -1021,7 +1009,7 @@ class People(fpb.BasePeople):
 
     def step_age(self):
         """
-        Advance people's age at at end of timestep after tabulating results
+        Advance people's age at the end of timestep after tabulating results
         and update the age_by_group, based on the new age distribution to
         quantify results in the next time step.
         """

@@ -5,9 +5,7 @@ Define defaults for use throughout FPsim
 import numpy as np
 import sciris as sc
 import starsim as ss
-import fpsim.settings as fps
 
-from . import base as fpb
 
 #%% Global defaults
 useSI          = True
@@ -152,14 +150,12 @@ person_defaults = [
     State('categorical_intent', "cannot", "<U6"),
     State('intent_to_use', 0, bool),            # for women not on contraception, whether she has intent to use contraception
 
-
     # Partnership information -- states will remain at these values if use_partnership is False
     State('partnered',    0, bool),
     State('partnership_age', -1, float),
 
-    # Urban (basic demographics) -- state will remain at these values if use_urban is False
+    # Socioeconomic
     State('urban', 1, bool),
-    State('region', None, str),
     State('wealthquintile', 3, int),       # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
 
     # Education - states will remain at these values if use_education is False

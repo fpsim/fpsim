@@ -121,7 +121,7 @@ def barriers():
 
 # %% Make and validate parameters
 
-def make_pars(location='senegal', seed=None, use_subnational=None):
+def make_pars(location='senegal', seed=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -155,13 +155,5 @@ def make_pars(location='senegal', seed=None, use_subnational=None):
     # Contraceptive methods
     pars['barriers'] = barriers()
     pars['mcpr'] = fpld.mcpr(location)
-
-    # Handle modules that have not been implemented yet
-    kwargs = locals()
-    not_implemented_args = ['use_subnational']
-    true_args = [key for key in not_implemented_args if kwargs[key] is True]
-    if true_args:
-        errmsg = f"{true_args} not implemented yet for {pars['location']}"
-        raise NotImplementedError(errmsg)
 
     return pars
