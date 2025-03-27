@@ -88,11 +88,7 @@ def barriers():
 
 # %% Make and validate parameters
 
-<<<<<<< HEAD
-def make_pars(location='kenya', seed=None, use_subnational=None):
-=======
-def make_pars(use_empowerment=None, use_education=None, use_partnership=None, seed=None):
->>>>>>> main
+def make_pars(location='kenya', seed=None):
     """
     Take all parameters and construct into a dictionary
     """
@@ -131,12 +127,5 @@ def make_pars(use_empowerment=None, use_education=None, use_partnership=None, se
     pars['urban_prop'] = fpld.urban_proportion(location)
     pars['age_partnership'] = fpld.age_partnership(location)
     pars['wealth_quintile'] = fpld.wealth(location)
-
-    kwargs = locals()
-    not_implemented_args = []
-    true_args = [key for key in not_implemented_args if kwargs[key] is True]
-    if true_args:
-        errmsg = f"{true_args} not implemented yet for {pars['location']}"
-        raise NotImplementedError(errmsg)
 
     return pars
