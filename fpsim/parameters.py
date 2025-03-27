@@ -184,6 +184,9 @@ default_pars = {
     'seed':                 1,      # Random seed
     'verbose':              1,      # How much detail to print during the simulation
 
+    # Settings - what aspects are being modeled - TODO, remove
+    'use_partnership':      0,      #
+
     # Age limits (in years)
     'method_age':           15,
     'age_limit_fecundity':  50,

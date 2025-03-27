@@ -95,7 +95,8 @@ class People(fpb.BasePeople):
             self.education_module.initialize(self)
 
         # Partnership
-        fpdmg.init_partnership_states(self)
+        if self.pars['use_partnership']:
+            fpdmg.init_partnership_states(self)
 
         # Handle circular buffer to keep track of historical data
         self.longitude = sc.objdict()
