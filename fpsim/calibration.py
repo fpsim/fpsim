@@ -185,9 +185,13 @@ class Calibration(sc.prettyobj):
         Remove the database file if keep_db is false and the path exists.
         '''
         if os.path.exists(self.g.db_name):
-            os.remove(self.g.db_name)
-            if self.verbose:
-                print(f'Removed existing calibration {self.g.db_name}')
+            try:
+                os.remove(self.g.db_name)
+                if self.verbose:
+                    print(f'Removed existing calibration {self.g.db_name}')
+            except Exception as E:
+                errormsg = f'Warning: Could not remove existing calibration {self.g.db_name}'
+                print(errormsg)
         return
 
     def make_study(self):
@@ -226,8 +230,8 @@ class Calibration(sc.prettyobj):
         # Process the results
         self.initial_pars = {k:v[0] for k,v in self.calib_pars.items()}
         self.par_bounds   = {k:np.array([v[1], v[2]]) for k,v in self.calib_pars.items()}
-        self.before = self.run_exp(pars=self.initial_pars, label='Before calibration', return_exp=True)
-        self.after  = self.run_exp(pars=self.best_pars,    label='After calibration',  return_exp=True)
+        self.before = self.run_exp(calib_pars=self.initial_pars, label='Before calibration', return_exp=True)
+        self.after  = self.run_exp(calib_pars=self.best_pars,    label='After calibration',  return_exp=True)
         self.parse_study()
 
         # Tidy up

@@ -311,6 +311,7 @@ nonscaling_array_results = sc.autolist(
 # list results are results that aren't recorded each time step or have variable lengths.
 # These will NOT be scaled by default!
 list_results = sc.autolist(
+    'pop_size',
     'tfr_years',
     'tfr_rates',
     'mcpr_by_year',

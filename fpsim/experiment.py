@@ -171,17 +171,17 @@ class Experiment(sc.prettyobj):
 
 
     def model_pop_size(self, sres=None):
-        self.model['pop_size'] = sres['n_alive']
+        self.model['pop_size'] = sres['pop_size']
         self.model['pop_years'] = sres['tfr_years']
 
-        model_growth_rate = self.pop_growth_rate(self.model['pop_years'], self.model['n_alive'])
+        model_growth_rate = self.pop_growth_rate(self.model['pop_years'], self.model['pop_size'])
         self.model['pop_growth_rate'] = model_growth_rate
 
         return
 
 
     def model_mcpr(self, sres=None):
-        model = {'years': sres['t'], 'mcpr': sres['mcpr']}
+        model = {'years': sres['mcpr'].timevec, 'mcpr': sres['mcpr']}
         model_frame = pd.DataFrame(model)
 
         # Filter to matching years
@@ -295,11 +295,10 @@ class Experiment(sc.prettyobj):
                 sky_arr['Data'][age_ind, row.parity] = row.percentage
 
         # Extract from model
-        ppl = self.sim.people
-        alive_f = ppl.filter(ppl.alive * ~ppl.sex)
-        m_age_bins = np.append(age_bins,max_age)
+        f_uids = self.sim.people.female.uids
+        m_age_bins = np.append(age_bins, max_age)
         m_parity_bins = np.append(parity_bins, parity_bins[-1]+1)
-        counts, _, _ = np.histogram2d(alive_f.age, alive_f.parity, bins=(m_age_bins, m_parity_bins))
+        counts, _, _ = np.histogram2d(self.sim.people.age[f_uids], self.sim.people.parity[f_uids], bins=(m_age_bins, m_parity_bins))
         sky_arr['Model'] = counts
 
         # Normalize
@@ -325,8 +324,8 @@ class Experiment(sc.prettyobj):
 
         # Extract birth spaces from model
         ppl = self.sim.people
-        gt1_birth = ppl.filter(ppl.alive * ~ppl.sex * ppl.parity>1)  # Alive women with >1 birth
-        birth_spaces = np.diff(gt1_birth.birth_ages)  # Birth spacings
+        gt1_birth_uids = ppl.alive.uids[(ppl.female==True) & (ppl.parity > 1)]
+        birth_spaces = np.diff(np.stack(ppl.birth_ages[gt1_birth_uids]))  # Birth spacings
         defined_vals = ~np.isnan(birth_spaces) * (birth_spaces>0)  # Find NaNs and twins
         model_spacing = birth_spaces[defined_vals]  # Remove NaNs and twins
         model_spacing_counts, _ = np.histogram(model_spacing, bins=np.append(spacing_bins.values(), 10))  # Bin
@@ -334,8 +333,8 @@ class Experiment(sc.prettyobj):
         model_spacing_counts[:] *= 100  # Percentages
 
         # Extract age at first birth from model
-        any_births = ppl.filter(ppl.alive * ~ppl.sex * ppl.parity>0)
-        model_age_first = any_births.birth_ages[:,0]
+        any_births_uids = ppl.alive.uids[(ppl.female==True) & (ppl.parity>0)]
+        model_age_first = np.stack(ppl.birth_ages[any_births_uids])[:,0]
 
         # Extract birth spaces and age at first birth from data
         for i, j in data_spaces.iterrows():
@@ -422,11 +421,11 @@ class Experiment(sc.prettyobj):
 
         # Extract from model
         ppl = self.sim.people
-        alive_f = ppl.filter(ppl.alive * ~ppl.sex)
-        model_methods = alive_f.method
+        alive_f_uids = ppl.female.uids
+        model_methods = ppl.method[alive_f_uids]
         model_method_counts,_ = np.histogram(model_methods, bins=np.arange(11))
         model_method_counts = model_method_counts/model_method_counts.sum()
-        model_labels = [m.label for m in self.sim.contraception_module.methods.values()]
+        model_labels = [m.label for m in self.sim.fp_pars['contraception_module'].methods.values()]
 
         # Make labels
         data_labels = data_method_counts.keys()

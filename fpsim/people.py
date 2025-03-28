@@ -1126,6 +1126,7 @@ class People(ss.People):
                     res[annual_res_name].append(res_over_year)
 
                 # res['method_usage'].append(self.compute_method_usage())  # only want this per year
+                res['pop_size'].append(res['n_alive'][ti])
                 res['mcpr_by_year'].append(res['mcpr'][ti])
                 res['cpr_by_year'].append(res['cpr'][ti])
 
