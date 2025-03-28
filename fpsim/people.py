@@ -111,7 +111,7 @@ class People(ss.People):
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
-        self.barrier = fpu.n_multinomial(self.sim.fp_pars['barriers'][:], self.sim.pars.n_agents)
+        self.barrier[self.alive.uids] = fpu.n_multinomial(self.sim.fp_pars['barriers'][:], self.sim.pars.n_agents)
 
         # Store keys
         self._keys = [s.name for s in self.states.values()]

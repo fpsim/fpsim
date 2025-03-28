@@ -111,7 +111,7 @@ class Analyzer(sc.prettyobj):
         return json
 
 
-class snapshot(Analyzer):
+class snapshot(ss.Analyzer):
     '''
     Analyzer that takes a "snapshot" of the sim.people array at specified points
     in time, and saves them to itself.
@@ -141,14 +141,14 @@ class snapshot(Analyzer):
         return
 
 
-    def apply(self, sim):
+    def step(self):
         """
         Apply snapshot at each timestep listed in timesteps and
         save result at snapshot[str(timestep)]
         """
         for t in self.timesteps:
-            if np.isclose(sim.ti, t):
-                self.snapshots[str(sim.ti)] = sc.dcp(sim.people) # Take snapshot!
+            if np.isclose(self.sim.ti, t):
+                self.snapshots[str(self.sim.ti)] = sc.dcp(self.sim.people) # Take snapshot!
         return
 
 

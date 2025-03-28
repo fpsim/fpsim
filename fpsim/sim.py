@@ -739,14 +739,14 @@ class MultiSim(sc.prettyobj):
         raw = sc.objdict()
         results = sc.objdict()
         axis = 1
-        start_end = np.array([sim.tvec[[0, -1]] for sim in self.sims])
+        start_end = np.array([sim.t.tvec[[0, -1]] for sim in self.sims])
         if len(np.unique(start_end)) != 2:
             errormsg = f'Cannot compute stats for sims: start and end values do not match:\n{start_end}'
             raise ValueError(errormsg)
 
         reskeys = list(base_sim.results.keys())
 
-        bad_keys = ['t', 'tfr_years', 'method_usage']
+        bad_keys = ['tfr_years', 'method_usage']
         for key in bad_keys:  # Don't compute high/low for these
             results[key] = base_sim.results[key]
             reskeys.remove(key)
