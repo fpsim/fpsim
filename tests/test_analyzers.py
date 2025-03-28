@@ -4,6 +4,7 @@ Run tests on the analyzers, including calibration.
 
 import sciris as sc
 import fpsim as fp
+import starsim as ss
 
 
 do_plot = 1
@@ -32,8 +33,9 @@ def test_calibration(n_trials=3):
     )
 
     # Calculate calibration
-    pars = fp.pars('test', n_agents=20, start_year=1960, end_year=1980)
-    calib = fp.Calibration(pars=pars, weights=dict(pop_size=100))
+    fp_pars = fp.pars('test')
+    sim_pars = ss.SimPars(n_agents=20, start=1960, stop=1980)
+    calib = fp.Calibration(sim_pars=sim_pars, fp_pars=fp_pars, weights=dict(pop_size=100))
     calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=2)
     before,after = calib.summarize()
 

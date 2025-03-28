@@ -53,10 +53,11 @@ class Experiment(sc.prettyobj):
         kwargs (dict): passed into pars
     '''
 
-    def __init__(self, pars=None, flags=None, label=None, **kwargs):
+    def __init__(self, sim_pars=None, fp_pars=None, flags=None, label=None, **kwargs):
         self.flags = sc.mergedicts(default_flags, flags, _copy=True)  # Set flags for what gets run
-        self.pars = pars if pars else fpp.pars(**kwargs)
-        self.location = self.pars['location']
+        self.fp_pars = fp_pars if fp_pars else fpp.pars(**kwargs)
+        self.sim_pars = sim_pars if sim_pars else fpp.default_sim_pars.copy()
+        self.location = self.fp_pars['location']
         self.model = sc.objdict()
         self.data = sc.objdict()
         self.method_keys = None
@@ -67,7 +68,7 @@ class Experiment(sc.prettyobj):
 
     def load_data(self, key, **kwargs):
         ''' Load data from various formats '''
-        files = self.pars['filenames']
+        files = self.fp_pars['filenames']
         path = files['base'] / files[key]
         if path.suffix == '.obj':
             data = sc.load(path, **kwargs)
@@ -103,8 +104,8 @@ class Experiment(sc.prettyobj):
         #self.data['pregnancy_parity'] = self.load_data('pregnancy_parity')
 
         # Extract population size over time
-        if self.pars:
-            n = self.pars['n_agents']
+        if self.sim_pars:
+            n = self.sim_pars['n_agents']
         else:
             n = 1000 # Use default if not available
             print(f'Warning: parameters not defined, using default of n={n}')
@@ -138,16 +139,19 @@ class Experiment(sc.prettyobj):
         return growth_rate
 
 
-    def run_model(self, pars=None, **kwargs):
+    def run_model(self, sim_pars=None, fp_pars=None, **kwargs):
         ''' Create the sim and run the model '''
 
         if not self.initialized:
             self.extract_data()
 
-        if pars is None:
-            pars = self.pars
+        if sim_pars is None:
+            sim_pars = self.sim_pars
 
-        self.sim = fps.Sim(pars=pars, **kwargs)
+        if fp_pars is None:
+            fp_pars = self.fp_pars
+
+        self.sim = fps.Sim(sim_pars=sim_pars, fp_pars=fp_pars, **kwargs)
         self.sim.run()
 
         return
@@ -167,10 +171,10 @@ class Experiment(sc.prettyobj):
 
 
     def model_pop_size(self, sres=None):
-        self.model['pop_size'] = sres['pop_size']
+        self.model['pop_size'] = sres['n_alive']
         self.model['pop_years'] = sres['tfr_years']
 
-        model_growth_rate = self.pop_growth_rate(self.model['pop_years'], self.model['pop_size'])
+        model_growth_rate = self.pop_growth_rate(self.model['pop_years'], self.model['n_alive'])
         self.model['pop_growth_rate'] = model_growth_rate
 
         return
@@ -242,7 +246,7 @@ class Experiment(sc.prettyobj):
         age_bins.remove('year')
 
         # Save asfr and asfr_bins to data dictionary
-        year_data = asfr[asfr['year'] == self.pars['end_year']]
+        year_data = asfr[asfr['year'] == self.sim_pars['stop']]
         if 'region' in age_bins:
             age_bins.remove('region')
             self.data['asfr'] = year_data.drop(['year', 'region'], axis=1).values.tolist()[0]
@@ -554,9 +558,9 @@ class Experiment(sc.prettyobj):
         return
 
 
-    def run(self, pars=None, keep_people=False, compute_fit=True, **kwargs):
+    def run(self, sim_pars=None, fp_pars=None, keep_people=False, compute_fit=True, **kwargs):
         ''' Run the model and post-process the results '''
-        self.run_model(pars=pars)
+        self.run_model(sim_pars=sim_pars, fp_pars=fp_pars)
         self.post_process_results(keep_people=keep_people, compute_fit=compute_fit, **kwargs)
         return self
 

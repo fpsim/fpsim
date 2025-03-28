@@ -45,8 +45,9 @@ class Calibration(sc.prettyobj):
         A Calibration object
     '''
 
-    def __init__(self, pars, calib_pars=None, weights=None, verbose=True, keep_db=False, **kwargs):
-        self.pars       = pars
+    def __init__(self, sim_pars, fp_pars, calib_pars=None, weights=None, verbose=True, keep_db=False, **kwargs):
+        self.sim_pars   = sim_pars
+        self.fp_pars    = fp_pars
         self.calib_pars = calib_pars
         self.weights    = weights
         self.verbose    = verbose
@@ -115,7 +116,7 @@ class Calibration(sc.prettyobj):
         for key,val in self.calib_pars.items():
 
             # Check that the key is a valid parameter
-            par_keys = self.pars.keys()
+            par_keys = self.sim_pars.keys() + list(self.fp_pars.keys())
             if key not in par_keys:
                 errormsg = f'Key "{key}" is not present the available parameter keys: {sc.newlinejoin(par_keys)}'
                 raise sc.KeyNotFoundError(errormsg)
@@ -147,10 +148,10 @@ class Calibration(sc.prettyobj):
         return
 
 
-    def run_exp(self, pars, return_exp=False, **kwargs):
+    def run_exp(self, calib_pars, return_exp=False, **kwargs):
         ''' Create and run an experiment '''
-        pars = sc.mergedicts(sc.dcp(self.pars), pars)
-        exp = fpe.Experiment(pars=pars, **kwargs)
+        pars = sc.mergedicts(sc.dcp(self.fp_pars), calib_pars)
+        exp = fpe.Experiment(fp_pars=pars, **kwargs)
         exp.run(weights=self.weights)
         if return_exp:
             return exp
