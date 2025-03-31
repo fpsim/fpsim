@@ -20,7 +20,7 @@ def ok(string):
 def make_analyzer(analyzer):
     ''' Create a sim with a single analyzer '''
     sim = fp.Sim(location='test', analyzers=analyzer).run()
-    an = sim.get_analyzer()
+    an = sim.analyzers[0]
     return an
 
 
@@ -33,7 +33,7 @@ def test_calibration(n_trials=3):
     )
 
     # Calculate calibration
-    fp_pars = fp.pars('test')
+    fp_pars = fp.pars(location='test')
     sim_pars = ss.SimPars(n_agents=20, start=1960, stop=1980)
     calib = fp.Calibration(sim_pars=sim_pars, fp_pars=fp_pars, weights=dict(pop_size=100))
     calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=2)
