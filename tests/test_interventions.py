@@ -46,11 +46,11 @@ def test_change_par():
     verbose = True
     year = 2002
     ec = 0.01
-    cp1 = fp.change_par(par='exposure_factor', years=year, vals=ec, verbose=verbose) # Reduce exposure factor
-    cp2 = fp.change_par(par='exposure_factor', years=year+5, vals=['reset'], verbose=verbose)  # Reset exposure factor
+    cp1 = fp.change_par(par='exposure_factor', years=year, vals=ec, verbose=verbose, name='cp1') # Reduce exposure factor
+    cp2 = fp.change_par(par='exposure_factor', years=year+5, vals=['reset'], verbose=verbose, name='cp2')  # Reset exposure factor
     s0 = make_sim(label='Baseline')
-    s1 = make_sim(interventions=cp1, label='Low exposure')
-    s2 = make_sim(interventions=[cp1, cp2], label='Low exposure, reset')
+    s1 = make_sim(interventions=sc.dcp(cp1), label='Low exposure')
+    s2 = make_sim(interventions=[sc.dcp(cp1), cp2], label='Low exposure, reset')
 
     # Run
     m = fp.parallel(s0, s1, s2, serial=serial, compute_stats=False)
@@ -60,10 +60,10 @@ def test_change_par():
     base_births = s0.results['births'].sum()
     cp1_births   = s1.results['births'].sum()
     cp2_births  = s2.results['births'].sum()
-    assert s1['exposure_factor'] == ec, f'change_pars() did not change exposure factor to {ec}'
+    assert s1.fp_pars['exposure_factor'] == ec, f'change_pars() did not change exposure factor to {ec}'
     assert cp1_births < base_births, f'Reducing exposure factor should reduce births, but {cp1_births} is not less than the baseline of {base_births}'
 
-    assert s2['exposure_factor'] == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
+    assert s2.fp_pars['exposure_factor'] == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
     assert cp2_births <= base_births, f'Reducing exposure factor temporarily should reduce births, but {cp2_births} is not less than the baseline of {base_births}'
 
     # Check user input validation

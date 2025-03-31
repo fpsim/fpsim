@@ -189,7 +189,7 @@ class Intervention:
         return output
 
 
-class change_par(Intervention):
+class change_par(ss.Intervention):
     '''
     Change a parameter at a specified point in time.
 
@@ -206,8 +206,8 @@ class change_par(Intervention):
         ec0 = fp.change_par(par='exposure_factor', vals={2000:0.0, 2010:2.0}) # Equivalent way of writing
         sim = fp.Sim(interventions=ec0).run()
     '''
-    def __init__(self, par, years=None, vals=None, verbose=False):
-        super().__init__()
+    def __init__(self, par, years=None, vals=None, verbose=False, **kwargs):
+        super().__init__(**kwargs)
         self.par   = par
         self.verbose = verbose
         if isinstance(years, dict): # Swap if years is supplied as a dict, so can be supplied first
@@ -239,11 +239,11 @@ class change_par(Intervention):
         return
 
 
-    def initialize(self, sim):
-        super().initialize()
+    def init_pre(self, sim):
+        super().init_pre(sim)
 
         # Validate parameter name
-        if self.par not in sim.pars:
+        if self.par not in sim.fp_pars:
             errormsg = f'Parameter "{self.par}" is not a valid sim parameter'
             raise ValueError(errormsg)
 
@@ -251,10 +251,10 @@ class change_par(Intervention):
         years = self.years
         min_year = min(years)
         max_year = max(years)
-        if min_year < sim['start_year']:
+        if min_year < sim.pars.start:
             errormsg = f'Intervention start {min_year} is before the start of the simulation'
             raise ValueError(errormsg)
-        if max_year > sim['end_year']:
+        if max_year > sim.pars.stop:
             errormsg = f'Intervention end {max_year} is after the end of the simulation'
             raise ValueError(errormsg)
         if years != sorted(years):
@@ -265,31 +265,31 @@ class change_par(Intervention):
         self.counter = 0
         self.inds = sc.autolist()
         for y in years:
-            self.inds += sc.findnearest(sim.tvec, y)
+            self.inds += sc.findnearest(sim.timevec, y)
 
         # Store original value
-        self.orig_val = sc.dcp(sim[self.par])
+        self.orig_val = sc.dcp(sim.fp_pars[self.par])
 
         return
 
 
-    def apply(self, sim):
+    def step(self):
         if len(self.inds) > self.counter:
             ind = self.inds[self.counter] # Find the current index
-            if sim.ti == ind: # Check if the current timestep matches
-                curr_val = sc.dcp(sim[self.par])
+            if self.sim.ti == ind: # Check if the current timestep matches
+                curr_val = sc.dcp(self.sim.fp_pars[self.par])
                 val = self.vals[self.counter]
                 if val == 'reset':
                     val = self.orig_val
-                sim[self.par] = val # Update the parameter value -- that's it!
+                self.sim.fp_pars[self.par] = val # Update the parameter value -- that's it!
                 if self.verbose:
-                    label = f'Sim "{sim.label}": ' if sim.label else ''
-                    print(f'{label}On {sim.y}, change {self.counter+1}/{len(self.inds)} applied: "{self.par}" from {curr_val} to {sim[self.par]}')
+                    label = f'Sim "{self.sim.label}": ' if self.sim.label else ''
+                    print(f'{label}On {self.sim.y}, change {self.counter+1}/{len(self.inds)} applied: "{self.par}" from {curr_val} to {self.sim.fp_pars[self.par]}')
                 self.counter += 1
         return
 
 
-    def finalize(self, sim=None):
+    def finalize(self):
         # Check that all changes were applied
         n_counter = self.counter
         n_vals = len(self.vals)
