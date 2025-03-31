@@ -477,26 +477,26 @@ class update_methods(ss.Intervention):
             # Implement efficacy
             if self.pars.eff is not None:
                 for k, rawval in self.pars.eff.items():
-                    self.sim.fp_pars.contraception_module.update_efficacy(method_label=k, new_efficacy=rawval)
+                    self.sim.people.contraception_module.update_efficacy(method_label=k, new_efficacy=rawval)
 
             # Implement changes in duration of use
             if self.pars.dur_use is not None:
                 for k, rawval in self.pars.dur_use.items():
-                    self.sim.fp_pars.contraception_module.update_duration(method_label=k, new_duration=rawval)
+                    self.sim.people.contraception_module.update_duration(method_label=k, new_duration=rawval)
 
             # Change in probability of use
             if self.pars.p_use is not None:
-                self.sim.fp_pars['contraception_module'].pars['p_use'] = self.pars.p_use
+                self.sim.people.contraception_module.pars['p_use'] = self.pars.p_use
 
             # Change in method mix
             if self.pars.method_mix is not None:
                 this_mix = self.pars.method_mix / np.sum(self.pars.method_mix) # Renormalise in case they are not adding up to 1
-                self.sim.fp_pars['contraception_module'].pars['method_mix'] = this_mix
+                self.sim.people.contraception_module.pars['method_mix'] = this_mix
             
             # Change in switching matrix
             if self.pars.method_choice_pars is not None:
                 print(f'Changed contraceptive switching matrix in year {self.sim.y}')
-                self.sim.fp_pars['contraception_module'].method_choice_pars = self.pars.method_choice_pars
+                self.sim.people.contraception_module.method_choice_pars = self.pars.method_choice_pars
                 
         return
 
