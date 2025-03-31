@@ -663,7 +663,7 @@ class lifeof_recorder(Analyzer):
         return temp
 
 
-class age_pyramids(Analyzer):
+class age_pyramids(ss.Analyzer):
     '''
     Records age pyramids for each timestep.
 
@@ -682,26 +682,26 @@ class age_pyramids(Analyzer):
         self.data = None
         return
 
-    def initialize(self, sim):
+    def init_pre(self, sim, force=False):
         """
         Initializes bins and data with proper shapes
         """
-        super().initialize()
+        super().init_pre(sim, force)
         if self.bins is None:
-            self.bins = np.arange(0, sim.pars['max_age']+2)
+            self.bins = np.arange(0, sim.fp_pars['max_age']+2)
         nbins = len(self.bins)-1
-        self.data = np.full((sim.npts, nbins), np.nan)
+        self.data = np.full((len(sim.t), nbins), np.nan)
         self._raw = sc.dcp(self.data)
         return
 
-    def apply(self, sim):
+    def step(self):
         """
         Records histogram of ages of all alive individuals at a timestep such that
         self.data[timestep] = list of proportions where index signifies age
         """
-        ages = sim.people.age[sc.findinds(sim.people.alive)]
-        self._raw[sim.ti, :] = np.histogram(ages, self.bins)[0]
-        self.data[sim.ti, :] = self._raw[sim.ti, :]/self._raw[sim.ti, :].sum()
+        ages = self.sim.people.age.values
+        self._raw[self.sim.ti, :] = np.histogram(ages, self.bins)[0]
+        self.data[self.sim.ti, :] = self._raw[self.sim.ti, :]/self._raw[self.sim.ti, :].sum()
 
     def plot(self):
         """
