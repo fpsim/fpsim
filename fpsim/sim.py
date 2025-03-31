@@ -160,10 +160,10 @@ class Sim(ss.Sim):
         if force or not self.initialized:
 
             if self.pars.people is None:
-                self.pars.people = fpppl.People(n_agents=self.pars.n_agents, age_pyramid=self.fp_pars['age_pyramid'])
+                self.pars.people = fpppl.People(n_agents=self.pars.n_agents, age_pyramid=self.fp_pars['age_pyramid'], contraception_module=self.fp_pars['contraception_module'])
 
             super().init(force=force)
-            self.init_contraception()  # Initialize contraceptive methods. v3 will refactor this to other modules
+
         return self
 
 
@@ -198,10 +198,7 @@ class Sim(ss.Sim):
         return
 
 
-    def init_contraception(self):
-        if self.fp_pars['contraception_module'] is not None:
-            self.people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.fp_pars['contraception_module'])
-        return
+
 
     def update_mortality(self):
         """

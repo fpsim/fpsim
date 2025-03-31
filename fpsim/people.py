@@ -25,10 +25,10 @@ class People(ss.People):
     Age pyramid is a 2d array with columns: age, male count, female count
     """
 
-    def __init__(self, n_agents=None, age_pyramid=None, empowerment_module=None, education_module=None, **kwargs):
+    def __init__(self, n_agents=None, age_pyramid=None, contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Allow defaults to be dynamically set
-        person_defaults = sc.dcp(fpd.person_defaults)
+        self.person_defaults = sc.dcp(fpd.person_defaults)
 
         ages = age_pyramid[:, 0]
         age_counts = age_pyramid[:, 1] + age_pyramid[:, 2]
@@ -36,89 +36,97 @@ class People(ss.People):
 
         f_frac = age_pyramid[:, 2].sum() / age_pyramid[:, 1:3].sum()
         # Initialization
-        super().__init__(n_agents, age_data, extra_states=person_defaults, **kwargs)
+        super().__init__(n_agents, age_data, extra_states=self.person_defaults, **kwargs)
         self.female.default.set(p=f_frac)
         # Empowerment and education
         self.empowerment_module = empowerment_module
         self.education_module = education_module
+        self.contraception_module = contraception_module
 
         self.binom = ss.bernoulli(p=0.5)
 
         return
 
-    def init_vals(self):
+    def init_vals(self, uids=None):
         super().init_vals()
+
+        if uids is None:
+            uids = self.alive.uids
 
         pars = self.sim.pars
 
         if not self.sim.fp_pars['use_subnational']:
-            _urban = self.get_urban(pars.n_agents)
+            _urban = self.get_urban(len(uids))
         else:
-            _urban = fpsn.get_urban_init_vals(self)
+            _urban = fpsn.get_urban_init_vals(len(uids))
 
-        # TODO Need hook to set sex distribution
+        # TODO Need hook to set sex distribution (I think this is done now: verify)
         # if sex is None: sex = _sex
 
-        self.urban[self.alive.uids] = _urban  # Urban (1) or rural (0)
+        self.urban[uids] = _urban  # Urban (1) or rural (0)
 
         # Parameters on sexual and reproductive history
-        self.fertile[self.alive.uids] = fpu.n_binomial(1 - self.sim.fp_pars['primary_infertility'], pars.n_agents) # todo replace with ss dist
+        self.fertile[uids] = fpu.n_binomial(1 - self.sim.fp_pars['primary_infertility'], len(uids)) # todo replace with ss dist
 
         # Fertility intent
         has_intent = "fertility_intent"
         # self.fertility_intent   = fpd.person_defaults["fertility_intent"].val
         # self.categorical_intent = self.states["categorical_intent"].new(n, "no")
         # Update distribution of fertility intent with location-specific values if it is present in self.pars
-        self.update_fertility_intent()
+        self.update_fertility_intent(uids)
 
         # Intent to use contraception
         has_intent = "intent_to_use"
         # self.intent_to_use = self.states[has_intent].new(n, person_defaults[has_intent].val)
         # Update distribution of fertility intent if it is present in self.pars
-        self.update_intent_to_use()
+        self.update_intent_to_use(uids)
 
         # self.wealthquintile = self.states["wealthquintile"].new(n, person_defaults["wealthquintile"].val)
-        self.update_wealthquintile()
+        self.update_wealthquintile(uids)
 
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
         if not self.sim.fp_pars['use_subnational']:
-            self.fated_debut[self.alive.uids] = self.sim.fp_pars['debut_age']['ages'][fpu.n_multinomial(self.sim.fp_pars['debut_age']['probs'], self.sim.pars.n_agents)]
+            self.fated_debut[uids] = self.sim.fp_pars['debut_age']['ages'][fpu.n_multinomial(self.sim.fp_pars['debut_age']['probs'], len(uids))]
         else:
-            self.fated_debut[self.alive.uids] = fpsn.get_debut_init_vals(self)
+            self.fated_debut[uids] = fpsn.get_debut_init_vals(uids)
 
         # Fecundity variation
         fv = [self.sim.fp_pars['fecundity_var_low'], self.sim.fp_pars['fecundity_var_high']]
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
-        self.personal_fecundity = np.random.random(self.sim.pars.n_agents) * fac # todo replace
+        self.personal_fecundity[uids] = np.random.random(len(uids)) * fac # todo replace
 
         # Initialise ti_contra based on age and fated debut
-        self.update_time_to_choose()
+        self.update_time_to_choose(uids)
+
+        female_uids = uids[self.female[uids]]
 
         # Initialize empowerment and education mods.
         if self.empowerment_module is not None:
-            self.empowerment_module.initialize(self.female.uids)
+            self.empowerment_module.initialize(female_uids)
 
         if self.education_module is not None:
-            self.education_module.initialize(self)
+            self.education_module.initialize(uids)
 
         # Partnership
         if self.sim.fp_pars['use_partnership']:
-            fpdmg.init_partnership_states(self)
+            fpdmg.init_partnership_states(uids)
 
         # Handle circular buffer to keep track of historical data
         self.longitude = sc.objdict()
         # self.initialize_circular_buffer() # todo move to analyzer
 
         # Once all the other metric are initialized, determine initial contraceptive use
-        self.contraception_module = None  # Set below
-        self.barrier[self.alive.uids] = fpu.n_multinomial(self.sim.fp_pars['barriers'][:], self.sim.pars.n_agents)
+        # self.fp_pars['contraception_module'] = None  # Set below
+        self.barrier[uids] = fpu.n_multinomial(self.sim.fp_pars['barriers'][:], len(uids))
 
         # Store keys
         self._keys = [s.name for s in self.states.values()]
 
         if self.sim.fp_pars['use_subnational']:
-            fpsn.init_regional_states(self)
-            fpsn.init_regional_states(self)
+            fpsn.init_regional_states(uids)
+            fpsn.init_regional_states(uids)
+
+        self.init_contraception(uids)  # Initialize contraceptive methods. v3 will refactor this to other modules
 
     # todo move to analyzer
     # def initialize_circular_buffer(self):
@@ -168,7 +176,7 @@ class People(ss.People):
 
     def get_urban(self, n):
         """ Get initial distribution of urban """
-        n_agents = self.sim.pars['n_agents']
+        n_agents = n
         urban_prop = self.sim.fp_pars['urban_prop']
         urban = fpu.n_binomial(urban_prop, n_agents) # todo replace with ss dist
         return urban
@@ -200,24 +208,24 @@ class People(ss.People):
 
         return ages, sexes
 
-    def update_fertility_intent(self):
+    def update_fertility_intent(self, uids):
         if self.sim.fp_pars['fertility_intent'] is None:
             return
-        self.update_fertility_intent_by_age()
+        self.update_fertility_intent_by_age(uids)
         return
 
-    def update_intent_to_use(self):
+    def update_intent_to_use(self, uids):
         if self.sim.fp_pars['intent_to_use'] is None:
             return
-        self.update_intent_to_use_by_age()
+        self.update_intent_to_use_by_age(uids)
         return
 
-    def update_wealthquintile(self):
+    def update_wealthquintile(self, uids):
         if self.sim.fp_pars['wealth_quintile'] is None:
             return
         wq_probs = self.sim.fp_pars['wealth_quintile']['percent']
-        vals = np.random.choice(len(wq_probs), size=self.sim.pars['n_agents'], p=wq_probs)+1 # todo replace with ss dist
-        self.wealthquintile[self.alive.uids] = vals
+        vals = np.random.choice(len(wq_probs), size=len(uids), p=wq_probs)+1 # todo replace with ss dist
+        self.wealthquintile[uids] = vals
         return
 
     def update_time_to_choose(self, uids=None):
@@ -255,6 +263,11 @@ class People(ss.People):
                     self.mothers[uids][child] = mother_index
         return
 
+    def init_contraception(self, uids):
+        if self.contraception_module is not None:
+            self.decide_contraception(uids=uids)  #, ti=self.ti, year=self.y, contraception_module=self.fp_pars['contraception_module'])
+        return
+
     def decide_contraception(self, uids=None, ti=None, year=None, contraception_module=None):
         """
         Decide who will start using contraception, when, which contraception method and the
@@ -266,6 +279,12 @@ class People(ss.People):
         """
         if uids is None:
             uids = self.alive.uids
+
+        if ti is None:
+            ti = self.sim.ti
+
+        if year is None:
+            year = self.sim.y
 
         fecund = (self.female[uids]==True) & (self.age[uids] < self.sim.fp_pars['age_limit_fecundity'])
         fecund_uids = uids[fecund]
@@ -282,12 +301,14 @@ class People(ss.People):
 
         if contraception_module is not None:
             self.contraception_module = contraception_module
-            self.on_contra[time_to_set_contra_uids] = contraception_module.get_contra_users(self, time_to_set_contra_uids, year=year, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
+
+        if self.contraception_module is not None:
+            self.on_contra[time_to_set_contra_uids] = self.contraception_module.get_contra_users(self, time_to_set_contra_uids, year=year, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
             # oc = contra_choosers.filter(contra_choosers.on_contra)
             oc_uids = time_to_set_contra_uids[(self.on_contra[time_to_set_contra_uids] == True)]
-            self.method[oc_uids] = contraception_module.init_method_dist(self, oc_uids)
+            self.method[oc_uids] = self.contraception_module.init_method_dist(self, oc_uids)
             self.ever_used_contra[oc_uids] = 1
-            method_dur = contraception_module.set_dur_method(self, time_to_set_contra_uids)
+            method_dur = self.contraception_module.set_dur_method(self, time_to_set_contra_uids)
             self.ti_contra[time_to_set_contra_uids] = ti + method_dur
 
         # Change the intent of women who have started to use a contraception method
@@ -472,6 +493,7 @@ class People(ss.People):
             self.breastfeed_dur[died] = 0,
             self.sim.results['deaths'][self.sim.ti] += len(died)
             self.request_death(died)
+            self.step_die() # EXPERIMENTAL to match the order of ops from earlier FPsim version
 
         return
 
@@ -860,14 +882,15 @@ class People(ss.People):
             i_death = self.check_infant_mortality(live)
 
             new_uids = self.grow(len(live) - len(i_death))
+
+            # Be sure to reset the new agents to the correct states!
+            self.init_vals(new_uids)
             self.age[new_uids] = 0
-            self.decide_contraception(uids=new_uids, ti=self.sim.ti, year=self.sim.y, contraception_module=self.contraception_module)
 
+            if new_uids is not None:
+                return new_uids
 
-            # if len(new_uids) > 0:
-            #     print(new_uids)
-
-        return
+        return []
 
 
     def update_age_bin_totals(self, uids):
