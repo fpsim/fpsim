@@ -4,6 +4,7 @@ Defines the People class
 
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
+import pylab as pl
 import sciris as sc
 from . import utils as fpu
 from . import defaults as fpd
@@ -1140,18 +1141,19 @@ class People(ss.People):
 
         # Start calculating annual metrics after we have at least 1 year of data. These are annual metrics, and so are not the same dimensions as a standard results object.
         if (time_months >= fpd.mpy) and (time_months % fpd.mpy) == 0:
-                res['tfr_years'].append(self.sim.t.yearvec[ti]-1.0)  # Subtract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
+                index = int(time_months / fpd.mpy) - 1
+                res['tfr_years'][index] = (self.sim.t.yearvec[ti]-1.0)  # Subtract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
                 stop_index = ti
                 start_index = int(stop_index - self.sim.fp_pars['tiperyear'])
                 for res_name, new_res_name in fpd.to_annualize.items():
                     res_over_year = self.annualize_results(res_name, start_index, stop_index)
                     annual_res_name = f'{new_res_name}_over_year'
-                    res[annual_res_name].append(res_over_year)
+                    res[annual_res_name][index] = (res_over_year)
 
-                # res['method_usage'].append(self.compute_method_usage())  # only want this per year
-                res['pop_size'].append(res['n_alive'][ti])
-                res['mcpr_by_year'].append(res['mcpr'][ti])
-                res['cpr_by_year'].append(res['cpr'][ti])
+                # res['method_usage'][index] = (self.compute_method_usage())  # only want this per year
+                res['pop_size'][index] = (res['n_alive'][ti])
+                res['mcpr_by_year'][index] = (res['mcpr'][ti])
+                res['cpr_by_year'][index] = (res['cpr'][ti])
 
                 # Calculate annual ratios
                 self.calculate_annual_ratios()
@@ -1161,28 +1163,34 @@ class People(ss.People):
                     age_bin_births_year = np.sum(res['total_births_' + key][start_index:stop_index])
                     age_bin_total_women_year = res['total_women_' + key][stop_index]
                     age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
-                    res[f'asfr'][key].append(age_bin_births_per_woman * 1000)
-                    res[f'tfr_{key}'].append(age_bin_births_per_woman * 1000)
+                    res[f'asfr'][key][index] = (age_bin_births_per_woman * 1000)
+                    res[f'tfr_{key}'][index] = (age_bin_births_per_woman * 1000)
                     tfr += age_bin_births_per_woman
-                res['tfr_rates'].append(tfr * 5)  # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
+                res['tfr_rates'][index] = (tfr * 5)  # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
 
         return
 
+    def get_annual_index(self):
+        time_months = int(np.round(
+            self.sim.ti * self.sim.t.dt_year * fpd.mpy))  # time since the beginning of the sim, expresse in months
+
+        return int(time_months / fpd.mpy) - 1
 
     def annualize_results(self, key, start_index, stop_index):
         return np.sum(self.sim.results[key][start_index:stop_index])
 
 
     def calculate_annual_ratios(self):
+        index = self.get_annual_index()
         live_births_over_year = self.sim.results['live_births_over_year'][-1]
 
         maternal_mortality_ratio = sc.safedivide(self.sim.results['maternal_deaths_over_year'][-1], live_births_over_year) * 100000
-        self.sim.results['mmr'].append(maternal_mortality_ratio)
+        self.sim.results['mmr'][index] = (maternal_mortality_ratio)
 
         infant_mortality_rate = sc.safedivide(self.sim.results['infant_deaths_over_year'][-1], live_births_over_year) * 1000
-        self.sim.results['imr'].append(infant_mortality_rate)
+        self.sim.results['imr'][index] = (infant_mortality_rate)
 
-        self.sim.results['proportion_short_interval_by_year'].append(sc.safedivide(self.sim.results['short_intervals_over_year'][-1], self.sim.results['secondary_births_over_year'][-1]))
+        self.sim.results['proportion_short_interval_by_year'][index] = (sc.safedivide(self.sim.results['short_intervals_over_year'][-1], self.sim.results['secondary_births_over_year'][-1]))
         return
 
     def _step_results_wq(self):
@@ -1312,18 +1320,18 @@ class People(ss.People):
     #     time_months = int(self.ti * self.pars["timestep"])  # time since the beginning of the sim, expresse in months
     #     # Calculate metrics over the last year in the model and save whole years and stats to an array
     #     if (time_months >= fpd.mpy) and (time_months % fpd.mpy) == 0:  # Start calculating annual metrics after we have at least 1 year of data
-    #         res['tfr_years'].append(self.y-1.0)  # Substract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
+    #         res['tfr_years'][index] = (self.y-1.0)  # Substract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
     #         stop_index = self.ti
     #         start_index = stop_index - self.tiperyear
     #         for res_name, new_res_name in fpd.to_annualize.items():
     #             res_over_year = self.annualize_results(res_name, start_index, stop_index)
     #             annual_res_name = f'{new_res_name}_over_year'
-    #             res[annual_res_name].append(res_over_year)
+    #             res[annual_res_name][index] = (res_over_year)
     #
-    #         # res['method_usage'].append(self.compute_method_usage())  # only want this per year
-    #         res['pop_size'].append(scale * self.n)  # CK: TODO: replace with arrays
-    #         res['mcpr_by_year'].append(res['mcpr'][ti])
-    #         res['cpr_by_year'].append(res['cpr'][ti])
+    #         # res['method_usage'][index] = (self.compute_method_usage())  # only want this per year
+    #         res['pop_size'][index] = (scale * self.n)  # CK: TODO: replace with arrays
+    #         res['mcpr_by_year'][index] = (res['mcpr'][ti])
+    #         res['cpr_by_year'][index] = (res['cpr'][ti])
     #
     #         # Calculate annual ratios
     #         self.calculate_annual_ratios()
@@ -1333,11 +1341,11 @@ class People(ss.People):
     #             age_bin_births_year = np.sum(res['total_births_' + key][start_index:stop_index])
     #             age_bin_total_women_year = res['total_women_' + key][stop_index]
     #             age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
-    #             res['asfr'][key].append(age_bin_births_per_woman * 1000)
-    #             res[f'tfr_{key}'].append(age_bin_births_per_woman * 1000)
+    #             res['asfr'][key][index] = (age_bin_births_per_woman * 1000)
+    #             res[f'tfr_{key}'][index] = (age_bin_births_per_woman * 1000)
     #             tfr += age_bin_births_per_woman  # CK: TODO: check if this is right
     #
-    #         res['tfr_rates'].append(
+    #         res['tfr_rates'][index] = (
     #             tfr * 5)  # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
 
 
@@ -1363,3 +1371,28 @@ class People(ss.People):
             # there is a max age for some of the stats, so if we exceed that, reset it
             self.age[self.alive.uids] = np.minimum(self.age[self.alive.uids], self.sim.fp_pars['max_age'])
         return
+
+    def plot(self, fig_args=None, hist_args=None):
+        ''' Plot histograms of each quantity '''
+
+        fig_args  = sc.mergedicts(fig_args)
+        hist_args = sc.mergedicts(dict(bins=50), hist_args)
+        keys = [key for key in self.__dict__.keys() if isinstance(self.__dict__[key], ss.FloatArr)]
+        nkeys = len(keys)
+        rows,cols = sc.get_rows_cols(nkeys)
+
+        fig = pl.figure(**fig_args)
+
+        for k,key in enumerate(keys):
+            pl.subplot(rows,cols,k+1)
+            try:
+                data = np.array(self[key], dtype=float)
+                mean = data.mean()
+                label = f'mean: {mean}'
+                pl.hist(data, label=label, **hist_args)
+                pl.title(key)
+                pl.legend()
+            except:
+                pl.title(f'Could not plot {key}')
+
+        return fig

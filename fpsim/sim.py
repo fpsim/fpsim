@@ -183,17 +183,18 @@ class Sim(ss.Sim):
         for key in fpd.nonscaling_array_results:
             self.results += ss.Result(key, label=key, **nonscaling_kw)
 
-        # TODO convert the below to Results objects with the correct shape and dtype
+        annual_kw = dict(shape=(self.pars.stop - self.pars.start), timevec=range(self.pars.start, self.pars.stop), dtype=float, scale=False)
         for key in fpd.list_results:
-            # self.results += ss.Result(key, label=key, **kw)
-            self.results[key] = []
+            self.results += ss.Result(key, label=key, **annual_kw)
+            # self.results[key] = []
 
         # Store age-specific fertility rates
-        #self.results += ss.Result('method_usage', label='method_usage', **kw)
-        self.results['asfr'] = {}
+        self.results['asfr'] = ss.Results(module=self) # ['asfr'] = {}
         for key in fpd.age_bin_map.keys():
-            self.results[f'asfr'][key] = []
-            self.results[f"tfr_{key}"] = []
+            # self.results[f'asfr'][key] = []
+            self.results.asfr += ss.Result(key, label=key, **annual_kw)
+            # self.results[f"tfr_{key}"] = []
+            self.results += ss.Result(f"tfr_{key}", label=key, **annual_kw)
 
         return
 
@@ -321,7 +322,7 @@ class Sim(ss.Sim):
         self.results['cum_pregnancies_by_year'] = np.cumsum(self.results['pregnancies_over_year'])
 
         # Convert to an objdict for easier access
-        self.results = sc.objdict(self.results)
+        # self.results = sc.objdict(self.results)
 
 
 
@@ -658,6 +659,35 @@ class Sim(ss.Sim):
             reprstr = sc.indent(n=0, text=keystr, width=None)
             output += f'{reprstr}'
         print(output)
+
+    def to_df(self, include_range=False):
+        """
+        Export all sim results to a dataframe
+
+        Args:
+            include_range (bool): if True, and if the sim results have best, high, and low, then export all of them; else just best
+        """
+        raw_res = sc.odict(defaultdict=list)
+        for reskey in self.results.keys():
+            res = self.results[reskey]
+            if isinstance(res, dict):
+                for blh, blhres in res.items():  # Best, low, high
+                    if len(blhres) == self.t.npts:
+                        if not include_range and blh != 'best':
+                            continue
+                        if include_range:
+                            blhkey = f'{reskey}_{blh}'
+                        else:
+                            blhkey = reskey
+                        raw_res[blhkey] += blhres.tolist()
+            # elif isinstance(res, ss.Result):
+            #     raw_res[reskey] += res.tolist()
+
+            elif (isinstance(res, ss.Result) or sc.isarray(res)) and len(res) == self.t.npts:
+                raw_res[reskey] += res.tolist()
+        df = pd.DataFrame(raw_res)
+        self.df = df
+        return df
 
 
 # %% Multisim and running
