@@ -526,9 +526,10 @@ class Sim(ss.Sim):
                     ax.fill_between(x, low, high, **fill_args)
 
                 # Plot interventions, if present
-                for intv in sc.tolist(self['interventions']):
-                    if hasattr(intv, 'plot_intervention'): # Don't plot e.g. functions
-                        intv.plot_intervention(self, ax)
+                if hasattr(self, 'interventions'):
+                    for intv in sc.tolist(self['interventions']):
+                        if hasattr(intv, 'plot_intervention'): # Don't plot e.g. functions
+                            intv.plot_intervention(self, ax)
 
                 # Handle annotations
                 as_plot = (
@@ -906,12 +907,12 @@ class MultiSim(sc.prettyobj):
                 for reskey in sim.results.keys():
                     res = sim.results[reskey]
                     if sc.isarray(res):
-                        if len(res) == sim.npts and not yearly:
+                        if len(res) == sim.t.npts and not yearly:
                             raw_res[reskey] += res.tolist()
                         elif len(res) == len(sim.results['tfr_years']) and yearly:
                             raw_res[reskey] += res.tolist()
 
-                scale = len(sim.results['tfr_years']) if yearly else sim.npts
+                scale = len(sim.results['tfr_years']) if yearly else sim.t.npts
                 raw_res['sim'] += [s] * scale
                 raw_res['sim_label'] += [sim.label] * scale
 

@@ -19,7 +19,7 @@ def test_multisim(do_plot=do_plot):
     for i in range(3):
         exposure = 0.5 + 0.5*i # Run a sweep over exposure
         pars = fp.pars('test', exposure_factor=exposure)
-        sim = fp.Sim(pars=pars, label=f'Exposure {exposure}')
+        sim = fp.Sim(fp_pars=pars, label=f'Exposure {exposure}')
         sims.append(sim)
 
     msim = fp.MultiSim(sims)
