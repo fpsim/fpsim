@@ -389,7 +389,7 @@ class change_people_state(ss.Intervention):
             errormsg = 'Eligibility must be a function or an array of uids'
             raise ValueError(errormsg)
 
-        return eligible_uids
+        return ss.uids(eligible_uids)
 
     def step(self):
         if self.pars.years[0] <= self.sim.y <= self.pars.years[1]:  # Inclusive range

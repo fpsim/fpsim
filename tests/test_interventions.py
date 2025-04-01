@@ -102,8 +102,8 @@ def test_change_people_state():
     """ Testing that change_people_state() modifies sim results in expected ways """
     sc.heading('Testing change_people_state()...')
 
-    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1)
-    pars = fp.pars(location='kenya', **par_kwargs)
+    sim_pars = dict(n_agents=500, start=2000, stop=2020, rand_seed=1, verbose=-1)
+    fp_pars = fp.pars(location='kenya')
     ms = fp.SimpleChoice(location='kenya')
     sim_kwargs = dict(contraception_module=ms)
 
@@ -112,16 +112,19 @@ def test_change_people_state():
     prior_use_gone = fp.change_people_state('ever_used_contra', years=2020, new_val=False, eligibility=np.arange(500), prop=1, annual=False)
 
     # Make and run sim
-    s0 = fp.Sim(pars, **sim_kwargs, label="Baseline")
-    s1 = fp.Sim(pars, **sim_kwargs, interventions=prior_use_lift, label="All prior_use set to True")
-    s2 = fp.Sim(pars, **sim_kwargs, interventions=prior_use_gone, label="Prior use removed from 500 people")
+    s0 = fp.Sim(sim_pars=sim_pars, fp_pars=fp_pars, **sim_kwargs, label="Baseline")
+    s1 = fp.Sim(sim_pars=sim_pars, fp_pars=fp_pars, **sim_kwargs, interventions=prior_use_lift, label="All prior_use set to True")
+    s2 = fp.Sim(sim_pars=sim_pars, fp_pars=fp_pars, **sim_kwargs, interventions=prior_use_gone, label="Prior use removed from 500 people")
     msim = fp.parallel(s0, s1, s2)
     s0, s1, s2 = msim.sims
 
     # Test people state change
     s0_used_contra = np.sum(s0.people['ever_used_contra'])
     s1_used_contra = np.sum(s1.people['ever_used_contra'])
-    s2_500_used_contra = np.sum(s2.people['ever_used_contra'][0:500])
+
+    s2auids = s2.people['ever_used_contra'].auids
+    s2subset = s2auids[s2auids < 500]
+    s2_500_used_contra = np.sum(s2.people['ever_used_contra'][s2subset])
 
     print(f"Checking change_state CPR trends ... ")
     assert s1_used_contra > s0_used_contra, f'Increasing prior use should increase the number of people with who have used contraception, but {s1_used_contra} is not greater than the baseline of {s0_used_contra}'
@@ -143,7 +146,7 @@ def test_change_people_state():
     # Check with plot
     if do_plot:
         import pylab as pl
-        t = s0.results['t']
+        t = s0.results['ever_used_contra'].timevec
         y0 = s0.results['ever_used_contra']
         y1 = s1.results['ever_used_contra']
         y2 = s2.results['ever_used_contra']
