@@ -60,6 +60,11 @@ default_sim_pars = {
     'rand_seed':            1,      # Random seed
     'verbose':              1,      # How much detail to print during the simulation
     'use_aging':            True,   # Whether to age the population
+    'interventions':        None,   # Interventions to apply
+    'analyzers':            None,   # Analyzers to apply
+    'connectors':           None,   # Connectors to apply
+    'diseases':             None,   # Diseases to model
+    'people':               None,
 
 }
 
