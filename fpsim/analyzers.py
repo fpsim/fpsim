@@ -742,7 +742,7 @@ class method_mix_over_time(Analyzer):
         super().initialize()
         self.methods = sim.contraception_module.methods.keys()
         self.n_methods = len(self.methods)
-        self.results = {k: np.zeros(sim.npts) for k in self.methods}
+        self.results = {k: np.zeros(sim.t.npts) for k in self.methods}
         self.tvec = sim.tvec
         return
 
@@ -791,10 +791,10 @@ class state_tracker(Analyzer):
         Initializes bins and data with proper shapes
         """
         super().initialize()
-        self.data_num = np.full((sim.npts,), np.nan)
-        self.data_perc = np.full((sim.npts,), np.nan)
-        self.data_n_female = np.full((sim.npts,), np.nan)
-        self.tvec = np.full((sim.npts,), np.nan)
+        self.data_num = np.full((sim.t.npts,), np.nan)
+        self.data_perc = np.full((sim.t.npts,), np.nan)
+        self.data_n_female = np.full((sim.t.npts,), np.nan)
+        self.tvec = np.full((sim.t.npts,), np.nan)
         return
 
     def apply(self, sim):
