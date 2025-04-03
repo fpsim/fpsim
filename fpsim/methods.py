@@ -307,7 +307,7 @@ class SimpleChoice(RandomChoice):
                     if 'age_factors' in dur_use.keys():
                         # Get functions based on distro and set for every agent
                         dist_pars_fun, make_dist_dict = self._get_dist_funs(dur_use['dist'])
-                        age_bins = np.digitize(ppl.age[uids], self.age_bins)
+                        age_bins = np.digitize(ppl.age[uids[users]], self.age_bins)
                         par1, par2 = dist_pars_fun(dur_use, age_bins)
 
                         # Transform to parameters needed by fpsim distributions
@@ -438,7 +438,7 @@ class StandardChoice(SimpleChoice):
                 + p.age_ever_user_factors[2] * dfa['knot_3'].values * ppl.ever_used_contra[uids])
 
         # Add education levels
-        primary = (ppl.edu_attainment[uids] > 1) & (ppl.edu_attainment <= 6)
+        primary = (ppl.edu_attainment[uids] > 1) & (ppl.edu_attainment[uids] <= 6)
         secondary = ppl.edu_attainment[uids] > 6
         rhs += p.edu_factors[0] * primary + p.edu_factors[1] * secondary
 

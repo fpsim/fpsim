@@ -140,7 +140,6 @@ default_pars = {
     'region':               None,
 }
 
-}
 
 def pars(location=None, rand_seed=None, **kwargs):
     '''
