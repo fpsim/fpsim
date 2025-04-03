@@ -184,9 +184,12 @@ class Sim(ss.Sim):
             self.results += ss.Result(key, label=key, **nonscaling_kw)
 
         annual_kw = dict(shape=(self.pars.stop - self.pars.start), timevec=range(self.pars.start, self.pars.stop), dtype=float, scale=False)
-        for key in fpd.list_results:
+        for key in fpd.float_annual_results:
             self.results += ss.Result(key, label=key, **annual_kw)
-            # self.results[key] = []
+
+        dict_annual_kw = dict(shape=(self.pars.stop - self.pars.start), timevec=range(self.pars.start, self.pars.stop), dtype=dict, scale=False)
+        for key in fpd.dict_annual_results:
+            self.results += ss.Result(key, label=key, **dict_annual_kw)
 
         # Store age-specific fertility rates
         self.results['asfr'] = ss.Results(module=self) # ['asfr'] = {}

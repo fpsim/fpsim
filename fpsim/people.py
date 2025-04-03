@@ -1148,7 +1148,7 @@ class People(ss.People):
                     annual_res_name = f'{new_res_name}_over_year'
                     res[annual_res_name][index] = (res_over_year)
 
-                # res['method_usage'][index] = (self.compute_method_usage())  # only want this per year
+                res['method_usage'][index] = (self.compute_method_usage())  # only want this per year
                 res['pop_size'][index] = (res['n_alive'][ti])
                 res['mcpr_by_year'][index] = (res['mcpr'][ti])
                 res['cpr_by_year'][index] = (res['cpr'][ti])
@@ -1369,6 +1369,33 @@ class People(ss.People):
             # there is a max age for some of the stats, so if we exceed that, reset it
             self.age[self.alive.uids] = np.minimum(self.age[self.alive.uids], self.sim.fp_pars['max_age'])
         return
+
+
+    def compute_method_usage(self):
+        """
+        Computes method mix proportions from a sim object
+
+        Returns:
+            list of lists where list[years_after_start][method_index] == proportion of
+            fecundity aged women using that method on that year
+        """
+
+        min_age = fpd.min_age
+        max_age = self.sim.fp_pars['age_limit_fecundity']
+
+        # filtering for women with appropriate characteristics
+        bool_list_uids = (self.alive & (self.female) & (self.age >= min_age) * (self.age <= max_age)).uids
+        filtered_methods = self.method[bool_list_uids]
+
+        unique, counts = np.unique(filtered_methods, return_counts=True)
+        count_dict = dict(zip(unique, counts))
+
+        result = [0] * (len(self.sim.fp_pars['contraception_module'].methods))
+        for method in count_dict:
+            result[int(method)] = count_dict[int(method)] / len(filtered_methods)
+
+        return result
+
 
     def plot(self, fig_args=None, hist_args=None):
         ''' Plot histograms of each quantity '''
