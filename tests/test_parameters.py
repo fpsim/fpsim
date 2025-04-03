@@ -172,7 +172,7 @@ def test_long_params():
     pars = fp.pars(location='senegal')
 
     # Make and run sim
-    s = fp.Sim(fp_pars=fp_pars)
+    s = fp.Sim(fp_pars=pars)
     s.run()
 
     expected_rows = len(s.people)

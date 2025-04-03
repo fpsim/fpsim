@@ -27,7 +27,8 @@ def make_sims(interventions, contraception_module=None):
     simlist = []
     for intv in interventions:
         pars = fp.pars('test', contraception_module=contraception_module)
-        simlist += fp.Sim(fp_pars=sc.dcp(pars), interventions=intv)
+        new_sim = fp.Sim(fp_pars=sc.dcp(pars), interventions=intv)
+        simlist.append(new_sim)
     return simlist
 
 

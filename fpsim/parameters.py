@@ -71,6 +71,9 @@ default_sim_pars = {
 default_pars = {
     # Basic parameters
     'location':             None,   # CONTEXT-SPECIFIC ####
+    'contraception_module': None,
+    'education_module':   None,
+    'empowerment_module': None,
 
     # Settings - what aspects are being modeled - TODO, remove
     'use_partnership':      0,      #
