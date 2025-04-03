@@ -73,7 +73,7 @@ class Sim(ss.Sim):
     The Sim class handles the running of the simulation. This class handles the mechanics
     of the actual simulation, while BaseSim takes care of housekeeping (saving,
     loading, exporting, etc.). Please see the BaseSim class for additional methods.
-    
+
     When a Sim is initialized, it triggers the creation of the population. Methods related
     to creating, initializing, and updating people can be found in the People class.
 
@@ -139,8 +139,8 @@ class Sim(ss.Sim):
         self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
 
         # Add modules, also initialized later
-        self.fp_pars['contraception_module'] = contraception_module or fpm.RandomChoice()
-        self.fp_pars['education_module'] = education_module
+        self.fp_pars['contraception_module'] = contraception_module or sc.dcp(fpm.StandardChoice(location=location))
+        self.fp_pars['education_module'] = education_module or sc.dcp(fped.Education(location=location))
         self.fp_pars['empowerment_module'] = empowerment_module
 
         return
@@ -158,7 +158,7 @@ class Sim(ss.Sim):
     def init(self, force=False):
         """ Fully initialize the Sim with people and result storage"""
         if force or not self.initialized:
-
+            fpu.set_seed(self['seed'])
             if self.pars.people is None:
                 self.pars.people = fpppl.People(n_agents=self.pars.n_agents, age_pyramid=self.fp_pars['age_pyramid'], contraception_module=self.fp_pars['contraception_module'])
 
@@ -360,6 +360,31 @@ class Sim(ss.Sim):
         pp.fillna(0, inplace=True)
         return pp
 
+    def to_df(self, include_range=False):
+        """
+        Export all sim results to a dataframe
+
+        Args:
+            include_range (bool): if True, and if the sim results have best, high, and low, then export all of them; else just best
+        """
+        raw_res = sc.odict(defaultdict=list)
+        for reskey in self.results.keys():
+            res = self.results[reskey]
+            if isinstance(res, dict):
+                for blh, blhres in res.items():  # Best, low, high
+                    if len(blhres) == self.npts:
+                        if not include_range and blh != 'best':
+                            continue
+                        if include_range:
+                            blhkey = f'{reskey}_{blh}'
+                        else:
+                            blhkey = reskey
+                        raw_res[blhkey] += blhres.tolist()
+            elif sc.isarray(res) and len(res) == self.npts:
+                raw_res[reskey] += res.tolist()
+        df = pd.DataFrame(raw_res)
+        self.df = df
+        return df
 
     # Function to scale all y-axes in fig based on input channel
     @staticmethod
@@ -704,7 +729,7 @@ class MultiSim(sc.prettyobj):
                 base_sim = sims
                 sims = None
             elif isinstance(sims, list):
-                base_sim = sims[0]
+                base_sim = sc.dcp(sims[0]) # Copy so we don't accidentally overwrite with compute_stats()
             else:
                 errormsg = f'If base_sim is not supplied, sims must be either a single sim (treated as base_sim) or a list of sims, not {type(sims)}'
                 raise TypeError(errormsg)

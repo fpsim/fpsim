@@ -10,7 +10,6 @@ from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
 from . import demographics as fpdmg
-from . import subnational as fpsn
 import starsim as ss
 
 # Specify all externally visible things this file defines
@@ -56,10 +55,7 @@ class People(ss.People):
 
         pars = self.sim.pars
 
-        if not self.sim.fp_pars['use_subnational']:
-            _urban = self.get_urban(len(uids))
-        else:
-            _urban = fpsn.get_urban_init_vals(len(uids))
+        _urban = self.get_urban(len(uids))
 
         # TODO Need hook to set sex distribution (I think this is done now: verify)
         # if sex is None: sex = _sex
@@ -86,10 +82,7 @@ class People(ss.People):
         self.update_wealthquintile(uids)
 
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        if not self.sim.fp_pars['use_subnational']:
-            self.fated_debut[uids] = self.sim.fp_pars['debut_age']['ages'][fpu.n_multinomial(self.sim.fp_pars['debut_age']['probs'], len(uids))]
-        else:
-            self.fated_debut[uids] = fpsn.get_debut_init_vals(uids)
+        self.fated_debut[uids] = self.sim.fp_pars['debut_age']['ages'][fpu.n_multinomial(self.sim.fp_pars['debut_age']['probs'], len(uids))]
 
         # Fecundity variation
         fv = [self.sim.fp_pars['fecundity_var_low'], self.sim.fp_pars['fecundity_var_high']]
@@ -123,11 +116,8 @@ class People(ss.People):
         # Store keys
         self._keys = [s.name for s in self.states.values()]
 
-        if self.sim.fp_pars['use_subnational']:
-            fpsn.init_regional_states(uids)
-            fpsn.init_regional_states(uids)
-
         self.init_contraception(uids)  # Initialize contraceptive methods. v3 will refactor this to other modules
+        return
 
     # todo move to analyzer
     # def initialize_circular_buffer(self):
@@ -404,16 +394,14 @@ class People(ss.People):
                     self.ever_used_contra[choosers] = self.ever_used_contra[choosers] | self.on_contra[choosers]
 
                     # Divide people into those that keep using contraception vs those that stop
-                    # switching_contra = choosers.filter(choosers.on_contra)
-                    switching_contra = choosers[self.on_contra[choosers]]
-                    # stopping_contra = choosers.filter(~choosers.on_contra)
+                    continuing_contra = choosers[self.on_contra[choosers]]
                     stopping_contra = choosers[~self.on_contra[choosers]]
-                    self.sim.results['contra_access'][self.sim.ti] += len(switching_contra)
+                    self.sim.results['contra_access'][self.sim.ti] += len(continuing_contra)
 
                     # For those who keep using, choose their next method
-                    if len(switching_contra):
-                        self.method[switching_contra] = cm.choose_method(self, switching_contra)
-                        self.sim.results['new_users'][self.sim.ti] += np.count_nonzero(self.method[switching_contra])
+                    if len(continuing_contra):
+                        self.method[continuing_contra] = cm.choose_method(self, continuing_contra)
+                        self.sim.results['new_users'][self.sim.ti] += np.count_nonzero(self.method[continuing_contra])
 
                     # For those who stop using, set method to zero
                     if len(stopping_contra):
@@ -453,7 +441,13 @@ class People(ss.People):
             # Set duration of use for everyone, and reset the time they'll next update
             durs_fixed = (self.postpartum_dur[uids] == 1) & (self.method[uids] == 0)
             update_durs = uids[~durs_fixed]
-            self.ti_contra[update_durs] = ti + cm.set_dur_method(self, update_durs)
+            dur_methods = cm.set_dur_method(self, update_durs)
+
+            # Check validity
+            if (dur_methods < 0).any():
+                raise ValueError('Negative duration of method use')
+
+            self.ti_contra[update_durs] = ti + dur_methods
 
         return
 
@@ -1024,8 +1018,7 @@ class People(ss.People):
         # Figure out who to update methods for
         ready = nonpreg[self.ti_contra[nonpreg] <= self.sim.ti]
 
-        # Check if has reached their age at first partnership and set partnered attribute to True.
-        # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
+        # Check who has reached their age at first partnership and set partnered attribute to True.
         self.start_partnership(self.female.uids)
 
         # Complete all updates. Note that these happen in a particular order!

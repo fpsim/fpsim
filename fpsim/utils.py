@@ -237,13 +237,17 @@ def sample(dist='uniform', par1=0, par2=1, size=1, **kwargs):
 
         if '_int' in dist:
             samples = np.round(samples)
-    elif dist == 'lognorm_sps':
+    elif dist == 'lognormal_sps':
         # NOTE: temporary fix
-        samples = sps.lognorm.rvs(s=par1, scale=par2, loc=0, size=size)
+        samples = sps.lognorm.rvs(s=par2, scale=par1, loc=0, size=size)  # NOTE ORDERING
     elif dist == 'gamma':
         samples = sps.gamma.rvs(a=par1, scale=par2, size=size)
     elif dist == 'llogis':
         samples = sps.fisk.rvs(c=par1, scale=par2, size=size)
+    elif dist == 'weibull':
+        samples = sps.weibull_min.rvs(c=par1, scale=par2, size=size)
+    elif dist == 'exponential':
+        samples = sps.expon.rvs(scale=par1, size=size)
     else:
         errormsg = f'The selected distribution "{dist}" is not implemented; choices are: {sc.newlinejoin(choices)}'
         raise NotImplementedError(errormsg)

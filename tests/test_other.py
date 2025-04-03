@@ -60,7 +60,7 @@ def test_to_df():
 def test_plot_people():
     sc.heading('Test plotting people...')
 
-    sim = fp.Sim(location='test').run()
+    sim = fp.Sim().run()
 
     if do_plot:
         sim.people.plot()
@@ -142,21 +142,20 @@ def test_samples(do_plot=False, verbose=True):
 
     return results
 
-# Method usage is not currently used in FPsim, v2 or v3.
-# def test_method_usage():
-#     '''Test that method usage proportions add to 1 and correspond to population'''
-#     sim = fp.Sim(location='test')
-#     sim.run()
-#     for timestep, proportions in enumerate(sim.results['method_usage']):
-#         assert np.isclose(sum(proportions), 1, atol=0.0001)
-#         pop = sim.results['pop_size'][timestep]
-#
-#         # Checking that proportion isn't calculated from a larger population than expected
-#         for proportion in proportions:
-#             if proportion > 0:
-#                 assert (proportion * pop) > 1, "Method usage proportions drawing from a larger population than expected"
-#
-#     return sim
+def test_method_usage():
+    '''Test that method usage proportions add to 1 and correspond to population'''
+    sim = fp.Sim()
+    sim.run() 
+    for timestep, proportions in enumerate(sim.results['method_usage']):
+        assert np.isclose(sum(proportions), 1, atol=0.0001)
+        pop = sim.results['pop_size'][timestep]
+
+        # Checking that proportion isn't calculated from a larger population than expected
+        for proportion in proportions:
+            if proportion > 0:
+                assert (proportion * pop) > 1, "Method usage proportions drawing from a larger population than expected"
+    
+    return sim
 
 
 # def test_track_as(run_track_as):
@@ -180,12 +179,11 @@ def test_samples(do_plot=False, verbose=True):
 # Run all tests
 if __name__ == '__main__':
 
-    sc.options(backend=None) # Turn on interactive plots
+    # sc.options(backend=None) # Turn on interactive plots
 
-    with sc.timer():
-        opts = test_options()
-        df   = test_to_df()
-        ppl  = test_plot_people()
-        res  = test_samples()
-        method = test_method_usage()
-        # sim = test_track_as(run_track_as)
+    opts = test_options()
+    df   = test_to_df()
+    ppl  = test_plot_people()
+    res  = test_samples()
+    method = test_method_usage()
+    # sim = test_track_as(run_track_as)

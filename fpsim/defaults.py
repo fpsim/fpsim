@@ -60,7 +60,7 @@ class State:
 
 # Parse locations
 def get_location(location, printmsg=False):
-    default_location = 'senegal'  # Need to change this back to Senegal once parameters have been added
+    default_location = 'senegal'
     if not location:
         if printmsg: print('Location not supplied: using parameters from Senegal')
         location = default_location
@@ -149,9 +149,8 @@ person_defaults = [
     ss.State('partnered', default=False),
     ss.FloatArr('partnership_age', default=-1),
 
-    # Urban (basic demographics) -- state will remain at these values if use_urban is False
+    # Socioeconomic
     ss.State('urban', default=True),
-    ss.Arr('region', dtype="<U64", default=None),
     ss.FloatArr('wealthquintile', default=3), # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
 
     # Education - states will remain at these values if use_education is False
@@ -171,9 +170,6 @@ person_defaults = [
     fpa.MultiFloat('miscarriage_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of miscarriages
     fpa.MultiFloat('abortion_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of abortions
     # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
-
-
-
 ]
 
 # person_defaults = ss.ndict(person_defaults)

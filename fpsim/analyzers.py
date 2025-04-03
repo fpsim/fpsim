@@ -416,7 +416,7 @@ class lifeof_recorder(Analyzer):
         self.max_agents = 0  # maximum number of agents this analyzer tracks
         self.time = []
         self.trajectories = {}  # Store education trajectories
-        from .methods import Methods
+        Methods = fp.make_methods().Methods
         self.method_map = {idx: method.label for idx, method in enumerate(Methods.values())}
         self.m2y = 1.0/fpd.mpy  # Transform timesteps in months to years
 

@@ -72,9 +72,8 @@ default_pars = {
     # Basic parameters
     'location':             None,   # CONTEXT-SPECIFIC ####
 
-    # Settings - what aspects are being modeled
-    'use_subnational':      0,      # Whether to model partnered states- will need to add context-specific data if using
-    'use_partnership':      0,      # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
+    # Settings - what aspects are being modeled - TODO, remove
+    'use_partnership':      0,      #
 
     # Age limits (in years)
     'method_age':           15,
@@ -139,11 +138,7 @@ default_pars = {
     'intent_to_use':        None,
 
     'region':               None,
-    'lactational_amenorrhea_region': None,
-    'sexual_activity_region':       None,
-    'sexual_activity_pp_region':    None,
-    'debut_age_region':             None,
-    'barriers_region':              None,
+}
 
 }
 
