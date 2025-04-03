@@ -21,13 +21,13 @@ class Education:
         self.pars = education_dict
         return
 
-    def initialize(self, ppl):
+    def initialize(self, ppl, uids):
         """ Initialize with people """
         education_dict = self.pars
 
         # Initialise individual education objectives from a 2d array of probs with dimensions (urban, edu_years)
-        f_uids_urban = (ppl.female & ppl.urban).uids
-        f_uids_rural = (ppl.female & ~ppl.urban).uids
+        f_uids_urban = uids[(ppl.female[uids] & ppl.urban[uids])]
+        f_uids_rural = uids[(ppl.female[uids] & ~ppl.urban[uids])]
 
         # Set objectives based on geo setting
         probs_urban = education_dict['edu_objective'][0, :]
@@ -70,7 +70,7 @@ class Education:
         """
         Begin education
         """
-        new_students = (~ppl.edu_started[uids] & (ppl.age[uids] >= self.pars["age_start"]))
+        new_students = uids[(~ppl.edu_started[uids] & (ppl.age[uids] >= self.pars["age_start"]))]
         ppl.edu_started[new_students] = True
 
     @staticmethod
@@ -80,7 +80,7 @@ class Education:
         woman is pregnant and towards the end of the first trimester
         """
         # Hinder education progression if a woman is pregnant and towards the end of the first trimester
-        pregnant_students = (ppl.pregnant[uids] & (ppl.gestation[uids] == ppl.sim.fp_pars['end_first_tri']))
+        pregnant_students = uids[(ppl.pregnant[uids] & (ppl.gestation[uids] == ppl.sim.fp_pars['end_first_tri']))]
         # Disrupt education
         ppl.edu_interrupted[pregnant_students] = True
 
@@ -97,15 +97,15 @@ class Education:
         """
 
         # Filter people who have not: completed education, dropped out or had their education interrupted
-        students = (ppl.edu_started[uids] & ~ppl.edu_completed[uids] & ~ppl.edu_dropout[uids] & ~ppl.edu_interrupted[uids]).uids
+        students = uids[(ppl.edu_started[uids] & ~ppl.edu_completed[uids] & ~ppl.edu_dropout[uids] & ~ppl.edu_interrupted[uids])]
         # Advance education attainment
         ppl.edu_attainment[students] += ppl.sim.t.dt_year
         # Check who will experience an interruption
         self.interrupt_education(ppl, students)
         # Make some students dropout based on dropout | parity probabilities
-        par1 = (ppl.parity[students] == 1).uids
+        par1 = students[(ppl.parity[students] == 1)]
         self.dropout_education(ppl, par1, '1')  # Women with parity 1
-        par2plus = (ppl.parity[students] >= 2).uids
+        par2plus = students[(ppl.parity[students] >= 2)]
         self.dropout_education(ppl, par2plus, '2+')  # Women with parity 2+
 
     @staticmethod
@@ -117,14 +117,11 @@ class Education:
         """
         # Basic mechanism to resume education post-pregnancy:
         # If education was interrupted due to pregnancy, resume after 9 months pospartum
-        postpartum_students = (ppl.postpartum[uids] & ppl.edu_interrupted[uids] & ~ppl.edu_completed[uids] & ~ppl.edu_dropout[uids] &
-                        (ppl.postpartum_dur[uids] > 0.5 * ppl.pars['postpartum_dur'])).uids
+        postpartum_students = uids[(ppl.postpartum[uids] & ppl.edu_interrupted[uids] & ~ppl.edu_completed[uids] & ~ppl.edu_dropout[uids] &
+                        (ppl.postpartum_dur[uids] > 0.5 * ppl.sim.fp_pars['postpartum_dur']))]
         ppl.edu_interrupted[postpartum_students] = False
 
     @staticmethod
     def graduate(ppl, uids):
-        completed_uids = (ppl.edu_attainment[uids] >= ppl.edu_objective[uids]).uids
-        # tmp = ppl.edu_completed
-        # tmp[completed_inds] = True
-        # ppl.edu_completed = tmp
+        completed_uids = uids[(ppl.edu_attainment[uids] >= ppl.edu_objective[uids])]
         ppl.edu_completed[completed_uids] = True

@@ -13,7 +13,7 @@ from . import defaults as fpd
 
 #%% Generic intervention classes
 
-__all__ = ['Intervention', 'change_par', 'update_methods', 'change_people_state', 'change_initiation_prob', 'change_initiation']
+__all__ = ['change_par', 'update_methods', 'change_people_state', 'change_initiation_prob', 'change_initiation']
 
 
 # class Intervention:

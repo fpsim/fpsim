@@ -156,10 +156,10 @@ person_defaults = [
     # Education - states will remain at these values if use_education is False
     ss.FloatArr('edu_objective', default=0),
     ss.FloatArr('edu_attainment', default=0),
-    ss.FloatArr('edu_dropout', default=0),
-    ss.FloatArr('edu_interrupted', default=0),
-    ss.FloatArr('edu_completed', default=0),
-    ss.FloatArr('edu_started', default=0),
+    ss.State('edu_dropout', default=False),
+    ss.State('edu_interrupted', default=False),
+    ss.State('edu_completed', default=False),
+    ss.State('edu_started', default=False),
 
     # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
     # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and

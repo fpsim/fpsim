@@ -8,8 +8,9 @@ import pylab as pl
 import sciris as sc
 from . import utils as fpu
 from . import defaults as fpd
-from . import base as fpb
 from . import demographics as fpdmg
+from . import education as fped
+from . import methods as fpm
 import starsim as ss
 
 # Specify all externally visible things this file defines
@@ -57,6 +58,10 @@ class People(ss.People):
 
         _urban = self.get_urban(len(uids))
 
+        # init the various modules
+        self.contraception_module = self.contraception_module or sc.dcp(fpm.StandardChoice(location=self.sim.fp_pars['location']))
+        self.education_module = self.education_module or sc.dcp(fped.Education(location=self.sim.fp_pars['location']))
+
         # TODO Need hook to set sex distribution (I think this is done now: verify)
         # if sex is None: sex = _sex
 
@@ -99,7 +104,7 @@ class People(ss.People):
             self.empowerment_module.initialize(female_uids)
 
         if self.education_module is not None:
-            self.education_module.initialize(uids)
+            self.education_module.initialize(self, uids)
 
         # Partnership
         if self.sim.fp_pars['use_partnership']:
@@ -1081,8 +1086,8 @@ class People(ss.People):
             self.update_fertility_intent_by_age(bday)
         return
 
-    def step_education(self):
-        self.education_module.update(self)
+    def step_education(self, uids):
+        self.education_module.update(self, uids)
         return
 
 
