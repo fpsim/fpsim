@@ -1,18 +1,18 @@
 {
   "model": {
-    "pop_size_mean": 12390.1,
-    "pop_growth_rate_mean": 0.6815703610173068,
-    "mcpr_mean": 40.516482268093206,
+    "pop_size_mean": 9909.25,
+    "pop_growth_rate_mean": -0.1936068557993502,
+    "mcpr_mean": 38.35202239638245,
     "maternal_mortality_ratio": 0.0,
-    "infant_mortality_rate": 46.082949308755765,
-    "crude_death_rate": 10.8038323027791,
-    "crude_birth_rate": 14.744852891214242,
-    "total_fertility_rate_mean": 2.53750466459798,
-    "asfr_mean": 56.86299137895291,
-    "ageparity_mean": 2.040816326530612,
-    "spacing_stats_mean": 3.4999999999999503,
-    "age_first_stats_mean": 22.926075857741026,
-    "method_counts_mean": 0.09999999999999999
+    "infant_mortality_rate": 93.33333333333334,
+    "crude_death_rate": 15.414258188824663,
+    "crude_birth_rate": 8.500510030601836,
+    "total_fertility_rate_mean": 1.500181227475711,
+    "asfr_mean": 41.810152722424384,
+    "ageparity_mean": 2.0408163265306127,
+    "spacing_stats_mean": 3.805583635965983,
+    "age_first_stats_mean": 22.55588452021281,
+    "method_counts_mean": 0.1
   },
   "data": {
     "pop_size_mean": 26261.302435139336,
