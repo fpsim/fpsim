@@ -194,9 +194,7 @@ class Sim(ss.Sim):
         # Store age-specific fertility rates
         self.results['asfr'] = ss.Results(module=self) # ['asfr'] = {}
         for key in fpd.age_bin_map.keys():
-            # self.results[f'asfr'][key] = []
             self.results.asfr += ss.Result(key, label=key, **annual_kw)
-            # self.results[f"tfr_{key}"] = []
             self.results += ss.Result(f"tfr_{key}", label=key, **annual_kw)
 
         return
@@ -614,31 +612,7 @@ class Sim(ss.Sim):
         pl.xlabel('Age (years')
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
-    def compute_method_usage(self):
-        """
-        Computes method mix proportions from a sim object
 
-        Returns:
-            list of lists where list[years_after_start][method_index] == proportion of
-            fecundity aged women using that method on that year
-        """
-
-        ppl = self.people
-        min_age = fpd.min_age
-        max_age = self['age_limit_fecundity']
-
-        # filtering for women with appropriate characteristics
-        bool_list = ppl.alive * (ppl.sex==0) * (ppl.age >= min_age) * (ppl.age <= max_age)
-        filtered_methods = ppl.method[bool_list]
-
-        unique, counts = np.unique(filtered_methods, return_counts=True)
-        count_dict = dict(zip(unique, counts))
-
-        result = [0] * (len(self.fp_pars['methods']['eff']))
-        for method in count_dict:
-            result[method] = count_dict[method] / len(filtered_methods)
-
-        return result
 
     def format_method_df(self, method_list=None, timeseries=False):
         """
