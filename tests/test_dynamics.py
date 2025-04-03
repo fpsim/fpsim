@@ -74,6 +74,7 @@ def test_mcpr(location=None, do_plot=False):
                                 eligibility=select_women,
                                 years=2000.0,
                                 new_val=covar.val0,
+                                name=f"change_state_{covar.pplattr}_2000"
                             )
         return zero_states
 
@@ -86,6 +87,7 @@ def test_mcpr(location=None, do_plot=False):
                             eligibility=select_women,
                             years=2010.0,
                             new_val=covar.val,
+                            name=f"change_state_{covar.pplattr}_2010"
                         )
         sims += make_sim(intvs=make_zeros()+[change_state], location=location, label=f'Increased {covar.pplattr}')
 
