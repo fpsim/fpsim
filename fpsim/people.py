@@ -1182,15 +1182,15 @@ class People(ss.People):
 
     def calculate_annual_ratios(self):
         index = self.get_annual_index()
-        live_births_over_year = self.sim.results['live_births_over_year'][-1]
+        live_births_over_year = self.sim.results['live_births_over_year'][index]
 
-        maternal_mortality_ratio = sc.safedivide(self.sim.results['maternal_deaths_over_year'][-1], live_births_over_year) * 100000
+        maternal_mortality_ratio = sc.safedivide(self.sim.results['maternal_deaths_over_year'][index], live_births_over_year) * 100000
         self.sim.results['mmr'][index] = (maternal_mortality_ratio)
 
-        infant_mortality_rate = sc.safedivide(self.sim.results['infant_deaths_over_year'][-1], live_births_over_year) * 1000
+        infant_mortality_rate = sc.safedivide(self.sim.results['infant_deaths_over_year'][index], live_births_over_year) * 1000
         self.sim.results['imr'][index] = (infant_mortality_rate)
 
-        self.sim.results['proportion_short_interval_by_year'][index] = (sc.safedivide(self.sim.results['short_intervals_over_year'][-1], self.sim.results['secondary_births_over_year'][-1]))
+        self.sim.results['proportion_short_interval_by_year'][index] = (sc.safedivide(self.sim.results['short_intervals_over_year'][index], self.sim.results['secondary_births_over_year'][index]))
         return
 
     def _step_results_wq(self):

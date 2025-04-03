@@ -53,10 +53,26 @@ class Experiment(sc.prettyobj):
         kwargs (dict): passed into pars
     '''
 
-    def __init__(self, sim_pars=None, fp_pars=None, flags=None, label=None, **kwargs):
+    def __init__(self, sim_pars={}, fp_pars={}, flags=None, label=None, **kwargs):
         self.flags = sc.mergedicts(default_flags, flags, _copy=True)  # Set flags for what gets run
-        self.fp_pars = fp_pars if fp_pars else fpp.pars(**kwargs)
-        self.sim_pars = sim_pars if sim_pars else fpp.default_sim_pars.copy()
+        # self.fp_pars = fp_pars
+        # self.sim_pars = sim_pars
+        #
+        # self.sim_pars = sim_pars if sim_pars else fpp.default_sim_pars.copy()
+        # self.fp_pars = fp_pars if fp_pars else fpp.default_fp_pars.copy()
+
+        self.sim_pars = sc.mergedicts(fpp.default_sim_pars, sim_pars)
+        self.fp_pars = fp_pars
+
+        if len(kwargs):
+            for k,v in kwargs.items():
+                if k in self.sim_pars:
+                    self.sim_pars[k] = v
+                elif k in self.fp_pars:
+                    self.fp_pars[k] = v
+
+        if 'location' not in self.fp_pars.keys():
+            self.fp_pars['location'] = 'test'
         self.location = self.fp_pars['location']
         self.model = sc.objdict()
         self.data = sc.objdict()
