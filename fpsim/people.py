@@ -734,10 +734,10 @@ class People(ss.People):
         self.sim.results['miscarriages'][self.sim.ti] = n_miscarriages
 
         if n_miscarriages:
-            # todo figure out how miscarriage age logging works
-            # for cum_miscarriages in np.unique(self.miscarriage[miscarriage]):
-            #     # all_ppl.miscarriage_ages[miscarriage.inds, cum_miscarriages] = miscarriage.age
-            #     self.miscarriage_ages[miscarriage, int(cum_miscarriages)] = self.age[miscarriage]
+            for miscarriage_uid in miscarriage:
+                # put miscarriage age in first nan slot
+                miscarriage_age_index = np.where(np.isnan(self.miscarriage_ages[miscarriage_uid]))[0][0]
+                self.miscarriage_ages[miscarriage_uid][miscarriage_age_index] = self.age[miscarriage_uid]
             self.pregnant[miscarriage] = False
             self.miscarriage[miscarriage] += 1  # Add 1 to number of miscarriages agent has had
             self.postpartum[miscarriage] = False
@@ -777,8 +777,6 @@ class People(ss.People):
         if len(uids) > 0:
             age_inds = sc.findnearest(self.sim.fp_pars['infant_mortality']['ages'], self.age[uids])
             death_prob = death_prob * (self.sim.fp_pars['infant_mortality']['age_probs'][age_inds])
-        #is_death = self.binomial(death_prob)
-        #death = self.filter(is_death)
         self.binom.set(p=death_prob)
         death = self.binom.filter(uids)
 
