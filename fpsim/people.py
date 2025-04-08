@@ -806,7 +806,6 @@ class People(ss.People):
             still_prob = self.sim.fp_pars['mortality_probs']['stillbirth']
             rate_ages = self.sim.fp_pars['stillbirth_rate']['ages']
 
-            # todo verify sorted inds map to uids correctly
             age_ind = np.searchsorted(rate_ages, self.age[deliv], side="left")
             prev_idx_is_less = ((age_ind == len(rate_ages)) | (
                     np.fabs(self.age[deliv] - rate_ages[np.maximum(age_ind - 1, 0)]) < np.fabs(
@@ -829,7 +828,6 @@ class People(ss.People):
 
             # Record ages of agents when live births / stillbirths occur
             for parity in np.unique(self.parity[single]):
-                #todo verify the indices align between birth_ages and uids
                 single_uids = single[self.parity[single] == parity]
                 for uid in single_uids:
                     self.birth_ages[ss.uids(uid)][int(parity)] = self.age[ss.uids(uid)]
