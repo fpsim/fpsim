@@ -11,8 +11,7 @@ serial   = 1 # Whether to run in serial (for debugging)
 
 
 def make_sim_parts(location='ethiopia', new_p_use_pars=False):
-    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1)
-    pars = fp.pars(location=location)
+    pars = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1, location=location)
     edu = fp.Education(location=location)
     choice = fp.StandardChoice(location=location)
     if new_p_use_pars:
@@ -28,13 +27,13 @@ def make_sim_parts(location='ethiopia', new_p_use_pars=False):
         )
         choice.contra_use_pars[1] = sc.dcp(choice.contra_use_pars[0])
         choice.contra_use_pars[2] = sc.dcp(choice.contra_use_pars[0])
-    return par_kwargs, pars, choice, edu
+    return pars, choice, edu
 
 
 def make_sim(label='Baseline', intvs=None, analyzers=None, location=None, **kwargs):
-    sim_pars, pars, choice, edu = make_sim_parts(location=location)
+    pars, choice, edu = make_sim_parts(location=location)
     sim = fp.Sim(
-        sim_pars=sim_pars, fp_pars=pars, contraception_module=choice, education_module=edu,
+        pars=pars, contraception_module=choice, education_module=edu,
         label=label, interventions=intvs, analyzers=analyzers, **kwargs
         )
     return sim
@@ -148,11 +147,11 @@ def test_durations(location=None):
     # Create parameters and modules
     sim_base = make_sim(location=location, label='Baseline')
 
-    sim_pars, pars, choice, edu = make_sim_parts(location=location)
+    pars, choice, edu = make_sim_parts(location=location)
     short_choice = sc.dcp(choice)
     for m in short_choice.methods.values(): m.dur_use = dict(dist='unif', par1=1, par2=2)
     sim_short = fp.Sim(
-        sim_pars=sim_pars, fp_pars=pars, contraception_module=short_choice, education_module=edu,
+        pars=pars, contraception_module=short_choice, education_module=edu,
         label='Short durations')
 
     # Run sims

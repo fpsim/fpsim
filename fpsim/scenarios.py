@@ -284,15 +284,15 @@ class Scenarios(sc.prettyobj):
 
     def make_sims(self, scenlabel, **kwargs):
         ''' Create a list of sims that are all identical except for the random seed '''
+        pars = dict()
         if scenlabel is None:
             errormsg = 'Scenario label must be defined'
             raise ValueError(errormsg)
         sims = sc.autolist()
         for i in range(self.repeats):
-            sim_pars, fp_pars = self.update_pars(**kwargs)
-            sim_pars['rand_seed'] = i
+            pars['rand_seed'] = i
 
-            sim = fps.Sim(fp_pars=fp_pars, sim_pars=sim_pars)
+            sim = fps.Sim(pars=pars, **kwargs)
 
             sim.scenlabel = scenlabel # Special label for scenarios objects
             if sim.label is None:

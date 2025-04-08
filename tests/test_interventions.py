@@ -85,19 +85,17 @@ def test_change_people_state():
     """ Testing that change_people_state() modifies sim results in expected ways """
     sc.heading('Testing change_people_state()...')
 
-    sim_pars = dict(n_agents=500, start=2000, stop=2020, rand_seed=1, verbose=-1)
-    fp_pars = fp.pars(location='kenya')
+    pars = dict(n_agents=500, start=2000, stop=2020, rand_seed=1, verbose=-1, location='kenya')
     ms = fp.SimpleChoice(location='kenya')
-    sim_kwargs = dict(contraception_module=ms)
 
     # Change ever user
     prior_use_lift = fp.change_people_state('ever_used_contra', years=2019, new_val=True, eligibility=np.arange(500), prop=1, annual=False)
     prior_use_gone = fp.change_people_state('ever_used_contra', years=2020, new_val=False, eligibility=np.arange(500), prop=1, annual=False)
 
     # Make and run sim
-    s0 = fp.Sim(sim_pars=sim_pars, fp_pars=fp_pars, **sim_kwargs, label="Baseline")
-    s1 = fp.Sim(sim_pars=sim_pars, fp_pars=fp_pars, **sim_kwargs, interventions=prior_use_lift, label="All prior_use set to True")
-    s2 = fp.Sim(sim_pars=sim_pars, fp_pars=fp_pars, **sim_kwargs, interventions=prior_use_gone, label="Prior use removed from 500 people")
+    s0 = fp.Sim(pars=pars, contraception_module=sc.dcp(ms), label="Baseline")
+    s1 = fp.Sim(pars=pars, contraception_module=sc.dcp(ms), interventions=prior_use_lift, label="All prior_use set to True")
+    s2 = fp.Sim(pars=pars, contraception_module=sc.dcp(ms), interventions=prior_use_gone, label="Prior use removed from 500 people")
     msim = fp.parallel(s0, s1, s2)
     s0, s1, s2 = msim.sims
 

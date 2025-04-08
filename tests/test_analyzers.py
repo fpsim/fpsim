@@ -33,9 +33,9 @@ def test_calibration(n_trials=3):
     )
 
     # Calculate calibration
-    fp_pars = fp.pars(location='test')
-    sim_pars = ss.SimPars(n_agents=20, start=1960, stop=1980)
-    calib = fp.Calibration(sim_pars=sim_pars, fp_pars=fp_pars, weights=dict(pop_size=100))
+    pars= dict(location='test', n_agents=20, start=1960, stop=1980)
+
+    calib = fp.Calibration(pars=pars, weights=dict(pop_size=100))
     calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=2)
     before,after = calib.summarize()
 

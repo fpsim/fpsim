@@ -56,16 +56,13 @@ def test_pregnant_women():
         'start_year': 2000,
         'end_year': 2001,
         'n_agents': 1000,
-    }
-
-    fp_pars = {
         'age_pyramid': f24_age_pyramid,
         'debut_age': debut_age,
         'primary_infertility': 0,
         'sexual_activity': sexual_activity,
     }
 
-    sim = fp.Sim(sim_pars=custom_pars, fp_pars=fp_pars, contraception_module=contra_mod)
+    sim = fp.Sim(pars=custom_pars, contraception_module=contra_mod)
     sim.init()
 
     # Override fecundity to maximize pregnancies and minimize variation during test
@@ -142,23 +139,20 @@ def test_contraception():
         'start_year': 2000,
         'end_year': 2003,
         'n_agents': 1000,
-    }
-
-    fp_pars = {
         'age_pyramid': f24_age_pyramid,
         'debut_age': debut_age,
         'primary_infertility': 0,
         'sexual_activity': sexual_activity,
     }
 
-    sim = fp.Sim(sim_pars=custom_pars, fp_pars=fp_pars, contraception_module=contra_mod, interventions=[p_use_change, p_use_change2])
+    sim = fp.Sim(pars=custom_pars, contraception_module=contra_mod, interventions=[p_use_change, p_use_change2])
     sim.init()
     # Override fecundity to maximize pregnancies and minimize variation during test
     sim.people.personal_fecundity[:] = 1
 
     sim.run()
 
-    print(f'Checking pregnancy and birth outcomes from {custom_pars["n_agents"]} women... ')
+    print(f'Checking pregnancy and birth outcomes from {sim.pars.n_agents} women... ')
     assert sim.results.pregnancies[0:12].sum() == 0, "Expected no pregnancies"
     assert sim.results.pregnancies[12:].sum() > 0, "Expected pregnancies after contraception switch"
     print(f'✓ (no pregnancies with 100% effective contraception)')
@@ -318,13 +312,10 @@ def test_method_selection_dependencies():
     # set up a bunch of identical women, same age, same history
     # manually assign a previous method and short method dur
     # inspect new methods -> should be distributed according to the method mix
-    sim_pars = {
+    pars = {
         'start_year': 2000,
         'end_year': 2001,
         'n_agents': 1000,
-    }
-
-    fp_pars = {
         'primary_infertility': 1,  # make sure no pregnancies!
     }
 
@@ -343,15 +334,14 @@ def test_method_selection_dependencies():
         'probs': np.ones(35, dtype=float)
     }
 
-    fp_pars['debut_age'] = debut_age
+    pars['debut_age'] = debut_age
 
     # Note: not all agents will be active at t==0 but will be after t==1
     sexual_activity = np.ones(51, dtype=float)
-    fp_pars['sexual_activity'] = sexual_activity
+    pars['sexual_activity'] = sexual_activity
 
-    sim1_fp_pars = fp_pars.copy()
-    sim1_fp_pars['age_pyramid'] = f15_age_pyramid
-    sim1 = fp.Sim(location="kenya", sim_pars=sim_pars, fp_pars=sim1_fp_pars, contraception_module=method, analyzers=[cpr, snapshots])
+    pars['age_pyramid'] = f15_age_pyramid
+    sim1 = fp.Sim(location="kenya", pars=pars, contraception_module=method, analyzers=[cpr, snapshots])
     sim1.init()
     sim1.people.ever_used_contra[:] = True
 
@@ -376,7 +366,7 @@ def test_education_preg():
 
     def make_sim(pregnant=False):
         pars = dict(start=2000, stop=2010, n_agents=1000, verbose=0.1)
-        sim = fp.Sim(sim_pars=pars)
+        sim = fp.Sim(pars=pars)
         sim.init()
         sim.people.age[:] = 15
         sim.people.female[:] = True

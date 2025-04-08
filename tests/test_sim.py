@@ -23,10 +23,8 @@ def test_simple_choice():
     # Make & run sim
     sims = sc.autolist()
     for location in ['kenya', 'ethiopia', 'senegal']:
-        fp_pars = fp.pars(location=location)
-        sim_pars = par_kwargs
         method_choice = fp.SimpleChoice(location=location)
-        sim = fp.Sim(sim_pars=sim_pars, fp_pars=fp_pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
+        sim = fp.Sim(pars=par_kwargs, location=location, contraception_module=method_choice, analyzers=fp.cpr_by_age())
         sims += sim
 
     m = fp.parallel(sims, serial=serial, compute_stats=False)
@@ -42,8 +40,7 @@ def test_mid_choice():
     for location in ['kenya', 'ethiopia', 'senegal']:
         ms = fp.StandardChoice(location=location)
         edu = fp.Education(location=location)
-        pars = fp.pars(location=location)
-        s = fp.Sim(sim_pars=par_kwargs, fp_pars=pars, contraception_module=ms, education_module=edu)
+        s = fp.Sim(pars=par_kwargs, location=location, contraception_module=ms, education_module=edu)
         sims += s
 
     m = fp.parallel(sims, serial=serial, compute_stats=False)

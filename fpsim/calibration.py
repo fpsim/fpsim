@@ -9,8 +9,10 @@ import pylab as pl
 import pandas as pd
 import sciris as sc
 import seaborn as sns
+import starsim as ss
 import optuna as op
 from . import experiment as fpe
+from . import parameters as fpp
 
 
 __all__ = ['Calibration']
@@ -45,9 +47,8 @@ class Calibration(sc.prettyobj):
         A Calibration object
     '''
 
-    def __init__(self, sim_pars, fp_pars, calib_pars=None, weights=None, verbose=True, keep_db=False, **kwargs):
-        self.sim_pars   = sim_pars
-        self.fp_pars    = fp_pars
+    def __init__(self, pars, calib_pars=None, weights=None, verbose=True, keep_db=False, **kwargs):
+        self.pars    = pars
         self.calib_pars = calib_pars
         self.weights    = weights
         self.verbose    = verbose
@@ -116,9 +117,10 @@ class Calibration(sc.prettyobj):
         for key,val in self.calib_pars.items():
 
             # Check that the key is a valid parameter
-            par_keys = self.sim_pars.keys() + list(self.fp_pars.keys())
-            if key not in par_keys:
-                errormsg = f'Key "{key}" is not present the available parameter keys: {sc.newlinejoin(par_keys)}'
+            all_par_keys = ss.Pars().keys() + list(fpp.default_pars.keys())
+            # if key not in par_keys:
+            if key not in all_par_keys:
+                errormsg = f'Key "{key}" is not present the available parameter keys: {sc.newlinejoin(all_par_keys)}'
                 raise sc.KeyNotFoundError(errormsg)
 
             # If each entry of calib_pars is a dict, convert to array
@@ -150,8 +152,8 @@ class Calibration(sc.prettyobj):
 
     def run_exp(self, calib_pars, return_exp=False, **kwargs):
         ''' Create and run an experiment '''
-        pars = sc.mergedicts(sc.dcp(self.fp_pars), calib_pars)
-        exp = fpe.Experiment(fp_pars=pars, **kwargs)
+        pars = sc.mergedicts(sc.dcp(self.pars), calib_pars)
+        exp = fpe.Experiment(pars=pars, **kwargs)
         exp.run(weights=self.weights)
         if return_exp:
             return exp

@@ -33,7 +33,7 @@ def test_null(do_plot=do_plot):
     for key in ['age_mortality', 'maternal_mortality', 'infant_mortality']:
         pars[key]['probs'] *= 0
 
-    sim = fp.Sim(fp_pars=pars)
+    sim = fp.Sim(pars=pars)
     sim.run()
 
     # Tests
@@ -46,16 +46,16 @@ def test_null(do_plot=do_plot):
 
 
 def test_timestep():
-    fp_pars = fp.pars('test')
-    sim_pars = {}
-    # Set options
-    sim_pars['n_agents'] = 500   # Small population size
-    sim_pars['stop'] = 2020  # 1961 - 2020 is the normal date range
-    fp_pars['exposure_factor'] = 0.5  # Overall scale factor on probability of becoming pregnant
+    pars = dict(
+        location='test',
+        n_agents = 500,   # Small population size
+        stop = 2020,  # 1961 - 2020 is the normal date range
+        exposure_factor = 0.5 # Overall scale factor on probability of becoming pregnant
+    )
 
     for timestep in range(1, 13):
-        sim_pars['dt'] = timestep/12
-        sim = fp.Sim(sim_pars=sc.dcp(sim_pars), fp_pars=sc.dcp(fp_pars))
+        pars['dt'] = timestep/12
+        sim = fp.Sim(pars=sc.dcp(pars))
         sim.run()
         ok(f'simulation ran for timestep {timestep}')
 
@@ -70,9 +70,9 @@ def test_scale():
     scale = 2
 
     # Make and run sims
-    fp_pars = fp.pars('test')
-    s1 = fp.Sim(fp_pars=fp_pars)
-    s2 = fp.Sim(fp_pars=fp_pars, pop_scale=scale)
+    pars = dict(location='test')
+    s1 = fp.Sim(pars=pars)
+    s2 = fp.Sim(pars=pars, pop_scale=scale)
     msim = ss.parallel([s1, s2], shrink=False)
     s1, s2 = msim.sims
 
@@ -169,10 +169,10 @@ def test_save_load():
 def test_long_params():
     sc.heading('Test longitudinal params')
     # Define pars
-    pars = fp.pars(location='senegal')
+    pars = dict(location='senegal')
 
     # Make and run sim
-    s = fp.Sim(fp_pars=pars)
+    s = fp.Sim(pars=pars)
     s.run()
 
     expected_rows = len(s.people)

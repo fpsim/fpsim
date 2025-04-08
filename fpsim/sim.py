@@ -90,10 +90,15 @@ class Sim(ss.Sim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, sim_pars={}, fp_pars={}, location=None, track_children=False, regional=False,
+    def __init__(self, pars={}, location=None, track_children=False, regional=False,
                  contraception_module=None, empowerment_module=None, education_module=None,
                  label=None, people=None, demographics=None, diseases=None, networks=None,
                  interventions=None, analyzers=None, connectors=None, copy_inputs=True, data=None, **kwargs):
+
+        if copy_inputs:
+            pars = sc.dcp(pars)
+        pars = self.remap_pars(pars)
+        sim_pars, fp_pars = self.separate_pars(pars)
 
         new_sim_pars = ss.make_pars() # get starsim default sim pars
         fpsim_default_sim_pars = fpp.default_sim_pars # get fpsim default sim pars
@@ -103,14 +108,6 @@ class Sim(ss.Sim):
         args = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         args = {key:val for key,val in args.items() if val is not None} # Remove None inputs
-
-        # remap old parameter names to the new names
-        if 'start_year' in sim_pars:
-            sim_pars['start'] = sim_pars.pop('start_year')
-        if 'end_year' in sim_pars:
-            sim_pars['stop'] = sim_pars.pop('end_year')
-        if 'seed' in sim_pars:
-            sim_pars['rand_seed'] = sim_pars.pop('seed')
 
         input_pars = sc.mergedicts(sim_pars, args, _copy=copy_inputs, **kwargs)
         new_sim_pars.update(input_pars) # update with input pars to override defaults
@@ -153,6 +150,36 @@ class Sim(ss.Sim):
     @property
     def y(self):
         return self.t.yearvec[self.ti]
+
+    def remap_pars(self, pars):
+        """
+        Remap the parameters to the new names. This is useful for backwards compatibility.
+        """
+        if 'start_year' in pars:
+            pars['start'] = pars.pop('start_year')
+        if 'end_year' in pars:
+            pars['stop'] = pars.pop('end_year')
+        if 'seed' in pars:
+            pars['rand_seed'] = pars.pop('seed')
+
+        return pars
+
+    """
+    Separate the parameters into simulation and fp-specific parameters.
+    """
+    def separate_pars(self, pars):
+        sim_pars = {}
+        fp_pars = {}
+
+        # get a copy of the original keys to iterate over
+        par_keys = list(pars.keys())
+        for par in par_keys:
+            if par in fpp.default_pars:
+                fp_pars[par] = pars.pop(par)
+            else:
+                sim_pars[par] = pars.pop(par)
+
+        return sim_pars, fp_pars
 
 
     def init(self, force=False):
@@ -223,67 +250,6 @@ class Sim(ss.Sim):
 
         return
 
-
-
-    # def apply_interventions(self):
-    #     """ Apply each intervention in the model """
-    #     from . import interventions as fpi  # To avoid circular import
-    #     for i, intervention in enumerate(sc.tolist(self['interventions'])):
-    #         if isinstance(intervention, fpi.Intervention):
-    #             if not intervention.initialized:  # pragma: no cover
-    #                 intervention.initialize(self)
-    #             intervention.apply(self)  # If it's an intervention, call the apply() method
-    #         elif callable(intervention):
-    #             intervention(self)  # If it's a function, call it directly
-    #         else:  # pragma: no cover
-    #             errormsg = f'Intervention {i} ({intervention}) is neither callable nor an Intervention object: it is {type(intervention)}'
-    #             raise TypeError(errormsg)
-    #     return
-    #
-    # def apply_analyzers(self):
-    #     """ Apply each analyzer in the model """
-    #     from . import analyzers as fpa  # To avoid circular import
-    #     for i, analyzer in enumerate(sc.tolist(self['analyzers'])):
-    #         if isinstance(analyzer, fpa.Analyzer):
-    #             if not analyzer.initialized:  # pragma: no cover
-    #                 analyzer.initialize(self)
-    #             analyzer.apply(self)  # If it's an intervention, call the apply() method
-    #         elif callable(analyzer):
-    #             analyzer(self)  # If it's a function, call it directly
-    #         else:  # pragma: no cover
-    #             errormsg = f'Analyzer {i} ({analyzer}) is neither callable nor an Analyzer object: it is {type(analyzer)}'
-    #             raise TypeError(errormsg)
-    #     return
-
-    # def finalize_interventions(self):
-    #     """ Make any final updates to interventions (e.g. to shrink) """
-    #     from . import interventions as fpi  # To avoid circular import
-    #     for intervention in sc.tolist(self['interventions']):
-    #         if isinstance(intervention, fpi.Intervention):
-    #             intervention.finalize(self)
-    #
-    # def finalize_analyzers(self):
-    #     """ Make any final updates to analyzers (e.g. to shrink) """
-    #     from . import analyzers as fpa  # To avoid circular import
-    #     for analyzer in sc.tolist(self['analyzers']):
-    #         if isinstance(analyzer, fpa.Analyzer):
-    #             analyzer.finalize(self)
-    #
-    # def finalize_people(self):
-    #     """Clean up and reset people's attributes at the end of a time step"""
-    #     if not self.track_children:
-    #         delattr(self.people, "mothers")
-
-    # def grow_population(self, n_new_people):
-    #     """Expand population size"""
-    #     # Births
-    #     new_people = fpppl.People(
-    #                 pars=self.pars, n=n_new_people, age=0,
-    #                 education_module=self.education_module,
-    #                 empowerment_module=self.empowerment_module
-    #                 )
-    #     new_people.decide_contraception(ti=self.ti, year=self.y, contraception_module=self.contraception_module)
-    #     self.people += new_people
 
     def start_step(self):
         super().start_step()

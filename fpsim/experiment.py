@@ -53,27 +53,19 @@ class Experiment(sc.prettyobj):
         kwargs (dict): passed into pars
     '''
 
-    def __init__(self, sim_pars={}, fp_pars={}, flags=None, label=None, **kwargs):
+    # def __init__(self, sim_pars={}, fp_pars={}, flags=None, label=None, **kwargs):
+    def __init__(self, pars={}, flags=None, label=None, **kwargs):
         self.flags = sc.mergedicts(default_flags, flags, _copy=True)  # Set flags for what gets run
-        # self.fp_pars = fp_pars
-        # self.sim_pars = sim_pars
-        #
-        # self.sim_pars = sim_pars if sim_pars else fpp.default_sim_pars.copy()
-        # self.fp_pars = fp_pars if fp_pars else fpp.default_fp_pars.copy()
 
-        self.sim_pars = sc.mergedicts(fpp.default_sim_pars, sim_pars)
-        self.fp_pars = fp_pars
+        self.pars = sc.mergedicts(fpp.default_sim_pars, pars)
 
         if len(kwargs):
-            for k,v in kwargs.items():
-                if k in self.sim_pars:
-                    self.sim_pars[k] = v
-                elif k in self.fp_pars:
-                    self.fp_pars[k] = v
+            for k, v in kwargs.items():
+                if k in self.pars:
+                    self.pars[k] = v
 
-        if 'location' not in self.fp_pars.keys():
-            self.fp_pars['location'] = 'test'
-        self.location = self.fp_pars['location']
+        if 'location' not in pars: self.pars['location'] = 'test'
+        self.location = self.pars['location']
         self.model = sc.objdict()
         self.data = sc.objdict()
         self.method_keys = None
@@ -84,7 +76,7 @@ class Experiment(sc.prettyobj):
 
     def load_data(self, key, **kwargs):
         ''' Load data from various formats '''
-        files = self.fp_pars['filenames']
+        files = self.sim.fp_pars['filenames']
         path = files['base'] / files[key]
         if path.suffix == '.obj':
             data = sc.load(path, **kwargs)
@@ -120,11 +112,8 @@ class Experiment(sc.prettyobj):
         #self.data['pregnancy_parity'] = self.load_data('pregnancy_parity')
 
         # Extract population size over time
-        if self.sim_pars:
-            n = self.sim_pars['n_agents']
-        else:
-            n = 1000 # Use default if not available
-            print(f'Warning: parameters not defined, using default of n={n}')
+        n = self.sim.pars.n_agents
+
         pop_size = self.load_data('popsize')
         self.data['pop_years'] = pop_size.year.to_numpy()
         self.data['pop_size']  = pop_size.population.to_numpy() / (pop_size.population[0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
@@ -155,19 +144,18 @@ class Experiment(sc.prettyobj):
         return growth_rate
 
 
-    def run_model(self, sim_pars=None, fp_pars=None, **kwargs):
+    def run_model(self, pars=None, **kwargs):
         ''' Create the sim and run the model '''
+
+        if pars is None:
+            pars = self.pars
+
+        self.sim = fps.Sim(pars=pars, **kwargs)
+        self.sim.init()
 
         if not self.initialized:
             self.extract_data()
 
-        if sim_pars is None:
-            sim_pars = self.sim_pars
-
-        if fp_pars is None:
-            fp_pars = self.fp_pars
-
-        self.sim = fps.Sim(sim_pars=sim_pars, fp_pars=fp_pars, **kwargs)
         self.sim.run()
 
         return
@@ -262,7 +250,7 @@ class Experiment(sc.prettyobj):
         age_bins.remove('year')
 
         # Save asfr and asfr_bins to data dictionary
-        year_data = asfr[asfr['year'] == self.sim_pars['stop']]
+        year_data = asfr[asfr['year'] == self.sim.pars['stop']]
         if 'region' in age_bins:
             age_bins.remove('region')
             self.data['asfr'] = year_data.drop(['year', 'region'], axis=1).values.tolist()[0]
@@ -573,9 +561,9 @@ class Experiment(sc.prettyobj):
         return
 
 
-    def run(self, sim_pars=None, fp_pars=None, keep_people=False, compute_fit=True, **kwargs):
+    def run(self, pars=None, keep_people=False, compute_fit=True, **kwargs):
         ''' Run the model and post-process the results '''
-        self.run_model(sim_pars=sim_pars, fp_pars=fp_pars)
+        self.run_model(pars=pars)
         self.post_process_results(keep_people=keep_people, compute_fit=compute_fit, **kwargs)
         return self
 
