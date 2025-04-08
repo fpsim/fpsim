@@ -625,9 +625,10 @@ class People(ss.People):
         n_aborts = len(abort)
         self.sim.results['abortions'][self.sim.ti] = n_aborts
         if n_aborts:
-            # todo verify abortion ages are being recorded correctly
-            #for cum_aborts in np.unique(self.abortion[abort]):
-            #    self.abortion_ages[abort, int(cum_aborts)] = self.age[abort]
+            for abort_uid in abort:
+                # put abortion age in first nan slot
+                abortion_age_index = np.where(np.isnan(self.abortion_ages[abort_uid]))[0][0]
+                self.abortion_ages[abort_uid][abortion_age_index] = self.age[abort_uid]
             self.postpartum[abort] = False
             self.abortion[abort] += 1  # Add 1 to number of abortions agent has had
             self.postpartum_dur[abort] = 0
