@@ -29,6 +29,10 @@ modules.rst
 # RStudio files
 .Rproj.user/
 
+# Datasets
+*.DTA
+*.dta
+
 # produced vignettes
 vignettes/*.html
 vignettes/*.pdf

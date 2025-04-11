@@ -9,11 +9,11 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix:
-        python-version: [ '3.11' ]
+        python-version: [ '3.12' ]
     name: Install and test
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - uses: actions/setup-python@master
         with:
           python-version: ${{ matrix.python-version }}

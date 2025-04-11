@@ -4,8 +4,8 @@ Define defaults for use throughout FPsim
 
 import numpy as np
 import sciris as sc
+import starsim as ss
 
-from . import base as fpb
 
 #%% Global defaults
 useSI          = True
@@ -14,22 +14,29 @@ eps            = 1e-9 # To avoid divide-by-zero
 min_age        = 15   # Minimum age to be considered eligible to use contraceptive methods
 max_age        = 99   # Maximum age (inclusive)
 max_age_preg   = 50   # Maximum age to become pregnant
-max_parity     = 20   # Maximum number of children
+max_parity     = 20   # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
+max_parity_spline = 20   # Used for parity splines
 
 
 #%% Defaults when creating a new person
 class State:
-    def __init__(self, name, val=None, dtype=None):
+    def __init__(self, name, val=None, dtype=None, ncols=None):
         """
         Initialize a state
         Args:
             name (str): name of state
             val (list, array, float, or str): value(s) to populate array with
             dtype (dtype): datatype. Inferred from val if not provided.
+            ncols (int): number of cols, needed for 2d states like birth_ages (n_agents * n_births)
         """
         self.name = name
         self.val = val
         self.dtype = dtype
+        self.ncols = ncols
+
+    @property
+    def ndim(self):
+        return 1 if self.ncols is None else 2
 
     def new(self, n, vals=None):
         """
@@ -40,13 +47,36 @@ class State:
         if isinstance(vals, np.ndarray):
             assert len(vals) == n
             arr = vals
-        elif isinstance(vals, list):
-            arr = [[] for _ in range(n)]
         else:
             if self.dtype is None: dtype = object if isinstance(vals, str) else None
             else: dtype = self.dtype
-            arr = np.full(shape=n, fill_value=vals, dtype=dtype)
+            shape = n if self.ncols is None else (n, self.ncols)
+            arr = np.full(shape=shape, fill_value=vals, dtype=dtype)
         return arr
+
+
+# Parse locations
+def get_location(location, printmsg=False):
+    default_location = 'senegal'
+    if not location:
+        if printmsg: print('Location not supplied: using parameters from Senegal')
+        location = default_location
+    location = location.lower()  # Ensure it's lowercase
+    if location == 'test':
+        if printmsg: print('Running test simulation using parameters from Senegal')
+        location = default_location
+    if location == 'default':
+        if printmsg: print('Running default simulation using parameters from Senegal')
+        location = default_location
+
+    # Define valid locations
+    valid_country_locs = ['senegal', 'kenya', 'ethiopia']
+    if location not in valid_country_locs:
+        errormsg = f'Location "{location}" is not currently supported'
+        raise NotImplementedError(errormsg)
+
+    return location
+
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
 # or updated during the course of a simulation.
@@ -59,8 +89,11 @@ person_defaults = [
     State('alive',              1, bool),
 
     # Contraception
-    State('method',             0, int),
+    State('on_contra',          0, bool),  # whether she's on contraception
+    State('method',             0, int),  # Which method to use. 0 used for those on no method
+    State('ti_contra',          0, int),  # time point at which to set method
     State('barrier',            0, int),
+    State('ever_used_contra',   0, bool),  # Ever been on contraception. 0 for never having used
 
     # Sexual and reproductive history
     State('parity',             0, int),
@@ -88,32 +121,42 @@ person_defaults = [
     State('breastfeed_dur',     0, int),
     State('breastfeed_dur_total', 0, int),
 
-    # Indices of children -- list of lists
-    State('children',           [], list),
-
-    # Dates
-    State('dobs',               [], list),  # Dates of birth of children
-    State('still_dates',        [], list),  # Dates of stillbirths -- list of lists
-    State('miscarriage_dates',  [], list),  # Dates of miscarriages -- list of lists
-    State('abortion_dates',     [], list),  # Dates of abortions -- list of lists
-    State('short_interval_dates',[], list),  # age of agents at short birth interval -- list of lists
-
     # Fecundity
     State('remainder_months',   0, int),
     State('personal_fecundity', 0, int),
 
     # Empowerment - states will remain at these values if use_empowerment is False
+    # NOTE: to use empowerment metrics, please refer to the kenya_empowerment repo
+    # These states will be refactored into a separate module as part of the V3 release.
     State('paid_employment',    0, bool),
-    State('decision_wages',     0, float),
-    State('decision_health',    0, float),
-    State('sexual_autonomy',    0, float),
+    State('decision_wages',     0, bool),
+    State('decision_health',    0, bool),
+    State('decision_purchase',  0, bool),
+    State('buy_decision_major', 0, bool),       # whether she has decision making ability over major purchases
+    State('buy_decision_daily', 0, bool),       # whether she has decision making over daily household purchases
+    State('buy_decision_clothes', 0, bool),     # whether she has decision making over clothing purchases
+    State('decide_spending_partner', 0, bool),  # whether she has decision makking over her partner's wages
+    State('has_savings', 0, bool),              # whether she has savings
+    State('has_fin_knowl', 0, bool),            # whether she knows where to get financial info
+    State('has_fin_goals', 0, bool),            # whether she has financial goals
+    State('sexual_autonomy',    0, bool),       # whether she has ability to refuse sex
+
+    # Composite empowerment attributes
+    State('financial_autonomy',    0, float),
+    State('decision_making', 0, float),
+
+    # Empowerment - fertility intent
+    State('fertility_intent', 0, bool),
+    State('categorical_intent', "cannot", "<U6"),
+    State('intent_to_use', 0, bool),            # for women not on contraception, whether she has intent to use contraception
 
     # Partnership information -- states will remain at these values if use_partnership is False
     State('partnered',    0, bool),
     State('partnership_age', -1, float),
 
-    # Urban (bsic demographics) -- state will remain at these values if use_urban is False
+    # Socioeconomic
     State('urban', 1, bool),
+    State('wealthquintile', 3, int),       # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
 
     # Education - states will remain at these values if use_education is False
     State('edu_objective',      0, float),
@@ -121,10 +164,17 @@ person_defaults = [
     State('edu_dropout',        0, bool),
     State('edu_interrupted',    0, bool),
     State('edu_completed',      0, bool),
-    State('edu_started',        0, bool)
+    State('edu_started',        0, bool),
+
+    State('child_inds',         -1,     int,    ncols=max_parity),
+    State('birth_ages',         np.nan, float,  ncols=max_parity),  # Ages at time of live births
+    State('stillborn_ages',     np.nan, float,  ncols=max_parity),  # Ages at time of stillbirths
+    State('miscarriage_ages',   np.nan, float,  ncols=max_parity),  # Ages at time of miscarriages
+    State('abortion_ages',      np.nan, float,  ncols=max_parity),  #  Ages at time of abortions
+    # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
 ]
 
-person_defaults = fpb.ndict(person_defaults)
+person_defaults = ss.ndict(person_defaults)
 
 # Postpartum keys to months
 postpartum_map = {
@@ -148,31 +198,27 @@ age_bin_map = {
 # Age and parity splines
 spline_ages      = np.arange(max_age + 1)
 spline_preg_ages = np.arange(max_age_preg + 1)
-spline_parities  = np.arange(max_parity + 1)
+spline_parities  = np.arange(max_parity_spline + 1)
 
 # Define allowable keys to select all (all ages, all methods, etc)
 none_all_keys = [None, 'all', ':', [None], ['all'], [':']]
 
-# Definition of contraceptive methods and corresponding numbers -- can be overwritten by locations
-method_map = {
-    'None'              : 0,
-    'Pill'              : 1,
-    'IUDs'              : 2,
-    'Injectables'       : 3,
-    'Condoms'           : 4,
-    'BTL'               : 5,
-    'Withdrawal'        : 6,
-    'Implants'          : 7,
-    'Other traditional' : 8,
-    'Other modern'      : 9,
-}
 
 # Age bins for different method switching matrices -- can be overwritten by locations
 method_age_map = {
     '<18':   [ 0, 18],
     '18-20': [18, 20],
-    '21-25': [20, 25],
-    '26-35': [25, 35],
+    '20-25': [20, 25],
+    '25-35': [25, 35],
+    '>35':   [35, max_age+1], # +1 since we're using < rather than <=
+}
+
+immutable_method_age_map = {
+    '<18':   [ 0, 18],
+    '18-20': [18, 20],
+    '20-25': [20, 25],
+    '25-30': [25, 30],
+    '30-35': [30, 35],
     '>35':   [35, max_age+1], # +1 since we're using < rather than <=
 }
 
@@ -184,24 +230,6 @@ method_youth_age_map = {
     '23-25': [23, 26],
     '>25': [26, max_age+1]
 }
-
-age_specific_channel_bins = method_youth_age_map
-
-by_age_results = sc.autolist(
-    'acpr',
-    'cpr',
-    'mcpr',
-    'pregnancies',
-    'births',
-    'imr_numerator',
-    'imr_denominator',
-    'mmr_numerator',
-    'mmr_denominator',
-    'imr',
-    'mmr',
-    'as_stillbirths',
-    'stillbirths',
-)
 
 array_results = sc.autolist(
     't',
@@ -223,20 +251,54 @@ array_results = sc.autolist(
     'no_methods_cpr',
     'on_methods_acpr',
     'no_methods_acpr',
+    'contra_access',
+    'new_users',
     'mcpr',
     'cpr',
     'acpr',
+    'ever_used_contra',
+    'switchers',
+    'urban_women',
     'pp0to5',
     'pp6to11',
     'pp12to23',
+    'parity0to1',
+    'parity2to3',
+    'parity4to5',
+    'parity6plus',
+    'wq1',
+    'wq2',
+    'wq3',
+    'wq4',
+    'wq5',
     'nonpostpartum',
     'total_women_fecund',
-    'unintended_pregs',
+    'method_failures',
     'birthday_fraction',
     'short_intervals',
     'secondary_births',
-    'proportion_short_interval'
-)
+    'proportion_short_interval',
+    # Education
+    'edu_objective',
+    'edu_attainment',
+    # Empowerment and intent: all zero unless using an empowerment module
+    'perc_contra_intent',
+    'perc_fertil_intent',
+    'paid_employment',
+    'decision_wages',
+    'decide_spending_partner',
+    "buy_decision_major", 
+    "buy_decision_daily", 
+    "buy_decision_clothes", 
+    "decision_health",
+    "has_savings", 
+    "has_fin_knowl", 
+    "has_fin_goals",
+    "financial_autonomy", 
+    "decision_making",
+    )
+
+
 for age_group in age_bin_map.keys():
     array_results += 'total_births_' + age_group
     array_results += 'total_women_' + age_group
@@ -247,6 +309,8 @@ list_results = sc.autolist(
     'pop_size',
     'mcpr_by_year',
     'cpr_by_year',
+    'contra_access_over_year',
+    'new_users_over_year',
     'method_failures_over_year',
     'infant_deaths_over_year',
     'total_births_over_year',
@@ -265,3 +329,37 @@ list_results = sc.autolist(
     'birthday_fraction',
     'method_usage',
 )
+
+# Map between key names in results and annualised results, some of them are different
+to_annualize = {
+    'method_failures' :'method_failures',
+    'infant_deaths'   :'infant_deaths',
+    'total_births'    :'total_births',
+    'births'          :'live_births',  # X
+    'stillbirths'     :'stillbirths',
+    'miscarriages'    :'miscarriages',
+    'abortions'       :'abortions',
+    'short_intervals' : 'short_intervals',
+    'secondary_births': 'secondary_births',
+    'maternal_deaths' : 'maternal_deaths',
+    'pregnancies'     : 'pregnancies',
+    'contra_access'   : 'contra_access',
+    'new_users'       : 'new_users'}
+
+# People's states for which we will need circular buffers
+longitude_keys = [
+    'on_contra',
+    'intent_to_use',
+    'buy_decision_major',
+    'buy_decision_clothes',
+    'buy_decision_daily',
+    'has_fin_knowl',
+    'has_fin_goals',
+    'financial_autonomy',
+    'has_fin_goals',
+    'paid_employment',
+    'has_savings',
+    'decision_wages',
+    'decide_spending_partner',
+    'decision_health'
+]
