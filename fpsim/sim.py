@@ -574,7 +574,7 @@ class Sim(ss.Sim):
                     if is_dist:
                         top = int(np.ceil(max(self.results['acpr'].high) / 10.0)) * 10  # rounding up to nearest 10
                     else:
-                        top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10
+                        top = int(np.ceil(max(self.results['acpr']) * 10.0)) * 10
                     self.conform_y_axes(figure=fig, top=top)
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
