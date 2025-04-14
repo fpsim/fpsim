@@ -391,12 +391,8 @@ class education_recorder(Analyzer):
             ax.legend()
             ax.set_title(f"Evolution of education \n objective and attainment for age group:\n{min_age}-{max_age}.")
 
-            # Show the plot
-            plt.show()
-            return fig
 
-
-class lifeof_recorder(Analyzer):
+class lifeof_recorder(ss.Analyzer):
     '''
     Analyzer records sexual and reproductive history, and contraceptions
     females, plus age and living status for all timesteps.
@@ -422,16 +418,16 @@ class lifeof_recorder(Analyzer):
 
         return
 
-    def apply(self, sim):
+    def step(self):
         """
         Apply snapshot at each timestep listed in timesteps and
         save result at snapshot[str(timestep)]
         """
-        females = sim.people.filter(sim.people.is_female)
-        self.snapshots[str(sim.ti)] = {}
+        females = self.sim.people.female.uids
+        self.snapshots[str(self.sim.ti)] = {}
         for key in self.keys:
-            self.snapshots[str(sim.ti)][key] = sc.dcp(
-                females[key])  # Take snapshot!
+            self.snapshots[str(self.sim.ti)][key] = sc.dcp(
+                self.sim.people[key][females])  # Take snapshot!
             self.max_agents = max(self.max_agents, len(females))
         return
 
