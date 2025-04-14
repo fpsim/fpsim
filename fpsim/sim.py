@@ -95,39 +95,57 @@ class Sim(ss.Sim):
                  label=None, people=None, demographics=None, diseases=None, networks=None,
                  interventions=None, analyzers=None, connectors=None, copy_inputs=True, data=None, **kwargs):
 
-        if copy_inputs:
-            pars = sc.dcp(pars)
-        pars = self.remap_pars(pars)
-        sim_pars, fp_pars = self.separate_pars(pars)
+        # Four sources of par values in decreasing order of priority:
+        # 1-2. kwargs == args (if multiple definitions, raise exception)
+        # 3. pars
+        # 4. default pars
 
-        new_sim_pars = ss.make_pars() # get starsim default sim pars
-        fpsim_default_sim_pars = fpp.default_sim_pars # get fpsim default sim pars
-        new_sim_pars.update(fpsim_default_sim_pars) # update starsim default sim pars with fpsim default sim pars
+        # combine copies of them in this order if copy_inputs
+        # remap any as necessary
+        # separate into sim and fp-specific pars
 
-        # add all inputs except fp-specific pars to the sim pars
         args = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         args = {key:val for key,val in args.items() if val is not None} # Remove None inputs
 
-        input_pars = sc.mergedicts(sim_pars, args, _copy=copy_inputs, **kwargs)
-        new_sim_pars.update(input_pars) # update with input pars to override defaults
-        super().__init__(new_sim_pars, **kwargs)  # Initialize and set the parameters as attributes
+        fp_args = dict(location=location, track_children=track_children, regional=regional)
+        fp_args = {key: val for key, val in fp_args.items() if val is not None}  # Remove None inputs
+
+        # Combine all the pars
+        user_pars = {}
+        for d in [args, fp_args, kwargs]:
+            for key, value in d.items():
+                if key in user_pars:
+                    raise ValueError(f"Duplicate key found: {key}")
+                user_pars[key] = value
+
+        # values provide in pars are overrided by args and kwargs, so only set values that haven't been set yet.
+        for key, value in pars.items():
+            if key not in user_pars:
+                user_pars[key] = value
+
+        user_pars = self.remap_pars(user_pars) # map any old par names to new ones
+        user_sim_pars, user_fp_pars = self.separate_pars(user_pars) # separate out the sim and fp-specific pars. Any pars passed as kwargs that don't map are preserved as sim pars.
+
+        # Get the default starsim parameters for an FPsim sim.
+        default_sim_pars = ss.make_pars() # get starsim default sim pars
+        fpsim_default_sim_pars = fpp.default_sim_pars # get fpsim default sim pars
+        default_sim_pars.update(fpsim_default_sim_pars) # update starsim default sim pars with fpsim default sim pars
+
+        # override the default sim pars with user-provided values
+        sim_pars = sc.mergedicts(default_sim_pars, user_sim_pars, _copy=copy_inputs)
+        # new_sim_pars.update(input_pars) # update with input pars to override defaults
+        super().__init__(sim_pars)  # Initialize and set the parameters as attributes
 
         # get the default fp pars
-
-
-        # location is explicitly provided, so pop the default out of the list
-        fp_pars = sc.dcp(fp_pars)
-        if fp_pars and 'location' in fp_pars and location is None:
-            location = fp_pars.pop('location')
-        self.fp_pars = fpp.pars(location, self.pars.rand_seed, **fp_pars)
+        if copy_inputs:
+            user_fp_pars = sc.dcp(user_fp_pars)
+        self.fp_pars = fpp.pars(rand_seed=self.pars.rand_seed, **user_fp_pars)
 
         fpp.validate(fpp.default_pars, self.fp_pars)  # Validate the FP parameters
 
         # Metadata and settings
         self.test_mode = False
-        self.fp_pars['track_children'] = track_children
-        self.fp_pars['regional'] = regional
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
 

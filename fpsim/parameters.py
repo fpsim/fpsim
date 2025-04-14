@@ -141,6 +141,8 @@ default_pars = {
     'intent_to_use':        None,
 
     'region':               None,
+    'track_children':   False,  # Whether to track children
+    'regional':         None,
 }
 
 
