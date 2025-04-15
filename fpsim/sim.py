@@ -967,7 +967,7 @@ class MultiSim(sc.prettyobj):
                 maximum_value = max([max(sim.results[channel].high) for sim in self.sims])
             else:
                 maximum_value = max([max(sim.results[channel]) for sim in self.sims])
-            top = int(np.ceil(maximum_value / 10.0)) * 10  # rounding up to nearest 10
+            top = int(np.ceil(maximum_value * 10.0)) * 10  # rounding up to nearest 10
             return top
 
         if to_plot == 'method':
