@@ -16,99 +16,100 @@ import starsim as ss
 
 
 #%% Generic analyzer classes
-__all__ = ['Analyzer', 'snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder', 'track_as']
+__all__ = ['snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder', 'track_as']
+# __all__ = ['snapshot', 'cpr_by_age', 'age_pyramids', 'lifeof_recorder']
 # Specific analyzers
 __all__ += ['education_recorder']
 # Analyzers for debugging
 __all__ += ['state_tracker', 'method_mix_over_time']
 
 
-class Analyzer(sc.prettyobj):
-    '''
-    Base class for analyzers. Based on the Intervention class. Analyzers are used
-    to provide more detailed information about a simulation than is available by
-    default -- for example, pulling states out of sim.people on a particular timestep
-    before it gets updated in the next timestep.
-
-    To retrieve a particular analyzer from a sim, use sim.get_analyzer().
-
-    Args:
-        label (str): a label for the Analyzer (used for ease of identification)
-    '''
-
-    def __init__(self, label=None):
-        if label is None:
-            label = self.__class__.__name__ # Use the class name if no label is supplied
-        self.label = label # e.g. "Record ages"
-        self.initialized = False
-        self.finalized = False
-        return
-
-
-    def initialize(self, sim=None):
-        '''
-        Initialize the analyzer, e.g. convert date strings to integers.
-        '''
-        self.initialized = True
-        self.finalized = False
-        return
-
-
-    def finalize(self, sim=None):
-        '''
-        Finalize analyzer
-
-        This method is run once as part of `sim.finalize()` enabling the analyzer to perform any
-        final operations after the simulation is complete (e.g. rescaling)
-        '''
-        if self.finalized:
-            raise RuntimeError('Analyzer already finalized')  # Raise an error because finalizing multiple times has a high probability of producing incorrect results e.g. applying rescale factors twice
-        self.finalized = True
-        return
-
-
-    def apply(self, sim):
-        '''
-        Apply analyzer at each time point. The analyzer has full access to the
-        sim object, and typically stores data/results in itself. This is the core
-        method which each analyzer object needs to implement.
-
-        Args:
-            sim: the Sim instance
-        '''
-        pass
-
-
-    def to_json(self):
-        '''
-        Return JSON-compatible representation
-
-        Custom classes can't be directly represented in JSON. This method is a
-        one-way export to produce a JSON-compatible representation of the
-        intervention. This method will attempt to JSONify each attribute of the
-        intervention, skipping any that fail.
-
-        Returns:
-            JSON-serializable representation
-        '''
-        # Set the name
-        json = {}
-        json['analyzer_name'] = self.label if hasattr(self, 'label') else None
-        json['analyzer_class'] = self.__class__.__name__
-
-        # Loop over the attributes and try to process
-        attrs = self.__dict__.keys()
-        for attr in attrs:
-            try:
-                data = getattr(self, attr)
-                try:
-                    attjson = sc.jsonify(data)
-                    json[attr] = attjson
-                except Exception as E:
-                    json[attr] = f'Could not jsonify "{attr}" ({type(data)}): "{str(E)}"'
-            except Exception as E2:
-                json[attr] = f'Could not jsonify "{attr}": "{str(E2)}"'
-        return json
+# class Analyzer(sc.prettyobj):
+#     '''
+#     Base class for analyzers. Based on the Intervention class. Analyzers are used
+#     to provide more detailed information about a simulation than is available by
+#     default -- for example, pulling states out of sim.people on a particular timestep
+#     before it gets updated in the next timestep.
+#
+#     To retrieve a particular analyzer from a sim, use sim.get_analyzer().
+#
+#     Args:
+#         label (str): a label for the Analyzer (used for ease of identification)
+#     '''
+#
+#     def __init__(self, label=None):
+#         if label is None:
+#             label = self.__class__.__name__ # Use the class name if no label is supplied
+#         self.label = label # e.g. "Record ages"
+#         self.initialized = False
+#         self.finalized = False
+#         return
+#
+#
+#     def initialize(self, sim=None):
+#         '''
+#         Initialize the analyzer, e.g. convert date strings to integers.
+#         '''
+#         self.initialized = True
+#         self.finalized = False
+#         return
+#
+#
+#     def finalize(self, sim=None):
+#         '''
+#         Finalize analyzer
+#
+#         This method is run once as part of `sim.finalize()` enabling the analyzer to perform any
+#         final operations after the simulation is complete (e.g. rescaling)
+#         '''
+#         if self.finalized:
+#             raise RuntimeError('Analyzer already finalized')  # Raise an error because finalizing multiple times has a high probability of producing incorrect results e.g. applying rescale factors twice
+#         self.finalized = True
+#         return
+#
+#
+#     def apply(self, sim):
+#         '''
+#         Apply analyzer at each time point. The analyzer has full access to the
+#         sim object, and typically stores data/results in itself. This is the core
+#         method which each analyzer object needs to implement.
+#
+#         Args:
+#             sim: the Sim instance
+#         '''
+#         pass
+#
+#
+#     def to_json(self):
+#         '''
+#         Return JSON-compatible representation
+#
+#         Custom classes can't be directly represented in JSON. This method is a
+#         one-way export to produce a JSON-compatible representation of the
+#         intervention. This method will attempt to JSONify each attribute of the
+#         intervention, skipping any that fail.
+#
+#         Returns:
+#             JSON-serializable representation
+#         '''
+#         # Set the name
+#         json = {}
+#         json['analyzer_name'] = self.label if hasattr(self, 'label') else None
+#         json['analyzer_class'] = self.__class__.__name__
+#
+#         # Loop over the attributes and try to process
+#         attrs = self.__dict__.keys()
+#         for attr in attrs:
+#             try:
+#                 data = getattr(self, attr)
+#                 try:
+#                     attjson = sc.jsonify(data)
+#                     json[attr] = attjson
+#                 except Exception as E:
+#                     json[attr] = f'Could not jsonify "{attr}" ({type(data)}): "{str(E)}"'
+#             except Exception as E2:
+#                 json[attr] = f'Could not jsonify "{attr}": "{str(E2)}"'
+#         return json
 
 
 class snapshot(ss.Analyzer):
@@ -180,7 +181,7 @@ class cpr_by_age(ss.Analyzer):
         return
 
 
-class method_mix_by_age(Analyzer):
+class method_mix_by_age(ss.Analyzer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)   # Initialize the Analyzer object
         self.age_bins = [v[1] for v in fpd.method_age_map.values()]
@@ -188,13 +189,10 @@ class method_mix_by_age(Analyzer):
         self.n_methods = None
         return
 
-    def initialize(self, sim):
-        super().initialize()
-
-    def finalize(self, sim):
-        n_methods = len(sim.contraception_module.methods)
+    def finalize(self):
+        n_methods = len(self.sim.contraception_module.methods)
         self.results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
-        ppl = sim.people
+        ppl = self.sim.people
         for key, (age_low, age_high) in fpd.method_age_map.items():
             match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
             denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
@@ -203,7 +201,7 @@ class method_mix_by_age(Analyzer):
                 self.results[key][mn] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
         return
 
-class education_recorder(Analyzer):
+class education_recorder(ss.Analyzer):
         '''
         Analyzer records all education attributes of females + pregnancy + living status
         for all timesteps. Made for debugging purposes.
@@ -224,15 +222,15 @@ class education_recorder(Analyzer):
             self.trajectories = {}  # Store education trajectories
             return
 
-        def apply(self, sim):
+        def step(self):
             """
             Apply snapshot at each timestep listed in timesteps and
             save result at snapshot[str(timestep)]
             """
-            females = sim.people.filter(sim.people.is_female)
-            self.snapshots[str(sim.ti)] = {}
+            females = self.sim.people.female.uids
+            self.snapshots[str(self.sim.ti)] = {}
             for key in self.keys:
-                self.snapshots[str(sim.ti)][key] = sc.dcp(females[key])  # Take snapshot!
+                self.snapshots[str(self.sim.ti)][key] = sc.dcp(self.sim.people[key][females])  # Take snapshot!
                 self.max_agents = max(self.max_agents, len(females))
             return
 
@@ -721,7 +719,7 @@ class age_pyramids(ss.Analyzer):
         return fig
 
 
-class method_mix_over_time(Analyzer):
+class method_mix_over_time(ss.Analyzer):
     """
     Tracks the number of women on each method available
     for each time step
@@ -734,19 +732,19 @@ class method_mix_over_time(Analyzer):
         self.tvec = None
         return
 
-    def initialize(self, sim):
+    def init_post(self):
         super().initialize()
-        self.methods = sim.contraception_module.methods.keys()
+        self.methods = self.sim.contraception_module.methods.keys()
         self.n_methods = len(self.methods)
-        self.results = {k: np.zeros(sim.t.npts) for k in self.methods}
-        self.tvec = sim.tvec
+        self.results = {k: np.zeros(self.sim.t.npts) for k in self.methods}
+        self.tvec = self.sim.tvec
         return
 
-    def apply(self, sim):
-        ppl = sim.people
+    def step(self):
+        ppl = self.sim.people
         for m_idx, method in enumerate(self.methods):
-            eligible = ppl.is_female & ppl.alive & (ppl.method == m_idx)
-            self.results[method][sim.ti] = np.count_nonzero(eligible)
+            eligible = ppl.female & ppl.alive & (ppl.method == m_idx)
+            self.results[method][self.sim.ti] = np.count_nonzero(eligible)
         return
 
     def plot(self, style=None):
@@ -763,7 +761,7 @@ class method_mix_over_time(Analyzer):
         return fig
 
 
-class state_tracker(Analyzer):
+class state_tracker(ss.Analyzer):
     '''
     Records the number of living women on a specific boolean state (eg, numbe of
     living women who live in rural settings)
@@ -782,27 +780,27 @@ class state_tracker(Analyzer):
         self.max_age = max_age
         return
 
-    def initialize(self, sim):
+    def init_post(self):
         """
         Initializes bins and data with proper shapes
         """
-        super().initialize()
-        self.data_num = np.full((sim.t.npts,), np.nan)
-        self.data_perc = np.full((sim.t.npts,), np.nan)
-        self.data_n_female = np.full((sim.t.npts,), np.nan)
-        self.tvec = np.full((sim.t.npts,), np.nan)
+        super().init_post()
+        self.data_num = np.full((self.sim.t.npts,), np.nan)
+        self.data_perc = np.full((self.sim.t.npts,), np.nan)
+        self.data_n_female = np.full((self.sim.t.npts,), np.nan)
+        self.tvec = np.full((self.sim.t.npts,), np.nan)
         return
 
-    def apply(self, sim):
+    def step(self):
         """
         Records histogram of ages of all alive individuals at a timestep such that
         self.data[timestep] = list of proportions where index signifies age
         """
-        living_women = sim.people.filter((sim.people.alive) & (sim.people.is_female) & (sim.people.age >= self.min_age) & (sim.people.age < self.max_age))
-        self.data_num[sim.ti] = living_women[self.state_name].sum()
-        self.data_n_female[sim.ti] = len(living_women)
-        self.data_perc[sim.ti] = (self.data_num[sim.ti] / self.data_n_female[sim.ti])*100.0
-        self.tvec[sim.ti] = sim.y
+        living_women = (self.sim.people.alive & self.sim.people.female & (self.sim.people.age >= self.min_age) & (self.sim.people.age < self.max_age)).uids
+        self.data_num[self.sim.ti] = self.sim.people[self.state_name][living_women].sum()
+        self.data_n_female[self.sim.ti] = len(living_women)
+        self.data_perc[self.sim.ti] = (self.data_num[self.sim.ti] / self.data_n_female[self.sim.ti])*100.0
+        self.tvec[self.sim.ti] = self.sim.y
 
     def plot(self, style=None):
         """
@@ -842,7 +840,7 @@ class state_tracker(Analyzer):
         return fig
 
 
-class track_as(Analyzer):
+class track_as(ss.Analyzer):
     """
     Analyzer for tracking age-specific results
     """
@@ -972,35 +970,36 @@ class track_as(Analyzer):
                     results_dict[f"{channel}_{age_str}"] = age_true_counts[index]
         return results_dict
 
-    def apply(self, sim):
+    def step(self):
         """
         Apply the analyzer
         Note: much of the logic won't work because the sim doesn't record the time at which events
         occur (!), so attributes like ppl.ti_pregnant won't exist. These are all slated to be added
         as part of the V3 refactor. For now, this is a placeholder.
         """
-        ppl = sim.people
+        ppl = self.sim.people
+        ppl_uids = ppl.alive.uids
 
         # Pregnancies
-        preg = ppl.filter(ppl.ti_pregnant == sim.ti)
+        preg_uids = (ppl.ti_pregnant == self.sim.ti).uids
         pregnant_boolean = np.full(len(ppl), False)
-        pregnant_boolean[np.searchsorted(ppl.uid, preg.uid)] = True
+        pregnant_boolean[np.searchsorted(ppl_uids, preg_uids)] = True
         pregnant_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='pregnancies',
                                                 numerators=[pregnant_boolean], denominators=None)
         for key in pregnant_age_split:
             self.results[key] = pregnant_age_split[key]
 
         # Stillborns
-        stillborn = ppl.filter(ppl.ti_stillbirth == sim.ti)
+        stillborn_uids = (ppl.ti_stillbirth == self.sim.ti).uids
         stillbirth_boolean = np.full(len(ppl), False)
-        stillbirth_boolean[np.searchsorted(ppl.uid, stillborn.uid)] = True
+        stillbirth_boolean[np.searchsorted(ppl_uids, stillborn_uids)] = True
         self.results['stillbirth_ages'] = self.age_by_group
         self.results['as_stillbirths'] = stillbirth_boolean
 
         # Live births
-        live = ppl.filter(ppl.ti_live_birth == sim.ti)
+        live_uids = (ppl.ti_live_birth == self.sim.ti).uids
         total_women_delivering = np.full(len(ppl), False)
-        total_women_delivering[np.searchsorted(ppl.uid, live.uid)] = True
+        total_women_delivering[np.searchsorted(ppl_uids, live_uids)] = True
         self.results['mmr_age_by_group'] = self.age_by_group
 
         live_births_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='births',
@@ -1010,9 +1009,9 @@ class track_as(Analyzer):
 
         # MCPR
         modern_methods_num = [idx for idx, m in enumerate(ppl.contraception_module.methods.values()) if m.modern]
-        method_age = (ppl.pars['method_age'] <= ppl.age)
-        fecund_age = ppl.age < ppl.pars['age_limit_fecundity']
-        denominator = method_age * fecund_age * ppl.is_female * ppl.alive
+        method_age = (self.sim.fp_pars['method_age'] <= ppl.age)
+        fecund_age = ppl.age < self.sim.fp_pars['age_limit_fecundity']
+        denominator = method_age * fecund_age * ppl.female * ppl.alive
         numerator = np.isin(ppl.method, modern_methods_num)
         as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='mcpr',
                                             numerators=[numerator], denominators=[denominator])
@@ -1020,8 +1019,8 @@ class track_as(Analyzer):
             self.results[key] = as_result_dict[key]
 
         # CPR
-        denominator = ((ppl.pars['method_age'] <= ppl.age) * (ppl.age < ppl.pars['age_limit_fecundity']) * (
-                ppl.sex == 0) * ppl.alive)
+        denominator = ((self.sim.fp_pars['method_age'] <= ppl.age) * (ppl.age < self.sim.fp_pars['age_limit_fecundity']) * (
+                ppl.female * ppl.alive))
         numerator = ppl.method != 0
         as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='cpr',
                                             numerators=[numerator], denominators=[denominator])
@@ -1029,8 +1028,8 @@ class track_as(Analyzer):
             self.results[key] = as_result_dict[key]
 
         # ACPR
-        denominator = ((ppl.pars['method_age'] <= ppl.age) * (ppl.age < ppl.pars['age_limit_fecundity']) * (
-                ppl.sex == 0) * (ppl.pregnant == 0) * (ppl.sexually_active == 1) * ppl.alive)
+        denominator = ((self.sim.fp_pars['method_age'] <= ppl.age) * (ppl.age < self.sim.fp_pars['age_limit_fecundity']) * (
+                ppl.female) * (ppl.pregnant == 0) * (ppl.sexually_active == 1) * ppl.alive)
         numerator = ppl.method != 0
 
         as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='acpr',
