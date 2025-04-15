@@ -62,28 +62,19 @@ class People(ss.People):
         self.contraception_module = self.contraception_module or sc.dcp(fpm.StandardChoice(location=self.sim.fp_pars['location']))
         self.education_module = self.education_module or sc.dcp(fped.Education(location=self.sim.fp_pars['location']))
 
-        # TODO Need hook to set sex distribution (I think this is done now: verify)
-        # if sex is None: sex = _sex
-
         self.urban[uids] = _urban  # Urban (1) or rural (0)
 
         # Parameters on sexual and reproductive history
         self.fertile[uids] = fpu.n_binomial(1 - self.sim.fp_pars['primary_infertility'], len(uids)) # todo replace with ss dist
 
         # Fertility intent
-        has_intent = "fertility_intent"
-        # self.fertility_intent   = fpd.person_defaults["fertility_intent"].val
-        # self.categorical_intent = self.states["categorical_intent"].new(n, "no")
         # Update distribution of fertility intent with location-specific values if it is present in self.pars
         self.update_fertility_intent(uids)
 
         # Intent to use contraception
-        has_intent = "intent_to_use"
-        # self.intent_to_use = self.states[has_intent].new(n, person_defaults[has_intent].val)
         # Update distribution of fertility intent if it is present in self.pars
         self.update_intent_to_use(uids)
 
-        # self.wealthquintile = self.states["wealthquintile"].new(n, person_defaults["wealthquintile"].val)
         self.update_wealthquintile(uids)
 
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
@@ -115,7 +106,6 @@ class People(ss.People):
         # self.initialize_circular_buffer() # todo move to analyzer
 
         # Once all the other metric are initialized, determine initial contraceptive use
-        # self.fp_pars['contraception_module'] = None  # Set below
         self.barrier[uids] = fpu.n_multinomial(self.sim.fp_pars['barriers'][:], len(uids))
 
         # Store keys
@@ -136,14 +126,6 @@ class People(ss.People):
     #         current = getattr(self, key)  # Current value of this attribute
     #         self.longitude[key] = np.full((self.sim.pars.n_agents, int(self.sim.fp_pars['tiperyear'])), current[0])
     #     return
-
-    # @property
-    # def dt(self):
-    #     return self.sim.pars['dr'] / fpd.mpy
-
-    # @property
-    # def tiperyear(self):
-    #     return self.tiperyear
 
     @property
     def yei(self):
@@ -261,7 +243,7 @@ class People(ss.People):
 
     def init_contraception(self, uids):
         if self.contraception_module is not None:
-            self.decide_contraception(uids=uids)  #, ti=self.ti, year=self.y, contraception_module=self.fp_pars['contraception_module'])
+            self.decide_contraception(uids=uids)
         return
 
     def decide_contraception(self, uids=None, ti=None, year=None, contraception_module=None):
@@ -288,19 +270,16 @@ class People(ss.People):
         # Because of the current initialisation flow, it's not possible to initialise the
         # sexually_active state in the init constructor.
         self.check_sexually_active(fecund_uids)
-        # fecund.update_time_to_choose()
         self.update_time_to_choose(fecund_uids)
 
         # Check whether have reached the time to choose
         time_to_set_contra_uids = fecund_uids[(self.ti_contra[fecund_uids] == 0)]
-        # contra_choosers = (time_to_set_contra)
 
         if contraception_module is not None:
             self.contraception_module = contraception_module
 
         if self.contraception_module is not None:
             self.on_contra[time_to_set_contra_uids] = self.contraception_module.get_contra_users(self, time_to_set_contra_uids, year=year, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
-            # oc = contra_choosers.filter(contra_choosers.on_contra)
             oc_uids = time_to_set_contra_uids[(self.on_contra[time_to_set_contra_uids] == True)]
             self.method[oc_uids] = self.contraception_module.init_method_dist(self, oc_uids)
             self.ever_used_contra[oc_uids] = 1
@@ -375,15 +354,11 @@ class People(ss.People):
 
                 # If force_choose is True, then all non-users will be made to pick a method
                 if cm.pars['force_choose']:
-                    # must_use = pp0.filter(~pp0.on_contra)
                     must_use = pp0[~self.on_contra[pp0]]
-                    # choosers = pp0.filter(pp0.on_contra)
                     choosers = pp0[self.oncontra[pp0]]
 
                     if len(must_use):
                         self.on_contra[must_use] = True
-                        # pp0.step_results['contra_access'] += len(must_use)
-                        # is it okay to use self instead of pp0 for step results?
                         self.sim.results['contra_access'][self.sim.ti] += len(must_use)
                         self.method[must_use] = cm.choose_method(must_use)
                         self.ever_used_contra[must_use] = 1
@@ -474,16 +449,13 @@ class People(ss.People):
         m_mort_prob = fpu.annprob2ts(m_spline[m_ages], timestep)
 
         # TODO does setting the probability twice affect cRNG safety?
-        # f_died = female.binomial(f_mort_prob, as_filter=True)
         self.binom.set(p=f_mort_prob)
         f_died = self.binom.filter(female)
 
-        # m_died = male.binomial(m_mort_prob, as_filter=True)
         self.binom.set(p=m_mort_prob)
         m_died = self.binom.filter(male)
 
         for died in [f_died, m_died]:
-            # self.alive[died] = False,
             self.pregnant[died] = False,
             self.gestation[died] = False,
             self.sexually_active[died] = False,
@@ -493,7 +465,7 @@ class People(ss.People):
             self.breastfeed_dur[died] = 0,
             self.sim.results['deaths'][self.sim.ti] += len(died)
             self.request_death(died)
-            self.step_die() # EXPERIMENTAL to match the order of ops from earlier FPsim version
+            self.step_die() # to match the order of ops from earlier FPsim version
 
         return
 
@@ -504,7 +476,7 @@ class People(ss.People):
 
         is_not_partnered = self.partnered[uids] == 0
         reached_partnership_age = self.age[uids] >= self.partnership_age[uids]
-        first_timers = uids[is_not_partnered & reached_partnership_age] #.filter(is_not_partnered * reached_partnership_age)
+        first_timers = uids[is_not_partnered & reached_partnership_age]
         self.partnered[first_timers] = True
         return
 
@@ -535,7 +507,6 @@ class People(ss.People):
             probs_pp = self.sim.fp_pars['sexual_activity_pp']['percent_active'][(self.postpartum_dur[pp]).astype(int)]
             # Adjust the probability: check the overall probability with print(pref['preference'][spacing_bins].mean())
             probs_pp *= pref['preference'][spacing_bins]
-            # self.sexually_active[pp] = fpu.binomial_arr(probs_pp)
             self.binom.set(p=probs_pp)
             sexually_active, sexually_inactive = self.binom.filter(pp, both=True)
             self.sexually_active[sexually_inactive] = False
@@ -595,7 +566,6 @@ class People(ss.People):
         preg_probs[nonlam] = nonlam_probs
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from PRESTO data
-        #nullip = active.filter(active.parity == 0)  # Nulliparous
         nullip = self.parity[active_uids] == 0
         nullip_uids = active_uids[nullip]
         preg_probs[nullip] *= pars['fecundity_ratio_nullip'][self.int_age_clip(nullip_uids)]
@@ -607,17 +577,14 @@ class People(ss.People):
         preg_probs *= pars['exposure_parity'][np.minimum(self.parity[active_uids], fpd.max_parity).astype(int)]
 
         # Use a single binomial trial to check for conception successes this month
-        #conceived = active.binomial(preg_probs[active.inds], as_filter=True)
         self.binom.set(p=preg_probs)
         conceived = self.binom.filter(active_uids)
 
         self.sim.results['pregnancies'][self.sim.ti] += len(conceived)  # track all pregnancies
-        # unintended = conceived.filter(conceived.method != 0)
         unintended = conceived[self.method[conceived] != 0]
         self.sim.results['method_failures'][self.sim.ti] += len(unintended)  # unintended pregnancies due to method failure
 
         # Check for abortion
-        #is_abort = conceived.binomial(pars['abortion_prob'])
         self.binom.set(p=pars['abortion_prob'])
         abort, preg = self.binom.filter(conceived, both=True)
 
@@ -686,8 +653,6 @@ class People(ss.People):
         mu, beta = self.sim.fp_pars['breastfeeding_dur_mu'], self.sim.fp_pars['breastfeeding_dur_beta']
         breastfeed_durs = abs(np.random.gumbel(mu, beta, size=len(uids))) # todo replace with ss dist
         breastfeed_durs = np.ceil(breastfeed_durs)
-        # breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
-        # breastfeed_finished = self.filter(breastfeed_finished_inds)
         breastfeed_finished = uids[self.breastfeed_dur[uids] >= breastfeed_durs]
         breastfeed_continue = uids[self.breastfeed_dur[uids] < breastfeed_durs]
         self.reset_breastfeeding(breastfeed_finished)
@@ -708,7 +673,6 @@ class People(ss.People):
         # Count the state of the agent for postpartum -- # TOOD: refactor, what is this loop doing?
         postpart = uids[(self.postpartum[uids] == True)]
         for key, (pp_low, pp_high) in fpd.postpartum_map.items():
-            # this_pp_bin = postpart.filter((postpart.postpartum_dur >= pp_low) * (postpart.postpartum_dur < pp_high))
             this_pp_bin = postpart[(self.postpartum_dur[postpart] >= pp_low) & (self.postpartum_dur[postpart] < pp_high)]
             self.sim.results[key][self.sim.ti] += len(this_pp_bin)
         self.postpartum_dur[postpart] += self.sim.t.dt_year * fpd.mpy
@@ -722,11 +686,9 @@ class People(ss.People):
         self.gestation[preg] += self.sim.t.dt_year * fpd.mpy
 
         # Check for miscarriage at the end of the first trimester
-        # end_first_tri = preg.filter(preg.gestation == self.sim.fp_pars['end_first_tri'])
         end_first_tri = preg[(self.gestation[preg] == self.sim.fp_pars['end_first_tri'])]
         miscarriage_probs = self.sim.fp_pars['miscarriage_rates'][self.int_age_clip(end_first_tri)]
         self.binom.set(p=miscarriage_probs)
-        #miscarriage = end_first_tri.binomial(miscarriage_probs, as_filter=True)
         miscarriage = self.binom.filter(end_first_tri)
 
         # Reset states and track miscarriages
@@ -761,8 +723,6 @@ class People(ss.People):
         """
         prob = self.sim.fp_pars['mortality_probs']['maternal'] * self.sim.fp_pars['maternal_mortality_factor']
         self.binom.set(p=prob)
-        # is_death = self.binomial(prob)
-        # death = self.filter(is_death)
         death = self.binom.filter(uids)
         self.request_death(death)
         self.sim.results['maternal_deaths'][self.sim.ti] += len(death)
@@ -792,7 +752,6 @@ class People(ss.People):
 
         # Update states
         deliv = uids[(self.gestation[uids] == self.preg_dur[uids])]
-        # deliv = self.filter(self.gestation == self.preg_dur)
         if len(deliv):  # check for any deliveries
             self.pregnant[deliv] = False
             self.gestation[deliv] = 0  # Reset gestation counter
@@ -852,14 +811,12 @@ class People(ss.People):
             if len(prev_birth_single):
                 pidx = (self.parity[prev_birth_single] - 1).astype(int)
                 all_ints = [self.birth_ages[r][pidx] - self.birth_ages[r][pidx-1] for r in prev_birth_single]
-                #all_ints = self.birth_ages[prev_birth_single][pidx] - self.birth_ages[prev_birth_single][pidx-1]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
                 short_ints = np.count_nonzero(latest_ints < (self.sim.fp_pars['short_int']/fpd.mpy))
                 self.sim.results['short_intervals'][self.sim.ti] += short_ints
             if len(prev_birth_twins):
                 pidx = (self.parity[prev_birth_twins] - 2).astype(int)
                 all_ints = [self.birth_ages[r][pidx] - self.birth_ages[r][pidx-1] for r in prev_birth_twins]
-                #all_ints = self.birth_ages[prev_birth_twins][:, pidx] - self.birth_ages[prev_birth_twins][:, pidx-1]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
                 short_ints = np.count_nonzero(latest_ints < (self.sim.fp_pars['short_int']/fpd.mpy))
                 self.sim.results['short_intervals'][self.sim.ti] += short_ints
@@ -991,37 +948,29 @@ class People(ss.People):
         """
         # self.reset_step_results()  # Allocate an 'empty' dictionary for the outputs of this time step
 
-        #alive_start = self.filter(self.alive)
-        #alive_start.decide_death_outcome()     # Decide if person dies at this t in the simulation
-        #alive_check = self.filter(self.alive)  # Reselect live agents after exposure to general mortality
         self.decide_death_outcome(self.alive.uids)
 
         # Update pregnancy with maternal mortality outcome
         preg = self.pregnant.uids # no longer needed because by default results are filtered by alive
         self.process_delivery(preg)  # Deliver with birth outcomes if reached pregnancy duration
 
-        # Reselect for live agents after exposure to maternal mortality
-        # alive_now = self.filter(self.alive)
+        # Reselect for live agents after exposure to maternal mortality and infant mortality
+        fecund = ((self.alive) & (self.female) & (self.age < self.sim.fp_pars['age_limit_fecundity'])).uids
 
-        # Reselect for live agents after exposure to infant mortality. TODO check if request death applies before this
-        # fecund = alive_now.filter((alive_now.sex == 0) * (alive_now.age < alive_now.pars['age_limit_fecundity']))
-        fecund = ((self.female == True) & (self.age < self.sim.fp_pars['age_limit_fecundity'])).uids
-
-        #nonpreg = fecund.filter(~fecund.pregnant)
         nonpreg = fecund[self.pregnant[fecund] == False]
         lact = fecund[self.lactating[fecund] == True]
 
         # Update empowerment states, and empowerment-related states
-        #alive_now_f = self.filter(self.female & self.alive)
+        live_female_uids = (self.female & self.alive).uids
 
-        if self.empowerment_module is not None: self.step_empowerment(self.female.uids)
-        if self.education_module is not None: self.step_education(self.female.uids)
+        if self.empowerment_module is not None: self.step_empowerment(live_female_uids)
+        if self.education_module is not None: self.step_education(live_female_uids)
 
         # Figure out who to update methods for
         ready = nonpreg[self.ti_contra[nonpreg] <= self.sim.ti]
 
         # Check who has reached their age at first partnership and set partnered attribute to True.
-        self.start_partnership(self.female.uids)
+        self.start_partnership(live_female_uids)
 
         # Complete all updates. Note that these happen in a particular order!
         self.progress_pregnancy(preg)  # Advance gestation in timestep, handle miscarriage
@@ -1219,132 +1168,14 @@ class People(ss.People):
         #self.sim.results['decision_making'] = (np.sum(self.decision_making & self.female & self.alive) / (self.n_female))
         return
 
+
     def _step_results_intent(self):
         """ Calculate percentage of living women who have intent to use contraception and intent to become pregnant in the next 12 months"""
         self.sim.results['perc_contra_intent'][self.sim.ti] = (np.sum(self.alive & self.female & self.intent_to_use) / self.n_female) * 100
         self.sim.results['perc_fertil_intent'][self.sim.ti] = (np.sum(self.alive & self.female & self.fertility_intent) / self.n_female) * 100
         return
 
-    # def update_results(self):
-    #     res = self.sim.results
-    #     ti = self.sim.ti
-    #
-    #     percent0to5 = (res.pp0to5 / res.total_women_fecund) * 100
-    #     percent6to11 = (res.pp6to11 / res.total_women_fecund) * 100
-    #     percent12to23 = (res.pp12to23 / res.total_women_fecund) * 100
-    #     nonpostpartum = ((res.total_women_fecund - res.pp0to5 - res.pp6to11 - res.pp12to23) / res.total_women_fecund) * 100
-    #
 
-    #     res['births'][ti] = res.births * scale
-    #     res['deaths'][ti] = res.deaths * scale
-    #     res['stillbirths'][ti] = res.stillbirths * scale
-    #     res['miscarriages'][ti] = res.miscarriages * scale
-    #     res['abortions'][ti] = res.abortions * scale
-    #     res['short_intervals'][ti] = res.short_intervals * scale
-    #     res['secondary_births'][ti] = res.secondary_births * scale
-    #     res['pregnancies'][ti] = res.pregnancies * scale
-    #     res['total_births'][ti] = res.total_births * scale
-    #     res['maternal_deaths'][ti] = res.maternal_deaths * scale
-    #     res['infant_deaths'][ti] = res.infant_deaths * scale
-    #     res['on_methods_mcpr'][ti] = res.on_methods_mcpr
-    #     res['no_methods_mcpr'][ti] = res.no_methods_mcpr
-    #     res['on_methods_cpr'][ti] = res.on_methods_cpr
-    #     res['no_methods_cpr'][ti] = res.no_methods_cpr
-    #     res['on_methods_acpr'][ti] = res.on_methods_acpr
-    #     res['no_methods_acpr'][ti] = res.no_methods_acpr
-    #     res['contra_access'][ti] = res.contra_access
-    #     res['new_users'][ti] = res.new_users
-    #     res['ever_used_contra'][ti] = res.ever_used_contra
-    #     res['switchers'][ti] = res.switchers
-    #     res['urban_women'][ti] = res.urban_women
-    #     res['mcpr'][ti] = sc.safedivide(res.on_methods_mcpr, (res.no_methods_mcpr + res.on_methods_mcpr))
-    #     res['cpr'][ti] = sc.safedivide(res.on_methods_cpr, (res.no_methods_cpr + res.on_methods_cpr))
-    #     res['acpr'][ti] = sc.safedivide(res.on_methods_acpr, (res.no_methods_acpr + res.on_methods_acpr))
-    #     res['pp0to5'][ti] = percent0to5
-    #     res['pp6to11'][ti] = percent6to11
-    #     res['pp12to23'][ti] = percent12to23
-    #     res['parity0to1'][ti] = res.parity0to1
-    #     res['parity2to3'][ti] = res.parity2to3
-    #     res['parity4to5'][ti] = res.parity4to5
-    #     res['parity6plus'][ti] = res.parity6plus
-    #     res['wq1'][ti] = res.wq1
-    #     res['wq2'][ti] = res.wq2
-    #     res['wq3'][ti] = res.wq3
-    #     res['wq4'][ti] = res.wq4
-    #     res['wq5'][ti] = res.wq5
-    #     res['nonpostpartum'][ti] = nonpostpartum
-    #     res['total_women_fecund'][ti] = res.total_women_fecund * scale
-    #     res['method_failures'][ti] = res.method_failures * scale
-    #
-    #     # Education metrics
-    #     res['edu_attainment'][ti] = res.edu_attainment
-    #     res['edu_objective'][ti] = res.edu_objective
-    #
-    #     # Intent
-    #     # These will all be zero if empowerment module is not provided
-    #     # Not used except for within kenya_empowerment repo
-    #     if self.empowerment_module is not None:
-    #         res['perc_contra_intent'][ti] = res.perc_contra_intent
-    #         res['perc_fertil_intent'][ti] = res.perc_fertil_intent
-    #
-    #         # Empowerment metrics
-    #         # These will all be zero if empowerment module is not provided
-    #         # Not used except for within kenya_empowerment repo
-    #         res['paid_employment'][ti] = res.paid_employment
-    #         res['decision_wages'][ti] = res.decision_wages
-    #         res['decide_spending_partner'][ti] = res.decide_spending_partner
-    #         res['buy_decision_major'][ti] = res.buy_decision_major
-    #         res['buy_decision_daily'][ti] = res.buy_decision_daily
-    #         res['buy_decision_clothes'][ti] = res.buy_decision_clothes
-    #         res['decision_health'][ti] = res.decision_health
-    #         res['has_savings'][ti] = res.has_savings
-    #         res['has_fin_knowl'][ti] = res.has_fin_knowl
-    #         res['has_fin_goals'][ti] = res.has_fin_goals
-    #         #res['financial_autonomy'][ti] = res.financial_autonomy
-    #         #res['decision_making'][ti] = res.decision_making
-    #
-    #     for agekey in fpd.age_bin_map.keys():
-    #         births_key = f'total_births_{agekey}'
-    #         women_key = f'total_women_{agekey}'
-    #         res[births_key][ti] = res.birth_bins[
-    #                                           agekey] * scale  # Store results of total births per age bin for ASFR
-    #         res[women_key][ti] = res.age_bin_totals[
-    #                                          agekey] * scale  # Store results of total fecund women per age bin for ASFR
-    #
-    #     scale = self.scale
-    #     time_months = int(self.ti * self.pars["timestep"])  # time since the beginning of the sim, expresse in months
-    #     # Calculate metrics over the last year in the model and save whole years and stats to an array
-    #     if (time_months >= fpd.mpy) and (time_months % fpd.mpy) == 0:  # Start calculating annual metrics after we have at least 1 year of data
-    #         res['tfr_years'][index] = (self.y-1.0)  # Substract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
-    #         stop_index = self.ti
-    #         start_index = stop_index - self.tiperyear
-    #         for res_name, new_res_name in fpd.to_annualize.items():
-    #             res_over_year = self.annualize_results(res_name, start_index, stop_index)
-    #             annual_res_name = f'{new_res_name}_over_year'
-    #             res[annual_res_name][index] = (res_over_year)
-    #
-    #         # res['method_usage'][index] = (self.compute_method_usage())  # only want this per year
-    #         res['pop_size'][index] = (scale * self.n)  # CK: TODO: replace with arrays
-    #         res['mcpr_by_year'][index] = (res['mcpr'][ti])
-    #         res['cpr_by_year'][index] = (res['cpr'][ti])
-    #
-    #         # Calculate annual ratios
-    #         self.calculate_annual_ratios()
-    #
-    #         tfr = 0
-    #         for key in fpd.age_bin_map.keys():
-    #             age_bin_births_year = np.sum(res['total_births_' + key][start_index:stop_index])
-    #             age_bin_total_women_year = res['total_women_' + key][stop_index]
-    #             age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
-    #             res['asfr'][key][index] = (age_bin_births_per_woman * 1000)
-    #             res[f'tfr_{key}'][index] = (age_bin_births_per_woman * 1000)
-    #             tfr += age_bin_births_per_woman  # CK: TODO: check if this is right
-    #
-    #         res['tfr_rates'][index] = (
-    #             tfr * 5)  # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
-
-
-    # Making int_age and int_age_clip functions and not properties because it is dangerous to assume uid and array index match.
     def int_age(self, uids):
         ''' Return ages as an integer '''
         if uids is None:
