@@ -1,4 +1,3 @@
-# testing git push
 '''
 A script for running plotting to compare the model to data.
 
