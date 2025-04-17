@@ -1,5 +1,5 @@
 #########################################
-# -- Posstpartum analysis - ##
+# -- Postpartum analysis - ##
 # -- Marita Zimmermann
 # -- October 2020
 #########################################
@@ -56,7 +56,9 @@ dhs.pp.results <- dhs.pp %>%
 # Note that method two overlooks if someone was sexually active pp, then stopped having sex in the last month
 # We are currently using method 2 in the model
 sexually.active.results <- dhs.pp.results %>% select(months_postpartum, n, s.active_1, s.active_2)
-write.csv(sexually.active.results, "Postpartum/Results/sexually.active.results_2022-12-09.csv", row.names = F)
+sexually.active.model <- sexually.active.results %>%
+  select(month = months_postpartum, prob = s.active_2)
+write.csv(sexually.active.model, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/sexually_active_pp.csv", row.names = F)
 
 # visualize two methodologies
 dhs.pp.results %>%
@@ -89,11 +91,11 @@ dhs.pp %>%
   filter(birth == "m8_1") %>%
   ggplot() +
   geom_bar(aes(x = months))
-ggsave("Postpartum/Results/postpartum.percentage.bf_2021-09-03.png", height = 4, width = 8, units = "in", device='png')
 
 
 # -- LAM postpartum
 
 # percentage of women on LAM by month pp (breastfeeding, amenorrhea, and both)
 LAM.results <- dhs.pp.results %>% select(months_postpartum, n, exclusive.bf, amenorrhea, exclusive.bf_and_amerorrhea)
-write.csv(LAM.results, "Postpartum/Results/LAM.results_2022-12-09v2.csv", row.names = F)
+LAM.model <- LAM.results %>% filter(months_postpartum<12) %>% select(month = months_postpartum, rate = exclusive.bf_and_amerorrhea)
+write.csv(LAM.results, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/lam.csv", row.names = F)
