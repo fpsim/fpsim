@@ -133,16 +133,12 @@ mid.function <- function(svychoice){
 splines <- as.data.frame(ns(c(15:49), knots = c(25)))
 names(splines) <- c("knot_1", "knot_2")
 splines$age <- c(15:49)
-write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/splines_25.csv", row.names = F)
-write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/splines_25.csv", row.names = F)
-write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/splines_25.csv", row.names = F)
+write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/splines_25.csv", row.names = F)
 
 splines <- as.data.frame(ns(c(15:49), knots = c(25,40)))
 names(splines) <- c("knot_1", "knot_2","knot_3")
 splines$age <- c(15:49)
-write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/splines_25_40.csv", row.names = F)
-write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/splines_25_40.csv", row.names = F)
-write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/splines_25_40.csv", row.names = F)
+write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/splines_25_40.csv", row.names = F)
 
 
 
