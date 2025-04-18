@@ -7,7 +7,7 @@ import fpsim as fp
 import matplotlib.pyplot as plt
 import numpy as np
 
-serial   = 1 # Whether to run in serial (for debugging)
+parallel   = 0 # Whether to run in parallel or serial (for debugging)
 
 
 def make_sim_parts(location='ethiopia', new_p_use_pars=False):
@@ -92,7 +92,7 @@ def test_mcpr(location=None, do_plot=False):
 
     # Run
     # for sim in sims: sim.run()
-    m = fp.parallel(*sims, serial=serial, compute_stats=False)
+    m = fp.parallel(*sims, parallel=parallel, compute_stats=False)
     sims = m.sims[:]  # Replace with run versions
 
     # Firstly, check that changing the people attributes has registered in the relevant results metrics as expected
@@ -155,7 +155,7 @@ def test_durations(location=None):
         label='Short durations')
 
     # Run sims
-    m = fp.parallel([sim_base, sim_short], serial=serial, compute_stats=False)
+    m = fp.parallel([sim_base, sim_short], parallel=parallel, compute_stats=False)
     sim_base, sim_short = m.sims[:]  # Replace with run versions
 
     # Shorter durations should mean more switching

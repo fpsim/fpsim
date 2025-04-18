@@ -7,7 +7,7 @@ import pylab as pl
 import fpsim as fp
 import numpy as np
 
-serial   = 0 # Whether to run in serial (for debugging)
+parallel   = 1 # Whether to run in serial (for debugging)
 do_plot  = 1 # Whether to do plotting in interactive mode
 # sc.options(backend='agg') # Turn off interactive plots
 
@@ -52,7 +52,7 @@ def test_change_par():
     s2 = make_sim(interventions=[sc.dcp(cp1), cp2], label='Low exposure, reset')
 
     # Run
-    m = fp.parallel(s0, s1, s2, serial=serial, compute_stats=False)
+    m = fp.parallel(s0, s1, s2, parallel=parallel, compute_stats=False)
     s0, s1, s2 = m.sims[:] # Replace with run versions
 
     # Test exposure factor change
