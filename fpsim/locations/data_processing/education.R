@@ -108,25 +108,3 @@ table.edu %>%
   theme(strip.background = element_rect(fill = "white")) +
   facet_wrap(~edu, labeller = "label_both")  
 
-# -- Empowerment -- #
-
-# Table of the three empowerment outcomes by age
-table.emp <- as.data.frame(svyby(~paidwork, ~age, svydes1, svymean)) %>% rename(paidwork.se = se) %>%
-  left_join(as.data.frame(svyby(~decisionwages, ~age, svydes1, svymean, na.rm = T)) %>% rename(decisionwages.se = se)) %>%
-  left_join(as.data.frame(svyby(~refusesex, ~age, svydes1, svymean, na.rm = T)) %>% rename(refusesex.se = se))
-# write.csv(table.emp, "fpsim/locations/kenya/empowerment.csv", row.names = F)
-
-# -- urban/rural -- #
-
-table.urban <- as.data.frame(svymean(~urban, svydes1)) %>% rename(urban.se = urban)
-# write.csv(table.urban, "fpsim/locations/kenya/urban.csv", row.names = F)
-
-# -- age at partnership -- #
-
-table.partner <- as.data.frame(svytable(~age_partner, svydes1)) %>%
-  mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
-# write.csv(table.partner, "fpsim/locations/kenya/age_partnership.csv", row.names = F)
-
-
-
-
