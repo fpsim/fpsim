@@ -45,14 +45,12 @@ def test_options():
 def test_to_df():
     sc.heading('Testing other sim methods...')
 
-    sim = fp.Sim().run()
-    sim.brief()
-    ok('sim.brief() worked')
+    sim = fp.Sim(location='test').run()
 
     df = sim.to_df()
     births = df.births.sum()
-    last = df.t.values[-1]
-    assert last == sim['end_year'], 'Last years do not match'
+    last = df.timevec.values[-1]
+    assert last == sim.pars.stop, 'Last years do not match'
     assert births > 0, 'Expected births'
     ok(f'to_df() worked to capture {births} births and final year {last}')
 
@@ -147,8 +145,11 @@ def test_samples(do_plot=False, verbose=True):
 def test_method_usage():
     '''Test that method usage proportions add to 1 and correspond to population'''
     sim = fp.Sim()
-    sim.run() 
-    for timestep, proportions in enumerate(sim.results['method_usage']):
+    sim.run()
+
+    method_usage = np.swapaxes(np.vstack(list(sim.results.method_usage.all_results_dict.values())), 1, 0)
+    for timestep, proportions in enumerate(method_usage):
+
         assert np.isclose(sum(proportions), 1, atol=0.0001)
         pop = sim.results['pop_size'][timestep]
 

@@ -7,6 +7,7 @@ the baseline results. To update baseline, run ./update_baseline.
 import numpy as np
 import sciris as sc
 import fpsim as fp
+import starsim as ss
 
 do_plot = 0
 do_save = 0
@@ -24,7 +25,7 @@ def make_exp(n_agents=10000, seed=1, do_run=False, do_plot=False):
     find a seed for a small pop (e.g. 1k) which produces results closest to the
     large-pop values.
     '''
-    pars = fp.pars(n_agents=n_agents, seed=seed, verbose=0)
+    pars = dict(n_agents=n_agents, seed=seed, verbose=0)
     exp = fp.Experiment(pars=pars)
 
     if do_run or do_plot:
@@ -104,15 +105,15 @@ def test_benchmark(do_save=do_save, repeats=1):
         # Create the sim
         exp = make_exp()
 
-        # Time initialization
-        t0 = sc.tic()
-        exp.extract_data()
-        t_init = sc.toc(t0, output=True)
-
         # Time running
         t0 = sc.tic()
         exp.run_model()
         t_run = sc.toc(t0, output=True)
+
+        # Time initialization
+        t0 = sc.tic()
+        exp.extract_data()
+        t_init = sc.toc(t0, output=True)
 
         # Time postprocessing
         t0 = sc.tic()
@@ -140,10 +141,10 @@ def test_benchmark(do_save=do_save, repeats=1):
                 'total':       round(t_init+t_run+t_post, n_decimals)
                 },
             'parameters': {
-                'n':          exp.pars['n_agents'],
-                'start_year': exp.pars['start_year'],
-                'end_year':   exp.pars['end_year'],
-                'timestep':   exp.pars['timestep'],
+                'n':          exp.sim.pars['n_agents'],
+                'start_year': exp.sim.pars['start'],
+                'end_year':   exp.sim.pars['stop'],
+                'timestep':   exp.sim.pars['dt'],
                 },
             'cpu_performance': ratio,
             }
