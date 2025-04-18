@@ -153,7 +153,7 @@ def make_pars(location='senegal', seed=None):
     pars['spacing_pref'] = fpld.birth_spacing_pref(location)
 
     # Contraceptive methods
-    #pars['barriers'] = barriers()
+    pars['barriers'] = barriers()
     pars['mcpr'] = fpld.mcpr(location)
 
     return pars

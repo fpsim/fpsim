@@ -104,7 +104,7 @@ class People(fpb.BasePeople):
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
-        #self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
+        self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
 
         # Store keys
         self._keys = [s.name for s in self.states.values()]
