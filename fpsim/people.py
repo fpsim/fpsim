@@ -466,6 +466,7 @@ class People(ss.People):
             self.sim.results['deaths'][self.sim.ti] += len(died)
             self.request_death(died)
             self.step_die() # to match the order of ops from earlier FPsim version
+            self.remove_dead()
 
         return
 
@@ -946,34 +947,32 @@ class People(ss.People):
         """
         Perform all updates to people within a single timestep
         """
-        # self.reset_step_results()  # Allocate an 'empty' dictionary for the outputs of this time step
 
+        # normally SS handles deaths at end of timestep, but to match the previous version's logic, we start it here.
+        # dead agents are removed so we don't have to filter for alive after this.
         self.decide_death_outcome(self.alive.uids)
 
         # Update pregnancy with maternal mortality outcome
-        preg = self.pregnant.uids # no longer needed because by default results are filtered by alive
-        self.process_delivery(preg)  # Deliver with birth outcomes if reached pregnancy duration
+        self.process_delivery(self.pregnant.uids)  # Deliver with birth outcomes if reached pregnancy duration
 
         # Reselect for live agents after exposure to maternal mortality and infant mortality
-        fecund = ((self.alive) & (self.female) & (self.age < self.sim.fp_pars['age_limit_fecundity'])).uids
+        fecund = ((self.female) & (self.age < self.sim.fp_pars['age_limit_fecundity'])).uids
 
         nonpreg = fecund[self.pregnant[fecund] == False]
         lact = fecund[self.lactating[fecund] == True]
 
         # Update empowerment states, and empowerment-related states
-        live_female_uids = (self.female & self.alive).uids
-
-        if self.empowerment_module is not None: self.step_empowerment(live_female_uids)
-        if self.education_module is not None: self.step_education(live_female_uids)
+        if self.empowerment_module is not None: self.step_empowerment(self.female.uids)
+        if self.education_module is not None: self.step_education(self.female.uids)
 
         # Figure out who to update methods for
         ready = nonpreg[self.ti_contra[nonpreg] <= self.sim.ti]
 
         # Check who has reached their age at first partnership and set partnered attribute to True.
-        self.start_partnership(live_female_uids)
+        self.start_partnership(self.female.uids)
 
         # Complete all updates. Note that these happen in a particular order!
-        self.progress_pregnancy(preg)  # Advance gestation in timestep, handle miscarriage
+        self.progress_pregnancy(self.pregnant.uids)  # Advance gestation in timestep, handle miscarriage
 
         # Update mothers
         if self.sim.fp_pars['track_children']:
@@ -1011,11 +1010,11 @@ class People(ss.People):
 
         return
 
-    def step_empowerment(self):
+    def step_empowerment(self, uids):
         """
         NOTE: by default this will not be used, but it will be used for analyses run from the kenya_empowerment repo
         """
-        eligible_uids = (self.is_dhs_age).uids
+        eligible_uids = (self.is_dhs_age[uids]).uids
         # Women who just turned 15 get assigned a value based on empowerment probs
         bday_15_uids = eligible_uids[
             ((self.age[eligible_uids] > int(fpd.min_age)) &
