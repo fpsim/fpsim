@@ -1094,7 +1094,9 @@ class People(ss.People):
                     annual_res_name = f'{new_res_name}_over_year'
                     res[annual_res_name][index] = (res_over_year)
 
-                res['method_usage'][index] = (self.compute_method_usage())  # only want this per year
+                computed_method_usage = self.compute_method_usage()
+                for i in range(len(computed_method_usage)):
+                    res['method_usage'][i][index] = (computed_method_usage[i])
                 res['pop_size'][index] = (res['n_alive'][ti])
                 res['mcpr_by_year'][index] = (res['mcpr'][ti])
                 res['cpr_by_year'][index] = (res['cpr'][ti])

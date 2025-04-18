@@ -230,9 +230,11 @@ class Sim(ss.Sim):
         for key in fpd.float_annual_results:
             self.results += ss.Result(key, label=key, **annual_kw)
 
-        dict_annual_kw = dict(shape=(self.pars.stop - self.pars.start), timevec=range(self.pars.start, self.pars.stop), dtype=dict, scale=False)
         for key in fpd.dict_annual_results:
-            self.results += ss.Result(key, label=key, **dict_annual_kw)
+            if key == 'method_usage':
+                self.results[key] = ss.Results(module=self)
+                for i, method in enumerate(self.people.contraception_module.methods):
+                    self.results[key] += ss.Result(method, label=method, **annual_kw)
 
         # Store age-specific fertility rates
         self.results['asfr'] = ss.Results(module=self) # ['asfr'] = {}
@@ -671,56 +673,25 @@ class Sim(ss.Sim):
 
 
 # %% Multisim and running
-class MultiSim(sc.prettyobj):
+class MultiSim(ss.MultiSim):
     """
     The MultiSim class handles the running of multiple simulations
     """
 
     def __init__(self, sims=None, base_sim=None, label=None, n=None, **kwargs):
-
-        # Handle inputs
-        if base_sim is None:
-            if isinstance(sims, Sim):
-                base_sim = sims
-                sims = None
-            elif isinstance(sims, list):
-                base_sim = sc.dcp(sims[0]) # Copy so we don't accidentally overwrite with compute_stats()
-            else:
-                errormsg = f'If base_sim is not supplied, sims must be either a single sim (treated as base_sim) or a list of sims, not {type(sims)}'
-                raise TypeError(errormsg)
-
-        # Set properties
-        self.sims = sims
-        self.base_sim = base_sim
-        self.label = base_sim.label if (label is None and base_sim is not None) else label
-        self.run_args = sc.mergedicts(kwargs)
-        self.results = None
-        self.which = None  # Whether the multisim is to be reduced, combined, etc.
         self.already_run = False
         fpu.set_metadata(self)  # Set version, date, and git info
 
-        return
+        super().__init__(sims, base_sim, label, n, **kwargs)
 
-    def __len__(self):
-        if isinstance(self.sims, list):
-            return len(self.sims)
-        elif isinstance(self.sims, Sim):
-            return 1
-        else:
-            return 0
+        return
 
     def run(self, compute_stats=True, **kwargs):
         """ Run all simulations in the MultiSim """
-        # Handle missing labels
-        for s, sim in enumerate(sc.tolist(self.sims)):
-            if sim.label is None:
-                sim.label = f'Sim {s}'
-        # Run
         if self.already_run:
             errormsg = 'Cannot re-run an already run MultiSim'
             raise RuntimeError(errormsg)
-        self.sims = multi_run(self.sims, **kwargs)
-
+        super().run(**kwargs)
         # Recompute stats
         if compute_stats:
             self.compute_stats()
@@ -780,9 +751,6 @@ class MultiSim(sc.prettyobj):
                     results[reskey].best = np.quantile(raw[reskey], q=0.5, axis=axis)
                     results[reskey].low = np.quantile(raw[reskey], q=quantiles['low'], axis=axis)
                     results[reskey].high = np.quantile(raw[reskey], q=quantiles['high'], axis=axis)
-
-        self.results = results
-        self.base_sim.results = results  # Store here too, to enable plotting
 
         if return_raw:
             return raw
@@ -1065,12 +1033,6 @@ def single_run(sim):
     """ Helper function for multi_run(); rarely used on its own """
     sim.run()
     return sim
-
-
-def multi_run(sims, **kwargs):
-    """ Run multiple sims in parallel; usually used via the MultiSim class, not directly """
-    sims = sc.parallelize(single_run, iterarg=sims, **kwargs)
-    return sims
 
 
 def parallel(*args, **kwargs):
