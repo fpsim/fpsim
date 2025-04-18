@@ -10,7 +10,7 @@ Idea:
 # %% Imports
 import numpy as np
 import sciris as sc
-import starsim as ss  # TODO add to dependencies
+import starsim as ss
 from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs

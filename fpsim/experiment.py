@@ -1209,15 +1209,6 @@ def diff_summaries(sim1, sim2, skip_key_diffs=False, output=False, die=False):
     # Compare keys
     keymatchmsg = ''
     sim1_keys = set(sim1.keys())
-    sim2_keys = set(sim2.keys())
-    #if sim1_keys !=    _keys and not skip_key_diffs: # pragma: no cover
-        #keymatchmsg = "Keys don't match!\n"
-       # missing = list(sim1_keys - sim2_keys)
-        #extra   = list(sim2_keys - sim1_keys)
-        #if missing:
-            #keymatchmsg += f'  Missing sim1 keys: {missing}\n'
-        #if extra:
-            #keymatchmsg += f'  Extra sim2 keys: {extra}\n'
 
     # Compare values
     valmatchmsg = ''

@@ -4,7 +4,6 @@ Methods and functions related to education
 
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
-import sciris as sc
 from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs

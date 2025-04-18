@@ -5,7 +5,6 @@ Class to define and run scenarios
 import numpy as np
 import pandas as pd
 import sciris as sc
-from . import defaults as fpd
 from . import parameters as fpp
 from . import sim as fps
 from . import interventions as fpi

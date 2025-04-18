@@ -5,10 +5,7 @@ Define defaults for use throughout FPsim
 import numpy as np
 import sciris as sc
 import starsim as ss
-import fpsim.settings as fps
 import fpsim.arrays as fpa
-
-from . import base as fpb
 
 #%% Global defaults
 useSI          = True
