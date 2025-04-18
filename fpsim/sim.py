@@ -12,7 +12,6 @@ import starsim as ss
 from .settings import options as fpo
 from . import utils as fpu
 from . import defaults as fpd
-from . import base as fpb
 from . import parameters as fpp
 from . import people as fpppl
 from . import methods as fpm
@@ -70,9 +69,8 @@ def tidy_up(fig, do_show=None, do_save=None, filename=None):
 
 class Sim(ss.Sim):
     """
-    The Sim class handles the running of the simulation. This class handles the mechanics
-    of the actual simulation, while BaseSim takes care of housekeeping (saving,
-    loading, exporting, etc.). Please see the BaseSim class for additional methods.
+    The Sim class handles the running of the simulation. It extends the Starim Sim class, so all Starsim Sim methods
+    are available to FPsims.
 
     When a Sim is initialized, it triggers the creation of the population. Methods related
     to creating, initializing, and updating people can be found in the People class.
@@ -305,10 +303,6 @@ class Sim(ss.Sim):
         self.results['cum_short_intervals_by_year'] = np.cumsum(self.results['short_intervals_over_year'])
         self.results['cum_secondary_births_by_year'] = np.cumsum(self.results['secondary_births_over_year'])
         self.results['cum_pregnancies_by_year'] = np.cumsum(self.results['pregnancies_over_year'])
-
-        # Convert to an objdict for easier access
-        # self.results = sc.objdict(self.results)
-
 
 
     def store_postpartum(self):

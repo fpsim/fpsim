@@ -4,9 +4,10 @@ Run tests on the multisim object.
 
 import sciris as sc
 import fpsim as fp
+import starsim as ss
 
-serial  = 0
-do_plot = 0
+parallel  = True
+do_plot = 1
 sc.options(backend='agg') # Turn off interactive plots
 
 
@@ -23,8 +24,11 @@ def test_multisim(do_plot=do_plot):
         sims.append(sim)
 
     msim = fp.MultiSim(sims)
-    msim.run(serial=serial) # Run sims in parallel
-    msim.to_df() # Test to_df
+    msim.run(parallel=parallel) # Run sims in parallel
+    # msim.to_df() # Test to_df
+
+    msim.reduce()
+    msim.summarize()
 
     births = msim.results.births
     assert sum(births.low) < sum(births.high), 'Expecting the higher bound of births to be higher than the lower bound'

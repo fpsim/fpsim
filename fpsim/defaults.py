@@ -164,15 +164,11 @@ person_defaults = [
     # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
     # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and
     # pregnancy outcomes.
-    #self.child_inds = np.full(max_parity, -1, int),
     fpa.MultiFloat('birth_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of live births
     fpa.MultiFloat('stillborn_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of stillbirths
     fpa.MultiFloat('miscarriage_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of miscarriages
     fpa.MultiFloat('abortion_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of abortions
-    # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
 ]
-
-# person_defaults = ss.ndict(person_defaults)
 
 # Postpartum keys to months
 postpartum_map = {

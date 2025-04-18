@@ -17,7 +17,6 @@ import starsim as ss
 
 #%% Generic analyzer classes
 __all__ = ['snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder', 'track_as']
-# __all__ = ['snapshot', 'cpr_by_age', 'age_pyramids', 'lifeof_recorder']
 # Specific analyzers
 __all__ += ['education_recorder']
 # Analyzers for debugging
