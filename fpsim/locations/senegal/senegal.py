@@ -14,10 +14,9 @@ import fpsim.locations.data_utils as fpld
 def scalar_pars():
     scalar_pars = {
         'location': 'senegal',
-        'breastfeeding_dur_mu': 19.66828,
-        # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'breastfeeding_dur_beta': 7.2585,
-        # Scale parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'postpartum_dur': 23,
+        'breastfeeding_dur_mu': 19.66828,   # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
+        'breastfeeding_dur_beta': 7.2585,   # Scale parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
         'abortion_prob': 0.08,  # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
         'twins_prob': 0.015,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
     }
