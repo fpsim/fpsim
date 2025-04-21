@@ -76,7 +76,6 @@ def _check_age_endpoints(df):
     return df
 
 # %% Scalar pars
-
 def bf_stats(location):
     """ Load breastfeeding stats """
     bf_data = pd.read_csv(this_dir() / location / 'data' / 'bf_stats.csv')
@@ -87,9 +86,16 @@ def bf_stats(location):
 
     return bf_pars
 
+def scalar_probs(location):
+    """ Load abortion and twins probabilities """
+    data = pd.read_csv(this_dir() / location / 'data' / 'scalar_probs.csv')
+    abortion_prob = data.loc[data['param']=='abortion_prob', 'prob'].values[0]   # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
+    twins_prob = data.loc[data['param']=='twins_prob', 'prob'].values[0]         # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+
+    return abortion_prob, twins_prob
+
 
 # %% Demographics
-
 def age_spline(which):
     d = pd.read_csv(this_dir() / f'splines_{which}.csv')
     # Set the age as the index

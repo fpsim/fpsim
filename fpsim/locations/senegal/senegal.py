@@ -14,8 +14,6 @@ import fpsim.locations.data_utils as fpld
 def scalar_pars():
     scalar_pars = {
         'location': 'senegal',
-        'abortion_prob': 0.08,  # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
-        'twins_prob': 0.015,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
     }
     return scalar_pars
 
@@ -124,8 +122,8 @@ def make_pars(location='senegal', seed=None):
 
     # Scalar parameters and filenames
     pars = scalar_pars()
-    bf_pars = fpld.bf_stats(location)
-    pars.update(bf_pars)
+    pars['abortion_prob'], pars['twins_prob'] = fpld.scalar_probs(location)
+    pars.update(fpld.bf_stats(location))
     pars['filenames'] = filenames()
 
     # Demographics and pregnancy outcome

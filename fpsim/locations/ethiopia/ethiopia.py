@@ -21,8 +21,6 @@ def scalar_pars():
     scalar_pars = {
         'location':             'ethiopia',
         'postpartum_dur':       23,
-        'abortion_prob':        0.176,          # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
-        'twins_prob':           0.011,          # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
     }
     return scalar_pars
 
@@ -97,8 +95,8 @@ def make_pars(location='ethiopia', seed=None):
 
     # Scalar parameters and filenames
     pars = scalar_pars()
-    bf_pars = fpld.bf_stats(location)
-    pars.update(bf_pars)
+    pars['abortion_prob'], pars['twins_prob'] = fpld.scalar_probs(location)
+    pars.update(fpld.bf_stats(location))
     pars['filenames'] = filenames()
 
     # Demographics and pregnancy outcome
