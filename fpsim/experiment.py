@@ -329,12 +329,18 @@ class Experiment(sc.prettyobj):
         # Extract birth spaces from model
         ppl = self.sim.people
         gt1_birth_uids = ppl.alive.uids[(ppl.female==True) & (ppl.parity > 1)]
-        birth_spaces = np.diff(np.stack(ppl.birth_ages[gt1_birth_uids]))  # Birth spacings
-        defined_vals = ~np.isnan(birth_spaces) * (birth_spaces>0)  # Find NaNs and twins
-        model_spacing = birth_spaces[defined_vals]  # Remove NaNs and twins
-        model_spacing_counts, _ = np.histogram(model_spacing, bins=np.append(spacing_bins.values(), 10))  # Bin
-        model_spacing_counts = model_spacing_counts / model_spacing_counts[:].sum()  # Normalize
-        model_spacing_counts[:] *= 100  # Percentages
+        birth_ages = ppl.birth_ages[gt1_birth_uids]
+        model_spacing = []
+
+        # Extract birth spaces from model. Stillbirth ages are not recorded in the main birth_ages list.
+        # We must account for that because np.stack fails when passed an empty array.
+        if len(birth_ages) > 0:
+            birth_spaces = np.diff(np.stack(birth_ages))  # Birth spacings
+            defined_vals = ~np.isnan(birth_spaces) * (birth_spaces>0)  # Find NaNs and twins
+            model_spacing = birth_spaces[defined_vals]  # Remove NaNs and twins
+            model_spacing_counts, _ = np.histogram(model_spacing, bins=np.append(spacing_bins.values(), 10))  # Bin
+            model_spacing_counts = model_spacing_counts / model_spacing_counts[:].sum()  # Normalize
+            model_spacing_counts[:] *= 100  # Percentages
 
         # Extract age at first birth from model
         any_births_uids = ppl.alive.uids[(ppl.female==True) & (ppl.parity>0)]
