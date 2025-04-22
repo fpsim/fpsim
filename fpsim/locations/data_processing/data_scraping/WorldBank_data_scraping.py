@@ -3,7 +3,7 @@
 
 This script can be run to pull the country data from the World Bank used for calibration. If the 'get' options below
 are set to True, this script will utilize the World Bank API to scrape the data - and create files for -
-population (popsize.csv), total fertility rate (tfr.csv), mortality trend (mortality_trend.csv), and basic_dhs.yaml,
+population (popsize.csv), total fertility rate (tfr.csv), mortality trend (mortality_trend.csv), and basic_wb.yaml,
 which includes maternal mortality ratio, infant mortality rate, crude death rate, and crude birth rate.
 
 The only setup required is to set the country name (all lower-case) and location iso code (which can be found in the file
@@ -41,7 +41,7 @@ filesdir = thisdir / 'scraped_data'
 # Set options for web scraping of data; all True by default
 get_pop = True  # Annual population size
 get_tfr = True  # Total fertility rate
-get_basic_dhs = True  # Includes maternal mortality, infant mortality, crude birth rate, & crude death rate
+get_basic_wb = True  # Includes maternal mortality, infant mortality, crude birth rate, & crude death rate
 get_maternal_mortality = True  # Maternal mortality
 get_infant_mortality = True  # Infant mortality
 
@@ -160,7 +160,7 @@ if get_tfr:
     df.to_csv(f'{filesdir}/{country}/tfr.csv', index=False)
 
 
-if get_basic_dhs:
+if get_basic_wb:
     # Get the most recent year of data in infant & maternal mortality data
     get_infant_mortality()
     get_maternal_mortality()
@@ -188,13 +188,13 @@ if get_basic_dhs:
     df = get_data(target)
     cdr = df['value'].values[0]
 
-    # Define dictionary for basic_dhs_csv
-    basic_dhs_data = {
+    # Define dictionary for basic_wb_csv
+    basic_wb_data = {
         'maternal_mortality_ratio': mmr, # Per 100,000 live births, (2017) From World Bank: https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
         'infant_mortality_rate': imr,  # Per 1,000 live births, From World Bank
         'crude_death_rate': cdr,  # Per 1,000 inhabitants, From World Bank
         'crude_birth_rate': cbr,  # Per 1,000 inhabitants, From World Bank
     }
 
-    with open(f'{filesdir}/{country}/basic_dhs.yaml', 'w') as file:
-        file.write(json.dumps(basic_dhs_data))
+    with open(f'{filesdir}/{country}/basic_wb.yaml', 'w') as file:
+        file.write(json.dumps(basic_wb_data))

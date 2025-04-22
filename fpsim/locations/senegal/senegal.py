@@ -22,7 +22,7 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'data'
-    files['basic_dhs']        = 'basic_dhs.yaml'
+    files['basic_wb']        = 'basic_wb.yaml'
     files['popsize']          = 'popsize.csv'
     files['mcpr']             = 'cpr.csv'
     files['tfr']              = 'tfr.csv'

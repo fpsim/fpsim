@@ -96,7 +96,7 @@ class Experiment(sc.prettyobj):
     def extract_data(self):
         ''' Load data '''
 
-        json = self.load_data('basic_dhs')
+        json = self.load_data('basic_wb')
 
         self.data.update(json)
 

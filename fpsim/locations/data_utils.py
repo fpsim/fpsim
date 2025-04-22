@@ -252,13 +252,13 @@ def female_age_fecundity():
     Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
     45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds
     '''
-    fecundity = {
-        'bins': np.array([0., 5, 10, 15, 20, 25, 28, 31, 34, 37, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
-        'f': np.array([0., 0, 0, 65, 70.8, 79.3, 77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
-    fecundity[
-        'f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
+    df = pd.read_csv(this_dir() / 'age_fecundity.csv')
 
-    fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
+    # Extract bins and fecundity values
+    bins = df['bin'].values
+    f = df['f'].values / 100    # Convert from per 100 to proportion
+
+    fecundity_interp_model = si.interp1d(x=bins, y=f)
     fecundity_interp = fecundity_interp_model(fpd.spline_preg_ages)
     fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp))  # Normalize to avoid negative or >1 values
 
