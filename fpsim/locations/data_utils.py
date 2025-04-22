@@ -75,9 +75,27 @@ def _check_age_endpoints(df):
     df.reset_index(drop=True, inplace=True)
     return df
 
+# %% Scalar pars
+def bf_stats(location):
+    """ Load breastfeeding stats """
+    bf_data = pd.read_csv(this_dir() / location / 'data' / 'bf_stats.csv')
+    bf_pars = {
+        'breastfeeding_dur_mu' : bf_data.loc[0]['fitgumbel$estimate'],  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
+        'breastfeeding_dur_beta' : bf_data.loc[1]['fitgumbel$estimate'] # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
+    }
+
+    return bf_pars
+
+def scalar_probs(location):
+    """ Load abortion and twins probabilities """
+    data = pd.read_csv(this_dir() / location / 'data' / 'scalar_probs.csv')
+    abortion_prob = data.loc[data['param']=='abortion_prob', 'prob'].values[0]   # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
+    twins_prob = data.loc[data['param']=='twins_prob', 'prob'].values[0]         # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
+
+    return abortion_prob, twins_prob
+
 
 # %% Demographics
-
 def age_spline(which):
     d = pd.read_csv(this_dir() / f'splines_{which}.csv')
     # Set the age as the index
@@ -205,8 +223,10 @@ def miscarriage():
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
     Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
     """
-    miscarriage_rates = np.array([[0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50],
-                                  [1, 1, 0.569, 0.167, 0.112, 0.097, 0.108, 0.167, 0.332, 0.569, 0.569]])
+    df = pd.read_csv(this_dir() / 'miscarriage.csv')
+
+    # Extract data and interpolate
+    miscarriage_rates = np.array([df['age'].values, df['prob'].values])
     miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
     return miscarriage_interp
 
@@ -234,13 +254,13 @@ def female_age_fecundity():
     Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
     45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds
     '''
-    fecundity = {
-        'bins': np.array([0., 5, 10, 15, 20, 25, 28, 31, 34, 37, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
-        'f': np.array([0., 0, 0, 65, 70.8, 79.3, 77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
-    fecundity[
-        'f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
+    df = pd.read_csv(this_dir() / 'age_fecundity.csv')
 
-    fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
+    # Extract bins and fecundity values
+    bins = df['bin'].values
+    f = df['f'].values / 100    # Convert from per 100 to proportion
+
+    fecundity_interp_model = si.interp1d(x=bins, y=f)
     fecundity_interp = fecundity_interp_model(fpd.spline_preg_ages)
     fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp))  # Normalize to avoid negative or >1 values
 
@@ -253,8 +273,10 @@ def fecundity_ratio_nullip():
     from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
     Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
     '''
-    fecundity_ratio_nullip = np.array([[0, 5, 10, 12.5, 15, 18, 20,   25,   30,   34,   37,   40, 45, 50],
-                                       [1, 1,  1,    1,  1,  1,  1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
+    df = pd.read_csv(this_dir() / 'fecundity_ratio_nullip.csv')
+
+    # Extract data and interpolate
+    fecundity_ratio_nullip = np.array([df['age'].values, df['prob'].values])
     fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
 
     return fecundity_nullip_interp

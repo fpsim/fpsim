@@ -21,10 +21,6 @@ def scalar_pars():
     scalar_pars = {
         'location':             'ethiopia',
         'postpartum_dur':       23,
-        'breastfeeding_dur_mu': 9.30485863,     # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'breastfeeding_dur_beta': 8.20149079,   # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'abortion_prob':        0.176,          # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5568682/, % of all pregnancies calculated
-        'twins_prob':           0.011,          # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
     }
     return scalar_pars
 
@@ -33,7 +29,7 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'data'
-    files['basic_dhs'] = 'basic_dhs.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
+    files['basic_wb'] = 'basic_wb.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
     files['popsize'] = 'popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
@@ -99,6 +95,8 @@ def make_pars(location='ethiopia', seed=None):
 
     # Scalar parameters and filenames
     pars = scalar_pars()
+    pars['abortion_prob'], pars['twins_prob'] = fpld.scalar_probs(location)
+    pars.update(fpld.bf_stats(location))
     pars['filenames'] = filenames()
 
     # Demographics and pregnancy outcome

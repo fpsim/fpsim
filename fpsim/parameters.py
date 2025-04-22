@@ -222,7 +222,7 @@ default_pars = {
     'analyzers':            [],
 
     ###################################
-    # Context-specific data-dervied parameters, all defined within location files
+    # Context-specific data-derived parameters, all defined within location files
     ###################################
     'filenames':            None,
     'age_pyramid':          None,
