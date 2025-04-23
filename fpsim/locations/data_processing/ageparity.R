@@ -21,16 +21,16 @@ dhs.raw <- with_dir(normalizePath(file.path(Sys.getenv("ONEDRIVE"), "DHS/ETIR81D
 
 data <- pma.raw  %>% filter(gender == 2 & !is.na(FQ_age) & !is.na(FQweight)) %>% select(birth_events_rw, age = FQ_age, wt = FQweight) %>%
   mutate(parity = case_when(birth_events_rw>6 ~ 6, is.na(birth_events_rw) | birth_events_rw == -99 ~ 0, T ~ birth_events_rw), dataset = "PMA 2019") %>% select(-birth_events_rw) %>%
-  bind_rows(dhs.raw %>% mutate(wt = v005/1000000, age = as.numeric(v012), parity=as.numeric(v220), dataset = paste("DHS", v007)) %>% select(wt, age, parity, dataset))
-
-data.result = data %>%
+  bind_rows(dhs.raw %>% mutate(wt = v005/1000000, age = as.numeric(v012), parity=as.numeric(v220), dataset = paste("DHS", v007)) %>% select(wt, age, parity, dataset)) %>%
   mutate(age = case_when(age > 14 & age <= 19 ~ "15-19",
                          age > 19 & age <= 24 ~ "20-24",
                          age > 24 & age <= 29 ~ "25-29",
                          age > 29 & age <= 34 ~ "30-34",
                          age > 34 & age <= 39 ~ "35-39",
                          age > 39 & age <= 44 ~ "40-44",
-                         age > 44 & age <= 49 ~ "45-49")) %>%
+                         age > 44 & age <= 49 ~ "45-49"))
+
+data.result = data  %>%
   group_by(dataset) %>% mutate(n = sum(wt, na.rm = T)) %>% ungroup %>%
   group_by(age, parity, dataset, n) %>% summarize(Freq = sum(wt, na.rm=T)) %>% mutate(percentage = Freq/n*100) %>% select(-n)
 

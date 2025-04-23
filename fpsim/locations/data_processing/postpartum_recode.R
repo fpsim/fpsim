@@ -60,38 +60,6 @@ sexually.active.model <- sexually.active.results %>%
   select(month = months_postpartum, prob = s.active_2)
 write.csv(sexually.active.model, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/kenya/data/sexually_active_pp.csv", row.names = F)
 
-# visualize two methodologies
-dhs.pp.results %>%
-  select(-starts_with("n")) %>% 
-  gather(var, val, -months_postpartum) %>%
-  mutate(var = factor(var,
-                         levels = c("exclusive.bf", "amenorrhea", "exclusive.bf_and_amerorrhea", "abstinent", "s.active_1", "s.active_2"),
-                         labels = c("Exclusively breastfeeding", "Amenorrheic", "Exclusively breastfeeding and amenorrheic", "Abstinent", "Sexually active (method 1)", "Sexually active (method 2)"))) %>%
-  filter(var == "Sexually active (method 1)" | var == "Sexually active (method 2)") %>%
-  #filter(var == "Exclusively breastfeeding" | var ==  "Amenorrheic" | var ==  "Exclusively breastfeeding and amenorrheic") %>%
-  ggplot() +
-  geom_line(aes(y = val, x = months_postpartum, group = var, color = var), size = 1.5) +
-  scale_color_viridis_d() + 
-  theme_bw(base_size = 10) +
-  xlab("Months post-partum") +
-  scale_y_continuous("Percent of women", labels = percent) +
-  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank(),
-        axis.line = element_line(colour = "black", size = 0.1), 
-        axis.text.x = element_text(colour = "black"), axis.text.y = element_text(colour = "black"),
-        text = element_text(family ="Garamond"),
-        legend.position = c(0.7, 0.8),
-        legend.title = element_blank(),
-        panel.border = element_blank()) 
-
-# look at distribution of time abstinent for those who have resumed sex
-dhs.pp %>%
-  select(starts_with("m8_")) %>%
-  gather(birth , months) %>%
-  filter(months < 90) %>%
-  filter(birth == "m8_1") %>%
-  ggplot() +
-  geom_bar(aes(x = months))
-
 
 # -- LAM postpartum
 
