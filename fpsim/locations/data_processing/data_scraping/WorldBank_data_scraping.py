@@ -69,6 +69,8 @@ def get_data(target):
 
     # Get the response, which includes the first page of data as well as information on pagination and number of records
     response = requests.get(target)
+    if response.status_code != 200:
+        raise ValueError(f"Request failed: {response.status_code} for URL: {target}")
 
     # Converts call into JSON
     j = response.json()
