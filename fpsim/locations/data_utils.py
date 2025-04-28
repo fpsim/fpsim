@@ -5,6 +5,7 @@ Process datafiles - this file contains functions common to all locations
 import numpy as np
 import pandas as pd
 import sciris as sc
+import yaml
 from scipy import interpolate as si
 from fpsim import defaults as fpd
 from fpsim import utils as fpu
@@ -25,7 +26,10 @@ def data2interp(data, ages, normalize=False):
         interp = np.minimum(1, np.maximum(0, interp))
     return interp
 
-
+def load_age_adjustments():
+    with open(this_dir() / 'age_adjustments.yaml', 'r') as f:
+        adjustments = yaml.safe_load(f)
+    return adjustments
 
 def _check_age_endpoints(df):
     """
@@ -200,17 +204,18 @@ def infant_mortality(location):
     '''
     From World Bank indicators for infant mortality (< 1 year) for Kenya, per 1000 live births
     From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
-    Adolescent increased risk of infant mortality gradient taken
-    from Noori et al for Sub-Saharan African from 2014-2018.  Odds ratios with age 23-25 as reference group:
-    https://www.medrxiv.org/content/10.1101/2021.06.10.21258227v1
     '''
     df = pd.read_csv(this_dir() / location / 'data' / 'infant_mortality.csv')
 
     infant_mortality = {}
     infant_mortality['year'] = df['year'].values
     infant_mortality['probs'] = df['probs'].values / 1000  # Rate per 1000 live births, used after stillbirth is filtered out
-    infant_mortality['ages'] = np.array([16, 17, 19, 22, 25, 50])
-    infant_mortality['age_probs'] = np.array([2.28, 1.63, 1.3, 1.12, 1.0, 1.0])
+
+    # Try to load age adjustments from YAML
+    adjustments = load_age_adjustments()
+    if 'infant_mortality' in adjustments:
+        infant_mortality['ages'] = np.array(adjustments['infant_mortality']['ages'])
+        infant_mortality['age_probs'] = np.array(adjustments['infant_mortality']['odds_ratios'])
 
     return infant_mortality
 
@@ -235,14 +240,17 @@ def stillbirth(location):
     '''
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
-    Age adjustments come from an extension of Noori et al., which were conducted June 2022.
     '''
     df = pd.read_csv(this_dir() / location / 'data' / 'stillbirths.csv')
     stillbirth_rate = {}
     stillbirth_rate['year'] = df['year'].values
     stillbirth_rate['probs'] =df['probs'].values / 1000  # Rate per 1000 total births
-    stillbirth_rate['ages'] = np.array([15, 16, 17, 19, 20, 28, 31, 36, 50])
-    stillbirth_rate['age_probs'] = np.array([3.27, 1.64, 1.85, 1.39, 0.89, 1.0, 1.5, 1.55, 1.78])  # odds ratios
+
+    # Try to load age adjustments from YAML
+    adjustments = load_age_adjustments()
+    if 'stillbirth' in adjustments:
+        stillbirth_rate['ages'] = np.array(adjustments['stillbirth']['ages'])
+        stillbirth_rate['age_probs'] = np.array(adjustments['stillbirth']['odds_ratios'])
 
     return stillbirth_rate
 
