@@ -142,10 +142,8 @@ class People(fpb.BasePeople):
     def get_longitudinal_state(self, state_name):
         """
         Extract values of one of the longitudinal state/attributes (aka states with history)
-
         Arguments:
             state_name (str): the name of the state or attribute that we are extracting
-
         Returns:
             state_vals (np.arr):  array of the ppl.term values from one year prior to current timestep
         """
@@ -909,6 +907,7 @@ class People(fpb.BasePeople):
     def update_history_buffer(self):
         """
         Updates longitudinal params in people object
+        Called by ...
         """
 
         # Calculate column index in which to store current vals

@@ -300,10 +300,10 @@ class Sim(fpb.BaseSim):
         # Apply interventions
         self.apply_interventions()
 
-        # # Populate the circular buffers with data from Peoples states that
-        # # are needed for methods/classes that use historical data (eg, need previous year's data)
-        # self.people.update_history_buffer()
-        #
+        # Populate the circular buffers with data from Peoples states that
+        # are needed for methods/classes that use historical data (eg, need previous year's data)
+        self.people.update_history_buffer()
+
         # Count results for this step
         step_results = self.people.get_step_results()
 
