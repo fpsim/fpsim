@@ -121,8 +121,7 @@ def make_pars(location='kenya', seed=None):
     pars['barriers'] = barriers()
     pars['mcpr'] = fpld.mcpr(location)
 
-    # Demographics: geography and partnership status
-    pars['urban_prop'] = fpld.urban_proportion(location)
+    # Demographics: partnership and wealth status
     pars['age_partnership'] = fpld.age_partnership(location)
     pars['wealth_quintile'] = fpld.wealth(location)
 
