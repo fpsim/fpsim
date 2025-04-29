@@ -1,20 +1,25 @@
 # Locations
 
-This folder stores the location-specific data for FPsim. 
+This folder stores the location-specific files for FPsim models (both the `<model>.py` file as well as location-specific data). 
 
 To add a new location:
 
 1. Create a new folder with the (lowercase) location name `<name>`.
-2. Create a folder `<name>/data` and add the source data files there.
-3. Create a file `<name>.py` that is used to generate the location parameter values; see `senegal.py` for the correct structure.
+2. Create a folder `<name>/data` and add the source data files there (see the 'Model Parameters' section below for the specific files required for an FPsim model to run). Many of the data files have corresponding R processing scripts to format the data, and some are from specific studies and need to be formatted manually. For the proper format of each file, refer to the files in `locations/kenya/data`. **Note that the filenames MUST match the naming conventions defined in the table(s) below.
+3. Within the `<name>` folder, create a file `<name>.py` that is used to configure a specific FPsim model and generate its location parameter values; see `senegal.py` for the correct structure.
 4. Add `from . import <name>` to `__init__.py`.
+5. In `defaults.py` under the `get_location` function, add the (lowercase) location name to the valid_country_locs array.
 
 ### Model Parameters
-The following are the metrics used to parameterize any model for FPsim. Most of the data for these metrics are context-specific 
-and their corresponding data files should be stored in the `<name>/data` directory. There are a few data sources that are shared across locations (denoted with
-the `shared_data/` prefix in the 'Filename and location' column), as they are derived from various studies applicable to multiple contexts. 
-Many of these data files are created using processing code indicated in the 'Filename of processing code' column; each of 
-these scripts can be found in the `fpsim/data_processing` directory. See also the README in this directory for further guidance.
+
+The following table lists the metrics used to parameterize any model within FPsim. Most data sources are context-specific 
+and should be stored in the `locations/<name>/data/` directory. However, some data files are shared across locations (indicated 
+by the `shared_data/` prefix in the Filename and location column), as they are derived from studies applicable to multiple settings.
+
+Many of these data files are generated using the scripts listed in the 'Filename of processing code' column. These processing 
+scripts are located in the `fpsim/data_processing/` directory. See the README in that directory for further guidance on 
+generating and updating these datasets.
+
 
 | Metric | Parameter or function name | Source | Filename and location | Filename of processing code |
 |:---|:---|:---|:---|:---|
@@ -50,10 +55,11 @@ these scripts can be found in the `fpsim/data_processing` directory. See also th
 
 
 ### Calibration Targets
-These data are utilized for calibrating each FPsim model. The processing code files can be found in the `fpsim/data_processing` 
-directory. In the calibration process, the calibration targets below generated from a model simulation will be compared 
-to the country/context data for the same metrics to assess model accuracy. For further guidance on calibration, refer to 
-the examples in the `fpsim/examples` and `fpsim/examples/calibration_scripts` directories.
+The data below are used to calibrate each FPsim model. During calibration, the model-generated outputs for these metrics 
+are compared against real-world data to assess model accuracy and performance.
+
+The corresponding processing scripts are located in the `fpsim/data_processing/` directory. For further guidance on the 
+calibration workflow, see the examples in `fpsim/examples/` and `fpsim/examples/calibration_scripts/`.
 
 | Calibration Target | Source         | Filename and location | Filename of processing code |
 |:---|:---|:---|:---|
@@ -70,12 +76,20 @@ the examples in the `fpsim/examples` and `fpsim/examples/calibration_scripts` di
 
 
 ### Parameters (Assumptions for Calibration and Data Insights)
+The parameters listed below represent model assumptions or free parameters that are not directly tied to empirical datasets. 
+These values can be manually adjusted by the user to fine-tune model behavior, explore different scenarios, or support calibration 
+when empirical data are limited or uncertain.
 
-| Parameter | Metric | Source | Filename and location |
-|:---|:---|:---|:---|
-| Age-based conception exposure | exposure_age | Calibration parameter | Manually input, model file |
-| Parity-based conception exposure | exposure_parity | Calibration parameter | Manually input, model file |
-| Birth spacing preference | spacing_pref | Calibration parameter | birth_spacing_pref.csv |
+They are typically defined within the `<name>.py` model file or in `parameters.py` and may be changed directly 
+by modifying the model configuration or parameter dictionary (pars). These parameters are especially useful for sensitivity 
+analyses, policy experiments, or to reflect plausible variation across contexts.
+
+
+| Parameter | Metric                                | Source | Filename and location |
+|:---|:--------------------------------------|:---|:---|
+| Age-based conception exposure | exposure_correction_age               | Calibration parameter | Manually input, model file |
+| Parity-based conception exposure | exposure_correction_parity            | Calibration parameter | Manually input, model file |
+| Birth spacing preference | spacing_pref                          | Calibration parameter | birth_spacing_pref.csv |
 | Personal fecundity variation range | fecundity_var_low, fecundity_var_high | Calibration parameter | parameters.py, can be manually changed via pars[] |
-| Overall exposure correction factor | exposure_factor | Calibration parameter | parameters.py, can be manually changed via pars[] |
-| Primary infertility | primary_infertility | Calibration parameter | parameters.py, can be manually changed via pars[] |
+| Overall exposure correction factor | exposure_factor                       | Calibration parameter | parameters.py, can be manually changed via pars[] |
+| Primary infertility | primary_infertility                   | Calibration parameter | parameters.py, can be manually changed via pars[] |
