@@ -1177,17 +1177,17 @@ class People(ss.People):
         return
 
 
-    def int_age(self, uids):
+    def int_age(self, uids=None):
         ''' Return ages as an integer '''
         if uids is None:
-            uids = self.alive.uids
+            return np.array(self.age, dtype=np.int64)
         return np.array(self.age[uids], dtype=np.int64)
 
 
-    def int_age_clip(self, uids):
+    def int_age_clip(self, uids=None):
         ''' Return ages as integers, clipped to maximum allowable age for pregnancy '''
         if uids is None:
-            uids = self.alive.uids
+            return np.minimum(self.int_age(), fpd.max_age_preg)
         return np.minimum(self.int_age(uids), fpd.max_age_preg)
 
     def update_post(self):
