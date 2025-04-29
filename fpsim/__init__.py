@@ -12,5 +12,5 @@ from .experiment import *
 from .calibration import *
 from .scenarios import *
 from .education import *
-
+from .arrays import *
 

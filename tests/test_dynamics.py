@@ -7,12 +7,11 @@ import fpsim as fp
 import matplotlib.pyplot as plt
 import numpy as np
 
-serial   = 1 # Whether to run in serial (for debugging)
+parallel   = 0 # Whether to run in parallel or serial (for debugging)
 
 
 def make_sim_parts(location='ethiopia', new_p_use_pars=False):
-    par_kwargs = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1)
-    pars = fp.pars(location=location, **par_kwargs)
+    pars = dict(n_agents=500, start_year=2000, end_year=2020, seed=1, verbose=-1, location=location)
     edu = fp.Education(location=location)
     choice = fp.StandardChoice(location=location)
     if new_p_use_pars:
@@ -64,7 +63,7 @@ def test_mcpr(location=None, do_plot=False):
 
     # Create interventions and sims
     sims = sc.autolist()
-    def select_women(sim): return sim.people.is_female & sim.people.alive
+    def select_women(sim): return sim.people.female.uids
 
     def make_zeros():
         zero_states = sc.autolist()
@@ -74,6 +73,7 @@ def test_mcpr(location=None, do_plot=False):
                                 eligibility=select_women,
                                 years=2000.0,
                                 new_val=covar.val0,
+                                name=f"change_state_{covar.pplattr}_2000"
                             )
         return zero_states
 
@@ -86,12 +86,13 @@ def test_mcpr(location=None, do_plot=False):
                             eligibility=select_women,
                             years=2010.0,
                             new_val=covar.val,
+                            name=f"change_state_{covar.pplattr}_2010"
                         )
         sims += make_sim(intvs=make_zeros()+[change_state], location=location, label=f'Increased {covar.pplattr}')
 
     # Run
     # for sim in sims: sim.run()
-    m = fp.parallel(*sims, serial=serial, compute_stats=False)
+    m = fp.parallel(*sims, parallel=parallel, compute_stats=False)
     sims = m.sims[:]  # Replace with run versions
 
     # Firstly, check that changing the people attributes has registered in the relevant results metrics as expected
@@ -119,8 +120,8 @@ def test_mcpr(location=None, do_plot=False):
         axes = axes.flatten()
         for ri, covar in enumerate(covars):
             ax = axes[ri]
-            ax.plot(sims[0].results.t, covar.base, label='Baseline')
-            ax.plot(sims[ri+1].results.t, covar.intv, label=f'Increased {covar.pplattr}')
+            ax.plot(sims[0].results.timevec, covar.base, label='Baseline')
+            ax.plot(sims[ri+1].results.timevec, covar.intv, label=f'Increased {covar.pplattr}')
             ax.set_title(f'{covar.pplattr}')
             ax.set_xlabel('Year')
             ax.legend()
@@ -128,9 +129,9 @@ def test_mcpr(location=None, do_plot=False):
         plt.show()
 
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-        ax.plot(sims[0].results.t, sims[0].results.mcpr, label=sims[0].label)
+        ax.plot(sims[0].results.timevec, sims[0].results.mcpr, label=sims[0].label)
         for ri, covar in enumerate(covars):
-            ax.plot(sims[ri+1].results.t, covar.mcpr, label=covar.pplattr)
+            ax.plot(sims[ri+1].results.timevec, covar.mcpr, label=covar.pplattr)
         ax.set_ylabel('mCPR')
         ax.set_xlabel('Year')
         plt.legend()
@@ -154,7 +155,7 @@ def test_durations(location=None):
         label='Short durations')
 
     # Run sims
-    m = fp.parallel([sim_base, sim_short], serial=serial, compute_stats=False)
+    m = fp.parallel([sim_base, sim_short], parallel=parallel, compute_stats=False)
     sim_base, sim_short = m.sims[:]  # Replace with run versions
 
     # Shorter durations should mean more switching
