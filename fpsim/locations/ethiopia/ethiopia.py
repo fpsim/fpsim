@@ -1,22 +1,14 @@
-'''
+"""
 Set the parameters for FPsim, specifically for Ethiopia.
-'''
+"""
 
 import numpy as np
-import pandas as pd
 import sciris as sc
-from scipy import interpolate as si
 from fpsim import defaults as fpd
 import fpsim.locations.data_utils as fpld
 
+# %% Housekeeping
 
-# %% Utilities
-def this_dir():
-    thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
-    return thisdir
-
-
-# %% Parameters
 def scalar_pars():
     scalar_pars = {
         'location':             'ethiopia',
@@ -26,7 +18,7 @@ def scalar_pars():
 
 
 def filenames():
-    ''' Data files for use with calibration, etc -- not needed for running a sim '''
+    """ Data files for use with calibration, etc -- not needed for running a sim """
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'data'
     files['basic_wb'] = 'basic_wb.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
@@ -35,23 +27,23 @@ def filenames():
     files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
     files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2016 or PMA 2022
-    files['spacing'] = 'birth_spacing_dhs.csv'
-    files['methods'] = 'mix.csv'
-    files['afb'] = 'afb.table.csv'
-    files['use'] = 'use.csv'
-    files['urban'] = 'urban.csv'
+    files['spacing'] = 'birth_spacing_dhs.csv' # From DHS
+    files['methods'] = 'mix.csv' # From PMA
+    files['afb'] = 'afb.table.csv' # From DHS
+    files['use'] = 'use.csv' # From PMA
+    files['education'] = 'edu_initialization.csv' # From DHS
     return files
 
 
 # %% Pregnancy exposure
 
 def exposure_age():
-    '''
+    """
     Returns an array of experimental factors to be applied to account for
     residual exposure to either pregnancy or live birth by age.  Exposure to pregnancy will
     increase factor number and residual likelihood of avoiding live birth (mostly abortion,
     also miscarriage), will decrease factor number
-    '''
+    """
     exposure_correction_age = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
                                         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
     exposure_age_interp = fpld.data2interp(exposure_correction_age, fpd.spline_preg_ages)
@@ -60,10 +52,10 @@ def exposure_age():
 
 
 def exposure_parity():
-    '''
+    """
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
     or live birth by parity.
-    '''
+    """
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
                                            [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])
     exposure_parity_interp = fpld.data2interp(exposure_correction_parity, fpd.spline_parities)
@@ -73,7 +65,8 @@ def exposure_parity():
 
 # %% Contraceptive methods
 def barriers():
-    ''' Reasons for nonuse -- taken from Ethiopia PMA 2019. '''
+    """ Reasons for nonuse -- taken from Ethiopia PMA 2019. """
+
     barriers = sc.odict({ #updated based on PMA cross-sectional data
         'No need': 58.5,
         'Opposition': 16.6,
@@ -89,9 +82,9 @@ def barriers():
 # %% Make and validate parameters
 
 def make_pars(location='ethiopia', seed=None):
-    '''
+    """
     Take all parameters and construct into a dictionary
-    '''
+    """
 
     # Scalar parameters and filenames
     pars = scalar_pars()
@@ -124,5 +117,9 @@ def make_pars(location='ethiopia', seed=None):
     # Contraceptive methods
     pars['barriers'] = barriers()
     pars['mcpr'] = fpld.mcpr(location)
+
+    # Demographics: partnership and wealth status
+    pars['age_partnership'] = fpld.age_partnership(location)
+    pars['wealth_quintile'] = fpld.wealth(location)
 
     return pars

@@ -1,32 +1,34 @@
 """
-Set the parameters for FPsim, specifically for Senegal.
+This is a template configuration file for an FPsim model specific to a location.
+Users should update values marked as USER-EDITABLE to match the context
+they are modeling.
 """
 
 import numpy as np
 import sciris as sc
-from ... import defaults as fpd
+from fpsim import defaults as fpd
 import fpsim.locations.data_utils as fpld
 
-
-# %% Parameters
+# %% Housekeeping
 
 def scalar_pars():
     scalar_pars = {
-        'location': 'senegal',
+        'location':             'test', # <<< USER-EDITABLE: Adjust name of location
+        'postpartum_dur':       23,     # <<< USER-EDITABLE: Adjust/override any parameters that are defined in fpsim/defaults.py
     }
     return scalar_pars
 
 
 def filenames():
-    ''' Data files for use with calibration, etc -- not needed for running a sim '''
+    """ Data files for use with calibration, etc -- not needed for running a sim """
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'data'
+    files['base'] = sc.thisdir(aspath=True) / 'data' # Location-specific data directory
     files['basic_wb'] = 'basic_wb.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT
-    files['popsize'] = 'popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
+    files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
     files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN
     files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2016 or PMA 2022
+    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2014 or PMA 2022
     files['spacing'] = 'birth_spacing_dhs.csv' # From DHS
     files['methods'] = 'mix.csv' # From PMA
     files['afb'] = 'afb.table.csv' # From DHS
@@ -45,7 +47,8 @@ def exposure_age():
     also miscarriage), will decrease factor number
     """
     exposure_correction_age = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
-                                        [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
+                                        [1, 1, 1,  1 ,   1,  1,  1 , 1,  1,  1,   1,  1, 1]])  # <<< USER-EDITABLE: Can be modified for calibration
+
     exposure_age_interp = fpld.data2interp(exposure_correction_age, fpd.spline_preg_ages)
     return exposure_age_interp
 
@@ -56,23 +59,22 @@ def exposure_parity():
     or live birth by parity.
     """
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
-                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])
+                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])  # <<< USER-EDITABLE: Can be modified for calibration
     exposure_parity_interp = fpld.data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
 
 
 # %% Contraceptive methods
-
 def barriers():
-    """ Reasons for nonuse -- taken from DHS """
+    """ Reasons for nonuse -- taken from DHS. """
 
     barriers = sc.odict({
-        'No need': 54.2,
-        'Opposition': 30.5,
-        'Knowledge': 1.7,
-        'Access': 4.5,
-        'Health': 12.9,
+        'No need': 40.3,
+        'Opposition': 22.7,
+        'Knowledge': 3.5,
+        'Access': 13.4,
+        'Health': 32.5,
     })
 
     barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
@@ -81,7 +83,7 @@ def barriers():
 
 # %% Make and validate parameters
 
-def make_pars(location='senegal', seed=None):
+def make_pars(location='test', seed=None):  # <<< USER-EDITABLE: Change name of location
     """
     Take all parameters and construct into a dictionary
     """
@@ -94,7 +96,7 @@ def make_pars(location='senegal', seed=None):
 
     # Demographics and pregnancy outcome
     pars['age_pyramid'] = fpld.age_pyramid(location)
-    pars['age_mortality'] = fpld.age_mortality(location, data_year=1990)
+    pars['age_mortality'] = fpld.age_mortality(location, data_year=2010)
     pars['urban_prop'] = fpld.urban_proportion(location)
     pars['maternal_mortality'] = fpld.maternal_mortality(location)
     pars['infant_mortality'] = fpld.infant_mortality(location)
