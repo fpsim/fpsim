@@ -4,7 +4,6 @@ Set the parameters for FPsim, specifically for Senegal.
 
 import numpy as np
 import sciris as sc
-from scipy import interpolate as si
 from ... import defaults as fpd
 import fpsim.locations.data_utils as fpld
 
@@ -120,7 +119,7 @@ def make_pars(location='senegal', seed=None):
     pars['mcpr'] = fpld.mcpr(location)
 
     # Demographics: partnership and wealth status
-    #pars['age_partnership'] = fpld.age_partnership(location)
-    #pars['wealth_quintile'] = fpld.wealth(location)
+    pars['age_partnership'] = fpld.age_partnership(location)
+    pars['wealth_quintile'] = fpld.wealth(location)
 
     return pars

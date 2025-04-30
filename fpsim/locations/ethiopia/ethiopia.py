@@ -119,7 +119,7 @@ def make_pars(location='ethiopia', seed=None):
     pars['mcpr'] = fpld.mcpr(location)
 
     # Demographics: partnership and wealth status
-    #pars['age_partnership'] = fpld.age_partnership(location)
-    #pars['wealth_quintile'] = fpld.wealth(location)
+    pars['age_partnership'] = fpld.age_partnership(location)
+    pars['wealth_quintile'] = fpld.wealth(location)
 
     return pars
