@@ -6,9 +6,9 @@ To add a new location:
 
 1. Create a new folder with the (lowercase) location name `<name>`.
 2. Create a folder `<name>/data` and add the source data files there (see the 'Model Parameters' section below for the specific files required for an FPsim model to run). Many of the data files have corresponding R processing scripts to format the data, and some are from specific studies and need to be formatted manually. For the proper format of each file, refer to the files in `locations/kenya/data`. **Note that the filenames MUST match the naming conventions defined in the table(s) below.
-3. Within the `<name>` folder, create a file `<name>.py` that is used to configure a specific FPsim model and generate its location parameter values; see `senegal.py` for the correct structure.
+3. Copy the template model file `locations/template.py` to the new location folder and change its name to `<name>.py`. Modify any lines designated with 'USER-EDITABLE' to your specifications. This file is used to configure a specific FPsim model and generate its location parameter values.
 4. Add `from . import <name>` to `__init__.py`.
-5. In `defaults.py` under the `get_location` function, add the (lowercase) location name to the valid_country_locs array.
+5. In `defaults.py` under the `get_location` function, add the (lowercase) location name to the `valid_country_locs` array.
 
 ### Model Parameters
 
