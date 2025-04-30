@@ -130,11 +130,6 @@ mid.function <- function(svychoice){
 
 
 # create csv for age splines
-splines <- as.data.frame(ns(c(15:49), knots = c(25)))
-names(splines) <- c("knot_1", "knot_2")
-splines$age <- c(15:49)
-write.csv(splines, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/splines_25.csv", row.names = F)
-
 splines <- as.data.frame(ns(c(15:49), knots = c(25,40)))
 names(splines) <- c("knot_1", "knot_2","knot_3")
 splines$age <- c(15:49)
