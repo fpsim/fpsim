@@ -62,23 +62,6 @@ def exposure_parity():
     return exposure_parity_interp
 
 
-# %% Contraceptive methods
-
-def barriers():
-    """ Reasons for nonuse -- taken from DHS """
-
-    barriers = sc.odict({
-        'No need': 54.2,
-        'Opposition': 30.5,
-        'Knowledge': 1.7,
-        'Access': 4.5,
-        'Health': 12.9,
-    })
-
-    barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
-    return barriers
-
-
 # %% Make and validate parameters
 
 def make_pars(location='senegal', seed=None):
@@ -115,7 +98,6 @@ def make_pars(location='senegal', seed=None):
     pars['spacing_pref'] = fpld.birth_spacing_pref(location)
 
     # Contraceptive methods
-    pars['barriers'] = barriers()
     pars['mcpr'] = fpld.mcpr(location)
 
     # Demographics: partnership and wealth status
