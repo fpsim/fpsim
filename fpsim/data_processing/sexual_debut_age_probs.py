@@ -7,7 +7,7 @@ import math
 
 # Data files must be raw individual recode DHS data (available for request at dhsprogram.com), in STATA format (.dta).
 # For example, Kenya's 2014 DHS data would be 'KEIR72FL.DTA'
-data_file = 'Your file here'
+data_file = 'DHS/KEIR8CFL.DTA'
 
 # Need raw.dta DHS data file here.
 dhs = pd.read_stata(data_file, convert_categoricals = False)  # Substitue your country's DHS data file here
@@ -21,4 +21,4 @@ age_probs['prob_weights'] = age_probs['wgt']/age_probs['wgt'].sum()
 probs_sum = age_probs['prob_weights'].sum()
 assert math.isclose(1, probs_sum), f'Sexual debut age probabilities should add to 1, not {probs_sum}'
 
-age_probs['prob_weights'].to_csv('Debut_age_probs_DHS.csv')
+age_probs['prob_weights'].to_csv('debut_age.csv')

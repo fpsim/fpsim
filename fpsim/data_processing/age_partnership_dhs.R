@@ -1,48 +1,57 @@
-#######################################################################################
-# -- Extract the proportion of women aged X years when they first entered a partnership
-# from a DHS individual recode (IR) dataset
-#######################################################################################
+###############################################################################
+# Calculate the proportion of women entering partnership by age
+# Using DHS individual recode (IR) data
+# User-configurable: Country and File Path
+###############################################################################
 
-# -- Import libraries -- #
-library(tidyverse)
-library(haven)
-library(survey)
-library(withr)
+# Clear environment
+rm(list = ls())
 
-# Kenya 2022 individual recode
-home_dir <- path.expand("~")   # replace with your own path to the DTA file
-dhs_dir <- "DHS"
-survey_dir <-"KEIR8BDT"
-filename <- "KEIR8BFL.DTA"
-filepath <- file.path(home_dir, dhs_dir, survey_dir, filename)
-# Senegal
-filepath <- file.path("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/IR_all/SNIR8BDT/SNIR8BFL.DTA")
-#Ethiopia
-filepath <- file.path("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/IR_all/ETIR71DT/ETIR71FL.DTA")
+# -------------------------------
+# 1. User Configuration
+# -------------------------------
+country <- "Kenya"                 # Modify for labeling and output
+dta_path <- "DHS/KEIR8CFL.DTA"        # Modify to path of your IR .DTA file
 
-# -- Load the data
-data.raw <- read_dta(filepath)
+# -------------------------------
+# 2. Setup
+# -------------------------------
+# Install and load required packages
+required_packages <- c("tidyverse", "haven", "survey")
+installed_packages <- rownames(installed.packages())
 
-# -- Clean data -- #
+for (pkg in required_packages) {
+  if (!pkg %in% installed_packages) {
+    install.packages(pkg)
+  }
+  library(pkg, character.only = TRUE)
+}
+
+# -------------------------------
+# 3. Load and Clean Data
+# -------------------------------
+data.raw <- read_dta(dta_path)
+
 data <- data.raw %>%
-  mutate(age_partner = v511)
+  mutate(age_partner = v511)  # v511: age at first cohabitation
 
-# -- Create survey object so means and SEM are properly adjusted for the survey design --#
-svydesign_obj = svydesign(id = data$v001, strata=data$v023, weights = data$v005/1000000, data=data)
+# -------------------------------
+# 4. Create Survey Design Object
+# -------------------------------
+svydesign_obj = svydesign(id = data$v001, strata=data$v023, weights = data$v005/1000000, data=data)  # Ensure means and SEM are properly adjusted for the survey design
 
-
-table.partnership <- as.data.frame(svytable(~age_partner, svydesign_obj)) %>%
+# -------------------------------
+# 5. Calculate Proportion by Age at Partnership
+# -------------------------------
+table_partnership <- as.data.frame(svytable(~age_partner, svydesign_obj)) %>%
   mutate(percent = Freq/sum(Freq)) %>% select(-Freq)
 
-home_dir <- path.expand("~")   # replace with your own path to the DTA file
-fpsim_dir <- "fpsim"           # path to root directory of fpsim
-locations_dir <- "fpsim/locations"
-country_dir <- "kenya"
-data_dir <- "data"
-filename <- "age_partnership.csv"
-country_data_path <- file.path(home_dir, fpsim_dir, locations, country_dir, data_dir, filename)
+# -------------------------------
+# 6. Save Output to Country Directory
+# -------------------------------
+output_dir <- file.path(".", country)
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
 
-# -- Save file --# Note that this will replace the default *.csv file for the specified country
-write.csv(table.partnerership, country_data_path, row.names = F)
-write.csv(table.partnership, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/senegal/data/age_partnership.csv", row.names = F)
-write.csv(table.partnership, "C:/Users/maritazi/Documents/Projects/fpsim/fpsim/locations/ethiopia/data/age_partnership.csv", row.names = F)
+write.csv(table_partnership, file.path(output_dir, "age_partnership.csv"), row.names = FALSE)
