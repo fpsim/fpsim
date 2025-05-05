@@ -1,6 +1,6 @@
 ###############################################################################
 # Calculate age at first birth for calibration
-# Using most recent DHS data
+# Using DHS individual recode (IR) data
 # User-configurable: Country and File Path
 # ---------------------------------------------------------------------------
 # January 2023

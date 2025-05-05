@@ -1,5 +1,6 @@
 ###############################################################################
 # Extract Empowerment Indicators from DHS Data
+# Using DHS individual recode (IR) data
 # -----------------------------------------------------------------------------
 # Outputs:
 # - wealth.csv: Percent in each wealth quintile (v190)

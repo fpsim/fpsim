@@ -1,5 +1,6 @@
 ###############################################################################
 # Generate Contraceptive Use Coefficients from DHS Data
+# Using DHS individual recode (IR) data
 # -----------------------------------------------------------------------------
 # Outputs (written to working directory or country folder):
 # For Simple Choice Model:

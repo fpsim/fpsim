@@ -1,6 +1,6 @@
 ###############################################################################
 # Postpartum Analysis: Sexual Activity & LAM by Months Postpartum
-# DHS IR Data Processing Script
+# Using DHS individual recode (IR) data
 # User-configurable: Country and File Path
 # -----------------------------------------------------------------------------
 # Author: Marita Zimmermann
