@@ -2,6 +2,10 @@
 require(readstata13)
 require(ggplot2)
 
+## Access PMA data here: https://www.pmadata.org/data/available-datasets
+# Analysis uses most recent phase of the Household & Female survey
+# Data available for Burkina Faso, Cote d'Ivoire, DRC, Ghana, India, Indonesia, Kenya, Niger, Nigeria, and Uganda
+
 dir <- 'directory'
 filename <- "PMA2022_KEP3_HQFQ_v2.0_17Aug2022.dta" #replace with recent PMA data file
 
