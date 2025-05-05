@@ -163,6 +163,9 @@ table.edu.20 %>%
 
 # -- PMA DATA for education interruption following pregnancy
 # We use PMA data because it has age at stopping education (DHS doesn't)
+# Access PMA data here: https://www.pmadata.org/data/available-datasets
+# Analysis uses the Household & Female survey
+# Data available for Burkina Faso, Cote d'Ivoire, DRC, Ghana, India, Indonesia, Kenya, Niger, Nigeria, and Uganda
 
 pma_dir <- "PMA"  # Replace with your own data directory structure
 survey_dir <- "Kenya/PMA2019_KEPX_HQFQ_v3.0_21Oct2021"  # Replace with your own data directory structure

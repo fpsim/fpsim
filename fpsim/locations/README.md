@@ -41,7 +41,6 @@ generating and updating these datasets.
 | Sexual activity last month (of debuted women) | sexual_activity | DHS | sexually_active.csv | sexual_activity.R |
 | Sexual activity postpartum | sexual_activity_pp | DHS | sexually_active_pp.csv | postpartum_recode.R |
 | Sexual debut | debut_age | DHS | debut_age.csv | sexual_debut_age_probs.py |
-| Barriers to use | barriers | DHS | Manually input, model file | |
 | Contraceptive prevalence rate | mcpr | UN Data Portal | cpr.csv | UN_data_scraping.py |
 | Age-based Probability of Partnership | age_partnership | DHS | age_partnership.csv | age_partnership_dhs.R |
 | Wealth Quintile | wealth_quintile | DHS | wealth.csv | wealth.R |
