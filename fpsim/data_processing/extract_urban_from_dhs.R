@@ -1,40 +1,54 @@
-#################################################################
-# -- Extract urban data from a DHS individual recode (IR) dataset
-#################################################################
+###############################################################################
+# Calculate the proportion of women living in urban areas
+# Using DHS individual recode (IR) data
+# User-configurable: Country and File Path
+###############################################################################
 
-# -- Import libraries -- #
-library(tidyverse)
-library(haven)
-library(survey)
-library(withr)
+# Clear environment
+rm(list = ls())
 
-# Kenya 2022 individual recode
-home_dir <- path.expand("~")   # replace with your own path to the DTA file
-dhs_dir <- "DHS"
-survey_dir <-"KEIR8BDT"
-filename <- "KEIR8BFL.DTA"
-filepath <- file.path(home_dir, dhs_dir, survey_dir, filename)
+# -------------------------------
+# 1. User Configuration
+# -------------------------------
+country <- "Kenya"                 # Modify for labeling and output
+dta_path <- "DHS/KEIR8CFL.DTA"        # Modify to path of your IR .DTA file
 
-# -- Load the data
-data.raw <- read_dta(filepath)
+# -------------------------------
+# 2. Setup
+# -------------------------------
+# Install and load required packages
+required_packages <- c("tidyverse", "haven", "survey")
+installed_packages <- rownames(installed.packages())
 
-# -- Clean data -- #
-data <- data.raw %>%
-  mutate(urban = ifelse(v025 == 1, 1, 0)) # 1 if urban
+for (pkg in required_packages) {
+  if (!pkg %in% installed_packages) {
+    install.packages(pkg)
+  }
+  library(pkg, character.only = TRUE)
+}
 
-# -- Create survey object  so means and SEM are properly adjusted for the survey design --#
+# -------------------------------
+# 3. Load and Clean Data
+# -------------------------------
+data <- read_dta(dta_path) %>%
+  mutate(urban = ifelse(v025 == 1, 1, 0))  # v025: 1 = urban, 2 = rural
+
+# -------------------------------
+# 4. Create Survey Design Object
+# -------------------------------
 svydesign_obj = svydesign(id = data$v001, strata=data$v023, weights = data$v005/1000000, data=data)
 
-# -- Compute proportion of women living in an urban setting -- #
-table.urban <- as.data.frame(svymean(~urban, svydesign_obj)) %>% rename(urban.se = urban)
+# -------------------------------
+# 5. Calculate Proportion Urban
+# -------------------------------
+urban_table <- as.data.frame(svymean(~urban, svydesign_obj)) %>% rename(urban.se = urban)  # Rename standard error column for clarity
 
-home_dir <- path.expand("~")   #
-fpsim_dir <- "fpsim"           # replace with your path to root directory of fpsim
-locations_dir <- "fpsim/locations"
-country_dir <- "kenya"
-data_dir <- "data"
-filename <- "urban_.csv"
-filepath <- file.path(home_dir, fpsim_dir, locations_dir,  country_dir, data_dir, filename)
+# -------------------------------
+# 6. Save Output to Country Directory
+# -------------------------------
+output_dir <- file.path(".", country)
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
 
-# -- Save file --# Note that this will replace the default urban.csv for the specified country
-write.csv(table.urban, filepath, row.names = F)
+write.csv(urban_table, file.path(output_dir, "urban.csv"), row.names = FALSE)

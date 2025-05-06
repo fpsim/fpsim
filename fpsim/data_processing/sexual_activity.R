@@ -1,34 +1,78 @@
-################################################################
-# Calculate sexual activity
-# DHS data
-# Percent of women who have been active in past 4 weeks among those ever active
-################################################################
+###############################################################################
+# Calculate Sexual Activity by Age Group
+# DHS IR Data: Percent of women active in past 4 weeks among those ever active
+###############################################################################
 
-rm(list=ls())
+rm(list = ls())  # Clear environment
 
-# -- Libraries -- #
-library(tidyverse)      
-library(withr)  
-library(haven)   
-library(survey)
+# -------------------------------
+# 1. User Configuration
+# -------------------------------
+country <- "Kenya"                 # Modify for labeling and output
+dta_path <- "DHS/KEIR8CFL.DTA"         # Path to DHS IR file
 
-# -- DHS data -- #
-dhs.data <- with_dir(normalizePath(file.path(Sys.getenv("ONEDRIVE"), "DHS/IR_all"), "/"),                        # path to DHS data
-                      {read_dta("KEIR72DT/KEIR72FL.DTA",                                                         # data file
-                                col_select = c("v005", "v021", "v023", "v012", "v536"))}) %>%                    # variables to include
-  mutate(active = ifelse(is.na(v536) | v536 == 0, NA, ifelse(v536 == 1, 1, 0)),                                  # sexually active within last 4 weeks, only for ever active
-         age = cut(v012, breaks = seq(0, 50, by = 5), right = F, labels = seq(0, 45, by = 5)),                   # 5 year age bins
-         wt = v005/1000000)                                                                                      # calculate individual weight 
+# -------------------------------
+# 2. Setup
+# -------------------------------
 
-# Calculate weighted data table 
-active <- as.data.frame(svytable(~ active + age, svydesign(id=~v021, weights=~wt, strata=~v023, data =dhs.data))) %>%
+# Install and load required packages
+required_packages <- c("tidyverse", "haven", "survey")
+installed_packages <- rownames(installed.packages())
+for (pkg in required_packages) {
+  if (!pkg %in% installed_packages) install.packages(pkg)
+  library(pkg, character.only = TRUE)
+}
+
+# -------------------------------
+# 3. Load and Clean Data
+# -------------------------------
+dhs_data <- read_dta(dta_path,
+                     col_select = c("v005", "v021", "v023", "v012", "v536")) %>%
+  mutate(
+    active = case_when(
+      is.na(v536) | v536 == 0 ~ NA_real_,  # never had sex or missing
+      v536 == 1 ~ 1,                      # active in last 4 weeks
+      TRUE ~ 0                            # not active in last 4 weeks
+    ),
+    age = cut(v012, breaks = seq(0, 55, by = 5), right = FALSE, labels = seq(0, 50, by = 5)),
+    wt = v005 / 1e6
+  )
+
+# -------------------------------
+# 4. Create Survey Design and Calculate Activity Rates
+# -------------------------------
+survey_design <- svydesign(
+  id = ~v021,
+  strata = ~v023,
+  weights = ~wt,
+  data = dhs_data
+)
+
+# Calculate percent active in past 4 weeks among ever active, by age group
+activity_summary <- as.data.frame(svytable(~active + age, survey_design)) %>%
   group_by(age) %>%
-           mutate(probs = Freq / sum(Freq) * 100, probs = replace_na(probs, 0)) %>%
+  mutate(
+    probs = Freq / sum(Freq) * 100,
+    probs = replace_na(probs, 0)
+  ) %>%
   filter(active == 1) %>%
-  select(age,probs)
+  select(age, probs)
 
-# add a row for age 50
-active <- bind_rows(active, mutate(tail(active, 1), age = "50"))
+# Convert age to numeric and remove duplicate 50s
+activity_summary <- activity_summary %>%
+  mutate(age = as.integer(as.character(age))) %>%
+  distinct(age, .keep_all = TRUE)
 
-# save csv
-write.csv(spacing, "fpsim/locations/kenya/sexually_active.csv")
+# Add a row for age 50 only if it doesn't already exist
+if (!50 %in% activity_summary$age) {
+  age_50_row <- activity_summary %>% filter(age == max(age)) %>% mutate(age = 50)
+  activity_summary <- bind_rows(activity_summary, age_50_row)
+}
+
+# -------------------------------
+# 5. Save Output to Country Directory
+# -------------------------------
+output_dir <- file.path(".", country)
+if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+
+write.csv(activity_summary, file.path(output_dir, "sexually_active.csv"), row.names = FALSE)
