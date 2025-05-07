@@ -27,4 +27,4 @@ data <- dhs.raw %>% mutate(wt = v005/1000000, age = as.numeric(v012), parity=as.
 
 data.result <- as.data.frame(svytable(~ age + parity, svydesign(id=~v021, weights=~wt, strata=~v023, data = data))) %>% mutate(percentage = Freq/sum(Freq)*100)
 
-write.table(data.result, file="locations/ethiopia/ageparity.csv", sep=",", row.names = F)
+write.table(data.result, file="ageparity.csv", sep=",", row.names = F)
