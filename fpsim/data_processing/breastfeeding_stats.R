@@ -1,5 +1,5 @@
 ###############################################################################
-# Estimate Breastfeeding Duration from DHS Data
+# Estimate Breastfeeding Duration from DHS Data (IR Recode Data)
 # Using survey-weighted analysis and truncated normal distribution
 # User-configurable: Country and File Path
 ###############################################################################

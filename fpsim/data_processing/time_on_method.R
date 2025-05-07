@@ -3,7 +3,6 @@
 # Using DHS individual recode (IR) data
 ##############################################################################
 
-
 # Clear environment
 rm(list = ls())
 
