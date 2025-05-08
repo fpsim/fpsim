@@ -84,8 +84,8 @@ def bf_stats(location):
     """ Load breastfeeding stats """
     bf_data = pd.read_csv(this_dir() / location / 'data' / 'bf_stats.csv')
     bf_pars = {
-        'breastfeeding_dur_mu' : bf_data.loc[0]['fitgumbel$estimate'],  # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
-        'breastfeeding_dur_beta' : bf_data.loc[1]['fitgumbel$estimate'] # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
+        'breastfeeding_dur_mean' : bf_data.loc[0]['value'],  # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
+        'breastfeeding_dur_sd' : bf_data.loc[1]['value']     # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
     }
 
     return bf_pars

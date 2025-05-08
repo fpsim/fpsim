@@ -201,8 +201,8 @@ default_pars = {
     'low_age_short_int':    0,      # age limit for tracking the age-specific short birth interval
     'high_age_short_int':   20,     # age limit for tracking the age-specific short birth interval
     'postpartum_dur':       35,     # Months
-    'breastfeeding_dur_mu': None,   # CONTEXT-SPECIFIC #### - Location parameter of gumbel distribution
-    'breastfeeding_dur_beta': None,  # CONTEXT-SPECIFIC #### - Scale parameter of gumbel distribution
+    'breastfeeding_dur_mean': None,   # CONTEXT-SPECIFIC #### - Parameter of truncated norm distribution
+    'breastfeeding_dur_sd': None,  # CONTEXT-SPECIFIC #### - Parameter of truncated norm distribution
 
     # Pregnancy outcomes
     'abortion_prob':        None,   # CONTEXT-SPECIFIC ####

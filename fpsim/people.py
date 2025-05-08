@@ -5,6 +5,7 @@ Defines the People class
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
 import sciris as sc
+from scipy.stats import truncnorm
 from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
@@ -582,12 +583,14 @@ class People(fpb.BasePeople):
     def update_breastfeeding(self):
         """
         Track breastfeeding, and update time of breastfeeding for individual pregnancy.
-        Agents are randomly assigned a duration value based on a gumbel distribution drawn
+        Agents are randomly assigned a duration value based on a truncated normal distribution drawn
         from the 2018 DHS variable for breastfeeding months.
-        The mean (mu) and the std dev (beta) are both drawn from that distribution in the DHS data.
+        The mean and the std dev are both drawn from that distribution in the DHS data.
         """
-        mu, beta = self.pars['breastfeeding_dur_mu'], self.pars['breastfeeding_dur_beta']
-        breastfeed_durs = abs(np.random.gumbel(mu, beta, size=len(self)))
+        mean, sd = self.pars['breastfeeding_dur_mean'], self.pars['breastfeeding_dur_sd']
+        a, b = 0, 50 # Truncate at 0 to ensure positive durations
+        a_std, b_std = (a - mean) / sd, (b - mean) / sd
+        breastfeed_durs = truncnorm.rvs(a_std, b_std, loc=mean, scale=sd, size=len(self))
         breastfeed_durs = np.ceil(breastfeed_durs)
         breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
         breastfeed_finished = self.filter(breastfeed_finished_inds)
