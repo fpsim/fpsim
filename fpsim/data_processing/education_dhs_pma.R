@@ -1,41 +1,51 @@
 ################################################################################
 # -- Extract education data from DHS and PMA data datasets
-# From DHS (https://dhsprogram.com/) we extract:
+# From DHS (https://dhsprogram.com/) we use the IR (Individual Recode) to extract:
 # - education objective (expressed in percentage of women that will aim to
 #                        complete X years of education, sratified by type of
 #                        residential setting).
 # - education initialization (expressed in (edu) number of years a woman aged (age)
 #                             will have likely completed).
 #
-# From PMA (https://datalab.pmadata.org/) we extract:
+# From PMA (https://datalab.pmadata.org/) we use all phases of the most recent year of data to extract:
 # - education stopping criteria (expressed in percentage of women aged (age)
 #                                years old and a given parity that would dropout
 #                                from their education if they got pregnant.
 # Base on original analysis by Marita Zimmermann, August 2023
 ###############################################################################
 
-# -- Libraries -- #
-library(tidyverse)
-library(haven)
-library(survey)
-library(withr)
+# Clear environment
+rm(list = ls())
 
-# -- Data -- #
+# -------------------------------
+# 1. User Configuration
+# -------------------------------
+country <- "Kenya"                         # Modify for labeling and output
+dhs_path <- "DHS/KEIR8CFL.DTA"             # Path to DHS IR .DTA file
+pma1_path <- "PMA/PMA2019_KEP1_HQFQ_v4.0_1Sep2024.dta"   # Path to PMA IR .DTA file
+pma2_path <- "PMA/PMA2020_KEP2_HQFQ_v4.0_1Sep2024.dta"   # Path to DHS IR .DTA file
+pma3_path <- "PMA/PMA2022_KEP3_HQFQ_v4.0_12Jul2023.dta"   # Path to DHS IR .DTA file
 
-# Kenya 2022 individual recode
-home_dir <-
-  path.expand("~")   # replace with your own path to the DTA file
-dhs_dir <- "DHS"
-survey_dir <- "KEIR8BDT"
-filename <- "KEIR8BFL.DTA"
-filepath <- file.path(home_dir, dhs_dir, survey_dir, filename)
-# Senegal
-filepath <- file.path("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/IR_all/SNIR8BDT/SNIR8BFL.DTA")
-#Ethiopia
-filepath <- file.path("C:/Users/maritazi/OneDrive - Bill & Melinda Gates Foundation/DHS/IR_all/ETIR71DT/ETIR71FL.DTA")
+# -------------------------------
+# 2. Setup
+# -------------------------------
+# Install and load required packages
+required_packages <- c("tidyverse", "haven", "survey", "withr")
+installed_packages <- rownames(installed.packages())
 
-# -- Load all the data
-data.raw <- read_dta(filepath)
+for (pkg in required_packages) {
+  if (!pkg %in% installed_packages) {
+    install.packages(pkg)
+  }
+  library(pkg, character.only = TRUE)
+}
+
+# -------------------------------
+# 3. Load and Process DHS Data
+# -------------------------------
+
+# -- Load all the data -- #
+data.raw <- read_dta(dhs_path)
 
 # -- Make new columns with names that are more readable -- #
 data <- data.raw %>%
@@ -128,7 +138,7 @@ svydesign_obj_2 = svydesign(
 
 table.edu.20 <-
   as.data.frame(svytable(~ edu + urban, svydesign_obj_2)) %>% group_by(urban) %>% mutate(percent = Freq /
-                                                                                           sum(Freq)) %>% select(-Freq)
+                                                                                           sum(Freq)) %>% dplyr::select(-Freq)
 current_levels_num <- sort(as.numeric(levels(table.edu.20$edu)))
 
 # -- Fill out missing edu level values, edu=22 and edu=23 are not found
@@ -161,29 +171,24 @@ table.edu.20 %>%
   ylab("Percent of women") +
   theme_bw(base_size = 13)
 
+# -------------------------------
+# 3. Load and Process PMA Data
+# -------------------------------
+
 # -- PMA DATA for education interruption following pregnancy
 # We use PMA data because it has age at stopping education (DHS doesn't)
 # Access PMA data here: https://www.pmadata.org/data/available-datasets
 # Analysis uses the most recent three phases of the Household & Female survey
 # Data available for Burkina Faso, Cote d'Ivoire, DRC, Ghana, India, Indonesia, Kenya, Niger, Nigeria, and Uganda
 
-pma_dir <- "PMA"  # Replace with your own data directory structure
-survey_dir <- "Kenya/PMA2019_KEPX_HQFQ_v3.0_21Oct2021"  # Replace with your own data directory structure
-file1 <- "PMA2019_KEP1_HQFQ_v3.0_21Oct2022.dta"
-file2 <- "PMA2021_KEP2_HQFQ_v3.0_21Oct2022.dta"
-file3 <- "PMA2022_KEP3_HQFQ_v4.0_12Jul2023.dta"
-file1_path <- file.path(home_dir, pma_dir, survey_dir, file1)
-file2_path <- file.path(home_dir, pma_dir, survey_dir, file2)
-file3_path <- file.path(home_dir, pma_dir, survey_dir, file3)
-
 # Load multiple datasets and add a column wave to each of them
-data1 <- read_dta(file1_path)
+data1 <- read_dta(pma1_path)
 data1 <- data1 %>% mutate(wave = 1, RE_ID = as.character(RE_ID), county = as.character(county))
 
-data2 <- read_dta(file2_path)
+data2 <- read_dta(pma2_path)
 data2 <- data2 %>% mutate(wave = 2, RE_ID = as.character(RE_ID), county = as.character(county))
 
-data3 <- read_dta(file3_path)
+data3 <- read_dta(pma3_path)
 data3 <- data3 %>% mutate(wave = 3, RE_ID = as.character(doi_corrected), county = as.character(county))
 
 data.raw.pma <- bind_rows(data1, data2, data3)
@@ -238,12 +243,12 @@ svydesign_obj_3 <-
 # table of probability of stopping school by age and parity
 stop.school <-
   as.data.frame(prop.table(svytable( ~ school_birth1 + birthage1, svydesign_obj_3), margin = 2)) %>%
-  filter(school_birth1 == 1) %>% rename(`1` = Freq, age = birthage1) %>% select(-school_birth1) %>%
+  filter(school_birth1 == 1) %>% rename(`1` = Freq, age = birthage1) %>% dplyr::select(-school_birth1) %>%
   left_join(
     stop.school2 <-
       as.data.frame(prop.table(
         svytable( ~ school_birth2 + birthage2, svydesign_obj_3), margin = 2
-      )) %>% filter(school_birth2 == 1) %>% rename(`2+` = Freq, age = birthage2) %>% select(-school_birth2)
+      )) %>% filter(school_birth2 == 1) %>% rename(`2+` = Freq, age = birthage2) %>% dplyr::select(-school_birth2)
   ) %>%
   gather(parity, percent,-age)
 stop.school %>%
@@ -274,21 +279,16 @@ stop.school <- stop.school %>%
 stop.school$age <- as.factor(stop.school$age)
 stop.school$parity <- as.factor(stop.school$parity)
 
-# -- Write files -- #
-fpsim_dir <- "fpsim" # replace with path to your root directory of fpsim
-locations_dir <- "fpsim/locations"
-# country_dir <- "kenya"
-# country_dir <- "senegal"
-country_dir <- "ethiopia"
-data_dir <- "data"
-country_data_path <-
-  file.path(home_dir, fpsim_dir, locations_dir, country_dir, data_dir)
+# -------------------------------
+# 4. Save Output to Country Directory
+# -------------------------------
 
-write.csv(table.edu.inital,
-          file.path(country_data_path, 'edu_initialization.csv'),
-          row.names = F)
-write.csv(table.edu.20,
-          file.path(country_data_path, 'edu_objective.csv'),
-          row.names = F)
-write.csv(stop.school, file.path(country_data_path, 'edu_stop.csv'),
-          row.names = F)
+output_dir <- file.path(".", country)
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
+
+write.csv(table.edu.inital, file.path(output_dir, "edu_initialization.csv"), row.names = FALSE)
+write.csv(table.edu.20, file.path(output_dir, "edu_objective.csv"), row.names = FALSE)
+write.csv(stop.school, file.path(output_dir, "edu_stop.csv"), row.names = FALSE)
+
