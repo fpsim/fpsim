@@ -40,9 +40,9 @@ data <- read_dta(dhs_path) %>%
       v312 == 9 ~ "Withdrawal",
       v312 == 11 ~ "Implants"
     ),
+    use = ifelse(is.na(v312), NA, ifelse(v312 == 0, 0, 1)),
     wt = v005 / 1e6
-  ) %>%
-  filter(!is.na(method))
+  )
 
 # -------------------------------
 # 3. Create Survey Design Object
@@ -57,6 +57,13 @@ method_mix <- svytable(~method, svydesign_obj) %>%
   mutate(perc = Freq / sum(Freq) * 100)
 
 # -------------------------------
+# 5. Calculate current use
+# -------------------------------
+use <- svytable(~use, svydesign_obj) %>%
+  as.data.frame() %>%
+  mutate(perc = Freq / sum(Freq) * 100)
+
+# -------------------------------
 # 5. Save Output to Country Directory
 # -------------------------------
 output_dir <- file.path(output_dir, country)
@@ -65,3 +72,4 @@ if (!dir.exists(output_dir)) {
 }
 
 write.csv(method_mix, file.path(output_dir, "mix.csv"), row.names = FALSE)
+write.csv(use, file.path(output_dir, "use.csv"), row.names = FALSE)
