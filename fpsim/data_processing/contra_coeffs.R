@@ -2,7 +2,7 @@
 # Generate Contraceptive Use Coefficients from DHS Data
 # Using DHS individual recode (IR) data
 # -----------------------------------------------------------------------------
-# Outputs (written to working directory or country folder):
+# Outputs:
 # For Simple Choice Model:
 # - contra_coef_simple.csv
 # - contra_coef_simple_pp1.csv
@@ -14,21 +14,18 @@
 # - contra_coef_standard_pp6.csv
 # - splines_25_40.csv
 #
-# Choose model_type = "simple", "standard", or "both" to control which models run.
 ###############################################################################
+
+# -------------------------------
+# 1. Setup
+# -------------------------------
 
 rm(list = ls())  # Clear environment
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"
-dta_path <- "DHS/KEIR8CFL.DTA"      # DHS IR .DTA file path
-model_type <- "both"              # Options: "simple", "standard", "both"
+# Load user configuration
+source("./config.R")
 
-# -------------------------------
-# 2. Setup
-# -------------------------------
+# Install packages
 required_packages <- c(
   "tidyverse", "haven", "survey", "splines", "glmnet", "boot",
   "lavaan", "tidySEM", "ggpubr", "extrafont", "ggalluvial"
@@ -41,9 +38,9 @@ for (pkg in required_packages) {
 options(survey.lonely.psu = "adjust")
 
 # -------------------------------
-# 3. Load and Clean Data
+# 2. Load and Clean Data
 # -------------------------------
-data.raw <- read_dta(dta_path)
+data.raw <- read_dta(dhs_path)
 
 All_data <- data.raw %>%
   mutate(
@@ -73,7 +70,7 @@ All_data <- data.raw %>%
   )
 
 # -------------------------------
-# 4. Create Survey Design Objects
+# 3. Create Survey Design Objects
 # -------------------------------
 filter.data.notpp <- All_data %>% filter((pp.time > 6 | is.na(pp.time)) & pregnant == 0)
 filter.data.pp1 <- All_data %>% filter(pp.time < 2)
@@ -85,10 +82,8 @@ svydes = svydesign(id = ~v001, strata = ~v023, weights = filter.data.notpp$v005/
 svydes.pp1 = svydesign(id = ~v001, strata = ~v023, weights = filter.data.pp1$v005/1000000, data=filter.data.pp1, nest = T)
 svydes.pp6 = svydesign(id = ~v001, strata = ~v023, weights = filter.data.pp6$v005/1000000, data=filter.data.pp6, nest = T)
 
-
-
 # -------------------------------
-# 5. Define Model Functions
+# 4. Define Model Functions
 # -------------------------------
 simple.function <- function(svychoice) {
   model <- svyglm(current_contra ~ age_grp * prior_user, family = quasibinomial(), design = svychoice)
@@ -111,9 +106,9 @@ standard.function <- function(svychoice) {
 }
 
 # -------------------------------
-# 6. Run and Save Models
+# 5. Run and Save Models
 # -------------------------------
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 if (model_type %in% c("simple", "both")) {

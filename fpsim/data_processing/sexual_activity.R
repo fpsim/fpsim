@@ -1,22 +1,21 @@
 ###############################################################################
 # Calculate Sexual Activity by Age Group
 # DHS IR Data: Percent of women active in past 4 weeks among those ever active
+#
+# Creates: sexually_active.csv
 ###############################################################################
 
-rm(list = ls())  # Clear environment
+# -------------------------------
+# 1. Setup
+# -------------------------------
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"                 # Modify for labeling and output
-dta_path <- "DHS/KEIR8CFL.DTA"         # Path to DHS IR file
+rm(list = ls())
 
-# -------------------------------
-# 2. Setup
-# -------------------------------
+# Load user configuration
+source("./config.R")
 
 # Install and load required packages
-required_packages <- c("tidyverse", "haven", "survey")
+required_packages <- c("tidyverse", "haven", "survey", "dplyr")
 installed_packages <- rownames(installed.packages())
 for (pkg in required_packages) {
   if (!pkg %in% installed_packages) install.packages(pkg)
@@ -24,9 +23,9 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Load and Clean Data
+# 2. Load and Clean Data
 # -------------------------------
-dhs_data <- read_dta(dta_path,
+dhs_data <- read_dta(dhs_path,
                      col_select = c("v005", "v021", "v023", "v012", "v536")) %>%
   mutate(
     active = case_when(
@@ -39,7 +38,7 @@ dhs_data <- read_dta(dta_path,
   )
 
 # -------------------------------
-# 4. Create Survey Design and Calculate Activity Rates
+# 3. Create Survey Design and Calculate Activity Rates
 # -------------------------------
 survey_design <- svydesign(
   id = ~v021,
@@ -56,7 +55,7 @@ activity_summary <- as.data.frame(svytable(~active + age, survey_design)) %>%
     probs = replace_na(probs, 0)
   ) %>%
   filter(active == 1) %>%
-  select(age, probs)
+  dplyr::select(age, probs)
 
 # Convert age to numeric and remove duplicate 50s
 activity_summary <- activity_summary %>%
@@ -70,9 +69,9 @@ if (!50 %in% activity_summary$age) {
 }
 
 # -------------------------------
-# 5. Save Output to Country Directory
+# 4. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 write.csv(activity_summary, file.path(output_dir, "sexually_active.csv"), row.names = FALSE)

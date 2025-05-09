@@ -1,21 +1,20 @@
 ###############################################################################
 # Estimate Breastfeeding Duration from DHS Data (IR Recode Data)
 # Using survey-weighted analysis and truncated normal distribution
-# User-configurable: Country and File Path
+#
+# Creates: bf_stats.csv
 ###############################################################################
+
+# -------------------------------
+# 1. Setup
+# -------------------------------
 
 # Clear environment
 rm(list = ls())
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"                         # Modify for labeling and output
-dta_path <- "DHS/KEIR8CFL.DTA"             # Path to DHS IR .DTA file
+# Load user configuration
+source("./config.R")
 
-# -------------------------------
-# 2. Setup
-# -------------------------------
 # Install and load required packages
 required_packages <- c("tidyverse", "survey", "fitdistrplus", "truncdist", "readstata13")
 installed_packages <- rownames(installed.packages())
@@ -28,11 +27,11 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Load and Clean DHS Data
+# 2. Load and Clean DHS Data
 # -------------------------------
 
 # Read DHS individual recode file (must include m4_* and b19_* for breastfeeding analysis)
-dat <- read.dta13(dta_path)
+dat <- read.dta13(dhs_path)
 
 # Select and process relevant variables
 dat_nonmiss <- dat %>%
@@ -47,7 +46,7 @@ dat_nonmiss <- dat %>%
   filter(age_months < 36 & !is.na(m4))  # include babies less than 3 years old and non-missing data
 
 # -------------------------------
-# 4. Calculate Survey-Weighted BF Proportions
+# 3. Calculate Survey-Weighted BF Proportions
 # -------------------------------
 
 # survey weighted table of proportion still breastfeeding of that age group
@@ -59,7 +58,7 @@ summary_table <- svyby(~still_bf, ~age_grp,
   filter(!is.na(p_stop)) # remove month 0
 
 # -------------------------------
-# 5. Fit Truncated Normal Distribution
+# 4. Fit Truncated Normal Distribution
 # -------------------------------
 
 # Create a vector of repeated ages
@@ -70,9 +69,9 @@ fit_tnorm <- fitdist(ages_rep, "norm", start = list(mean = mean(ages_rep), sd = 
 summary(fit_tnorm)
 
 # -------------------------------
-# 6. Save Output to Country Directory
+# 5. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

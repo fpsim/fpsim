@@ -1,23 +1,21 @@
 ###############################################################################
 # Calculate age at first birth for calibration
 # Using DHS individual recode (IR) data
-# User-configurable: Country and File Path
+#
+# Creates: afb.table.csv
 # ---------------------------------------------------------------------------
 # January 2023
 ###############################################################################
 
+# -------------------------------
+# 1. Setup
+# -------------------------------
+
 # Clear environment
 rm(list = ls())
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"  # Modify this for labeling/output purposes
-dta_path <- "DHS/KEIR8CFL.DTA"  # Modify to the full path of your DHS .DTA file; assumes DTA file is in current working dir unless full path provided
-
-# -------------------------------
-# 2. Setup
-# -------------------------------
+# Load user configuration
+source("./config.R")
 
 # Install and load required packages
 required_packages <- c("tidyverse", "withr", "haven", "survey")
@@ -31,7 +29,7 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Load DHS Data
+# 2. Load DHS Data
 # -------------------------------
 # Read relevant variables:
 # - v005: sample weight
@@ -40,7 +38,7 @@ for (pkg in required_packages) {
 # - v201: number of children ever born
 # - v012: current age
 
-dhs_data <- read_dta(dta_path,
+dhs_data <- read_dta(dhs_path,
                      col_select = c("v005", "caseid", "v212", "v201", "v012")) %>%
   mutate(
     wt = v005 / 1e6,
@@ -48,15 +46,15 @@ dhs_data <- read_dta(dta_path,
   )
 
 # -------------------------------
-# 4. Prepare and Save Output
+# 3. Prepare and Save Output
 # -------------------------------
 
 # Select key variables
 afb_table <- dhs_data %>%
-  select(wt, age = v012, afb)
+  dplyr::select(wt, age = v012, afb)
 
 # Create country-based output directory if it doesn't exist
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

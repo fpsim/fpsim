@@ -1,21 +1,22 @@
 ###############################################################################
 # Create Switching Matrix for ABM
-# # Using DHS individual recode (IR) calendar data
+# Using DHS individual recode (IR) calendar data
+#
+# Creates: method_mix_matrix_switch.csv
+# ----------------------------------------------------------------
 # Author: Marita Zimmermann
 # Date: June 2022
 ###############################################################################
 
+# -------------------------------
+# 1. Setup
+# -------------------------------
+
 rm(list = ls())
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"  # Options: "Kenya", "Senegal", "Ethiopia"
-dta_path <- "DHS/KEIR8CFL.DTA"  # Update this to match the desired country’s IR .DTA file path
+# Load user configuration
+source("./config.R")
 
-# -------------------------------
-# 2. Load Required Packages
-# -------------------------------
 required_packages <- c("tidyverse", "haven", "withr", "labelled",
                        "lubridate", "expm", "data.table")
 installed_packages <- rownames(installed.packages())
@@ -28,14 +29,14 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Load DHS Calendar Data
+# 2. Load DHS Calendar Data
 # -------------------------------
 
-data.raw <- read_dta(dta_path)
+data.raw <- read_dta(dhs_path)
 
 
 # -------------------------------
-# 4. Data Manipulation
+# 3. Data Manipulation
 #      Keep only calendar data, age, and parity
 # -------------------------------
 
@@ -75,7 +76,7 @@ data <- data.raw %>%
                                          labels = c("None", "Pill", "IUD", "Injectable", "Condom", "F.sterilization", "Withdrawal", "Implant", "Other.trad", "Other.mod", "Birth", "Abstinence")))
 
 # -------------------------------
-# 5. Generate Switching Matrices
+# 4. Generate Switching Matrices
 # -------------------------------
 
 matrices <- data %>%
@@ -110,11 +111,11 @@ matrices_switch <- data %>%
 
 
 # -------------------------------
-# 6. Prepare and Save Output
+# 5. Prepare and Save Output
 # -------------------------------
 
 # Create country-based output directory if it doesn't exist
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

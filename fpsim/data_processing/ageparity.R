@@ -1,23 +1,21 @@
 ###############################################################################
 # Age-Parity Table for Calibration
 # Using DHS individual recode (IR) data
-# User-configurable: Country and File Path
+#
+# Creates: ageparity.csv
 # ---------------------------------------------------------------------------
 # January 2023
 ###############################################################################
 
+# -------------------------------
+# 1. Setup
+# -------------------------------
+
 # Clear environment
 rm(list = ls())
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"  # Modify this for labeling/output purposes
-dta_path <- "DHS/KEIR8CFL.DTA"  # Full or relative path to DHS IR .DTA file
-
-# -------------------------------
-# 2. Setup
-# -------------------------------
+# Load user configuration
+source("./config.R")
 
 # Install and load required packages
 required_packages <- c("tidyverse", "withr", "haven", "survey")
@@ -31,7 +29,7 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Load and Prepare DHS Data
+# 2. Load and Prepare DHS Data
 # -------------------------------
 
 # Read relevant variables:
@@ -41,7 +39,7 @@ for (pkg in required_packages) {
 # - v023: strata
 # - v220: parity (number of live births)
 
-dhs_data <- read_dta(dta_path,
+dhs_data <- read_dta(dhs_path,
                      col_select = c("v005", "v012", "v021", "v023", "v220")) %>%
   mutate(
     wt = v005 / 1e6,
@@ -60,7 +58,7 @@ dhs_data <- read_dta(dta_path,
   )
 
 # -------------------------------
-# 4. Calculate Age-Parity Table
+# 3. Calculate Age-Parity Table
 # -------------------------------
 
 # Set up DHS survey design
@@ -77,16 +75,16 @@ age_parity_table <- svytable(~age + parity, design) %>%
   mutate(percentage = Freq / sum(Freq) * 100)
 
 # -------------------------------
-# 5. Save Output
+# 4. Save Output
 # -------------------------------
 
 # Create country-based output directory if it doesn't exist
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
 
-# Save CSV to ./<country>/ageparity.csv
+# Save CSV to <output_dir>/<country>/ageparity.csv
 write.table(age_parity_table,
             file = file.path(output_dir, "ageparity.csv"),
             sep = ",",

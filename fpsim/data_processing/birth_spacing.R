@@ -1,23 +1,24 @@
 ###############################################################################
 # Calculate Birth Spacing Intervals for Calibration
 # Using Most Recent DHS IR Recode Data
+#
+# Creates: birth_spacing_dhs.csv
+# ---------------------------------------------------------------------------
 # January 2023
 ###############################################################################
+
+# -------------------------------
+# 1. Setup
+# -------------------------------
 
 # Clear environment
 rm(list = ls())
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"                         # Used for labeling and output
-dta_path <- "DHS/KEIR8CFL.DTA"             # Path to DHS IR .DTA file
+# Load user configuration
+source("./config.R")
 
-# -------------------------------
-# 2. Setup
-# -------------------------------
 # Install and load required packages
-required_packages <- c("tidyverse", "haven", "survey", "withr")
+required_packages <- c("tidyverse", "withr", "haven", "survey")
 installed_packages <- rownames(installed.packages())
 
 for (pkg in required_packages) {
@@ -28,11 +29,11 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Load and Prepare DHS Data
+# 2. Load and Prepare DHS Data
 # -------------------------------
 
 dhs_data <- read_dta(
-  dta_path,
+  dhs_path,
   col_select = c(
     "v005", "v021", "v023", "v102", "caseid",
     starts_with("b0"),  # multiple births
@@ -50,7 +51,7 @@ dhs_data <- read_dta(
   )
 
 # -------------------------------
-# 4. Calculate Weighted Birth Spacing Table
+# 3. Calculate Weighted Birth Spacing Table
 # -------------------------------
 design <- svydesign(
   id = ~v021,
@@ -63,9 +64,9 @@ spacing <- svytable(~space_mo + urban_rural, design) %>%
   as.data.frame()
 
 # -------------------------------
-# 5. Save Output to Country Directory
+# 4. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

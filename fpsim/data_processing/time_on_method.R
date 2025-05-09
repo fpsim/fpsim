@@ -1,22 +1,18 @@
 ##############################################################################
 # -- Analysis of time on contraceptive method using DHS calendar data
 # Using DHS individual recode (IR) data
+#
+# Creates: method_time_coefficients.csv
 ##############################################################################
 
-# Clear environment
+# -------------------------------
+# 1. Setup
+# -------------------------------
+
 rm(list = ls())
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-
-country <- "Kenya"  # Modify this for labeling/output purposes
-dta_path <- "DHS/KEIR8CFL.DTA"  # Modify to the full path of your DHS .DTA file; assumes DTA file is in current working dir unless full path provided
-
-
-# -------------------------------
-# 2. Setup
-# -------------------------------
+# Load user configuration
+source("./config.R")
 
 required_packages <- c("survival", "ggplot2", "survey", "ciTools", "tidyverse",
                        "survminer", "flexsurv", "withr", "haven", "data.table",
@@ -32,7 +28,7 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Data Cleaning
+# 2. Data Cleaning
 # -------------------------------
 
 # List of variables we want to use
@@ -54,7 +50,7 @@ varlist <- c("v000", #country-survey code
              "v025") #urban/rural
 
 # Read and process IR data
-data.raw <- read_dta(dta_path, col_select = any_of(varlist))
+data.raw <- read_dta(dhs_path, col_select = any_of(varlist))
 
 # -- Survival analysis data organization -- #
 data.surv <- data.raw %>%
@@ -104,7 +100,7 @@ data.surv <- data.raw %>%
 df_country <- data.surv
 
 # -------------------------------
-# 4. Accelerated Failure Time Model
+# 3. Accelerated Failure Time Model
 # -------------------------------
 
 results <- list()
@@ -148,7 +144,7 @@ for (m in c("None", "Pill", "IUD", "Injectable", "Condom", "Withdrawal",
 }
 
 # -------------------------------
-# 5. Extract and Save Coefficients
+# 4. Extract and Save Coefficients
 # -------------------------------
 
 coef_list <- list()
@@ -179,11 +175,11 @@ coef_fpsim <- coef_res %>%
   dplyr::select(estimate = est, coef, se, method, functionform)
 
 # -------------------------------
-# 6. Prepare and Save Output
+# 5. Prepare and Save Output
 # -------------------------------
 
 # Create country-based output directory if it doesn't exist
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

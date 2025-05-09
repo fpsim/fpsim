@@ -1,23 +1,21 @@
 ###############################################################################
 # Postpartum Analysis: Sexual Activity & LAM by Months Postpartum
 # Using DHS individual recode (IR) data
-# User-configurable: Country and File Path
+#
+# Creates: sexually_active_pp.csv, lam.csv
 # -----------------------------------------------------------------------------
 # Author: Marita Zimmermann
 # Date: Originally October 2020, cleaned April 2025
 ###############################################################################
 
-rm(list = ls())  # Clear environment
+# -------------------------------
+# 1. Setup
+# -------------------------------
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"                 # Modify for labeling and output
-dta_path <- "DHS/KEIR8CFL.DTA"        # Modify to path of your IR .DTA file
+rm(list = ls())
 
-# -------------------------------
-# 2. Setup
-# -------------------------------
+# Load user configuration
+source("./config.R")
 
 required_packages <- c("tidyverse", "haven", "scales")
 installed_packages <- rownames(installed.packages())
@@ -28,9 +26,9 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Load and Clean DHS Data
+# 2. Load and Clean DHS Data
 # -------------------------------
-dhs <- read_dta(dta_path)
+dhs <- read_dta(dhs_path)
 
 # Calculate postpartum months and filter for recent births
 dhs.pp <- dhs %>%
@@ -53,7 +51,7 @@ dhs.pp <- dhs %>%
          wt = v005/1000000)
 
 # -------------------------------
-# 4. Summarize Results by Month Postpartum
+# 3. Summarize Results by Month Postpartum
 # -------------------------------
 dhs.pp.results <- dhs.pp %>%
   rename(months_postpartum = b19_01) %>%
@@ -67,23 +65,23 @@ dhs.pp.results <- dhs.pp %>%
             n = sum(!is.na(abstinent)))
 
 # -------------------------------
-# 5. Save Output to Country Directory
+# 4. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 # Sexual Activity Output: Percentage by month postpartum
   # method 1 is using duration of postpartum abstinence with months pp, and method 2 is using sexually active in last 4 weeks with months pp
   # Note that method two overlooks if someone was sexually active pp, then stopped having sex in the last month
   # We are currently using method 2 in the model
-sexually.active.results <- dhs.pp.results %>% select(months_postpartum, n, s.active_1, s.active_2)
+sexually.active.results <- dhs.pp.results %>% dplyr::select(months_postpartum, n, s.active_1, s.active_2)
 sexually.active.model <- sexually.active.results %>%
-  select(month = months_postpartum, probs = s.active_2)
+  dplyr::select(month = months_postpartum, probs = s.active_2)
 write.csv(sexually.active.model, file.path(output_dir, "sexually_active_pp.csv"), row.names = F)
 
 # LAM output
   # percentage of women on LAM by month pp (breastfeeding, amenorrhea, and both)
-LAM.results <- dhs.pp.results %>% select(months_postpartum, n, exclusive.bf, amenorrhea, exclusive.bf_and_amerorrhea)
-LAM.model <- LAM.results %>% filter(months_postpartum<12) %>% select(month = months_postpartum, rate = exclusive.bf_and_amerorrhea)
+LAM.results <- dhs.pp.results %>% dplyr::select(months_postpartum, n, exclusive.bf, amenorrhea, exclusive.bf_and_amerorrhea)
+LAM.model <- LAM.results %>% filter(months_postpartum<12) %>% dplyr::select(month = months_postpartum, rate = exclusive.bf_and_amerorrhea)
 
 write.csv(LAM.model, file.path(output_dir, "lam.csv"), row.names = FALSE)

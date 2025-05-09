@@ -1,22 +1,19 @@
 ###############################################################################
 # Calculate Method Mix from DHS Data
 # Using DHS individual recode (IR) data
-# User-configurable: Country and File Path
+#
+# Creates: mix.csv
 ###############################################################################
 
-# Clear environment
+# -------------------------------
+# 1. Setup
+# -------------------------------
+
 rm(list = ls())
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"                         # Modify for labeling and output
-dta_path <- "DHS/KEIR8CFL.DTA"             # Modify to path of your IR .DTA file
+# Load user configuration
+source("./config.R")
 
-# -------------------------------
-# 2. Setup
-# -------------------------------
-# Install and load required packages
 required_packages <- c("tidyverse", "haven", "survey")
 installed_packages <- rownames(installed.packages())
 
@@ -28,9 +25,9 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Load and Clean Data
+# 2. Load and Clean Data
 # -------------------------------
-data <- read_dta(dta_path) %>%
+data <- read_dta(dhs_path) %>%
   mutate(
     method = case_when(
       v312 == 1 ~ "Pill",
@@ -48,21 +45,21 @@ data <- read_dta(dta_path) %>%
   filter(!is.na(method))
 
 # -------------------------------
-# 4. Create Survey Design Object
+# 3. Create Survey Design Object
 # -------------------------------
 svydesign_obj <- svydesign(id = ~v021, strata = ~v023, weights = ~wt, data = data)
 
 # -------------------------------
-# 5. Calculate Method Mix
+# 4. Calculate Method Mix
 # -------------------------------
 method_mix <- svytable(~method, svydesign_obj) %>%
   as.data.frame() %>%
   mutate(perc = Freq / sum(Freq) * 100)
 
 # -------------------------------
-# 6. Save Output to Country Directory
+# 5. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

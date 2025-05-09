@@ -2,26 +2,19 @@
 # Extract Empowerment Indicators from DHS Data
 # Using DHS individual recode (IR) data
 # -----------------------------------------------------------------------------
-# Outputs:
-# - wealth.csv: Percent in each wealth quintile (v190)
+# Creates: wealth.csv: Percent in each wealth quintile (v190)
 #
-# Variables include:
-# - Paid employment & wage decision-making
-# - Sexual autonomy
-# - Decision-making on health and purchases
 ###############################################################################
 
-rm(list = ls())  # Clear environment
+# -------------------------------
+# 1. Setup
+# -------------------------------
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"
-dta_path <- "DHS/KEIR8CFL.DTA"  # Path to DHS IR .DTA file (update per country)
+rm(list = ls())
 
-# -------------------------------
-# 2. Setup
-# -------------------------------
+# Load user configuration
+source("./config.R")
+
 required_packages <- c("tidyverse", "haven", "survey")
 installed <- rownames(installed.packages())
 for (pkg in required_packages) {
@@ -30,9 +23,9 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Load and Clean Data
+# 2. Load and Clean Data
 # -------------------------------
-data <- read_dta(dta_path) %>%
+data <- read_dta(dhs_path) %>%
   mutate(
     age = v012,
     parity = v220,
@@ -67,22 +60,22 @@ data <- read_dta(dta_path) %>%
   )
 
 # -------------------------------
-# 4. Create Survey Design Object
+# 3. Create Survey Design Object
 # -------------------------------
 svydes = svydesign(id = data$v001, strata=data$v023, weights = data$v005/1000000, data=data)
 
 # -------------------------------
-# 5. Calculate Wealth Quintile Proportions
+# 4. Calculate Wealth Quintile Proportions
 # -------------------------------
 table_wealth <- as.data.frame(svytable(~v190, svydes)) %>%
   mutate(percent = Freq / sum(Freq)) %>%
   rename(quintile = v190) %>%
-  select(quintile, percent)
+  dplyr::select(quintile, percent)
 
 # -------------------------------
-# 6. Save Output
+# 5. Save Output
 # -------------------------------
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 write_csv(table_wealth, file.path(output_dir, "wealth.csv"))

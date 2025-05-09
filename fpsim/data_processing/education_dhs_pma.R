@@ -11,24 +11,23 @@
 # - education stopping criteria (expressed in percentage of women aged (age)
 #                                years old and a given parity that would dropout
 #                                from their education if they got pregnant.
-# Base on original analysis by Marita Zimmermann, August 2023
+#
+# Creates: edu_initialization.csv, edu_objective.csv, edu_stop.csv
+#
+# ---------------------------------------------------------------------------
+# Based on original analysis by Marita Zimmermann, August 2023
 ###############################################################################
+
+# -------------------------------
+# 1. Setup
+# -------------------------------
 
 # Clear environment
 rm(list = ls())
 
-# -------------------------------
-# 1. User Configuration
-# -------------------------------
-country <- "Kenya"                         # Modify for labeling and output
-dhs_path <- "DHS/KEIR8CFL.DTA"             # Path to DHS IR .DTA file
-pma1_path <- "PMA/PMA2019_KEP1_HQFQ_v4.0_1Sep2024.dta"   # Path to PMA IR .DTA file
-pma2_path <- "PMA/PMA2020_KEP2_HQFQ_v4.0_1Sep2024.dta"   # Path to DHS IR .DTA file
-pma3_path <- "PMA/PMA2022_KEP3_HQFQ_v4.0_12Jul2023.dta"   # Path to DHS IR .DTA file
+# Load user configuration
+source("./config.R")
 
-# -------------------------------
-# 2. Setup
-# -------------------------------
 # Install and load required packages
 required_packages <- c("tidyverse", "haven", "survey", "withr")
 installed_packages <- rownames(installed.packages())
@@ -41,7 +40,7 @@ for (pkg in required_packages) {
 }
 
 # -------------------------------
-# 3. Load and Process DHS Data
+# 2. Load and Process DHS Data
 # -------------------------------
 
 # -- Load all the data -- #
@@ -283,7 +282,7 @@ stop.school$parity <- as.factor(stop.school$parity)
 # 4. Save Output to Country Directory
 # -------------------------------
 
-output_dir <- file.path(".", country)
+output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
