@@ -2,7 +2,7 @@
 # Calculate Method Mix from DHS Data
 # Using DHS individual recode (IR) data
 #
-# Creates: mix.csv
+# Creates: mix.csv, use.csv
 ###############################################################################
 
 # -------------------------------

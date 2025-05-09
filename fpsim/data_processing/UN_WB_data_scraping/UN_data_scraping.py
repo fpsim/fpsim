@@ -9,7 +9,7 @@ options below are set to True, this script will utilize the UN Data Portal API t
 - age-specific fertility rate (asfr.csv)
 - age-specific population pyramid, by 5-year age groups (age_pyramid.csv)
 
-The only setup required is to set the country name (all lower-case) and either the location ID or ISO2 code (both of which
+The setup required is to set the country name (all lower-case) and either the location ID or ISO2 code (both of which
  can be found in the file country_codes.csv, located in the data_processing/data_scraping folder). The script will store
  any created files in a location directory for each respective country, in data_processing/data_scraping/scraped_data/{country_name}.
  To use the UN Data Portal API, you must also email population@un.org requesting the authorization token to access the
