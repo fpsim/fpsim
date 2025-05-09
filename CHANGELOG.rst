@@ -8,6 +8,15 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 2.0.1 (2025-05-09)
+---------------------------
+- Cleanup of data processing scripts in the data_processing directory
+- Creation of shared_data dir for data shared across model locations and corresponding data_utils cleanup
+- Addition of <location>.py template for new users
+- Documentation overhaul in locations/README, data_processing/README, and data processing scripts
+
+ *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/531>`_
+
 Version 2.0.0 (2025-03-31)
 ---------------------------
 FPsim 2.0 represents a major overhaul of how the model represents contraceptive choices. Previously, women updated their contraceptive choices each year in their birth month.
