@@ -64,7 +64,7 @@ use <- svytable(~use, svydesign_obj) %>%
   mutate(perc = Freq / sum(Freq) * 100)
 
 # -------------------------------
-# 5. Save Output to Country Directory
+# 6. Save Output to Country Directory
 # -------------------------------
 output_dir <- file.path(output_dir, country)
 if (!dir.exists(output_dir)) {
