@@ -19,7 +19,7 @@ These R scripts process raw DHS and PMA survey data for use in FPsim. They gener
 ### Requirements
 
 1. **Download latest DHS datasets**  
-   Create a DHS account and download relevant datasets from
+   Create a DHS account and download an Individual Recode (IR) DTA file from
    https://dhsprogram.com/data/. We suggest using the most recent Standard DHS dataset DTA file, or you may use a Continuous DHS dataset DTA file if it has the needed variables for the script(s) you would like to run.
 
 2. **Download PMA datasets for the last 3 phases**  

@@ -14,11 +14,11 @@ DHS_Data <- "DHS"  # Folder (relative to data_processing/ dir) where DHS DTA fil
 PMA_Data <- "PMA"  # Folder (relative to data_processing/ dir) where PMA DTA files are stored
 
 # Specific data file paths (relative to above folders or absolute)
-dhs_file <- "KEIR8CFL.DTA"  # Example DHS file
+dhs_file <- "KEIR8CFL.DTA"  # Example DHS file; needs to be Individual Recode (IR) DTA file
 
-pma_file1 <- "PMA2019_KEP1_HQFQ_v4.0_1Sep2024.dta"  # Example PMA file, Phase 1
-pma_file2 <- "PMA2020_KEP2_HQFQ_v4.0_1Sep2024.dta"  # Example PMA file, Phase 2
-pma_file3 <- "PMA2022_KEP3_HQFQ_v4.0_12Jul2023.dta" # Example PMA file, Phase 3
+pma_file1 <- "PMA2019_KEP1_HQFQ_v4.0_1Sep2024.dta"  # Example PMA file, Phase 1 (Use the PMA 'Household and Female' datasets DTA files)
+pma_file2 <- "PMA2020_KEP2_HQFQ_v4.0_1Sep2024.dta"  # Example PMA file, Phase 2 (Use the PMA 'Household and Female' datasets DTA files)
+pma_file3 <- "PMA2022_KEP3_HQFQ_v4.0_12Jul2023.dta" # Example PMA file, Phase 3 (Use the PMA 'Household and Female' datasets DTA files)
 
 # Contraceptive module for which to generate contraceptive coefficients in contra_coeffs.R
 model_type <- "standard"  # Options: "simple", "standard", "both"
