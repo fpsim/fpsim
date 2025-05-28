@@ -16,7 +16,9 @@ To add a new location in an analysis repo:
    4. `data_utils.py`
 5. In your analysis repo, create a folder `locations/template_loc/data` and add your model data files there (see the 'Model Parameters' section below for the specific files required for an FPsim model to run). Many of the data files have corresponding R processing scripts to format the data, and some are from specific studies and need to be formatted manually. For the proper format of each file, refer to the files in `locations/kenya/data`. **Note that the filenames MUST match the naming conventions defined in the table(s) below.
 6. Change the `template_loc` directory name and `template_loc/template.py` filename to your model location name (must match), and update `template.py` by modifying any lines designated with 'USER-EDITABLE' to your specifications. This file is used to configure a specific FPsim model and generate its location parameter values.
-7. In your analysis repository, you can now use your custom location by adding the following to the imports at the top of a script: `from locations import <name>`.
+7. In your analysis repository, you can now use your custom location by adding the following to the top of a script:
+   8. `from locations import <name>`
+   10. `fp.defaults.register_location('<name>', <name>)`
 8. To run fpsim with your location, ensure you also have fpsim installed (either via pip or locally) so that the core model code can be used.
 
 
