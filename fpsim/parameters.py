@@ -2,47 +2,170 @@
 Handle sim parameters
 '''
 
+import numpy as np
 import sciris as sc
+from . import utils as fpu
 from . import defaults as fpd
 
-__all__ = ['pars', 'validate', 'pars_to_json', 'pars_from_json', 'default_pars', 'default_sim_pars']
+__all__ = ['Pars', 'pars', 'default_pars']
 
 
-def validate(valid_pars, to_validate_pars, die=True):
+# %% Pars (parameters) class
+
+def getval(v):
+    """ Handle different ways of supplying a value -- number, distribution, function """
+    if sc.isnumber(v):
+        return v
+    elif isinstance(v, dict):
+        return fpu.sample(**v)[0]  # [0] since returns an array
+    elif callable(v):
+        return v()
+
+
+class Pars(dict):
     '''
-    Perform validation on the parameters
+    Class to hold a dictionary of parameters, and associated methods.
+
+    Usually not called by the user directly -- use ``fp.pars()`` instead.
 
     Args:
-        die (bool): whether to raise an exception if an error is encountered
-        update (bool): whether to update the method and age maps
+        pars (dict): dictionary of parameters
     '''
-    # Check that keys are correct
-    valid_keys = set(valid_pars.keys())
-    keys = set(to_validate_pars.keys())
-    if keys != valid_keys:
-        diff1 = valid_keys - keys
-        diff2 = keys - valid_keys
-        errormsg = ''
-        if diff1:
-            errormsg += 'The parameter set is not valid since the following keys are missing:\n'
-            errormsg += f'{sc.strjoin(diff1)}\n'
-        if diff2:
-            errormsg += 'The parameter set is not valid since the following keys are not recognized:\n'
-            errormsg += f'{sc.strjoin(diff2)}\n'
-        if die:
+    def __init__(self, pars=None, *args, **kwargs):
+        if pars is None:
+            pars = {}
+        super().__init__(*args, **kwargs)
+        self.update(pars)
+        return
+
+    def __repr__(self, *args, **kwargs):
+        ''' Use odict repr, but with a custom class name and no quotes '''
+        return sc.odict.__repr__(self, quote='', numsep='.', classname='fp.Parameters()', *args, **kwargs)
+
+    def copy(self):
+        ''' Shortcut for deep copying '''
+        return sc.dcp(self)
+
+    def to_dict(self):
+        ''' Return parameters as a new dictionary '''
+        return {k: v for k, v in self.items()}
+
+    def to_json(self, filename, **kwargs):
+        '''
+        Export parameters to a JSON file.
+
+        Args:
+            filename (str): filename to save to
+            kwargs (dict): passed to ``sc.savejson``
+
+        **Example**::
+            sim.pars.to_json('my_pars.json')
+        '''
+        return sc.savejson(filename=filename, obj=self.to_dict(), **kwargs)
+
+    def from_json(self, filename, **kwargs):
+        '''
+        Import parameters from a JSON file.
+
+        Args:
+            filename (str): filename to load from
+            kwargs (dict): passed to ``sc.loadjson``
+
+        **Example**::
+            sim.pars.from_json('my_pars.json')
+        '''
+        pars = sc.loadjson(filename=filename, **kwargs)
+        self.update(pars)
+        return self
+
+    def validate(self, die=True, update=True):
+        '''
+        Perform validation on the parameters
+
+        Args:
+            die (bool): whether to raise an exception if an error is encountered
+            update (bool): whether to update the method and age maps
+        '''
+        # Check that keys are correct
+        valid_keys = set(default_pars.keys())
+        keys = set(self.keys())
+        if keys != valid_keys:
+            diff1 = valid_keys - keys
+            diff2 = keys - valid_keys
+            errormsg = ''
+            if diff1:
+                errormsg += 'The parameter set is not valid since the following keys are missing:\n'
+                errormsg += f'{sc.strjoin(diff1)}\n'
+            if diff2:
+                errormsg += 'The parameter set is not valid since the following keys are not recognized:\n'
+                errormsg += f'{sc.strjoin(diff2)}\n'
+            if die:
+                raise ValueError(errormsg)
+            else:
+                print(errormsg)
+
+        return self
+
+
+    def _as_ind(self, key, allow_none=True):
+        '''
+        Take a method key and convert to an int, e.g. 'Condoms' → 7.
+
+        If already an int, do validation.
+        '''
+
+        mapping = self['methods']['map']
+        keys = list(mapping.keys())
+
+        # Validation
+        if key is None and not allow_none:
+            errormsg = "No key supplied; did you mean 'None' instead of None?"
             raise ValueError(errormsg)
+
+        # Handle options
+        if key in fpd.none_all_keys:
+            ind = slice(None)  # This is equivalent to ":" in matrix[:,:]
+        elif isinstance(key, str):  # Normal case, convert from key to index
+            try:
+                ind = mapping[key]
+            except KeyError as E:
+                errormsg = f'Key "{key}" is not a valid method'
+                raise sc.KeyNotFoundError(errormsg) from E
+        elif isinstance(key, int):  # Already an int, do nothing
+            ind = key
+            if ind < len(keys):
+                key = keys[ind]
+            else:
+                errormsg = f'Method index {ind} is out of bounds for methods {sc.strjoin(keys)}'
+                raise IndexError(errormsg)
         else:
-            print(errormsg)
+            errormsg = f'Could not process key of type {type(key)}: must be str or int'
+            raise TypeError(errormsg)
+        return ind
 
-    return
+    def _as_key(self, ind):
+        '''
+        Convert ind to key, e.g. 7 → 'Condoms'.
 
-def pars_to_json(pars, filename):
-    # write the parameters to a json file
-    sc.savejson(filename, pars)
+        If already a key, do validation.
+        '''
+        keys = list(self['methods']['map'].keys())
+        if isinstance(ind, int):  # Normal case, convert to string
+            if ind < len(keys):
+                key = keys[ind]
+            else:
+                errormsg = f'Method index {ind} is out of bounds for methods {sc.strjoin(keys)}'
+                raise IndexError(errormsg)
+        elif isinstance(ind, str):  # Already a string, do nothing
+            key = ind
+            if key not in keys:
+                errormsg = f'Name "{key}" is not a valid method: choices are {sc.strjoin(keys)}'
+                raise sc.KeyNotFoundError(errormsg)
+        else:
+            errormsg = f'Could not process index of type {type(ind)}: must be int or str'
+            raise TypeError(errormsg)
+        return key
 
-def pars_from_json(filename):
-    # load the parameters from a json file
-    return sc.loadjson(filename)
 
 # %% Parameter creation functions
 
@@ -50,29 +173,16 @@ def pars_from_json(filename):
 # All parameters that don't vary across geographies are defined explicitly here.
 # Keys for all location-specific parameters are also defined here with None values.
 
-default_sim_pars = {
-    'n_agents':             1_000,  # Number of agents
-    'pop_scale':            None,   # Scaled population / total population size
-    'start':                1960,   # Start year of simulation
-    'stop':                 2020,   # End year of simulation
-    'dt':                   1/12,      # The simulation timestep in 'unit's
-    'unit':                 'year',   # The unit of time for the simulation
-    'rand_seed':            1,      # Random seed
-    'verbose':              1/12,   # Verbosity level
-    'use_aging':            True,   # Whether to age the population
-    'interventions':        None,   # Interventions to apply
-    'analyzers':            None,   # Analyzers to apply
-    'connectors':           None,   # Connectors to apply
-    'people':               None,
-
-}
-
 default_pars = {
     # Basic parameters
     'location':             None,   # CONTEXT-SPECIFIC ####
-    'contraception_module': None,
-    'education_module':   None,
-    'empowerment_module': None,
+    'n_agents':             1_000,  # Number of agents
+    'scaled_pop':           None,   # Scaled population / total population size
+    'start_year':           1960,   # Start year of simulation
+    'end_year':             2020,   # End year of simulation
+    'timestep':             1,      # The simulation timestep in months
+    'seed':                 1,      # Random seed
+    'verbose':              1,      # How much detail to print during the simulation
 
     # Settings - what aspects are being modeled - TODO, remove
     'use_partnership':      0,      #
@@ -108,6 +218,8 @@ default_pars = {
 
     # Other sim parameters
     'mortality_probs':      {},
+    'interventions':        [],
+    'analyzers':            [],
 
     ###################################
     # Context-specific data-derived parameters, all defined within location files
@@ -140,34 +252,42 @@ default_pars = {
     'intent_to_use':        None,
 
     'region':               None,
-    'track_children':   False,  # Whether to track children
-    'regional':         None,
 }
 
+# Shortcut for accessing default keys
+par_keys = default_pars.keys()
 
-def pars(location=None, rand_seed=None, **kwargs):
-    '''
-    Create a parameter set for a given location
+
+def pars(location=None, validate=True, die=True, update=True, **kwargs):
+    """
+    Function for updating parameters.
 
     Args:
-        location (str): the location to use
-        kwargs (dict): additional parameters to update
+        location (str): the location to use for the parameters; use 'test' for a simple test set of parameters
+        validate (bool): whether to perform validation on the parameters
+        die      (bool): whether to raise an exception if validation fails
+        update   (bool): whether to update values during validation
+        kwargs   (dict): custom parameter values
 
-    Returns:
-        pars (dict): the parameter set
-    '''
-    pars = sc.dcp(default_pars)
+    **Example**::
+        pars = fp.pars(location='senegal')
+    """
+
+    from . import locations as fplocs # Here to avoid circular import
+
+    # Set test parameters
+    if location == 'test':
+        kwargs.setdefault('n_agents', 100)
+        kwargs.setdefault('verbose', 0)
+        kwargs.setdefault('start_year', 2000)
+        kwargs.setdefault('end_year', 2010)
 
     # Handle location
-    if location is None and 'location' in kwargs:
-        location = kwargs.pop('location')
-    location = fpd.get_location(location, printmsg=True)  # Handle location
-    pars['location'] = location
+    location = fpd.get_location(location)  # Handle location
 
-    if rand_seed is None:
-        rand_seed = default_sim_pars['rand_seed']
+    # Initialize parameter dict, which will be updated with location data
+    pars = sc.mergedicts(default_pars, kwargs, _copy=True)  # Merge all pars with kwargs and copy
 
-    """
     # Pull out values needed for the location-specific make_pars functions
     loc_kwargs = dict(seed=pars['seed'])
 
@@ -181,27 +301,21 @@ def pars(location=None, rand_seed=None, **kwargs):
         raise NotImplementedError(f'Could not find location function for "{location}"')
 
     pars = sc.mergedicts(pars, location_pars)
-    """
-    # Load the location-specific parameters
-    from . import locations as fplocs
-    loc_kwargs = dict(seed=rand_seed)
 
-    # Use external registry for locations first
-    if location in fpd.location_registry:
-        location_module = fpd.location_registry[location]
-        location_pars = location_module.make_pars(**loc_kwargs)
-    elif hasattr(fplocs, location):
-        location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
-    else:
-        raise NotImplementedError(f'Could not find location function for "{location}"')
+    # TODO: regional locations not supported yet
+    # valid_ethiopia_regional_locs = dir(fplocs.ethiopia.regions)
+    # if location in valid_ethiopia_regional_locs:
+    #     location_pars = getattr(fplocs.ethiopia.regions, location).make_pars(**loc_kwargs)
 
-    pars.update(sc.dcp(location_pars))
-    pars.update(**kwargs)
+    # Merge again, so that we ensure the user-defined values overwrite any location defaults
+    pars = sc.mergedicts(pars, kwargs, _copy=True)
 
-    validate(default_pars, pars)
+    # Convert to the class
+    pars = Pars(pars)
+
+    # Perform validation
+    if validate:
+        pars.validate(die=die, update=update)
 
     return pars
 
-# Shortcut for accessing default keys
-par_keys = default_pars.keys()
-sim_par_keys = default_sim_pars.keys()
