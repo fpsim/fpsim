@@ -17,7 +17,13 @@ class Education:
     def __init__(self, location=None):
         # Handle location
         location = fpd.get_location(location)
-        education_dict, _ = fplocs.data_utils.education_distributions(location)  # This function returns extrapolated and raw data
+        # Get the correct module, from either registry or built-in
+        if location in fpd.location_registry:
+            location_module = fpd.location_registry[location]
+        else:
+            location_module = fplocs  # fallback to built-in only if not registered
+
+        education_dict, _ = location_module.data_utils.education_distributions(location)  # This function returns extrapolated and raw data
         self.pars = education_dict
         return
 

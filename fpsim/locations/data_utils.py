@@ -1,7 +1,7 @@
 """
 Process datafiles - this file contains functions common to all locations
 """
-
+import os
 import numpy as np
 import pandas as pd
 import sciris as sc
@@ -9,7 +9,9 @@ import yaml
 from scipy import interpolate as si
 from fpsim import defaults as fpd
 from fpsim import utils as fpu
+import fpsim.shared_data as sd
 
+sd_dir = os.path.dirname(sd.__file__)  # path to the shared_data directory
 
 # %% Housekeeping and utility functions
 
@@ -27,7 +29,7 @@ def data2interp(data, ages, normalize=False):
     return interp
 
 def load_age_adjustments():
-    with open(this_dir() / '..' / 'shared_data' / 'age_adjustments.yaml', 'r') as f:
+    with open(os.path.join(sd_dir, 'age_adjustments.yaml'), 'r') as f:
         adjustments = yaml.safe_load(f)
     return adjustments
 
@@ -101,7 +103,7 @@ def scalar_probs(location):
 
 # %% Demographics
 def age_spline(which):
-    d = pd.read_csv(this_dir() / '..' / 'shared_data' / f'splines_{which}.csv')
+    d = pd.read_csv(os.path.join(sd_dir, f'splines_{which}.csv'))
     # Set the age as the index
     d.index = d.age
     return d
@@ -228,7 +230,7 @@ def miscarriage():
     Data to be fed into likelihood of continuing a pregnancy once initialized in model
     Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
     """
-    df = pd.read_csv(this_dir() / '..' / 'shared_data' / 'miscarriage.csv')
+    df = pd.read_csv(os.path.join(sd_dir, 'miscarriage.csv'))
 
     # Extract data and interpolate
     miscarriage_rates = np.array([df['age'].values, df['prob'].values])
@@ -262,7 +264,7 @@ def female_age_fecundity():
     Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
     45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds
     '''
-    df = pd.read_csv(this_dir() / '..' / 'shared_data' / 'age_fecundity.csv')
+    df = pd.read_csv(os.path.join(sd_dir, 'age_fecundity.csv'))
 
     # Extract bins and fecundity values
     bins = df['bin'].values
@@ -281,7 +283,7 @@ def fecundity_ratio_nullip():
     from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
     Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
     '''
-    df = pd.read_csv(this_dir() / '..' / 'shared_data' / 'fecundity_ratio_nullip.csv')
+    df = pd.read_csv(os.path.join(sd_dir, 'fecundity_ratio_nullip.csv'))
 
     # Extract data and interpolate
     fecundity_ratio_nullip = np.array([df['age'].values, df['prob'].values])
