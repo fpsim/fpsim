@@ -8,6 +8,14 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 2.0.2 (2025-05-28)
+---------------------------
+Introduces a flexible location_registry system to support custom location modules defined outside the core fpsim package.
+External users can now create an analysis repo and register their own locations in their respective repo via fpsim.defaults.register_location(),
+eliminating the need for a user to modify the core code in order to test creating their own model in location other than Ethiopia, Senegal, or Kenya.
+
+ *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/547>`_
+
 Version 2.0.1 (2025-05-09)
 ---------------------------
 - Cleanup of data processing scripts in the data_processing directory
