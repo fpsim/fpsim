@@ -8,131 +8,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 3.0.3 (2025-07-09)
----------------------------
-Resolves issues:
-#580 - removes requirement headers for Tutorials 2-5 (redundant because in header of Tutorial 1)
-#578 - modifies sigmoid function in methods.py to use scipy's expit function to avoid runtime warnings (due to overflow with very large/small rhs values)
-- *GitHub info*: PR `581 <https://github.com/fpsim/fpsim/pull/581>`_
-
-
-Version 3.0.2 (2025-07-02)
----------------------------
-- Fixes issue 567 (bug in method_mix_by_age_analyzer)
-- Fixes issue 568 (reduces default verbosity of Sim)
-- *GitHub info*: PR `574 <https://github.com/fpsim/fpsim/pull/574>`_
-
-
-Version 3.0.1 (2025-07-01)
----------------------------
-Adds a plotting class that can be used to create plots typically used for calibration and analyses. Both manual and automatic
-calibration example scripts were cleaned and consolidated. Tutorial explaining overall calibration process created.
-
- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/547>`_
-
-
-Version 3.0.0 (2025-06-26)
----------------------------
-
-This version of FPsim is now built on `Starsim <https://starsim.org>`_. Several major changes were introduced as a result.
-
-Overview of changes
-~~~~~~~~~~~~~~~~~~~
-
-* **Analyzer Refactor**
-
-  * Replaced ``fpsim.analyzers.Analyzer`` with ``starsim.Analyzer`` as the base class.
-  * Updated all analyzer classes in ``fpsim/analyzers.py`` to inherit from ``starsim.Analyzer``.
-  * Renamed and refactored key analyzer methods:
-
-    * Replaced ``apply`` with ``step``.
-    * Refactored initialization/finalization methods to align with StarSim conventions (``init_results``, ``init_pre``, ``init_post``, etc.).
-    * Updated logic to use ``.female`` instead of ``.is_female`` and ``.uids`` for indexing.
-
-  * Replaced direct boolean/array filtering with StarSim's approach using ``.uids`` and attribute access.
-
-* **Array Handling**
-
-  * Introduced new module: ``fpsim/arrays.py`` with a ``TwoDimensionalArr`` array class for handling multi-valued attributes (e.g., birth ages).
-  * Replaced previous handling of multi-valued person states (like ``birth_ages``, ``stillborn_ages``, etc.) with ``TwoDimensionalArr`` arrays in ``fpsim/defaults.py``.
-
-* **Parameter System Overhaul**
-
-  * Simplified and separated FPsim-specific and simulation-level parameters in ``fpsim/parameters.py``.
-
-    * Added ``default_sim_pars`` for high-level simulation settings.
-    * Refactored ``pars()`` function to create parameter sets and validate keys.
-    * Removed old ``Pars`` class.
-    * Updated parameter validation logic.
-
-  * Adjusted parameter passing and initialization throughout the codebase for compatibility (notably in ``fpsim/experiment.py``, ``fpsim/scenarios.py``, etc.).
-
-* **Method & Module API Changes**
-
-  * All module methods that handle people (contraception, education, etc.) now require explicit ``uids`` for subsetting and updating.
-  * Updated contraception and education modules to take and use ``uids`` for all relevant operations.
-  * Refactored method selection, probability assignment, and duration logic in ``fpsim/methods.py`` for array compatibility and efficiency.
-
-Detailed changes
-~~~~~~~~~~~~~~~~
-
-* **fpsim/analyzers.py**
-
-  * Refactored all analyzers for new array and indexing conventions.
-  * Updated key logic for CPR, method mix, education, age pyramids, and tracking analyzers.
-
-* **fpsim/defaults.py**
-
-  * Changed all person state definitions to use StarSim array classes.
-  * Removed direct use of numpy arrays, replaced with typed StarSim arrays and new ``TwoDimensionalArr``.
-  * Updated results arrays and lists for new structure.
-
-* **fpsim/education.py**
-
-  * Refactored all methods to use explicit ``uids`` for subsetting.
-  * Improved efficiency and clarity of education progression, interruption, resumption, and graduation logic.
-
-* **fpsim/experiment.py**
-
-  * Updated experiment parameter passing to use new ``pars`` structure.
-  * Adjusted data extraction and model comparison routines for compatibility.
-
-* **fpsim/methods.py**
-
-  * Refactored all module methods to use ``uids`` for indexing and updating.
-  * Improved probabilistic selection, method choice, and duration assignment logic.
-
-* **fpsim/parameters.py**
-
-  * Removed class-based parameter system; now uses plain dictionaries and utility functions.
-  * Introduced validation and JSON (de)serialization helpers.
-
-* **fpsim/scenarios.py**
-
-  * Refactored scenario parameter handling and simulation creation for new parameter API.
-
-* **fpsim/utils.py**
-
-  * Updated Numba-accelerated utility functions to use ``float32`` for compatibility.
-
-* **Other changes**
-
-  * Removed obsolete ``fpsim/base.py``.
-  * Various bug fixes and code style improvements for array handling, type consistency, and API clarity.
-
----
-
-**Note:**
-This PR introduces several breaking changes to the FPsim API, notably in how arrays and parameters are handled, and how modules interact with people objects. Downstream code and scripts will likely require updates to align with the new conventions.
-
-*GitHub info*: PR `490 <https://github.com/fpsim/fpsim/pull/490>`_
-
-
 Version 2.0.2 (2025-05-28)
 ---------------------------
-- Introduces a flexible location_registry system to support custom location modules defined outside the core fpsim package.
-- External users can now create an analysis repo and register their own locations in their respective repo via fpsim.defaults.register_location(), eliminating the need for a user to modify the core code in order to test creating their own model in location other than Ethiopia, Senegal, or Kenya.
-- *GitHub info*: PR `547 <https://github.com/fpsim/fpsim/pull/547>`_
+Introduces a flexible location_registry system to support custom location modules defined outside the core fpsim package.
+External users can now create an analysis repo and register their own locations in their respective repo via fpsim.defaults.register_location(),
+eliminating the need for a user to modify the core code in order to test creating their own model in location other than Ethiopia, Senegal, or Kenya.
+
+ *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/547>`_
 
 Version 2.0.1 (2025-05-09)
 ---------------------------
@@ -140,7 +22,8 @@ Version 2.0.1 (2025-05-09)
 - Creation of shared_data dir for data shared across model locations and corresponding data_utils cleanup
 - Addition of <location>.py template for new users
 - Documentation overhaul in locations/README, data_processing/README, and data processing scripts
-- *GitHub info*: PR `531 <https://github.com/fpsim/fpsim/pull/531>`_
+
+ *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/531>`_
 
 Version 2.0.0 (2025-03-31)
 ---------------------------
@@ -162,58 +45,58 @@ To support this new feature, this PR also introduces several new items:
  - Fixes a bug that prevented simulations from running if pars['timestep'] !=1
  - Adds a circular buffer to track the last 12 months of data, and enable model updates that depend on the previous state
 
- *GitHub info*: PR `411 <https://github.com/fpsim/fpsim/pull/411>`_
+ *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/411>`_
 
 Version 1.0.4 (2024-08-19)
 ---------------------------
 - Fixes issue 310 (Removes legacy use_subnational logic)
-- *GitHub info*: PR `392 <https://github.com/fpsim/fpsim/pull/392>`_
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/392>`_
 
 Version 1.0.3 (2024-07-26)
 ---------------------------
 - Adds .devcontainer configuration for a Codespaces dev container
-- *GitHub info*: PR `369 <https://github.com/fpsim/fpsim/pull/369>`_
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/369>`_
 
 Version 1.0.2 (2024-07-25)
 ---------------------------
 - Fixes issue 347, correcting variable in defaults storing age-specific results
-- *GitHub info*: PR `388 <https://github.com/fpsim/fpsim/pull/388>`_
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/388>`_
 
 Version 1.0.1 (2024-06-17)
 ---------------------------
 - Adds empowerment metrics (paid work and education attainment) to calibration targets
 - Creates script for empowerment calibration
-- *GitHub info*: PR `240 <https://github.com/fpsim/fpsim/pull/240>`_
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/240>`_
 
 Version 1.0.0 (2024-06-07)
 --------------------------
 - Releases FPsim1.0 to pypi
 - Adds FPsim New User Instructions to tutorials
-- *GitHub info*: PR `349 <https://github.com/fpsim/fpsim/pull/349>`_
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/349>`_
 
 Version 0.28.3 (2024-04-30)
 --------------------------
 - Creates subnational tutorial for Ethiopia
 - Updates regional scripts to improve subnationals calibrations for Ethiopia
-- *GitHub info*: PR `334 <https://github.com/fpsim/fpsim/pull/334>`_
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/334>`_
 
 Version 0.28.2 (2024-04-20)
 ---------------------------
 - Refactoring of location directory, such that there is a country folder under locations/ dir containing the data, model script(s), and figs pertaining to that location only
 - Modifies these new paths accordingly in all relevant files
-- *GitHub info*: PR `316 <https://github.com/fpsim/fpsim/pull/316>`_
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/316>`_
 
 Version 0.28.1 (2024-04-11)
 ---------------------------
 - Updates regional parameters to calibrate subnationally in Ethiopia
 - Revises subnational calibration script to run for all regions and includes a new multisim script for subnational comparisons 
-- *GitHub info*: PR `319 <https://github.com/fpsim/fpsim/pull/319>`_
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/319>`_
 
 Version 0.27.0 (2024-02-09)
 ---------------------------
 - Builds out new regional attribute and parameters for subnational dynamics in Ethiopia
 - Creates new subnational calibration script and subfolder for regional datasets and figures 
-- *GitHub info*: PR `241 <https://github.com/fpsim/fpsim/pull/241>`_
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/241>`_
 
 Version 0.26.8 (2024-02-08)
 ---------------------------
