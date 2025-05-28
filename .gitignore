@@ -1,10 +1,14 @@
 # Custom files
 *.obj
-.DS_Store
 *.pdf
 *.png
 *.zip
 modules.rst
+
+# Other files
+.idea
+.vscode
+.DS_Store
 
 # History files
 .Rhistory
@@ -24,6 +28,10 @@ modules.rst
 
 # RStudio files
 .Rproj.user/
+
+# Datasets
+*.DTA
+*.dta
 
 # produced vignettes
 vignettes/*.html
@@ -114,6 +122,7 @@ instance/
 # Sphinx documentation
 docs/_build/
 docs/fpsim*
+docs/api/_autosummary/
 
 # PyBuilder
 target/

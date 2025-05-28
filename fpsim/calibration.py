@@ -183,10 +183,9 @@ class Calibration(sc.prettyobj):
         '''
         Remove the database file if keep_db is false and the path exists.
         '''
-        if os.path.exists(self.g.db_name):
-            os.remove(self.g.db_name)
-            if self.verbose:
-                print(f'Removed existing calibration {self.g.db_name}')
+        sc.rmpath(self.g.db_name, die=False)
+        if self.verbose:
+            print(f'Removed existing calibration {self.g.db_name}')
         return
 
     def make_study(self):
@@ -195,7 +194,6 @@ class Calibration(sc.prettyobj):
             self.remove_db()
         output = op.create_study(storage=self.g.storage, study_name=self.g.name)
         return output
-
 
     def calibrate(self, calib_pars=None, weights=None, verbose=None, **kwargs):
         ''' Actually perform calibration '''
@@ -237,7 +235,6 @@ class Calibration(sc.prettyobj):
             self.summarize()
 
         return
-
 
     def summarize(self):
         try:

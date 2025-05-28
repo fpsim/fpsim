@@ -9,11 +9,11 @@ jobs:
       fail-fast: false
       max-parallel: 8
       matrix:
-        python-version: [ '3.9' ]
+        python-version: [ '3.12' ]
     name: Install and test
     steps:
       - name: Checkout sources
-        uses: actions/checkout@v2
+        uses: actions/checkout@v4
       - uses: actions/setup-python@master
         with:
           python-version: ${{ matrix.python-version }}
@@ -27,13 +27,13 @@ jobs:
         working-directory: ./tests
         run: pytest -v test_*.py -n auto --durations=0 --junitxml=test-results.xml # Run actual tests
       - name: Upload test results
-        uses: actions/upload-artifact@v1
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: test_results
           path: tests/test-results.xml
       - name: Upload report
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v4
         if: failure()
         with:
           name: report

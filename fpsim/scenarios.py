@@ -24,26 +24,6 @@ def check_not_none(obj, *args):
     return
 
 
-def check_ages(ages):
-    ''' Check that age keys are all valid '''
-    valid_keys = list(fpd.method_age_map.keys()) + fpd.none_all_keys
-    ages = sc.tolist(ages, keepnone=True)
-    for age in ages:
-        if age not in valid_keys:
-            errormsg = f'Age "{age}" is not valid; choices are:\n{sc.newlinejoin(valid_keys)}'
-            raise sc.KeyNotFoundError(errormsg)
-    return
-
-
-def check_method(methods):
-    ''' Check that methods are valid '''
-    valid_methods = list(fpd.method_map.keys()) + [None]
-    for method in methods:
-        if method not in valid_methods:
-            errormsg = f'Method "{method}" is not valid; choices are:\n{sc.newlinejoin(valid_methods)}'
-            raise sc.KeyNotFoundError(errormsg)
-    return
-
 
 #%% Scenario classes
 
@@ -103,14 +83,8 @@ class Scenario(sc.prettyobj, sc.dictobj):
         # Basic efficacy scenario
         s1 = fp.make_scen(eff={'Injectables':0.99}, year=2020)
 
-        # Double rate of injectables initiation
-        s2 = fp.make_scen(source='None', dest='Injectables', factor=2)
-
         # Double rate of injectables initiation -- alternate approach
         s3 = fp.make_scen(method='Injectables', init_factor=2)
-
-        # More complex example: change condoms to injectables transition probability for 18-25 postpartum women
-        s4 = fp.make_scen(source='Condoms', dest='Injectables', value=0.5, ages='18-25', matrix='pp1to6')
 
         # Parameter scenario: halve exposure
         s5 = fp.make_scen(par='exposure_factor', years=2010, vals=0.5)
@@ -129,9 +103,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         s8 = s1 + s2
     '''
     def __init__(self, spec=None, label=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
-                 eff=None, probs=None, # Option 1
-                 source=None, dest=None, factor=None, value=None, copy_from=None, # Option 2
-                 method=None, init_factor=None, discont_factor=None, init_value=None, discont_value=None, # Option 3
+                 eff=None, dur_use=None, p_use=None, method_mix=None, # Option 1
                  par=None, par_years=None, par_vals=None, # Option 4
                  interventions=None, # Option 5
                  ):
@@ -142,49 +114,21 @@ class Scenario(sc.prettyobj, sc.dictobj):
         self.specs = sc.mergelists(*[Scenario(**s).specs for s in sc.tolist(spec)]) # Sorry
         self.label = label
         self.pars  = sc.mergedicts(pars)
-        if not isinstance(label, (str, type(None))):
-            errormsg = f'Unexpected label type {type(label)}'
-            raise TypeError(errormsg)
 
         # Handle other keyword inputs
-        eff_spec   = None
-        prob_spec  = None
+        contraceptive_spec = None
         par_spec   = None
         intv_specs = None
 
-        # It's an efficacy scenario
-        if eff is not None:
-            eff_spec = sc.objdict(
-                which  = 'eff',
-                eff    = eff,
-                year   = year,
-            )
-            check_not_none(eff_spec, 'year')
-
-        # It's a method switching probability scenario
-        prob_args = [probs, factor, value, init_factor, discont_factor, init_value, discont_value]
-        if len(sc.mergelists(*prob_args)): # Check if any are non-None
-            prob_spec = sc.objdict(
-                which  = 'prob',
-                year   = year,
-                probs = probs if probs else dict(
-                    matrix         = matrix,
-                    ages           = ages,
-                    source         = source,
-                    dest           = dest,
-                    factor         = factor,
-                    value          = value,
-                    method         = method,
-                    init_factor    = init_factor,
-                    discont_factor = discont_factor,
-                    init_value     = init_value,
-                    discont_value  = discont_value,
-                    copy_from      = copy_from,
-                )
-            )
-            check_not_none(prob_spec, 'year')
-            check_ages(ages)
-            check_method([source, dest, method])
+        # It's a scenario related to changing the contraceptive mix parameters
+        for scentype, input in {'eff': eff, 'dur_use': dur_use, 'p_use': p_use, 'method_mix': method_mix}.items():
+            if input is not None:
+                contraceptive_spec = sc.objdict({
+                    'which': scentype,
+                    scentype: input,
+                    'year': year
+                })
+                check_not_none(contraceptive_spec, 'year')
 
         # It's a parameter change scenario
         if par is not None:
@@ -206,13 +150,12 @@ class Scenario(sc.prettyobj, sc.dictobj):
                 ))
 
         # Merge these different scenarios into the list, skipping None entries
-        self.specs.extend(sc.mergelists(eff_spec, prob_spec, par_spec, intv_specs))
+        self.specs.extend(sc.mergelists(contraceptive_spec, par_spec, intv_specs))
 
         # Finally, ensure all have a consistent label if supplied
         self.update_label()
 
         return
-
 
     def __add__(self, scen2):
         ''' Combine two scenario spec lists '''
@@ -220,12 +163,10 @@ class Scenario(sc.prettyobj, sc.dictobj):
         scen3.specs.extend(sc.dcp(scen2.specs))
         return scen3
 
-
     def __radd__(self, scen2):
         ''' Allows sum() to work correctly '''
         if not scen2: return self
         else:         return self.__add__(scen2)
-
 
     def update_label(self, label=None):
         ''' Ensure all specs have the correct label '''
@@ -259,7 +200,6 @@ class Scenario(sc.prettyobj, sc.dictobj):
         scens.add_scen(self)
         scens.run(**sc.mergedicts(run_args))
         return scens
-
 
 
 def make_scen(*args, **kwargs):
@@ -303,6 +243,17 @@ class Scenarios(sc.prettyobj):
         self.msim = None
         self.already_run = False
         return
+
+    def __bool__(self):
+        """ Always return True """
+        return True
+
+    def __len__(self):
+        """ Try to get the length of the scenarios, else return 0 """
+        try:
+            return len(self.scens)
+        except:
+            return 0
 
 
     def add_scen(self, scen=None, label=None):
@@ -349,14 +300,10 @@ class Scenarios(sc.prettyobj):
                     which = spec.pop('which')
 
                 # Handle interventions
-                if which == 'eff':
-                    eff  = spec.pop('eff')
+                if which in ['eff', 'dur_use', 'p_use', 'method_mix']:
+                    pardict  = spec.pop(which)
                     year = spec.pop('year')
-                    interventions += fpi.update_methods(eff=eff, year=year)
-                elif which == 'prob':
-                    probs = spec.pop('probs')
-                    year  = spec.pop('year')
-                    interventions += fpi.update_methods(probs=probs, year=year)
+                    interventions += fpi.update_methods(**{which: pardict, 'year': year})
                 elif which == 'par':
                     par = spec.pop('par')
                     years = spec.pop('par_years')
@@ -458,8 +405,13 @@ class Scenarios(sc.prettyobj):
 
             # Defines how we calculate each channel, first number is is_sum: 1 = aggregate as sum, 0 = aggregate as mean
             # The second parameter defines whether to aggregate by year or by timestep where 1 = use sim.t (timestep), 0 = use sim.tfr_years (years)
-            agg_param_dict = {'method_failures_over_year': (1, 0), 'pop_size': (1, 0), 'tfr_rates': (0, 0), 'maternal_deaths_over_year': (1, 0),
-                            'infant_deaths_over_year': (1, 0), 'mcpr': (0, 1), 'births': (1, 1)}
+            agg_param_dict = {'method_failures_over_year': (1, 0),
+                              'pop_size': (1, 0),
+                              'tfr_rates': (0, 0),
+                              'maternal_deaths_over_year': (1, 0),
+                              'infant_deaths_over_year': (1, 0),
+                              'mcpr': (0, 1),
+                              'births': (1, 1)}
             results_dict = {}
 
             for channel in agg_param_dict:
@@ -470,7 +422,7 @@ class Scenarios(sc.prettyobj):
 
         # Split the sims up by scenario
         results = sc.objdict()
-        results.sims = sc.objdict(defaultdict=sc.autolist)
+        sims = sc.objdict(defaultdict=sc.autolist)
         for sim in self.msim.sims:
             try:
                 label = sim.scenlabel
@@ -478,11 +430,11 @@ class Scenarios(sc.prettyobj):
                 errormsg = f'Warning, could not extract scenlabel from sim {sim.label}; using default...'
                 print(errormsg)
                 label = sim.label
-            results.sims[label] += sim
+            sims[label] += sim
 
         # Count the births across the scenarios
         raw = sc.ddict(list)
-        for key,sims in results.sims.items():
+        for key,sims in sims.items():
             for sim in sims:
                 results_dict = analyze_sim(sim)
                 raw['scenario'] += [key]      # Append scenario key

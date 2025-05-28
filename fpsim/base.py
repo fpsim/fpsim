@@ -1,7 +1,6 @@
 '''
 Base classes for loading parameters and for running simulations with FP model
 '''
-
 import numpy as np
 import pandas as pd
 import sciris as sc
@@ -14,6 +13,7 @@ obj_set = object.__setattr__
 
 
 __all__ = ['ParsObj', 'BasePeople', 'BaseSim']
+__all__ += ['ndict']
 
 
 class FlexPretty(sc.prettyobj):
@@ -118,8 +118,9 @@ class BasePeople(sc.prettyobj):
     Class for all the people in the simulation.
     '''
 
-    def __init__(self):
+    def __init__(self, *args, **kwargs):
         ''' Initialize essential attributes used for filtering '''
+        super().__init__(*args, **kwargs)
         obj_set(self, '_keys', []) # Since getattribute is overwritten
         obj_set(self, '_inds', None)
         return
@@ -173,6 +174,7 @@ class BasePeople(sc.prettyobj):
                 return output
             else:
                 if self._is_filtered(attr):
+
                     output = output[self.inds]
         return output
 
@@ -182,7 +184,7 @@ class BasePeople(sc.prettyobj):
         if self._is_filtered(attr):
             array = obj_get(self, attr)
             array[self.inds] = value
-        else:   # If not initialized, rely on the default behavior
+        else:   # If not filtered, just set
             obj_set(self, attr, value)
         return
 
@@ -203,16 +205,17 @@ class BasePeople(sc.prettyobj):
             p2val = people2[key]
             if isinstance(npval, np.ndarray):
                 newpeople[key] = np.concatenate([npval, p2val], axis=0)
+            elif isinstance(npval, dict):
+                for attr in npval.keys():
+                    new_rows = np.full((len(people2), npval[attr].shape[1]), p2val[attr][0])
+                    newpeople[key][attr] = np.concatenate((npval[attr], new_rows), axis=0)
             elif isinstance(npval, list):
                 newpeople[key] += p2val
             else:
                 errormsg = f'Not sure what to do with object of type {type(npval)}'
                 raise TypeError(errormsg)
 
-        # Validate
-        for key in keys:
-            assert len(newpeople[key]) == len(newpeople)
-        newpeople.uid[n_orig:] = max_uid + np.arange(n_new) # Reassign UIDs so they're unique
+        newpeople.uid[n_orig:] = max_uid + np.arange(n_new)  # Reassign UIDs so they're unique
 
         return newpeople
 
@@ -227,6 +230,9 @@ class BasePeople(sc.prettyobj):
         ''' Returns keys for all properties of the people object '''
         try: # Unclear wy this fails, but sometimes it does during initialization/pickling
             keys = obj_get(self, '_keys')[:]
+            if 'longitude' not in keys:
+                if hasattr(self, 'longitude'):
+                    keys.append('longitude')
         except:
             keys = []
         return keys
@@ -260,6 +266,16 @@ class BasePeople(sc.prettyobj):
     def n(self):
         ''' Number of people alive '''
         return self.alive.sum()
+
+    @property
+    def n_female(self):
+        ''' Number of females alive'''
+        return np.sum(self.alive & self.is_female)
+
+    @property
+    def is_dhs_age(self):
+        ''' Returns Boolean array of whether each agents's age is within the DHS age range '''
+        return (self.age >= fpd.min_age) & (self.age < fpd.max_age_preg)
 
     @property
     def inds(self):
@@ -311,7 +327,7 @@ class BasePeople(sc.prettyobj):
         Store indices to allow for easy filtering of the People object.
 
         Args:
-            criteria (array): a boolean array for the filtering critria
+            criteria (bool array): a boolean array for the filtering critria
             inds (array): alternatively, explicitly filter by these indices
 
         Returns:
@@ -320,9 +336,9 @@ class BasePeople(sc.prettyobj):
         '''
 
         # Create a new People object with the same properties as the original
-        filtered = object.__new__(self.__class__) # Create a new People instance
-        BasePeople.__init__(filtered) # Perform essential initialization
-        filtered.__dict__ = {k:v for k,v in self.__dict__.items()} # Copy pointers to the arrays in People
+        filtered = object.__new__(self.__class__)  # Create a new People instance
+        BasePeople.__init__(filtered)  # Perform essential initialization
+        filtered.__dict__ = self.__dict__.copy()  # Copy pointers to the arrays in People
 
         # Perform the filtering
         if criteria is None: # No filtering: reset
@@ -330,9 +346,10 @@ class BasePeople(sc.prettyobj):
             if inds is not None: # Unless indices are supplied directly, in which case use them
                 filtered._inds = inds
         else: # Main use case: perform filtering
-            if len(criteria) == len(self): # Main use case: a new filter applied on an already filtered object, e.g. filtered.filter(filtered.age > 5)
+            len_criteria = len(criteria)
+            if len_criteria == self.len_inds: # Main use case: a new filter applied on an already filtered object, e.g. filtered.filter(filtered.age > 5)
                 new_inds = criteria.nonzero()[0] # Criteria is already filtered, just get the indices
-            elif len(criteria) == self.len_people: # Alternative: a filter on the underlying People object is applied to the filtered object, e.g. filtered.filter(people.age > 5)
+            elif len_criteria == self.len_people: # Alternative: a filter on the underlying People object is applied to the filtered object, e.g. filtered.filter(people.age > 5)
                 new_inds = criteria[filtered.inds].nonzero()[0] # Apply filtering before getting the new indices
             else:
                 errormsg = f'"criteria" must be boolean array matching either current filter length ({self.len_inds}) or else the total number of people ({self.len_people}), not {len(criteria)}'
@@ -401,7 +418,15 @@ class BaseSim(ParsObj):
     def npts(self):
         ''' Count the number of points in timesteps between the starting year and the ending year.'''
         try:
-            return int(fpd.mpy * (self.pars['end_year'] - self.pars['start_year']) / self.pars['timestep'] + 1)
+            return int(fpd.mpy * (self.pars['end_year'] - self.pars['start_year']) / self.pars['timestep']+1)
+        except:
+            return 0
+
+    @property
+    def tiperyear(self):
+        ''' Count the number of points in timesteps per year.'''
+        try:
+            return (self.npts / (self.pars['end_year'] - self.pars['start_year'])).__ceil__()
         except:
             return 0
 
@@ -417,6 +442,10 @@ class BaseSim(ParsObj):
     def n(self):
         return self.people.alive.sum()
 
+    @property
+    def dt(self):
+        """ Time step in years"""
+        return self.pars['timestep'] / fpd.mpy
 
     def _brief(self):
         '''
@@ -553,4 +582,5 @@ class BaseSim(ParsObj):
         Same as get_intervention(), but for analyzers.
         '''
         return self._get_ia('analyzers', label=label, partial=partial, first=first, die=die, as_inds=False, as_list=False)
+
 

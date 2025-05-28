@@ -8,67 +8,159 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 2.0.1 (2025-05-09)
+---------------------------
+- Cleanup of data processing scripts in the data_processing directory
+- Creation of shared_data dir for data shared across model locations and corresponding data_utils cleanup
+- Addition of <location>.py template for new users
+- Documentation overhaul in locations/README, data_processing/README, and data processing scripts
+
+ *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/531>`_
+
+Version 2.0.0 (2025-03-31)
+---------------------------
+FPsim 2.0 represents a major overhaul of how the model represents contraceptive choices. Previously, women updated their contraceptive choices each year in their birth month.
+This version introduces a new method for setting contraceptive choices, whereby women choose a method of contraception, and are then assigned a duration of use (`dur_use`). They update their contraceptive choice at the end of this duration, or after certain other events (e.g. postpartum, or after a change in one of their empowerment metrics).
+
+To support this new feature, this PR also introduces several new items:
+ - `ContraceptiveChoice` modules can be defined (eg, `SimpleChoice`) and flexibly added to sims depending on how one wishes to model the mechanism for choosing contraception
+
+ There are also several other minor changes:
+ - `sim.i` has been renamed `sim.ti` for consistency across starsim modules and for clarity that it refers to an integer representation of time (time step)
+ - `track_switching` has been moved to an analyzer
+ - the fpsim `ndict` class has been removed and replaced with the starsim `ndict` class
+ - the lists of lists in the results object have been replaced with arrays
+ - `Education` modules have been added
+ - new parameters and people's attributes have been added: `fertility_intent`, `intent_to_use` and `wealth_quintile`
+ - new analyzer "Life of" has been added to visualise the events during the lifecourse of a woman
+ - new intervention that allows for changes in the probability of initiation (of contraceptive use) in contraception modules that use a logistic regression module.
+ - Fixes a bug that prevented simulations from running if pars['timestep'] !=1
+ - Adds a circular buffer to track the last 12 months of data, and enable model updates that depend on the previous state
+
+ *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/411>`_
+
+Version 1.0.4 (2024-08-19)
+---------------------------
+- Fixes issue 310 (Removes legacy use_subnational logic)
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/392>`_
+
+Version 1.0.3 (2024-07-26)
+---------------------------
+- Adds .devcontainer configuration for a Codespaces dev container
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/369>`_
+
+Version 1.0.2 (2024-07-25)
+---------------------------
+- Fixes issue 347, correcting variable in defaults storing age-specific results
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/388>`_
+
+Version 1.0.1 (2024-06-17)
+---------------------------
+- Adds empowerment metrics (paid work and education attainment) to calibration targets
+- Creates script for empowerment calibration
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/240>`_
+
+Version 1.0.0 (2024-06-07)
+--------------------------
+- Releases FPsim1.0 to pypi
+- Adds FPsim New User Instructions to tutorials
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/349>`_
+
+Version 0.28.3 (2024-04-30)
+--------------------------
+- Creates subnational tutorial for Ethiopia
+- Updates regional scripts to improve subnationals calibrations for Ethiopia
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/334>`_
+
+Version 0.28.2 (2024-04-20)
+---------------------------
+- Refactoring of location directory, such that there is a country folder under locations/ dir containing the data, model script(s), and figs pertaining to that location only
+- Modifies these new paths accordingly in all relevant files
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/316>`_
+
+Version 0.28.1 (2024-04-11)
+---------------------------
+- Updates regional parameters to calibrate subnationally in Ethiopia
+- Revises subnational calibration script to run for all regions and includes a new multisim script for subnational comparisons 
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/319>`_
+
+Version 0.27.0 (2024-02-09)
+---------------------------
+- Builds out new regional attribute and parameters for subnational dynamics in Ethiopia
+- Creates new subnational calibration script and subfolder for regional datasets and figures 
+- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/241>`_
+
+Version 0.26.8 (2024-02-08)
+---------------------------
+- Removed unused ``timeseries_recorder`` and ``verbose_sim`` analyzers.
+- *GitHub info*: PR `257 <https://github.com/fpsim/fpsim/pull/257>`_
+
+Version 0.26.7 (2023-10-24)
+---------------------------
+- Created two scripts in data_processing dir to scrape UN and World Bank country calibration data
+- Updated location_template.txt with logic to pull this scraped data for future contexts
+- *GitHub info*: PR `213 <https://github.com/fpsim/fpsim/pull/213>`_
+
 Version 0.26.6 (2023-9-27)
 --------------------------
 - Renamed the country data filenames to be standardized across contexts
 - Updated references to these updated country data files
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/196>`_
+- *GitHub info*: PR `196 <https://github.com/fpsim/fpsim/pull/196>`_
 
 Version 0.26.5 (2023-9-27)
 --------------------------
 - Adds Tutorial for manual calibration to docs/tutorials/ directory
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/166>`_
+- *GitHub info*: PR `166 <https://github.com/fpsim/fpsim/pull/166>`_
 
 Version 0.26.4 (2023-9-27)
 --------------------------
 - Refactoring of Experiment class to run with the latest country data formats
 - Country files have updated references to these updated country data files
 - Senegal country data files updated to latest standard format (based on Kenya)
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/193>`_
+- *GitHub info*: PR `193 <https://github.com/fpsim/fpsim/pull/193>`_
 
 Version 0.26.3 (2023-9-27)
 --------------------------
 - Updates Senegal files in locations/senegal to be in the same format as Kenya for standardization purposes
 - Minor updates to calibrate_manual.py to be able to run with Senegal data (in addition to Kenya and other contexts)
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/165>`_
+- *GitHub info*: PR `165 <https://github.com/fpsim/fpsim/pull/165>`_
 
 Version 0.26.2 (2023-7-25)
 --------------------------
 - Updates code for manual calibration
 - Adds folder to create figures for manual calibration runs
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/164>`_
+- *GitHub info*: PR `164 <https://github.com/fpsim/fpsim/pull/164>`_
 
 Version 0.26.1 (2023-6-29)
 --------------------------
 - Updates code for contraceptive matrices
 - Adds contraceptive matrices for Ethiopia to run manual calibration
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/161>`_
+- *GitHub info*: PR `161 <https://github.com/fpsim/fpsim/pull/161>`_
 
 Version 0.26.0 (2023-5-31)
 --------------------------
 - Builds out new parameters file for Ethiopia
 - Adds camparison data for Ethiopia calibration
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/156>`_
+- *GitHub info*: PR `156 <https://github.com/fpsim/fpsim/pull/156>`_
 
 Version 0.25.0 (2023-5-13)
 --------------------------
 - Adds to sim.py to track sexual inactivity in agents
 - Restricts method use to only those women sexually active over the last 12 months and debuted
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/157>`_
+- *GitHub info*: PR `157 <https://github.com/fpsim/fpsim/pull/157>`_
 
 Version 0.24.1 (2023-4-14)
 --------------------------
 - Fixes example_calib.py and example_exp.py to run with fpsim library
 - Updates manual_calibration.py to be flexible to take any location with identically structured data as Kenya
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/133>`_
+- *GitHub info*: PR `133 <https://github.com/fpsim/fpsim/pull/133>`_
 
 Version 0.24.0 (2023-3-17)
 --------------------------
 - Finish a manual calibration script for plotting model outcomes vs data for Kenya
 - Goal is to make this script more flexible for other locations, still needs some tweaks for data import
-- Compares ASFR, TFR, age/parity mix, contraceptive use and mix, CPR, pop growth rate, age at first birth,
-and birth spacing bins
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/133>`_
+- Compares ASFR, TFR, age/parity mix, contraceptive use and mix, CPR, pop growth rate, age at first birth, and birth spacing bins
+- *GitHub info*: PR `133 <https://github.com/fpsim/fpsim/pull/133>`_
 
 Version 0.23.2 (2023-3-6)
 --------------------------

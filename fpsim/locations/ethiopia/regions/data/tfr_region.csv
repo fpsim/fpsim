@@ -1,0 +1,221 @@
+year,region,tfr
+2000,Addis Ababa,1.8
+2000,Afar,4.4
+2000,Amhara,5.5
+2000,Benishangul-Gumuz,5
+2000,Dire Dawa,3.5
+2000,Gambela,4.4
+2000,Harari,4.2
+2000,Oromia,6.1
+2000,SNNPR,5.6
+2000,Somali,5.1
+2000,Tigray,5.3
+2001,Addis Ababa,1.72
+2001,Afar,4.5
+2001,Amhara,5.42
+2001,Benishangul-Gumuz,5.04
+2001,Dire Dawa,3.52
+2001,Gambela,4.32
+2001,Harari,4.12
+2001,Oromia,6.12
+2001,SNNPR,5.6
+2001,Somali,5.28
+2001,Tigray,5.26
+2002,Addis Ababa,1.64
+2002,Afar,4.6
+2002,Amhara,5.34
+2002,Benishangul-Gumuz,5.08
+2002,Dire Dawa,3.54
+2002,Gambela,4.24
+2002,Harari,4.04
+2002,Oromia,6.14
+2002,SNNPR,5.6
+2002,Somali,5.46
+2002,Tigray,5.22
+2003,Addis Ababa,1.56
+2003,Afar,4.7
+2003,Amhara,5.26
+2003,Benishangul-Gumuz,5.12
+2003,Dire Dawa,3.56
+2003,Gambela,4.16
+2003,Harari,3.96
+2003,Oromia,6.16
+2003,SNNPR,5.6
+2003,Somali,5.64
+2003,Tigray,5.18
+2004,Addis Ababa,1.48
+2004,Afar,4.8
+2004,Amhara,5.18
+2004,Benishangul-Gumuz,5.16
+2004,Dire Dawa,3.58
+2004,Gambela,4.08
+2004,Harari,3.88
+2004,Oromia,6.18
+2004,SNNPR,5.6
+2004,Somali,5.82
+2004,Tigray,5.14
+2005,Addis Ababa,1.4
+2005,Afar,4.9
+2005,Amhara,5.1
+2005,Benishangul-Gumuz,5.2
+2005,Dire Dawa,3.6
+2005,Gambela,4
+2005,Harari,3.8
+2005,Oromia,6.2
+2005,SNNPR,5.6
+2005,Somali,6
+2005,Tigray,5.1
+2006,Addis Ababa,1.416666667
+2006,Afar,4.916666667
+2006,Amhara,4.95
+2006,Benishangul-Gumuz,5.2
+2006,Dire Dawa,3.566666667
+2006,Gambela,4
+2006,Harari,3.8
+2006,Oromia,6.1
+2006,SNNPR,5.483333333
+2006,Somali,6.183333333
+2006,Tigray,5.016666667
+2007,Addis Ababa,1.433333333
+2007,Afar,4.933333333
+2007,Amhara,4.8
+2007,Benishangul-Gumuz,5.2
+2007,Dire Dawa,3.533333333
+2007,Gambela,4
+2007,Harari,3.8
+2007,Oromia,6
+2007,SNNPR,5.366666667
+2007,Somali,6.366666667
+2007,Tigray,4.933333333
+2008,Addis Ababa,1.45
+2008,Afar,4.95
+2008,Amhara,4.65
+2008,Benishangul-Gumuz,5.2
+2008,Dire Dawa,3.5
+2008,Gambela,4
+2008,Harari,3.8
+2008,Oromia,5.9
+2008,SNNPR,5.25
+2008,Somali,6.55
+2008,Tigray,4.85
+2009,Addis Ababa,1.466666667
+2009,Afar,4.966666667
+2009,Amhara,4.5
+2009,Benishangul-Gumuz,5.2
+2009,Dire Dawa,3.466666667
+2009,Gambela,4
+2009,Harari,3.8
+2009,Oromia,5.8
+2009,SNNPR,5.133333333
+2009,Somali,6.733333333
+2009,Tigray,4.766666667
+2010,Addis Ababa,1.483333333
+2010,Afar,4.983333333
+2010,Amhara,4.35
+2010,Benishangul-Gumuz,5.2
+2010,Dire Dawa,3.433333333
+2010,Gambela,4
+2010,Harari,3.8
+2010,Oromia,5.7
+2010,SNNPR,5.016666667
+2010,Somali,6.916666667
+2010,Tigray,4.683333333
+2011,Addis Ababa,1.5
+2011,Afar,5
+2011,Amhara,4.2
+2011,Benishangul-Gumuz,5.2
+2011,Dire Dawa,3.4
+2011,Gambela,4
+2011,Harari,3.8
+2011,Oromia,5.6
+2011,SNNPR,4.9
+2011,Somali,7.1
+2011,Tigray,4.6
+2012,Addis Ababa,1.56
+2012,Afar,5.1
+2012,Amhara,4.1
+2012,Benishangul-Gumuz,5.04
+2012,Dire Dawa,3.34
+2012,Gambela,3.9
+2012,Harari,3.86
+2012,Oromia,5.56
+2012,SNNPR,4.8
+2012,Somali,7.12
+2012,Tigray,4.62
+2013,Addis Ababa,1.62
+2013,Afar,5.2
+2013,Amhara,4
+2013,Benishangul-Gumuz,4.88
+2013,Dire Dawa,3.28
+2013,Gambela,3.8
+2013,Harari,3.92
+2013,Oromia,5.52
+2013,SNNPR,4.7
+2013,Somali,7.14
+2013,Tigray,4.64
+2014,Addis Ababa,1.68
+2014,Afar,5.3
+2014,Amhara,3.9
+2014,Benishangul-Gumuz,4.72
+2014,Dire Dawa,3.22
+2014,Gambela,3.7
+2014,Harari,3.98
+2014,Oromia,5.48
+2014,SNNPR,4.6
+2014,Somali,7.16
+2014,Tigray,4.66
+2015,Addis Ababa,1.74
+2015,Afar,5.4
+2015,Amhara,3.8
+2015,Benishangul-Gumuz,4.56
+2015,Dire Dawa,3.16
+2015,Gambela,3.6
+2015,Harari,4.04
+2015,Oromia,5.44
+2015,SNNPR,4.5
+2015,Somali,7.18
+2015,Tigray,4.68
+2016,Addis Ababa,1.8
+2016,Afar,5.5
+2016,Amhara,3.7
+2016,Benishangul-Gumuz,4.4
+2016,Dire Dawa,3.1
+2016,Gambela,3.5
+2016,Harari,4.1
+2016,Oromia,5.4
+2016,SNNPR,4.4
+2016,Somali,7.2
+2016,Tigray,4.7
+2017,Addis Ababa,1.966666667
+2017,Afar,5.6
+2017,Amhara,3.666666667
+2017,Benishangul-Gumuz,4.5
+2017,Dire Dawa,3.133333333
+2017,Gambela,3.5
+2017,Harari,3.966666667
+2017,Oromia,5.033333333
+2017,SNNPR,4.3
+2017,Somali,6.733333333
+2017,Tigray,4.433333333
+2018,Addis Ababa,2.133333333
+2018,Afar,5.7
+2018,Amhara,3.633333333
+2018,Benishangul-Gumuz,4.6
+2018,Dire Dawa,3.166666667
+2018,Gambela,3.5
+2018,Harari,3.833333333
+2018,Oromia,4.666666667
+2018,SNNPR,4.2
+2018,Somali,6.266666667
+2018,Tigray,4.166666667
+2019,Addis Ababa,2.3
+2019,Afar,5.8
+2019,Amhara,3.6
+2019,Benishangul-Gumuz,4.7
+2019,Dire Dawa,3.2
+2019,Gambela,3.5
+2019,Harari,3.7
+2019,Oromia,4.3
+2019,SNNPR,4.1
+2019,Somali,5.8
+2019,Tigray,3.9

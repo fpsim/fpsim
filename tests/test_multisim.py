@@ -6,7 +6,7 @@ import sciris as sc
 import fpsim as fp
 
 serial  = 0
-do_plot = 1
+do_plot = 0
 sc.options(backend='agg') # Turn off interactive plots
 
 
@@ -36,8 +36,28 @@ def test_multisim(do_plot=do_plot):
 
     return msim
 
+# def test_eth_multisim():
+#     sim1 = fp.Sim(pars=fp.pars(location='addis_ababa'))
+#     sim2 = fp.Sim(pars=fp.pars(location='afar'))
+#     sim3 = fp.Sim(pars=fp.pars(location='amhara'))
+#     sim4 = fp.Sim(pars=fp.pars(location='benishangul_gumuz'))
+#     sim5 = fp.Sim(pars=fp.pars(location='dire_dawa'))
+#     sim6 = fp.Sim(pars=fp.pars(location='gambela'))
+#     sim7 = fp.Sim(pars=fp.pars(location='harari'))
+#     sim8 = fp.Sim(pars=fp.pars(location='oromia'))
+#     sim9 = fp.Sim(pars=fp.pars(location='snnpr'))
+#     sim10 = fp.Sim(pars=fp.pars(location='somali'))
+#     sim11 = fp.Sim(pars=fp.pars(location='tigray'))
+#     msim = fp.MultiSim(sims=[sim1, sim2, sim3, sim4, sim5, sim6, sim7, sim8, sim9, sim10, sim11])
+#
+#     msim.run()
+#
+#     if do_plot:
+#         msim.plot()
+#     return msim
 
 if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer(): # Start timing
         msim = test_multisim()
+        # msim_eth = test_eth_multisim()
