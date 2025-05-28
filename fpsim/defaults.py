@@ -5,9 +5,7 @@ Define defaults for use throughout FPsim
 import numpy as np
 import sciris as sc
 import starsim as ss
-import fpsim.settings as fps
 
-from . import base as fpb
 
 #%% Global defaults
 useSI          = True
@@ -55,6 +53,29 @@ class State:
             shape = n if self.ncols is None else (n, self.ncols)
             arr = np.full(shape=shape, fill_value=vals, dtype=dtype)
         return arr
+
+
+# Parse locations
+def get_location(location, printmsg=False):
+    default_location = 'senegal'
+    if not location:
+        if printmsg: print('Location not supplied: using parameters from Senegal')
+        location = default_location
+    location = location.lower()  # Ensure it's lowercase
+    if location == 'test':
+        if printmsg: print('Running test simulation using parameters from Senegal')
+        location = default_location
+    if location == 'default':
+        if printmsg: print('Running default simulation using parameters from Senegal')
+        location = default_location
+
+    # Define valid locations
+    valid_country_locs = ['senegal', 'kenya', 'ethiopia']
+    if location not in valid_country_locs:
+        errormsg = f'Location "{location}" is not currently supported'
+        raise NotImplementedError(errormsg)
+
+    return location
 
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
@@ -105,6 +126,8 @@ person_defaults = [
     State('personal_fecundity', 0, int),
 
     # Empowerment - states will remain at these values if use_empowerment is False
+    # NOTE: to use empowerment metrics, please refer to the kenya_empowerment repo
+    # These states will be refactored into a separate module as part of the V3 release.
     State('paid_employment',    0, bool),
     State('decision_wages',     0, bool),
     State('decision_health',    0, bool),
@@ -127,14 +150,12 @@ person_defaults = [
     State('categorical_intent', "cannot", "<U6"),
     State('intent_to_use', 0, bool),            # for women not on contraception, whether she has intent to use contraception
 
-
     # Partnership information -- states will remain at these values if use_partnership is False
     State('partnered',    0, bool),
     State('partnership_age', -1, float),
 
-    # Urban (basic demographics) -- state will remain at these values if use_urban is False
+    # Socioeconomic
     State('urban', 1, bool),
-    State('region', None, str),
     State('wealthquintile', 3, int),       # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
 
     # Education - states will remain at these values if use_education is False
@@ -210,24 +231,6 @@ method_youth_age_map = {
     '>25': [26, max_age+1]
 }
 
-age_specific_channel_bins = method_youth_age_map
-
-by_age_results = sc.autolist(
-    'acpr',
-    'cpr',
-    'mcpr',
-    'pregnancies',
-    'births',
-    'imr_numerator',
-    'imr_denominator',
-    'mmr_numerator',
-    'mmr_denominator',
-    'imr',
-    'mmr',
-    'as_stillbirths',
-    'stillbirths',
-)
-
 array_results = sc.autolist(
     't',
     'pop_size_months',
@@ -254,6 +257,7 @@ array_results = sc.autolist(
     'cpr',
     'acpr',
     'ever_used_contra',
+    'switchers',
     'urban_women',
     'pp0to5',
     'pp6to11',
@@ -267,6 +271,17 @@ array_results = sc.autolist(
     'wq3',
     'wq4',
     'wq5',
+    'nonpostpartum',
+    'total_women_fecund',
+    'method_failures',
+    'birthday_fraction',
+    'short_intervals',
+    'secondary_births',
+    'proportion_short_interval',
+    # Education
+    'edu_objective',
+    'edu_attainment',
+    # Empowerment and intent: all zero unless using an empowerment module
     'perc_contra_intent',
     'perc_fertil_intent',
     'paid_employment',
@@ -281,14 +296,7 @@ array_results = sc.autolist(
     "has_fin_goals",
     "financial_autonomy", 
     "decision_making",
-    'nonpostpartum',
-    'total_women_fecund',
-    'method_failures',
-    'birthday_fraction',
-    'short_intervals',
-    'secondary_births',
-    'proportion_short_interval'
-)
+    )
 
 
 for age_group in age_bin_map.keys():

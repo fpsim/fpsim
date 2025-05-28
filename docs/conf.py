@@ -16,7 +16,7 @@ on_rtd = os.environ.get('READTHEDOCS') == 'True'
 # -- Project information -----------------------------------------------------
 
 project = 'FPsim'
-copyright = f'2019 - {sc.now().year}, Bill & Melinda Gates Foundation. All rights reserved.\nThese docs were built for FPsim version {fp.__version__}\n'
+copyright = f'2019 - {sc.now().year}, Gates Foundation. All rights reserved.\nThese docs were built for FPsim version {fp.__version__}\n'
 author = 'Institute for Disease Modeling'
 
 # The short X.Y version
@@ -86,6 +86,9 @@ html_theme_options = {
     "header_links_before_dropdown": 5,
     "footer_start": ["copyright", "footer_start"],
     "footer_end": ["theme-version", "footer_end"],
+    "logo": {
+        "text": "FPsim",
+    },
 }
 html_sidebars = {
     "**": ["sidebar-nav-bs", "page-toc"],

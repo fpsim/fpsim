@@ -304,34 +304,69 @@ class change_people_state(Intervention):
     point in time.
 
     Args:
-        state_name   (string): name of the People's state that will be modified
-        year         (float): time expressed in years when the change is applied
-        new_val      (float): the new state value eligible people will have
-        eligibility  (inds/callable): indices OR callable that returns inds
+        state_name  (string): name of the People's state that will be modified
+        years       (list, float): The year we want to start the intervention.
+                     if years is None, uses start and end years of sim as defaults
+                     if years is a number or a list with a single element, eg, 2000.5, or [2000.5],
+                     this is interpreted as the start year of the intervention, and the
+                     end year of intervention will be the end of the simulation
+        new_val     (bool, float): the new state value eligible people will have
+        prop        (float): a value between 0 and 1 indicating the x% of eligible people
+                     who will have the new state value
+        annual      (bool): whether the increase, prop, represents a "per year" increase, or per time step
+        eligibility (inds/callable): indices OR callable that returns inds
     """
 
-    def __init__(self, state_name, year, new_val, eligibility=None, prop=1.0):
+    def __init__(self, state_name, new_val, years=None, eligibility=None, prop=1.0, annual=False):
         super().__init__()
         self.state_name = state_name
-        self.year = year
-        self.new_val = new_val
+        self.years = years
         self.eligibility = eligibility
+
         self.prop = prop
+        self.annual = annual
+        self.annual_perc = None
+        self.new_val = new_val
+
         self.applied = False
         return
 
     def initialize(self, sim=None):
         super().initialize()
-        self._validate()
+        self._validate_pars()
+
+        # Lastly, adjust the probability by the sim's timestep, if it's an annual probability
+        if self.annual:
+            # per timestep/monthly growth rate or perc of eligible women who will be made to choose contraception
+            self.annual_perc = self.prop
+            self.prop = ((1 + self.annual_perc) ** sim.dt)-1
+        # Validate years and values
+        if self.years is None:
+            # f'Intervention start and end years not provided. Will use sim start an end years'
+            self.years = [sim['start_year'], sim['end_year']]
+        if sc.isnumber(self.years) or len(self.years) == 1:
+            self.years = sc.promotetolist(self.years)
+            # Assumes that start year has been specified, append end of the simulation as end year of the intervention
+            self.years.append(sim['end_year'])
+
+        min_year = min(self.years)
+        max_year = max(self.years)
+        if min_year < sim['start_year']:
+            errormsg = f'Intervention start {min_year} is before the start of the simulation.'
+            raise ValueError(errormsg)
+        if max_year > sim['end_year']:
+            errormsg = f'Intervention end {max_year} is after the end of the simulation.'
+            raise ValueError(errormsg)
+        if self.years != sorted(self.years):
+            errormsg = f'Years {self.years} should be monotonically increasing'
+            raise ValueError(errormsg)
+
         return
 
-    def _validate(self):
+    def _validate_pars(self):
         # Validation
         if self.state_name is None:
             errormsg = 'A state name must be supplied.'
-            raise ValueError(errormsg)
-        if self.year is None:
-            errormsg = 'A year must be supplied.'
             raise ValueError(errormsg)
         if self.new_val is None:
             errormsg = 'A new value must be supplied.'
@@ -355,18 +390,22 @@ class change_people_state(Intervention):
             errormsg = 'Eligibility must be a function or an array of indices'
             raise ValueError(errormsg)
 
-        eligible_inds = sc.findinds(is_eligible)
-        is_selected = fpu.n_binomial(self.prop, len(eligible_inds))
-        is_eligible[eligible_inds] = is_selected
-
         return is_eligible
 
+    def select_people(self, is_eligible):
+        """
+        Select people using
+        """
+        eligible_inds = sc.findinds(is_eligible)
+        is_selected = fpu.n_binomial(self.prop, len(eligible_inds))
+        selected_inds = eligible_inds[is_selected]
+        return selected_inds
+
     def apply(self, sim):
-        if not self.applied and sim.y >= self.year:
-            self.applied = True  # Ensure we don't apply this more than once
+        if self.years[0] <= sim.y <= self.years[1]:  # Inclusive range
             is_eligible = self.check_eligibility(sim)
-            ppl = sim.people.filter(is_eligible)
-            setattr(ppl, self.state_name, self.new_val)
+            selected_inds = self.select_people(is_eligible)
+            sim.people[self.state_name][selected_inds] = self.new_val
         return
 
 
@@ -410,9 +449,9 @@ class update_methods(Intervention):
         super().initialize()
         self._validate()
         par_name = None
-        if self.p_use is not None and isinstance(sim.people.contraception_module, (fpm.SimpleChoice, fpm.EmpoweredChoice)):
+        if self.p_use is not None and isinstance(sim.people.contraception_module, fpm.SimpleChoice):
             par_name = 'p_use'
-        if self.method_mix is not None and isinstance(sim.people.contraception_module, (fpm.SimpleChoice, fpm.EmpoweredChoice)):
+        if self.method_mix is not None and isinstance(sim.people.contraception_module, fpm.SimpleChoice, ):
             par_name = 'method_mix'
 
         if par_name is not None:
@@ -475,14 +514,14 @@ class change_initiation_prob(Intervention):
     contraceptive choice modules that have a logistic regression model.
 
     Args:
-        year (float): The year we want to start the intervention.
+        year (float): The year in which this intervention will be applied
         prob_use_intercept (float): A number that changes the intercept in the logistic refgression model
         p_use = 1 / (1 + np.exp(-rhs + p_use_time_trend + p_use_intercept))
     """
 
-    def __init__(self, year, prob_use_intercept=0.0, verbose=False):
+    def __init__(self, year=None, prob_use_intercept=0.0, verbose=False):
         super().__init__()
-        self.year    = year
+        self.year = year
         self.prob_use_intercept = prob_use_intercept
         self.verbose = verbose
         self.applied = False
@@ -502,12 +541,6 @@ class change_initiation_prob(Intervention):
 
         return
 
-    def _validate(self):
-        # Basic Validation
-        if self.year is None:
-            errormsg = 'A year must be supplied'
-            raise ValueError(errormsg)
-        return
 
     def apply(self, sim):
         """
@@ -528,79 +561,144 @@ class change_initiation(Intervention):
     Select a proportion of women and sets them on a contraception method.
 
     Args:
-        year (float): time expressed in years when the intervention starts is applied
-        annual_increase (float): a value between 0 and 1 indicating the x% extra of women
-            who will be made to select a contraception method.
-            The proportion or % is with respect to the number of
-            women who were on contraception the previous year.
+        years (list, float): The year we want to start the intervention.
+            if years is None, uses start and end years of sim as defaults
+            if years is a number or a list with a single lem,ent, eg, 2000.5, or [2000.5],
+            this is interpreted as the start year of the intervention, and the
+            end year of intervention will be the eno of the simulation
         eligibility (callable): callable that returns a filtered version of
             people eligible to receive the intervention
+        perc (float): a value between 0 and 1 indicating the x% extra of women
+            who will be made to select a contraception method .
+            The proportion or % is with respect to the number of
+            women who were on contraception:
+             - the previous year (12 months earlier)?
+             - at the beginning of the intervention.
+        annual (bool): whether the increase, perc, represents a "per year"
+            increase.
     """
 
-    def __init__(self, year=None, annual_increase=0.0, eligibility=None):
+    def __init__(self, years=None, eligibility=None, perc=0.0, annual=True, force_theoretical=False):
         super().__init__()
-        self.year = year
+        self.years = years
         self.eligibility = eligibility
-        self.increase = annual_increase / fpd.mpy
-        self.dt_increase = None
-        self.applied = False
+        self.perc = perc
+        self.annual = annual
+        self.annual_perc = None
+        self.force_theoretical = force_theoretical
+        self.current_women_oncontra = None
+
+        # Initial value of women on contra at the start of the intervention. Tracked for validation.
+        self.init_women_oncontra = None
+        # Theoretical number of women on contraception we should have by the end of the intervention period, if
+        # nothing else affected the dynamics of the contraception. Tracked for validation.
+        self.expected_women_oncontra = None
         return
 
     def initialize(self, sim=None):
         super().initialize()
-        self._validate()
-        self.dt_increase = 1.0 + self.increase  # if we do the updates at every time point
-        return
 
-    def _validate(self):
-        # Validation
-        if self.year is None:
-            errormsg = 'A year must be supplied.'
+        # Lastly, adjust the probability by the sim's timestep, if it's an annual probability
+        if self.annual:
+            # per timestep/monthly growth rate or perc of eligible women who will be made to choose contraception
+            self.annual_perc = self.perc
+            self.perc = ((1 + self.annual_perc) ** sim.dt)-1
+        # Validate years and values
+        if self.years is None:
+            # f'Intervention start and end years not provided. Will use sim start an end years'
+            self.years = [sim['start_year'], sim['end_year']]
+        if sc.isnumber(self.years) or len(self.years) == 1:
+            self.years = sc.promotetolist(self.years)
+            # Assumes that start year has been specified, append end of the simulation as end year of the intervention
+            self.years.append(sim['end_year'])
+
+        min_year = min(self.years)
+        max_year = max(self.years)
+        if min_year < sim['start_year']:
+            errormsg = f'Intervention start {min_year} is before the start of the simulation.'
             raise ValueError(errormsg)
+        if max_year > sim['end_year']:
+            errormsg = f'Intervention end {max_year} is after the end of the simulation.'
+            raise ValueError(errormsg)
+        if self.years != sorted(self.years):
+            errormsg = f'Years {self.years} should be monotonically increasing'
+            raise ValueError(errormsg)
+
         return
 
     def check_eligibility(self, sim):
         """
         Select eligible who is eligible
         """
+        contra_choosers = []
         if self.eligibility is None:
             contra_choosers = self._default_contra_choosers(sim.people)
         return contra_choosers
 
-    def _default_contra_choosers(self, ppl):
-        # TODO: check this is ok, or make a filter about the largest group of women who are eligible to choose contraception
+    @staticmethod
+    def _default_contra_choosers(ppl):
         # TODO: do we care whether women people have ti_contra > 0? For instance postpartum women could be made to choose earlier?
+        # Though it is trickier because we need to reset many postpartum-related attributes
         eligible = ppl.filter((ppl.sex == 0) & (ppl.alive) &                 # living women
                               (ppl.age < ppl.pars['age_limit_fecundity']) &  # who are fecund
                               (ppl.sexual_debut) &                           # who already had their sexual debut
-                              (~ppl.pregnant)  &                             # who are not currently pregnant
-                              (~ppl.postpartum) &                            # who are not in postpartum
-                              (ppl.sexually_active) &                        # who are sexually active on this time step or doesn't matter???
+                              (~ppl.pregnant)    &                           # who are not currently pregnant
+                              (~ppl.postpartum)  &                           # who are not in postpartum
                               (~ppl.on_contra)                               # who are not already on contra
                               )
         return eligible
 
     def apply(self, sim):
         ti = sim.ti
-        if sim.y >= self.year:
-            contra_choosers = self.check_eligibility(sim)
-            n_choosers = len(contra_choosers)
-            # Number currently on contra
-            current_oncontra = sum(sim.people.on_contra) # PSL: not used at the moment, not sure if we should be using this value instead of past_oncontra
-            #PSL: Number on contra one year ago.
-            past_oncontra = sum(sim.people['longitude']['on_contra'][:, sim.people.yei])
-            oncontra = past_oncontra
-            # avoid overflow and selecting more agents than we have available. feel there should be a better way of doing this
-            increase_factor = np.minimum(self.dt_increase, 1e9)
-            new_oncontra = sc.randround(oncontra * increase_factor - oncontra)
-            new_oncontra = np.minimum(new_oncontra, n_choosers)
-            if new_oncontra:
-                p_select = new_oncontra * np.ones(n_choosers) / n_choosers
-                contra_choosers.on_contra = fpu.binomial_arr(p_select)
-                new_users = contra_choosers.filter(contra_choosers.on_contra)
+        # Save theoretical number based on the value of women on contraception at start of intervention
+        if self.years[0] == sim.y:
+            self.expected_women_oncontra = (sim.people.alive & sim.people.on_contra).sum()
+            self.init_women_oncontra = self.expected_women_oncontra
+
+        # Apply intervention within this time range
+        if self.years[0] <= sim.y <= self.years[1]:  # Inclusive range
+            self.current_women_oncontra = (sim.people.alive & sim.people.on_contra).sum()
+
+            # Save theoretical number based on the value of women on contraception at start of intervention
+            nnew_on_contra = self.perc * self.expected_women_oncontra
+
+            # NOTE: TEMPORARY: force specified increase
+            # how many more women should be added per time step
+            # However, if the current number of women on contraception is >> than the expected value, this
+            # intervention does nothing. The forcing ocurrs in one particular direction, making it incomplete.
+            # If the forcing had to be fully function, when there are more women than the expected value
+            # this intervention should additionaly 'reset' the contraceptive state and related attributes (ie, like the duration on the method)
+            if self.force_theoretical:
+                additional_women_on_contra = self.expected_women_oncontra - self.current_women_oncontra
+                if additional_women_on_contra < 0:
+                    additional_women_on_contra = 0
+                new_on_contra = nnew_on_contra + additional_women_on_contra
+            else:
+                new_on_contra = self.perc * self.current_women_oncontra
+
+            self.expected_women_oncontra += nnew_on_contra
+
+            if not new_on_contra:
+                raise ValueError("For the given parameters (n_agents, and perc increase) we won't see an effect. "
+                                 "Consider increasing the number of agents.")
+
+            # Eligible population
+            can_choose_contra = self.check_eligibility(sim)
+            n_eligible = len(can_choose_contra)
+
+            if n_eligible:
+                if n_eligible < new_on_contra:
+                    print(f"There are fewer eligible women ({n_eligible}) than "
+                          f"the number of women who should be initiated on contraception ({new_on_contra}).")
+                    new_on_contra = n_eligible
+                # Of eligible women, select who will be asked to choose contraception
+                p_selected = new_on_contra * np.ones(n_eligible) / n_eligible
+                can_choose_contra.on_contra = fpu.binomial_arr(p_selected)
+                new_users = can_choose_contra.filter(can_choose_contra.on_contra)
                 new_users.method = sim.people.contraception_module.init_method_dist(new_users)
                 new_users.ever_used_contra = 1
                 method_dur = sim.people.contraception_module.set_dur_method(new_users)
                 new_users.ti_contra = ti + method_dur
-            self.dt_increase += self.increase # Not sure this is exactly what was required
+            else:
+                print(f"Ran out of eligible women to initiate")
         return

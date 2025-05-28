@@ -5,11 +5,11 @@ Defines the People class
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
 import sciris as sc
+from scipy.stats import truncnorm
 from . import utils as fpu
 from . import defaults as fpd
 from . import base as fpb
 from . import demographics as fpdmg
-from . import subnational as fpsn
 
 # Specify all externally visible things this file defines
 __all__ = ['People']
@@ -28,12 +28,18 @@ class People(fpb.BasePeople):
         # Initialization
         super().__init__(**kwargs)
 
+        # Allow defaults to be dynamically set
+        person_defaults = fpd.person_defaults
+        if 'person_defaults' in kwargs and kwargs['person_defaults'] is not None:
+            for state_name, val in kwargs['person_defaults'].items():
+                person_defaults[state_name].val = val
+
         self.pars = pars  # Set parameters
         if n is None:
             n = int(self.pars['n_agents'])
 
         # Set default states
-        self.states = fpd.person_defaults
+        self.states = person_defaults
         for state_name, state in self.states.items():
             self[state_name] = state.new(n)
 
@@ -42,10 +48,7 @@ class People(fpb.BasePeople):
 
         # Basic demographics
         _age, _sex = self.get_age_sex(n)
-        if not self.pars['use_subnational']:
-            _urban = self.get_urban(n)
-        else:
-            _urban = fpsn.get_urban_init_vals(self)
+        _urban = self.get_urban(n)
         if age is None: age = _age
         if sex is None: sex = _sex
 
@@ -58,25 +61,22 @@ class People(fpb.BasePeople):
 
         # Fertility intent
         has_intent = "fertility_intent"
-        self.fertility_intent   = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        self.fertility_intent   = self.states[has_intent].new(n, person_defaults[has_intent].val)
         self.categorical_intent = self.states["categorical_intent"].new(n, "no")
         # Update distribution of fertility intent with location-specific values if it is present in self.pars
         self.update_fertility_intent(n)
 
         # Intent to use contraception
         has_intent = "intent_to_use"
-        self.intent_to_use = self.states[has_intent].new(n, fpd.person_defaults[has_intent].val)
+        self.intent_to_use = self.states[has_intent].new(n, person_defaults[has_intent].val)
         # Update distribution of fertility intent if it is present in self.pars
         self.update_intent_to_use(n)
 
-        self.wealthquintile = self.states["wealthquintile"].new(n, fpd.person_defaults["wealthquintile"].val)
+        self.wealthquintile = self.states["wealthquintile"].new(n, person_defaults["wealthquintile"].val)
         self.update_wealthquintile(n)
 
-        # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        if not self.pars['use_subnational']:
-            self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
-        else:
-            self.fated_debut = fpsn.get_debut_init_vals(self)
+        # Default initialization for fated_debut
+        self.fated_debut = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], n)]
 
         # Fecundity variation
         fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
@@ -105,14 +105,9 @@ class People(fpb.BasePeople):
 
         # Once all the other metric are initialized, determine initial contraceptive use
         self.contraception_module = None  # Set below
-        self.barrier = fpu.n_multinomial(self.pars['barriers'][:], n)
 
         # Store keys
         self._keys = [s.name for s in self.states.values()]
-
-        if self.pars['use_subnational']:
-            fpsn.init_regional_states(self)
-            fpsn.init_regional_states(self)
 
         return
 
@@ -255,6 +250,9 @@ class People(fpb.BasePeople):
             oc.ever_used_contra = 1
             method_dur = contraception_module.set_dur_method(contra_choosers)
             contra_choosers.ti_contra = ti + method_dur
+
+        # Change the intent of women who have started to use a contraception method
+        self.intent_to_use[self.on_contra] = False
         return
 
     def update_fertility_intent_by_age(self):
@@ -296,7 +294,6 @@ class People(fpb.BasePeople):
             f_aged_x_inds = f_inds[age_inds == age]  # indices of women of a given age
             prob = intent_pars[age][1]  # Get the probability of having intent
             self.intent_to_use[f_aged_x_inds] = fpu.n_binomial(prob, len(f_aged_x_inds))
-
         return
 
     def update_method(self, year=None, ti=None):
@@ -304,6 +301,7 @@ class People(fpb.BasePeople):
         cm = self.contraception_module
         if year is None: year = self.y
         if ti is None: ti = self.ti
+
         if cm is not None:
 
             # If people are 1 or 6m postpartum, we use different parameters for updating their contraceptive decisions
@@ -338,14 +336,14 @@ class People(fpb.BasePeople):
                     choosers.ever_used_contra = choosers.ever_used_contra | choosers.on_contra
 
                     # Divide people into those that keep using contraception vs those that stop
-                    switching_contra = choosers.filter(choosers.on_contra)
+                    continuing_contra = choosers.filter(choosers.on_contra)
                     stopping_contra = choosers.filter(~choosers.on_contra)
-                    pp0.step_results['contra_access'] += len(switching_contra)
+                    pp0.step_results['contra_access'] += len(continuing_contra)
 
                     # For those who keep using, choose their next method
-                    if len(switching_contra):
-                        switching_contra.method = cm.choose_method(switching_contra)
-                        choosers.step_results['new_users'] += np.count_nonzero(switching_contra.method)
+                    if len(continuing_contra):
+                        continuing_contra.method = cm.choose_method(continuing_contra)
+                        choosers.step_results['new_users'] += np.count_nonzero(continuing_contra.method)
 
                     # For those who stop using, set method to zero
                     if len(stopping_contra):
@@ -385,7 +383,13 @@ class People(fpb.BasePeople):
             # Set duration of use for everyone, and reset the time they'll next update
             durs_fixed = (self.postpartum_dur == 1) & (self.method == 0)
             update_durs = self.filter(~durs_fixed)
-            update_durs.ti_contra = ti + cm.set_dur_method(update_durs)
+            dur_methods = cm.set_dur_method(update_durs)
+
+            # Check validity
+            if (dur_methods < 0).any():
+                raise ValueError('Negative duration of method use')
+
+            update_durs.ti_contra = ti + dur_methods
 
         return
 
@@ -540,14 +544,7 @@ class People(fpb.BasePeople):
 
         # Make selected agents pregnant
         preg.make_pregnant()
-        if self.pars['track_as']:
-            pregnant_boolean = np.full(len(self), False)
-            pregnant_boolean[np.searchsorted(self.uid, preg.uid)] = True
-            pregnant_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='pregnancies',
-                                                    numerators=[pregnant_boolean], denominators=None)
 
-            for key in pregnant_age_split:
-                self.step_results[key] = pregnant_age_split[key]
         return
 
     def make_pregnant(self):
@@ -586,12 +583,14 @@ class People(fpb.BasePeople):
     def update_breastfeeding(self):
         """
         Track breastfeeding, and update time of breastfeeding for individual pregnancy.
-        Agents are randomly assigned a duration value based on a gumbel distribution drawn
+        Agents are randomly assigned a duration value based on a truncated normal distribution drawn
         from the 2018 DHS variable for breastfeeding months.
-        The mean (mu) and the std dev (beta) are both drawn from that distribution in the DHS data.
+        The mean and the std dev are both drawn from that distribution in the DHS data.
         """
-        mu, beta = self.pars['breastfeeding_dur_mu'], self.pars['breastfeeding_dur_beta']
-        breastfeed_durs = abs(np.random.gumbel(mu, beta, size=len(self)))
+        mean, sd = self.pars['breastfeeding_dur_mean'], self.pars['breastfeeding_dur_sd']
+        a, b = 0, 50 # Truncate at 0 to ensure positive durations
+        a_std, b_std = (a - mean) / sd, (b - mean) / sd
+        breastfeed_durs = truncnorm.rvs(a_std, b_std, loc=mean, scale=sd, size=len(self))
         breastfeed_durs = np.ceil(breastfeed_durs)
         breastfeed_finished_inds = self.breastfeed_dur >= breastfeed_durs
         breastfeed_finished = self.filter(breastfeed_finished_inds)
@@ -715,34 +714,48 @@ class People(fpb.BasePeople):
             stillborn.lactating = False  # Set agents of stillbith to not lactate
             self.step_results['stillbirths'] = len(stillborn)
 
-            if self.pars['track_as']:
-                stillbirth_boolean = np.full(len(self), False)
-                stillbirth_boolean[np.searchsorted(self.uid, stillborn.uid)] = True
+            live = deliv.filter(~is_stillborn)
 
-                self.step_results['stillbirth_ages'] = self.age_by_group
-                self.step_results['as_stillbirths'] = stillbirth_boolean
+            # Increment parity for live births
+            is_twin = live.binomial(self.pars['twins_prob'])
+            twin = live.filter(is_twin) # Handle twins
+            self.step_results['births'] += 2 * len(twin)  # only add births to population if born alive
+            single = live.filter(~is_twin)  # Handle singles
+            self.step_results['births'] += len(single)
 
             # Record ages of agents when live births / stillbirths occur
             all_ppl = self.unfilter()
-            live = deliv.filter(~is_stillborn)
-            for parity in np.unique(live.parity):
-                inds = live.inds[live.parity == parity]
+            for parity in np.unique(single.parity):
+                inds = single.inds[single.parity == parity]
                 all_ppl.birth_ages[inds, parity] = all_ppl.age[inds]
+                if parity == 0: all_ppl.first_birth_age[inds] = all_ppl.age[inds]
+            for parity in np.unique(twin.parity):
+                inds = twin.inds[twin.parity == parity]
+                all_ppl.birth_ages[inds, parity] = all_ppl.age[inds]
+                all_ppl.birth_ages[inds, parity+1] = all_ppl.age[inds]  # Record twin birth
                 if parity == 0: all_ppl.first_birth_age[inds] = all_ppl.age[inds]
             for parity in np.unique(stillborn.parity):
                 inds = stillborn.inds[stillborn.parity == parity]
                 all_ppl.stillborn_ages[inds, parity] = all_ppl.age[inds]
 
-            # Handle twins
-            is_twin = live.binomial(self.pars['twins_prob'])
-            twin = live.filter(is_twin)
-            self.step_results['births'] += 2 * len(twin)  # only add births to population if born alive
+            single.parity += 1
             twin.parity += 2  # Add 2 because matching DHS "total children ever born (alive) v201"
 
-            # Handle singles
-            single = live.filter(~is_twin)
-            self.step_results['births'] += len(single)
-            single.parity += 1
+            # Calculate short intervals
+            prev_birth_single = single.filter(single.parity > 1)
+            prev_birth_twins = twin.filter(twin.parity > 2)
+            if len(prev_birth_single):
+                pidx = prev_birth_single.parity - 1
+                all_ints = prev_birth_single.birth_ages[:, pidx] - prev_birth_single.birth_ages[:, pidx-1]
+                latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
+                short_ints = np.count_nonzero(latest_ints < (self.pars['short_int']/fpd.mpy))
+                self.step_results['short_intervals'] += short_ints
+            if len(prev_birth_twins):
+                pidx = prev_birth_twins.parity - 2
+                all_ints = prev_birth_twins.birth_ages[:, pidx] - prev_birth_twins.birth_ages[:, pidx-1]
+                latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
+                short_ints = np.count_nonzero(latest_ints < (self.pars['short_int']/fpd.mpy))
+                self.step_results['short_intervals'] += short_ints
 
             # Calculate total births
             self.step_results['total_births'] = len(stillborn) + self.step_results['births']
@@ -753,39 +766,9 @@ class People(fpb.BasePeople):
                 birth_bins = np.sum(match_low_high)
                 self.step_results['birth_bins'][key] += birth_bins
 
-            if self.pars['track_as']:
-                total_women_delivering = np.full(len(self), False)
-                total_women_delivering[np.searchsorted(self.uid, live.uid)] = True
-                self.step_results['mmr_age_by_group'] = self.age_by_group
-
             # Check mortality
             maternal_deaths = live.check_maternal_mortality()  # Mothers of only live babies eligible to match definition of maternal mortality ratio
-            if self.pars['track_as']:
-                maternal_deaths_bool = np.full(len(self), False)
-                maternal_deaths_bool[np.searchsorted(self.uid, maternal_deaths.uid)] = True
-
-                total_infants_bool = np.full(len(self), False)
-                total_infants_bool[np.searchsorted(self.uid, live.uid)] = True
-
             i_death = live.check_infant_mortality()
-
-            # Save infant deaths and totals into age buckets
-            if self.pars['track_as']:
-                infant_deaths_bool = np.full(len(self), False)
-                infant_deaths_bool[np.searchsorted(self.uid, i_death.uid)] = True
-                self.step_results[
-                    'imr_age_by_group'] = self.age_by_group  # age groups have to be in same context as imr
-
-                self.step_results[
-                    'imr_numerator'] = infant_deaths_bool  # we need to track these over time to be summed by year
-                self.step_results['imr_denominator'] = total_infants_bool
-                self.step_results['mmr_numerator'] = maternal_deaths_bool
-                self.step_results['mmr_denominator'] = total_women_delivering
-
-                live_births_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='births',
-                                                           numerators=[total_women_delivering], denominators=None)
-                for key in live_births_age_split:
-                    self.step_results[key] = live_births_age_split[key]
 
         return
 
@@ -807,78 +790,6 @@ class People(fpb.BasePeople):
             self.step_results['age_bin_totals'][key] += len(this_age_bin)
         return
 
-    def log_age_split(self, binned_ages_t, channel, numerators, denominators=None):
-        """
-        Method called if age-specific results are being tracked. Separates results by age.
-        """
-        counts_dict = {}
-        results_dict = {}
-        if denominators is not None:  # true when we are calculating rates (like cpr)
-            for timestep_index in range(len(binned_ages_t)):
-                if len(denominators[timestep_index]) == 0:
-                    counts_dict[f"age_true_counts_{timestep_index}"] = {}
-                    counts_dict[f"age_false_counts_{timestep_index}"] = {}
-                else:
-                    binned_ages = binned_ages_t[timestep_index]
-                    binned_ages_true = binned_ages[
-                        np.logical_and(numerators[timestep_index], denominators[timestep_index])]
-                    if len(numerators[timestep_index]) == 0:
-                        binned_ages_false = []  # ~[] doesnt make sense
-                    else:
-                        binned_ages_false = binned_ages[
-                            np.logical_and(~numerators[timestep_index], denominators[timestep_index])]
-
-                    counts_dict[f"age_true_counts_{timestep_index}"] = dict(
-                        zip(*np.unique(binned_ages_true, return_counts=True)))
-                    counts_dict[f"age_false_counts_{timestep_index}"] = dict(
-                        zip(*np.unique(binned_ages_false, return_counts=True)))
-
-            age_true_counts = {}
-            age_false_counts = {}
-            for age_counts_dict_key in counts_dict:
-                for index in counts_dict[age_counts_dict_key]:
-                    age_true_counts[index] = 0 if index not in age_true_counts else age_true_counts[index]
-                    age_false_counts[index] = 0 if index not in age_false_counts else age_false_counts[index]
-                    if 'false' in age_counts_dict_key:
-                        age_false_counts[index] += counts_dict[age_counts_dict_key][index]
-                    else:
-                        age_true_counts[index] += counts_dict[age_counts_dict_key][index]
-
-            for index, age_str in enumerate(fpd.age_specific_channel_bins):
-                scale = 1
-                if channel == "imr":
-                    scale = 1000
-                elif channel == "mmr":
-                    scale = 100000
-                if index not in age_true_counts:
-                    results_dict[f"{channel}_{age_str}"] = 0
-                elif index in age_true_counts and index not in age_false_counts:
-                    results_dict[f"{channel}_{age_str}"] = 1.0 * scale
-                else:
-                    results_dict[f"{channel}_{age_str}"] = (age_true_counts[index] / (
-                            age_true_counts[index] + age_false_counts[index])) * scale
-        else:  # true when we are calculating counts (like pregnancies)
-            for timestep_index in range(len(binned_ages_t)):
-                if len(numerators[timestep_index]) == 0:
-                    counts_dict[f"age_counts_{timestep_index}"] = {}
-                else:
-                    binned_ages = binned_ages_t[timestep_index]
-                    binned_ages_true = binned_ages[numerators[timestep_index]]
-                    counts_dict[f"age_counts_{timestep_index}"] = dict(
-                        zip(*np.unique(binned_ages_true, return_counts=True)))
-            age_true_counts = {}
-            for age_counts_dict_key in counts_dict:
-                for index in counts_dict[age_counts_dict_key]:
-                    age_true_counts[index] = 0 if index not in age_true_counts else age_true_counts[index]
-                    age_true_counts[index] += counts_dict[age_counts_dict_key][index]
-
-            for index, age_str in enumerate(fpd.age_specific_channel_bins):
-                if index not in age_true_counts:
-                    results_dict[f"{channel}_{age_str}"] = 0
-                else:
-                    results_dict[f"{channel}_{age_str}"] = age_true_counts[index]
-        return results_dict
-
     def track_mcpr(self):
         """
         Track for purposes of calculating mCPR at the end of the timestep after all people are updated
@@ -896,11 +807,6 @@ class People(fpb.BasePeople):
         self.step_results['no_methods_mcpr'] += no_method_mcpr
         self.step_results['on_methods_mcpr'] += on_method_mcpr
 
-        if self.pars['track_as']:
-            as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='mcpr',
-                                                numerators=[numerator], denominators=[denominator])
-            for key in as_result_dict:
-                self.step_results[key] = as_result_dict[key]
         return
 
     def track_cpr(self):
@@ -918,11 +824,6 @@ class People(fpb.BasePeople):
         self.step_results['no_methods_cpr'] += no_method_cpr
         self.step_results['on_methods_cpr'] += on_method_cpr
 
-        if self.pars['track_as']:
-            as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='cpr',
-                                                numerators=[numerator], denominators=[denominator])
-            for key in as_result_dict:
-                self.step_results[key] = as_result_dict[key]
         return
 
     def track_acpr(self):
@@ -940,21 +841,13 @@ class People(fpb.BasePeople):
         self.step_results['no_methods_acpr'] += no_method_cpr
         self.step_results['on_methods_acpr'] += on_method_cpr
 
-        if self.pars['track_as']:
-            as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='acpr',
-                                                numerators=[numerator], denominators=[denominator])
-            for key in as_result_dict:
-                self.step_results[key] = as_result_dict[key]
         return
 
-    def birthday_filter(self, int_age=None):
+    def birthday_filter(self):
         """
         Returns a filtered ppl object of people who celebrated their bdays, useful for methods that update
         annualy, but not based on a calendar year, rather every year on an agent's bday."""
-        if int_age is None:
-            int_age = self.int_age
-
-        age_diff = int_age - self.age
+        age_diff = self.age - self.int_age
         had_bday = (age_diff <= (self.pars['timestep'] / fpd.mpy))
         return self.filter(had_bday)
 
@@ -976,6 +869,7 @@ class People(fpb.BasePeople):
             no_methods_acpr=0,
             contra_access=0,
             new_users=0,
+            switchers=0,
             ever_used_contra=0,
             urban_women=0,
             as_stillbirths=[],
@@ -1007,24 +901,6 @@ class People(fpb.BasePeople):
             mmr_age_by_group=[],
             stillbirth_ages=[]
         )
-
-        if self.pars['track_as']:
-            as_keys = dict(
-                as_stillbirths=[],
-                imr_numerator=[],
-                imr_denominator=[],
-                mmr_numerator=[],
-                mmr_denominator=[],
-                imr_age_by_group=[],
-                mmr_age_by_group=[],
-                stillbirth_ages=[]
-            )
-            self.step_results.update(as_keys)
-
-            as_channels = ['acpr', 'cpr', 'mcpr', 'stillbirths', "births", "pregnancies"]
-            for age_specific_channel in as_channels:
-                for age_range in fpd.age_specific_channel_bins:
-                    self.step_results[f"{age_specific_channel}_{age_range}"] = 0
 
         for key in fpd.age_bin_map.keys():
             self.step_results['birth_bins'][key] = 0
@@ -1076,17 +952,20 @@ class People(fpb.BasePeople):
         # Figure out who to update methods for
         ready = nonpreg.filter(nonpreg.ti_contra <= self.ti)
 
-        # Check if has reached their age at first partnership and set partnered attribute to True.
-        # TODO: decide whether this is the optimal place to perform this update, and how it may interact with sexual debut age
+        # Check who has reached their age at first partnership and set partnered attribute to True.
         alive_now.start_partnership()
 
         # Complete all updates. Note that these happen in a particular order!
         preg.progress_pregnancy()  # Advance gestation in timestep, handle miscarriage
         nonpreg.check_sexually_active()
 
-        # Update methods for those who are elgible
+        # Update methods for those who are eligible
         if len(ready):
             ready.update_method()
+            self.step_results['switchers'] = len(ready)  # Track how many people switch methods (incl on/off)
+
+        # Make sure that women who are on contraception do not have intent to use contraception
+        self.intent_to_use[self.on_contra] = False
 
         methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
         if not methods_ok:
@@ -1097,10 +976,6 @@ class People(fpb.BasePeople):
         lact.update_breastfeeding()
         nonpreg.check_lam()
         nonpreg.check_conception()  # Decide if conceives and initialize gestation counter at 0
-
-        # Populate the ciruclar buffers with data from Peoples states that
-        # are needed for methods/classes that use historical data (eg, need previous year's data)
-        self.update_history_buffer()
 
         # Update results
         fecund.update_age_bin_totals()
@@ -1113,9 +988,12 @@ class People(fpb.BasePeople):
         return
 
     def step_empowerment(self):
+        """
+        NOTE: by default this will not be used, but it will be used for analyses run from the kenya_empowerment repo
+        """
         eligible = self.filter(self.is_dhs_age)
         # Women who just turned 15 get assigned a value based on empowerment probs
-        bday_15 = eligible.birthday_filter(int_age=int(fpd.min_age))
+        bday_15 = eligible.filter((eligible.age > int(fpd.min_age)) & (eligible.age <= int(fpd.min_age) + (self.pars['timestep'] / fpd.mpy)))
         if len(bday_15):
             self.empowerment_module.update_empwr_states(bday_15)
         # Update states on her bday, based on coefficients
@@ -1133,18 +1011,13 @@ class People(fpb.BasePeople):
 
     def step_age(self):
         """
-        Advance people's age at at end of timestep after tabulating results
+        Advance people's age at the end of timestep after tabulating results
         and update the age_by_group, based on the new age distribution to
         quantify results in the next time step.
         """
         alive_now = self.filter(self.alive)
         # Age person at end of timestep after tabulating results
         alive_now.update_age()  # Important to keep this here so birth spacing gets recorded accurately
-
-        # Storing ages by method age group
-        age_bins = [0] + [max(fpd.age_specific_channel_bins[key]) for key in
-                          fpd.age_specific_channel_bins]
-        self.age_by_group = np.digitize(self.age, age_bins) - 1
         return
 
     def get_step_results(self):
@@ -1163,9 +1036,14 @@ class People(fpb.BasePeople):
         self.step_results['parity4to5'] = np.sum((self.parity >= 4) & (self.parity <= 5) & self.is_female) / np.sum(self.is_female) * 100
         self.step_results['parity6plus'] = np.sum((self.parity >= 6) & self.is_female) / np.sum(self.is_female) * 100
 
+        # Update wealth and education
         self._step_results_wq()
-        self._step_results_intent()
-        self._step_results_empower()
+        self._step_results_edu()
+
+        # Update intent and empowerment if empowerment module is present
+        if self.empowerment_module is not None:
+            self._step_results_intent()
+            self._step_results_empower()
 
         return self.step_results
 
@@ -1174,6 +1052,16 @@ class People(fpb.BasePeople):
         for i in range(1, 6):
             self.step_results[f'wq{i}'] = (np.sum((self.wealthquintile == i) & self.is_female) / np.sum(self.is_female) * 100)
         return
+
+    @staticmethod
+    def cond_prob(a, b):
+        """ Calculate conditional probability. This should be moved somewhere else. """
+        return np.sum(a & b) / np.sum(b)
+
+    def _step_results_edu(self):
+        denom = self.is_female & self.alive & (self.age >= fpd.min_age) & (self.age < fpd.max_age)
+        self.step_results['edu_objective'] = np.mean(self.filter(denom).edu_objective)
+        self.step_results['edu_attainment'] = np.mean(self.filter(denom).edu_attainment)
 
     def _step_results_empower(self):
         self.step_results['paid_employment'] = (np.sum(self.paid_employment & self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age))/ np.sum(self.is_female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age)))*100

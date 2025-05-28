@@ -183,13 +183,9 @@ class Calibration(sc.prettyobj):
         '''
         Remove the database file if keep_db is false and the path exists.
         '''
-        if os.path.exists(self.g.db_name):
-            try:
-                os.remove(self.g.db_name)
-                if self.verbose:
-                    print(f"Removed existing calibration {self.g.db_name}")
-            except PermissionError:
-                print(f"Could not remove {self.g.db_name} as it is still in use.")
+        sc.rmpath(self.g.db_name, die=False)
+        if self.verbose:
+            print(f'Removed existing calibration {self.g.db_name}')
         return
 
     def make_study(self):

@@ -184,10 +184,8 @@ default_pars = {
     'seed':                 1,      # Random seed
     'verbose':              1,      # How much detail to print during the simulation
 
-    # Settings - what aspects are being modeled
-    'track_as':             0,      # Whether to track age-specific channels
-    'use_subnational':      0,      # Whether to model partnered states- will need to add context-specific data if using
-    'use_partnership':      0,      # Whether to model subnational dynamics (only modeled for ethiopia currently) - will need to add context-specific data if using
+    # Settings - what aspects are being modeled - TODO, remove
+    'use_partnership':      0,      #
 
     # Age limits (in years)
     'method_age':           15,
@@ -203,8 +201,8 @@ default_pars = {
     'low_age_short_int':    0,      # age limit for tracking the age-specific short birth interval
     'high_age_short_int':   20,     # age limit for tracking the age-specific short birth interval
     'postpartum_dur':       35,     # Months
-    'breastfeeding_dur_mu': None,   # CONTEXT-SPECIFIC #### - Location parameter of gumbel distribution
-    'breastfeeding_dur_beta': None,  # CONTEXT-SPECIFIC #### - Scale parameter of gumbel distribution
+    'breastfeeding_dur_mean': None,   # CONTEXT-SPECIFIC #### - Parameter of truncated norm distribution
+    'breastfeeding_dur_sd': None,  # CONTEXT-SPECIFIC #### - Parameter of truncated norm distribution
 
     # Pregnancy outcomes
     'abortion_prob':        None,   # CONTEXT-SPECIFIC ####
@@ -224,7 +222,7 @@ default_pars = {
     'analyzers':            [],
 
     ###################################
-    # Context-specific data-dervied parameters, all defined within location files
+    # Context-specific data-derived parameters, all defined within location files
     ###################################
     'filenames':            None,
     'age_pyramid':          None,
@@ -249,15 +247,11 @@ default_pars = {
     'mcpr':                 None,
 
     # Newer parameters, associated with empowerment, but that are not empowerment metrics
+    # NOTE, these will be None unless running analyses from the kenya_empowerment repo
     'fertility_intent':     None,
     'intent_to_use':        None,
 
     'region':               None,
-    'lactational_amenorrhea_region': None,
-    'sexual_activity_region':       None,
-    'sexual_activity_pp_region':    None,
-    'debut_age_region':             None,
-    'barriers_region':              None,
 }
 
 # Shortcut for accessing default keys
@@ -281,37 +275,28 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
 
     from . import locations as fplocs # Here to avoid circular import
 
-    if not location:
-        location = 'default'
-
-    location = location.lower()  # Ensure it's lowercase
-
     # Set test parameters
     if location == 'test':
-        location = 'default'
         kwargs.setdefault('n_agents', 100)
         kwargs.setdefault('verbose', 0)
         kwargs.setdefault('start_year', 2000)
         kwargs.setdefault('end_year', 2010)
+
+    # Handle location
+    location = fpd.get_location(location)  # Handle location
 
     # Initialize parameter dict, which will be updated with location data
     pars = sc.mergedicts(default_pars, kwargs, _copy=True)  # Merge all pars with kwargs and copy
 
     # Pull out values needed for the location-specific make_pars functions
     loc_kwargs = dict(seed=pars['seed'])
-
-    # Define valid locations
-    if location == 'default':
-        location = 'senegal'
-    valid_locs = dir(fplocs)
-
-    # Get parameters for this location
-    if location in valid_locs:
-        location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
-    else:  # Else, error
-        errormsg = f'Location "{location}" is not currently supported'
-        raise NotImplementedError(errormsg)
+    location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
     pars = sc.mergedicts(pars, location_pars)
+
+    # TODO: regional locations not supported yet
+    # valid_ethiopia_regional_locs = dir(fplocs.ethiopia.regions)
+    # if location in valid_ethiopia_regional_locs:
+    #     location_pars = getattr(fplocs.ethiopia.regions, location).make_pars(**loc_kwargs)
 
     # Merge again, so that we ensure the user-defined values overwrite any location defaults
     pars = sc.mergedicts(pars, kwargs, _copy=True)

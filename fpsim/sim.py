@@ -15,6 +15,7 @@ from . import base as fpb
 from . import parameters as fpp
 from . import people as fpppl
 from . import methods as fpm
+from . import education as fped
 
 # Specify all externally visible things this file defines
 __all__ = ['Sim', 'MultiSim', 'parallel']
@@ -71,7 +72,7 @@ class Sim(fpb.BaseSim):
     The Sim class handles the running of the simulation. This class handles the mechanics
     of the actual simulation, while BaseSim takes care of housekeeping (saving,
     loading, exporting, etc.). Please see the BaseSim class for additional methods.
-    
+
     When a Sim is initialized, it triggers the creation of the population. Methods related
     to creating, initializing, and updating people can be found in the People class.
 
@@ -96,6 +97,8 @@ class Sim(fpb.BaseSim):
         if location is None:
             if pars is not None and pars.get('location'):
                 location = pars.pop('location')
+        location = fpd.get_location(location, printmsg=True)  # Handle location
+        self.location = location
 
         # Make parameters
         pars = fpp.pars(location=location, **sc.mergedicts(pars, kwargs))  # Update with location-specific parameters
@@ -105,11 +108,6 @@ class Sim(fpb.BaseSim):
         if len(mismatches):
             errormsg = f'Key(s) {mismatches} not found; available keys are {fpp.par_keys}'
             raise sc.KeyNotFoundError(errormsg)
-
-        if isinstance(contraception_module, fpm.EmpoweredChoice) and (empowerment_module is None or education_module is None):
-            errormsg = 'If EmpoweredChoice contraception module is used, empowerment_module and education_module must ' \
-                       'be provided as parameters. '
-            raise ValueError(errormsg)
 
         super().__init__(pars, location=location, **kwargs)  # Initialize and set the parameters as attributes
 
@@ -133,9 +131,9 @@ class Sim(fpb.BaseSim):
         self.people = None  # Sims are generally constructed without people, since People construction is time-consuming
 
         # Add modules, also initialized later
-        self.contraception_module = contraception_module or fpm.RandomChoice()
+        self.contraception_module = contraception_module or sc.dcp(fpm.StandardChoice(location=location))
+        self.education_module = education_module or sc.dcp(fped.Education(location=location))
         self.empowerment_module = empowerment_module
-        self.education_module = education_module
 
         return
 
@@ -156,6 +154,7 @@ class Sim(fpb.BaseSim):
             self.init_results()
             self.init_people()  # This step also initializes the empowerment and education modules if provided
             self.init_contraception()  # Initialize contraceptive methods
+        self.initialized = True
         return self
 
     def init_results(self):
@@ -176,17 +175,6 @@ class Sim(fpb.BaseSim):
             self.results['asfr'][key] = []
             self.results[f"tfr_{key}"] = []
 
-        if self.pars['track_as']:
-            self.results['imr_age_by_group'] = []
-            self.results['mmr_age_by_group'] = []
-            self.results['stillbirth_ages'] = []
-            for age_specific_channel in fpd.by_age_results:
-                for age_group in fpd.age_specific_channel_bins:
-                    if 'numerator' in age_specific_channel or 'denominator' in age_specific_channel or 'as_' in age_specific_channel:
-                        self.results[age_specific_channel] = []
-                    else:
-                        self.results[f"{age_specific_channel}_{age_group}"] = []
-
         return
 
     def init_people(self):
@@ -196,7 +184,6 @@ class Sim(fpb.BaseSim):
         """
         self.people = fpppl.People(pars=self.pars, contraception_module=self.contraception_module,
                                     empowerment_module=self.empowerment_module, education_module=self.education_module)
-
 
     def init_contraception(self):
         if self.contraception_module is not None:
@@ -307,12 +294,15 @@ class Sim(fpb.BaseSim):
         self.people.ty = self.ty
         self.people.y = self.y
 
-
         # Step forward people's states and attributes
         self.people.step()
 
         # Apply interventions
         self.apply_interventions()
+
+        # Populate the circular buffers with data from Peoples states that
+        # are needed for methods/classes that use historical data (eg, need previous year's data)
+        self.people.update_history_buffer()
 
         # Count results for this step
         step_results = self.people.get_step_results()
@@ -421,6 +411,7 @@ class Sim(fpb.BaseSim):
         self.results['contra_access'][ti] = res.contra_access
         self.results['new_users'][ti] = res.new_users
         self.results['ever_used_contra'][ti] = res.ever_used_contra
+        self.results['switchers'][ti] = res.switchers
         self.results['urban_women'][ti] = res.urban_women
         self.results['mcpr'][ti] = sc.safedivide(res.on_methods_mcpr, (res.no_methods_mcpr + res.on_methods_mcpr))
         self.results['cpr'][ti] = sc.safedivide(res.on_methods_cpr, (res.no_methods_cpr + res.on_methods_cpr))
@@ -441,36 +432,32 @@ class Sim(fpb.BaseSim):
         self.results['total_women_fecund'][ti] = res.total_women_fecund * scale
         self.results['method_failures'][ti] = res.method_failures * scale
 
+        # Education metrics
+        self.results['edu_attainment'][ti] = res.edu_attainment
+        self.results['edu_objective'][ti] = res.edu_objective
+
         # Intent
-        self.results['perc_contra_intent'][ti] = res.perc_contra_intent
-        self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
+        # These will all be zero if empowerment module is not provided
+        # Not used except for within kenya_empowerment repo
+        if self.empowerment_module is not None:
+            self.results['perc_contra_intent'][ti] = res.perc_contra_intent
+            self.results['perc_fertil_intent'][ti] = res.perc_fertil_intent
 
-        # Empowerment
-        self.results['paid_employment'][ti] = res.paid_employment
-        self.results['decision_wages'][ti] = res.decision_wages
-        self.results['decide_spending_partner'][ti] = res.decide_spending_partner
-        self.results['buy_decision_major'][ti] = res.buy_decision_major
-        self.results['buy_decision_daily'][ti] = res.buy_decision_daily
-        self.results['buy_decision_clothes'][ti] = res.buy_decision_clothes
-        self.results['decision_health'][ti] = res.decision_health
-        self.results['has_savings'][ti] = res.has_savings
-        self.results['has_fin_knowl'][ti] = res.has_fin_knowl
-        self.results['has_fin_goals'][ti] = res.has_fin_goals
-        #self.results['financial_autonomy'][ti] = res.financial_autonomy
-        #self.results['decision_making'][ti] = res.decision_making
-
-        if self.pars['track_as']:
-            for age_specific_channel in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator',
-                                         'as_stillbirths', 'imr_age_by_group', 'mmr_age_by_group',
-                                         'stillbirth_ages']:
-                self.results[f"{age_specific_channel}"].append(getattr(res, f"{age_specific_channel}"))
-                if len(self.results[f"{age_specific_channel}"]) > 12:
-                    self.results[f"{age_specific_channel}"] = self.results[f"{age_specific_channel}"][1:]
-
-            for age_specific_channel in ['acpr', 'cpr', 'mcpr', 'pregnancies', 'births']:
-                for method_agekey in fpd.age_specific_channel_bins:
-                    self.results[f"{age_specific_channel}_{method_agekey}"].append(
-                        getattr(res, f"{age_specific_channel}_{method_agekey}"))
+            # Empowerment metrics
+            # These will all be zero if empowerment module is not provided
+            # Not used except for within kenya_empowerment repo
+            self.results['paid_employment'][ti] = res.paid_employment
+            self.results['decision_wages'][ti] = res.decision_wages
+            self.results['decide_spending_partner'][ti] = res.decide_spending_partner
+            self.results['buy_decision_major'][ti] = res.buy_decision_major
+            self.results['buy_decision_daily'][ti] = res.buy_decision_daily
+            self.results['buy_decision_clothes'][ti] = res.buy_decision_clothes
+            self.results['decision_health'][ti] = res.decision_health
+            self.results['has_savings'][ti] = res.has_savings
+            self.results['has_fin_knowl'][ti] = res.has_fin_knowl
+            self.results['has_fin_goals'][ti] = res.has_fin_goals
+            #self.results['financial_autonomy'][ti] = res.financial_autonomy
+            #self.results['decision_making'][ti] = res.decision_making
 
         for agekey in fpd.age_bin_map.keys():
             births_key = f'total_births_{agekey}'
@@ -497,26 +484,7 @@ class Sim(fpb.BaseSim):
             self.results['mcpr_by_year'].append(self.results['mcpr'][ti])
             self.results['cpr_by_year'].append(self.results['cpr'][ti])
 
-            if self.pars['track_as']:
-                imr_results_dict = self.people.log_age_split(binned_ages_t=self.results['imr_age_by_group'],
-                                                             channel='imr',
-                                                             numerators=self.results['imr_numerator'],
-                                                             denominators=self.results['imr_denominator'])
-                mmr_results_dict = self.people.log_age_split(binned_ages_t=self.results['mmr_age_by_group'],
-                                                             channel='mmr',
-                                                             numerators=self.results['mmr_numerator'],
-                                                             denominators=self.results['mmr_denominator'])
-                stillbirths_results_dict = self.people.log_age_split(binned_ages_t=self.results['stillbirth_ages'],
-                                                                     channel='stillbirths',
-                                                                     numerators=self.results['as_stillbirths'],
-                                                                     denominators=None)
-
-                for age_key in fpd.age_specific_channel_bins:
-                    self.results[f"imr_{age_key}"].append(imr_results_dict[f"imr_{age_key}"])
-                    self.results[f"mmr_{age_key}"].append(mmr_results_dict[f"mmr_{age_key}"])
-                    self.results[f"stillbirths_{age_key}"].append(
-                        stillbirths_results_dict[f"stillbirths_{age_key}"])
-
+            # Calculate annual ratios
             self.calculate_annual_ratios()
 
             tfr = 0
@@ -608,7 +576,7 @@ class Sim(fpb.BaseSim):
     def to_df(self, include_range=False):
         """
         Export all sim results to a dataframe
-        
+
         Args:
             include_range (bool): if True, and if the sim results have best, high, and low, then export all of them; else just best
         """
@@ -676,24 +644,8 @@ class Sim(fpb.BaseSim):
                 nrows, ncols = 2, 3
 
             res = self.results  # Shorten since heavily used
-            method_age_groups = list(fpd.age_specific_channel_bins.keys())
-            if self.pars['track_as']:
-                no_plot_age = method_age_groups[-1]
-                method_age_groups.remove(no_plot_age)
-                delete_keys = []  # to avoid mutating dict during iteration
-                for key in res:
-                    if no_plot_age in key:
-                        delete_keys.append(key)
-
-                for bad_key in delete_keys:
-                    res.remove(bad_key)
-
             agelim = ('-'.join([str(self.pars['low_age_short_int']), str(
                 self.pars['high_age_short_int'])]))  ## age limit to be added to the title of short birth interval plot
-
-            # Plot everything
-            if ('as_' in to_plot and not self.pars['track_as']):
-                raise ValueError(f"Age specific plot selected but sim.pars['track_as'] is False")
 
             if isinstance(to_plot, dict):
                 pass
@@ -744,24 +696,6 @@ class Sim(fpb.BaseSim):
                     to_plot = {
                         'proportion_short_interval_by_year':     f"Proportion of short birth interval [{age_group})" for age_group in agelim.split()
                     }
-                elif to_plot == 'as_cpr':
-                    to_plot = {f"cpr_{age_group}": f"Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
-                elif to_plot == 'as_acpr':
-                    to_plot = {f"acpr_{age_group}": f"Alternative Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
-                elif to_plot == 'as_mcpr':
-                    to_plot = {f"mcpr_{age_group}": f"Modern Contraceptive Prevalence Rate ({age_group})" for age_group in method_age_groups}
-                elif to_plot == 'as_pregnancies':
-                    to_plot = {f"pregnancies_{age_group}": f"Number of Pregnancies for ({age_group})" for age_group in method_age_groups}
-                elif to_plot == 'as_tfr':
-                    to_plot = {f"tfr_{age_group}": f"Fertility Rate for ({age_group})" for age_group in fpd.age_bin_map}
-                elif to_plot == 'as_imr':
-                    to_plot = {f"imr_{age_group}": f"Infant Mortality Rate for ({age_group})" for age_group in method_age_groups}
-                elif to_plot == 'as_mmr':
-                    to_plot = {f"mmr_{age_group}": f"Maternal Mortality Rate for ({age_group})" for age_group in method_age_groups}
-                elif to_plot == 'as_stillbirths':
-                    to_plot = {f"stillbirths_{age_group}": f"Stillbirths for ({age_group})" for age_group in method_age_groups}
-                elif to_plot == 'as_births':
-                    to_plot = {f"births_{age_group}": f"Live births for ({age_group})" for age_group in method_age_groups}
                 elif to_plot is not None:
                     errormsg = f"Your to_plot value: {to_plot} is not a valid option"
                     raise ValueError(errormsg)
@@ -869,21 +803,6 @@ class Sim(fpb.BaseSim):
                     else:
                         top = int(np.ceil(max(self.results['acpr']) / 10.0)) * 10
                     self.conform_y_axes(figure=fig, top=top)
-                if as_plot:  # this condition is impossible if self.pars['track_as']
-                    channel_type = key.split("_")[0]
-                    tfr_scaling = 'tfr_' in key
-                    age_bins = fpd.age_bin_map if tfr_scaling else fpd.age_specific_channel_bins
-                    age_bins = {bin: interval for bin, interval in age_bins.items() if no_plot_age not in bin}
-                    if is_dist:
-                        top = max([max(group_result) for group_result in
-                                   [res[f'{channel_type}_{age_group}'].high for age_group in age_bins]])
-                    else:
-                        top = max([max(group_result) for group_result in
-                                   [res[f'{channel_type}_{age_group}'] for age_group in age_bins]])
-                    tidy_top = int(np.ceil(top / 10.0)) * 10
-                    tidy_top = tidy_top + 20 if tfr_scaling or 'imr_' in key else tidy_top
-                    tidy_top = tidy_top + 50 if 'mmr_' in key else tidy_top
-                    self.conform_y_axes(figure=fig, top=tidy_top)
         return tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
     def plot_age_first_birth(self, do_show=None, do_save=None, fig_args=None, filename="first_birth_age.png"):
@@ -892,8 +811,8 @@ class Sim(fpb.BaseSim):
 
         Args:
             fig_args (dict): arguments to pass to ``pl.figure()``
-            do_show (bool): whether or not the user wants to show the output plot (default: true)
-            do_save (bool): whether or not the user wants to save the plot to filepath (default: false)
+            do_show (bool): whether the user wants to show the output plot (default: true)
+            do_save (bool): whether the user wants to save the plot to filepath (default: false)
             filename (str): the name of the path to output the plot
         """
         birth_age = self.people.first_birth_age
@@ -918,7 +837,7 @@ class Sim(fpb.BaseSim):
         max_age = self['age_limit_fecundity']
 
         # filtering for women with appropriate characteristics
-        bool_list = ppl.alive * (ppl.sex==0) * (pp.age >= min_age) * (ppl.age <= max_age)
+        bool_list = ppl.alive * (ppl.sex==0) * (ppl.age >= min_age) * (ppl.age <= max_age)
         filtered_methods = ppl.method[bool_list]
 
         unique, counts = np.unique(filtered_methods, return_counts=True)
@@ -993,7 +912,7 @@ class MultiSim(sc.prettyobj):
                 base_sim = sims
                 sims = None
             elif isinstance(sims, list):
-                base_sim = sims[0]
+                base_sim = sc.dcp(sims[0]) # Copy so we don't accidentally overwrite with compute_stats()
             else:
                 errormsg = f'If base_sim is not supplied, sims must be either a single sim (treated as base_sim) or a list of sims, not {type(sims)}'
                 raise TypeError(errormsg)
@@ -1062,10 +981,6 @@ class MultiSim(sc.prettyobj):
             raise ValueError(errormsg)
 
         reskeys = list(base_sim.results.keys())
-        if self.sims[0].pars['track_as']:
-            for bad_key in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr_age_by_group',
-                            'mmr_age_by_group', 'as_stillbirths', 'stillbirth_ages']:
-                reskeys.remove(bad_key)  # these keys are intermediate results so we don't really want to save them
 
         bad_keys = ['t', 'tfr_years', 'method_usage']
         for key in bad_keys:  # Don't compute high/low for these
@@ -1254,7 +1169,6 @@ class MultiSim(sc.prettyobj):
         See ``sim.plot()`` for additional args.
         """
         fig_args = sc.mergedicts(dict(figsize=(16, 10)), fig_args)
-        no_plot_age = list(fpd.age_specific_channel_bins.keys())[-1]
 
         fig = pl.figure(**fig_args)
         do_show = kwargs.pop('do_show', True)
@@ -1272,9 +1186,9 @@ class MultiSim(sc.prettyobj):
         def get_scale_ceil(channel):
             is_dist = hasattr(self.sims[0].results['acpr'], 'best')  # picking a random channel
             if is_dist:
-                maximum_value = max([max(sim.results[channel].high) for sim in self.sims if no_plot_age not in channel])
+                maximum_value = max([max(sim.results[channel].high) for sim in self.sims])
             else:
-                maximum_value = max([max(sim.results[channel]) for sim in self.sims if no_plot_age not in channel])
+                maximum_value = max([max(sim.results[channel]) for sim in self.sims])
             top = int(np.ceil(maximum_value / 10.0)) * 10  # rounding up to nearest 10
             return top
 
