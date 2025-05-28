@@ -185,7 +185,7 @@ class SimpleChoice(RandomChoice):
         if location in fpd.location_registry:
             location_module = fpd.location_registry[location]
         else:
-            location_module = getattr(fplocs, location)  # fallback to built-in only if not registered
+            location_module = fplocs  # fallback to built-in only if not registered
 
         self.contra_use_pars = location_module.data_utils.process_contra_use('simple', location)  # Set probability of use
         method_choice_pars, init_dist = location_module.data_utils.process_markovian_method_choice(self.methods, location, df=method_choice_df)  # Method choice
@@ -410,7 +410,7 @@ class StandardChoice(SimpleChoice):
         if location in fpd.location_registry:
             location_module = fpd.location_registry[location]
         else:
-            location_module = getattr(fplocs, location)  # fallback to built-in only if not registered
+            location_module = fplocs  # fallback to built-in only if not registered
 
         # Now overwrite the default prob_use parameters with the mid-choice coefficients
         location = fpd.get_location(location)

@@ -6,8 +6,9 @@ import os
 import numpy as np
 import sciris as sc
 import fpsim as fp
-import pylab as pl
 import pytest
+import types
+import fpsim.defaults as fpd
 
 do_plot = True
 sc.options(backend='agg') # Turn off interactive plots
@@ -184,6 +185,35 @@ def test_long_params():
         assert (df[:, curr_year_index] == s.people[key]).all(), f"Expected column {curr_year_index} to have same longitudinal data as {key} but it does not."
 
 
+def test_register_custom_location():
+    sc.heading('Testing ability to register a custom location')
+
+    # Create a dummy location module
+    dummy_module = types.SimpleNamespace()
+
+    # Add a fake make_pars function
+    def make_pars(seed=None):
+        return {'location': 'dummy', 'seed': seed}
+
+    # Optionally add fake data_utils
+    class DummyDataUtils:
+        @staticmethod
+        def process_contra_use(use_type, location):
+            return f"Processed {use_type} for {location}"
+
+    dummy_module.make_pars = make_pars
+    dummy_module.data_utils = DummyDataUtils()
+
+    # Register the custom location
+    fpd.register_location('dummy', dummy_module)
+
+    # Retrieve it and test
+    assert 'dummy' in fpd.location_registry
+    mod = fpd.location_registry['dummy']
+    assert mod.make_pars(seed=42)['location'] == 'dummy'
+    assert mod.data_utils.process_contra_use('simple', 'dummy') == "Processed simple for dummy"
+
+
 if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
@@ -194,3 +224,4 @@ if __name__ == '__main__':
         pars    = test_validation()
         p2      = test_save_load()
         long    = test_long_params()
+        custom_loc = test_register_custom_location()
