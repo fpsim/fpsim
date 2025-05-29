@@ -57,9 +57,10 @@ class snapshot(ss.Analyzer):
         Apply snapshot at each timestep listed in timesteps and
         save result at snapshot[str(timestep)]
         """
+        sim = self.sim
         for t in self.timesteps:
-            if np.isclose(self.sim.ti, t):
-                self.snapshots[str(self.sim.ti)] = sc.dcp(self.sim.people) # Take snapshot!
+            if np.isclose(sim.ti, t):
+                self.snapshots[str(sim.ti)] = sc.dcp(sim.people) # Take snapshot!
         return
 
 
@@ -78,16 +79,17 @@ class cpr_by_age(ss.Analyzer):
         return
 
     def step(self):
-        ppl = self.sim.people
+        sim = self.sim
+        ppl = sim.people
         for key, (age_low, age_high) in fpd.method_age_map.items():
             match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
             denom_conds = match_low_high * (ppl.female) * ppl.alive
             num_conds = denom_conds * (ppl.method != 0)
-            self.results[key][self.sim.ti] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
+            self.results[key][sim.ti] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
 
         total_denom_conds = (ppl.female) * ppl.alive
         total_num_conds = total_denom_conds * (ppl.method != 0)
-        self.results['total'][self.sim.ti] = sc.safedivide(np.count_nonzero(total_num_conds), np.count_nonzero(total_denom_conds))
+        self.results['total'][sim.ti] = sc.safedivide(np.count_nonzero(total_num_conds), np.count_nonzero(total_denom_conds))
         return
 
 
@@ -100,9 +102,12 @@ class method_mix_by_age(ss.Analyzer):
         return
 
     def finalize(self):
-        n_methods = len(self.sim.contraception_module.methods)
+        sim = self.sim
+        ppl = sim.people
+
+        n_methods = len(sim.contraception_module.methods)
         self.results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
-        ppl = self.sim.people
+
         for key, (age_low, age_high) in fpd.method_age_map.items():
             match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
             denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
