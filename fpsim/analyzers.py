@@ -142,10 +142,13 @@ class education_recorder(ss.Analyzer):
             Apply snapshot at each timestep listed in timesteps and
             save result at snapshot[str(timestep)]
             """
-            females = self.sim.people.female.uids
-            self.snapshots[str(self.sim.ti)] = {}
+            sim = self.sim
+            ppl = sim.people
+            # females = self.sim.people.female.uids
+            females = sim.people.filter(ppl.female)
+            self.snapshots[str(sim.ti)] = {}
             for key in self.keys:
-                self.snapshots[str(self.sim.ti)][key] = sc.dcp(self.sim.people[key][females])  # Take snapshot!
+                self.snapshots[str(sim.ti)][key] = sc.dcp(ppl[key][females])  # Take snapshot!
                 self.max_agents = max(self.max_agents, len(females))
             return
 
@@ -336,11 +339,13 @@ class lifeof_recorder(ss.Analyzer):
         Apply snapshot at each timestep listed in timesteps and
         save result at snapshot[str(timestep)]
         """
-        females = self.sim.people.female.uids
-        self.snapshots[str(self.sim.ti)] = {}
+        sim = self.sim
+        ppl = sim.people
+        females = ppl.filter(ppl.female)
+        self.snapshots[str(sim.ti)] = {}
         for key in self.keys:
-            self.snapshots[str(self.sim.ti)][key] = sc.dcp(
-                self.sim.people[key][females])  # Take snapshot!
+            self.snapshots[str(sim.ti)][key] = sc.dcp(
+                ppl[key][females])  # Take snapshot!
             self.max_agents = max(self.max_agents, len(females))
         return
 
@@ -608,9 +613,11 @@ class age_pyramids(ss.Analyzer):
         Records histogram of ages of all alive individuals at a timestep such that
         self.data[timestep] = list of proportions where index signifies age
         """
-        ages = self.sim.people.age.values
-        self._raw[self.sim.ti, :] = np.histogram(ages, self.bins)[0]
-        self.data[self.sim.ti, :] = self._raw[self.sim.ti, :]/self._raw[self.sim.ti, :].sum()
+        sim = self.sim
+        ppl = sim.people
+        ages = ppl.age.values
+        self._raw[sim.ti, :] = np.histogram(ages, self.bins)[0]
+        self.data[sim.ti, :] = self._raw[sim.ti, :]/self._raw[sim.ti, :].sum()
 
     def plot(self):
         """
@@ -649,17 +656,19 @@ class method_mix_over_time(ss.Analyzer):
 
     def init_post(self):
         super().initialize()
-        self.methods = self.sim.contraception_module.methods.keys()
+        sim = self.sim
+        self.methods = sim.contraception_module.methods.keys()
         self.n_methods = len(self.methods)
-        self.results = {k: np.zeros(self.sim.t.npts) for k in self.methods}
-        self.tvec = self.sim.tvec
+        self.results = {k: np.zeros(sim.t.npts) for k in self.methods}
+        self.tvec = sim.tvec
         return
 
     def step(self):
-        ppl = self.sim.people
+        sim = self.sim
+        ppl = sim.people
         for m_idx, method in enumerate(self.methods):
             eligible = ppl.female & ppl.alive & (ppl.method == m_idx)
-            self.results[method][self.sim.ti] = np.count_nonzero(eligible)
+            self.results[method][sim.ti] = np.count_nonzero(eligible)
         return
 
     def plot(self, style=None):
@@ -700,10 +709,11 @@ class state_tracker(ss.Analyzer):
         Initializes bins and data with proper shapes
         """
         super().init_post()
-        self.data_num = np.full((self.sim.t.npts,), np.nan)
-        self.data_perc = np.full((self.sim.t.npts,), np.nan)
-        self.data_n_female = np.full((self.sim.t.npts,), np.nan)
-        self.tvec = np.full((self.sim.t.npts,), np.nan)
+        n_pts = self.sim.t.npts
+        self.data_num = np.full((n_pts,), np.nan)
+        self.data_perc = np.full((n_pts,), np.nan)
+        self.data_n_female = np.full((n_pts,), np.nan)
+        self.tvec = np.full((n_pts,), np.nan)
         return
 
     def step(self):
@@ -711,11 +721,14 @@ class state_tracker(ss.Analyzer):
         Records histogram of ages of all alive individuals at a timestep such that
         self.data[timestep] = list of proportions where index signifies age
         """
-        living_women = (self.sim.people.alive & self.sim.people.female & (self.sim.people.age >= self.min_age) & (self.sim.people.age < self.max_age)).uids
-        self.data_num[self.sim.ti] = self.sim.people[self.state_name][living_women].sum()
-        self.data_n_female[self.sim.ti] = len(living_women)
-        self.data_perc[self.sim.ti] = (self.data_num[self.sim.ti] / self.data_n_female[self.sim.ti])*100.0
-        self.tvec[self.sim.ti] = self.sim.y
+        sim = self.sim
+        ppl = sim.people
+
+        living_women = ppl.filter(ppl.alive)(ppl.female)(ppl.age >= self.min_age)(ppl.age < self.max_age)
+        self.data_num[sim.ti] = living_women[self.state_name].sum()
+        self.data_n_female[sim.ti] = len(living_women)
+        self.data_perc[self.sim.ti] = (self.data_num[sim.ti] / self.data_n_female[sim.ti])*100.0
+        self.tvec[sim.ti] = sim.y
 
     def plot(self, style=None):
         """
@@ -892,29 +905,31 @@ class track_as(ss.Analyzer):
         occur (!), so attributes like ppl.ti_pregnant won't exist. These are all slated to be added
         as part of the V3 refactor. For now, this is a placeholder.
         """
-        ppl = self.sim.people
-        ppl_uids = ppl.alive.uids
+        sim = self.sim
+        ppl = sim.people
+        # ppl_uids = ppl.alive.uids
 
         # Pregnancies
-        preg_uids = (ppl.ti_pregnant == self.sim.ti).uids
+        preg = ppl.filter(ppl.ti_pregnant == sim.ti)
         pregnant_boolean = np.full(len(ppl), False)
-        pregnant_boolean[np.searchsorted(ppl_uids, preg_uids)] = True
+        pregnant_boolean[np.searchsorted(ppl.uid, preg.uid)] = True
         pregnant_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='pregnancies',
                                                 numerators=[pregnant_boolean], denominators=None)
         for key in pregnant_age_split:
             self.results[key] = pregnant_age_split[key]
 
         # Stillborns
-        stillborn_uids = (ppl.ti_stillbirth == self.sim.ti).uids
+        stillborn = ppl.filter(ppl.ti_stillbirth == sim.ti)
         stillbirth_boolean = np.full(len(ppl), False)
-        stillbirth_boolean[np.searchsorted(ppl_uids, stillborn_uids)] = True
+        stillbirth_boolean[np.searchsorted(ppl.uid, stillborn.uid)] = True
         self.results['stillbirth_ages'] = self.age_by_group
         self.results['as_stillbirths'] = stillbirth_boolean
 
         # Live births
-        live_uids = (ppl.ti_live_birth == self.sim.ti).uids
+        # live_uids = (ppl.ti_live_birth == self.sim.ti).uids
+        live = ppl.filter(ppl.ti_live_birth == sim.ti)
         total_women_delivering = np.full(len(ppl), False)
-        total_women_delivering[np.searchsorted(ppl_uids, live_uids)] = True
+        total_women_delivering[np.searchsorted(ppl.uid, live.uid)] = True
         self.results['mmr_age_by_group'] = self.age_by_group
 
         live_births_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='births',
@@ -924,8 +939,8 @@ class track_as(ss.Analyzer):
 
         # MCPR
         modern_methods_num = [idx for idx, m in enumerate(ppl.contraception_module.methods.values()) if m.modern]
-        method_age = (self.sim.fp_pars['method_age'] <= ppl.age)
-        fecund_age = ppl.age < self.sim.fp_pars['age_limit_fecundity']
+        method_age = (sim.fp_pars['method_age'] <= ppl.age)
+        fecund_age = ppl.age < sim.fp_pars['age_limit_fecundity']
         denominator = method_age * fecund_age * ppl.female * ppl.alive
         numerator = np.isin(ppl.method, modern_methods_num)
         as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='mcpr',
@@ -934,7 +949,7 @@ class track_as(ss.Analyzer):
             self.results[key] = as_result_dict[key]
 
         # CPR
-        denominator = ((self.sim.fp_pars['method_age'] <= ppl.age) * (ppl.age < self.sim.fp_pars['age_limit_fecundity']) * (
+        denominator = ((sim.fp_pars['method_age'] <= ppl.age) * (ppl.age < sim.fp_pars['age_limit_fecundity']) * (
                 ppl.female * ppl.alive))
         numerator = ppl.method != 0
         as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='cpr',
@@ -943,7 +958,7 @@ class track_as(ss.Analyzer):
             self.results[key] = as_result_dict[key]
 
         # ACPR
-        denominator = ((self.sim.fp_pars['method_age'] <= ppl.age) * (ppl.age < self.sim.fp_pars['age_limit_fecundity']) * (
+        denominator = ((sim.fp_pars['method_age'] <= ppl.age) * (ppl.age < sim.fp_pars['age_limit_fecundity']) * (
                 ppl.female) * (ppl.pregnant == 0) * (ppl.sexually_active == 1) * ppl.alive)
         numerator = ppl.method != 0
 
