@@ -144,11 +144,10 @@ class education_recorder(ss.Analyzer):
             """
             sim = self.sim
             ppl = sim.people
-            # females = self.sim.people.female.uids
             females = sim.people.filter(ppl.female)
             self.snapshots[str(sim.ti)] = {}
             for key in self.keys:
-                self.snapshots[str(sim.ti)][key] = sc.dcp(ppl[key][females])  # Take snapshot!
+                self.snapshots[str(sim.ti)][key] = females[key].values  # Take snapshot!
                 self.max_agents = max(self.max_agents, len(females))
             return
 
@@ -344,8 +343,7 @@ class lifeof_recorder(ss.Analyzer):
         females = ppl.filter(ppl.female)
         self.snapshots[str(sim.ti)] = {}
         for key in self.keys:
-            self.snapshots[str(sim.ti)][key] = sc.dcp(
-                ppl[key][females])  # Take snapshot!
+            self.snapshots[str(sim.ti)][key] = females[key].values  # Take snapshot!
             self.max_agents = max(self.max_agents, len(females))
         return
 
