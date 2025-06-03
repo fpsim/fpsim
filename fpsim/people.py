@@ -14,7 +14,7 @@ from . import methods as fpm
 import starsim as ss
 
 # Specify all externally visible things this file defines
-__all__ = ['People']
+__all__ = ['People', 'Filter']
 
 
 # %% Define classes
@@ -38,6 +38,7 @@ class People(ss.People):
         f_frac = age_pyramid[:, 2].sum() / age_pyramid[:, 1:3].sum()
         # Initialization
         super().__init__(n_agents, age_data, extra_states=self.person_defaults, **kwargs)
+        self.parent.people = self
         self.female.default.set(p=f_frac)
         # Empowerment and education
         self.empowerment_module = empowerment_module
@@ -53,6 +54,8 @@ class People(ss.People):
 
         if uids is None:
             uids = self.alive.uids
+
+        filtered = self.filter(uids=uids)
 
         pars = self.sim.pars
 
@@ -95,7 +98,8 @@ class People(ss.People):
             self.empowerment_module.initialize(female_uids)
 
         if self.education_module is not None:
-            self.education_module.initialize(self, uids)
+            # self.education_module.initialize(self, uids)
+            self.education_module.initialize(filtered)
 
         # Partnership
         if self.sim.fp_pars['use_partnership']:
@@ -1032,7 +1036,9 @@ class People(ss.People):
         return
 
     def step_education(self, uids):
-        self.education_module.update(self, uids)
+        filtered = self.filter(uids=uids)
+        self.education_module.update(filtered)
+        # self.education_module.update(self, uids)
         return
 
 
@@ -1275,10 +1281,13 @@ class Filter(sc.prettyobj):
         self.people = people
         self._uids = uids if uids is not None else people.auids
         self.orig_uids = people.auids
-        self.states = ss.ndict(type=ss.Arr)
+        # self.states = ss.ndict(type=ss.Arr)
+        # self.states = dict()
+        self.states = sc.dictobj()
         self.is_filtered = False
         self._key = None
         self._stale = False
+        self.sim = people.sim
 
         # Copy states
         for key,state in self.people.states.items():
