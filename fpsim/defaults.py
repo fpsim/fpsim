@@ -16,6 +16,7 @@ max_age        = 99   # Maximum age (inclusive)
 max_age_preg   = 50   # Maximum age to become pregnant
 max_parity     = 20   # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
 max_parity_spline = 20   # Used for parity splines
+location_registry = {}  # Registry for external custom locations
 
 
 #%% Defaults when creating a new person
@@ -69,6 +70,10 @@ def get_location(location, printmsg=False):
         if printmsg: print('Running default simulation using parameters from Senegal')
         location = default_location
 
+    # External locations override internal ones
+    if location in location_registry:
+        return location
+
     # Define valid locations
     valid_country_locs = ['senegal', 'kenya', 'ethiopia']
     if location not in valid_country_locs:
@@ -76,6 +81,17 @@ def get_location(location, printmsg=False):
         raise NotImplementedError(errormsg)
 
     return location
+
+# Register custom location (for external users)
+def register_location(name, location_ref):
+    """
+    Register a custom location, either a function (make_pars) or a module (with make_pars + data_utils).
+    """
+    if callable(location_ref):
+        # wrap into a fake module-like object with just make_pars
+        location_ref = type('LocationStub', (), {'make_pars': location_ref})()
+
+    location_registry[name.lower()] = location_ref
 
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
