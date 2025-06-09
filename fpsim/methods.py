@@ -198,7 +198,7 @@ class SimpleChoice(RandomChoice):
 
             # Loop over age groups and methods
             for key, (age_low, age_high) in fpd.method_age_map.items():
-                this_age_bools = (ppl.age[uids] >= age_low) & (ppl.age[uids] < age_high) # fpu.match_ages(ppl.age[uids], age_low, age_high)
+                this_age_bools = (ppl.age[uids] >= age_low) & (ppl.age[uids] < age_high)
                 ppl_this_age = this_age_bools.nonzero()[-1]
                 if len(ppl_this_age) > 0:
                     these_probs = self.init_dist[key]
