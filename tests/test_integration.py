@@ -364,7 +364,7 @@ def test_education_preg():
     sc.heading('Testing that lower fertility rate leads to more education...')
 
     def make_sim(pregnant=False):
-        pars = dict(start=2000, stop=2010, n_agents=1000, verbose=0.1)
+        pars = dict(start=2000, stop=2010, n_agents=10000, verbose=0.1)
         sim = fp.Sim(pars=pars)
         sim.init()
         sim.people.age[:] = 15

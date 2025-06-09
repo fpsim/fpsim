@@ -109,7 +109,7 @@ class People(ss.People):
         # self.initialize_circular_buffer() # todo move to analyzer
 
         # Once all the other metric are initialized, determine initial contraceptive use
-        self.barrier[uids] = fpu.n_multinomial(fp_pars['barriers'][:], len(uids))
+        # self.barrier[uids] = fpu.n_multinomial(fp_pars['barriers'][:], len(uids))
 
         # Store keys
         self._keys = [s.name for s in self.states.values()]
@@ -658,7 +658,7 @@ class People(ss.People):
         mean, sd = self.sim.fp_pars['breastfeeding_dur_mean'], self.sim.fp_pars['breastfeeding_dur_sd']
         a, b = 0, 50 # Truncate at 0 to ensure positive durations
         a_std, b_std = (a - mean) / sd, (b - mean) / sd
-        breastfeed_durs = truncnorm.rvs(a_std, b_std, loc=mean, scale=sd, size=len(self))
+        breastfeed_durs = truncnorm.rvs(a_std, b_std, loc=mean, scale=sd, size=len(uids))
         breastfeed_durs = np.ceil(breastfeed_durs)
         breastfeed_finished = uids[self.breastfeed_dur[uids] >= breastfeed_durs]
         breastfeed_continue = uids[self.breastfeed_dur[uids] < breastfeed_durs]
