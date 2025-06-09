@@ -57,9 +57,10 @@ class snapshot(ss.Analyzer):
         Apply snapshot at each timestep listed in timesteps and
         save result at snapshot[str(timestep)]
         """
+        sim = self.sim
         for t in self.timesteps:
-            if np.isclose(self.sim.ti, t):
-                self.snapshots[str(self.sim.ti)] = sc.dcp(self.sim.people) # Take snapshot!
+            if np.isclose(sim.ti, t):
+                self.snapshots[str(sim.ti)] = sc.dcp(sim.people) # Take snapshot!
         return
 
 
@@ -72,22 +73,22 @@ class cpr_by_age(ss.Analyzer):
     def init_results(self):
         super().init_results()
         for k in fpd.method_age_map.keys():
-
             self.define_results(ss.Result(name=k,dtype=float, scale=False))
         self.define_results(ss.Result(name='total',dtype=float, scale=False))
         return
 
     def step(self):
-        ppl = self.sim.people
+        sim = self.sim
+        ppl = sim.people
         for key, (age_low, age_high) in fpd.method_age_map.items():
             match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
             denom_conds = match_low_high * (ppl.female) * ppl.alive
             num_conds = denom_conds * (ppl.method != 0)
-            self.results[key][self.sim.ti] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
+            self.results[key][sim.ti] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
 
         total_denom_conds = (ppl.female) * ppl.alive
         total_num_conds = total_denom_conds * (ppl.method != 0)
-        self.results['total'][self.sim.ti] = sc.safedivide(np.count_nonzero(total_num_conds), np.count_nonzero(total_denom_conds))
+        self.results['total'][sim.ti] = sc.safedivide(np.count_nonzero(total_num_conds), np.count_nonzero(total_denom_conds))
         return
 
 
@@ -100,9 +101,10 @@ class method_mix_by_age(ss.Analyzer):
         return
 
     def finalize(self):
-        n_methods = len(self.sim.contraception_module.methods)
+        sim = self.sim
+        ppl = sim.people
+        n_methods = len(sim.contraception_module.methods)
         self.results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
-        ppl = self.sim.people
         for key, (age_low, age_high) in fpd.method_age_map.items():
             match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
             denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
@@ -137,10 +139,11 @@ class education_recorder(ss.Analyzer):
             Apply snapshot at each timestep listed in timesteps and
             save result at snapshot[str(timestep)]
             """
-            females = self.sim.people.female.uids
-            self.snapshots[str(self.sim.ti)] = {}
+            sim = self.sim
+            females = sim.people.female.uids
+            self.snapshots[str(sim.ti)] = {}
             for key in self.keys:
-                self.snapshots[str(self.sim.ti)][key] = sc.dcp(self.sim.people[key][females])  # Take snapshot!
+                self.snapshots[str(sim.ti)][key] = sc.dcp(sim.people[key][females])  # Take snapshot!
                 self.max_agents = max(self.max_agents, len(females))
             return
 
@@ -331,11 +334,12 @@ class lifeof_recorder(ss.Analyzer):
         Apply snapshot at each timestep listed in timesteps and
         save result at snapshot[str(timestep)]
         """
-        females = self.sim.people.female.uids
-        self.snapshots[str(self.sim.ti)] = {}
+        sim = self.sim
+        females = sim.people.female.uids
+        self.snapshots[str(sim.ti)] = {}
         for key in self.keys:
-            self.snapshots[str(self.sim.ti)][key] = sc.dcp(
-                self.sim.people[key][females])  # Take snapshot!
+            self.snapshots[str(sim.ti)][key] = sc.dcp(
+                sim.people[key][females])  # Take snapshot!
             self.max_agents = max(self.max_agents, len(females))
         return
 
@@ -594,7 +598,7 @@ class age_pyramids(ss.Analyzer):
         if self.bins is None:
             self.bins = np.arange(0, sim.fp_pars['max_age']+2)
         nbins = len(self.bins)-1
-        self.data = np.full((len(sim.t), nbins), np.nan)
+        self.data = np.full((sim.t.npts, nbins), np.nan)
         self._raw = sc.dcp(self.data)
         return
 
@@ -603,9 +607,10 @@ class age_pyramids(ss.Analyzer):
         Records histogram of ages of all alive individuals at a timestep such that
         self.data[timestep] = list of proportions where index signifies age
         """
-        ages = self.sim.people.age.values
-        self._raw[self.sim.ti, :] = np.histogram(ages, self.bins)[0]
-        self.data[self.sim.ti, :] = self._raw[self.sim.ti, :]/self._raw[self.sim.ti, :].sum()
+        sim = self.sim
+        ages = sim.people.age.values
+        self._raw[sim.ti, :] = np.histogram(ages, self.bins)[0]
+        self.data[sim.ti, :] = self._raw[sim.ti, :]/self._raw[sim.ti, :].sum()
 
     def plot(self):
         """
@@ -651,10 +656,11 @@ class method_mix_over_time(ss.Analyzer):
         return
 
     def step(self):
-        ppl = self.sim.people
+        sim = self.sim
+        ppl = sim.people
         for m_idx, method in enumerate(self.methods):
             eligible = ppl.female & ppl.alive & (ppl.method == m_idx)
-            self.results[method][self.sim.ti] = np.count_nonzero(eligible)
+            self.results[method][sim.ti] = np.count_nonzero(eligible)
         return
 
     def plot(self, style=None):
@@ -694,11 +700,12 @@ class state_tracker(ss.Analyzer):
         """
         Initializes bins and data with proper shapes
         """
+        sim = self.sim
         super().init_post()
-        self.data_num = np.full((self.sim.t.npts,), np.nan)
-        self.data_perc = np.full((self.sim.t.npts,), np.nan)
-        self.data_n_female = np.full((self.sim.t.npts,), np.nan)
-        self.tvec = np.full((self.sim.t.npts,), np.nan)
+        self.data_num = np.full((sim.t.npts,), np.nan)
+        self.data_perc = np.full((sim.t.npts,), np.nan)
+        self.data_n_female = np.full((sim.t.npts,), np.nan)
+        self.tvec = np.full((sim.t.npts,), np.nan)
         return
 
     def step(self):
@@ -706,11 +713,13 @@ class state_tracker(ss.Analyzer):
         Records histogram of ages of all alive individuals at a timestep such that
         self.data[timestep] = list of proportions where index signifies age
         """
-        living_women = (self.sim.people.alive & self.sim.people.female & (self.sim.people.age >= self.min_age) & (self.sim.people.age < self.max_age)).uids
-        self.data_num[self.sim.ti] = self.sim.people[self.state_name][living_women].sum()
-        self.data_n_female[self.sim.ti] = len(living_women)
-        self.data_perc[self.sim.ti] = (self.data_num[self.sim.ti] / self.data_n_female[self.sim.ti])*100.0
-        self.tvec[self.sim.ti] = self.sim.y
+        sim = self.sim
+        ppl = sim.people
+        living_women = (ppl.alive & ppl.female & (ppl.age >= self.min_age) & (ppl.age < self.max_age)).uids
+        self.data_num[sim.ti] = ppl[self.state_name][living_women].sum()
+        self.data_n_female[sim.ti] = len(living_women)
+        self.data_perc[sim.ti] = (self.data_num[sim.ti] / self.data_n_female[sim.ti])*100.0
+        self.tvec[sim.ti] = sim.y
 
     def plot(self, style=None):
         """
@@ -887,7 +896,8 @@ class track_as(ss.Analyzer):
         occur (!), so attributes like ppl.ti_pregnant won't exist. These are all slated to be added
         as part of the V3 refactor. For now, this is a placeholder.
         """
-        ppl = self.sim.people
+        sim = self.sim
+        ppl = sim.people
         ppl_uids = ppl.alive.uids
 
         # Pregnancies
@@ -919,8 +929,8 @@ class track_as(ss.Analyzer):
 
         # MCPR
         modern_methods_num = [idx for idx, m in enumerate(ppl.contraception_module.methods.values()) if m.modern]
-        method_age = (self.sim.fp_pars['method_age'] <= ppl.age)
-        fecund_age = ppl.age < self.sim.fp_pars['age_limit_fecundity']
+        method_age = (sim.fp_pars['method_age'] <= ppl.age)
+        fecund_age = ppl.age < sim.fp_pars['age_limit_fecundity']
         denominator = method_age * fecund_age * ppl.female * ppl.alive
         numerator = np.isin(ppl.method, modern_methods_num)
         as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='mcpr',
@@ -929,7 +939,7 @@ class track_as(ss.Analyzer):
             self.results[key] = as_result_dict[key]
 
         # CPR
-        denominator = ((self.sim.fp_pars['method_age'] <= ppl.age) * (ppl.age < self.sim.fp_pars['age_limit_fecundity']) * (
+        denominator = ((sim.fp_pars['method_age'] <= ppl.age) * (ppl.age < sim.fp_pars['age_limit_fecundity']) * (
                 ppl.female * ppl.alive))
         numerator = ppl.method != 0
         as_result_dict = self.log_age_split(binned_ages_t=[self.age_by_group], channel='cpr',
@@ -938,7 +948,7 @@ class track_as(ss.Analyzer):
             self.results[key] = as_result_dict[key]
 
         # ACPR
-        denominator = ((self.sim.fp_pars['method_age'] <= ppl.age) * (ppl.age < self.sim.fp_pars['age_limit_fecundity']) * (
+        denominator = ((sim.fp_pars['method_age'] <= ppl.age) * (ppl.age < sim.fp_pars['age_limit_fecundity']) * (
                 ppl.female) * (ppl.pregnant == 0) * (ppl.sexually_active == 1) * ppl.alive)
         numerator = ppl.method != 0
 
