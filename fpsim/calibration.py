@@ -9,8 +9,10 @@ import pylab as pl
 import pandas as pd
 import sciris as sc
 import seaborn as sns
+import starsim as ss
 import optuna as op
 from . import experiment as fpe
+from . import parameters as fpp
 
 
 __all__ = ['Calibration']
@@ -115,9 +117,10 @@ class Calibration(sc.prettyobj):
         for key,val in self.calib_pars.items():
 
             # Check that the key is a valid parameter
-            par_keys = self.pars.keys()
-            if key not in par_keys:
-                errormsg = f'Key "{key}" is not present the available parameter keys: {sc.newlinejoin(par_keys)}'
+            all_par_keys = ss.Pars().keys() + list(fpp.default_pars.keys())
+            # if key not in par_keys:
+            if key not in all_par_keys:
+                errormsg = f'Key "{key}" is not present the available parameter keys: {sc.newlinejoin(all_par_keys)}'
                 raise sc.KeyNotFoundError(errormsg)
 
             # If each entry of calib_pars is a dict, convert to array
@@ -147,9 +150,9 @@ class Calibration(sc.prettyobj):
         return
 
 
-    def run_exp(self, pars, return_exp=False, **kwargs):
+    def run_exp(self, calib_pars, return_exp=False, **kwargs):
         ''' Create and run an experiment '''
-        pars = sc.mergedicts(sc.dcp(self.pars), pars)
+        pars = sc.mergedicts(sc.dcp(self.pars), calib_pars)
         exp = fpe.Experiment(pars=pars, **kwargs)
         exp.run(weights=self.weights)
         if return_exp:
@@ -224,8 +227,8 @@ class Calibration(sc.prettyobj):
         # Process the results
         self.initial_pars = {k:v[0] for k,v in self.calib_pars.items()}
         self.par_bounds   = {k:np.array([v[1], v[2]]) for k,v in self.calib_pars.items()}
-        self.before = self.run_exp(pars=self.initial_pars, label='Before calibration', return_exp=True)
-        self.after  = self.run_exp(pars=self.best_pars,    label='After calibration',  return_exp=True)
+        self.before = self.run_exp(calib_pars=self.initial_pars, label='Before calibration', return_exp=True)
+        self.after  = self.run_exp(calib_pars=self.best_pars,    label='After calibration',  return_exp=True)
         self.parse_study()
 
         # Tidy up
