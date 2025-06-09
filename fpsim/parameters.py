@@ -92,8 +92,8 @@ default_pars = {
     'low_age_short_int':    0,      # age limit for tracking the age-specific short birth interval
     'high_age_short_int':   20,     # age limit for tracking the age-specific short birth interval
     'postpartum_dur':       35,     # Months
-    'breastfeeding_dur_mu': None,   # CONTEXT-SPECIFIC #### - Location parameter of gumbel distribution
-    'breastfeeding_dur_beta': None,  # CONTEXT-SPECIFIC #### - Scale parameter of gumbel distribution
+    'breastfeeding_dur_mean': None,   # CONTEXT-SPECIFIC #### - Parameter of truncated norm distribution
+    'breastfeeding_dur_sd': None,  # CONTEXT-SPECIFIC #### - Parameter of truncated norm distribution
 
     # Pregnancy outcomes
     'abortion_prob':        None,   # CONTEXT-SPECIFIC ####
@@ -111,7 +111,7 @@ default_pars = {
     'mortality_probs':      {},
 
     ###################################
-    # Context-specific data-dervied parameters, all defined within location files
+    # Context-specific data-derived parameters, all defined within location files
     ###################################
     'filenames':            None,
     'age_pyramid':          None,
@@ -171,8 +171,17 @@ def pars(location=None, rand_seed=None, **kwargs):
     # Load the location-specific parameters
     from . import locations as fplocs
     loc_kwargs = dict(seed=rand_seed)
-    locpars = getattr(fplocs, location).make_pars(**loc_kwargs)
-    pars.update(sc.dcp(locpars))
+
+    # Use external registry for locations first
+    if location in fpd.location_registry:
+        location_module = fpd.location_registry[location]
+        location_pars = location_module.make_pars(**loc_kwargs)
+    elif hasattr(fplocs, location):
+        location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
+    else:
+        raise NotImplementedError(f'Could not find location function for "{location}"')
+
+    pars.update(sc.dcp(location_pars))
     pars.update(**kwargs)
 
     validate(default_pars, pars)

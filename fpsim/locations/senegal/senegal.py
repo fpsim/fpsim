@@ -1,10 +1,9 @@
-'''
+"""
 Set the parameters for FPsim, specifically for Senegal.
-'''
+"""
 
 import numpy as np
 import sciris as sc
-from scipy import interpolate as si
 from ... import defaults as fpd
 import fpsim.locations.data_utils as fpld
 
@@ -14,12 +13,6 @@ import fpsim.locations.data_utils as fpld
 def scalar_pars():
     scalar_pars = {
         'location': 'senegal',
-        'breastfeeding_dur_mu': 19.66828,
-        # Location parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'breastfeeding_dur_beta': 7.2585,
-        # Scale parameter of gumbel distribution. Requires children's recode DHS file, see data_processing/breastfeedin_stats.R
-        'abortion_prob': 0.08,  # From https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4712915/
-        'twins_prob': 0.015,  # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
     }
     return scalar_pars
 
@@ -28,62 +21,29 @@ def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     files = {}
     files['base'] = sc.thisdir(aspath=True) / 'data'
-    files['basic_dhs']        = 'basic_dhs.yaml'
-    files['popsize']          = 'popsize.csv'
-    files['mcpr']             = 'cpr.csv'
-    files['tfr']              = 'tfr.csv'
-    files['asfr']             = 'asfr.csv'
-    files['ageparity']        = 'ageparity.csv'
-    files['spacing']          = 'birth_spacing_dhs.csv'
-    files['methods']          = 'mix.csv'
-    files['afb'] = 'afb.table.csv'
-    files['use'] = 'use.csv'
+    files['basic_wb'] = 'basic_wb.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT
+    files['popsize'] = 'popsize.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
+    files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+    files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN
+    files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
+    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2016 or PMA 2022
+    files['spacing'] = 'birth_spacing_dhs.csv' # From DHS
+    files['methods'] = 'mix.csv' # From PMA
+    files['afb'] = 'afb.table.csv' # From DHS
+    files['use'] = 'use.csv' # From PMA
+    files['education'] = 'edu_initialization.csv' # From DHS
     return files
-
-
-# %% Fecundity
-
-def female_age_fecundity():
-    '''
-    Use fecundity rates from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
-    Fecundity rate assumed to be approximately linear from onset of fecundity around age 10 (average age of menses 12.5) to first data point at age 20
-    45-50 age bin estimated at 0.10 of fecundity of 25-27 yr olds, based on fertility rates from Senegal
-    '''
-    fecundity = {
-        'bins': np.array([0., 5, 10, 15, 20, 25, 28, 31, 34, 37, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 99]),
-        'f': np.array([0., 0, 0, 65, 70.8, 79.3, 77.9, 76.6, 74.8, 67.4, 55.5, 7.9, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0])}
-    fecundity[
-        'f'] /= 100  # Conceptions per hundred to conceptions per woman over 12 menstrual cycles of trying to conceive
-
-    fecundity_interp_model = si.interp1d(x=fecundity['bins'], y=fecundity['f'])
-    fecundity_interp = fecundity_interp_model(fpd.spline_preg_ages)
-    fecundity_interp = np.minimum(1, np.maximum(0, fecundity_interp))  # Normalize to avoid negative or >1 values
-
-    return fecundity_interp
-
-
-def fecundity_ratio_nullip():
-    '''
-    Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
-    from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
-    Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
-    '''
-    fecundity_ratio_nullip = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 34, 37, 40, 45, 50],
-                                       [1, 1, 1, 1, 1, 1, 1, 0.96, 0.95, 0.71, 0.73, 0.42, 0.42, 0.42]])
-    fecundity_nullip_interp = fpld.data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
-
-    return fecundity_nullip_interp
 
 
 # %% Pregnancy exposure
 
 def exposure_age():
-    '''
+    """
     Returns an array of experimental factors to be applied to account for
     residual exposure to either pregnancy or live birth by age.  Exposure to pregnancy will
     increase factor number and residual likelihood of avoiding live birth (mostly abortion,
     also miscarriage), will decrease factor number
-    '''
+    """
     exposure_correction_age = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
                                         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
     exposure_age_interp = fpld.data2interp(exposure_correction_age, fpd.spline_preg_ages)
@@ -91,32 +51,15 @@ def exposure_age():
 
 
 def exposure_parity():
-    '''
+    """
     Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
     or live birth by parity.
-    '''
+    """
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
                                            [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])
     exposure_parity_interp = fpld.data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
-
-
-# %% Contraceptive methods
-
-def barriers():
-    ''' Reasons for nonuse -- taken from DHS '''
-
-    barriers = sc.odict({
-        'No need': 54.2,
-        'Opposition': 30.5,
-        'Knowledge': 1.7,
-        'Access': 4.5,
-        'Health': 12.9,
-    })
-
-    barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
-    return barriers
 
 
 # %% Make and validate parameters
@@ -128,6 +71,8 @@ def make_pars(location='senegal', seed=None):
 
     # Scalar parameters and filenames
     pars = scalar_pars()
+    pars['abortion_prob'], pars['twins_prob'] = fpld.scalar_probs(location)
+    pars.update(fpld.bf_stats(location))
     pars['filenames'] = filenames()
 
     # Demographics and pregnancy outcome
@@ -153,7 +98,10 @@ def make_pars(location='senegal', seed=None):
     pars['spacing_pref'] = fpld.birth_spacing_pref(location)
 
     # Contraceptive methods
-    pars['barriers'] = barriers()
     pars['mcpr'] = fpld.mcpr(location)
+
+    # Demographics: partnership and wealth status
+    pars['age_partnership'] = fpld.age_partnership(location)
+    pars['wealth_quintile'] = fpld.wealth(location)
 
     return pars
