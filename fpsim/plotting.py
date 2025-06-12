@@ -1,5 +1,5 @@
 """
-Standard plots used in calibrations
+Standard plots used in calibrations and analyses
 """
 import os
 import fpsim as fp
@@ -72,9 +72,6 @@ class Config:
 
         return val_data
 
-# Ensure the default directory exists
-Config.set_figs_directory(Config._figs_directory)
-
 def save_figure(filename):
     """Helper function to save a figure if saving is enabled."""
     if Config.do_save:
@@ -94,7 +91,10 @@ def pop_growth_rate(years, population):
 
 
 def plot_by_age(sim):
-    """Plot CPR by age and method mix by age."""
+    """
+    Plot CPR by age and method mix by age.
+    Note: This plot can only be run if the sim used the analyzers 'cpr_by_age' and 'method_mix_by_age'
+    """
     # CPR by age
     fig, ax = pl.subplots()
     age_bins = [18, 20, 25, 35, 50]
@@ -105,8 +105,8 @@ def plot_by_age(sim):
     ax.set_ylim([0, 1])
     ax.set_ylabel('CPR')
     ax.set_title('CPR')
-    pl.show()
     save_figure('cpr_by_age.png')
+    pl.show()
 
     # Method mix by age
     fig, ax = pl.subplots()
@@ -115,11 +115,13 @@ def plot_by_age(sim):
     df_plot = df.melt(id_vars='method')
     sns.barplot(x='method', y='value', hue='variable', data=df_plot, ax=ax, palette="viridis")
     ax.set_title('Method Mix by Age')
-    pl.show()
     save_figure('method_mix_by_age.png')
+    pl.show()
 
 
 def plot_asfr(sim, data):
+    """Plots age-specific fertility rate"""
+
     # Print ASFR form model in output
     for key in age_bin_map:
         print(f'ASFR (annual) for age bin {key} in the last year of the sim: {sim.results["asfr"][key][-1]}')
@@ -127,7 +129,7 @@ def plot_asfr(sim, data):
     x = [1, 2, 3, 4, 5, 6, 7, 8]
 
     # Load data
-    year = data[data['year'] == sim.pars['end_year']]
+    year = data[data['year'] == sim.pars['end_year']]   # Compare model to data at the end year of the sim
     asfr_data = year.drop(['year'], axis=1).values.tolist()[0]
 
     x_labels = []
@@ -155,8 +157,8 @@ def plot_asfr(sim, data):
     ax.legend(frameon=False)
     sc.boxoff()
 
-    pl.show()
     save_figure('asfr.png')
+    pl.show()
 
 
 def plot_methods(sim, data_methods, data_use):
@@ -237,19 +239,19 @@ def plot_methods(sim, data_methods, data_use):
 
     pl.tight_layout()
 
-    pl.show()
     save_figure('method_mix.png')
+    pl.show()
 
     # Plot data_use
     ax = df_use.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'})
     ax.set_xlabel('Percent')
     ax.set_title(f'Contraceptive Method Use - Model vs Data\n(RMSE: {rmse_use:.2f})')
 
-    pl.show()
     save_figure('method_use.png')
+    pl.show()
 
 
-def plot_ageparity(sim, ageparity_data, ageparity_dataset='PMA 2022'):
+def plot_ageparity(sim, ageparity_data):
     """
     Plot an age-parity distribution for model vs data
     """
@@ -261,8 +263,6 @@ def plot_ageparity(sim, ageparity_data, ageparity_dataset='PMA 2022'):
     n_age = len(age_bins)
     n_parity = len(parity_bins)
 
-    # Load data
-    ageparity_data = ageparity_data[ageparity_data['dataset'] == ageparity_dataset]
     sky_arr = sc.odict()
 
     sky_arr['Data'] = pl.zeros((len(age_keys), len(parity_bins)))
@@ -652,24 +652,31 @@ def plot_education(sim, data_education):
     pl.show()
 
 
-def plot_all(sim, val_data):
+def plot_all(sim):
     """Plots all the figures above besides empowerment plots"""
-    plot_by_age(sim)
-    plot_asfr(sim, val_data['asfr'])
+
+    # Load target parameter data
+    val_data = Config.load_validation_data(sim.location)
+
     plot_methods(sim, val_data['methods'], val_data['use'])
-    plot_ageparity(sim, val_data['ageparity'])
     plot_cpr(sim, val_data['mcpr'])
     plot_tfr(sim, val_data['tfr'])
-    plot_pop_growth(sim, val_data['popsize'])
     plot_birth_space_afb(sim, val_data['spacing'], val_data['afb'])
+    plot_asfr(sim, val_data['asfr'])
+    plot_ageparity(sim, val_data['ageparity'])
+    plot_pop_growth(sim, val_data['popsize'])
     return
 
-def plot_calib(sim, val_data):
+def plot_calib(sim):
     """Plots all the commonly used plots for calibration"""
+
+    # Load target parameter data
+    val_data = Config.load_validation_data(sim.location)
+
     plot_methods(sim, val_data['methods'], val_data['use'])
     plot_cpr(sim, val_data['mcpr'])
     plot_tfr(sim, val_data['tfr'])
-    plot_birth_space_afb(val_data['spacing'], val_data['afb'])
+    plot_birth_space_afb(sim, val_data['spacing'], val_data['afb'])
     plot_asfr(sim, val_data['asfr'])
     return
 
