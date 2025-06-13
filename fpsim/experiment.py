@@ -2,7 +2,7 @@
 Define classes and functions for the Experiment class (running sims and comparing them to data)
 '''
 import math
-
+from pathlib import Path
 import yaml
 import numpy as np
 import pylab as pl
@@ -68,7 +68,7 @@ class Experiment(sc.prettyobj):
     def load_data(self, key, **kwargs):
         ''' Load data from various formats '''
         files = self.pars['filenames']
-        path = files['base'] / files[key]
+        path = Path(files['base']) / files[key]
         if path.suffix == '.obj':
             data = sc.load(path, **kwargs)
         elif path.suffix == '.json':

@@ -122,10 +122,6 @@ def plot_by_age(sim):
 def plot_asfr(sim, data):
     """Plots age-specific fertility rate"""
 
-    # Print ASFR form model in output
-    for key in age_bin_map:
-        print(f'ASFR (annual) for age bin {key} in the last year of the sim: {sim.results["asfr"][key][-1]}')
-
     x = [1, 2, 3, 4, 5, 6, 7, 8]
 
     # Load data
@@ -230,6 +226,7 @@ def plot_methods(sim, data_methods, data_use):
     # Set up plotting
     use_labels = list(data_methods_use.keys())
     df_mix = pd.DataFrame({'PMA': mix_percent_data, 'FPsim': mix_percent_model}, index=model_labels_methods[1:])
+    df_mix = df_mix.iloc[::-1]
     df_use = pd.DataFrame({'PMA': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
 
     # Plot mix
@@ -491,8 +488,6 @@ def plot_birth_space_afb(sim, data_spaces, data_afb):
     bins_frame = pd.DataFrame(
         {'Model': model_spacing_bins, 'Data': data_spacing_bins, 'Diff': diff},
         index=spacing_bins.keys())
-
-    print(bins_frame)  # Print in output, remove if not needed
 
     ax = bins_frame.plot.barh(color={'Data': 'black', 'Model': 'cornflowerblue', 'Diff': 'red'})
     ax.set_xlabel('Percent of live birth spaces')
