@@ -290,7 +290,16 @@ def pars(location=None, validate=True, die=True, update=True, **kwargs):
 
     # Pull out values needed for the location-specific make_pars functions
     loc_kwargs = dict(seed=pars['seed'])
-    location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
+
+    # Use external registry for locations first
+    if location in fpd.location_registry:
+        location_module = fpd.location_registry[location]
+        location_pars = location_module.make_pars(**loc_kwargs)
+    elif hasattr(fplocs, location):
+        location_pars = getattr(fplocs, location).make_pars(**loc_kwargs)
+    else:
+        raise NotImplementedError(f'Could not find location function for "{location}"')
+
     pars = sc.mergedicts(pars, location_pars)
 
     # TODO: regional locations not supported yet
