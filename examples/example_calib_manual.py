@@ -33,6 +33,7 @@ country = 'kenya'
 
 plt.Config.set_figs_directory('./figs_manual_calib')
 plt.Config.do_save = True
+plt.Config.show_rmse = True
 
 
 def run_sim():

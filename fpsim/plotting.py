@@ -14,11 +14,15 @@ from . import defaults as fpd
 min_age = 15
 max_age = 50
 bin_size = 5
+
 age_bin_map = fpd.age_bin_map
+rmse_scores = {}
+
 
 class Config:
     """Configuration for plots"""
     do_save = True
+    show_rmse = True
     _figs_directory = 'figures'
 
     # Default validation data mapping (key: filename)
@@ -46,7 +50,7 @@ class Config:
         return cls._figs_directory
 
     @classmethod
-    def load_validation_data(cls, country, val_data_mapping=None):
+    def load_validation_data(cls, country, val_data_mapping=None, keys=None):
         """
         Load validation data for the specified country.
 
@@ -54,12 +58,21 @@ class Config:
             country (str): The name of the country folder.
             val_data_mapping (dict, optional): Custom mapping of validation data keys to filenames.
                                                Defaults to `default_val_data_mapping`.
+            keys (str or list of str, optional): Specific metric(s) to load (e.g., 'asfr' or ['asfr', 'tfr']).
 
         Returns:
-            sc.objdict: Loaded validation data as a dictionary-like object.
+            sc.objdict: Loaded validation data (either full or partial dict with requested keys).
         """
         if val_data_mapping is None:
             val_data_mapping = cls.default_val_data_mapping
+
+        # Handle single string input for keys
+        if isinstance(keys, str):
+            keys = [keys]
+
+        # Filter mapping if specific keys requested
+        if keys is not None:
+            val_data_mapping = {k: v for k, v in val_data_mapping.items() if k in keys}
 
         base_path = getattr(fp.locations, country).filenames()['base']
         val_data = sc.objdict()
@@ -77,6 +90,26 @@ def save_figure(filename):
     if Config.do_save:
         sc.savefig(f"{Config.get_figs_directory()}/{filename}")
 
+def compute_rmse(model_vals, data_vals):
+    """
+    Compute mean-normalized Root Mean Squared Error (RMSE) between model output and real data.
+
+    Normalization is done by dividing RMSE by the mean of the data values.
+
+    :param model_vals: List or numpy array of model-generated values
+    :param data_vals: List or numpy array of real-world data values
+    :return: Normalized RMSE (unitless)
+    """
+    model_vals = np.array(model_vals)
+    data_vals = np.array(data_vals)
+
+    rmse = np.sqrt(np.mean((model_vals - data_vals) ** 2))
+    mean_val = np.mean(data_vals)
+
+    if mean_val != 0:
+        rmse /= mean_val  # Mean normalization
+
+    return rmse
 
 def pop_growth_rate(years, population):
     """Calculates growth rate as a time series to help compare model to data"""
@@ -119,26 +152,26 @@ def plot_by_age(sim):
     pl.show()
 
 
-def plot_asfr(sim, data):
+def plot_asfr(sim):
     """Plots age-specific fertility rate"""
+
+    data = Config.load_validation_data(sim.location, keys='asfr')['asfr']
 
     x = [1, 2, 3, 4, 5, 6, 7, 8]
 
-    # Load data
+    # Extract ASFR from simulation results
     year = data[data['year'] == sim.pars['end_year']]   # Compare model to data at the end year of the sim
     asfr_data = year.drop(['year'], axis=1).values.tolist()[0]
 
+    # Extract ASFR from simulation results
     x_labels = []
     asfr_model = []
-
-    # Extract from model
     for key in age_bin_map:
         x_labels.append(key)
         asfr_model.append(sim.results['asfr'][key][-1])
 
-    # Calculate RMSE
-    rmse = np.sqrt(np.mean((np.array(asfr_data) - np.array(asfr_model)) ** 2))
-    print(f'ASFR RMSE between model and data: {rmse}')
+    # Compute mean-normalized RMSE
+    rmse_scores['asfr'] = compute_rmse(asfr_model, asfr_data)
 
     # Plot
     fig, ax = pl.subplots()
@@ -147,7 +180,10 @@ def plot_asfr(sim, data):
     ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
     pl.xticks(x, x_labels)
     pl.ylim(bottom=-10)
-    ax.set_title(f'Age specific fertility rate per 1000 woman years\n(RMSE: {rmse:.2f})')
+    if Config.show_rmse is True:
+        ax.set_title(f'Age specific fertility rate per 1000 woman years\n(RMSE: {rmse_scores['asfr']:.2f})')
+    else:
+        ax.set_title(f'Age specific fertility rate per 1000 woman years')
     ax.set_xlabel('Age')
     ax.set_ylabel('ASFR')
     ax.legend(frameon=False)
@@ -157,13 +193,17 @@ def plot_asfr(sim, data):
     pl.show()
 
 
-def plot_methods(sim, data_methods, data_use):
+def plot_methods(sim):
     """
     Plots both dichotomous method data_use and non-data_use and contraceptive mix
     """
-    ppl = sim.people
+    # Load data
+    data = Config.load_validation_data(sim.location, keys=['methods', 'use'])
+    data_methods = data['methods']
+    data_use = data['use']
 
     # Setup
+    ppl = sim.people
     model_labels_all = [m.label for m in sim.contraception_module.methods.values()]
     model_labels_methods = sc.dcp(model_labels_all)
     model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
@@ -215,13 +255,9 @@ def plot_methods(sim, data_methods, data_use):
     mix_percent_data = list(data_methods_mix.values())
     data_use_percent = list(data_methods_use.values())
 
-    # Calculate RMSE for method mix
-    rmse_mix = np.sqrt(np.mean((np.array(mix_percent_data) - np.array(mix_percent_model)) ** 2))
-    print(f'RMSE for method mix: {rmse_mix:.2f}')
-
-    # Calculate RMSE for overall use
-    rmse_use = np.sqrt(np.mean((np.array(data_use_percent) - np.array(model_use_percent)) ** 2))
-    print(f'RMSE for overall use: {rmse_use:.2f}')
+    # Compute mean-normalized RMSE
+    rmse_scores['method_mix'] = compute_rmse(mix_percent_model, mix_percent_data)
+    rmse_scores['use'] = compute_rmse(model_use_percent, data_use_percent)
 
     # Set up plotting
     use_labels = list(data_methods_use.keys())
@@ -232,26 +268,35 @@ def plot_methods(sim, data_methods, data_use):
     # Plot mix
     ax = df_mix.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'})
     ax.set_xlabel('Percent users')
-    ax.set_title(f'Contraceptive Method Mix - Model vs Data\n(RMSE: {rmse_mix:.2f})')
+    if Config.show_rmse is True:
+        ax.set_title(f'Contraceptive Method Mix - Model vs Data\n(RMSE: {rmse_scores['method_mix']:.2f})')
+    else:
+        ax.set_title(f'Contraceptive Method Mix - Model vs Data')
 
     pl.tight_layout()
-
     save_figure('method_mix.png')
     pl.show()
 
     # Plot data_use
     ax = df_use.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'})
     ax.set_xlabel('Percent')
-    ax.set_title(f'Contraceptive Method Use - Model vs Data\n(RMSE: {rmse_use:.2f})')
+    if Config.show_rmse is True:
+        ax.set_title(f'Contraceptive Method Use - Model vs Data\n(RMSE: {rmse_scores['use']:.2f})')
+    else:
+        ax.set_title(f'Contraceptive Method Use - Model vs Data')
 
+    pl.tight_layout()
     save_figure('method_use.png')
     pl.show()
 
 
-def plot_ageparity(sim, ageparity_data):
+def plot_ageparity(sim):
     """
     Plot an age-parity distribution for model vs data
     """
+    # Load data
+    ageparity_data = Config.load_validation_data(sim.location, keys=['ageparity'])['ageparity']
+
     # Set up
     ppl = sim.people
     age_keys = list(age_bin_map.keys())
@@ -313,11 +358,12 @@ def plot_ageparity(sim, ageparity_data):
         pl.show()
 
 
-def plot_cpr(sim, data_cpr):
+def plot_cpr(sim):
     '''
     Plot contraceptive prevalence rate for model vs data
     '''
     # Import data
+    data_cpr = Config.load_validation_data(sim.location, keys=['mcpr'])['mcpr']
     data_cpr = data_cpr[data_cpr['year'] <= sim.pars['end_year']]  # Restrict years to plot
     res = sim.results
 
@@ -326,55 +372,61 @@ def plot_cpr(sim, data_cpr):
     data_values = data_cpr['cpr'].values
     model_values = np.interp(years, res['t'], res['cpr'] * 100)  # Interpolate model CPR to match data years
 
-    # Calculate RMSE
-    rmse = np.sqrt(np.mean((data_values - model_values) ** 2))
-    print(f'RMSE for CPR: {rmse:.2f}')
+    # Compute mean-normalized RMSE
+    rmse_scores['cpr'] = compute_rmse(model_values, data_values)
 
     # Plot
     pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
     pl.plot(res['t'], res['cpr'] * 100, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
     pl.ylabel('Percent')
-    pl.title(f'Contraceptive Prevalence Rate - Model vs Data\n(RMSE: {rmse:.2f})')
+    if Config.show_rmse is True:
+        pl.title(f'Contraceptive Prevalence Rate - Model vs Data\n(RMSE: {rmse_scores['cpr']:.2f})')
+    else:
+        pl.title(f'Contraceptive Prevalence Rate - Model vs Data')
     pl.legend()
 
     save_figure('cpr.png')
     pl.show()
 
 
-def plot_tfr(sim, data_tfr):
+def plot_tfr(sim):
     """
     Plot total fertility rate for model vs data
     """
-
+    # Load data
     res = sim.results
+    data_tfr = Config.load_validation_data(sim.location, keys=['tfr'])['tfr']
+
     # Align model and data years for RMSE calculation
     data_years = data_tfr['year']
     data_tfr_values = data_tfr['tfr']
     model_tfr_values = np.interp(data_years, res['tfr_years'],
                                  res['tfr_rates'])  # Interpolate model to match data years
 
-    # Calculate RMSE
-    rmse = np.sqrt(np.mean((np.array(data_tfr_values) - np.array(model_tfr_values)) ** 2))
-    print(f'RMSE for Total Fertility Rate: {rmse:.2f}')
+    # Compute mean-normalized RMSE
+    rmse_scores['tfr'] = compute_rmse(model_tfr_values, data_tfr_values)
 
     # Plot
     pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
     pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
     pl.ylabel('Rate')
-    pl.title(f'Total Fertility Rate - Model vs Data\n(RMSE: {rmse:.2f})')
+    if Config.show_rmse is True:
+        pl.title(f'Total Fertility Rate - Model vs Data\n(RMSE: {rmse_scores['tfr']:.2f})')
+    else:
+        pl.title(f'Total Fertility Rate - Model vs Data')
     pl.legend()
 
     save_figure('tfr.png')
     pl.show()
 
 
-def plot_pop_growth(sim, data_popsize):
+def plot_pop_growth(sim):
     """
     Plot annual population growth rate for model vs data
     """
-
+    data_popsize = Config.load_validation_data(sim.location, keys=['popsize'])['popsize']
     res = sim.results
 
     # Import data
@@ -398,103 +450,109 @@ def plot_pop_growth(sim, data_popsize):
     save_figure('popgrowth.png')
     pl.show()
 
+def plot_afb(sim):
+    """Plot age at first birth: model vs survey data"""
+    data_afb = Config.load_validation_data(sim.location, keys='afb')['afb']
 
-def plot_birth_space_afb(sim, data_spaces, data_afb):
-    """
-    Plot birth space and age at first birth for model vs data
-    """
-    # Set up
-    ppl = sim.people
-    spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in months
-    model_age_first = []
-    model_spacing = []
-    model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
-    data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+    # Extract model AFB values
+    model_afb = [age for age in sim.people.first_birth_age if age != -1]
+    model_afb = np.array(model_afb)
 
-    # Extract age at first birth and birth spaces from model
-    # TODO, refactor to avoid loops
-    for i in range(len(ppl)):
-        if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
-            if ppl.first_birth_age[i] == -1:
-                model_age_first.append(float('inf'))
-            else:
-                model_age_first.append(ppl.first_birth_age[i])
-                if ppl.parity[i] > 1:
-                    cleaned_birth_ages = ppl.birth_ages[i][~np.isnan(ppl.birth_ages[i])]
-                    for d in range(len(cleaned_birth_ages) - 1):
-                        space = cleaned_birth_ages[d + 1] - cleaned_birth_ages[d]
-                        if space > 0:
-                            ind = sc.findinds(space > spacing_bins[:])[-1]
-                            model_spacing_counts[ind] += 1
-                            model_spacing.append(space)
+    # Clean and bin data AFB values
+    data_afb_clean = data_afb[data_afb['afb'].apply(np.isfinite)]
+    data_afb_vals = data_afb_clean['afb'].to_numpy()
+    data_afb_weights = data_afb_clean['wt'].to_numpy()
 
-    # Normalize model birth space bin counts to percentages
-    model_spacing_counts[:] /= model_spacing_counts[:].sum()
-    model_spacing_counts[:] *= 100
+    # Histogram bins
+    bins = np.arange(10, 50, 1)  # From age 10 to 45 in 1-year bins
 
-    age_first_birth_model = pd.DataFrame(data=model_age_first)
+    # Bin both model and data into normalized histograms
+    model_hist, _ = np.histogram(model_afb, bins=bins, density=True)
+    data_hist, _ = np.histogram(data_afb_vals, bins=bins, density=True)
 
-    # Extract birth spaces and age at first birth from data
-    for i, j in data_spaces.iterrows():
-        space = j['space_mo'] / 12
-        ind = sc.findinds(space > spacing_bins[:])[-1]
-        data_spacing_counts[ind] += j['Freq']
+    # Ensure the two distributions have the same shape
+    if len(model_hist) != len(data_hist):
+        raise ValueError(f"Histogram size mismatch: Model = {len(model_hist)}, Data = {len(data_hist)}")
 
-    age_first_birth_data = pd.DataFrame(data=data_afb)
+    # Compute RMSE
+    rmse_scores['afb'] = compute_rmse(model_hist, data_hist)
 
-    # Normalize dat birth space bin counts to percentages
-    data_spacing_counts[:] /= data_spacing_counts[:].sum()
-    data_spacing_counts[:] *= 100
-
-    # RMSE for Birth Spacing Bins
-    data_spacing_bins = np.array(data_spacing_counts.values())
-    model_spacing_bins = np.array(model_spacing_counts.values())
-    rmse_spacing = np.sqrt(np.mean((data_spacing_bins - model_spacing_bins) ** 2))
-    print(f'RMSE for Birth Spacing Bins: {rmse_spacing:.2f}')
-
-    # RMSE for Age at First Birth
-    model_afb_values = age_first_birth_model[age_first_birth_model[0] != float('inf')][0].values
-    data_afb_values = age_first_birth_data['afb'].values
-
-    # Compute mean for model and data to resolve shape mismatch
-    model_afb_mean = np.mean(model_afb_values)
-    data_afb_mean = np.mean(data_afb_values)
-
-    # RMSE between aggregated means
-    rmse_afb = np.sqrt((model_afb_mean - data_afb_mean) ** 2)
-    print(f'Mean Age at First Birth - Model: {model_afb_mean:.2f}, Data: {data_afb_mean:.2f}')
-    print(f'RMSE for Age at First Birth: {rmse_afb:.2f}')
-
-    # Plot age at first birth (histogram with KDE)
-    sns.histplot(data=age_first_birth_model, stat='proportion', kde=True, binwidth=1, color='cornflowerblue',
-                 label='FPsim')
-    sns.histplot(x=age_first_birth_data['afb'], stat='proportion', kde=True, weights=age_first_birth_data['wt'],
+    # Plot
+    sns.histplot(model_afb, stat='proportion', kde=True, binwidth=1, color='cornflowerblue', label='FPsim')
+    sns.histplot(x=data_afb_vals, stat='proportion', kde=True, weights=data_afb_weights,
                  binwidth=1, color='dimgrey', label='DHS data')
     pl.xlabel('Age at first birth')
-    pl.title(f'Age at First Birth - Model vs Data\n(RMSE: {rmse_afb:.2f})')
+    if Config.show_rmse:
+        pl.title(f'Age at First Birth - Model vs Data\n(RMSE: {rmse_scores["afb"]:.2f})')
+    else:
+        pl.title('Age at First Birth - Model vs Data')
     pl.legend()
 
     save_figure('age_first_birth.png')
     pl.show()
 
-    # Plot birth space bins with diff
-    data_spacing_bins = np.array(data_spacing_counts.values())
-    model_spacing_bins = np.array(model_spacing_counts.values())
 
-    diff = model_spacing_bins - data_spacing_bins
+def plot_birth_spacing(sim):
+    """
+    Plot birth space and age at first birth for model vs data
+    """
+    # Load data
+    data_spacing = Config.load_validation_data(sim.location, keys=['spacing'])['spacing']
 
-    res_bins = np.array([[model_spacing_bins], [data_spacing_bins], [diff]])
+    # Set up
+    ppl = sim.people
+    spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in months
 
-    bins_frame = pd.DataFrame(
-        {'Model': model_spacing_bins, 'Data': data_spacing_bins, 'Diff': diff},
-        index=spacing_bins.keys())
+    # Count model birth spacing
+    model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+    for i in range(len(ppl)):
+        if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+            if ppl.parity[i] > 1:
+                clean_ages = ppl.birth_ages[i][~np.isnan(ppl.birth_ages[i])]
+                for d in range(len(clean_ages) - 1):
+                    space = clean_ages[d + 1] - clean_ages[d]
+                    if space > 0:
+                        ind = sc.findinds(space > spacing_bins[:])[-1]
+                        model_spacing_counts[ind] += 1
+
+    # Normalize to percent
+    model_spacing_counts[:] /= model_spacing_counts[:].sum()
+    model_spacing_counts[:] *= 100
+
+    # Count data birth spacing
+    data_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
+    for _, row in data_spacing.iterrows():
+        space = row['space_mo'] / 12
+        ind = sc.findinds(space > spacing_bins[:])[-1]
+        data_spacing_counts[ind] += row['Freq']
+
+    # Normalize to percent
+    data_spacing_counts[:] /= data_spacing_counts[:].sum()
+    data_spacing_counts[:] *= 100
+
+    # Convert to arrays for RMSE
+    model_bins = np.array(model_spacing_counts.values())
+    data_bins = np.array(data_spacing_counts.values())
+
+    rmse_scores['birth_spacing'] = compute_rmse(model_bins, data_bins)
+
+    # Diff for visualization
+    diff = model_bins - data_bins
+    bins_frame = pd.DataFrame({
+        'Model': model_bins,
+        'Data': data_bins,
+        'Diff': diff
+    }, index=spacing_bins.keys())
 
     ax = bins_frame.plot.barh(color={'Data': 'black', 'Model': 'cornflowerblue', 'Diff': 'red'})
     ax.set_xlabel('Percent of live birth spaces')
-    ax.set_ylabel('Birth space in months')
-    ax.set_title(f'Birth Space Bins - Model vs Data\n(RMSE: {rmse_spacing:.2f})')
+    ax.set_ylabel('Birth spacing (months)')
+    if Config.show_rmse:
+        ax.set_title(f'Birth Spacing - Model vs Data\n(RMSE: {rmse_scores["birth_spacing"]:.2f})')
+    else:
+        ax.set_title('Birth Spacing - Model vs Data')
 
-    save_figure('birth_space_bins.png')
+    save_figure('birth_spacing_bins.png')
     pl.show()
 
 
@@ -546,8 +604,7 @@ def plot_paid_work(sim, data_employment):
     employment_model_se = list(percentage_employed_se.values())
 
     # Calculate RMSE
-    rmse = np.sqrt(np.mean((np.array(employment_data_mean) - np.array(employment_model)) ** 2))
-    print(f'RMSE for Paid Employment: {rmse:.2f}')
+    rmse_scores['paid_work'] = np.sqrt(np.mean((np.array(employment_data_mean) - np.array(employment_model)) ** 2))
 
     # Set up plotting
     labels = age_bin_map
@@ -568,7 +625,10 @@ def plot_paid_work(sim, data_employment):
     # Set labels and title
     ax.set_xlabel('Percent Women with Paid Work')
     ax.set_ylabel('Age Bin')
-    ax.set_title(f'Kenya: Paid Employment - Model vs Data\n(RMSE: {rmse:.2f})')
+    if Config.show_rmse is True:
+        ax.set_title(f'Kenya: Paid Employment - Model vs Data\n(RMSE: {rmse_scores['paid_work']:.2f})')
+    else:
+        ax.set_title(f'Kenya: Paid Employment - Model vs Data')
     ax.set_yticks(x_pos)
     ax.set_yticklabels(labels)
     ax.legend()
@@ -617,8 +677,7 @@ def plot_education(sim, data_education):
             model_edu_se.append(0)
 
     # Calculate RMSE
-    rmse = np.sqrt(np.mean((np.array(education_data_mean) - np.array(model_edu_mean)) ** 2))
-    print(f'RMSE for Education Attainment: {rmse:.2f}')
+    rmse_scores['education'] = compute_rmse(model_edu_mean, education_data_mean)
 
     # Set up plotting
     labels = age_bin_map
@@ -638,7 +697,10 @@ def plot_education(sim, data_education):
     # Set labels and title
     ax.set_xlabel('Avg Years of Education Attainment')
     ax.set_ylabel('Age Bin')
-    ax.set_title(f'Kenya: Years of Education - Model vs Data\n(RMSE: {rmse:.2f})')
+    if Config.show_rmse is True:
+        ax.set_title(f'Kenya: Years of Education - Model vs Data\n(RMSE: {rmse_scores['education']:.2f})')
+    else:
+        ax.set_title(f'Kenya: Years of Education - Model vs Data')
     ax.set_yticks(x_pos)
     ax.set_yticklabels(labels)
     ax.legend()
@@ -650,28 +712,24 @@ def plot_education(sim, data_education):
 def plot_all(sim):
     """Plots all the figures above besides empowerment plots"""
 
-    # Load target parameter data
-    val_data = Config.load_validation_data(sim.location)
-
-    plot_methods(sim, val_data['methods'], val_data['use'])
-    plot_cpr(sim, val_data['mcpr'])
-    plot_tfr(sim, val_data['tfr'])
-    plot_birth_space_afb(sim, val_data['spacing'], val_data['afb'])
-    plot_asfr(sim, val_data['asfr'])
-    plot_ageparity(sim, val_data['ageparity'])
-    plot_pop_growth(sim, val_data['popsize'])
+    plot_methods(sim)
+    plot_cpr(sim)
+    plot_tfr(sim)
+    plot_afb(sim)
+    plot_birth_spacing(sim)
+    plot_asfr(sim)
+    plot_ageparity(sim)
+    plot_pop_growth(sim)
     return
 
 def plot_calib(sim):
-    """Plots all the commonly used plots for calibration"""
+    """Plots the commonly used plots for calibration"""
 
-    # Load target parameter data
-    val_data = Config.load_validation_data(sim.location)
-
-    plot_methods(sim, val_data['methods'], val_data['use'])
-    plot_cpr(sim, val_data['mcpr'])
-    plot_tfr(sim, val_data['tfr'])
-    plot_birth_space_afb(sim, val_data['spacing'], val_data['afb'])
-    plot_asfr(sim, val_data['asfr'])
+    plot_methods(sim)
+    plot_cpr(sim)
+    plot_tfr(sim)
+    plot_afb(sim)
+    plot_birth_spacing(sim)
+    plot_asfr(sim)
     return
 
