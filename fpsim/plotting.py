@@ -181,7 +181,7 @@ def plot_asfr(sim):
     pl.xticks(x, x_labels)
     pl.ylim(bottom=-10)
     if Config.show_rmse is True:
-        ax.set_title(f'Age specific fertility rate per 1000 woman years\n(RMSE: {rmse_scores['asfr']:.2f})')
+        ax.set_title(f"Age specific fertility rate per 1000 woman years\n(RMSE: {rmse_scores['asfr']:.2f})")
     else:
         ax.set_title(f'Age specific fertility rate per 1000 woman years')
     ax.set_xlabel('Age')
@@ -269,7 +269,7 @@ def plot_methods(sim):
     ax = df_mix.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'})
     ax.set_xlabel('Percent users')
     if Config.show_rmse is True:
-        ax.set_title(f'Contraceptive Method Mix - Model vs Data\n(RMSE: {rmse_scores['method_mix']:.2f})')
+        ax.set_title(f"Contraceptive Method Mix - Model vs Data\n(RMSE: {rmse_scores['method_mix']:.2f})")
     else:
         ax.set_title(f'Contraceptive Method Mix - Model vs Data')
 
@@ -281,7 +281,7 @@ def plot_methods(sim):
     ax = df_use.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'})
     ax.set_xlabel('Percent')
     if Config.show_rmse is True:
-        ax.set_title(f'Contraceptive Method Use - Model vs Data\n(RMSE: {rmse_scores['use']:.2f})')
+        ax.set_title(f"Contraceptive Method Use - Model vs Data\n(RMSE: {rmse_scores['use']:.2f})")
     else:
         ax.set_title(f'Contraceptive Method Use - Model vs Data')
 
@@ -381,7 +381,7 @@ def plot_cpr(sim):
     pl.xlabel('Year')
     pl.ylabel('Percent')
     if Config.show_rmse is True:
-        pl.title(f'Contraceptive Prevalence Rate - Model vs Data\n(RMSE: {rmse_scores['cpr']:.2f})')
+        pl.title(f"Contraceptive Prevalence Rate - Model vs Data\n(RMSE: {rmse_scores['cpr']:.2f})")
     else:
         pl.title(f'Contraceptive Prevalence Rate - Model vs Data')
     pl.legend()
@@ -413,7 +413,7 @@ def plot_tfr(sim):
     pl.xlabel('Year')
     pl.ylabel('Rate')
     if Config.show_rmse is True:
-        pl.title(f'Total Fertility Rate - Model vs Data\n(RMSE: {rmse_scores['tfr']:.2f})')
+        pl.title(f"Total Fertility Rate - Model vs Data\n(RMSE: {rmse_scores['tfr']:.2f})")
     else:
         pl.title(f'Total Fertility Rate - Model vs Data')
     pl.legend()
@@ -483,7 +483,7 @@ def plot_afb(sim):
                  binwidth=1, color='dimgrey', label='DHS data')
     pl.xlabel('Age at first birth')
     if Config.show_rmse:
-        pl.title(f'Age at First Birth - Model vs Data\n(RMSE: {rmse_scores["afb"]:.2f})')
+        pl.title(f"Age at First Birth - Model vs Data\n(RMSE: {rmse_scores['afb']:.2f})")
     else:
         pl.title('Age at First Birth - Model vs Data')
     pl.legend()
@@ -548,7 +548,7 @@ def plot_birth_spacing(sim):
     ax.set_xlabel('Percent of live birth spaces')
     ax.set_ylabel('Birth spacing (months)')
     if Config.show_rmse:
-        ax.set_title(f'Birth Spacing - Model vs Data\n(RMSE: {rmse_scores["birth_spacing"]:.2f})')
+        ax.set_title(f"Birth Spacing - Model vs Data\n(RMSE: {rmse_scores['birth_spacing']:.2f})")
     else:
         ax.set_title('Birth Spacing - Model vs Data')
 
@@ -626,7 +626,7 @@ def plot_paid_work(sim, data_employment):
     ax.set_xlabel('Percent Women with Paid Work')
     ax.set_ylabel('Age Bin')
     if Config.show_rmse is True:
-        ax.set_title(f'Kenya: Paid Employment - Model vs Data\n(RMSE: {rmse_scores['paid_work']:.2f})')
+        ax.set_title(f"Kenya: Paid Employment - Model vs Data\n(RMSE: {rmse_scores['paid_work']:.2f})")
     else:
         ax.set_title(f'Kenya: Paid Employment - Model vs Data')
     ax.set_yticks(x_pos)
@@ -698,7 +698,7 @@ def plot_education(sim, data_education):
     ax.set_xlabel('Avg Years of Education Attainment')
     ax.set_ylabel('Age Bin')
     if Config.show_rmse is True:
-        ax.set_title(f'Kenya: Years of Education - Model vs Data\n(RMSE: {rmse_scores['education']:.2f})')
+        ax.set_title(f"Kenya: Years of Education - Model vs Data\n(RMSE: {rmse_scores['education']:.2f})")
     else:
         ax.set_title(f'Kenya: Years of Education - Model vs Data')
     ax.set_yticks(x_pos)
