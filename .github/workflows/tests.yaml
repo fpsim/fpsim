@@ -23,6 +23,7 @@ jobs:
       - name: Install tests
         working-directory: ./tests
         run: pip install -r requirements_test.txt
+              pip install pytest==8.4.0
       - name: Run integration tests
         working-directory: ./tests
         run: pytest -v test_*.py -n auto --durations=0 --junitxml=test-results.xml # Run actual tests
