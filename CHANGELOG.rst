@@ -8,6 +8,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 2.0.3 (2025-06-16)
+---------------------------
+Adds a plotting class that can be used to create plots typically used for calibration and analyses. Both manual and automatic
+calibration example scripts were cleaned and consolidated. Tutorial explaining overall calibration process created.
+
+ *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/547>`_
+
 Version 2.0.2 (2025-05-28)
 ---------------------------
 Introduces a flexible location_registry system to support custom location modules defined outside the core fpsim package.

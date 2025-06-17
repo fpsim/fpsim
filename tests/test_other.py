@@ -7,6 +7,7 @@ import numpy as np
 import sciris as sc
 import fpsim as fp
 import pytest
+from fpsim import plotting as plt
 
 
 do_plot  = 1 # Whether to do plotting in interactive mode
@@ -68,6 +69,15 @@ def test_plot_people():
         sim.people.plot()
 
     return sim.people
+
+
+def test_plotting_class():
+    sc.heading('Test plotting class functions...')
+
+    sim = fp.Sim().run()
+    plt.plot_all(sim)
+    plt.plot_calib(sim)
+    return sim
 
 
 def test_samples(do_plot=False, verbose=True):
