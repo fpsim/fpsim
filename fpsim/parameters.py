@@ -63,7 +63,6 @@ default_sim_pars = {
     'interventions':        None,   # Interventions to apply
     'analyzers':            None,   # Analyzers to apply
     'connectors':           None,   # Connectors to apply
-    'diseases':             None,   # Diseases to model
     'people':               None,
 
 }
