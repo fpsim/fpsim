@@ -26,8 +26,8 @@ def make_sims(interventions, contraception_module=None):
     ''' Make simulations with particular interventions '''
     simlist = []
     for intv in interventions:
-        pars = dict(location='test', contraception_module=contraception_module)
-        new_sim = fp.Sim(pars=pars, interventions=intv)
+        pars = dict(location='test')
+        new_sim = fp.Sim(pars=pars, interventions=intv, contraception_module=contraception_module)
         simlist.append(new_sim)
     return simlist
 
@@ -93,6 +93,10 @@ def test_update_methods():
     # Test that there are fewer births with the new method parameters
     baseline_births = msim.sims[0].results.births.sum()
     scenario_births = msim.sims[1].results.births.sum()
+
+    msg = f'Expected more births with default methods but ({scenario_births} > {baseline_births})'
+    assert baseline_births > scenario_births, msg
+    ok(f'Changes to method parameters resulted in fewer births, as expected ({scenario_births} < {baseline_births})')
 
     return msim
 
@@ -189,6 +193,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # msim1  = test_update_methods_eff()
-        # msim2  = test_update_methods()
+        msim1  = test_update_methods_eff()
+        msim2  = test_update_methods()
         scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
