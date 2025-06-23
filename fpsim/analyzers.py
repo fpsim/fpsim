@@ -65,6 +65,19 @@ class snapshot(ss.Analyzer):
 
 
 class cpr_by_age(ss.Analyzer):
+    '''
+    Analyzer that records the contraceptive prevalence rate (CPR) by age at each timestep.
+
+    Args:
+        kwargs (dict): passed to Analyzer()
+
+
+    **Example**::
+
+        sim = fp.Sim(analyzers=fps.cpr_by_age())
+        sim.run()
+        final_cpr = sim.analyzers.cpr_by_age.results['total'][-1]
+    '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)   # Initialize the Analyzer object
         self.age_bins = [v[1] for v in fpd.method_age_map.values()]
@@ -72,6 +85,8 @@ class cpr_by_age(ss.Analyzer):
 
     def init_results(self):
         super().init_results()
+
+        # Define results for each age group based on the method_age_map
         for k in fpd.method_age_map.keys():
             self.define_results(ss.Result(name=k,dtype=float, scale=False))
         self.define_results(ss.Result(name='total',dtype=float, scale=False))
@@ -93,6 +108,9 @@ class cpr_by_age(ss.Analyzer):
 
 
 class method_mix_by_age(ss.Analyzer):
+    '''
+    Analyzer that records the method mix by age at the end of the simulation.
+    '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)   # Initialize the Analyzer object
         self.age_bins = [v[1] for v in fpd.method_age_map.values()]
@@ -583,7 +601,7 @@ class age_pyramids(ss.Analyzer):
 
     def __init__(self, bins=None):
         """
-        Initializes bins and data variables
+        Initializes age bins and data variables
         """
         super().__init__()
         self.bins = bins
@@ -592,12 +610,16 @@ class age_pyramids(ss.Analyzer):
 
     def init_pre(self, sim, force=False):
         """
-        Initializes bins and data with proper shapes
+        Initializes bins and data with proper shapes.
         """
         super().init_pre(sim, force)
         if self.bins is None:
+            # If no bins are provided, use default bins which exceed the maximum allowed age to ensure all agent ages are captured
             self.bins = np.arange(0, sim.fp_pars['max_age']+2)
         nbins = len(self.bins)-1
+
+        # self.data will contain the proportions of individuals in each age bin at each timestep
+        # self._raw will contain the raw counts of individuals in each age bin at each timestep
         self.data = np.full((sim.t.npts, nbins), np.nan)
         self._raw = sc.dcp(self.data)
         return
@@ -971,7 +993,8 @@ class track_as(ss.Analyzer):
 
 class longitudinal_history(ss.Analyzer):
     """
-    Analyzer for tracking longitudinal history of individuals
+    Analyzer for tracking longitudinal history of individuals. The longitude object acts as a circular buffer,
+    tracking the most recent 1 year of values for each key specified in longitude_keys.
     """
 
     def __init__(self, longitude_keys):
@@ -983,8 +1006,9 @@ class longitudinal_history(ss.Analyzer):
 
     def init_post(self):
         super().init_post()
-        ppl = self.sim.people
 
+        # Initialize the longitude object with empty lists for each key. We can't use an array to track the values because it won't
+        # be resized along with the population. Instead we use an array of lists, where each list will hold the values for that key at each timestep.
         for key in self.longitude_keys:
             self.longitude[key] = np.empty( shape=(int(self.sim.fp_pars['tiperyear']),), dtype=list)  # Initialize with empty lists
         return
