@@ -986,8 +986,7 @@ class longitudinal_history(ss.Analyzer):
         ppl = self.sim.people
 
         for key in self.longitude_keys:
-            # current = getattr(ppl, key).values  # Current value of this attribute
-            self.longitude[key] = np.full((self.sim.pars.n_agents, int(self.sim.fp_pars['tiperyear'])), np.nan)
+            self.longitude[key] = np.empty( shape=(int(self.sim.fp_pars['tiperyear']),), dtype=list)  # Initialize with empty lists
         return
 
 
@@ -1001,6 +1000,6 @@ class longitudinal_history(ss.Analyzer):
 
         # Store the current params in people.longitude object
         for key in self.longitude_keys:
-            self.longitude[key][:, index] = getattr(ppl, key)
+            self.longitude[key][index] = getattr(ppl, key).values
 
         return
