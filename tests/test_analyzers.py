@@ -79,6 +79,16 @@ def test_age_pyramids():
 
     return ap
 
+def test_longitudinal():
+    sc.heading('Testing longitudinal history analyzer...')
+    keys=['on_contra', 'age', 'buy_decision_daily']
+    lh = fp.longitudinal_history(keys)
+
+    sim = fp.Sim(analyzers=lh)
+    sim.init()
+    sim.run()
+
+
 
 if __name__ == '__main__':
 

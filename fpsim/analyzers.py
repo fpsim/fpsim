@@ -16,7 +16,7 @@ import starsim as ss
 
 
 #%% Generic analyzer classes
-__all__ = ['snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder', 'track_as']
+__all__ = ['snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder', 'track_as', 'longitudinal_history']
 # Specific analyzers
 __all__ += ['education_recorder']
 # Analyzers for debugging
@@ -966,5 +966,41 @@ class track_as(ss.Analyzer):
         for age_key in self.age_bins:
             self.results[f"stillbirths_{age_key}"].append(
                 stillbirths_results_dict[f"stillbirths_{age_key}"])
+
+        return
+
+class longitudinal_history(ss.Analyzer):
+    """
+    Analyzer for tracking longitudinal history of individuals
+    """
+
+    def __init__(self, longitude_keys):
+        super().__init__()
+
+        self.longitude_keys = longitude_keys
+        self.longitude = sc.objdict()
+
+
+    def init_post(self):
+        super().init_post()
+        ppl = self.sim.people
+
+        for key in self.longitude_keys:
+            # current = getattr(ppl, key).values  # Current value of this attribute
+            self.longitude[key] = np.full((self.sim.pars.n_agents, int(self.sim.fp_pars['tiperyear'])), np.nan)
+        return
+
+
+    def step(self):
+        """
+        Updates longitudinal params in people object
+        """
+        ppl = self.sim.people
+        # Calculate column index in which to store current vals
+        index = int(self.sim.ti % self.sim.fp_pars['tiperyear'])
+
+        # Store the current params in people.longitude object
+        for key in self.longitude_keys:
+            self.longitude[key][:, index] = getattr(ppl, key)
 
         return

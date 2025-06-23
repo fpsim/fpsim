@@ -117,18 +117,7 @@ class People(ss.People):
         self.init_contraception(uids)  # Initialize contraceptive methods. v3 will refactor this to other modules
         return
 
-    # todo move to analyzer?
-    # def initialize_circular_buffer(self):
-    #     # Initialize circular buffers to track longitudinal data
-    #     longitude_keys = fpd.longitude_keys
-    #     # NOTE: by default the history array/circular buffer is initialised with constant
-    #     # values. We could potentially initialise the buffer
-    #     # with the data from a previous simulation.
-    #
-    #     for key in longitude_keys:
-    #         current = getattr(self, key)  # Current value of this attribute
-    #         self.longitude[key] = np.full((self.sim.pars.n_agents, int(self.sim.fp_pars['tiperyear'])), current[0])
-    #     return
+
 
     @property
     def yei(self):
@@ -937,20 +926,6 @@ class People(ss.People):
         return had_bday
 
 
-    # todo move to longitudinal analyzer
-    # def update_history_buffer(self):
-    #     """
-    #     Updates longitudinal params in people object
-    #     """
-    #
-    #     # Calculate column index in which to store current vals
-    #     index = int(self.sim.ti % self.sim.fp_pars['tiperyear'])
-    #
-    #     # Store the current params in people.longitude object
-    #     for key in self.longitude.keys():
-    #         self.longitude[key][:, index] = getattr(self, key)
-    #
-    #     return
 
     def step(self):
         """
