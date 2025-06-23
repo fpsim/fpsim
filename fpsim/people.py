@@ -68,7 +68,7 @@ class People(ss.People):
         self.urban[uids] = _urban  # Urban (1) or rural (0)
 
         # Parameters on sexual and reproductive history
-        self.fertile[uids] = fpu.n_binomial(1 - fp_pars['primary_infertility'], len(uids)) # todo replace with ss dist
+        self.fertile[uids] = fpu.n_binomial(1 - fp_pars['primary_infertility'], len(uids))
 
         # Fertility intent
         # Update distribution of fertility intent with location-specific values if it is present in self.pars
