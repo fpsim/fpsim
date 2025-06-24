@@ -1,32 +1,31 @@
 import numpy as np
 import starsim as ss
 
-# class MultiFloat(ss.Arr):
-#     def __init__(self, name=None, nan=np.nan, **kwargs):
-#         super().__init__(name=name, dtype=np.ndarray, nan=nan, **kwargs)
-#         return
-#
-#     def set(self, uids, new_vals=None):
-#         """ Set the values for the specified UIDs"""
-#         if new_vals is None:
-#             if isinstance(self.default, ss.Dist):
-#                 new_vals = self.default.rvs(uids)
-#             elif callable(self.default):
-#                 new_vals = self.default(len(uids))
-#             elif self.default is not None:
-#                 new_vals = self.default
-#             else:
-#                 new_vals = self.nan
-#         for uid in uids:
-#             self.raw[uid] = new_vals.copy()
-#         return new_vals
-#
-#     @property
-#     def isnan(self):
-#         return self.asnew(np.isnan(self), cls=ss.BoolArr)
 
 
 class TwoDimensionalArr(ss.Arr):
+    """
+    A State that tracks a two-dimensional array of values, indexed by UIDs. Because this is a true State, it is linked to
+    People and can grow dynamically as new agents are added. It is used for storing state that has multiple columns, such as
+    the ages at which a child is born.
+
+    It can be indexed by UIDs, slices, or boolean arrays, and supports setting values for new agents.
+
+    example usage:
+    self.<key>[uid]: returns the entire row of values for the specified uid
+    self.<key>[uid, col]: returns the value in the specified column for the specified uid
+    self.<key>[slice]: returns all rows for the specified slice
+    self.<key>[bool_arr]: returns all rows where the boolean array is True
+
+    Args:
+        name (str): Name of the array
+        dtype (type): Data type of the array (e.g., np.float64)
+        default: Default value to use when setting new agents
+        nan: Value to use for NaN entries
+        label (str): Label for the array, used in plots and reports
+        skip_init (bool): If True, do not initialize the array; useful for module state definitions
+
+    """
     def __init__(self, name=None, dtype=None, default=None, nan=None, label=None, skip_init=False, people=None, ncols=1):
         # Set attributes
         self.name = name
