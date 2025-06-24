@@ -9,6 +9,7 @@ import matplotlib.pyplot as pl
 from . import defaults as fpd
 from . import utils as fpu
 import fpsim as fp
+import fpsim.arrays as fpa
 from .settings import options as fpo
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -997,22 +998,20 @@ class longitudinal_history(ss.Analyzer):
     tracking the most recent 1 year of values for each key specified in longitude_keys.
     """
 
-    def __init__(self, longitude_keys):
+    def __init__(self, longitude_keys, tiperyear=12):
         super().__init__()
 
         self.longitude_keys = longitude_keys
         self.longitude = sc.objdict()
+        states = []
 
-
-    def init_post(self):
-        super().init_post()
-
-        # Initialize the longitude object with empty lists for each key. We can't use an array to track the values because it won't
-        # be resized along with the population. Instead we use an array of lists, where each list will hold the values for that key at each timestep.
         for key in self.longitude_keys:
-            self.longitude[key] = np.empty( shape=(int(self.sim.fp_pars['tiperyear']),), dtype=list)  # Initialize with empty lists
-        return
+            self.longitude[key] = np.empty( shape=(tiperyear), dtype=list)  # Initialize with empty lists
+            states.append(
+                fpa.TwoDimensionalArr(name=key, ncols=tiperyear)
+            )
 
+        self.define_states(*states)
 
     def step(self):
         """
@@ -1024,6 +1023,7 @@ class longitudinal_history(ss.Analyzer):
 
         # Store the current params in people.longitude object
         for key in self.longitude_keys:
-            self.longitude[key][index] = getattr(ppl, key).values
+            attr = getattr(self, key)
+            attr[:, index] = getattr(ppl, key).values
 
         return

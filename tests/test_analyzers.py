@@ -92,8 +92,8 @@ def test_longitudinal():
     # The difference between the largest and smallest age should for each person be equal to (1 year - 1/timestepsperyear)
     # Based on the default params, the value in slot 0 is the max and in slot 1 is the min. There will be some rounding error
     # so we use pytest.approx to compare.
-    max_age = sim.analyzers.longitudinal_history.longitude['age'][0][0]
-    min_age = sim.analyzers.longitudinal_history.longitude['age'][1][0]
+    max_age = sim.analyzers.longitudinal_history.age[ss.uids(1), 0]
+    min_age = sim.analyzers.longitudinal_history.age[ss.uids(1), 1]
     assert max_age - min_age == pytest.approx(1 - 1/sim.fp_pars['tiperyear'], rel=1e-2), 'Expected age difference to be equal to 1 year minus the timestep size'
 
     return

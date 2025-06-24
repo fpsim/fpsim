@@ -20,40 +20,40 @@ location_registry = {}  # Registry for external custom locations
 
 
 #%% Defaults when creating a new person
-class State:
-    def __init__(self, name, val=None, dtype=None, ncols=None):
-        """
-        Initialize a state
-        Args:
-            name (str): name of state
-            val (list, array, float, or str): value(s) to populate array with
-            dtype (dtype): datatype. Inferred from val if not provided.
-            ncols (int): number of cols, needed for 2d states like birth_ages (n_agents * n_births)
-        """
-        self.name = name
-        self.val = val
-        self.dtype = dtype
-        self.ncols = ncols
-
-    @property
-    def ndim(self):
-        return 1 if self.ncols is None else 2
-
-    def new(self, n, vals=None):
-        """
-        Define an empty array with the correct value and data type
-        """
-        if vals is None: vals = self.val  # Use default if none provided
-
-        if isinstance(vals, np.ndarray):
-            assert len(vals) == n
-            arr = vals
-        else:
-            if self.dtype is None: dtype = object if isinstance(vals, str) else None
-            else: dtype = self.dtype
-            shape = n if self.ncols is None else (n, self.ncols)
-            arr = np.full(shape=shape, fill_value=vals, dtype=dtype)
-        return arr
+# class State:
+#     def __init__(self, name, val=None, dtype=None, ncols=None):
+#         """
+#         Initialize a state
+#         Args:
+#             name (str): name of state
+#             val (list, array, float, or str): value(s) to populate array with
+#             dtype (dtype): datatype. Inferred from val if not provided.
+#             ncols (int): number of cols, needed for 2d states like birth_ages (n_agents * n_births)
+#         """
+#         self.name = name
+#         self.val = val
+#         self.dtype = dtype
+#         self.ncols = ncols
+#
+#     @property
+#     def ndim(self):
+#         return 1 if self.ncols is None else 2
+#
+#     def new(self, n, vals=None):
+#         """
+#         Define an empty array with the correct value and data type
+#         """
+#         if vals is None: vals = self.val  # Use default if none provided
+#
+#         if isinstance(vals, np.ndarray):
+#             assert len(vals) == n
+#             arr = vals
+#         else:
+#             if self.dtype is None: dtype = object if isinstance(vals, str) else None
+#             else: dtype = self.dtype
+#             shape = n if self.ncols is None else (n, self.ncols)
+#             arr = np.full(shape=shape, fill_value=vals, dtype=dtype)
+#         return arr
 
 
 # Parse locations
@@ -177,10 +177,10 @@ person_defaults = [
     # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
     # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and
     # pregnancy outcomes.
-    fpa.MultiFloat('birth_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of live births
-    fpa.MultiFloat('stillborn_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of stillbirths
-    fpa.MultiFloat('miscarriage_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of miscarriages
-    fpa.MultiFloat('abortion_ages', default=np.full(max_parity, np.nan, float)),  # Ages at time of abortions
+    fpa.TwoDimensionalArr('birth_ages', ncols=max_parity),  # Ages at time of live births
+    fpa.TwoDimensionalArr('stillborn_ages', ncols=max_parity),  # Ages at time of stillbirths
+    fpa.TwoDimensionalArr('miscarriage_ages', ncols=max_parity),  # Ages at time of miscarriages
+    fpa.TwoDimensionalArr('abortion_ages', ncols=max_parity),  # Ages at time of abortions
 ]
 
 # Postpartum keys to months

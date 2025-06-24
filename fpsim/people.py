@@ -589,7 +589,7 @@ class People(ss.People):
             for abort_uid in abort:
                 # put abortion age in first nan slot
                 abortion_age_index = np.where(np.isnan(self.abortion_ages[abort_uid]))[0][0]
-                self.abortion_ages[abort_uid][abortion_age_index] = self.age[abort_uid]
+                self.abortion_ages[abort_uid, abortion_age_index] = self.age[abort_uid]
             self.postpartum[abort] = False
             self.abortion[abort] += 1  # Add 1 to number of abortions agent has had
             self.postpartum_dur[abort] = 0
@@ -695,7 +695,7 @@ class People(ss.People):
             for miscarriage_uid in miscarriage:
                 # put miscarriage age in first nan slot
                 miscarriage_age_index = np.where(np.isnan(self.miscarriage_ages[miscarriage_uid]))[0][0]
-                self.miscarriage_ages[miscarriage_uid][miscarriage_age_index] = self.age[miscarriage_uid]
+                self.miscarriage_ages[miscarriage_uid, miscarriage_age_index] = self.age[miscarriage_uid]
             self.pregnant[miscarriage] = False
             self.miscarriage[miscarriage] += 1  # Add 1 to number of miscarriages agent has had
             self.postpartum[miscarriage] = False
@@ -787,19 +787,19 @@ class People(ss.People):
             # Record ages of agents when live births / stillbirths occur
             for parity in np.unique(self.parity[single]):
                 single_uids = single[self.parity[single] == parity]
-                for uid in single_uids:
-                    self.birth_ages[ss.uids(uid)][int(parity)] = self.age[ss.uids(uid)]
+                # for uid in single_uids:
+                self.birth_ages[ss.uids(single_uids), int(parity)] = self.age[ss.uids(single_uids)]
                 if parity == 0: self.first_birth_age[single_uids] = self.age[single_uids]
             for parity in np.unique(self.parity[twin]):
                 twin_uids = twin[self.parity[twin] == parity]
-                for uid in twin_uids:
-                    self.birth_ages[uid][int(parity)] = self.age[uid]
-                    self.birth_ages[uid][int(parity) + 1] = self.age[uid]
+                # for uid in twin_uids:
+                self.birth_ages[twin_uids, int(parity)] = self.age[twin_uids]
+                self.birth_ages[twin_uids, int(parity) + 1] = self.age[twin_uids]
                 if parity == 0: self.first_birth_age[twin_uids] = self.age[twin_uids]
             for parity in np.unique(self.parity[stillborn]):
                 uids = stillborn[self.parity[stillborn] == parity]
-                for uid in uids:
-                    self.stillborn_ages[uid][int(parity)] = self.age[uid]
+                # for uid in uids:
+                self.stillborn_ages[uids, int(parity)] = self.age[uids]
 
             self.parity[single] += 1
             self.parity[twin] += 2  # Add 2 because matching DHS "total children ever born (alive) v201"
@@ -809,13 +809,13 @@ class People(ss.People):
             prev_birth_twins = twin[self.parity[twin] > 2]
             if len(prev_birth_single):
                 pidx = (self.parity[prev_birth_single] - 1).astype(int)
-                all_ints = [self.birth_ages[r][pidx] - self.birth_ages[r][pidx-1] for r in prev_birth_single]
+                all_ints = [self.birth_ages[r, pidx] - self.birth_ages[r, pidx-1] for r in prev_birth_single]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
                 short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int']/fpd.mpy))
                 sim.results['short_intervals'][ti] += short_ints
             if len(prev_birth_twins):
                 pidx = (self.parity[prev_birth_twins] - 2).astype(int)
-                all_ints = [self.birth_ages[r][pidx] - self.birth_ages[r][pidx-1] for r in prev_birth_twins]
+                all_ints = [self.birth_ages[r, pidx] - self.birth_ages[r, pidx-1] for r in prev_birth_twins]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
                 short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int']/fpd.mpy))
                 sim.results['short_intervals'][ti] += short_ints
