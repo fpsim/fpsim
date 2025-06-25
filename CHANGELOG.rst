@@ -23,8 +23,8 @@ version 3.0.0 (2025-06-09)
   - Replaced direct boolean/array filtering with StarSim's approach using `.uids` and attribute access.
 
 - **Array Handling**
-  - Introduced new module: `fpsim/arrays.py` with a `MultiFloat` array class for handling multi-valued attributes (e.g., birth ages).
-  - Replaced previous handling of multi-valued person states (like `birth_ages`, `stillborn_ages`, etc.) with `MultiFloat` arrays in `fpsim/defaults.py`.
+  - Introduced new module: `fpsim/arrays.py` with a `TwoDimensionalArr` array class for handling multi-valued attributes (e.g., birth ages).
+  - Replaced previous handling of multi-valued person states (like `birth_ages`, `stillborn_ages`, etc.) with `TwoDimensionalArr` arrays in `fpsim/defaults.py`.
 
 - **Parameter System Overhaul**
   - Simplified and separated FPsim-specific and simulation-level parameters in `fpsim/parameters.py`.
@@ -47,7 +47,7 @@ version 3.0.0 (2025-06-09)
 
 - **fpsim/defaults.py**
   - Changed all person state definitions to use StarSim array classes.
-  - Removed direct use of numpy arrays, replaced with typed StarSim arrays and new `MultiFloat`.
+  - Removed direct use of numpy arrays, replaced with typed StarSim arrays and new `TwoDimensionalArr`.
   - Updated results arrays and lists for new structure.
 
 - **fpsim/education.py**
