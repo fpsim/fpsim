@@ -86,7 +86,7 @@ class People(ss.People):
         # Fecundity variation
         fv = [fp_pars['fecundity_var_low'], fp_pars['fecundity_var_high']]
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
-        self.personal_fecundity[uids] = np.random.random(len(uids)) * fac # todo replace
+        self.personal_fecundity[uids] = np.random.random(len(uids)) * fac
 
         # Initialise ti_contra based on age and fated debut
         self.update_time_to_choose(uids)
@@ -106,7 +106,6 @@ class People(ss.People):
 
         # Handle circular buffer to keep track of historical data
         self.longitude = sc.objdict()
-        # self.initialize_circular_buffer() # todo move to analyzer
 
         # Once all the other metric are initialized, determine initial contraceptive use
         # self.barrier[uids] = fpu.n_multinomial(fp_pars['barriers'][:], len(uids))
@@ -148,7 +147,7 @@ class People(ss.People):
         """ Get initial distribution of urban """
         n_agents = n
         urban_prop = self.sim.fp_pars['urban_prop']
-        urban = fpu.n_binomial(urban_prop, n_agents) # todo replace with ss dist
+        urban = fpu.n_binomial(urban_prop, n_agents)
         return urban
 
     def get_age_sex(self, n):
@@ -194,7 +193,7 @@ class People(ss.People):
         if self.sim.fp_pars['wealth_quintile'] is None:
             return
         wq_probs = self.sim.fp_pars['wealth_quintile']['percent']
-        vals = np.random.choice(len(wq_probs), size=len(uids), p=wq_probs)+1 # todo replace with ss dist
+        vals = np.random.choice(len(wq_probs), size=len(uids), p=wq_probs)+1
         self.wealthquintile[uids] = vals
         return
 
@@ -234,52 +233,47 @@ class People(ss.People):
         return
 
     def init_contraception(self, uids):
+        """
+         Decide who will start using contraception, when, which contraception method and the
+         duration on that method. This method is called by the simulation to initialise the
+         people object at the beginning of the simulation and new people born during the simulation.
+         """
         if self.contraception_module is not None:
-            self.decide_contraception(uids=uids)
-        return
+            if uids is None:
+                uids = self.alive.uids
 
-    def decide_contraception(self, uids=None, ti=None, year=None, contraception_module=None):
-        """
-        Decide who will start using contraception, when, which contraception method and the
-        duration on that method. This method is called by the simulation to initialise the
-        people object at the beginning of the simulation and new people born during the simulation.
-
-        #TODO: rename to something that indicates this method is used for initialisation
-        #Todo remove excess input params
-        """
-        if uids is None:
-            uids = self.alive.uids
-
-        if ti is None:
             ti = self.sim.ti
-
-        if year is None:
             year = self.sim.y
 
-        fecund = (self.female[uids]==True) & (self.age[uids] < self.sim.fp_pars['age_limit_fecundity'])
-        fecund_uids = uids[fecund]
-        # NOTE: PSL: This line effectively "initialises" whether a woman is sexually active or not.
-        # Because of the current initialisation flow, it's not possible to initialise the
-        # sexually_active state in the init constructor.
-        self.check_sexually_active(fecund_uids)
-        self.update_time_to_choose(fecund_uids)
+            fecund = (self.female[uids] == True) & (self.age[uids] < self.sim.fp_pars['age_limit_fecundity'])
+            fecund_uids = uids[fecund]
+            # NOTE: PSL: This line effectively "initialises" whether a woman is sexually active or not.
+            # Because of the current initialisation flow, it's not possible to initialise the
+            # sexually_active state in the init constructor.
+            self.check_sexually_active(fecund_uids)
+            self.update_time_to_choose(fecund_uids)
 
-        # Check whether have reached the time to choose
-        time_to_set_contra_uids = fecund_uids[(self.ti_contra[fecund_uids] == 0)]
+            # Check whether have reached the time to choose
+            time_to_set_contra_uids = fecund_uids[(self.ti_contra[fecund_uids] == 0)]
 
-        if contraception_module is not None:
-            self.contraception_module = contraception_module
+            # if contraception_module is not None:
+            #     self.contraception_module = contraception_module
 
-        if self.contraception_module is not None:
-            self.on_contra[time_to_set_contra_uids] = self.contraception_module.get_contra_users(self, time_to_set_contra_uids, year=year, ti=ti, tiperyear=self.sim.fp_pars['tiperyear'])
+            # if self.contraception_module is not None:
+            self.on_contra[time_to_set_contra_uids] = self.contraception_module.get_contra_users(self,
+                                                                                                 time_to_set_contra_uids,
+                                                                                                 year=year, ti=ti,
+                                                                                                 tiperyear=
+                                                                                                 self.sim.fp_pars[
+                                                                                                     'tiperyear'])
             oc_uids = time_to_set_contra_uids[(self.on_contra[time_to_set_contra_uids] == True)]
             self.method[oc_uids] = self.contraception_module.init_method_dist(self, oc_uids)
             self.ever_used_contra[oc_uids] = 1
             method_dur = self.contraception_module.set_dur_method(self, time_to_set_contra_uids)
             self.ti_contra[time_to_set_contra_uids] = ti + method_dur
 
-        # Change the intent of women who have started to use a contraception method
-        self.intent_to_use[self.on_contra] = False
+            # Change the intent of women who have started to use a contraception method
+            self.intent_to_use[self.on_contra] = False
         return
 
     def update_fertility_intent_by_age(self, uids=None):
@@ -441,7 +435,6 @@ class People(ss.People):
         f_mort_prob = fpu.annprob2ts(f_spline[f_ages], timestep)
         m_mort_prob = fpu.annprob2ts(m_spline[m_ages], timestep)
 
-        # TODO does setting the probability twice affect cRNG safety?
         self.binom.set(p=f_mort_prob)
         f_died = self.binom.filter(female)
 
@@ -1096,7 +1089,7 @@ class People(ss.People):
                     res[f'asfr'][key][index] = (age_bin_births_per_woman * 1000)
                     res[f'tfr_{key}'][index] = (age_bin_births_per_woman * 1000)
                     tfr += age_bin_births_per_woman
-                res['tfr_rates'][index] = (tfr * 5)  # CK: TODO: why *5? # SB: I think this corresponds to size of age bins?
+                res['tfr_rates'][index] = (tfr * 5)  # 5 corresponds to size of age bins
 
         return
 

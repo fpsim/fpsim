@@ -274,12 +274,6 @@ class Sim(ss.Sim):
         self.update_mortality()
         self.people.step()
 
-        # todo move to analyzer
-        # Populate the circular buffers with data from Peoples states that
-        # are needed for methods/classes that use historical data (eg, need previous year's data)
-        # self.people.update_history_buffer()
-
-
     def finalize(self):
         self.finalize_results()
         super().finalize()
