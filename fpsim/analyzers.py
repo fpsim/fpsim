@@ -125,7 +125,7 @@ class method_mix_by_age(ss.Analyzer):
         n_methods = len(sim.contraception_module.methods)
         self.results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
         for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = fpu.match_ages(ppl.age, age_low, age_high)
+            match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
             denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
             for mn in range(n_methods):
                 num_conds = denom_conds * (ppl.method == mn)

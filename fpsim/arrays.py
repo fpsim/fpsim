@@ -12,10 +12,10 @@ class TwoDimensionalArr(ss.Arr):
     It can be indexed by UIDs, slices, or boolean arrays, and supports setting values for new agents.
 
     example usage:
-    self.<key>[uid]: returns the entire row of values for the specified uid
-    self.<key>[uid, col]: returns the value in the specified column for the specified uid
-    self.<key>[slice]: returns all rows for the specified slice
-    self.<key>[bool_arr]: returns all rows where the boolean array is True
+    self[uid]: returns the entire row of values for the specified uid
+    self[uid, col]: returns the value in the specified column for the specified uid
+    self[slice]: returns all rows for the specified slice
+    self[bool_arr]: returns all rows where the boolean array is True
 
     Args:
         name (str): Name of the array

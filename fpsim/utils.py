@@ -11,16 +11,8 @@ from . import version as fpv
 
 
 # Specify all externally visible things this file defines
-__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample', 'match_ages']
+__all__ = ['set_seed', 'bt', 'bc', 'rbt', 'mt', 'sample']
 __all__ += ['DuplicateNameException']
-
-
-@nb.jit((nb.float32[:], nb.float64, nb.float64), cache=True, nopython=True)
-def match_ages(age, age_low, age_high):
-    ''' Find ages between age low and age_high '''
-    match_low  = (age >= age_low)
-    match_high = (age <  age_high)
-    return match_low & match_high
 
 
 @nb.jit((nb.float32[:], ), cache=True, nopython=True)

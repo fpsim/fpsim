@@ -907,7 +907,7 @@ class MultiSim(ss.MultiSim):
         fig = pl.figure(**fig_args)
         do_show = kwargs.pop('do_show', True)
         labels = sc.autolist()
-        labellist = sc.autolist()  # TODO: shouldn't need this
+        labellist = sc.autolist()
         for sim in self.sims:  # Loop over and find unique labels
             if sim.label not in labels:
                 labels += sim.label

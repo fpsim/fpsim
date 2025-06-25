@@ -385,7 +385,7 @@ class SimpleChoice(RandomChoice):
 
         # Loop over age groups and methods
         for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = fpu.match_ages(ppl.age[uids], age_low, age_high)
+            match_low_high = (ppl.age[uids] >= age_low) & (ppl.age[uids] < age_high)
             switch_iinds = match_low_high.nonzero()[-1]
 
             if len(switch_iinds):
