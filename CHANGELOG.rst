@@ -14,8 +14,8 @@ Version 3.0.0 (2025-06-26)
 
 This version of FPsim is now built on `Starsim <https://starsim.org>`_. Several major changes were introduced as a result.
 
-Major Refactor & API Changes
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+Overview of changes
+~~~~~~~~~~~~~~~~~~~
 
 * **Analyzer Refactor**
 
@@ -51,7 +51,7 @@ Major Refactor & API Changes
   * Updated contraception and education modules to take and use ``uids`` for all relevant operations.
   * Refactored method selection, probability assignment, and duration logic in ``fpsim/methods.py`` for array compatibility and efficiency.
 
-Detailed Updates
+Detailed changes
 ~~~~~~~~~~~~~~~~
 
 * **fpsim/analyzers.py**
@@ -93,26 +93,24 @@ Detailed Updates
 
   * Updated Numba-accelerated utility functions to use ``float32`` for compatibility.
 
-Other Changes
-~~~~~~~~~~~~~
+* **Other changes**
 
-* Removed obsolete ``fpsim/base.py``.
-* Various bug fixes and code style improvements for array handling, type consistency, and API clarity.
+  * Removed obsolete ``fpsim/base.py``.
+  * Various bug fixes and code style improvements for array handling, type consistency, and API clarity.
 
 ---
 
 **Note:**
 This PR introduces several breaking changes to the FPsim API, notably in how arrays and parameters are handled, and how modules interact with people objects. Downstream code and scripts will likely require updates to align with the new conventions.
 
- *GitHub info*: PR `490 <https://github.com/fpsim/fpsim/pull/490>`_
+*GitHub info*: PR `490 <https://github.com/fpsim/fpsim/pull/490>`_
+
 
 Version 2.0.2 (2025-05-28)
 ---------------------------
-Introduces a flexible location_registry system to support custom location modules defined outside the core fpsim package.
-External users can now create an analysis repo and register their own locations in their respective repo via fpsim.defaults.register_location(),
-eliminating the need for a user to modify the core code in order to test creating their own model in location other than Ethiopia, Senegal, or Kenya.
-
- *GitHub info*: PR `547 <https://github.com/fpsim/fpsim/pull/547>`_
+- Introduces a flexible location_registry system to support custom location modules defined outside the core fpsim package.
+- External users can now create an analysis repo and register their own locations in their respective repo via fpsim.defaults.register_location(), eliminating the need for a user to modify the core code in order to test creating their own model in location other than Ethiopia, Senegal, or Kenya.
+- *GitHub info*: PR `547 <https://github.com/fpsim/fpsim/pull/547>`_
 
 Version 2.0.1 (2025-05-09)
 ---------------------------
@@ -120,8 +118,7 @@ Version 2.0.1 (2025-05-09)
 - Creation of shared_data dir for data shared across model locations and corresponding data_utils cleanup
 - Addition of <location>.py template for new users
 - Documentation overhaul in locations/README, data_processing/README, and data processing scripts
-
- *GitHub info*: PR `531 <https://github.com/fpsim/fpsim/pull/531>`_
+- *GitHub info*: PR `531 <https://github.com/fpsim/fpsim/pull/531>`_
 
 Version 2.0.0 (2025-03-31)
 ---------------------------
