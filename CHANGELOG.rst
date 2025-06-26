@@ -12,7 +12,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 Version 3.0.0 (2025-06-26)
 ---------------------------
 
-This version of FPsim is now built on [Starsim](https://starsim.org). Several major changes were introduced as a result.
+This version of FPsim is now built on `Starsim <https://starsim.org>`_. Several major changes were introduced as a result.
 
 Major Refactor & API Changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -104,7 +104,7 @@ Other Changes
 **Note:**
 This PR introduces several breaking changes to the FPsim API, notably in how arrays and parameters are handled, and how modules interact with people objects. Downstream code and scripts will likely require updates to align with the new conventions.
 
- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/490>`_
+ *GitHub info*: PR `490 <https://github.com/fpsim/fpsim/pull/490>`_
 
 Version 2.0.2 (2025-05-28)
 ---------------------------
@@ -112,7 +112,7 @@ Introduces a flexible location_registry system to support custom location module
 External users can now create an analysis repo and register their own locations in their respective repo via fpsim.defaults.register_location(),
 eliminating the need for a user to modify the core code in order to test creating their own model in location other than Ethiopia, Senegal, or Kenya.
 
- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/547>`_
+ *GitHub info*: PR `547 <https://github.com/fpsim/fpsim/pull/547>`_
 
 Version 2.0.1 (2025-05-09)
 ---------------------------
@@ -121,7 +121,7 @@ Version 2.0.1 (2025-05-09)
 - Addition of <location>.py template for new users
 - Documentation overhaul in locations/README, data_processing/README, and data processing scripts
 
- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/531>`_
+ *GitHub info*: PR `531 <https://github.com/fpsim/fpsim/pull/531>`_
 
 Version 2.0.0 (2025-03-31)
 ---------------------------
@@ -143,58 +143,58 @@ To support this new feature, this PR also introduces several new items:
  - Fixes a bug that prevented simulations from running if pars['timestep'] !=1
  - Adds a circular buffer to track the last 12 months of data, and enable model updates that depend on the previous state
 
- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/411>`_
+ *GitHub info*: PR `411 <https://github.com/fpsim/fpsim/pull/411>`_
 
 Version 1.0.4 (2024-08-19)
 ---------------------------
 - Fixes issue 310 (Removes legacy use_subnational logic)
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/392>`_
+- *GitHub info*: PR `392 <https://github.com/fpsim/fpsim/pull/392>`_
 
 Version 1.0.3 (2024-07-26)
 ---------------------------
 - Adds .devcontainer configuration for a Codespaces dev container
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/369>`_
+- *GitHub info*: PR `369 <https://github.com/fpsim/fpsim/pull/369>`_
 
 Version 1.0.2 (2024-07-25)
 ---------------------------
 - Fixes issue 347, correcting variable in defaults storing age-specific results
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/388>`_
+- *GitHub info*: PR `388 <https://github.com/fpsim/fpsim/pull/388>`_
 
 Version 1.0.1 (2024-06-17)
 ---------------------------
 - Adds empowerment metrics (paid work and education attainment) to calibration targets
 - Creates script for empowerment calibration
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/240>`_
+- *GitHub info*: PR `240 <https://github.com/fpsim/fpsim/pull/240>`_
 
 Version 1.0.0 (2024-06-07)
 --------------------------
 - Releases FPsim1.0 to pypi
 - Adds FPsim New User Instructions to tutorials
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/349>`_
+- *GitHub info*: PR `349 <https://github.com/fpsim/fpsim/pull/349>`_
 
 Version 0.28.3 (2024-04-30)
 --------------------------
 - Creates subnational tutorial for Ethiopia
 - Updates regional scripts to improve subnationals calibrations for Ethiopia
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/334>`_
+- *GitHub info*: PR `334 <https://github.com/fpsim/fpsim/pull/334>`_
 
 Version 0.28.2 (2024-04-20)
 ---------------------------
 - Refactoring of location directory, such that there is a country folder under locations/ dir containing the data, model script(s), and figs pertaining to that location only
 - Modifies these new paths accordingly in all relevant files
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/316>`_
+- *GitHub info*: PR `316 <https://github.com/fpsim/fpsim/pull/316>`_
 
 Version 0.28.1 (2024-04-11)
 ---------------------------
 - Updates regional parameters to calibrate subnationally in Ethiopia
 - Revises subnational calibration script to run for all regions and includes a new multisim script for subnational comparisons 
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/319>`_
+- *GitHub info*: PR `319 <https://github.com/fpsim/fpsim/pull/319>`_
 
 Version 0.27.0 (2024-02-09)
 ---------------------------
 - Builds out new regional attribute and parameters for subnational dynamics in Ethiopia
 - Creates new subnational calibration script and subfolder for regional datasets and figures 
-- *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/241>`_
+- *GitHub info*: PR `241 <https://github.com/fpsim/fpsim/pull/241>`_
 
 Version 0.26.8 (2024-02-08)
 ---------------------------
