@@ -11,71 +11,91 @@ All notable changes to the codebase are documented in this file. Changes that ma
 
 version 3.0.0 (2025-06-09)
 ---------------------------
-### Major Refactor & API Changes
 
-- **Analyzer Refactor**
-  - Replaced `fpsim.analyzers.Analyzer` with `starsim.Analyzer` as the base class.
-  - Updated all analyzer classes in `fpsim/analyzers.py` to inherit from `starsim.Analyzer`.
-  - Renamed and refactored key analyzer methods:
-    - Replaced `apply` with `step`.
-    - Refactored initialization/finalization methods to align with StarSim conventions (`init_results`, `init_pre`, `init_post`, etc.).
-    - Updated logic to use `.female` instead of `.is_female` and `.uids` for indexing.
-  - Replaced direct boolean/array filtering with StarSim's approach using `.uids` and attribute access.
+Major Refactor & API Changes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-- **Array Handling**
-  - Introduced new module: `fpsim/arrays.py` with a `TwoDimensionalArr` array class for handling multi-valued attributes (e.g., birth ages).
-  - Replaced previous handling of multi-valued person states (like `birth_ages`, `stillborn_ages`, etc.) with `TwoDimensionalArr` arrays in `fpsim/defaults.py`.
+* **Analyzer Refactor**
 
-- **Parameter System Overhaul**
-  - Simplified and separated FPsim-specific and simulation-level parameters in `fpsim/parameters.py`.
-    - Added `default_sim_pars` for high-level simulation settings.
-    - Refactored `pars()` function to create parameter sets and validate keys.
-    - Removed old `Pars` class.
-    - Updated parameter validation logic.
-  - Adjusted parameter passing and initialization throughout the codebase for compatibility (notably in `fpsim/experiment.py`, `fpsim/scenarios.py`, etc.).
+  * Replaced ``fpsim.analyzers.Analyzer`` with ``starsim.Analyzer`` as the base class.
+  * Updated all analyzer classes in ``fpsim/analyzers.py`` to inherit from ``starsim.Analyzer``.
+  * Renamed and refactored key analyzer methods:
 
-- **Method & Module API Changes**
-  - All module methods that handle people (contraception, education, etc.) now require explicit `uids` for subsetting and updating.
-  - Updated contraception and education modules to take and use `uids` for all relevant operations.
-  - Refactored method selection, probability assignment, and duration logic in `fpsim/methods.py` for array compatibility and efficiency.
+    * Replaced ``apply`` with ``step``.
+    * Refactored initialization/finalization methods to align with StarSim conventions (``init_results``, ``init_pre``, ``init_post``, etc.).
+    * Updated logic to use ``.female`` instead of ``.is_female`` and ``.uids`` for indexing.
 
-### Detailed Updates
+  * Replaced direct boolean/array filtering with StarSim's approach using ``.uids`` and attribute access.
 
-- **fpsim/analyzers.py**
-  - Refactored all analyzers for new array and indexing conventions.
-  - Updated key logic for CPR, method mix, education, age pyramids, and tracking analyzers.
+* **Array Handling**
 
-- **fpsim/defaults.py**
-  - Changed all person state definitions to use StarSim array classes.
-  - Removed direct use of numpy arrays, replaced with typed StarSim arrays and new `TwoDimensionalArr`.
-  - Updated results arrays and lists for new structure.
+  * Introduced new module: ``fpsim/arrays.py`` with a ``TwoDimensionalArr`` array class for handling multi-valued attributes (e.g., birth ages).
+  * Replaced previous handling of multi-valued person states (like ``birth_ages``, ``stillborn_ages``, etc.) with ``TwoDimensionalArr`` arrays in ``fpsim/defaults.py``.
 
-- **fpsim/education.py**
-  - Refactored all methods to use explicit `uids` for subsetting.
-  - Improved efficiency and clarity of education progression, interruption, resumption, and graduation logic.
+* **Parameter System Overhaul**
 
-- **fpsim/experiment.py**
-  - Updated experiment parameter passing to use new `pars` structure.
-  - Adjusted data extraction and model comparison routines for compatibility.
+  * Simplified and separated FPsim-specific and simulation-level parameters in ``fpsim/parameters.py``.
 
-- **fpsim/methods.py**
-  - Refactored all module methods to use `uids` for indexing and updating.
-  - Improved probabilistic selection, method choice, and duration assignment logic.
+    * Added ``default_sim_pars`` for high-level simulation settings.
+    * Refactored ``pars()`` function to create parameter sets and validate keys.
+    * Removed old ``Pars`` class.
+    * Updated parameter validation logic.
 
-- **fpsim/parameters.py**
-  - Removed class-based parameter system; now uses plain dictionaries and utility functions.
-  - Introduced validation and JSON (de)serialization helpers.
+  * Adjusted parameter passing and initialization throughout the codebase for compatibility (notably in ``fpsim/experiment.py``, ``fpsim/scenarios.py``, etc.).
 
-- **fpsim/scenarios.py**
-  - Refactored scenario parameter handling and simulation creation for new parameter API.
+* **Method & Module API Changes**
 
-- **fpsim/utils.py**
-  - Updated Numba-accelerated utility functions to use `float32` for compatibility.
+  * All module methods that handle people (contraception, education, etc.) now require explicit ``uids`` for subsetting and updating.
+  * Updated contraception and education modules to take and use ``uids`` for all relevant operations.
+  * Refactored method selection, probability assignment, and duration logic in ``fpsim/methods.py`` for array compatibility and efficiency.
 
-### Other Changes
+Detailed Updates
+~~~~~~~~~~~~~~~~
 
-- Removed obsolete `fpsim/base.py`.
-- Various bug fixes and code style improvements for array handling, type consistency, and API clarity.
+* **fpsim/analyzers.py**
+
+  * Refactored all analyzers for new array and indexing conventions.
+  * Updated key logic for CPR, method mix, education, age pyramids, and tracking analyzers.
+
+* **fpsim/defaults.py**
+
+  * Changed all person state definitions to use StarSim array classes.
+  * Removed direct use of numpy arrays, replaced with typed StarSim arrays and new ``TwoDimensionalArr``.
+  * Updated results arrays and lists for new structure.
+
+* **fpsim/education.py**
+
+  * Refactored all methods to use explicit ``uids`` for subsetting.
+  * Improved efficiency and clarity of education progression, interruption, resumption, and graduation logic.
+
+* **fpsim/experiment.py**
+
+  * Updated experiment parameter passing to use new ``pars`` structure.
+  * Adjusted data extraction and model comparison routines for compatibility.
+
+* **fpsim/methods.py**
+
+  * Refactored all module methods to use ``uids`` for indexing and updating.
+  * Improved probabilistic selection, method choice, and duration assignment logic.
+
+* **fpsim/parameters.py**
+
+  * Removed class-based parameter system; now uses plain dictionaries and utility functions.
+  * Introduced validation and JSON (de)serialization helpers.
+
+* **fpsim/scenarios.py**
+
+  * Refactored scenario parameter handling and simulation creation for new parameter API.
+
+* **fpsim/utils.py**
+
+  * Updated Numba-accelerated utility functions to use ``float32`` for compatibility.
+
+Other Changes
+~~~~~~~~~~~~~
+
+* Removed obsolete ``fpsim/base.py``.
+* Various bug fixes and code style improvements for array handling, type consistency, and API clarity.
 
 ---
 
