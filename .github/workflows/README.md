@@ -11,3 +11,5 @@ In short, the steps are:
 4. Click "Add"
 
 That's it! This shouldn't need to be done again, unless the owner or workflow name changes.
+
+To use, go to the FPsim GitHub repo, go to "Actions", click on the PyPI Release workflow, and click "Run".
