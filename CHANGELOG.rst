@@ -9,8 +9,10 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-version 3.0.0 (2025-06-09)
+Version 3.0.0 (2025-06-26)
 ---------------------------
+
+This version of FPsim is now built on [Starsim](https://starsim.org). Several major changes were introduced as a result.
 
 Major Refactor & API Changes
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
