@@ -35,7 +35,8 @@ class Config:
         'asfr': 'asfr.csv',
         'methods': 'mix.csv',
         'tfr': 'tfr.csv',
-        'popsize': 'popsize.csv'
+        'popsize': 'popsize.csv',
+        'education': 'education.csv'
     }
 
     @classmethod
@@ -123,17 +124,17 @@ def pop_growth_rate(years, population):
     return growth_rate
 
 
-def plot_by_age(sim):
+def plot_cpr_by_age(sim):
     """
-    Plot CPR by age and method mix by age.
-    Note: This plot can only be run if the sim used the analyzers 'cpr_by_age' and 'method_mix_by_age'
+    Plot CPR by age.
+    Note: This plot can only be run if the sim used the analyzer 'cpr_by_age'
     """
     # CPR by age
     fig, ax = pl.subplots()
-    age_bins = [18, 20, 25, 35, 50]
-    colors = sc.vectocolor(age_bins)
-    for cind, (alabel, ares) in enumerate(sim.get_analyzer('cpr_by_age').results.items()):
-        ax.plot(sim.results.t, ares, label=alabel, color=colors[cind])
+    age_bins = ['<18', '18-20', '20-25', '25-35', '>35']
+    for age_key in age_bins:
+        ares = sim.analyzers['cpr_by_age'].results[age_key]
+        ax.plot(sim.results['timevec'], ares, label=age_key)
     ax.legend(loc='best', frameon=False)
     ax.set_ylim([0, 1])
     ax.set_ylabel('CPR')
@@ -141,26 +142,16 @@ def plot_by_age(sim):
     save_figure('cpr_by_age.png')
     pl.show()
 
-    # Method mix by age
-    fig, ax = pl.subplots()
-    df = pd.DataFrame(sim.get_analyzer('method_mix_by_age').results)
-    df['method'] = sim.contraception_module.methods.keys()
-    df_plot = df.melt(id_vars='method')
-    sns.barplot(x='method', y='value', hue='variable', data=df_plot, ax=ax, palette="viridis")
-    ax.set_title('Method Mix by Age')
-    save_figure('method_mix_by_age.png')
-    pl.show()
-
 
 def plot_asfr(sim):
     """Plots age-specific fertility rate"""
 
-    data = Config.load_validation_data(sim.location, keys='asfr')['asfr']
+    data = Config.load_validation_data(sim.fp_pars['location'], keys='asfr')['asfr']
 
     x = [1, 2, 3, 4, 5, 6, 7, 8]
 
     # Extract ASFR from simulation results
-    year = data[data['year'] == sim.pars['end_year']]   # Compare model to data at the end year of the sim
+    year = data[data['year'] == sim.pars['stop']]   # Compare model to data at the end year of the sim
     asfr_data = year.drop(['year'], axis=1).values.tolist()[0]
 
     # Extract ASFR from simulation results
@@ -198,21 +189,21 @@ def plot_methods(sim):
     Plots both dichotomous method data_use and non-data_use and contraceptive mix
     """
     # Load data
-    data = Config.load_validation_data(sim.location, keys=['methods', 'use'])
+    data = Config.load_validation_data(sim.fp_pars['location'], keys=['methods', 'use'])
     data_methods = data['methods']
     data_use = data['use']
 
     # Setup
     ppl = sim.people
-    model_labels_all = [m.label for m in sim.contraception_module.methods.values()]
+    model_labels_all = [m.label for m in sim.fp_pars['contraception_module'].methods.values()]
     model_labels_methods = sc.dcp(model_labels_all)
     model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 
     # Extract from model
     # TODO: refactor, this shouldn't need to loop over people, can just data_use a histogram
     for i in range(len(ppl)):
-        if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-            model_method_counts[ppl.method[i]] += 1
+        if ppl.alive[i] and ppl.female[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+            model_method_counts[int(ppl.method.values[i])] += 1
 
     model_method_counts[:] /= model_method_counts[:].sum()
 
@@ -295,7 +286,7 @@ def plot_ageparity(sim):
     Plot an age-parity distribution for model vs data
     """
     # Load data
-    ageparity_data = Config.load_validation_data(sim.location, keys=['ageparity'])['ageparity']
+    ageparity_data = Config.load_validation_data(sim.fp_pars['location'], keys=['ageparity'])['ageparity']
 
     # Set up
     ppl = sim.people
@@ -318,7 +309,7 @@ def plot_ageparity(sim):
     # TODO, refactor - can just use histogram instead of looping over agents
     sky_arr['Model'] = pl.zeros((len(age_keys), len(parity_bins)))
     for i in range(len(ppl)):
-        if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+        if ppl.alive[i] and ppl.female[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
             # Match age to age_keys
             for age_key, age_range in age_bin_map.items():
                 if age_range[0] <= ppl.age[i] < age_range[1]:
@@ -363,21 +354,21 @@ def plot_cpr(sim):
     Plot contraceptive prevalence rate for model vs data
     '''
     # Import data
-    data_cpr = Config.load_validation_data(sim.location, keys=['mcpr'])['mcpr']
-    data_cpr = data_cpr[data_cpr['year'] <= sim.pars['end_year']]  # Restrict years to plot
+    data_cpr = Config.load_validation_data(sim.fp_pars['location'], keys=['mcpr'])['mcpr']
+    data_cpr = data_cpr[data_cpr['year'] <= sim.pars['stop']]  # Restrict years to plot
     res = sim.results
 
     # Align data for RMSE calculation
     years = data_cpr['year']
     data_values = data_cpr['cpr'].values
-    model_values = np.interp(years, res['t'], res['cpr'] * 100)  # Interpolate model CPR to match data years
+    model_values = np.interp(years, res['timevec'], res['cpr'] * 100)  # Interpolate model CPR to match data years
 
     # Compute mean-normalized RMSE
     rmse_scores['cpr'] = compute_rmse(model_values, data_values)
 
     # Plot
     pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
-    pl.plot(res['t'], res['cpr'] * 100, label='FPsim', color='cornflowerblue')
+    pl.plot(res['timevec'], res['cpr'] * 100, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
     pl.ylabel('Percent')
     if Config.show_rmse is True:
@@ -396,7 +387,7 @@ def plot_tfr(sim):
     """
     # Load data
     res = sim.results
-    data_tfr = Config.load_validation_data(sim.location, keys=['tfr'])['tfr']
+    data_tfr = Config.load_validation_data(sim.fp_pars['location'], keys=['tfr'])['tfr']
 
     # Align model and data years for RMSE calculation
     data_years = data_tfr['year']
@@ -426,11 +417,11 @@ def plot_pop_growth(sim):
     """
     Plot annual population growth rate for model vs data
     """
-    data_popsize = Config.load_validation_data(sim.location, keys=['popsize'])['popsize']
+    data_popsize = Config.load_validation_data(sim.fp_pars['location'], keys=['popsize'])['popsize']
     res = sim.results
 
     # Import data
-    data_popsize = data_popsize[data_popsize['year'] <= sim.pars['end_year']]  # Restrict years to plot
+    data_popsize = data_popsize[data_popsize['year'] <= sim.pars['stop']]  # Restrict years to plot
     data_pop_years = data_popsize['year'].to_numpy()
     data_population = data_popsize['population'].to_numpy()
 
@@ -452,7 +443,7 @@ def plot_pop_growth(sim):
 
 def plot_afb(sim):
     """Plot age at first birth: model vs survey data"""
-    data_afb = Config.load_validation_data(sim.location, keys='afb')['afb']
+    data_afb = Config.load_validation_data(sim.fp_pars['location'], keys='afb')['afb']
 
     # Extract model AFB values
     model_afb = [age for age in sim.people.first_birth_age if age != -1]
@@ -497,7 +488,7 @@ def plot_birth_spacing(sim):
     Plot birth space and age at first birth for model vs data
     """
     # Load data
-    data_spacing = Config.load_validation_data(sim.location, keys=['spacing'])['spacing']
+    data_spacing = Config.load_validation_data(sim.fp_pars['location'], keys=['spacing'])['spacing']
 
     # Set up
     ppl = sim.people
@@ -506,7 +497,7 @@ def plot_birth_spacing(sim):
     # Count model birth spacing
     model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
     for i in range(len(ppl)):
-        if ppl.alive[i] and not ppl.sex[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+        if ppl.alive[i] and ppl.female[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
             if ppl.parity[i] > 1:
                 clean_ages = ppl.birth_ages[i][~np.isnan(ppl.birth_ages[i])]
                 for d in range(len(clean_ages) - 1):
@@ -558,7 +549,7 @@ def plot_birth_spacing(sim):
 
 def plot_paid_work(sim, data_employment):
     """
-    Plot rates of paid employment between model and data
+    Plot rates of paid employment between model and data; only used for empowerment analyses
     """
     # Extract paid work from data
     data_empowerment = data_employment.iloc[1:-1]
@@ -579,7 +570,7 @@ def plot_paid_work(sim, data_employment):
     # Count the number of employed and total people in each age bin
     ppl = sim.people
     for i in range(len(ppl)):
-        if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+        if ppl.alive[i] and ppl.female[i] and min_age <= ppl.age[i] < max_age:
             age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
             total_counts[age_bin] += 1
             if ppl.paid_employment[i]:
@@ -637,14 +628,16 @@ def plot_paid_work(sim, data_employment):
     pl.show()
 
 
-def plot_education(sim, data_education):
+def plot_education(sim):
     """
     Plot years of educational attainment between model and data
     """
     pl.clf()
 
     # Extract education from data
-    data_edu = data_education[['age', 'edu', 'se']].sort_values(by='age')
+    data_education = Config.load_validation_data(sim.fp_pars['location'], keys=['education'])['education']
+
+    data_edu = data_education[['age', 'edu']].sort_values(by='age')
     data_edu = data_edu.query(f"{min_age} <= age < {max_age}").copy()
     age_bins = np.arange(min_age, max_age + 1, bin_size)
     data_edu['age_group'] = pd.cut(data_edu['age'], bins=age_bins, right=False)
@@ -652,47 +645,43 @@ def plot_education(sim, data_education):
     # Calculate mean and standard error for each age bin
     education_data_grouped = data_edu.groupby('age_group', observed=False)['edu']
     education_data_mean = education_data_grouped.mean().tolist()
-    education_data_se = data_edu.groupby('age_group', observed=False)['se'].apply(
-        lambda x: np.sqrt(np.sum(x ** 2)) / len(x)).tolist()
 
     # Extract education from model
     model_edu_years = {age_bin: [] for age_bin in np.arange(min_age, max_age, bin_size)}
     ppl = sim.people
     for i in range(len(ppl)):
-        if ppl.alive[i] and not ppl.sex[i] and min_age <= ppl.age[i] < max_age:
+        if ppl.alive[i] and ppl.female[i] and min_age <= ppl.age[i] < max_age:
             age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
             model_edu_years[age_bin].append(ppl.edu_attainment[i])
 
     # Calculate average # of years of educational attainment for each age
     model_edu_mean = []
-    model_edu_se = []
     for age_group in model_edu_years:
         if len(model_edu_years[age_group]) != 0:
             avg_edu = sum(model_edu_years[age_group]) / len(model_edu_years[age_group])
             se_edu = np.std(model_edu_years[age_group], ddof=1) / np.sqrt(len(model_edu_years[age_group]))
             model_edu_mean.append(avg_edu)
-            model_edu_se.append(se_edu)
         else:
             model_edu_years[age_group] = 0
-            model_edu_se.append(0)
 
     # Calculate RMSE
     rmse_scores['education'] = compute_rmse(model_edu_mean, education_data_mean)
 
     # Set up plotting
     labels = age_bin_map
-    x_pos = np.arange(len(labels))
+    filtered_labels = {
+        k: v for k, v in labels.items()
+        if int(k.split('-')[0]) >= min_age and int(k.split('-')[1]) < max_age
+    }
+    x_pos = np.arange(len(filtered_labels))
     fig, ax = pl.subplots()
     width = 0.35
 
     # Plot DHS data
     ax.barh(x_pos - width / 2, education_data_mean, width, label='DHS', color='black')
-    ax.errorbar(education_data_mean, x_pos - width / 2, xerr=education_data_se, fmt='none', ecolor='gray',
-                capsize=5)
 
     # Plot FPsim data
     ax.barh(x_pos + width / 2, model_edu_mean, width, label='FPsim', color='cornflowerblue')
-    ax.errorbar(model_edu_mean, x_pos + width / 2, xerr=model_edu_se, fmt='none', ecolor='gray', capsize=5)
 
     # Set labels and title
     ax.set_xlabel('Avg Years of Education Attainment')
@@ -702,7 +691,7 @@ def plot_education(sim, data_education):
     else:
         ax.set_title(f'Kenya: Years of Education - Model vs Data')
     ax.set_yticks(x_pos)
-    ax.set_yticklabels(labels)
+    ax.set_yticklabels(filtered_labels)
     ax.legend()
 
     save_figure('education.png')
@@ -720,6 +709,7 @@ def plot_all(sim):
     plot_asfr(sim)
     plot_ageparity(sim)
     plot_pop_growth(sim)
+    plot_education(sim)
     return
 
 def plot_calib(sim):

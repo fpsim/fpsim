@@ -39,7 +39,7 @@ plt.Config.show_rmse = True
 def run_sim():
         # Set up sim for country
         pars = fp.pars(location=country)
-        pars['n_agents'] = 1_000  # Small population size
+        pars['n_agents'] = 100  # Small population size
         pars['end_year'] = 2020  # 1960 - 2020 is the normal date range
 
         # Free parameters for calibration
@@ -74,7 +74,7 @@ def run_sim():
         print(f"Contraceptive choice parameters: {cm_pars}")
 
         # Run the sim
-        sim = fp.Sim(pars=pars, contraception_module=method_choice, analyzers=[fp.cpr_by_age(), fp.method_mix_by_age()])
+        sim = fp.Sim(pars=pars, contraception_module=method_choice, analyzers=fp.cpr_by_age())
         sim.run()
 
         return sim
@@ -87,4 +87,4 @@ if __name__ == '__main__':
 
         # Set options for plotting
         plt.plot_calib(sim)     # Function to plot the primary calibration targets (method mix, use, mcpr, tfr, birth spacing, afb, and asfr)
-        plt.plot_by_age(sim)    # Function to plot method mix and cpr by age when these analyzers are used (useful for analysis and debugging)
+        plt.plot_cpr_by_age(sim)    # Function to plot cpr by age when this analyzer is used (useful for analysis and debugging)
