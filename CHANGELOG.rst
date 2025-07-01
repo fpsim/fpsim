@@ -11,7 +11,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 Version 3.0.1 (2025-07-15)
 ---------------------------
 - Fixes issue 567 (Removes legacy use_subnational logic)
-- *GitHub info*: PR `392 <https://github.com/fpsim/fpsim/pull/392>`_
+- *GitHub info*: PR `570 <https://github.com/fpsim/fpsim/pull/570>`_
 
 Version 3.0.0 (2025-06-26)
 ---------------------------
