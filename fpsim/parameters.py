@@ -58,7 +58,6 @@ default_sim_pars = {
     'dt':                   1/12,      # The simulation timestep in 'unit's
     'unit':                 'year',   # The unit of time for the simulation
     'rand_seed':            1,      # Random seed
-    'verbose':              1,      # How much detail to print during the simulation
     'use_aging':            True,   # Whether to age the population
     'interventions':        None,   # Interventions to apply
     'analyzers':            None,   # Analyzers to apply
