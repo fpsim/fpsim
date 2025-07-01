@@ -53,9 +53,18 @@ class Experiment(sc.prettyobj):
         kwargs (dict): passed into pars
     '''
 
-    def __init__(self, pars=None, flags=None, label=None, **kwargs):
+    # def __init__(self, sim_pars={}, fp_pars={}, flags=None, label=None, **kwargs):
+    def __init__(self, pars={}, flags=None, label=None, **kwargs):
         self.flags = sc.mergedicts(default_flags, flags, _copy=True)  # Set flags for what gets run
-        self.pars = pars if pars else fpp.pars(**kwargs)
+
+        self.pars = sc.mergedicts(fpp.default_sim_pars, pars)
+
+        if len(kwargs):
+            for k, v in kwargs.items():
+                if k in self.pars:
+                    self.pars[k] = v
+
+        if 'location' not in pars: self.pars['location'] = 'test'
         self.location = self.pars['location']
         self.model = sc.objdict()
         self.data = sc.objdict()
@@ -67,7 +76,7 @@ class Experiment(sc.prettyobj):
 
     def load_data(self, key, **kwargs):
         ''' Load data from various formats '''
-        files = self.pars['filenames']
+        files = self.sim.fp_pars['filenames']
         path = Path(files['base']) / files[key]
         if path.suffix == '.obj':
             data = sc.load(path, **kwargs)
@@ -103,11 +112,8 @@ class Experiment(sc.prettyobj):
         #self.data['pregnancy_parity'] = self.load_data('pregnancy_parity')
 
         # Extract population size over time
-        if self.pars:
-            n = self.pars['n_agents']
-        else:
-            n = 1000 # Use default if not available
-            print(f'Warning: parameters not defined, using default of n={n}')
+        n = self.sim.pars.n_agents
+
         pop_size = self.load_data('popsize')
         self.data['pop_years'] = pop_size.year.to_numpy()
         self.data['pop_size']  = pop_size.population.to_numpy() / (pop_size.population[0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
@@ -141,13 +147,15 @@ class Experiment(sc.prettyobj):
     def run_model(self, pars=None, **kwargs):
         ''' Create the sim and run the model '''
 
-        if not self.initialized:
-            self.extract_data()
-
         if pars is None:
             pars = self.pars
 
         self.sim = fps.Sim(pars=pars, **kwargs)
+        self.sim.init()
+
+        if not self.initialized:
+            self.extract_data()
+
         self.sim.run()
 
         return
@@ -177,7 +185,7 @@ class Experiment(sc.prettyobj):
 
 
     def model_mcpr(self, sres=None):
-        model = {'years': sres['t'], 'mcpr': sres['mcpr']}
+        model = {'years': sres['mcpr'].timevec, 'mcpr': sres['mcpr']}
         model_frame = pd.DataFrame(model)
 
         # Filter to matching years
@@ -242,7 +250,7 @@ class Experiment(sc.prettyobj):
         age_bins.remove('year')
 
         # Save asfr and asfr_bins to data dictionary
-        year_data = asfr[asfr['year'] == self.pars['end_year']]
+        year_data = asfr[asfr['year'] == self.sim.pars['stop']]
         if 'region' in age_bins:
             age_bins.remove('region')
             self.data['asfr'] = year_data.drop(['year', 'region'], axis=1).values.tolist()[0]
@@ -287,11 +295,10 @@ class Experiment(sc.prettyobj):
                 sky_arr['Data'][age_ind, row.parity] = row.percentage
 
         # Extract from model
-        ppl = self.sim.people
-        alive_f = ppl.filter(ppl.alive * ~ppl.sex)
-        m_age_bins = np.append(age_bins,max_age)
+        f_uids = self.sim.people.female.uids
+        m_age_bins = np.append(age_bins, max_age)
         m_parity_bins = np.append(parity_bins, parity_bins[-1]+1)
-        counts, _, _ = np.histogram2d(alive_f.age, alive_f.parity, bins=(m_age_bins, m_parity_bins))
+        counts, _, _ = np.histogram2d(self.sim.people.age[f_uids], self.sim.people.parity[f_uids], bins=(m_age_bins, m_parity_bins))
         sky_arr['Model'] = counts
 
         # Normalize
@@ -317,17 +324,23 @@ class Experiment(sc.prettyobj):
 
         # Extract birth spaces from model
         ppl = self.sim.people
-        gt1_birth = ppl.filter(ppl.alive * ~ppl.sex * ppl.parity>1)  # Alive women with >1 birth
-        birth_spaces = np.diff(gt1_birth.birth_ages)  # Birth spacings
-        defined_vals = ~np.isnan(birth_spaces) * (birth_spaces>0)  # Find NaNs and twins
-        model_spacing = birth_spaces[defined_vals]  # Remove NaNs and twins
-        model_spacing_counts, _ = np.histogram(model_spacing, bins=np.append(spacing_bins.values(), 10))  # Bin
-        model_spacing_counts = model_spacing_counts / model_spacing_counts[:].sum()  # Normalize
-        model_spacing_counts[:] *= 100  # Percentages
+        gt1_birth_uids = ppl.alive.uids[(ppl.female==True) & (ppl.parity > 1)]
+        birth_ages = ppl.birth_ages[gt1_birth_uids]
+        model_spacing = []
+
+        # Extract birth spaces from model. Stillbirth ages are not recorded in the main birth_ages list.
+        # We must account for that because np.stack fails when passed an empty array.
+        if len(birth_ages) > 0:
+            birth_spaces = np.diff(np.stack(birth_ages))  # Birth spacings
+            defined_vals = ~np.isnan(birth_spaces) * (birth_spaces>0)  # Find NaNs and twins
+            model_spacing = birth_spaces[defined_vals]  # Remove NaNs and twins
+            model_spacing_counts, _ = np.histogram(model_spacing, bins=np.append(spacing_bins.values(), 10))  # Bin
+            model_spacing_counts = model_spacing_counts / model_spacing_counts[:].sum()  # Normalize
+            model_spacing_counts[:] *= 100  # Percentages
 
         # Extract age at first birth from model
-        any_births = ppl.filter(ppl.alive * ~ppl.sex * ppl.parity>0)
-        model_age_first = any_births.birth_ages[:,0]
+        any_births_uids = ppl.alive.uids[(ppl.female==True) & (ppl.parity>0)]
+        model_age_first = np.stack(ppl.birth_ages[any_births_uids])[:,0]
 
         # Extract birth spaces and age at first birth from data
         for i, j in data_spaces.iterrows():
@@ -414,11 +427,11 @@ class Experiment(sc.prettyobj):
 
         # Extract from model
         ppl = self.sim.people
-        alive_f = ppl.filter(ppl.alive * ~ppl.sex)
-        model_methods = alive_f.method
+        alive_f_uids = ppl.female.uids
+        model_methods = ppl.method[alive_f_uids]
         model_method_counts,_ = np.histogram(model_methods, bins=np.arange(11))
         model_method_counts = model_method_counts/model_method_counts.sum()
-        model_labels = [m.label for m in self.sim.contraception_module.methods.values()]
+        model_labels = [m.label for m in self.sim.fp_pars['contraception_module'].methods.values()]
 
         # Make labels
         data_labels = data_method_counts.keys()
@@ -1198,15 +1211,6 @@ def diff_summaries(sim1, sim2, skip_key_diffs=False, output=False, die=False):
     # Compare keys
     keymatchmsg = ''
     sim1_keys = set(sim1.keys())
-    sim2_keys = set(sim2.keys())
-    #if sim1_keys !=    _keys and not skip_key_diffs: # pragma: no cover
-        #keymatchmsg = "Keys don't match!\n"
-       # missing = list(sim1_keys - sim2_keys)
-        #extra   = list(sim2_keys - sim1_keys)
-        #if missing:
-            #keymatchmsg += f'  Missing sim1 keys: {missing}\n'
-        #if extra:
-            #keymatchmsg += f'  Extra sim2 keys: {extra}\n'
 
     # Compare values
     valmatchmsg = ''

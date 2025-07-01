@@ -5,7 +5,6 @@ Class to define and run scenarios
 import numpy as np
 import pandas as pd
 import sciris as sc
-from . import defaults as fpd
 from . import parameters as fpp
 from . import sim as fps
 from . import interventions as fpi
@@ -235,7 +234,9 @@ class Scenarios(sc.prettyobj):
     '''
 
     def __init__(self, pars=None, repeats=None, scens=None, **kwargs):
-        self.pars = sc.mergedicts(pars, kwargs)
+        self.sim_par_keys = fpp.default_sim_pars.keys()
+        self.fp_pars_keys = fpp.default_pars.keys()
+
         self.repeats = repeats if repeats is not None else 1
         self.scens = sc.dcp(sc.tolist(scens))
         self.simslist = []
@@ -266,17 +267,32 @@ class Scenarios(sc.prettyobj):
         return
 
 
+    def update_pars(self, **kwargs):
+        new_sim_pars = {}
+        new_fp_pars = {}
+
+        for k,v in kwargs.items():
+            if k in self.sim_par_keys:
+                new_sim_pars[k] = v
+            elif k in self.fp_pars_keys:
+                new_fp_pars[k] = v
+            else:
+                errormsg = f'Parameter "{k}" not recognized'
+                raise ValueError(errormsg)
+        return new_sim_pars, new_fp_pars
+
     def make_sims(self, scenlabel, **kwargs):
         ''' Create a list of sims that are all identical except for the random seed '''
+        pars = dict()
         if scenlabel is None:
             errormsg = 'Scenario label must be defined'
             raise ValueError(errormsg)
         sims = sc.autolist()
         for i in range(self.repeats):
-            pars = sc.mergedicts(fpp.pars(self.pars.get('location')), self.pars, _copy=True)
-            pars.update(kwargs)
-            pars['seed'] += i
-            sim = fps.Sim(pars=pars)
+            pars['rand_seed'] = i
+
+            sim = fps.Sim(pars=pars, **kwargs)
+
             sim.scenlabel = scenlabel # Special label for scenarios objects
             if sim.label is None:
                 sim.label = scenlabel # Include here if no other label
@@ -386,15 +402,15 @@ class Scenarios(sc.prettyobj):
 
         # Pull out first sim and parameters
         sim0 = self.msim.sims[0]
-        if start is None: start = sim0.pars['start_year']
-        if end   is None: end   = sim0.pars['end_year']
+        if start is None: start = sim0.pars['start']
+        if end   is None: end   = sim0.pars['stop']
 
         def analyze_sim(sim):
             def aggregate_channel(channel, is_sum=True, is_t=False):
                 if is_t:
-                    year = sim.results['t']
+                    year = sim.results['timevec']
                 else:
-                    year = sim.results['tfr_years']
+                    year = sim.results['tfr_years'].values
                 channel_results = sim.results[channel]
                 inds = sc.findinds((year >= start), year <= end)
 

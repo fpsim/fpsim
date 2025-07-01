@@ -10,7 +10,7 @@ from fpsim import defaults as fpd
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-serial   = 1 # Whether to run in serial (for debugging)
+parallel   = 0 # Whether to run in serial (for debugging)
 do_plot  = 0 # Whether to do plotting in interactive mode
 do_plot_as = 0 # Whether or not to plot all age-specific channels
 default_ages = list(fpd.method_age_map.keys())
@@ -26,11 +26,9 @@ def make_sims(interventions, contraception_module=None):
     ''' Make simulations with particular interventions '''
     simlist = []
     for intv in interventions:
-        pars = fp.pars('test', interventions=intv)
-        simlist.append(
-            fp.Sim(
-                pars=sc.dcp(pars),
-                contraception_module=sc.dcp(contraception_module)))
+        pars = dict(location='test')
+        new_sim = fp.Sim(pars=pars, interventions=intv, contraception_module=contraception_module)
+        simlist.append(new_sim)
     return simlist
 
 
@@ -49,10 +47,10 @@ def test_update_methods_eff():
 
     simlist = make_sims([um1, um2])
     msim = fp.MultiSim(sims=simlist)
-    msim.run(serial=serial)
+    msim.run(parallel=parallel)
 
-    low_eff_post_sim = msim.sims[0].contraception_module.methods[method].efficacy
-    high_eff_post_sim = msim.sims[1].contraception_module.methods[method].efficacy
+    low_eff_post_sim = msim.sims[0].people.contraception_module.methods[method].efficacy
+    high_eff_post_sim = msim.sims[1].people.contraception_module.methods[method].efficacy
 
     msg = f"Efficacies did not update correctly"
     assert (high_eff_post_sim==high_eff) & (low_eff_post_sim==low_eff) & (high_eff_post_sim > low_eff_post_sim), msg
@@ -84,17 +82,18 @@ def test_update_methods():
     # Make and run sims
     simlist = make_sims([no_contra, hi_contr], contraception_module=fp.RandomChoice())
     msim = fp.MultiSim(sims=simlist)
-    msim.run(serial=serial, compute_stats=False)
+    msim.run(parallel=parallel, compute_stats=False)
 
     # Test that all the parameters were correctly updated
-    assert msim.sims[1].contraception_module.pars['p_use'] == p_use
-    assert msim.sims[1].contraception_module.methods['iud'].dur_use == 10
-    assert np.array_equal(msim.sims[1].contraception_module.pars['method_mix'], method_mix)
+    assert msim.sims[1].people.contraception_module.pars['p_use'] == p_use
+    assert msim.sims[1].people.contraception_module.methods['iud'].dur_use == 10
+    assert np.array_equal(msim.sims[1].people.contraception_module.pars['method_mix'], method_mix)
     ok('Parameters updated correctly')
 
     # Test that there are fewer births with the new method parameters
     baseline_births = msim.sims[0].results.births.sum()
     scenario_births = msim.sims[1].results.births.sum()
+
     msg = f'Expected more births with default methods but ({scenario_births} > {baseline_births})'
     assert baseline_births > scenario_births, msg
     ok(f'Changes to method parameters resulted in fewer births, as expected ({scenario_births} < {baseline_births})')
@@ -105,8 +104,8 @@ def test_update_methods():
 def test_scenarios():
     def run_scenario(scen, plot=do_plot, plot_as=do_plot_as):
         '''Runs simple scenario and returns Scenarios object'''
-        scens = fp.Scenarios(location='test', scens=scen, start_year=int_year)
-        scens.run(serial=serial)
+        scens = fp.Scenarios(location='test', scens=scen, start=int_year)
+        scens.run(parallel=parallel)
         if plot:
             scens.plot()
             scens.plot(to_plot='method')
@@ -125,12 +124,12 @@ def test_scenarios():
     high_inj_eff = 0.99
     scen = fp.make_scen(label='More effective pill', year=int_year, eff={'Pill': high_inj_eff})
     scens_repeat = fp.Scenarios(location='test', repeats=2, scens=scen, start_year=int_year)
-    scens_repeat.run(serial=serial)
+    scens_repeat.run(parallel=parallel)
     assert len(scens_repeat.msim.sims) == 2, f"Should be {2} sims in scens object but found {len(scens_repeat.msim.sims)}"
     ok('Scenarios repeated as expected')
 
-    eff1 = scens_repeat.msim.sims[0].contraception_module.methods['pill'].efficacy
-    eff2 = scens_repeat.msim.sims[1].contraception_module.methods['pill'].efficacy
+    eff1 = scens_repeat.msim.sims[0].people.contraception_module.methods['pill'].efficacy
+    eff2 = scens_repeat.msim.sims[1].people.contraception_module.methods['pill'].efficacy
     output['Repeated'] = scens_repeat
 
     for efficacy in [eff1, eff2]:
@@ -144,8 +143,8 @@ def test_scenarios():
 
     scens_scenario_list = run_scenario([scen1, scen2])
 
-    eff1 = scens_scenario_list.msim.sims[0].contraception_module.methods['pill'].efficacy
-    eff2 = scens_scenario_list.msim.sims[1].contraception_module.methods['pill'].efficacy
+    eff1 = scens_scenario_list.msim.sims[0].people.contraception_module.methods['pill'].efficacy
+    eff2 = scens_scenario_list.msim.sims[1].people.contraception_module.methods['pill'].efficacy
 
     output['Scenario_list'] = scens_scenario_list
 
@@ -194,6 +193,6 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # msim1  = test_update_methods_eff()
-        # msim2  = test_update_methods()
+        msim1  = test_update_methods_eff()
+        msim2  = test_update_methods()
         scenarios = test_scenarios() # returns a dict with schema {name: Scenarios}
