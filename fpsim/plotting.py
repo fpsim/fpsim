@@ -202,7 +202,7 @@ def plot_methods(sim):
     # Extract from model
     # TODO: refactor, this shouldn't need to loop over people, can just data_use a histogram
     for i in range(len(ppl)):
-        if ppl.alive[i] and ppl.female[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+        if ppl.alive.values[i] and ppl.female.values[i] and ppl.age.values[i] >= min_age and ppl.age.values[i] < max_age:
             model_method_counts[int(ppl.method.values[i])] += 1
 
     model_method_counts[:] /= model_method_counts[:].sum()
@@ -309,18 +309,18 @@ def plot_ageparity(sim):
     # TODO, refactor - can just use histogram instead of looping over agents
     sky_arr['Model'] = pl.zeros((len(age_keys), len(parity_bins)))
     for i in range(len(ppl)):
-        if ppl.alive[i] and ppl.female[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
+        if ppl.alive.values[i] and ppl.female.values[i] and ppl.age.values[i] >= min_age and ppl.age.values[i] < max_age:
             # Match age to age_keys
             for age_key, age_range in age_bin_map.items():
-                if age_range[0] <= ppl.age[i] < age_range[1]:
+                if age_range[0] <= ppl.age.values[i] < age_range[1]:
                     age_bin = age_keys.index(age_key)
                     break
             else:
                 continue  # Skip if no match is found
 
             # Find parity bin
-            if ppl.parity[i] < len(parity_bins):
-                parity_bin = int(ppl.parity[i])  # Ensure parity is an integer index
+            if ppl.parity.values[i] < len(parity_bins):
+                parity_bin = int(ppl.parity.values[i])  # Ensure parity is an integer index
                 sky_arr['Model'][age_bin, parity_bin] += 1
 
     # Normalize
@@ -497,9 +497,9 @@ def plot_birth_spacing(sim):
     # Count model birth spacing
     model_spacing_counts = sc.odict().make(keys=spacing_bins.keys(), vals=0.0)
     for i in range(len(ppl)):
-        if ppl.alive[i] and ppl.female[i] and ppl.age[i] >= min_age and ppl.age[i] < max_age:
-            if ppl.parity[i] > 1:
-                clean_ages = ppl.birth_ages[i][~np.isnan(ppl.birth_ages[i])]
+        if ppl.alive.values[i] and ppl.female.values[i] and ppl.age.values[i] >= min_age and ppl.age.values[i] < max_age:
+            if ppl.parity.values[i] > 1:
+                clean_ages = ppl.birth_ages.values[i][~np.isnan(ppl.birth_ages.values[i])]
                 for d in range(len(clean_ages) - 1):
                     space = clean_ages[d + 1] - clean_ages[d]
                     if space > 0:
@@ -570,10 +570,10 @@ def plot_paid_work(sim, data_employment):
     # Count the number of employed and total people in each age bin
     ppl = sim.people
     for i in range(len(ppl)):
-        if ppl.alive[i] and ppl.female[i] and min_age <= ppl.age[i] < max_age:
-            age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
+        if ppl.alive.values[i] and ppl.female.values[i] and min_age <= ppl.age.values[i] < max_age:
+            age_bin = age_bins[sc.findinds(age_bins <= ppl.age.values[i])[-1]]
             total_counts[age_bin] += 1
-            if ppl.paid_employment[i]:
+            if ppl.paid_employment.values[i]:
                 employed_counts[age_bin] += 1
 
     # Calculate the percentage of employed people in each age bin and their standard errors
@@ -650,16 +650,15 @@ def plot_education(sim):
     model_edu_years = {age_bin: [] for age_bin in np.arange(min_age, max_age, bin_size)}
     ppl = sim.people
     for i in range(len(ppl)):
-        if ppl.alive[i] and ppl.female[i] and min_age <= ppl.age[i] < max_age:
-            age_bin = age_bins[sc.findinds(age_bins <= ppl.age[i])[-1]]
-            model_edu_years[age_bin].append(ppl.edu_attainment[i])
+        if ppl.alive.values[i] and ppl.female.values[i] and min_age <= ppl.age.values[i] < max_age:
+            age_bin = age_bins[sc.findinds(age_bins <= ppl.age.values[i])[-1]]
+            model_edu_years[age_bin].append(ppl.edu_attainment.values[i])
 
     # Calculate average # of years of educational attainment for each age
     model_edu_mean = []
     for age_group in model_edu_years:
         if len(model_edu_years[age_group]) != 0:
             avg_edu = sum(model_edu_years[age_group]) / len(model_edu_years[age_group])
-            se_edu = np.std(model_edu_years[age_group], ddof=1) / np.sqrt(len(model_edu_years[age_group]))
             model_edu_mean.append(avg_edu)
         else:
             model_edu_years[age_group] = 0

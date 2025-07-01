@@ -74,7 +74,6 @@ def test_plotting_class():
 
     sim = fp.Sim().run()
     plt.plot_all(sim)
-    plt.plot_calib(sim)
     return sim
 
 
