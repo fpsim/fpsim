@@ -8,9 +8,9 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 3.0.1 (2025-07-15)
+Version 3.0.1 (2025-07-01)
 ---------------------------
-- Fixes issue 567 (Removes legacy use_subnational logic)
+- Fixes issue 567 (bug in method_mix_by_age_analyzer)
 - *GitHub info*: PR `570 <https://github.com/fpsim/fpsim/pull/570>`_
 
 Version 3.0.0 (2025-06-26)
