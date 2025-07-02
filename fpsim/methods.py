@@ -110,7 +110,7 @@ class ContraceptiveChoice(ss.Connector):
         """
         Used for all agents at the start of a sim and for newly active agents throughout
         """
-        contra_users = self.get_contra_users(uids)
+        contra_users, _ = self.get_contra_users(uids)
         self.start_contra(contra_users)
         self.init_methods(contra_users)
         return
@@ -162,8 +162,8 @@ class ContraceptiveChoice(ss.Connector):
     def get_contra_users(self, uids, event=None):
         """ Select contraception users, return boolean array """
         self.get_prob_use(uids, event=event)  # Call this to reset p_use parameter
-        uses_contra_uids = self.pars.p_use.filter(uids)
-        return uses_contra_uids
+        users, non_users = self.pars.p_use.split(uids)
+        return users, non_users
 
     def choose_method(self, uids, event=None):
         pass

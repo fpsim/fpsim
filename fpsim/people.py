@@ -302,23 +302,17 @@ class People(ss.People):
                 # Get previous users and see whether they will switch methods or stop using
                 if len(choosers):
 
-                    users = cm.get_contra_users(choosers)
-                    cm.start_contra(users)
+                    users, non_users = cm.get_contra_users(choosers)
 
-                    # Divide people into those that keep using contraception vs those that stop
-                    continuing_contra = choosers[self.on_contra[choosers]]
-                    stopping_contra = choosers[~self.on_contra[choosers]]
-                    sim.results['contra_access'][sim.ti] += len(continuing_contra)
+                    if len(non_users):
+                        self.on_contra[non_users] = False  # Set non-users to not using contraception
+                        self.method[non_users] = 0  # Set method to zero for non-users
 
                     # For those who keep using, choose their next method
-                    if len(continuing_contra):
-                        method_used = cm.choose_method(continuing_contra)
-                        self.method[continuing_contra] = method_used
-                        sim.results['new_users'][sim.ti] += np.count_nonzero(self.method[continuing_contra])
-
-                    # For those who stop using, set method to zero
-                    if len(stopping_contra):
-                        self.method[stopping_contra] = 0
+                    if len(users):
+                        cm.start_contra(users)
+                        method_used = cm.choose_method(users)
+                        self.method[users] = method_used
 
                 # Validate
                 n_methods = len(cm.methods)
@@ -336,7 +330,7 @@ class People(ss.People):
                     if self.on_contra[pp].any():
                         errormsg = 'Postpartum women should not currently be using contraception.'
                         raise ValueError(errormsg)
-                    users = cm.get_contra_users(pp, event=event)
+                    users, _ = cm.get_contra_users(pp, event=event)
                     cm.start_contra(users)
                     on_contra = pp[self.on_contra[pp]]
                     off_contra = pp[~self.on_contra[pp]]
@@ -899,6 +893,8 @@ class People(ss.People):
         self.check_sexually_active(nonpreg)
 
         # Update methods for those who are eligible
+        # if self.sim.now in 48:
+        #     print('hi')
         ready = nonpreg[self.ti_contra[nonpreg] <= self.sim.ti]
         if len(ready):
             self.update_method(ready)

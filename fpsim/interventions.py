@@ -297,7 +297,6 @@ class update_methods(ss.Intervention):
         based on scenario specifications.
         """
         sim = self.sim
-        ppl = sim.people
         cm = sim.connectors.contraception
         if not self.applied and sim.y >= self.pars.year:
             self.applied = True # Ensure we don't apply this more than once

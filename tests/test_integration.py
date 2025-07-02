@@ -115,8 +115,8 @@ def test_contraception():
     # test 2: contraception use restarts after postpartum period
 
     methods = ss.ndict([
-        fpm.Method(name='none', efficacy=0, modern=False, dur_use=fpm.ln(2, 3), label='None'),
-        fpm.Method(name='test',     efficacy=1.0, modern=True,  dur_use=fpm.ln(2, 3), label='Test'),
+        fpm.Method(name='none', efficacy=0, modern=False, dur_use=1/12, label='None'),
+        fpm.Method(name='test', efficacy=1.0, modern=True,  dur_use=1/12, label='Test'),
     ])
     contra_mod = fpm.RandomChoice(methods=methods, pars={'p_use': 1.0})
 
@@ -137,7 +137,7 @@ def test_contraception():
 
     custom_pars = {
         'start_year': 2000,
-        'end_year': 2003,
+        'end_year': 2005,
         'n_agents': 1000,
         'age_pyramid': f24_age_pyramid,
         'debut_age': debut_age,
@@ -150,7 +150,7 @@ def test_contraception():
     # Override fecundity to maximize pregnancies and minimize variation during test
     sim.people.personal_fecundity[:] = 1
 
-    sim.run()
+    sim.run(verbose=1/12)
 
     print(f'Checking pregnancy and birth outcomes from {sim.pars.n_agents} women... ')
     assert sim.results.pregnancies[0:12].sum() == 0, "Expected no pregnancies"
