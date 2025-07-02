@@ -57,7 +57,7 @@ def test_snapshot():
     ''' Test snapshot analyzer '''
     sc.heading('Testing snapshot analyzer...')
 
-    timesteps = [50, 100]
+    timesteps = [0, 50]
     snap = make_analyzer(fp.snapshot(timesteps=timesteps))
     shots = snap.snapshots
     assert len(shots) == len(timesteps), 'Wrong number of snapshots'
