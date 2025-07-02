@@ -350,7 +350,7 @@ class People(ss.People):
                 # Get previous users and see whether they will switch methods or stop using
                 if len(choosers):
 
-                    self.on_contra[choosers] = cm.get_contra_users(choosers, year=year, ti=ti, tiperyear=sim.fp_pars['tiperyear'])
+                    self.on_contra[choosers] = cm.get_contra_users(choosers)
                     self.ever_used_contra[choosers] = self.ever_used_contra[choosers] | self.on_contra[choosers]
 
                     # Divide people into those that keep using contraception vs those that stop
@@ -383,7 +383,7 @@ class People(ss.People):
                     if self.on_contra[pp].any():
                         errormsg = 'Postpartum women should not currently be using contraception.'
                         raise ValueError(errormsg)
-                    self.on_contra[pp] = cm.get_contra_users(pp, year=year, event=event, ti=ti, tiperyear=sim.fp_pars['tiperyear'])
+                    self.on_contra[pp] = cm.get_contra_users(pp, event=event)
                     on_contra = pp[self.on_contra[pp]]
                     off_contra = pp[~self.on_contra[pp]]
                     sim.results['contra_access'][sim.ti] += len(on_contra)

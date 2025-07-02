@@ -61,10 +61,23 @@ def test_mid_choice():
     return m.sims
 
 
+def test_kenya():
+    sc.heading('Method choice is based on age & previous method')
+
+    # Make & run sim
+    method_choice = fp.SimpleChoice(location='kenya')
+    sim = fp.Sim(pars=par_kwargs, location='kenya', contraception_module=method_choice, analyzers=fp.cpr_by_age())
+    sim.run()
+    print(f'✓ (successfully ran StandardChoice)')
+    return sim
+
+
+
 if __name__ == '__main__':
 
-    s0 = test_simple('ethiopia')
-    s1 = test_random_choice()
-    sims1 = test_simple_choice()
-    sims2 = test_mid_choice()
+    # s0 = test_simple('ethiopia')
+    # s1 = test_random_choice()
+    # sims1 = test_simple_choice()
+    # sims2 = test_mid_choice()
+    sim = test_kenya()
     print('Done.')

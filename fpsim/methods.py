@@ -120,8 +120,12 @@ class ContraceptiveChoice(ss.Connector):
         method = self.get_method_by_label(method_label)
         del self.methods[method.name]
 
-    def get_contra_users(self, uids, year=None, event=None, ti=None, tiperyear=None):
+    def get_prob_use(self, uids, event=None):
+        pass
+
+    def get_contra_users(self, uids, event=None):
         """ Select contraception users, return boolean array """
+        self.get_prob_use(uids, event=event)  # Call this to reset p_use parameter
         uses_contra_bool = self.pars.p_use.rvs(uids)
         return uses_contra_bool
 
@@ -220,7 +224,7 @@ class SimpleChoice(RandomChoice):
             errormsg = f'Distribution of contraceptive choices has not been provided.'
             raise ValueError(errormsg)
 
-    def get_prob_use(self, uids, year=None, event=None, ti=None, tiperyear=None):
+    def get_prob_use(self, uids, event=None):
         """
         Return an array of probabilities that each woman will use contraception.
         """
@@ -246,7 +250,10 @@ class SimpleChoice(RandomChoice):
         # This parameter can be positive or negative
         rhs += self.pars['prob_use_intercept']
         prob_use = 1 / (1+np.exp(-rhs))
-        return prob_use
+
+        # Set
+        self.pars.p_use.set(p=prob_use)  # Set the probability of use parameter
+        return
 
     @staticmethod
     def _lognormal_dpars(dur_use, ai):
@@ -431,14 +438,14 @@ class StandardChoice(SimpleChoice):
 
         return
 
-    def get_prob_use(self, uids, year=None, event=None, ti=None, tiperyear=None):
+    def get_prob_use(self, uids, event=None):
         """
         Return an array of probabilities that each woman will use contraception.
         """
         ppl = self.sim.people
         year = self.t.now()
 
-        # Figure out which coefficients to data_use
+        # Figure out which coefficients to use
         if event is None : p = self.contra_use_pars[0]
         if event == 'pp1': p = self.contra_use_pars[1]
         if event == 'pp6': p = self.contra_use_pars[2]
@@ -470,5 +477,5 @@ class StandardChoice(SimpleChoice):
 
         # Finish
         prob_use = 1 / (1+np.exp(-rhs))
-
-        return prob_use
+        self.pars.p_use.set(p=prob_use)
+        return
