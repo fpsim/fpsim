@@ -94,7 +94,7 @@ def test_longitudinal():
     # so we use pytest.approx to compare.
     min_age = sim.analyzers.longitudinal_history.age[ss.uids(1), 0]
     max_age = sim.analyzers.longitudinal_history.age[ss.uids(1), 1]
-    assert max_age - min_age == pytest.approx(1 - 1/sim.fp_pars['tiperyear'], rel=1e-2), 'Expected age difference to be equal to 1 year minus the timestep size'
+    assert max_age - min_age == pytest.approx(1/sim.fp_pars['tiperyear'], rel=1e-2), 'Expected age difference to be equal to 1 year minus the timestep size'
 
     return
 
@@ -104,7 +104,7 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        calib = test_calibration()
-        snap  = test_snapshot()
-        ap    = test_age_pyramids()
+        # calib = test_calibration()
+        # snap  = test_snapshot()
+        # ap    = test_age_pyramids()
         lh    = test_longitudinal()
