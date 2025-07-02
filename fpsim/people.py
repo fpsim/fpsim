@@ -43,7 +43,6 @@ class People(ss.People):
         # Empowerment and education
         self.empowerment_module = empowerment_module
         self.education_module = education_module
-        # self.contraception_module = contraception_module
 
         self.binom = ss.bernoulli(p=0.5)
 
@@ -61,7 +60,6 @@ class People(ss.People):
         _urban = self.get_urban(len(uids))
 
         # init the various modules
-        # self.contraception_module = self.contraception_module or sc.dcp(fpm.StandardChoice(location=fp_pars['location']))
         self.education_module = self.education_module or sc.dcp(fped.Education(location=fp_pars['location']))
 
         self.urban[uids] = _urban  # Urban (1) or rural (0)
@@ -106,13 +104,10 @@ class People(ss.People):
         # Handle circular buffer to keep track of historical data
         self.longitude = sc.objdict()
 
-        # Once all the other metric are initialized, determine initial contraceptive use
-        # self.barrier[uids] = fpu.n_multinomial(fp_pars['barriers'][:], len(uids))
-
         # Store keys
         self._keys = [s.name for s in self.states.values()]
 
-        # self.init_contraception(uids)  # Initialize contraceptive methods. v3 will refactor this to other modules
+        self.init_contraception(uids)  # Initialize contraceptive methods. v3 will refactor this to other modules
         return
 
     @property
@@ -235,7 +230,6 @@ class People(ss.People):
          duration on that method. This method is called by the simulation to initialise the
          people object at the beginning of the simulation and new people born during the simulation.
          """
-        # if self.contraception_module is not None:
         cm = self.sim.connectors.contraception_module
         if uids is None:
             uids = self.alive.uids
@@ -253,11 +247,6 @@ class People(ss.People):
 
         # Check whether have reached the time to choose
         time_to_set_contra_uids = fecund_uids[(self.ti_contra[fecund_uids] == 0)]
-
-        # if contraception_module is not None:
-        #     self.contraception_module = contraception_module
-
-        # if self.contraception_module is not None:
         self.on_contra[time_to_set_contra_uids] = cm.get_contra_users(time_to_set_contra_uids)
         oc_uids = time_to_set_contra_uids[(self.on_contra[time_to_set_contra_uids] == True)]
         self.method[oc_uids] = cm.init_method_dist(oc_uids)
