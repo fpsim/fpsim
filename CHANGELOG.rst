@@ -12,7 +12,7 @@ Version 3.0.2 (2025-07-02)
 ---------------------------
 - Fixes issue 567 (bug in method_mix_by_age_analyzer)
 - Fixes issue 568 (reduces default verbosity of Sim)
-- *GitHub info*: PR `570 <https://github.com/fpsim/fpsim/pull/574>`_
+- *GitHub info*: PR `574 <https://github.com/fpsim/fpsim/pull/574>`_
 
 
 Version 3.0.1 (2025-07-01)
