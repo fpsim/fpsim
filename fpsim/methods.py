@@ -64,21 +64,24 @@ def make_methods():
     return m
 
 
-
 # %% Define classes to contain information about the way women choose contraception
 
-class ContraceptiveChoice:
+class ContraceptiveChoice(ss.Connector):
     def __init__(self, methods=None, pars=None, **kwargs):
+        """
+        Base contraceptive choice module
+        """
+        super().__init__(name='contraception')
         self.methods = methods or make_methods().Methods
         self.__dict__.update(kwargs)
         self.n_options = len(self.methods)
         self.n_methods = len([m for m in self.methods if m != 'none'])
         self.init_dist = None
-        default_pars = dict(
-            p_use=0.5,
+        self.define_pars(
+            p_use=ss.bernoulli(p=0.5),
             force_choose=False,  # Whether to force non-users to choose a method
         )
-        self.pars = sc.mergedicts(default_pars, pars)
+        self.update_pars(pars, **kwargs)
 
     @property
     def average_dur_use(self):
@@ -90,11 +93,6 @@ class ContraceptiveChoice:
 
     def init_method_dist(self, ppl):
         pass
-
-    def get_prob_use(self, ppl, uids, year=None, event=None, ti=None, tiperyear=None):
-        """ Assign probabilities that each woman will use contraception """
-        prob_use = np.full(len(uids), fill_value=self.pars['p_use'], dtype=float)
-        return prob_use
 
     def get_method_by_label(self, method_label):
         """ Extract method according to its label / long name """
@@ -122,58 +120,60 @@ class ContraceptiveChoice:
         method = self.get_method_by_label(method_label)
         del self.methods[method.name]
 
-    def get_contra_users(self, ppl, uids, year=None, event=None, ti=None, tiperyear=None):
+    def get_contra_users(self, uids, year=None, event=None, ti=None, tiperyear=None):
         """ Select contraception users, return boolean array """
-        prob_use = self.get_prob_use(ppl, uids, event=event, year=year, ti=ti, tiperyear=tiperyear)
-        uses_contra_bool = fpu.binomial_arr(prob_use) # todo replace with ss dist
+        uses_contra_bool = self.pars.p_use.rvs(uids)
         return uses_contra_bool
 
-    def choose_method(self, ppl, uids, event=None):
+    def choose_method(self, uids, event=None):
         pass
 
-    def set_dur_method(self, ppl, uids, method_used=None):
+    def set_dur_method(self, uids, method_used=None):
         # todo make this aware of starsim time units. right now assumes average_dur_use is in years and timestep par is in years
-        dt = ppl.sim.t.dt_year * fpd.mpy
+        # dt = ppl.sim.t.dt_year * fpd.mpy
+        dt = self.t.dt_year
         timesteps_til_update = np.full(len(uids), np.round(self.average_dur_use/dt), dtype=int)
         return timesteps_til_update
+
+    def step(self):
+        # TODO, could move all update logic to here...
+        pass
 
 
 class RandomChoice(ContraceptiveChoice):
     """ Randomly choose a method of contraception """
     def __init__(self, pars=None, methods=None, **kwargs):
-        super().__init__(methods=methods, **kwargs)
-        default_pars = dict(
-            p_use=0.5,
+        super().__init__(methods=methods)
+        self.define_pars(
             method_mix=np.array([1/self.n_methods]*self.n_methods),
             force_choose=False,  # Whether to force non-users to choose a method
         )
-        self.pars = sc.mergedicts(default_pars, pars)
+        self.update_pars(pars, **kwargs)
         self.init_dist = self.pars['method_mix']
+        self._method_mix = ss.choice(a=np.arange(1, self.n_methods+1))
         return
 
-    def init_method_dist(self, ppl, uids):
-        return self.choose_method(ppl, uids)
+    def init_method_dist(self, uids):
+        return self.choose_method(uids)
 
-    def choose_method(self, ppl, uids, event=None):
-        choice_arr = np.random.choice(np.arange(1, self.n_methods+1), size=len(uids), p=self.pars['method_mix'])
+    def choose_method(self, uids, event=None):
+        choice_arr = self._method_mix.rvs(uids)
         return choice_arr.astype(int)
 
 
 class SimpleChoice(RandomChoice):
     def __init__(self, pars=None, location=None, method_choice_df=None, method_time_df=None, **kwargs):
         """ Args: coefficients """
-        super().__init__(**kwargs)
-        default_pars = dict(
+        super().__init__()
+        self.define_pars(
             prob_use_year=2000,
             prob_use_intercept=0.0,
             prob_use_trend_par=0.0,
             force_choose=False,  # Whether to force non-users to choose a method
             method_weights=np.ones(self.n_methods),
-            max_dur=100*fpd.mpy,  # Maximum duration of use in months
+            max_dur=ss.years(100),  # Maximum duration of use in months
         )
-        updated_pars = sc.mergedicts(default_pars, pars)
-        self.pars = sc.mergedicts(self.pars, updated_pars)
-        self.pars.update(kwargs)  # TODO: check
+        self.update_pars(pars, **kwargs)
 
         # Handle location
         location = fpd.get_location(location)
@@ -192,13 +192,15 @@ class SimpleChoice(RandomChoice):
         method_choice_pars, init_dist = location_module.data_utils.process_markovian_method_choice(self.methods, location, df=method_choice_df)  # Method choice
         self.method_choice_pars = method_choice_pars
         self.init_dist = init_dist
+        self._method_mix.set(p=init_dist)  # TODO check
         self.methods = location_module.data_utils.process_dur_use(self.methods, location, df=method_time_df)  # Reset duration of use
 
         # Handle age bins -- find a more robust way to do this
         self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
         return
 
-    def init_method_dist(self, ppl, uids):
+    def init_method_dist(self, uids):
+        ppl = self.sim.people
         if self.init_dist is not None:
             choice_array = np.zeros(len(uids))
 

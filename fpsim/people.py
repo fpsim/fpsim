@@ -27,7 +27,7 @@ class People(ss.People):
     Age pyramid is a 2d array with columns: age, male count, female count
     """
 
-    def __init__(self, n_agents=None, age_pyramid=None, contraception_module=None, empowerment_module=None, education_module=None, **kwargs):
+    def __init__(self, n_agents=None, age_pyramid=None, empowerment_module=None, education_module=None, **kwargs):
 
         # Allow defaults to be dynamically set
         self.person_defaults = sc.dcp(fpd.person_defaults)
@@ -43,7 +43,7 @@ class People(ss.People):
         # Empowerment and education
         self.empowerment_module = empowerment_module
         self.education_module = education_module
-        self.contraception_module = contraception_module
+        # self.contraception_module = contraception_module
 
         self.binom = ss.bernoulli(p=0.5)
 
@@ -53,7 +53,6 @@ class People(ss.People):
         super().init_vals()
 
         sim = self.sim
-        pars = sim.pars
         fp_pars = sim.fp_pars
 
         if uids is None:
@@ -62,7 +61,7 @@ class People(ss.People):
         _urban = self.get_urban(len(uids))
 
         # init the various modules
-        self.contraception_module = self.contraception_module or sc.dcp(fpm.StandardChoice(location=fp_pars['location']))
+        # self.contraception_module = self.contraception_module or sc.dcp(fpm.StandardChoice(location=fp_pars['location']))
         self.education_module = self.education_module or sc.dcp(fped.Education(location=fp_pars['location']))
 
         self.urban[uids] = _urban  # Urban (1) or rural (0)
@@ -113,10 +112,8 @@ class People(ss.People):
         # Store keys
         self._keys = [s.name for s in self.states.values()]
 
-        self.init_contraception(uids)  # Initialize contraceptive methods. v3 will refactor this to other modules
+        # self.init_contraception(uids)  # Initialize contraceptive methods. v3 will refactor this to other modules
         return
-
-
 
     @property
     def yei(self):
@@ -238,42 +235,38 @@ class People(ss.People):
          duration on that method. This method is called by the simulation to initialise the
          people object at the beginning of the simulation and new people born during the simulation.
          """
-        if self.contraception_module is not None:
-            if uids is None:
-                uids = self.alive.uids
+        # if self.contraception_module is not None:
+        cm = self.sim.connectors.contraception_module
+        if uids is None:
+            uids = self.alive.uids
 
-            ti = self.sim.ti
-            year = self.sim.y
+        ti = self.sim.ti
+        year = self.sim.y
 
-            fecund = (self.female[uids] == True) & (self.age[uids] < self.sim.fp_pars['age_limit_fecundity'])
-            fecund_uids = uids[fecund]
-            # NOTE: PSL: This line effectively "initialises" whether a woman is sexually active or not.
-            # Because of the current initialisation flow, it's not possible to initialise the
-            # sexually_active state in the init constructor.
-            self.check_sexually_active(fecund_uids)
-            self.update_time_to_choose(fecund_uids)
+        fecund = (self.female[uids] == True) & (self.age[uids] < self.sim.fp_pars['age_limit_fecundity'])
+        fecund_uids = uids[fecund]
+        # NOTE: PSL: This line effectively "initialises" whether a woman is sexually active or not.
+        # Because of the current initialisation flow, it's not possible to initialise the
+        # sexually_active state in the init constructor.
+        self.check_sexually_active(fecund_uids)
+        self.update_time_to_choose(fecund_uids)
 
-            # Check whether have reached the time to choose
-            time_to_set_contra_uids = fecund_uids[(self.ti_contra[fecund_uids] == 0)]
+        # Check whether have reached the time to choose
+        time_to_set_contra_uids = fecund_uids[(self.ti_contra[fecund_uids] == 0)]
 
-            # if contraception_module is not None:
-            #     self.contraception_module = contraception_module
+        # if contraception_module is not None:
+        #     self.contraception_module = contraception_module
 
-            # if self.contraception_module is not None:
-            self.on_contra[time_to_set_contra_uids] = self.contraception_module.get_contra_users(self,
-                                                                                                 time_to_set_contra_uids,
-                                                                                                 year=year, ti=ti,
-                                                                                                 tiperyear=
-                                                                                                 self.sim.fp_pars[
-                                                                                                     'tiperyear'])
-            oc_uids = time_to_set_contra_uids[(self.on_contra[time_to_set_contra_uids] == True)]
-            self.method[oc_uids] = self.contraception_module.init_method_dist(self, oc_uids)
-            self.ever_used_contra[oc_uids] = 1
-            method_dur = self.contraception_module.set_dur_method(self, time_to_set_contra_uids)
-            self.ti_contra[time_to_set_contra_uids] = ti + method_dur
+        # if self.contraception_module is not None:
+        self.on_contra[time_to_set_contra_uids] = cm.get_contra_users(time_to_set_contra_uids)
+        oc_uids = time_to_set_contra_uids[(self.on_contra[time_to_set_contra_uids] == True)]
+        self.method[oc_uids] = cm.init_method_dist(oc_uids)
+        self.ever_used_contra[oc_uids] = 1
+        method_dur = cm.set_dur_method(time_to_set_contra_uids)
+        self.ti_contra[time_to_set_contra_uids] = ti + method_dur
 
-            # Change the intent of women who have started to use a contraception method
-            self.intent_to_use[self.on_contra] = False
+        # Change the intent of women who have started to use a contraception method
+        self.intent_to_use[self.on_contra] = False
         return
 
     def update_fertility_intent_by_age(self, uids=None):
@@ -324,7 +317,7 @@ class People(ss.People):
     def update_method(self, uids, year=None, ti=None):
         """ Inputs: filtered people, only includes those for whom it's time to update """
         sim = self.sim
-        cm = self.contraception_module
+        cm = self.sim.connectors.contraception
         if year is None: year = sim.y
         if ti is None: ti = sim.ti
         if cm is not None:
@@ -357,7 +350,7 @@ class People(ss.People):
                 # Get previous users and see whether they will switch methods or stop using
                 if len(choosers):
 
-                    self.on_contra[choosers] = cm.get_contra_users(self, choosers, year=year, ti=ti, tiperyear=sim.fp_pars['tiperyear'])
+                    self.on_contra[choosers] = cm.get_contra_users(choosers, year=year, ti=ti, tiperyear=sim.fp_pars['tiperyear'])
                     self.ever_used_contra[choosers] = self.ever_used_contra[choosers] | self.on_contra[choosers]
 
                     # Divide people into those that keep using contraception vs those that stop
@@ -367,7 +360,7 @@ class People(ss.People):
 
                     # For those who keep using, choose their next method
                     if len(continuing_contra):
-                        self.method[continuing_contra] = cm.choose_method(self, continuing_contra)
+                        self.method[continuing_contra] = cm.choose_method(continuing_contra)
                         sim.results['new_users'][sim.ti] += np.count_nonzero(self.method[continuing_contra])
 
                     # For those who stop using, set method to zero
@@ -375,7 +368,7 @@ class People(ss.People):
                         self.method[stopping_contra] = 0
 
                 # Validate
-                n_methods = len(self.contraception_module.methods)
+                n_methods = len(cm.methods)
                 invalid_vals = (self.method[pp0] >= n_methods) * (self.method[pp0] < 0)
                 if invalid_vals.any():
                     errormsg = f'Invalid method set: ti={pp0.ti}, inds={invalid_vals.nonzero()[-1]}'
@@ -390,14 +383,14 @@ class People(ss.People):
                     if self.on_contra[pp].any():
                         errormsg = 'Postpartum women should not currently be using contraception.'
                         raise ValueError(errormsg)
-                    self.on_contra[pp] = cm.get_contra_users(self, pp, year=year, event=event, ti=ti, tiperyear=sim.fp_pars['tiperyear'])
+                    self.on_contra[pp] = cm.get_contra_users(pp, year=year, event=event, ti=ti, tiperyear=sim.fp_pars['tiperyear'])
                     on_contra = pp[self.on_contra[pp]]
                     off_contra = pp[~self.on_contra[pp]]
                     sim.results['contra_access'][sim.ti] += len(on_contra)
 
                     # Set method for those who use contraception
                     if len(on_contra):
-                        self.method[on_contra] = cm.choose_method(self, on_contra, event=event)
+                        self.method[on_contra] = cm.choose_method(on_contra, event=event)
                         self.ever_used_contra[on_contra] = 1
 
                     if len(off_contra):
@@ -408,7 +401,7 @@ class People(ss.People):
             # Set duration of use for everyone, and reset the time they'll next update
             durs_fixed = (self.postpartum_dur[uids] == 1) & (self.method[uids] == 0)
             update_durs = uids[~durs_fixed]
-            dur_methods = cm.set_dur_method(self, update_durs)
+            dur_methods = cm.set_dur_method(update_durs)
 
             # Check validity
             if (dur_methods < 0).any():
@@ -542,7 +535,8 @@ class People(ss.People):
         preg_eval_nonlam = pars['age_fecundity'][self.int_age_clip(nonlam_uids)] * self.personal_fecundity[nonlam_uids]
 
         # Get each woman's degree of protection against conception based on her contraception or LAM
-        eff_array = np.array([m.efficacy for m in pars['contraception_module'].methods.values()])
+        cm = self.sim.connectors.contraception
+        eff_array = np.array([m.efficacy for m in cm.methods.values()])
         method_eff = eff_array[self.method[nonlam_uids].astype(int)]
         lam_eff = pars['LAM_efficacy']
 
@@ -838,7 +832,6 @@ class People(ss.People):
 
         return
 
-
     def update_age_bin_totals(self, uids):
         """
         Count how many total live women in each 5-year age bin 10-50, for tabulating ASFR
@@ -850,9 +843,6 @@ class People(ss.People):
             this_age_bin = uids[(self.age[uids] >= age_low) & (self.age[uids] < age_high)]
             self.sim.results[f'total_women_{key}'][self.sim.ti] += len(this_age_bin)
 
-
-
-
         return
 
     def track_mcpr(self):
@@ -862,7 +852,8 @@ class People(ss.People):
         DHS data records only women who self-report LAM which is much lower.
         Follows the DHS definition of mCPR
         """
-        modern_methods_num = [idx for idx, m in enumerate(self.contraception_module.methods.values()) if m.modern]
+        cm = self.sim.connectors.contraception
+        modern_methods_num = [idx for idx, m in enumerate(cm.methods.values()) if m.modern]
         method_age = (self.sim.fp_pars['method_age'] <= self.age)
         fecund_age = self.age < self.sim.fp_pars['age_limit_fecundity']
         denominator = method_age * fecund_age * self.female * (self.alive)
@@ -917,8 +908,6 @@ class People(ss.People):
         age_diff = self.age[uids] - self.int_age(uids)
         had_bday = uids[(age_diff <= self.sim.t.dt_year)]
         return had_bday
-
-
 
     def step(self):
         """
@@ -983,8 +972,6 @@ class People(ss.People):
             errormsg = f'Invalid values for ti_contra at timestep {self.ti}'
             raise ValueError(errormsg)
 
-
-
         return
 
     def step_empowerment(self, uids):
@@ -1011,7 +998,6 @@ class People(ss.People):
     def step_education(self, uids):
         self.education_module.update(self, uids)
         return
-
 
     def update_results(self):
         """Calculate and return the results for this specific time step"""
@@ -1056,8 +1042,6 @@ class People(ss.People):
         res['pp12to23'][ti] = percent12to23
         res['nonpostpartum'][ti] = nonpostpartum
 
-
-
         time_months = int(np.round(ti * sim.t.dt_year * fpd.mpy))  # time since the beginning of the sim, expresse in months
 
         # Start calculating annual metrics after we have at least 1 year of data. These are annual metrics, and so are not the same dimensions as a standard results object.
@@ -1101,7 +1085,6 @@ class People(ss.People):
 
     def annualize_results(self, key, start_index, stop_index):
         return np.sum(self.sim.results[key][start_index:stop_index])
-
 
     def calculate_annual_ratios(self):
         index = self.get_annual_index()
@@ -1148,20 +1131,17 @@ class People(ss.People):
 
         return
 
-
     def _step_results_intent(self):
         """ Calculate percentage of living women who have intent to use contraception and intent to become pregnant in the next 12 months"""
         self.sim.results['perc_contra_intent'][self.sim.ti] = (np.sum(self.alive & self.female & self.intent_to_use) / self.n_female) * 100
         self.sim.results['perc_fertil_intent'][self.sim.ti] = (np.sum(self.alive & self.female & self.fertility_intent) / self.n_female) * 100
         return
 
-
     def int_age(self, uids=None):
         ''' Return ages as an integer '''
         if uids is None:
             return np.array(self.age, dtype=np.int64)
         return np.array(self.age[uids], dtype=np.int64)
-
 
     def int_age_clip(self, uids=None):
         ''' Return ages as integers, clipped to maximum allowable age for pregnancy '''
@@ -1177,7 +1157,6 @@ class People(ss.People):
             # there is a max age for some of the stats, so if we exceed that, reset it
             self.age[self.alive.uids] = np.minimum(self.age[self.alive.uids], self.sim.fp_pars['max_age'])
         return
-
 
     def compute_method_usage(self):
         """
@@ -1203,7 +1182,6 @@ class People(ss.People):
             result[int(method)] = count_dict[int(method)] / len(filtered_methods)
 
         return result
-
 
     def plot(self, fig_args=None, hist_args=None):
         ''' Plot histograms of each quantity '''
