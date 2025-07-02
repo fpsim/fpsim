@@ -98,6 +98,20 @@ def test_longitudinal():
 
     return
 
+def test_method_mix_by_age():
+    sc.heading('Testing method mix by age analyzer...')
+
+    # Create a sim with the method mix by age analyzer
+    mmba = fp.method_mix_by_age()
+    sim = fp.Sim(analyzers=[mmba])
+    sim.init()
+    sim.run()
+
+    # Check that the analyzer has been populated
+    assert sim.analyzers.method_mix_by_age.mmba_results is not None, 'Method mix by age results should not be empty'
+
+    return
+
 
 
 if __name__ == '__main__':
