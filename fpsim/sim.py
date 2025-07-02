@@ -234,12 +234,11 @@ class Sim(ss.Sim):
         for key in fpd.float_annual_results:
             self.results += ss.Result(key, label=key, **annual_kw)
 
-        # TODO move to contra module
-        # for key in fpd.dict_annual_results:
-        #     if key == 'method_usage':
-        #         self.results[key] = ss.Results(module=self)
-        #         for i, method in enumerate(self.connectors.contraception_module.methods):
-        #             self.results[key] += ss.Result(method, label=method, **annual_kw)
+        for key in fpd.dict_annual_results:
+            if key == 'method_usage':
+                self.results[key] = ss.Results(module=self)
+                for i, method in enumerate(self.connectors.contraception.methods):
+                    self.results[key] += ss.Result(method, label=method, **annual_kw)
 
         # Store age-specific fertility rates
         self.results['asfr'] = ss.Results(module=self) # ['asfr'] = {}

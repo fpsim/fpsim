@@ -184,9 +184,9 @@ if __name__ == '__main__':
 
     # sc.options(backend=None) # Turn on interactive plots
 
-    opts = test_options()
-    df   = test_to_df()
-    ppl  = test_plot_people()
-    res  = test_samples()
+    # opts = test_options()
+    # df   = test_to_df()
+    # ppl  = test_plot_people()
+    # res  = test_samples()
     method = test_method_usage()
     # sim = test_track_as(run_track_as)
