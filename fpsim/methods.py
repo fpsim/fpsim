@@ -91,8 +91,44 @@ class ContraceptiveChoice(ss.Connector):
             elif isinstance(m.dur_use, dict): av += m.dur_use['par1']
         return av / len(self.methods)
 
-    def init_method_dist(self, ppl):
-        pass
+    def init_post(self):
+        """
+         Decide who will start using contraception, when, which contraception method and the
+         duration on that method. This method is called by the simulation to initialise the
+         people object at the beginning of the simulation and new people born during the simulation.
+         """
+        ppl = self.sim.people
+        fecund = ppl.female & (ppl.age < self.sim.fp_pars['age_limit_fecundity'])
+        fecund_uids = fecund.uids
+
+        # Look for women who have reached the time to choose
+        time_to_set_contra_uids = fecund_uids[(ppl.ti_contra[fecund_uids] == 0)]
+        self.init_contraception(time_to_set_contra_uids)
+        return
+
+    def init_contraception(self, uids):
+        """
+        Used for all agents at the start of a sim and for newly active agents throughout
+        """
+        contra_users = self.get_contra_users(uids)
+        self.start_contra(contra_users)
+        self.init_methods(contra_users)
+        return
+
+    def start_contra(self, uids):
+        """ Wrapper method to start contraception for a set of users """
+        self.sim.people.on_contra[uids] = True
+        self.sim.people.ever_used_contra[uids] = 1
+        self.sim.people.intent_to_use[uids] = False
+        # Change the intent of women who have started to use a contraception method - ???
+        return
+
+    def init_methods(self, uids):
+        # Set initial distribution of methods
+        self.sim.people.method[uids] = self.init_method_dist(uids)
+        method_dur = self.set_dur_method(uids)
+        self.sim.people.ti_contra[uids] = self.ti + method_dur
+        return
 
     def get_method_by_label(self, method_label):
         """ Extract method according to its label / long name """
@@ -126,8 +162,8 @@ class ContraceptiveChoice(ss.Connector):
     def get_contra_users(self, uids, event=None):
         """ Select contraception users, return boolean array """
         self.get_prob_use(uids, event=event)  # Call this to reset p_use parameter
-        uses_contra_bool = self.pars.p_use.rvs(uids)
-        return uses_contra_bool
+        uses_contra_uids = self.pars.p_use.filter(uids)
+        return uses_contra_uids
 
     def choose_method(self, uids, event=None):
         pass
@@ -138,6 +174,18 @@ class ContraceptiveChoice(ss.Connector):
         dt = self.t.dt_year
         timesteps_til_update = np.full(len(uids), np.round(self.average_dur_use/dt), dtype=int)
         return timesteps_til_update
+
+    def set_method(self, uids):
+        """ Wrapper for choosing method and assigning duration of use """
+        ppl = self.sim.people
+        method_used = self.choose_method(uids)
+        ppl.method[uids] = method_used
+
+        # Set the duration of use
+        dur_method = self.set_dur_method(uids)
+        ppl.ti_contra[uids] = self.ti + dur_method
+
+        return
 
     def step(self):
         # TODO, could move all update logic to here...
