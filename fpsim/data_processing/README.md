@@ -9,6 +9,8 @@ This folder contains scripts and resources to prepare location-specific input da
 - `DHS_PMA_scripts/run_all.R`: Controller script to execute selected R processing scripts in sequence
 
 Each output CSV file represents a specific metric needed by FPsim (e.g., `popsize.csv`, `cpr.csv`, `maternal_mortality.csv`, etc.).
+**NOTE: These scripts do not create all of the data files needed to run a model. See 'Model Parameters' chart in locations/README.md
+for all of the required files (some are created from studies, etc.)
 
 ---
 

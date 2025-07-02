@@ -359,24 +359,34 @@ def debut_age(location):
 
 
 def birth_spacing_pref(location):
-    '''
+    """
     Returns an array of birth spacing preferences by closest postpartum month.
-    Applied to postpartum pregnancy likelihoods.
+    If the CSV file is missing, a default table with equal weights is used.
+    """
+    filepath = this_dir() / location / 'data' / 'birth_spacing_pref.csv'
 
-    NOTE: spacing bins must be uniform!
-    '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'birth_spacing_pref.csv')
+    # Try to read the CSV, fallback to dummy df if not found
+    try:
+        df = pd.read_csv(filepath)
+    except FileNotFoundError:
+        print(f"birth_spacing_pref.csv not found for {location}, using default weights of 1.")
+        months = np.arange(0, 39, 3)  # 0 to 36 months in 3-month intervals
+        weights = np.ones_like(months, dtype=float)
+        df = pd.DataFrame({'month': months, 'weights': weights})
 
-    # Calculate the intervals and check they're all the same
+    # Check uniform intervals
     intervals = np.diff(df['month'].values)
     interval = intervals[0]
-    assert np.all(
-        intervals == interval), f'In order to be computed in an array, birth spacing preference bins must be equal width, not {intervals}'
-    pref_spacing = {}
-    pref_spacing['interval'] = interval  # Store the interval (which we've just checked is always the same)
-    pref_spacing['n_bins'] = len(intervals)  # Actually n_bins - 1, but we're counting 0 so it's OK
-    pref_spacing['months'] = df['month'].values
-    pref_spacing['preference'] = df['weights'].values  # Store the actual birth spacing data
+    assert np.all(intervals == interval), (
+        f"In order to be computed in an array, birth spacing preference bins must be uniform. Got: {intervals}"
+    )
+
+    pref_spacing = {
+        'interval': interval,
+        'n_bins': len(intervals),
+        'months': df['month'].values,
+        'preference': df['weights'].values
+    }
 
     return pref_spacing
 
