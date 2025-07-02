@@ -1055,9 +1055,9 @@ class People(ss.People):
                     annual_res_name = f'{new_res_name}_over_year'
                     res[annual_res_name][index] = (res_over_year)
 
-                computed_method_usage = self.compute_method_usage()
-                for i in range(len(computed_method_usage)):
-                    res['method_usage'][i][index] = (computed_method_usage[i])
+                # computed_method_usage = self.compute_method_usage()
+                # for i in range(len(computed_method_usage)):
+                #     res['method_usage'][i][index] = (computed_method_usage[i])
                 res['pop_size'][index] = (res['n_alive'][ti])
                 res['mcpr_by_year'][index] = (res['mcpr'][ti])
                 res['cpr_by_year'][index] = (res['cpr'][ti])
@@ -1177,7 +1177,9 @@ class People(ss.People):
         unique, counts = np.unique(filtered_methods, return_counts=True)
         count_dict = dict(zip(unique, counts))
 
-        result = [0] * (len(self.sim.fp_pars['contraception_module'].methods))
+        # Initialize result list with zeros for each method
+        cm = self.sim.connectors.contraception
+        result = [0] * (len(cm.methods))
         for method in count_dict:
             result[int(method)] = count_dict[int(method)] / len(filtered_methods)
 

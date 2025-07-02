@@ -220,10 +220,13 @@ class SimpleChoice(RandomChoice):
             errormsg = f'Distribution of contraceptive choices has not been provided.'
             raise ValueError(errormsg)
 
-    def get_prob_use(self, ppl, uids, year=None, event=None, ti=None, tiperyear=None):
+    def get_prob_use(self, uids, year=None, event=None, ti=None, tiperyear=None):
         """
         Return an array of probabilities that each woman will use contraception.
         """
+        ppl = self.sim.people
+        year = self.t.now()
+
         # Figure out which coefficients to use
         if event is None : p = self.contra_use_pars[0]
         if event == 'pp1': p = self.contra_use_pars[1]
@@ -293,8 +296,9 @@ class SimpleChoice(RandomChoice):
             raise ValueError(
                 f'Unrecognized distribution type {dist_name} for duration of use')
 
-    def set_dur_method(self, ppl, uids, method_used=None):
+    def set_dur_method(self, uids, method_used=None):
         """ Time on method depends on age and method """
+        ppl = self.sim.people
 
         dur_method = np.zeros(len(uids), dtype=float)
         if method_used is None: method_used = ppl.method[uids]
@@ -339,8 +343,9 @@ class SimpleChoice(RandomChoice):
 
         return timesteps_til_update
 
-    def choose_method(self, ppl, uids, event=None, jitter=1e-4):
-        if event == 'pp1': return self.choose_method_post_birth(ppl, uids)
+    def choose_method(self, uids, event=None, jitter=1e-4):
+        ppl = self.sim.people
+        if event == 'pp1': return self.choose_method_post_birth(uids)
 
         else:
             if event is None:  mcp = self.method_choice_pars[0]
@@ -380,7 +385,8 @@ class SimpleChoice(RandomChoice):
 
         return choice_array.astype(int)
 
-    def choose_method_post_birth(self, ppl, uids, jitter=1e-4):
+    def choose_method_post_birth(self, uids, jitter=1e-4):
+        ppl = self.sim.people
         mcp = self.method_choice_pars[1]
         jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
         choice_array = np.zeros(len(uids))
@@ -425,10 +431,13 @@ class StandardChoice(SimpleChoice):
 
         return
 
-    def get_prob_use(self, ppl, uids, year=None, event=None, ti=None, tiperyear=None):
+    def get_prob_use(self, uids, year=None, event=None, ti=None, tiperyear=None):
         """
-        Return an array of probabilities that each woman will data_use contraception.
+        Return an array of probabilities that each woman will use contraception.
         """
+        ppl = self.sim.people
+        year = self.t.now()
+
         # Figure out which coefficients to data_use
         if event is None : p = self.contra_use_pars[0]
         if event == 'pp1': p = self.contra_use_pars[1]
