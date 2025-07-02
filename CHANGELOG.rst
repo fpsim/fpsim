@@ -8,6 +8,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 3.0.1 (2025-07-01)
+---------------------------
+Adds a plotting class that can be used to create plots typically used for calibration and analyses. Both manual and automatic
+calibration example scripts were cleaned and consolidated. Tutorial explaining overall calibration process created.
+
+ *GitHub info*: PR `https://github.com/fpsim/fpsim/pull/547>`_
+
 
 Version 3.0.0 (2025-06-26)
 ---------------------------
