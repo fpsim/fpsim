@@ -893,8 +893,6 @@ class People(ss.People):
         self.check_sexually_active(nonpreg)
 
         # Update methods for those who are eligible
-        # if self.sim.now in 48:
-        #     print('hi')
         ready = nonpreg[self.ti_contra[nonpreg] <= self.sim.ti]
         if len(ready):
             self.update_method(ready)
