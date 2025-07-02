@@ -248,9 +248,6 @@ class Sim(ss.Sim):
 
         return
 
-
-
-
     def update_mortality(self):
         """
         Update infant and maternal mortality for the sim's current year.
