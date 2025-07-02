@@ -10,6 +10,7 @@ import sciris as sc
 par_kwargs = dict(n_agents=500, start=2000, stop=2010, unit='year', dt=1/12, rand_seed=1, verbose=-1)
 parallel = 0  # Whether to run in serial (for debugging)
 
+
 def test_simple(location='kenya'):
     sc.heading('Test simplest possible FPsim run')
     sim = fp.Sim(location=location)
@@ -52,6 +53,6 @@ def test_mid_choice():
 if __name__ == '__main__':
 
     s0 = test_simple('ethiopia')
-    sims1 = test_simple_choice()
-    sims2 = test_mid_choice()
+    # sims1 = test_simple_choice()
+    # sims2 = test_mid_choice()
     print('Done.')
