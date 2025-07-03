@@ -191,20 +191,24 @@ class Education(ss.Connector):
         parity2 = self.dropout_data['2+']
 
         # Determine who drops out based on the dropout probabilities
-        mother_students = (ppl.parity > 1) & self.in_school
+        mother_students = (ppl.parity > 0) & self.in_school
         if mother_students.any():
-            p_drop = np.full_like(mother_students, fill_value=0.0, dtype=float)
+            p_drop = np.full_like(mother_students.uids, fill_value=0.0, dtype=float)
             age_cutoffs = parity1['age']
 
             # Parity 1
             p1_students = self.in_school & (ppl.parity == 1)
-            p1_age_idx = np.searchsorted(age_cutoffs, ppl.age[p1_students], "right")
-            p_drop[p1_students] = parity1['prob'][p1_age_idx]
+            p1_age_idx = np.searchsorted(age_cutoffs, ppl.age[p1_students], "right") - 1
+            p1_idx = mother_students[p1_students].nonzero()[-1]
+            p_drop[p1_idx] = parity1['percent'][p1_age_idx]
 
             # Parity 2+
             p2_students = self.in_school & (ppl.parity > 1)
-            p2_age_idx = np.searchsorted(age_cutoffs, ppl.age[p2_students], "right")
-            p_drop[p2_students] = parity2['prob'][p2_age_idx]
+            if p2_students.any():
+                print('hi')
+            p2_age_idx = np.searchsorted(age_cutoffs, ppl.age[p2_students], "right") - 1
+            p2_idx = mother_students[p2_students].nonzero()[-1]
+            p_drop[p2_idx] = parity2['percent'][p2_age_idx]
 
             # Scale by dt
             p_drop *= self.t.dt_year
