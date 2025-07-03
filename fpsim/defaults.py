@@ -19,42 +19,6 @@ max_parity_spline = 20   # Used for parity splines
 location_registry = {}  # Registry for external custom locations
 
 
-#%% Defaults when creating a new person
-# class State:
-#     def __init__(self, name, val=None, dtype=None, ncols=None):
-#         """
-#         Initialize a state
-#         Args:
-#             name (str): name of state
-#             val (list, array, float, or str): value(s) to populate array with
-#             dtype (dtype): datatype. Inferred from val if not provided.
-#             ncols (int): number of cols, needed for 2d states like birth_ages (n_agents * n_births)
-#         """
-#         self.name = name
-#         self.val = val
-#         self.dtype = dtype
-#         self.ncols = ncols
-#
-#     @property
-#     def ndim(self):
-#         return 1 if self.ncols is None else 2
-#
-#     def new(self, n, vals=None):
-#         """
-#         Define an empty array with the correct value and data type
-#         """
-#         if vals is None: vals = self.val  # Use default if none provided
-#
-#         if isinstance(vals, np.ndarray):
-#             assert len(vals) == n
-#             arr = vals
-#         else:
-#             if self.dtype is None: dtype = object if isinstance(vals, str) else None
-#             else: dtype = self.dtype
-#             shape = n if self.ncols is None else (n, self.ncols)
-#             arr = np.full(shape=shape, fill_value=vals, dtype=dtype)
-#         return arr
-
 
 # Parse locations
 def get_location(location, printmsg=False):
@@ -81,6 +45,7 @@ def get_location(location, printmsg=False):
         raise NotImplementedError(errormsg)
 
     return location
+
 
 # Register custom location (for external users)
 def register_location(name, location_ref):
@@ -165,14 +130,6 @@ person_defaults = [
     # Socioeconomic
     ss.State('urban', default=True),
     ss.FloatArr('wealthquintile', default=3), # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
-
-    # Education - states will remain at these values if use_education is False
-    ss.FloatArr('edu_objective', default=0),
-    ss.FloatArr('edu_attainment', default=0),
-    ss.State('edu_dropout', default=False),
-    ss.State('edu_interrupted', default=False),
-    ss.State('edu_completed', default=False),
-    ss.State('edu_started', default=False),
 
     # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
     # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and

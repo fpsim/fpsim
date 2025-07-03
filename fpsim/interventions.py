@@ -154,7 +154,9 @@ class change_people_state(ss.Intervention):
             prop=prop,
             annual=annual
         )
-
+        self.module_name = None
+        if '.' in state_name:
+            self.module_name, self.pars.state_name = state_name.split('.')
         self.annual_perc = None
         return
 
@@ -220,7 +222,10 @@ class change_people_state(ss.Intervention):
     def step(self):
         if self.pars.years[0] <= self.sim.y <= self.pars.years[1]:  # Inclusive range
             eligible_uids = self.check_eligibility()
-            self.sim.people[self.pars.state_name][eligible_uids] = self.pars.new_val
+            if self.module_name is not None:
+                self.sim.people[self.module_name][self.pars.state_name][eligible_uids] = self.pars.new_val
+            else:
+                self.sim.people[self.pars.state_name][eligible_uids] = self.pars.new_val
         return
 
 

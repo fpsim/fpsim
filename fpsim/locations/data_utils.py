@@ -409,8 +409,9 @@ def education_objective(df):
         arr (np.array): A 2D array of shape (2, n_edu_objective_years) containing proportions. The first
                         row corresponds to 'rural' women and the second row to 'urban' women.
     """
-    arr = df["percent"].to_numpy().reshape(df["urban"].nunique(), df["edu"].nunique())
-    return arr
+    return df
+    # arr = df["percent"].to_numpy().reshape(df["urban"].nunique(), df["edu"].nunique())
+    # return arr
 
 
 def education_attainment(df):
@@ -428,16 +429,17 @@ def education_attainment(df):
     NOTE: The data in education_initialization.csv have been extrapolated to cover the age range
     [0, 99], inclusive range. Here we only interpolate data for the group 15-49 (inclusive range).
     """
-    # This df has columns
-    # age:age in years and edu: mean years of education
-    df.sort_values(by="age", ascending=True, inplace=True)
-    ages = df["age"].to_numpy()
-    arr  = df["edu"].to_numpy()
-
-    # Get indices of those ages
-    inds = np.array(sc.findinds(ages >= fpd.min_age, ages < fpd.max_age_preg+5)) # interpolate beyond DHS max age to avoid discontinuities
-    arr[inds] = sc.smooth(arr[inds], 3)
-    return arr
+    return df.set_index('age')
+    # # This df has columns
+    # # age:age in years and edu: mean years of education
+    # df.sort_values(by="age", ascending=True, inplace=True)
+    # ages = df["age"].to_numpy()
+    # arr  = df["edu"].to_numpy()
+    #
+    # # Get indices of those ages
+    # inds = np.array(sc.findinds(ages >= fpd.min_age, ages < fpd.max_age_preg+5)) # interpolate beyond DHS max age to avoid discontinuities
+    # arr[inds] = sc.smooth(arr[inds], 3)
+    # return arr
 
 
 def education_dropout_probs(df):
