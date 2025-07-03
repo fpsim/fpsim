@@ -204,13 +204,14 @@ class Education(ss.Connector):
 
             # Parity 2+
             p2_students = self.in_school & (ppl.parity > 1)
-            if p2_students.any():
-                print('hi')
             p2_age_idx = np.searchsorted(age_cutoffs, ppl.age[p2_students], "right") - 1
             p2_idx = mother_students[p2_students].nonzero()[-1]
             p_drop[p2_idx] = parity2['percent'][p2_age_idx]
 
             # Scale by dt
+            # TODO, this logic seems flawed. What do these dropout probabilities actually represent?
+            # We're interpreting them as annual probabilities, but is it actually a one-time filtering
+            # operation that should be applied to women when they have a new baby?
             p_drop *= self.t.dt_year
             self._p_dropout.set(0)
             self._p_dropout.set(p_drop)
