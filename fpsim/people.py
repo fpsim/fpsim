@@ -27,7 +27,7 @@ class People(ss.People):
     Age pyramid is a 2d array with columns: age, male count, female count
     """
 
-    def __init__(self, n_agents=None, age_pyramid=None, empowerment_module=None, education_module=None, **kwargs):
+    def __init__(self, n_agents=None, age_pyramid=None, empowerment_module=None, **kwargs):
 
         # Allow defaults to be dynamically set
         self.person_defaults = sc.dcp(fpd.person_defaults)
@@ -44,7 +44,7 @@ class People(ss.People):
         # Empowerment and education
         # TODO,  remove
         self.empowerment_module = empowerment_module
-        self.education_module = education_module
+        # self.education_module = education_module
 
         self.binom = ss.bernoulli(p=0.5)
 
@@ -62,7 +62,7 @@ class People(ss.People):
         _urban = self.get_urban(len(uids))
 
         # Initialize the education modules - TODO, remove
-        self.education_module = self.education_module or sc.dcp(fped.Education(location=fp_pars['location']))
+        # self.education_module = self.education_module or sc.dcp(fped.Education(location=fp_pars['location']))
 
         # Initialize sociodemographic states
         self.urban[uids] = _urban  # Urban (1) or rural (0)
@@ -94,8 +94,8 @@ class People(ss.People):
         if self.empowerment_module is not None:
             self.empowerment_module.initialize(female_uids)
 
-        if self.education_module is not None:
-            self.education_module.initialize(self, uids)
+        # if self.education_module is not None:
+        #     self.education_module.initialize(self, uids)
 
         # Partnership
         if fp_pars['use_partnership']:
@@ -877,7 +877,7 @@ class People(ss.People):
 
         # Update empowerment states, and empowerment-related states
         if self.empowerment_module is not None: self.step_empowerment(self.female.uids)
-        if self.education_module is not None: self.step_education(self.female.uids)
+        # if self.education_module is not None: self.step_education(self.female.uids)
 
         # Check who has reached their age at first partnership and set partnered attribute to True.
         self.start_partnership(self.female.uids)
@@ -939,9 +939,9 @@ class People(ss.People):
             self.update_fertility_intent_by_age(bday)
         return
 
-    def step_education(self, uids):
-        self.education_module.update(self, uids)
-        return
+    # def step_education(self, uids):
+    #     self.education_module.update(self, uids)
+    #     return
 
     def update_results(self):
         """Calculate and return the results for this specific time step"""
@@ -965,7 +965,7 @@ class People(ss.People):
 
         # Update wealth and education
         self._step_results_wq()
-        self._step_results_edu()
+        # self._step_results_edu()
 
         # Update intent and empowerment if empowerment module is present
         if self.empowerment_module is not None:

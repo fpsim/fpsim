@@ -136,8 +136,8 @@ class Sim(ss.Sim):
 
         # Merge modules, also initialized later
         contraception_module = contraception_module or sc.dcp(fpm.StandardChoice(location=location))
-        connectors = sc.tolist(connectors) + [contraception_module]  # Ensure contraception module is always included in connectors
-        # self.fp_pars['education_module'] = education_module or sc.dcp(fped.Education(location=location))
+        education_module = education_module or sc.dcp(fped.Education(location=location))
+        connectors = sc.tolist(connectors) + [contraception_module, education_module]
         # self.fp_pars['empowerment_module'] = empowerment_module
 
         super().__init__(sim_pars, connectors=connectors)  # Initialize and set the parameters as attributes
@@ -159,7 +159,7 @@ class Sim(ss.Sim):
         self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
 
         # Modules - TODO, move
-        self.fp_pars['education_module'] = education_module or sc.dcp(fped.Education(location=location))
+        # self.fp_pars['education_module'] = education_module or sc.dcp(fped.Education(location=location))
         self.fp_pars['empowerment_module'] = empowerment_module
 
         return

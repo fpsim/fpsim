@@ -516,8 +516,8 @@ class StandardChoice(SimpleChoice):
                 + p.age_ever_user_factors[2] * dfa['knot_3'].values * ppl.ever_used_contra[uids])
 
         # Add education levels
-        primary = (ppl.edu_attainment[uids] > 1) & (ppl.edu_attainment[uids] <= 6)
-        secondary = ppl.edu_attainment[uids] > 6
+        primary = (ppl.edu.attainment[uids] > 1) & (ppl.edu.attainment[uids] <= 6)
+        secondary = ppl.edu.attainment[uids] > 6
         rhs += p.edu_factors[0] * primary + p.edu_factors[1] * secondary
 
         # Add time trend
