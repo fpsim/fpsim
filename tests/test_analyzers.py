@@ -110,7 +110,7 @@ def test_method_mix_by_age():
     # Check that the analyzer has been populated
     assert sim.analyzers.method_mix_by_age.mmba_results is not None, 'Method mix by age results should not be empty'
 
-    return
+    return sim.analyzers.method_mix_by_age
 
 
 
@@ -121,4 +121,5 @@ if __name__ == '__main__':
         # calib = test_calibration()
         # snap  = test_snapshot()
         # ap    = test_age_pyramids()
-        lh    = test_longitudinal()
+        # lh    = test_longitudinal()
+        mmba  = test_method_mix_by_age()
