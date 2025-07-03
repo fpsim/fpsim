@@ -431,7 +431,7 @@ class Experiment(sc.prettyobj):
         model_methods = ppl.method[alive_f_uids]
         model_method_counts,_ = np.histogram(model_methods, bins=np.arange(11))
         model_method_counts = model_method_counts/model_method_counts.sum()
-        model_labels = [m.label for m in self.sim.fp_pars['contraception_module'].methods.values()]
+        model_labels = [m.label for m in self.sim.connectors.contraception.methods.values()]
 
         # Make labels
         data_labels = data_method_counts.keys()

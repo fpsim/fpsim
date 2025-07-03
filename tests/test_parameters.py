@@ -104,14 +104,14 @@ def test_method_changes():
     choice.add_method(new_method)
     s1 = fp.Sim(location='test', contraception_module=choice)
     s1.run()
-    assert len(s1.fp_pars['contraception_module'].methods) == n+1, 'Method was not added'
+    assert len(s1.connectors.contraception.methods) == n+1, 'Method was not added'
     ok(f'Methods had expected length after addition ({n+1})')
 
     # Test remove method
     choice.remove_method('Injectables')
     s2 = fp.Sim(location='test', contraception_module=choice)
     s2.run()
-    assert len(s2.fp_pars['contraception_module'].methods) == n, 'Methods was not removed'
+    assert len(s2.connectors.contraception.methods) == n, 'Methods was not removed'
     ok(f'Methods have expected length after removal ({n})')
 
     # Test method efficacy
@@ -150,7 +150,6 @@ def test_validation():
     ok('Missing parameter was caught by validation')
 
     return pars
-
 
 
 def test_save_load():
@@ -217,7 +216,7 @@ def test_register_custom_location():
 
 if __name__ == '__main__':
 
-    sc.options(backend=None) # Turn on interactive plots
+    sc.options(backend=None)  # Turn on interactive plots
     with sc.timer():
         null    = test_null(do_plot=do_plot)
         scale   = test_scale()
