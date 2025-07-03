@@ -244,8 +244,8 @@ def test_education_preg():
     sim_base, sim_preg = m.sims[:]  # Replace with run versions
 
     # Check that education has increased
-    base_edu = sim_base.results.edu.attainment[-1]
-    preg_edu = sim_preg.results.edu.attainment[-1]
+    base_edu = sim_base.results.edu.mean_attainment[-1]
+    preg_edu = sim_preg.results.edu.mean_attainment[-1]
     base_births = sum(sim_base.results.births)
     preg_births = sum(sim_preg.results.births)
     assert base_births < preg_births, f'With more pregnancy there should be more births, but {preg_births}<{base_births}'
