@@ -8,6 +8,12 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 3.1.0 (2025-07-10)
+---------------------------
+- Refactors Contraception and Education to Starsim modules (connectors)
+- *GitHub info*: PR `575 <https://github.com/fpsim/fpsim/pull/575>`_
+
+
 Version 3.0.2 (2025-07-02)
 ---------------------------
 - Fixes issue 567 (bug in method_mix_by_age_analyzer)
