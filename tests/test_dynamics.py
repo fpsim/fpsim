@@ -54,7 +54,7 @@ def test_mcpr(location=None, do_plot=False):
             self.mcpr = None
 
     covars = [
-        Covar('edu_attainment', 0, 15, 'edu_attainment'),
+        Covar('edu.attainment', 0, 15, 'edu.attainment'),
         Covar('urban', False, True, 'urban_women'),
         # Covar('parity', 2, 'parity2to3'),  # Unfortunately this will not work
         Covar('wealthquintile', 1, 5, 'wq5'),
