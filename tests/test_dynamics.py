@@ -100,13 +100,13 @@ def test_mcpr(location=None, do_plot=False):
         print(f"Checking effect of {covar.pplattr} ... ")
         if '.' in covar.resname:
             modname, resname = covar.resname.split('.')
-            base = sims[0].results[modname][resname][-1]
-            intv = sims[ri+1].results[modname][resname][-1]
+            base = sims[0].results[modname][resname]
+            intv = sims[ri+1].results[modname][resname]
         else:
-            base = sims[0].results[covar.resname][-1]
-            intv = sims[ri+1].results[covar.resname][-1]
-        assert base < intv, f'Increasing {covar.pplattr} should register in results, but {intv}<{base}'
-        print(f"✓ ({base:.2f} < {intv:.2f})")
+            base = sims[0].results[covar.resname]
+            intv = sims[ri+1].results[covar.resname]
+        assert base[-1] < intv[-1], f'Increasing {covar.pplattr} should register in results, but {intv[-1]}<{base[-1]}'
+        print(f"✓ ({base[-1]:.2f} < {intv[-1]:.2f})")
         covar.base = base
         covar.intv = intv
         covar.mcpr = sims[ri+1].results.mcpr
