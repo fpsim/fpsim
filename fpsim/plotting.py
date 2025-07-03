@@ -195,7 +195,8 @@ def plot_methods(sim):
 
     # Setup
     ppl = sim.people
-    model_labels_all = [m.label for m in sim.fp_pars['contraception_module'].methods.values()]
+    cm = sim.connectors.contraception
+    model_labels_all = [m.label for m in cm.methods.values()]
     model_labels_methods = sc.dcp(model_labels_all)
     model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 

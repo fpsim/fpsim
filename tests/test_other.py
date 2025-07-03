@@ -154,7 +154,7 @@ def test_samples(do_plot=False, verbose=True):
 def test_method_usage():
     '''Test that method usage proportions add to 1 and correspond to population'''
     sim = fp.Sim()
-    sim.run()
+    sim.run(verbose=1/12)
 
     method_usage = np.swapaxes(np.vstack(list(sim.results.method_usage.all_results_dict.values())), 1, 0)
     for timestep, proportions in enumerate(method_usage):
@@ -196,6 +196,7 @@ if __name__ == '__main__':
     opts = test_options()
     df   = test_to_df()
     ppl  = test_plot_people()
+    sim = test_plotting_class()
     res  = test_samples()
     method = test_method_usage()
     # sim = test_track_as(run_track_as)
