@@ -226,7 +226,7 @@ def test_education_preg():
     sc.heading('Testing that lower fertility rate leads to more education...')
 
     def make_sim(pregnant=False):
-        pars = dict(start=2000, stop=2010, n_agents=10000, verbose=0.1)
+        pars = dict(start=2000, stop=2010, n_agents=1000)
         sim = fp.Sim(pars=pars)
         sim.init()
         sim.people.age[:] = 15
@@ -244,8 +244,8 @@ def test_education_preg():
     sim_base, sim_preg = m.sims[:]  # Replace with run versions
 
     # Check that education has increased
-    base_edu = sim_base.results.edu_attainment[-1]
-    preg_edu = sim_preg.results.edu_attainment[-1]
+    base_edu = sim_base.results.edu.attainment[-1]
+    preg_edu = sim_preg.results.edu.attainment[-1]
     base_births = sum(sim_base.results.births)
     preg_births = sum(sim_preg.results.births)
     assert base_births < preg_births, f'With more pregnancy there should be more births, but {preg_births}<{base_births}'

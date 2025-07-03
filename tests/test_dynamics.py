@@ -54,7 +54,7 @@ def test_mcpr(location=None, do_plot=False):
             self.mcpr = None
 
     covars = [
-        Covar('edu.attainment', 0, 15, 'edu.attainment'),
+        Covar('edu.attainment', 0, 15, 'edu.mean_attainment'),
         Covar('urban', False, True, 'urban_women'),
         # Covar('parity', 2, 'parity2to3'),  # Unfortunately this will not work
         Covar('wealthquintile', 1, 5, 'wq5'),
@@ -98,12 +98,17 @@ def test_mcpr(location=None, do_plot=False):
     # Firstly, check that changing the people attributes has registered in the relevant results metrics as expected
     for ri, covar in enumerate(covars):
         print(f"Checking effect of {covar.pplattr} ... ")
-        base = sims[0].results[covar.resname][-1]
-        intv = sims[ri+1].results[covar.resname][-1]
+        if '.' in covar.resname:
+            modname, resname = covar.resname.split('.')
+            base = sims[0].results[modname][resname][-1]
+            intv = sims[ri+1].results[modname][resname][-1]
+        else:
+            base = sims[0].results[covar.resname][-1]
+            intv = sims[ri+1].results[covar.resname][-1]
         assert base < intv, f'Increasing {covar.pplattr} should register in results, but {intv}<{base}'
         print(f"✓ ({base:.2f} < {intv:.2f})")
-        covar.base = sims[0].results[covar.resname]
-        covar.intv = sims[ri+1].results[covar.resname]
+        covar.base = base
+        covar.intv = intv
         covar.mcpr = sims[ri+1].results.mcpr
 
     # Next, check that changing the people attributes has registered in the relevant results metrics as expected

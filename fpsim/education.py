@@ -64,6 +64,19 @@ class Education(ss.Connector):
 
         return
 
+    def init_results(self):
+        """ Initialize results """
+        super().init_results()
+        results = [
+            ss.Result('mean_attainment', label='Mean education attainment', scale=False),
+            ss.Result('mean_objective', label='Mean education objective', scale=False),
+            ss.Result('prop_completed', label='Proportion completed education', scale=False),
+            ss.Result('prop_in_school', label='Proportion in school', scale=False),
+            ss.Result('prop_dropped', label='Proportion dropped', scale=False),
+        ]
+        self.define_results(*results)
+        return
+
     def set_objective_dists(self, objective_data):
         """
         Return an educational objective distribution based on provided data.
@@ -247,4 +260,15 @@ class Education(ss.Connector):
         completed = self.attainment >= self.objective
         self.in_school[completed.uids] = False
         self.completed[completed.uids] = True
+        return
+
+    def update_results(self):
+        """ Update results for education module """
+        ppl = self.sim.people
+        f = ppl.female & (ppl.age >= 15)
+        self.results.mean_attainment[self.ti] = np.mean(self.attainment[f])
+        self.results.mean_objective[self.ti] = np.mean(self.objective[f])
+        self.results.prop_completed[self.ti] = np.count_nonzero(self.completed[f]) / len(self.completed[f])
+        self.results.prop_in_school[self.ti] = np.count_nonzero(self.in_school[f]) / len(self.in_school[f])
+        self.results.prop_dropped[self.ti] = np.count_nonzero(self.dropped[f]) / len(self.dropped[f])
         return
