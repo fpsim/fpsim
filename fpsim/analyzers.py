@@ -125,7 +125,7 @@ class method_mix_by_age(ss.Analyzer):
     def finalize(self):
         sim = self.sim
         ppl = sim.people
-        n_methods = len(sim.people.contraception_module.methods)
+        n_methods = len(sim.connectors.contraception.methods)
         self.mmba_results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
         for key, (age_low, age_high) in fpd.method_age_map.items():
             match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
