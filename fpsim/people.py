@@ -10,8 +10,6 @@ from scipy.stats import truncnorm
 from . import utils as fpu
 from . import defaults as fpd
 from . import demographics as fpdmg
-from . import education as fped
-from . import methods as fpm
 import starsim as ss
 
 # Specify all externally visible things this file defines
@@ -41,10 +39,9 @@ class People(ss.People):
         super().__init__(n_agents, age_data, extra_states=self.person_defaults, **kwargs)
         self.female.default.set(p=f_frac)
 
-        # Empowerment and education
+        # Empowerment
         # TODO,  remove
         self.empowerment_module = empowerment_module
-        # self.education_module = education_module
 
         self.binom = ss.bernoulli(p=0.5)
 
@@ -60,9 +57,6 @@ class People(ss.People):
             uids = self.alive.uids
 
         _urban = self.get_urban(len(uids))
-
-        # Initialize the education modules - TODO, remove
-        # self.education_module = self.education_module or sc.dcp(fped.Education(location=fp_pars['location']))
 
         # Initialize sociodemographic states
         self.urban[uids] = _urban  # Urban (1) or rural (0)
@@ -89,13 +83,10 @@ class People(ss.People):
 
         female_uids = uids[self.female[uids]]
 
-        # Initialize empowerment and education mods.
+        # Initialize empowerment 
         # TODO, remove
         if self.empowerment_module is not None:
             self.empowerment_module.initialize(female_uids)
-
-        # if self.education_module is not None:
-        #     self.education_module.initialize(self, uids)
 
         # Partnership
         if fp_pars['use_partnership']:
@@ -877,7 +868,6 @@ class People(ss.People):
 
         # Update empowerment states, and empowerment-related states
         if self.empowerment_module is not None: self.step_empowerment(self.female.uids)
-        # if self.education_module is not None: self.step_education(self.female.uids)
 
         # Check who has reached their age at first partnership and set partnered attribute to True.
         self.start_partnership(self.female.uids)
@@ -939,10 +929,6 @@ class People(ss.People):
             self.update_fertility_intent_by_age(bday)
         return
 
-    # def step_education(self, uids):
-    #     self.education_module.update(self, uids)
-    #     return
-
     def update_results(self):
         """Calculate and return the results for this specific time step"""
         super().update_results()
@@ -963,9 +949,8 @@ class People(ss.People):
         res['parity4to5'][ti] = np.sum((self.parity >= 4) & (self.parity <= 5) & self.female) / np.sum(self.female) * 100
         res['parity6plus'][ti] = np.sum((self.parity >= 6) & self.female) / np.sum(self.female) * 100
 
-        # Update wealth and education
+        # Update wealth
         self._step_results_wq()
-        # self._step_results_edu()
 
         # Update intent and empowerment if empowerment module is present
         if self.empowerment_module is not None:
@@ -1053,11 +1038,6 @@ class People(ss.People):
     def cond_prob(a, b):
         """ Calculate conditional probability. This should be moved somewhere else. """
         return np.sum(a & b) / np.sum(b)
-
-    def _step_results_edu(self):
-        denom = self.female & self.alive & (self.age >= fpd.min_age) & (self.age < fpd.max_age)
-        self.sim.results['edu_objective'][self.sim.ti] = np.mean(self.edu_objective[denom])
-        self.sim.results['edu_attainment'][self.sim.ti] = np.mean(self.edu_attainment[denom])
 
     def _step_results_empower(self):
         res = self.sim.results
