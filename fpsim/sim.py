@@ -134,11 +134,12 @@ class Sim(ss.Sim):
         sim_pars = sc.mergedicts(default_sim_pars, user_sim_pars, _copy=copy_inputs)
         # new_sim_pars.update(input_pars) # update with input pars to override defaults
 
-        # Merge modules, also initialized later
+        # Process modules by adding them as Starsim connectors
         contraception_module = contraception_module or sc.dcp(fpm.StandardChoice(location=location))
         education_module = education_module or sc.dcp(fped.Education(location=location))
         connectors = sc.tolist(connectors) + [contraception_module, education_module]
-        # self.fp_pars['empowerment_module'] = empowerment_module
+        if empowerment_module is not None:
+            connectors += sc.tolist(empowerment_module)
 
         super().__init__(sim_pars, connectors=connectors)  # Initialize and set the parameters as attributes
 
@@ -157,10 +158,6 @@ class Sim(ss.Sim):
         # Add a new parameter to pars that determines the size of the circular buffer
         unit = self.pars.unit if self.pars.unit != "" else 'year'
         self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
-
-        # Modules - TODO, move
-        # self.fp_pars['education_module'] = education_module or sc.dcp(fped.Education(location=location))
-        self.fp_pars['empowerment_module'] = empowerment_module
 
         return
 
@@ -209,7 +206,6 @@ class Sim(ss.Sim):
             fpu.set_seed(self.pars['rand_seed'])
             if self.pars.people is None:
                 self.pars.people = fpppl.People(n_agents=self.pars.n_agents, age_pyramid=self.fp_pars['age_pyramid'])
-
             super().init(force=force)
 
         return self
@@ -269,7 +265,6 @@ class Sim(ss.Sim):
 
         return
 
-
     def start_step(self):
         super().start_step()
         self.update_mortality()
@@ -300,7 +295,7 @@ class Sim(ss.Sim):
         self.results['cum_short_intervals_by_year'] = np.cumsum(self.results['short_intervals_over_year'])
         self.results['cum_secondary_births_by_year'] = np.cumsum(self.results['secondary_births_over_year'])
         self.results['cum_pregnancies_by_year'] = np.cumsum(self.results['pregnancies_over_year'])
-
+        return
 
     def store_postpartum(self):
         """

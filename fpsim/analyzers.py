@@ -148,9 +148,9 @@ class education_recorder(ss.Analyzer):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)   # Initialize the Analyzer object
             self.snapshots = sc.odict()  # Store the actual snapshots
-            self.keys = ['edu_objective', 'edu_attainment', 'edu_completed',
-                         'edu_dropout', 'edu_interrupted',
-                         'pregnant', 'alive', 'age']
+            self.edu_keys = ['objective', 'attainment', 'completed',
+                         'dropped', 'interrupted']
+            self.ppl_keys = ['pregnant', 'alive', 'age']
             self.max_agents = 0     # maximum number of agents this analyzer tracks
             self.time = []
             self.trajectories = {}  # Store education trajectories
@@ -164,9 +164,11 @@ class education_recorder(ss.Analyzer):
             sim = self.sim
             females = sim.people.female.uids
             self.snapshots[str(sim.ti)] = {}
+            for key in self.edu_keys:
+                self.snapshots[str(sim.ti)][key] = sc.dcp(sim.people.edu[key][females])  # Take snapshot!
             for key in self.keys:
                 self.snapshots[str(sim.ti)][key] = sc.dcp(sim.people[key][females])  # Take snapshot!
-                self.max_agents = max(self.max_agents, len(females))
+            self.max_agents = max(self.max_agents, len(females))
             return
 
         def finalize(self, sim=None):
