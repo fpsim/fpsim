@@ -124,18 +124,6 @@ class People(ss.People):
 
         return ages, sexes
 
-    # def update_fertility_intent(self, uids):
-    #     if self.sim.fp_pars['fertility_intent'] is None:
-    #         return
-    #     self.update_fertility_intent_by_age(uids)
-    #     return
-    #
-    # def update_intent_to_use(self, uids):
-    #     if self.sim.fp_pars['intent_to_use'] is None:
-    #         return
-    #     self.update_intent_to_use_by_age(uids)
-    #     return
-
     def update_wealthquintile(self, uids):
         if self.sim.fp_pars['wealth_quintile'] is None:
             return
@@ -177,51 +165,6 @@ class People(ss.People):
                 for child in self.children[uids][mother_index]:
                     self.mothers[uids][child] = mother_index
         return
-
-    # def update_fertility_intent_by_age(self, uids=None):
-    #     """
-    #     In the absence of other factors, fertilty intent changes as a function of age
-    #     each year on a woman’s birthday
-    #     """
-    #     intent_pars = self.sim.fp_pars['fertility_intent']
-    #     if uids is None:
-    #         uids = self.alive.uids
-    #
-    #     f_uids = uids[(self.female[uids])]
-    #     f_ages = self.age[f_uids]
-    #     age_inds = fpu.digitize_ages_1yr(f_ages)
-    #     for age in intent_pars.keys():
-    #         aged_x_uids = f_uids[age_inds == age]
-    #         fi_cats = list(intent_pars[age].keys())  # all ages have the same intent categories
-    #         probs = np.array(list(intent_pars[age].values()))
-    #         ci = np.random.choice(fi_cats, aged_x_uids.size, p=probs)
-    #         self.categorical_intent[aged_x_uids] = ci
-    #
-    #     self.fertility_intent[(self.categorical_intent == "yes")] = True
-    #     self.fertility_intent[((self.categorical_intent == "no") |
-    #                                       (self.categorical_intent == "cannot"))] = False
-    #     return
-    #
-    # def update_intent_to_use_by_age(self, uids=None):
-    #     """
-    #     In the absence of other factors, intent to use contraception
-    #     can change as a function of age each year on a woman’s birthday.
-    #
-    #     This function is also used to initialise the State intent_to_use
-    #     """
-    #     intent_pars = self.sim.fp_pars['intent_to_use']
-    #     if uids is None:
-    #         uids = self.alive.uids
-    #
-    #     f_uids = uids[(self.female)]
-    #     f_ages = self.age[f_uids]
-    #     age_inds = fpu.digitize_ages_1yr(f_ages)
-    #
-    #     for age in intent_pars.keys():
-    #         f_aged_x_uids = f_uids[age_inds == age]  # indices of women of a given age
-    #         prob = intent_pars[age][1]  # Get the probability of having intent
-    #         self.intent_to_use[f_aged_x_uids] = fpu.n_binomial(prob, len(f_aged_x_uids))
-    #     return
 
     def update_method(self, uids, ti=None):
         """ Inputs: filtered people, only includes those for whom it's time to update """
