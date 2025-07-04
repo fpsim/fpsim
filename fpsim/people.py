@@ -25,7 +25,7 @@ class People(ss.People):
     Age pyramid is a 2d array with columns: age, male count, female count
     """
 
-    def __init__(self, n_agents=None, age_pyramid=None, empowerment_module=None, **kwargs):
+    def __init__(self, n_agents=None, age_pyramid=None, **kwargs):
 
         # Allow defaults to be dynamically set
         self.person_defaults = sc.dcp(fpd.person_defaults)
@@ -81,9 +81,6 @@ class People(ss.People):
         if fp_pars['use_partnership']:
             fpdmg.init_partnership_states(uids)
 
-        # Handle circular buffer to keep track of historical data
-        self.longitude = sc.objdict()
-
         # Store keys
         self._keys = [s.name for s in self.states.values()]
 
@@ -96,23 +93,6 @@ class People(ss.People):
         or 12-months ago as of the same date.
         """
         return (self.ti + 1) % self.tiperyear
-
-    def get_longitudinal_state(self, state_name):
-        """
-        Extract values of one of the longitudinal state/attributes (aka states with history)
-
-        Arguments:
-            state_name (str): the name of the state or attribute that we are extracting
-
-        Returns:
-            state_vals (np.arr):  array of the ppl.term values from one year prior to current timestep
-        """
-        # Calculate correct index for data 1 year prior
-        if len(self):
-            state_vals = self['longitude'][state_name][self.inds, self.yei]
-        else:
-            state_vals = np.empty((0,))
-        return state_vals
 
     def get_urban(self, n):
         """ Get initial distribution of urban """
@@ -893,27 +873,6 @@ class People(ss.People):
 
         return
 
-    # def step_empowerment(self, uids):
-    #     """
-    #     NOTE: by default this will not be used, but it will be used for analyses run from the kenya_empowerment repo
-    #     """
-    #     eligible_uids = (self.is_dhs_age[uids]).uids
-    #     # Women who just turned 15 get assigned a value based on empowerment probs
-    #     bday_15_uids = eligible_uids[
-    #         ((self.age[eligible_uids] > int(fpd.min_age)) &
-    #          (self.age[eligible_uids] <= int(fpd.min_age) +
-    #           (self.sim.fp_pars['timestep'] / fpd.mpy)))]
-    #     if len(bday_15_uids):
-    #         self.empowerment_module.update_empwr_states(bday_15_uids)
-    #     # Update states on her bday, based on coefficients
-    #     bday = self.birthday_filter(eligible_uids)
-    #     if len(bday):
-    #         # The empowerment module will update the empowerment states and intent to use
-    #         self.empowerment_module.update(bday)
-    #         # Update fertility intent on her bday, together with empowerment updates
-    #         self.update_fertility_intent_by_age(bday)
-    #     return
-
     def update_results(self):
         """Calculate and return the results for this specific time step"""
         super().update_results()
@@ -936,11 +895,6 @@ class People(ss.People):
 
         # Update wealth
         self._step_results_wq()
-
-        # # Update intent and empowerment if empowerment module is present
-        # if self.empowerment_module is not None:
-        #     self._step_results_intent()
-        #     self._step_results_empower()
 
         percent0to5 = (res.pp0to5[ti] / res.total_women_fecund[ti]) * 100
         percent6to11 = (res.pp6to11[ti] / res.total_women_fecund[ti]) * 100
@@ -1023,28 +977,6 @@ class People(ss.People):
     def cond_prob(a, b):
         """ Calculate conditional probability. This should be moved somewhere else. """
         return np.sum(a & b) / np.sum(b)
-
-    # def _step_results_empower(self):
-    #     res = self.sim.results
-    #     ti = self.sim.ti
-    #     res['paid_employment'][ti] = (np.sum(self.paid_employment & self.female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age))/ np.sum(self.female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age)))*100
-    #     res['decision_wages'][ti] = (np.sum(self.decision_wages & self.female & self.alive & (self.age>=fpd.min_age) & (self.age<fpd.max_age)) / np.sum(self.female & self.alive  & (self.age>=fpd.min_age) & (self.age<fpd.max_age)))*100
-    #     res['decide_spending_partner'][ti] = (np.sum(self.decide_spending_partner & self.female & self.alive) / (self.n_female))*100
-    #     res['buy_decision_major'][ti] = (np.sum(self.buy_decision_major & self.female & self.alive) / (self.n_female))*100
-    #     res['buy_decision_daily'][ti] = (np.sum(self.buy_decision_daily & self.female & self.alive) / (self.n_female))*100
-    #     res['buy_decision_clothes'][ti] = (np.sum(self.buy_decision_clothes & self.female & self.alive) / (self.n_female))*100
-    #     res['decision_health'][ti] = (np.sum(self.decision_health & self.female & self.alive) / (self.n_female))*100
-    #     res['has_savings'][ti] = (np.sum(self.has_savings & self.female & self.alive) / (self.n_female))*100
-    #     res['has_fin_knowl'][ti] = (np.sum(self.has_fin_knowl & self.female & self.alive) / (self.n_female))*100
-    #     res['has_fin_goals'][ti] = (np.sum(self.has_fin_goals & self.female & self.alive) / (self.n_female))*100
-    #
-    #     return
-    #
-    # def _step_results_intent(self):
-    #     """ Calculate percentage of living women who have intent to use contraception and intent to become pregnant in the next 12 months"""
-    #     self.sim.results['perc_contra_intent'][self.sim.ti] = (np.sum(self.alive & self.female & self.intent_to_use) / self.n_female) * 100
-    #     self.sim.results['perc_fertil_intent'][self.sim.ti] = (np.sum(self.alive & self.female & self.fertility_intent) / self.n_female) * 100
-    #     return
 
     def int_age(self, uids=None):
         ''' Return ages as an integer '''

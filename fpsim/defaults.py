@@ -222,23 +222,6 @@ nonscaling_array_results = sc.autolist(
     'wq5',
     'nonpostpartum',
     'proportion_short_interval',
-
-    # Empowerment and intent: all zero unless using an empowerment module
-    # Todo move these to the empowerment module results section
-    # 'perc_contra_intent',
-    # 'perc_fertil_intent',
-    # 'paid_employment',
-    # 'decision_wages',
-    # 'decide_spending_partner',
-    # "buy_decision_major",
-    # "buy_decision_daily",
-    # "buy_decision_clothes",
-    # "decision_health",
-    # "has_savings",
-    # "has_fin_knowl",
-    # "has_fin_goals",
-    # "financial_autonomy",
-    # "decision_making",
 )
 
 
@@ -291,20 +274,4 @@ to_annualize = {
     # 'new_users'       : 'new_users'
     }
 
-# People's states for which we will need circular buffers
-longitude_keys = [
-    'on_contra',
-    'intent_to_use',
-    'buy_decision_major',
-    'buy_decision_clothes',
-    'buy_decision_daily',
-    'has_fin_knowl',
-    'has_fin_goals',
-    'financial_autonomy',
-    'has_fin_goals',
-    'paid_employment',
-    'has_savings',
-    'decision_wages',
-    'decide_spending_partner',
-    'decision_health'
-]
+

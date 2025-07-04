@@ -166,7 +166,7 @@ class education_recorder(ss.Analyzer):
             self.snapshots[str(sim.ti)] = {}
             for key in self.edu_keys:
                 self.snapshots[str(sim.ti)][key] = sc.dcp(sim.people.edu[key][females])  # Take snapshot!
-            for key in self.keys:
+            for key in self.ppl_keys:
                 self.snapshots[str(sim.ti)][key] = sc.dcp(sim.people[key][females])  # Take snapshot!
             self.max_agents = max(self.max_agents, len(females))
             return
@@ -180,7 +180,7 @@ class education_recorder(ss.Analyzer):
             self.finalized = True
             # Process data so we can plot it easily
             self.time = np.array([key for key in self.snapshots.keys()], dtype=int)
-            for state in self.keys:
+            for state in self.edu_keys + self.ppl_keys:
                 self.trajectories[state] = np.full((len(self.time), self.max_agents), np.nan)
                 for ti, t in enumerate(self.time):
                     stop_idx = len(self.snapshots[t][state])

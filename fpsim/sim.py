@@ -437,15 +437,6 @@ class Sim(ss.Sim):
                         'cum_miscarriages_by_year':    'Miscarriages',
                         'cum_abortions_by_year':       'Abortions',
                         }
-                elif to_plot == 'intent':
-                    to_plot = {
-                        'perc_contra_intent':     'Intent to use contraception (%)',
-                        'perc_fertil_intent':     'Fertility intent (%)',
-                        }
-                elif to_plot == 'empowerment':
-                    to_plot = {
-                        'paid_employment':     'Paid employment (%)',
-                        }
                 elif to_plot == 'method':
                     to_plot = {
                         'method_usage':                 'Method usage'
