@@ -61,10 +61,6 @@ class People(ss.People):
         # Parameters on sexual and reproductive history
         self.fertile[uids] = fpu.n_binomial(1 - fp_pars['primary_infertility'], len(uids))
 
-        # # Fertility intent and intent to use - TODO, remove
-        # self.update_fertility_intent(uids)
-        # self.update_intent_to_use(uids)
-
         # Sexual activity
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
         self.fated_debut[uids] = fp_pars['debut_age']['ages'][fpu.n_multinomial(fp_pars['debut_age']['probs'], len(uids))]
