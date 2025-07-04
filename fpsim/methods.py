@@ -119,8 +119,6 @@ class ContraceptiveChoice(ss.Connector):
         """ Wrapper method to start contraception for a set of users """
         self.sim.people.on_contra[uids] = True
         self.sim.people.ever_used_contra[uids] = 1
-        # self.sim.people.intent_to_use[uids] = False
-        # Change the intent of women who have started to use a contraception method - ???
         return
 
     def init_methods(self, uids):
