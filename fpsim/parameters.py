@@ -70,9 +70,6 @@ default_sim_pars = {
 default_pars = {
     # Basic parameters
     'location':             None,   # CONTEXT-SPECIFIC ####
-    'contraception_module': None,
-    'education_module':   None,
-    'empowerment_module': None,
 
     # Settings - what aspects are being modeled - TODO, remove
     'use_partnership':      0,      #
@@ -133,12 +130,6 @@ default_pars = {
     'wealth_quintile':      None,
     'age_partnership':      None,
     'mcpr':                 None,
-
-    # Newer parameters, associated with empowerment, but that are not empowerment metrics
-    # NOTE, these will be None unless running analyses from the kenya_empowerment repo
-    'fertility_intent':     None,
-    'intent_to_use':        None,
-
     'region':               None,
     'track_children':   False,  # Whether to track children
     'regional':         None,

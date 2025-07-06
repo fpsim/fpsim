@@ -119,8 +119,6 @@ class ContraceptiveChoice(ss.Connector):
         """ Wrapper method to start contraception for a set of users """
         self.sim.people.on_contra[uids] = True
         self.sim.people.ever_used_contra[uids] = 1
-        self.sim.people.intent_to_use[uids] = False
-        # Change the intent of women who have started to use a contraception method - ???
         return
 
     def init_methods(self, uids):
@@ -366,7 +364,7 @@ class SimpleChoice(RandomChoice):
             if n_users:
                 if isinstance(dur_use, dict):
                     # NOTE: List of available/supported distros can be a property of the class?
-                    if not (dur_use['dist'] in ['lognormal_sps', 'gamma', 'llogis', 'exponential', 'weibull', 'unif']):
+                    if not (dur_use['dist'] in ['lognormal', 'lognormal_sps', 'gamma', 'llogis', 'exponential', 'weibull', 'unif']):
                         # bail early
                         raise ValueError(
                             f'Unrecognized distribution type for duration of use: {dur_use["dist"]}')
