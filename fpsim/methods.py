@@ -364,7 +364,7 @@ class SimpleChoice(RandomChoice):
             if n_users:
                 if isinstance(dur_use, dict):
                     # NOTE: List of available/supported distros can be a property of the class?
-                    if not (dur_use['dist'] in ['lognormal_sps', 'gamma', 'llogis', 'exponential', 'weibull', 'unif']):
+                    if not (dur_use['dist'] in ['lognormal', 'lognormal_sps', 'gamma', 'llogis', 'exponential', 'weibull', 'unif']):
                         # bail early
                         raise ValueError(
                             f'Unrecognized distribution type for duration of use: {dur_use["dist"]}')
