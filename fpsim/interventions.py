@@ -273,14 +273,14 @@ class update_methods(ss.Intervention):
         super().init_pre(sim)
         self._validate()
         par_name = None
-        if self.pars.p_use is not None and isinstance(sim.fp_pars['contraception_module'], fpm.SimpleChoice):
+        if self.pars.p_use is not None and isinstance(sim.connectors.contraception, fpm.SimpleChoice):
             par_name = 'p_use'
-        if self.pars.method_mix is not None and isinstance(sim.fp_pars['contraception_module'], fpm.SimpleChoice, ):
+        if self.pars.method_mix is not None and isinstance(sim.connectors.contraception, fpm.SimpleChoice):
             par_name = 'method_mix'
 
         if par_name is not None:
             errormsg = (
-                f"Contraceptive module  {type(sim.fp_pars['contraception_module'])} does not have `{par_name}` parameter. "
+                f"Contraceptive module  {type(sim.connectors.contraception)} does not have `{par_name}` parameter. "
                 f"For this type of module, the probability of contraceptive use depends on people attributes and can't be reset using this intervention.")
             print(errormsg)
 
