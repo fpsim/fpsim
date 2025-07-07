@@ -58,7 +58,7 @@ default_sim_pars = {
     'dt':                   1/12,      # The simulation timestep in 'unit's
     'unit':                 'year',   # The unit of time for the simulation
     'rand_seed':            1,      # Random seed
-    'verbose':              1,      # How much detail to print during the simulation
+    'verbose':              1/12,   # Verbosity level
     'use_aging':            True,   # Whether to age the population
     'interventions':        None,   # Interventions to apply
     'analyzers':            None,   # Analyzers to apply
@@ -70,9 +70,6 @@ default_sim_pars = {
 default_pars = {
     # Basic parameters
     'location':             None,   # CONTEXT-SPECIFIC ####
-    'contraception_module': None,
-    'education_module':   None,
-    'empowerment_module': None,
 
     # Settings - what aspects are being modeled - TODO, remove
     'use_partnership':      0,      #
@@ -133,12 +130,6 @@ default_pars = {
     'wealth_quintile':      None,
     'age_partnership':      None,
     'mcpr':                 None,
-
-    # Newer parameters, associated with empowerment, but that are not empowerment metrics
-    # NOTE, these will be None unless running analyses from the kenya_empowerment repo
-    'fertility_intent':     None,
-    'intent_to_use':        None,
-
     'region':               None,
     'track_children':   False,  # Whether to track children
     'regional':         None,

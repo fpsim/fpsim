@@ -115,21 +115,24 @@ class method_mix_by_age(ss.Analyzer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)   # Initialize the Analyzer object
         self.age_bins = [v[1] for v in fpd.method_age_map.values()]
-        self.results = None
+        self.mmba_results = None
         self.n_methods = None
         return
+
+    def step(self):
+        pass
 
     def finalize(self):
         sim = self.sim
         ppl = sim.people
-        n_methods = len(sim.contraception_module.methods)
-        self.results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
+        n_methods = len(sim.connectors.contraception.methods)
+        self.mmba_results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
         for key, (age_low, age_high) in fpd.method_age_map.items():
             match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
-            denom_conds = match_low_high * (ppl.sex == 0) * ppl.alive
+            denom_conds = match_low_high * (ppl.female == True) * ppl.alive
             for mn in range(n_methods):
                 num_conds = denom_conds * (ppl.method == mn)
-                self.results[key][mn] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
+                self.mmba_results[key][mn] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
         return
 
 class education_recorder(ss.Analyzer):
@@ -145,9 +148,9 @@ class education_recorder(ss.Analyzer):
         def __init__(self, **kwargs):
             super().__init__(**kwargs)   # Initialize the Analyzer object
             self.snapshots = sc.odict()  # Store the actual snapshots
-            self.keys = ['edu_objective', 'edu_attainment', 'edu_completed',
-                         'edu_dropout', 'edu_interrupted',
-                         'pregnant', 'alive', 'age']
+            self.edu_keys = ['objective', 'attainment', 'completed',
+                         'dropped', 'interrupted']
+            self.ppl_keys = ['pregnant', 'alive', 'age']
             self.max_agents = 0     # maximum number of agents this analyzer tracks
             self.time = []
             self.trajectories = {}  # Store education trajectories
@@ -161,9 +164,11 @@ class education_recorder(ss.Analyzer):
             sim = self.sim
             females = sim.people.female.uids
             self.snapshots[str(sim.ti)] = {}
-            for key in self.keys:
+            for key in self.edu_keys:
+                self.snapshots[str(sim.ti)][key] = sc.dcp(sim.people.edu[key][females])  # Take snapshot!
+            for key in self.ppl_keys:
                 self.snapshots[str(sim.ti)][key] = sc.dcp(sim.people[key][females])  # Take snapshot!
-                self.max_agents = max(self.max_agents, len(females))
+            self.max_agents = max(self.max_agents, len(females))
             return
 
         def finalize(self, sim=None):
@@ -175,7 +180,7 @@ class education_recorder(ss.Analyzer):
             self.finalized = True
             # Process data so we can plot it easily
             self.time = np.array([key for key in self.snapshots.keys()], dtype=int)
-            for state in self.keys:
+            for state in self.edu_keys + self.ppl_keys:
                 self.trajectories[state] = np.full((len(self.time), self.max_agents), np.nan)
                 for ti, t in enumerate(self.time):
                     stop_idx = len(self.snapshots[t][state])
@@ -991,6 +996,7 @@ class track_as(ss.Analyzer):
                 stillbirths_results_dict[f"stillbirths_{age_key}"])
 
         return
+
 
 class longitudinal_history(ss.Analyzer):
     """

@@ -49,8 +49,8 @@ def test_update_methods_eff():
     msim = fp.MultiSim(sims=simlist)
     msim.run(parallel=parallel)
 
-    low_eff_post_sim = msim.sims[0].people.contraception_module.methods[method].efficacy
-    high_eff_post_sim = msim.sims[1].people.contraception_module.methods[method].efficacy
+    low_eff_post_sim = msim.sims[0].connectors.contraception.methods[method].efficacy
+    high_eff_post_sim = msim.sims[1].connectors.contraception.methods[method].efficacy
 
     msg = f"Efficacies did not update correctly"
     assert (high_eff_post_sim==high_eff) & (low_eff_post_sim==low_eff) & (high_eff_post_sim > low_eff_post_sim), msg
@@ -85,9 +85,9 @@ def test_update_methods():
     msim.run(parallel=parallel, compute_stats=False)
 
     # Test that all the parameters were correctly updated
-    assert msim.sims[1].people.contraception_module.pars['p_use'] == p_use
-    assert msim.sims[1].people.contraception_module.methods['iud'].dur_use == 10
-    assert np.array_equal(msim.sims[1].people.contraception_module.pars['method_mix'], method_mix)
+    assert msim.sims[1].connectors.contraception.pars['p_use'].pars.p == p_use
+    assert msim.sims[1].connectors.contraception.methods['iud'].dur_use == 10
+    assert np.array_equal(msim.sims[1].connectors.contraception.pars['method_mix'], method_mix)
     ok('Parameters updated correctly')
 
     # Test that there are fewer births with the new method parameters
@@ -128,8 +128,8 @@ def test_scenarios():
     assert len(scens_repeat.msim.sims) == 2, f"Should be {2} sims in scens object but found {len(scens_repeat.msim.sims)}"
     ok('Scenarios repeated as expected')
 
-    eff1 = scens_repeat.msim.sims[0].people.contraception_module.methods['pill'].efficacy
-    eff2 = scens_repeat.msim.sims[1].people.contraception_module.methods['pill'].efficacy
+    eff1 = scens_repeat.msim.sims[0].connectors.contraception.methods['pill'].efficacy
+    eff2 = scens_repeat.msim.sims[1].connectors.contraception.methods['pill'].efficacy
     output['Repeated'] = scens_repeat
 
     for efficacy in [eff1, eff2]:
@@ -143,8 +143,8 @@ def test_scenarios():
 
     scens_scenario_list = run_scenario([scen1, scen2])
 
-    eff1 = scens_scenario_list.msim.sims[0].people.contraception_module.methods['pill'].efficacy
-    eff2 = scens_scenario_list.msim.sims[1].people.contraception_module.methods['pill'].efficacy
+    eff1 = scens_scenario_list.msim.sims[0].connectors.contraception.methods['pill'].efficacy
+    eff2 = scens_scenario_list.msim.sims[1].connectors.contraception.methods['pill'].efficacy
 
     output['Scenario_list'] = scens_scenario_list
 

@@ -104,14 +104,14 @@ def test_method_changes():
     choice.add_method(new_method)
     s1 = fp.Sim(location='test', contraception_module=choice)
     s1.run()
-    assert len(s1.fp_pars['contraception_module'].methods) == n+1, 'Method was not added'
+    assert len(s1.connectors.contraception.methods) == n+1, 'Method was not added'
     ok(f'Methods had expected length after addition ({n+1})')
 
     # Test remove method
     choice.remove_method('Injectables')
     s2 = fp.Sim(location='test', contraception_module=choice)
     s2.run()
-    assert len(s2.fp_pars['contraception_module'].methods) == n, 'Methods was not removed'
+    assert len(s2.connectors.contraception.methods) == n, 'Methods was not removed'
     ok(f'Methods have expected length after removal ({n})')
 
     # Test method efficacy
@@ -152,7 +152,6 @@ def test_validation():
     return pars
 
 
-
 def test_save_load():
     sc.heading('Testing saving and loading...')
     filename = 'tmp_pars.json'
@@ -165,25 +164,6 @@ def test_save_load():
     ok('pars.from_json() and pars.to_json() work')
 
     return pars
-
-
-def test_long_params():
-    sc.heading('Test longitudinal params')
-    # Define pars
-    pars = dict(location='senegal')
-
-    # Make and run sim
-    s = fp.Sim(pars=pars)
-    s.run()
-
-    expected_rows = len(s.people)
-    expected_cols = s.fp_pars['tiperyear']
-
-    for key in s.people.longitude.keys():
-        df = s.people.longitude[key]
-        assert df.shape == (expected_rows, expected_cols), f"Expected {key} to have dimensions ({expected_rows}, {expected_cols}), but got {df.shape}"
-        curr_year_index = s.ti % s.tiperyear
-        assert (df[:, curr_year_index] == s.people[key]).all(), f"Expected column {curr_year_index} to have same longitudinal data as {key} but it does not."
 
 
 def test_register_custom_location():
@@ -217,12 +197,11 @@ def test_register_custom_location():
 
 if __name__ == '__main__':
 
-    sc.options(backend=None) # Turn on interactive plots
+    sc.options(backend=None)  # Turn on interactive plots
     with sc.timer():
         null    = test_null(do_plot=do_plot)
         scale   = test_scale()
         meths   = test_method_changes()
         pars    = test_validation()
         p2      = test_save_load()
-        long    = test_long_params()
         custom_loc = test_register_custom_location()

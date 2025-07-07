@@ -91,7 +91,7 @@ class Sim(ss.Sim):
     def __init__(self, pars={}, location=None, track_children=False, regional=False,
                  contraception_module=None, empowerment_module=None, education_module=None,
                  label=None, people=None, demographics=None, diseases=None, networks=None,
-                 interventions=None, analyzers=None, connectors=None, copy_inputs=True, data=None, **kwargs):
+                 interventions=None, analyzers=None, connectors=None, copy_inputs=True, **kwargs):
 
         # Four sources of par values in decreasing order of priority:
         # 1-2. kwargs == args (if multiple definitions, raise exception)
@@ -103,7 +103,7 @@ class Sim(ss.Sim):
         # separate into sim and fp-specific pars
 
         args = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
-                    interventions=interventions, analyzers=analyzers, connectors=connectors)
+                    interventions=interventions, analyzers=analyzers)
         args = {key:val for key,val in args.items() if val is not None} # Remove None inputs
 
         fp_args = dict(location=location, track_children=track_children, regional=regional)
@@ -133,7 +133,15 @@ class Sim(ss.Sim):
         # override the default sim pars with user-provided values
         sim_pars = sc.mergedicts(default_sim_pars, user_sim_pars, _copy=copy_inputs)
         # new_sim_pars.update(input_pars) # update with input pars to override defaults
-        super().__init__(sim_pars)  # Initialize and set the parameters as attributes
+
+        # Process modules by adding them as Starsim connectors
+        contraception_module = contraception_module or sc.dcp(fpm.StandardChoice(location=location))
+        education_module = education_module or sc.dcp(fped.Education(location=location))
+        connectors = sc.tolist(connectors) + [contraception_module, education_module]
+        if empowerment_module is not None:
+            connectors += sc.tolist(empowerment_module)
+
+        super().__init__(sim_pars, connectors=connectors)  # Initialize and set the parameters as attributes
 
         # get the default fp pars
         if copy_inputs:
@@ -150,11 +158,6 @@ class Sim(ss.Sim):
         # Add a new parameter to pars that determines the size of the circular buffer
         unit = self.pars.unit if self.pars.unit != "" else 'year'
         self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
-
-        # Add modules, also initialized later
-        self.fp_pars['contraception_module'] = contraception_module or sc.dcp(fpm.StandardChoice(location=location))
-        self.fp_pars['education_module'] = education_module or sc.dcp(fped.Education(location=location))
-        self.fp_pars['empowerment_module'] = empowerment_module
 
         return
 
@@ -197,18 +200,15 @@ class Sim(ss.Sim):
 
         return sim_pars, fp_pars
 
-
     def init(self, force=False):
         """ Fully initialize the Sim with people and result storage"""
         if force or not self.initialized:
             fpu.set_seed(self.pars['rand_seed'])
             if self.pars.people is None:
-                self.pars.people = fpppl.People(n_agents=self.pars.n_agents, age_pyramid=self.fp_pars['age_pyramid'], contraception_module=self.fp_pars['contraception_module'])
-
+                self.pars.people = fpppl.People(n_agents=self.pars.n_agents, age_pyramid=self.fp_pars['age_pyramid'])
             super().init(force=force)
 
         return self
-
 
     def init_results(self):
         """
@@ -233,7 +233,7 @@ class Sim(ss.Sim):
         for key in fpd.dict_annual_results:
             if key == 'method_usage':
                 self.results[key] = ss.Results(module=self)
-                for i, method in enumerate(self.people.contraception_module.methods):
+                for i, method in enumerate(self.connectors.contraception.methods):
                     self.results[key] += ss.Result(method, label=method, **annual_kw)
 
         # Store age-specific fertility rates
@@ -243,9 +243,6 @@ class Sim(ss.Sim):
             self.results += ss.Result(f"tfr_{key}", label=key, **annual_kw)
 
         return
-
-
-
 
     def update_mortality(self):
         """
@@ -267,7 +264,6 @@ class Sim(ss.Sim):
             self.fp_pars['mortality_probs'][key2] = val
 
         return
-
 
     def start_step(self):
         super().start_step()
@@ -299,7 +295,7 @@ class Sim(ss.Sim):
         self.results['cum_short_intervals_by_year'] = np.cumsum(self.results['short_intervals_over_year'])
         self.results['cum_secondary_births_by_year'] = np.cumsum(self.results['secondary_births_over_year'])
         self.results['cum_pregnancies_by_year'] = np.cumsum(self.results['pregnancies_over_year'])
-
+        return
 
     def store_postpartum(self):
         """
@@ -440,15 +436,6 @@ class Sim(ss.Sim):
                         'cum_stillbirths_by_year':     'Stillbirths',
                         'cum_miscarriages_by_year':    'Miscarriages',
                         'cum_abortions_by_year':       'Abortions',
-                        }
-                elif to_plot == 'intent':
-                    to_plot = {
-                        'perc_contra_intent':     'Intent to use contraception (%)',
-                        'perc_fertil_intent':     'Fertility intent (%)',
-                        }
-                elif to_plot == 'empowerment':
-                    to_plot = {
-                        'paid_employment':     'Paid employment (%)',
                         }
                 elif to_plot == 'method':
                     to_plot = {
