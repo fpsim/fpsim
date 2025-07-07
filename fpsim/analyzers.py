@@ -997,6 +997,7 @@ class track_as(ss.Analyzer):
 
         return
 
+
 class longitudinal_history(ss.Analyzer):
     """
     Analyzer for tracking longitudinal history of individuals. The longitude object acts as a circular buffer,
