@@ -11,6 +11,7 @@ Idea:
 import numpy as np
 import sciris as sc
 import starsim as ss
+from scipy.special import expit
 from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs
@@ -458,6 +459,6 @@ class StandardChoice(SimpleChoice):
         rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
 
         # Finish
-        prob_use = 1 / (1+np.exp(-rhs))
+        prob_use = expit(rhs)
 
         return prob_use
