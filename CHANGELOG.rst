@@ -8,6 +8,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 3.0.2 (2025-07-02)
+---------------------------
+- Fixes issue 567 (bug in method_mix_by_age_analyzer)
+- Fixes issue 568 (reduces default verbosity of Sim)
+- *GitHub info*: PR `574 <https://github.com/fpsim/fpsim/pull/574>`_
+
+
 Version 3.0.1 (2025-07-01)
 ---------------------------
 Adds a plotting class that can be used to create plots typically used for calibration and analyses. Both manual and automatic

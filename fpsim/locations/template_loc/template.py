@@ -3,11 +3,7 @@ This is a template configuration file for an FPsim model specific to a location.
 Users should update values marked as USER-EDITABLE to match the context
 they are modeling.
 """
-<<<<<<< rc2.0-methodtime-plotting
 import os
-=======
-
->>>>>>> main
 import numpy as np
 import sciris as sc
 from fpsim import defaults as fpd
@@ -25,14 +21,9 @@ def scalar_pars():
 
 def filenames():
     """ Data files for use with calibration, etc -- not needed for running a sim """
-<<<<<<< rc2.0-methodtime-plotting
     base_dir = os.path.dirname(os.path.abspath(__file__))
     files = {}
     files['base'] = os.path.join(base_dir, 'data')
-=======
-    files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'data' # Location-specific data directory
->>>>>>> main
     files['basic_wb'] = 'basic_wb.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT
     files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
