@@ -293,44 +293,44 @@ class contra_hmb(ss.Intervention):
 
 # ---------------- TEST ----------------
 
-if __name__ == '__main__':
+# if __name__ == '__main__':
 
-    mens = Menstruation()
+#     mens = Menstruation()
 
-    from education import Education
-    objective_data = pd.read_csv("data/edu_objective.csv")
-    attainment_data = pd.read_csv("data/edu_initialization.csv")
-    edu = Education(objective_data=objective_data, attainment_data=attainment_data)
+#     from education import Education
+#     objective_data = pd.read_csv("data/edu_objective.csv")
+#     attainment_data = pd.read_csv("data/edu_initialization.csv")
+#     edu = Education(objective_data=objective_data, attainment_data=attainment_data)
 
-    sim = fp.Sim(location='kenya', connectors=[mens, edu], interventions=contra_hmb, start=2020, stop=2030)
-    sim.run(verbose=1/12)
+#     sim = fp.Sim(location='kenya', connectors=[mens, edu], interventions=contra_hmb, start=2020, stop=2030)
+#     sim.run(verbose=1/12)
 
-    # Plot education
-    import pylab as pl
-    t = sim.results.education.timevec
-    fig, axes = pl.subplots(2, 3, figsize=(20, 12))
-    axes = axes.ravel()
+#     # Plot education
+#     import pylab as pl
+#     t = sim.results.education.timevec
+#     fig, axes = pl.subplots(2, 3, figsize=(20, 12))
+#     axes = axes.ravel()
 
-    res_to_plot = ['mean_attainment', 'mean_objective', 'prop_completed', 'prop_in_school', 'prop_dropped']
-    sc.options(fontsize=16)
+#     res_to_plot = ['mean_attainment', 'mean_objective', 'prop_completed', 'prop_in_school', 'prop_dropped']
+#     sc.options(fontsize=16)
 
-    for i, res in enumerate(res_to_plot):
-        ax = axes[i]
-        r0 = sim.results.education[res]
-        ax.plot(t, r0)
-        ax.set_title(res)
+#     for i, res in enumerate(res_to_plot):
+#         ax = axes[i]
+#         r0 = sim.results.education[res]
+#         ax.plot(t, r0)
+#         ax.set_title(res)
 
-    all_props = [sim.results.education.prop_in_school,
-                 sim.results.education.prop_completed,
-                 sim.results.education.prop_dropped]
+#     all_props = [sim.results.education.prop_in_school,
+#                  sim.results.education.prop_completed,
+#                  sim.results.education.prop_dropped]
 
-    ax = axes[-1]
-    ax.stackplot(t, all_props, labels=['In school', 'Completed', 'Dropped'], alpha=0.8)
-    ax.set_title('All AGYW')
-    ax.legend()
+#     ax = axes[-1]
+#     ax.stackplot(t, all_props, labels=['In school', 'Completed', 'Dropped'], alpha=0.8)
+#     ax.set_title('All AGYW')
+#     ax.legend()
 
-    sc.figlayout()
-    pl.show()
+#     sc.figlayout()
+#     pl.show()
 
 
 
