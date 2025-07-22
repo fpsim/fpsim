@@ -278,7 +278,7 @@ class contra_hmb(ss.Intervention):
     def step(self):
         if sim.t.now() == self.pars.year:
             # Print message
-            print(f'Changing IUDs!')
+            print('Changing IUDs!')
 
             # Get women who accept the intervention
             elig_uids = self.check_eligibility()
@@ -297,9 +297,9 @@ if __name__ == '__main__':
 
     mens = Menstruation()
 
-    from fp.education import Education
-    objective_data = pd.read_csv(f"data/edu_objective.csv")
-    attainment_data = pd.read_csv(f"data/edu_initialization.csv")
+    from education import Education
+    objective_data = pd.read_csv("data/edu_objective.csv")
+    attainment_data = pd.read_csv("data/edu_initialization.csv")
     edu = Education(objective_data=objective_data, attainment_data=attainment_data)
 
     sim = fp.Sim(location='kenya', connectors=[mens, edu], interventions=contra_hmb, start=2020, stop=2030)
