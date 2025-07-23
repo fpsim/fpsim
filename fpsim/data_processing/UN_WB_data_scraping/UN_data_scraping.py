@@ -247,20 +247,13 @@ if get_mortality_prob:
 
     # Load female data from scraped data
     df = pd.read_csv(f'{filesdir}/{female_mort_stem}.csv')
-<<<<<<< HEAD
     ###df_female = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
-=======
->>>>>>> origin/main
     df_female = df.loc[(df['Location']==country) & (df['Time']==endYear)]
     df_female = df_female.filter(["AgeGrpStart", "qx"])
     df_female.rename(columns={'AgeGrpStart': 'age', 'qx': 'female'}, inplace=True)
 
     # Load male data from scraped data
     df = pd.read_csv(f'{filesdir}/{male_mort_stem}.csv')
-<<<<<<< HEAD
-    ###df_male = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
-=======
->>>>>>> origin/main
     df_male = df.loc[(df['Location']==country) & (df['Time']==endYear)]
     df_male = df_male.filter(["AgeGrpStart", "qx"])
     df_male.rename(columns={'AgeGrpStart': 'age', 'qx': 'male'}, inplace=True)
@@ -281,10 +274,7 @@ if get_pop:
 
     # Load female data from scraped data
     df = pd.read_csv(f'{filesdir}/{pop_stem}.csv')
-<<<<<<< HEAD
     ###filtered_df = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
-=======
->>>>>>> origin/main
     filtered_df = df.loc[(df['Location']==country) & (df['Time']==endYear)]
     filtered_df = filtered_df.filter(["AgeGrpStart", "PopMale", "PopFemale"])
     filtered_df.rename(columns={'AgeGrpStart': 'age', 'PopMale': 'male', 'PopFemale': 'female'}, inplace=True)
