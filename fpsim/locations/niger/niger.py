@@ -1,7 +1,9 @@
 """
-Set the parameters for a location-specific FPsim model.
+This is a template configuration file for an FPsim model specific to a location.
+Users should update values marked as USER-EDITABLE to match the context
+they are modeling.
 """
-
+import os
 import numpy as np
 import sciris as sc
 from fpsim import defaults as fpd
@@ -11,20 +13,21 @@ import fpsim.locations.data_utils as fpld
 
 def scalar_pars():
     scalar_pars = {
-        'location':             'niger',
-        'postpartum_dur':       23,
+        'location':             'niger', # <<< USER-EDITABLE: Adjust name of location
+        'postpartum_dur':       23,     # <<< USER-EDITABLE: Adjust/override any parameters that are defined in fpsim/defaults.py
     }
     return scalar_pars
 
 
 def filenames():
     """ Data files for use with calibration, etc -- not needed for running a sim """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'data'
-    files['basic_wb'] = 'basic_wb.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
-    files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
+    files['base'] = os.path.join(base_dir, 'data')
+    files['basic_wb'] = 'basic_wb.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT
+    files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
+    files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN
     files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
     files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2014 or PMA 2022
     files['spacing'] = 'birth_spacing_dhs.csv' # From DHS
@@ -44,9 +47,8 @@ def exposure_age():
     increase factor number and residual likelihood of avoiding live birth (mostly abortion,
     also miscarriage), will decrease factor number
     """
-    # Previously set to all 1's
     exposure_correction_age = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
-                                        [1, 1, 1,  1 ,   .4, 1.3, 1.5 ,.8, .8, .5, .3, .5, .5]])
+                                        [1, 1, 1,  1 ,   1,  1,  1 , 1,  1,  1,   1,  1, 1]])  # <<< USER-EDITABLE: Can be modified for calibration
 
     exposure_age_interp = fpld.data2interp(exposure_correction_age, fpd.spline_preg_ages)
     return exposure_age_interp
@@ -58,15 +60,31 @@ def exposure_parity():
     or live birth by parity.
     """
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
-                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])
+                                           [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])  # <<< USER-EDITABLE: Can be modified for calibration
     exposure_parity_interp = fpld.data2interp(exposure_correction_parity, fpd.spline_parities)
 
     return exposure_parity_interp
 
 
+# %% Contraceptive methods
+def barriers():
+    """ Reasons for nonuse -- taken from DHS. """
+
+    barriers = sc.odict({
+        'No need': 40.3,
+        'Opposition': 22.7,
+        'Knowledge': 3.5,
+        'Access': 13.4,
+        'Health': 32.5,
+    })
+
+    barriers[:] /= barriers[:].sum()  # Ensure it adds to 1
+    return barriers
+
+
 # %% Make and validate parameters
 
-def make_pars(location='niger', seed=None):
+def make_pars(location='niger', seed=None):  # <<< USER-EDITABLE: Change name of location
     """
     Take all parameters and construct into a dictionary
     """
@@ -74,12 +92,12 @@ def make_pars(location='niger', seed=None):
     # Scalar parameters and filenames
     pars = scalar_pars()
     pars['abortion_prob'], pars['twins_prob'] = fpld.scalar_probs(location)
-    #pars.update(fpld.bf_stats(location)) # TO DO did not exist for Niger
+    pars.update(fpld.bf_stats(location))
     pars['filenames'] = filenames()
 
     # Demographics and pregnancy outcome
     pars['age_pyramid'] = fpld.age_pyramid(location)
-    pars['age_mortality'] = fpld.age_mortality(location, data_year=2010) # Uses UN morality_trend.csv and morality_prob.csv
+    pars['age_mortality'] = fpld.age_mortality(location, data_year=2010)
     pars['urban_prop'] = fpld.urban_proportion(location)
     pars['maternal_mortality'] = fpld.maternal_mortality(location)
     pars['infant_mortality'] = fpld.infant_mortality(location)
@@ -100,6 +118,7 @@ def make_pars(location='niger', seed=None):
     pars['spacing_pref'] = fpld.birth_spacing_pref(location)
 
     # Contraceptive methods
+    pars['barriers'] = barriers()
     pars['mcpr'] = fpld.mcpr(location)
 
     # Demographics: partnership and wealth status
