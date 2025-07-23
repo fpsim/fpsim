@@ -79,7 +79,7 @@ age_parity_table <- svytable(~age + parity, design) %>%
 # -------------------------------
 
 # Create country-based output directory if it doesn't exist
-output_dir <- file.path(output_dir, country)
+output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

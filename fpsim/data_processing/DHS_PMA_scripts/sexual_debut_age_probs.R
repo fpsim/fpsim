@@ -46,7 +46,7 @@ if (!isTRUE(all.equal(prob_sum, 1, tolerance = 1e-6))) {
 # -------------------------------
 # 4. Save Output
 # -------------------------------
-output_dir <- file.path(output_dir, country)
+output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 write_csv(age_probs %>% dplyr::select(age, probs), file.path(output_dir, "debut_age.csv"))

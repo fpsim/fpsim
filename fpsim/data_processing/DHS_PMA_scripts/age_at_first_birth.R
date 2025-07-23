@@ -23,9 +23,9 @@ installed_packages <- rownames(installed.packages())
 
 for (pkg in required_packages) {
   if (!pkg %in% installed_packages) {
-    install.packages(pkg)
+    install.packages(pkg, repos = "https://cloud.r-project.org/")
   }
-  library(pkg, character.only = TRUE)
+  suppressPackageStartupMessages(library(pkg, character.only = TRUE))
 }
 
 # -------------------------------
@@ -54,7 +54,7 @@ afb_table <- dhs_data %>%
   dplyr::select(wt, age = v012, afb)
 
 # Create country-based output directory if it doesn't exist
-output_dir <- file.path(output_dir, country)
+output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

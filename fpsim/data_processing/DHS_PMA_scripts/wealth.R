@@ -75,7 +75,7 @@ table_wealth <- as.data.frame(svytable(~v190, svydes)) %>%
 # -------------------------------
 # 5. Save Output
 # -------------------------------
-output_dir <- file.path(output_dir, country)
+output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 write_csv(table_wealth, file.path(output_dir, "wealth.csv"))

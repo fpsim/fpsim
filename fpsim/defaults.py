@@ -75,7 +75,7 @@ def get_location(location, printmsg=False):
         return location
 
     # Define valid locations
-    valid_country_locs = ['senegal', 'kenya', 'ethiopia']
+    valid_country_locs = ['senegal', 'kenya', 'ethiopia', 'cotedivoire']
     if location not in valid_country_locs:
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)

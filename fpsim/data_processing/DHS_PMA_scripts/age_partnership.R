@@ -21,9 +21,9 @@ installed_packages <- rownames(installed.packages())
 
 for (pkg in required_packages) {
   if (!pkg %in% installed_packages) {
-    install.packages(pkg)
+    install.packages(pkg, repos = "https://cloud.r-project.org/")
   }
-  library(pkg, character.only = TRUE)
+  suppressPackageStartupMessages(library(pkg, character.only = TRUE))
 }
 
 # -------------------------------
@@ -48,7 +48,7 @@ table_partnership <- as.data.frame(svytable(~age_partner, svydesign_obj)) %>%
 # -------------------------------
 # 5. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(output_dir, country)
+output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

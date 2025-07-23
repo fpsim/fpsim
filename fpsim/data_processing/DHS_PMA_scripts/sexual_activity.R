@@ -71,7 +71,7 @@ if (!50 %in% activity_summary$age) {
 # -------------------------------
 # 4. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(output_dir, country)
+output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 write.csv(activity_summary, file.path(output_dir, "sexually_active.csv"), row.names = FALSE)
