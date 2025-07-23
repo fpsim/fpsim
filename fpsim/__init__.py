@@ -13,4 +13,8 @@ from .calibration import *
 from .scenarios import *
 from .education import *
 from .plotting import *
+<<<<<<< HEAD
 from .arrays import *
+=======
+
+>>>>>>> f654431c (Committing original __init__.py and methods.py files.)
