@@ -179,10 +179,10 @@ coef_fpsim <- coef_res %>%
 # -------------------------------
 
 # Create country-based output directory if it doesn't exist
-output_dir <- file.path(output_dir, country)
+output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
 
-# Save CSV to ./<country>/afb.table.csv
+# Save CSV to ./<country>/data/method_time_coefficients.csv
 write.csv(coef_fpsim, file.path(output_dir, "method_time_coefficients.csv"), row.names = F)

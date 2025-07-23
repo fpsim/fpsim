@@ -181,16 +181,47 @@ table.edu.20 %>%
 # Data available for Burkina Faso, Cote d'Ivoire, DRC, Ghana, India, Indonesia, Kenya, Niger, Nigeria, and Uganda
 
 # Load multiple datasets and add a column wave to each of them
-data1 <- read_dta(pma1_path)
-data1 <- data1 %>% mutate(wave = 1, RE_ID = as.character(RE_ID), county = as.character(county))
+#data1 <- read_dta(pma1_path)
+#data1 <- data1 %>% mutate(wave = 1, RE_ID = as.character(RE_ID), country = as.character(country), doi_corrected = as.POSIXct(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"))
+data1 <- read_dta(pma1_path) %>%
+  mutate(
+    wave = 1,
+    RE_ID = as.character(RE_ID),
+    country = as.character(country),
+    doi_corrected = parse_date_time(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
+    FQdoi_corrected = parse_date_time(FQdoi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
+    consent_obtained = as.double(consent_obtained)
+  )
 
-data2 <- read_dta(pma2_path)
-data2 <- data2 %>% mutate(wave = 2, RE_ID = as.character(RE_ID), county = as.character(county))
+#data2 <- read_dta(pma2_path)
+#data2 <- data2 %>% mutate(wave = 2, RE_ID = as.character(RE_ID), country = as.character(country), doi_corrected = as.POSIXct(doi_corrected,  orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"))
+data2 <- read_dta(pma2_path) %>%
+  mutate(
+    wave = 2,
+    RE_ID = as.character(RE_ID),
+    country = as.character(country),
+    doi_corrected = parse_date_time(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
+    FQdoi_corrected = parse_date_time(FQdoi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
+    consent_obtained = as.double(consent_obtained)
+  )
 
-data3 <- read_dta(pma3_path)
-data3 <- data3 %>% mutate(wave = 3, RE_ID = as.character(doi_corrected), county = as.character(county))
+#data3 <- read_dta(pma3_path)
+#data3 <- data3 %>% mutate(wave = 3, RE_ID = as.character(RE_ID), country = as.character(country), doi_corrected = as.POSIXct(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"))
+data3 <- read_dta(pma3_path) %>%
+  mutate(
+    wave = 3,
+    RE_ID = as.character(RE_ID),
+    country = as.character(country),
+    doi_corrected = parse_date_time(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
+    FQdoi_corrected = parse_date_time(FQdoi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
+    consent_obtained = as.double(consent_obtained)
+  )
 
-data.raw.pma <- bind_rows(data1, data2, data3)
+# TODO: Add if statement if 4 files available
+#data4 <- read_dta(pma4_path)
+#data4 <- data4 %>% mutate(wave = 4, RE_ID = as.character(RE_ID), country = as.character(country), doi_corrected = as.POSIXct(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"))
+
+data.raw.pma <- bind_rows(data1, data2, data3) #, data4)
 
 
 # recode data for school and birth timing
@@ -282,7 +313,7 @@ stop.school$parity <- as.factor(stop.school$parity)
 # 4. Save Output to Country Directory
 # -------------------------------
 
-output_dir <- file.path(output_dir, country)
+output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

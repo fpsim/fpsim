@@ -45,7 +45,7 @@ urban_table <- as.data.frame(svymean(~urban, svydesign_obj)) %>% rename(urban.se
 # -------------------------------
 # 5. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(output_dir, country)
+output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

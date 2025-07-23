@@ -32,7 +32,7 @@ required_packages <- c(
 )
 installed <- rownames(installed.packages())
 for (pkg in required_packages) {
-  if (!pkg %in% installed) install.packages(pkg)
+  if (!pkg %in% installed) install.packages(pkg, repos = "https://cloud.r-project.org/")
   library(pkg, character.only = TRUE)
 }
 options(survey.lonely.psu = "adjust")
@@ -108,7 +108,7 @@ standard.function <- function(svychoice) {
 # -------------------------------
 # 5. Run and Save Models
 # -------------------------------
-output_dir <- file.path(output_dir, country)
+output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
 
 if (model_type %in% c("simple", "both")) {

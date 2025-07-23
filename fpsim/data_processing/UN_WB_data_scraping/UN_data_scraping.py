@@ -42,10 +42,14 @@ logger = logging.getLogger(__name__)
 # Kenya ID = 404
 # Ethiopia ID = 231
 # India ID = 356
+# Côte d'Ivoire (CI,CIV) ID = 384, country = 'Côte d\'Ivoire'
+# Niger ID = 562
+# Nigeria ID = 566 
+# Pakistan = 586 
 
 # Country name and location id(s) (per UN Data Portal); User must update these two variables prior to running.
-country = 'india'
-location_id = 356
+country = 'Niger'
+location_id = 562
 
 # Default global variables
 startYear = 1950            # Specifies the start year of projection data retrieved (e.g. data from '1960'). Used for cpr, asfr, and mortality trend
@@ -61,6 +65,7 @@ get_pop = True  # Population pyramid (5-year age groups for both male/female sex
 
 # Authorization token from the UN Data Population Division
 auth_token = os.getenv('UN_AUTH_TOKEN')
+print(auth_token)
 if not auth_token:
     raise ValueError("No authorization token provided. Please set UN_AUTH_TOKEN environment variable.")
 headers = {"Authorization": f"Bearer {auth_token}"}
@@ -73,16 +78,19 @@ male_mort_stem = 'WPP2024_Life_Table_Complete_Medium_Male_1950-2023'
 #####################################
 
 # Store local directories as variables
-thisdir = Path(sc.thisdir())
-filesdir = thisdir / 'scraped_data'
+#thisdir = Path(sc.thisdir())
+country_dir = '../../locations/' + country + '/data/' #relative path to country
+filesdir = country_dir + '/scraped_data/'
 
 # API Base URLs
 base_url = "https://population.un.org/dataportalapi/api/v1"
 wpp_base_url = "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/CSV_FILES/"
 
 # If country folder doesn't already exist, create it (location in which created data files will be stored)
-country_dir = filesdir / country
-country_dir.mkdir(parents=True, exist_ok=True)
+if not os.path.exists(f'{country_dir}'):
+    os.makedirs(f'{country_dir}')
+if not os.path.exists(f'{filesdir}'):
+    os.makedirs(f'{filesdir}')
 
 
 def get_UN_data(target):
@@ -104,7 +112,7 @@ def get_UN_data(target):
     # Loop until there are new pages with data
     while j['nextPage'] is not None:
         # call the API for the next page
-        next_page = f'{target}?pageNumber={j['pageNumber']+1}&pageSize=100' # NOTE: Currently using j['nextPage'] as target has issue; resolving with UN Pop Division
+        next_page = f'{target}?pageNumber={j["pageNumber"]+1}&pageSize=100' # NOTE: Currently using j['nextPage'] as target has issue; resolving with UN Pop Division
         response = requests.get(next_page, headers=headers)
         if response.status_code != 200:
             raise ValueError(f"Request failed: {response.status_code} for URL: {target}")
@@ -236,13 +244,15 @@ if get_mortality_prob:
 
     # Load female data from scraped data
     df = pd.read_csv(f'{filesdir}/{female_mort_stem}.csv')
-    df_female = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
+    ###df_female = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
+    df_female = df.loc[(df['Location']==country) & (df['Time']==endYear)]
     df_female = df_female.filter(["AgeGrpStart", "qx"])
     df_female.rename(columns={'AgeGrpStart': 'age', 'qx': 'female'}, inplace=True)
 
     # Load male data from scraped data
     df = pd.read_csv(f'{filesdir}/{male_mort_stem}.csv')
-    df_male = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
+    ###df_male = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
+    df_male = df.loc[(df['Location']==country) & (df['Time']==endYear)]
     df_male = df_male.filter(["AgeGrpStart", "qx"])
     df_male.rename(columns={'AgeGrpStart': 'age', 'qx': 'male'}, inplace=True)
 
@@ -262,7 +272,8 @@ if get_pop:
 
     # Load female data from scraped data
     df = pd.read_csv(f'{filesdir}/{pop_stem}.csv')
-    filtered_df = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
+    ###filtered_df = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
+    filtered_df = df.loc[(df['Location']==country) & (df['Time']==endYear)]
     filtered_df = filtered_df.filter(["AgeGrpStart", "PopMale", "PopFemale"])
     filtered_df.rename(columns={'AgeGrpStart': 'age', 'PopMale': 'male', 'PopFemale': 'female'}, inplace=True)
     filtered_df[['male', 'female']] = (filtered_df[['male', 'female']] * 1000).astype(int)
