@@ -1,5 +1,5 @@
 """
-4/25/25, Emily Driano
+Updated 7/1/25, Emily Driano
 
 This script can be run to pull country data from the UN Data Portal and UN World Population Prospects (WPP). If the 'get'
 options below are set to True, this script will utilize the UN Data Portal API to scrape the data - and create files for:
@@ -9,13 +9,16 @@ options below are set to True, this script will utilize the UN Data Portal API t
 - age-specific fertility rate (asfr.csv)
 - age-specific population pyramid, by 5-year age groups (age_pyramid.csv)
 
-The setup required is to set the country name (all lower-case) and either the location ID or ISO2 code (both of which
- can be found in the file country_codes.csv, located in the data_processing/data_scraping folder). The script will store
- any created files in a location directory for each respective country, in data_processing/data_scraping/scraped_data/{country_name}.
+The setup required is to set the country name and either the location ID or ISO2 code (all of which
+ can be found in the file country_codes.csv, located in the data_processing/data_scraping folder). Please note that the
+ 'country' parameter MUST match the country in the 'name' column in country_codes.csv; otherwise, the mortality_prob and
+ population pyramid will not be able to be generated.
+
+ The script will store any created files in a location directory for each respective country, in data_processing/data_scraping/scraped_data/{country_name}.
  To use the UN Data Portal API, you must also email population@un.org requesting the authorization token to access the
- Data Portal data endpoints. Note that the standard format is: Bearer xyz (with the space between the word Bearer and the token itself).
- Set the 'xyz' portion of the token (excluding 'Bearer ') as an environment variable 'UN_AUTH_TOKEN'. This will then be
- read in by the script when calling the UN Portal endpoints.
+ Data Portal data endpoints. They will provide you with a token in the following format: Bearer xyz (with the space between
+ the word Bearer and the token itself). Set ONLY  the 'xyz' portion of the token (excluding 'Bearer ') as an environment
+ variable 'UN_AUTH_TOKEN'. This will then be read in by the script when calling the UN Portal endpoints.
 
 As the WPP files are location-agnostic and can be reused for other contexts, they are stored as CSVs in data_scraping/scraped_data.
 
@@ -244,14 +247,20 @@ if get_mortality_prob:
 
     # Load female data from scraped data
     df = pd.read_csv(f'{filesdir}/{female_mort_stem}.csv')
+<<<<<<< HEAD
     ###df_female = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
+=======
+>>>>>>> origin/main
     df_female = df.loc[(df['Location']==country) & (df['Time']==endYear)]
     df_female = df_female.filter(["AgeGrpStart", "qx"])
     df_female.rename(columns={'AgeGrpStart': 'age', 'qx': 'female'}, inplace=True)
 
     # Load male data from scraped data
     df = pd.read_csv(f'{filesdir}/{male_mort_stem}.csv')
+<<<<<<< HEAD
     ###df_male = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
+=======
+>>>>>>> origin/main
     df_male = df.loc[(df['Location']==country) & (df['Time']==endYear)]
     df_male = df_male.filter(["AgeGrpStart", "qx"])
     df_male.rename(columns={'AgeGrpStart': 'age', 'qx': 'male'}, inplace=True)
@@ -272,7 +281,10 @@ if get_pop:
 
     # Load female data from scraped data
     df = pd.read_csv(f'{filesdir}/{pop_stem}.csv')
+<<<<<<< HEAD
     ###filtered_df = df.loc[(df['Location']==country.capitalize()) & (df['Time']==endYear)]
+=======
+>>>>>>> origin/main
     filtered_df = df.loc[(df['Location']==country) & (df['Time']==endYear)]
     filtered_df = filtered_df.filter(["AgeGrpStart", "PopMale", "PopFemale"])
     filtered_df.rename(columns={'AgeGrpStart': 'age', 'PopMale': 'male', 'PopFemale': 'female'}, inplace=True)

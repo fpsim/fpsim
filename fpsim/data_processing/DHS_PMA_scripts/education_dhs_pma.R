@@ -45,6 +45,7 @@ for (pkg in required_packages) {
 
 # -- Load all the data -- #
 data.raw <- read_dta(dhs_path)
+data.raw.h <- read_dta("") # path to household DHS dataset here
 
 # -- Make new columns with names that are more readable -- #
 data <- data.raw %>%
@@ -61,6 +62,17 @@ svydesign_obj_1 = svydesign(
   weights = data$v005 / 1000000,
   data = data
 )
+
+# -- preprocess household data
+data.h <- data.raw.h %>%
+  select(starts_with("hv103"), starts_with("hv105"), starts_with("hv104"), starts_with("hv109"), 
+         starts_with("hhid"), starts_with("hv001"), starts_with("hv023"), starts_with("hv005")) %>%
+  gather(var, val, -c(hhid, hv001, hv023, hv005)) %>% mutate(num = substr(var,7,9), var = substr(var,1,5)) %>% spread(var, val) %>%
+  filter(hv103 == 1 & hv105 %in% c(6:14) & hv104 == 2) %>% # de facto hh member, age 6-15, female
+  rename(edu = hv109, age = hv105) %>%
+  mutate(parity = 0) # assume girls under age 15 are parity 0
+svydesign_obj_hh = svydesign(id = data.h$hv001, strata=data.h$hv023, weights = data.h$hv005/1000000, data=data.h)
+
 
 # -- Preprocess education data -- #
 table.edu.mean <-
@@ -169,6 +181,36 @@ table.edu.20 %>%
   )) +
   ylab("Percent of women") +
   theme_bw(base_size = 13)
+
+# -- Create a table of the distribution of women by age and parity
+# For age 15+
+table.edu.ind <- as.data.frame(svytable(~age+edu+parity, svydesign_obj_1))
+
+# For women who have a birth before age 15, create matrix for parity 1+ and age<15 using birth calendar
+data.edu <- data %>%
+  select(caseid, v001, v023, v005, v212, v011, age = v012, edu = v133, starts_with("b3"), starts_with("bord")) %>%
+  filter(v212 < 15) %>% # age at first birth under 15
+  gather(var, val, -caseid, -v212, -v011, -age, -edu, -v001, -v023, -v005) %>% separate(var, c("var", "order")) %>% spread(var, val) %>% # one row per pregnancy
+  mutate(age_at_birth = floor((b3 - v011)/12)) %>%
+  filter(age_at_birth < 15) %>% # look at birth under age 15
+  mutate(edu_at_birth = pmin(age_at_birth - 6, edu)) # assume school starts at age 6, women continue education from then until age at birth or until their actual education level, whichever is less
+svydesign_obj_3 = svydesign(id = data.edu$v001, strata=data.edu$v023, weights = data.edu$v005/1000000, data=data.edu)
+table.edu.young <- as.data.frame(svytable(~age_at_birth+edu_at_birth+bord, svydesign_obj_3)) %>%
+  rename(age = age_at_birth, edu = edu_at_birth, parity = bord)
+
+# For 0 parity under age 15, create data frame for education for girls age 6-15 from household survey
+table.edu.hh <- as.data.frame(svytable(~age+edu+parity, svydesign_obj_hh)) 
+
+# combine age group tables
+table.edu <- table.edu.ind %>% 
+  bind_rows(table.edu.young) %>%
+  bind_rows(table.edu.hh) %>%
+  mutate(edu = as.numeric(as.character(edu)),
+         age = as.numeric(as.character(age))) %>%
+  group_by(age, parity) %>% arrange(-edu) %>%
+  mutate(total = sum(Freq), sum = cumsum(Freq), cum.percent = sum/total) %>% # percentage with each year of education in the age/parity group
+  select(-total, -sum, -Freq)
+
 
 # -------------------------------
 # 3. Load and Process PMA Data
@@ -321,4 +363,5 @@ if (!dir.exists(output_dir)) {
 write.csv(table.edu.inital, file.path(output_dir, "edu_initialization.csv"), row.names = FALSE)
 write.csv(table.edu.20, file.path(output_dir, "edu_objective.csv"), row.names = FALSE)
 write.csv(stop.school, file.path(output_dir, "edu_stop.csv"), row.names = FALSE)
+write.csv(table.edu, file.path(output_dir, "education.csv"), row.names = F)
 

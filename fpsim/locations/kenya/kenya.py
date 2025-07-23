@@ -1,9 +1,8 @@
 """
 Set the parameters for a location-specific FPsim model.
 """
-
+import os
 import numpy as np
-import sciris as sc
 from fpsim import defaults as fpd
 import fpsim.locations.data_utils as fpld
 
@@ -19,8 +18,9 @@ def scalar_pars():
 
 def filenames():
     """ Data files for use with calibration, etc -- not needed for running a sim """
+    base_dir = os.path.dirname(os.path.abspath(__file__))
     files = {}
-    files['base'] = sc.thisdir(aspath=True) / 'data'
+    files['base'] = os.path.join(base_dir, 'data')
     files['basic_wb'] = 'basic_wb.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
     files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
     files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030

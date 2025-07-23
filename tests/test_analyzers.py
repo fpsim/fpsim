@@ -4,6 +4,8 @@ Run tests on the analyzers, including calibration.
 
 import sciris as sc
 import fpsim as fp
+import starsim as ss
+import pytest
 
 
 do_plot = 1
@@ -19,7 +21,7 @@ def ok(string):
 def make_analyzer(analyzer):
     ''' Create a sim with a single analyzer '''
     sim = fp.Sim(location='test', analyzers=analyzer).run()
-    an = sim.get_analyzer()
+    an = sim.analyzers[0]
     return an
 
 
@@ -32,7 +34,8 @@ def test_calibration(n_trials=3):
     )
 
     # Calculate calibration
-    pars = fp.pars('test', n_agents=20, start_year=1960, end_year=1980)
+    pars= dict(location='test', n_agents=20, start=1960, stop=1980)
+
     calib = fp.Calibration(pars=pars, weights=dict(pop_size=100))
     calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=2)
     before,after = calib.summarize()
@@ -76,6 +79,39 @@ def test_age_pyramids():
         ap.plot()
 
     return ap
+
+def test_longitudinal():
+    sc.heading('Testing longitudinal history analyzer...')
+    keys=['age']
+    lh = fp.longitudinal_history(keys)
+
+    sim = fp.Sim(analyzers=lh)
+    sim.init()
+    sim.run()
+
+    # The difference between the largest and smallest age should for each person be equal to (1 year - 1/timestepsperyear)
+    # Based on the default params, the value in slot 0 is the max and in slot 1 is the min. There will be some rounding error
+    # so we use pytest.approx to compare.
+    max_age = sim.analyzers.longitudinal_history.age[ss.uids(1), 0]
+    min_age = sim.analyzers.longitudinal_history.age[ss.uids(1), 1]
+    assert max_age - min_age == pytest.approx(1 - 1/sim.fp_pars['tiperyear'], rel=1e-2), 'Expected age difference to be equal to 1 year minus the timestep size'
+
+    return
+
+def test_method_mix_by_age():
+    sc.heading('Testing method mix by age analyzer...')
+
+    # Create a sim with the method mix by age analyzer
+    mmba = fp.method_mix_by_age()
+    sim = fp.Sim(analyzers=[mmba])
+    sim.init()
+    sim.run()
+
+    # Check that the analyzer has been populated
+    assert sim.analyzers.method_mix_by_age.mmba_results is not None, 'Method mix by age results should not be empty'
+
+    return
+
 
 
 if __name__ == '__main__':

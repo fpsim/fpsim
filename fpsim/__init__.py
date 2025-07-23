@@ -13,4 +13,4 @@ from .calibration import *
 from .scenarios import *
 from .education import *
 from .plotting import *
-
+from .arrays import *

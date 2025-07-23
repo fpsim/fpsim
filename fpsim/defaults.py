@@ -5,7 +5,7 @@ Define defaults for use throughout FPsim
 import numpy as np
 import sciris as sc
 import starsim as ss
-
+import fpsim.arrays as fpa
 
 #%% Global defaults
 useSI          = True
@@ -20,40 +20,40 @@ location_registry = {}  # Registry for external custom locations
 
 
 #%% Defaults when creating a new person
-class State:
-    def __init__(self, name, val=None, dtype=None, ncols=None):
-        """
-        Initialize a state
-        Args:
-            name (str): name of state
-            val (list, array, float, or str): value(s) to populate array with
-            dtype (dtype): datatype. Inferred from val if not provided.
-            ncols (int): number of cols, needed for 2d states like birth_ages (n_agents * n_births)
-        """
-        self.name = name
-        self.val = val
-        self.dtype = dtype
-        self.ncols = ncols
-
-    @property
-    def ndim(self):
-        return 1 if self.ncols is None else 2
-
-    def new(self, n, vals=None):
-        """
-        Define an empty array with the correct value and data type
-        """
-        if vals is None: vals = self.val  # Use default if none provided
-
-        if isinstance(vals, np.ndarray):
-            assert len(vals) == n
-            arr = vals
-        else:
-            if self.dtype is None: dtype = object if isinstance(vals, str) else None
-            else: dtype = self.dtype
-            shape = n if self.ncols is None else (n, self.ncols)
-            arr = np.full(shape=shape, fill_value=vals, dtype=dtype)
-        return arr
+# class State:
+#     def __init__(self, name, val=None, dtype=None, ncols=None):
+#         """
+#         Initialize a state
+#         Args:
+#             name (str): name of state
+#             val (list, array, float, or str): value(s) to populate array with
+#             dtype (dtype): datatype. Inferred from val if not provided.
+#             ncols (int): number of cols, needed for 2d states like birth_ages (n_agents * n_births)
+#         """
+#         self.name = name
+#         self.val = val
+#         self.dtype = dtype
+#         self.ncols = ncols
+#
+#     @property
+#     def ndim(self):
+#         return 1 if self.ncols is None else 2
+#
+#     def new(self, n, vals=None):
+#         """
+#         Define an empty array with the correct value and data type
+#         """
+#         if vals is None: vals = self.val  # Use default if none provided
+#
+#         if isinstance(vals, np.ndarray):
+#             assert len(vals) == n
+#             arr = vals
+#         else:
+#             if self.dtype is None: dtype = object if isinstance(vals, str) else None
+#             else: dtype = self.dtype
+#             shape = n if self.ncols is None else (n, self.ncols)
+#             arr = np.full(shape=shape, fill_value=vals, dtype=dtype)
+#         return arr
 
 
 # Parse locations
@@ -97,100 +97,91 @@ def register_location(name, location_ref):
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
 # or updated during the course of a simulation.
 person_defaults = [
-    # Basic demographics
-    State('uid',                -1, int),
-    State('age',                0, float),
-    State('age_by_group',       0, float),
-    State('sex',                0, bool),
-    State('alive',              1, bool),
-
     # Contraception
-    State('on_contra',          0, bool),  # whether she's on contraception
-    State('method',             0, int),  # Which method to use. 0 used for those on no method
-    State('ti_contra',          0, int),  # time point at which to set method
-    State('barrier',            0, int),
-    State('ever_used_contra',   0, bool),  # Ever been on contraception. 0 for never having used
+    ss.State('on_contra', default=False),  # whether she's on contraception
+    ss.FloatArr('method', default=0),  # Which method to use. 0 used for those on no method
+    ss.FloatArr('ti_contra', default=0),  # time point at which to set method
+    ss.FloatArr('barrier', default=0),
+    ss.State('ever_used_contra', default=False),  # Ever been on contraception. 0 for never having used
 
     # Sexual and reproductive history
-    State('parity',             0, int),
-    State('pregnant',           0, bool),
-    State('fertile',            0, bool),
-    State('sexually_active',    0, bool),
-    State('sexual_debut',       0, bool),
-    State('sexual_debut_age',   -1, float),
-    State('fated_debut',        -1, float),
-    State('first_birth_age',    -1, float),
-    State('lactating',          0, bool),
-    State('gestation',          0, int),
-    State('preg_dur',           0, int),
-    State('stillbirth',         0, int),
-    State('miscarriage',        0, int),
-    State('abortion',           0, int),
-    State('pregnancies',        0, int),
-    State('months_inactive',    0, int),
-    State('postpartum',         0, bool),
-    State('mothers',            -1, int),
-    State('short_interval',     0, int),
-    State('secondary_birth',    0, int),
-    State('postpartum_dur',     0, int),
-    State('lam',                0, bool),
-    State('breastfeed_dur',     0, int),
-    State('breastfeed_dur_total', 0, int),
+    ss.FloatArr('parity', default=0),
+    ss.State('pregnant', default=False),
+    ss.State('fertile', default=False),
+    ss.State('sexually_active', default=False),
+    ss.State('sexual_debut', default=False),
+    ss.FloatArr('sexual_debut_age', default=-1),
+    ss.FloatArr('fated_debut', default=-1),
+    ss.FloatArr('first_birth_age', default=-1),
+    ss.State('lactating', default=False),
+    ss.FloatArr('gestation', default=0),
+    ss.FloatArr('preg_dur', default=0),
+    ss.FloatArr('stillbirth', default=0),
+    ss.FloatArr('miscarriage', default=0),
+    ss.FloatArr('abortion', default=0),
+    ss.FloatArr('pregnancies', default=0),
+    ss.FloatArr('months_inactive', default=0),
+    ss.State('postpartum', default=False),
+    ss.FloatArr('mothers', default=-1),
+    ss.FloatArr('short_interval', default=0),
+    ss.FloatArr('secondary_birth', default=0), # no functions ever set this value. Used in empowerment?
+    ss.FloatArr('postpartum_dur', default=0),
+    ss.State('lam', default=False),
+    ss.FloatArr('breastfeed_dur', default=0),
+    ss.FloatArr('breastfeed_dur_total', default=0),
 
     # Fecundity
-    State('remainder_months',   0, int),
-    State('personal_fecundity', 0, int),
+    ss.FloatArr('remainder_months', default=0),
+    ss.FloatArr('personal_fecundity', default=0),
 
     # Empowerment - states will remain at these values if use_empowerment is False
-    # NOTE: to use empowerment metrics, please refer to the kenya_empowerment repo
-    # These states will be refactored into a separate module as part of the V3 release.
-    State('paid_employment',    0, bool),
-    State('decision_wages',     0, bool),
-    State('decision_health',    0, bool),
-    State('decision_purchase',  0, bool),
-    State('buy_decision_major', 0, bool),       # whether she has decision making ability over major purchases
-    State('buy_decision_daily', 0, bool),       # whether she has decision making over daily household purchases
-    State('buy_decision_clothes', 0, bool),     # whether she has decision making over clothing purchases
-    State('decide_spending_partner', 0, bool),  # whether she has decision makking over her partner's wages
-    State('has_savings', 0, bool),              # whether she has savings
-    State('has_fin_knowl', 0, bool),            # whether she knows where to get financial info
-    State('has_fin_goals', 0, bool),            # whether she has financial goals
-    State('sexual_autonomy',    0, bool),       # whether she has ability to refuse sex
+    ss.State('paid_employment', default=False),
+    ss.State('decision_wages', default=False),
+    ss.State('decision_health', default=False),
+    ss.State('decision_purchase', default=False),
+    ss.State('buy_decision_major', default=False),  # whether she has decision making ability over major purchases
+    ss.State('buy_decision_daily', default=False),  # whether she has decision making over daily household purchases
+    ss.State('buy_decision_clothes', default=False),  # whether she has decision making over clothing purchases
+    ss.State('decide_spending_partner', default=False),  # whether she has decision makking over her partner's wages
+    ss.State('has_savings', default=False),  # whether she has savings
+    ss.State('has_fin_knowl', default=False),  # whether she knows where to get financial info
+    ss.State('has_fin_goals', default=False),  # whether she has financial goals
+    ss.State('sexual_autonomy', default=False),  # whether she has ability to refuse sex
 
     # Composite empowerment attributes
-    State('financial_autonomy',    0, float),
-    State('decision_making', 0, float),
+    ss.FloatArr('financial_autonomy', default=0),
+    ss.FloatArr('decision_making', default=0),
 
     # Empowerment - fertility intent
-    State('fertility_intent', 0, bool),
-    State('categorical_intent', "cannot", "<U6"),
-    State('intent_to_use', 0, bool),            # for women not on contraception, whether she has intent to use contraception
+    ss.State('fertility_intent', default=False),
+    ss.Arr('categorical_intent', dtype="<U6",
+           default="no"),  # default listed as "cannot", but its overridden with "no" during init
+    ss.State('intent_to_use', default=False),
 
     # Partnership information -- states will remain at these values if use_partnership is False
-    State('partnered',    0, bool),
-    State('partnership_age', -1, float),
+    ss.State('partnered', default=False),
+    ss.FloatArr('partnership_age', default=-1),
 
     # Socioeconomic
-    State('urban', 1, bool),
-    State('wealthquintile', 3, int),       # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
+    ss.State('urban', default=True),
+    ss.FloatArr('wealthquintile', default=3), # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
 
     # Education - states will remain at these values if use_education is False
-    State('edu_objective',      0, float),
-    State('edu_attainment',     0, float),
-    State('edu_dropout',        0, bool),
-    State('edu_interrupted',    0, bool),
-    State('edu_completed',      0, bool),
-    State('edu_started',        0, bool),
+    ss.FloatArr('edu_objective', default=0),
+    ss.FloatArr('edu_attainment', default=0),
+    ss.State('edu_dropout', default=False),
+    ss.State('edu_interrupted', default=False),
+    ss.State('edu_completed', default=False),
+    ss.State('edu_started', default=False),
 
-    State('child_inds',         -1,     int,    ncols=max_parity),
-    State('birth_ages',         np.nan, float,  ncols=max_parity),  # Ages at time of live births
-    State('stillborn_ages',     np.nan, float,  ncols=max_parity),  # Ages at time of stillbirths
-    State('miscarriage_ages',   np.nan, float,  ncols=max_parity),  # Ages at time of miscarriages
-    State('abortion_ages',      np.nan, float,  ncols=max_parity),  #  Ages at time of abortions
-    # State('short_interval_ages', np.nan, float, ncols=max_parity)  # Ages of agents at short birth interval
+    # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
+    # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and
+    # pregnancy outcomes.
+    fpa.TwoDimensionalArr('birth_ages', ncols=max_parity),  # Ages at time of live births
+    fpa.TwoDimensionalArr('stillborn_ages', ncols=max_parity),  # Ages at time of stillbirths
+    fpa.TwoDimensionalArr('miscarriage_ages', ncols=max_parity),  # Ages at time of miscarriages
+    fpa.TwoDimensionalArr('abortion_ages', ncols=max_parity),  # Ages at time of abortions
 ]
-
-person_defaults = ss.ndict(person_defaults)
 
 # Postpartum keys to months
 postpartum_map = {
@@ -247,20 +238,29 @@ method_youth_age_map = {
     '>25': [26, max_age+1]
 }
 
-array_results = sc.autolist(
-    't',
-    'pop_size_months',
-    'pregnancies',
+scaling_array_results = sc.autolist(
     'births',
     'deaths',
     'stillbirths',
     'miscarriages',
     'abortions',
+    'short_intervals',
+    'secondary_births',
+    'pregnancies',
     'total_births',
     'maternal_deaths',
     'infant_deaths',
     'cum_maternal_deaths',
     'cum_infant_deaths',
+    'total_women_fecund',
+    'method_failures',
+)
+
+for age_group in age_bin_map.keys():
+    scaling_array_results += 'total_births_' + age_group
+    scaling_array_results += 'total_women_' + age_group
+
+nonscaling_array_results = sc.autolist(
     'on_methods_mcpr',
     'no_methods_mcpr',
     'on_methods_cpr',
@@ -288,45 +288,41 @@ array_results = sc.autolist(
     'wq4',
     'wq5',
     'nonpostpartum',
-    'total_women_fecund',
-    'method_failures',
-    'birthday_fraction',
-    'short_intervals',
-    'secondary_births',
     'proportion_short_interval',
+
     # Education
     'edu_objective',
     'edu_attainment',
+
     # Empowerment and intent: all zero unless using an empowerment module
-    'perc_contra_intent',
-    'perc_fertil_intent',
-    'paid_employment',
-    'decision_wages',
-    'decide_spending_partner',
-    "buy_decision_major", 
-    "buy_decision_daily", 
-    "buy_decision_clothes", 
-    "decision_health",
-    "has_savings", 
-    "has_fin_knowl", 
-    "has_fin_goals",
-    "financial_autonomy", 
-    "decision_making",
-    )
+    # Todo move these to the empowerment module results section
+    # 'perc_contra_intent',
+    # 'perc_fertil_intent',
+    # 'paid_employment',
+    # 'decision_wages',
+    # 'decide_spending_partner',
+    # "buy_decision_major",
+    # "buy_decision_daily",
+    # "buy_decision_clothes",
+    # "decision_health",
+    # "has_savings",
+    # "has_fin_knowl",
+    # "has_fin_goals",
+    # "financial_autonomy",
+    # "decision_making",
+)
 
 
-for age_group in age_bin_map.keys():
-    array_results += 'total_births_' + age_group
-    array_results += 'total_women_' + age_group
-
-list_results = sc.autolist(
+# list results are results that aren't recorded each time step or have variable lengths.
+# These will NOT be scaled by default!
+float_annual_results = sc.autolist(
+    'pop_size',
     'tfr_years',
     'tfr_rates',
-    'pop_size',
     'mcpr_by_year',
     'cpr_by_year',
-    'contra_access_over_year',
-    'new_users_over_year',
+    # 'contra_access_over_year', # these all seem to be empowerment related? By year values can be generated by resampling the related per-timestep results
+    # 'new_users_over_year',
     'method_failures_over_year',
     'infant_deaths_over_year',
     'total_births_over_year',
@@ -337,12 +333,15 @@ list_results = sc.autolist(
     'pregnancies_over_year',
     'short_intervals_over_year',
     'secondary_births_over_year',
-    'risky_pregs_over_year',
+    # 'risky_pregs_over_year',
     'maternal_deaths_over_year',
     'proportion_short_interval_by_year',
     'mmr',
     'imr',
     'birthday_fraction',
+)
+
+dict_annual_results = sc.autolist(
     'method_usage',
 )
 
@@ -359,8 +358,9 @@ to_annualize = {
     'secondary_births': 'secondary_births',
     'maternal_deaths' : 'maternal_deaths',
     'pregnancies'     : 'pregnancies',
-    'contra_access'   : 'contra_access',
-    'new_users'       : 'new_users'}
+    # 'contra_access'   : 'contra_access', # do these get moved?
+    # 'new_users'       : 'new_users'
+    }
 
 # People's states for which we will need circular buffers
 longitude_keys = [
