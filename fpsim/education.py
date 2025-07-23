@@ -4,9 +4,9 @@ Methods and functions related to education
 
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
-from . import utils as fpu
-from . import defaults as fpd
-from . import locations as fplocs
+from fpsim import utils as fpu
+from fpsim import defaults as fpd
+from fpsim import locations as fplocs
 
 
 

@@ -12,6 +12,7 @@ from . import defaults as fpd
 from . import demographics as fpdmg
 from . import education as fped
 from . import methods as fpm
+from . import menstruation as fpmens
 import starsim as ss
 
 # Specify all externally visible things this file defines
@@ -44,6 +45,10 @@ class People(ss.People):
         self.empowerment_module = empowerment_module
         self.education_module = education_module
         self.contraception_module = contraception_module
+        
+        # Menstruation
+        self.menstruation = fpmens.Menstruation()
+        self.add_connector(self.menstruation_module)
 
         self.binom = ss.bernoulli(p=0.5)
 
@@ -99,7 +104,10 @@ class People(ss.People):
 
         if self.education_module is not None:
             self.education_module.initialize(self, uids)
+            
 
+
+        
         # Partnership
         if fp_pars['use_partnership']:
             fpdmg.init_partnership_states(uids)
