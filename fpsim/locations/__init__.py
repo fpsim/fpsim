@@ -2,7 +2,7 @@ from .kenya import kenya
 from .senegal import senegal
 from .ethiopia import ethiopia
 from .cotedivoire import cotedivoire
-from . import cotedivoire
+from .niger import niger
 from .ethiopia.regions import addis_ababa
 from .ethiopia.regions import afar
 from .ethiopia.regions import amhara
