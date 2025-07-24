@@ -50,10 +50,19 @@ varlist <- c("v000", #country-survey code
              "v025") #urban/rural
 
 # Read and process IR data
-data.raw <- read_dta(dhs_path, col_select = any_of(varlist))
+# Filter if region and region_code are defined
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path,
+                       col_select = any_of(c(varlist, region_variable))) 
+  dhs_data <- dhs_data %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path,
+                       col_select = any_of(varlist)) 
+}
 
 # -- Survival analysis data organization -- #
-data.surv <- data.raw %>%
+data.surv <- dhs_data %>%
   mutate(cc = str_sub(v000,1,2),
          wt = v005/1000000,
          urban = ifelse(v025 == 1, 1, 0),
@@ -179,7 +188,12 @@ coef_fpsim <- coef_res %>%
 # -------------------------------
 
 # Create country-based output directory if it doesn't exist
-output_dir <- file.path(output_dir, country, 'data')
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
+
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

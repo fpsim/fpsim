@@ -28,10 +28,14 @@ for (pkg in required_packages) {
 # -------------------------------
 # 2. Load and Clean DHS Data
 # -------------------------------
-dhs <- read_dta(dhs_path)
-
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path) %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path) 
+}
 # Calculate postpartum months and filter for recent births
-dhs.pp <- dhs %>%
+dhs.pp <- dhs_data %>%
   mutate(b19_01 = v008 - b3_01) %>% # have to calculate months pp
   filter(b19_01 < 24 & b9_01 == 0) %>% # keep if most recent birth is under 24 months, living with mother
   mutate(breastmilk = ifelse(m4_1 == 95, T, F), # breastfeeding https://dhsprogram.com/data/Guide-to-DHS-Statistics/Breastfeeding_and_Complementary_Feeding.htm#Calculation
@@ -67,8 +71,16 @@ dhs.pp.results <- dhs.pp %>%
 # -------------------------------
 # 4. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(output_dir, country, 'data')
-if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+# Create country-based output directory if it doesn't exist
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
+
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
 
 # Sexual Activity Output: Percentage by month postpartum
   # method 1 is using duration of postpartum abstinence with months pp, and method 2 is using sexually active in last 4 weeks with months pp

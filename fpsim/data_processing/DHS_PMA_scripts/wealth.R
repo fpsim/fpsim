@@ -25,7 +25,15 @@ for (pkg in required_packages) {
 # -------------------------------
 # 2. Load and Clean Data
 # -------------------------------
-data <- read_dta(dhs_path) %>%
+# Filter if region and region_code are defined
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path) %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path) 
+}
+
+data <- dhs_data %>%
   mutate(
     age = v012,
     parity = v220,
@@ -75,7 +83,15 @@ table_wealth <- as.data.frame(svytable(~v190, svydes)) %>%
 # -------------------------------
 # 5. Save Output
 # -------------------------------
-output_dir <- file.path(output_dir, country, 'data')
-if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+# Create country-based output directory if it doesn't exist
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
+
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
 
 write_csv(table_wealth, file.path(output_dir, "wealth.csv"))
