@@ -29,13 +29,10 @@ for (pkg in required_packages) {
 # -------------------------------
 # Filter if region and region_code are defined
 if (exists("region_variable") && exists("region") && exists("region_code")) {
-  dhs_data <- read_dta(dhs_path,
-                       col_select = c("v005", "caseid", "v212", "v201", "v012", region_variable)) 
-  dhs_data <- dhs_data %>% 
+  dhs_data <- read_dta(dhs_path) %>% 
     filter(.data[[region_variable]] == region_code)
 } else {
-  dhs_data <- read_dta(dhs_path,
-                       col_select = c("v005", "caseid", "v212", "v201", "v012")) 
+  dhs_data <- read_dta(dhs_path) 
 }
 
 data <- dhs_data %>%
