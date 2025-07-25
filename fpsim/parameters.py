@@ -167,7 +167,7 @@ def pars(location=None, rand_seed=None, **kwargs):
     if rand_seed is None:
         rand_seed = default_sim_pars['rand_seed']
 
-   """
+    """
     # Pull out values needed for the location-specific make_pars functions
     loc_kwargs = dict(seed=pars['seed'])
 

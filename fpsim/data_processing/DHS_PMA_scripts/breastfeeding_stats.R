@@ -16,7 +16,7 @@ rm(list = ls())
 source("./config.R")
 
 # Install and load required packages
-required_packages <- c("tidyverse", "survey", "fitdistrplus", "truncdist", "readstata13")
+required_packages <- c("tidyverse", "withr", "survey", "fitdistrplus", "truncdist", "readstata13")
 installed_packages <- rownames(installed.packages())
 
 for (pkg in required_packages) {
@@ -31,10 +31,17 @@ for (pkg in required_packages) {
 # -------------------------------
 
 # Read DHS individual recode file (must include m4_* and b19_* for breastfeeding analysis)
-dat <- read.dta13(dhs_path)
+# Filter if region and region_code are defined
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path) %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path) 
+}
+
 
 # Select and process relevant variables
-dat_nonmiss <- dat %>%
+dat_nonmiss <- dhs_data %>%
   # select categories of breastfeeding, months breastfed, age of baby in months, and survey variables
   dplyr::select(starts_with("m4_"), starts_with("b19_"), v005, v021, v023, caseid) %>%
   # make long format with a row for each birth
@@ -44,7 +51,7 @@ dat_nonmiss <- dat %>%
          still_bf = ifelse(m4 == "still breastfeeding", 1, 0), # create indicator for still breastfeeding
          age_grp = floor(age_months / 2) * 2) %>% # 2 month age bins (it's too noisy with individual age bins)
   filter(age_months < 36 & !is.na(m4))  # include babies less than 3 years old and non-missing data
-
+print(dat_nonmiss)
 # -------------------------------
 # 3. Calculate Survey-Weighted BF Proportions
 # -------------------------------
@@ -56,14 +63,14 @@ summary_table <- svyby(~still_bf, ~age_grp,
   arrange(age_grp) %>% mutate(p_stop = lag(still_bf) - still_bf,  # estimate of stopping probability, basically the PDF
                               counts = ifelse(p_stop<0, 0, round(p_stop*10000))) %>% # create pseudo-counts to simulate a sample size, change and negatives to 0
   filter(!is.na(p_stop)) # remove month 0
-
+print(summary_table)
 # -------------------------------
 # 4. Fit Truncated Normal Distribution
 # -------------------------------
 
 # Create a vector of repeated ages
 ages_rep <- rep(summary_table$age_grp, summary_table$counts)
-
+print(ages_rep)
 # Fit truncated normal distribution
 fit_tnorm <- fitdist(ages_rep, "norm", start = list(mean = mean(ages_rep), sd = sd(ages_rep)))
 summary(fit_tnorm)
@@ -71,11 +78,16 @@ summary(fit_tnorm)
 # -------------------------------
 # 5. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(output_dir, country, 'data')
+# Create country-based output directory if it doesn't exist
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
+
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
-
 estimates <- data.frame(
   parameter = names(fit_tnorm$estimate),
   value = as.numeric(fit_tnorm$estimate)

@@ -7,6 +7,7 @@ import numpy as np
 import sciris as sc
 from fpsim import defaults as fpd
 import fpsim.locations.data_utils as fpld
+import os
 
 # %% Housekeeping
 

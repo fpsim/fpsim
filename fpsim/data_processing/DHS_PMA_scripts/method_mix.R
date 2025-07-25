@@ -27,7 +27,18 @@ for (pkg in required_packages) {
 # -------------------------------
 # 2. Load and Clean Data
 # -------------------------------
-data <- read_dta(dhs_path) %>%
+# Filter if region and region_code are defined
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path,
+                       col_select = c("v005", "caseid", "v212", "v201", "v012", region_variable)) 
+  dhs_data <- dhs_data %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path,
+                       col_select = c("v005", "caseid", "v212", "v201", "v012")) 
+}
+
+data <- dhs_data %>%
   mutate(
     method = case_when(
       v312 == 1 ~ "Pill",
@@ -66,7 +77,13 @@ use <- svytable(~use, svydesign_obj) %>%
 # -------------------------------
 # 6. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(output_dir, country, 'data')
+# Create country-based output directory if it doesn't exist
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
+
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

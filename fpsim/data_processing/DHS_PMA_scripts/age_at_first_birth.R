@@ -57,7 +57,6 @@ dhs_data <- dhs_data %>%
     wt = v005 / 1e6,
     afb = ifelse(v201 == 0, Inf, v212)  # Assign Inf for those with no children
   )
-print(dhs_data)
 
 # -------------------------------
 # 3. Prepare and Save Output
