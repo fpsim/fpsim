@@ -17,7 +17,10 @@ max_age_preg   = 50   # Maximum age to become pregnant
 max_parity     = 20   # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
 max_parity_spline = 20   # Used for parity splines
 location_registry = {}  # Registry for external custom locations
-
+valid_country_locs = ['senegal', 'kenya', 'ethiopia']
+valid_region_locs = {
+    'ethiopia': ['addis_ababa']
+}
 
 #%% Defaults when creating a new person
 # class State:
@@ -75,8 +78,7 @@ def get_location(location, printmsg=False):
         return location
 
     # Define valid locations
-    valid_country_locs = ['senegal', 'kenya', 'ethiopia']
-    if location not in valid_country_locs:
+    if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
 
