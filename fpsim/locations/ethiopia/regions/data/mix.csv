@@ -1,184 +1,184 @@
 year,region,method,perc,freq
-2000,Addis Ababa,Condoms,2.7,0.027
-2001,Addis Ababa,Condoms,2.58,0.0258
-2002,Addis Ababa,Condoms,2.46,0.0246
-2003,Addis Ababa,Condoms,2.34,0.0234
-2004,Addis Ababa,Condoms,2.22,0.0222
-2005,Addis Ababa,Condoms,2.1,0.021
-2006,Addis Ababa,Condoms,2.1,0.021
-2007,Addis Ababa,Condoms,2.1,0.021
-2008,Addis Ababa,Condoms,2.1,0.021
-2009,Addis Ababa,Condoms,2.1,0.021
-2010,Addis Ababa,Condoms,2.1,0.021
-2011,Addis Ababa,Condoms,2.1,0.021
-2012,Addis Ababa,Condoms,1.96,0.0196
-2013,Addis Ababa,Condoms,1.82,0.0182
-2014,Addis Ababa,Condoms,1.68,0.0168
-2015,Addis Ababa,Condoms,1.54,0.0154
-2016,Addis Ababa,Condoms,1.4,0.014
-2017,Addis Ababa,Condoms,1.2,0.012
-2018,Addis Ababa,Condoms,1,0.01
-2019,Addis Ababa,Condoms,0.8,0.008
-2000,Addis Ababa,Implants,0.3,0.003
-2001,Addis Ababa,Implants,0.38,0.0038
-2002,Addis Ababa,Implants,0.46,0.0046
-2003,Addis Ababa,Implants,0.54,0.0054
-2004,Addis Ababa,Implants,0.62,0.0062
-2005,Addis Ababa,Implants,0.7,0.007
-2006,Addis Ababa,Implants,0.816666667,0.008166667
-2007,Addis Ababa,Implants,0.933333333,0.009333333
-2008,Addis Ababa,Implants,1.05,0.0105
-2009,Addis Ababa,Implants,1.166666667,0.011666667
-2010,Addis Ababa,Implants,1.283333333,0.012833333
-2011,Addis Ababa,Implants,1.4,0.014
-2012,Addis Ababa,Implants,2.42,0.0242
-2013,Addis Ababa,Implants,3.44,0.0344
-2014,Addis Ababa,Implants,4.46,0.0446
-2015,Addis Ababa,Implants,5.48,0.0548
-2016,Addis Ababa,Implants,6.5,0.065
-2017,Addis Ababa,Implants,6.566666667,0.065666667
-2018,Addis Ababa,Implants,6.633333333,0.066333333
-2019,Addis Ababa,Implants,6.7,0.067
-2000,Addis Ababa,Injectables,4.8,0.048
-2001,Addis Ababa,Injectables,5.36,0.0536
-2002,Addis Ababa,Injectables,5.92,0.0592
-2003,Addis Ababa,Injectables,6.48,0.0648
-2004,Addis Ababa,Injectables,7.04,0.0704
-2005,Addis Ababa,Injectables,7.6,0.076
-2006,Addis Ababa,Injectables,8.8,0.088
-2007,Addis Ababa,Injectables,10,0.1
-2008,Addis Ababa,Injectables,11.2,0.112
-2009,Addis Ababa,Injectables,12.4,0.124
-2010,Addis Ababa,Injectables,13.6,0.136
-2011,Addis Ababa,Injectables,14.8,0.148
-2012,Addis Ababa,Injectables,13.36,0.1336
-2013,Addis Ababa,Injectables,11.92,0.1192
-2014,Addis Ababa,Injectables,10.48,0.1048
-2015,Addis Ababa,Injectables,9.04,0.0904
-2016,Addis Ababa,Injectables,7.6,0.076
-2017,Addis Ababa,Injectables,8.1,0.081
-2018,Addis Ababa,Injectables,8.6,0.086
-2019,Addis Ababa,Injectables,9.1,0.091
-2000,Addis Ababa,IUDs,1.3,0.013
-2001,Addis Ababa,IUDs,1.26,0.0126
-2002,Addis Ababa,IUDs,1.22,0.0122
-2003,Addis Ababa,IUDs,1.18,0.0118
-2004,Addis Ababa,IUDs,1.14,0.0114
-2005,Addis Ababa,IUDs,1.1,0.011
-2006,Addis Ababa,IUDs,1.083333333,0.010833333
-2007,Addis Ababa,IUDs,1.066666667,0.010666667
-2008,Addis Ababa,IUDs,1.05,0.0105
-2009,Addis Ababa,IUDs,1.033333333,0.010333333
-2010,Addis Ababa,IUDs,1.016666667,0.010166667
-2011,Addis Ababa,IUDs,1,0.01
-2012,Addis Ababa,IUDs,1.56,0.0156
-2013,Addis Ababa,IUDs,2.12,0.0212
-2014,Addis Ababa,IUDs,2.68,0.0268
-2015,Addis Ababa,IUDs,3.24,0.0324
-2016,Addis Ababa,IUDs,3.8,0.038
-2017,Addis Ababa,IUDs,3.366666667,0.033666667
-2018,Addis Ababa,IUDs,2.933333333,0.029333333
-2019,Addis Ababa,IUDs,2.5,0.025
-2000,Addis Ababa,Other modern,0,0
-2001,Addis Ababa,Other modern,0.08,8.00E-04
-2002,Addis Ababa,Other modern,0.16,0.0016
-2003,Addis Ababa,Other modern,0.24,0.0024
-2004,Addis Ababa,Other modern,0.32,0.0032
-2005,Addis Ababa,Other modern,0.4,0.004
-2006,Addis Ababa,Other modern,0.333333333,0.003333333
-2007,Addis Ababa,Other modern,0.266666667,0.002666667
-2008,Addis Ababa,Other modern,0.2,0.002
-2009,Addis Ababa,Other modern,0.133333333,0.001333333
-2010,Addis Ababa,Other modern,0.066666667,0.000666667
-2011,Addis Ababa,Other modern,0,0
-2012,Addis Ababa,Other modern,0.06,6.00E-04
-2013,Addis Ababa,Other modern,0.12,0.0012
-2014,Addis Ababa,Other modern,0.18,0.0018
-2015,Addis Ababa,Other modern,0.24,0.0024
-2016,Addis Ababa,Other modern,0.3,0.003
-2017,Addis Ababa,Other modern,0.6,0.006
-2018,Addis Ababa,Other modern,0.9,0.009
-2019,Addis Ababa,Other modern,1.2,0.012
-2000,Addis Ababa,Other traditional,4.7,0.047
-2001,Addis Ababa,Other traditional,4.48,0.0448
-2002,Addis Ababa,Other traditional,4.26,0.0426
-2003,Addis Ababa,Other traditional,4.04,0.0404
-2004,Addis Ababa,Other traditional,3.82,0.0382
-2005,Addis Ababa,Other traditional,3.6,0.036
-2006,Addis Ababa,Other traditional,3.366666667,0.033666667
-2007,Addis Ababa,Other traditional,3.133333333,0.031333333
-2008,Addis Ababa,Other traditional,2.9,0.029
-2009,Addis Ababa,Other traditional,2.666666667,0.026666667
-2010,Addis Ababa,Other traditional,2.433333333,0.024333333
-2011,Addis Ababa,Other traditional,2.2,0.022
-2012,Addis Ababa,Other traditional,2.24,0.0224
-2013,Addis Ababa,Other traditional,2.28,0.0228
-2014,Addis Ababa,Other traditional,2.32,0.0232
-2015,Addis Ababa,Other traditional,2.36,0.0236
-2016,Addis Ababa,Other traditional,2.4,0.024
-2017,Addis Ababa,Other traditional,2.066666667,0.020666667
-2018,Addis Ababa,Other traditional,1.733333333,0.017333333
-2019,Addis Ababa,Other traditional,1.4,0.014
-2000,Addis Ababa,Pill,5.2,0.052
-2001,Addis Ababa,Pill,4.88,0.0488
-2002,Addis Ababa,Pill,4.56,0.0456
-2003,Addis Ababa,Pill,4.24,0.0424
-2004,Addis Ababa,Pill,3.92,0.0392
-2005,Addis Ababa,Pill,3.6,0.036
-2006,Addis Ababa,Pill,3.766666667,0.037666667
-2007,Addis Ababa,Pill,3.933333333,0.039333333
-2008,Addis Ababa,Pill,4.1,0.041
-2009,Addis Ababa,Pill,4.266666667,0.042666667
-2010,Addis Ababa,Pill,4.433333333,0.044333333
-2011,Addis Ababa,Pill,4.6,0.046
-2012,Addis Ababa,Pill,4.34,0.0434
-2013,Addis Ababa,Pill,4.08,0.0408
-2014,Addis Ababa,Pill,3.82,0.0382
-2015,Addis Ababa,Pill,3.56,0.0356
-2016,Addis Ababa,Pill,3.3,0.033
-2017,Addis Ababa,Pill,3.7,0.037
-2018,Addis Ababa,Pill,4.1,0.041
-2019,Addis Ababa,Pill,4.5,0.045
-2000,Addis Ababa,BTL,1.3,0.013
-2001,Addis Ababa,BTL,1.2,0.012
-2002,Addis Ababa,BTL,1.1,0.011
-2003,Addis Ababa,BTL,1,0.01
-2004,Addis Ababa,BTL,0.9,0.009
-2005,Addis Ababa,BTL,0.8,0.008
-2006,Addis Ababa,BTL,0.816666667,0.008166667
-2007,Addis Ababa,BTL,0.833333333,0.008333333
-2008,Addis Ababa,BTL,0.85,0.0085
-2009,Addis Ababa,BTL,0.866666667,0.008666667
-2010,Addis Ababa,BTL,0.883333333,0.008833333
-2011,Addis Ababa,BTL,0.9,0.009
-2012,Addis Ababa,BTL,0.76,0.0076
-2013,Addis Ababa,BTL,0.62,0.0062
-2014,Addis Ababa,BTL,0.48,0.0048
-2015,Addis Ababa,BTL,0.34,0.0034
-2016,Addis Ababa,BTL,0.2,0.002
-2017,Addis Ababa,BTL,0.133333333,0.001333333
-2018,Addis Ababa,BTL,0.066666667,0.000666667
-2019,Addis Ababa,BTL,0,0
-2000,Addis Ababa,Withdrawal,0.6,0.006
-2001,Addis Ababa,Withdrawal,0.62,0.0062
-2002,Addis Ababa,Withdrawal,0.64,0.0064
-2003,Addis Ababa,Withdrawal,0.66,0.0066
-2004,Addis Ababa,Withdrawal,0.68,0.0068
-2005,Addis Ababa,Withdrawal,0.7,0.007
-2006,Addis Ababa,Withdrawal,0.666666667,0.006666667
-2007,Addis Ababa,Withdrawal,0.633333333,0.006333333
-2008,Addis Ababa,Withdrawal,0.6,0.006
-2009,Addis Ababa,Withdrawal,0.566666667,0.005666667
-2010,Addis Ababa,Withdrawal,0.533333333,0.005333333
-2011,Addis Ababa,Withdrawal,0.5,0.005
-2012,Addis Ababa,Withdrawal,0.48,0.0048
-2013,Addis Ababa,Withdrawal,0.46,0.0046
-2014,Addis Ababa,Withdrawal,0.44,0.0044
-2015,Addis Ababa,Withdrawal,0.42,0.0042
-2016,Addis Ababa,Withdrawal,0.4,0.004
-2017,Addis Ababa,Withdrawal,0.266666667,0.002666667
-2018,Addis Ababa,Withdrawal,0.133333333,0.001333333
-2019,Addis Ababa,Withdrawal,0,0
+2000,addis_ababa,Condoms,2.7,0.027
+2001,addis_ababa,Condoms,2.58,0.0258
+2002,addis_ababa,Condoms,2.46,0.0246
+2003,addis_ababa,Condoms,2.34,0.0234
+2004,addis_ababa,Condoms,2.22,0.0222
+2005,addis_ababa,Condoms,2.1,0.021
+2006,addis_ababa,Condoms,2.1,0.021
+2007,addis_ababa,Condoms,2.1,0.021
+2008,addis_ababa,Condoms,2.1,0.021
+2009,addis_ababa,Condoms,2.1,0.021
+2010,addis_ababa,Condoms,2.1,0.021
+2011,addis_ababa,Condoms,2.1,0.021
+2012,addis_ababa,Condoms,1.96,0.0196
+2013,addis_ababa,Condoms,1.82,0.0182
+2014,addis_ababa,Condoms,1.68,0.0168
+2015,addis_ababa,Condoms,1.54,0.0154
+2016,addis_ababa,Condoms,1.4,0.014
+2017,addis_ababa,Condoms,1.2,0.012
+2018,addis_ababa,Condoms,1,0.01
+2019,addis_ababa,Condoms,0.8,0.008
+2000,addis_ababa,Implants,0.3,0.003
+2001,addis_ababa,Implants,0.38,0.0038
+2002,addis_ababa,Implants,0.46,0.0046
+2003,addis_ababa,Implants,0.54,0.0054
+2004,addis_ababa,Implants,0.62,0.0062
+2005,addis_ababa,Implants,0.7,0.007
+2006,addis_ababa,Implants,0.816666667,0.008166667
+2007,addis_ababa,Implants,0.933333333,0.009333333
+2008,addis_ababa,Implants,1.05,0.0105
+2009,addis_ababa,Implants,1.166666667,0.011666667
+2010,addis_ababa,Implants,1.283333333,0.012833333
+2011,addis_ababa,Implants,1.4,0.014
+2012,addis_ababa,Implants,2.42,0.0242
+2013,addis_ababa,Implants,3.44,0.0344
+2014,addis_ababa,Implants,4.46,0.0446
+2015,addis_ababa,Implants,5.48,0.0548
+2016,addis_ababa,Implants,6.5,0.065
+2017,addis_ababa,Implants,6.566666667,0.065666667
+2018,addis_ababa,Implants,6.633333333,0.066333333
+2019,addis_ababa,Implants,6.7,0.067
+2000,addis_ababa,Injectables,4.8,0.048
+2001,addis_ababa,Injectables,5.36,0.0536
+2002,addis_ababa,Injectables,5.92,0.0592
+2003,addis_ababa,Injectables,6.48,0.0648
+2004,addis_ababa,Injectables,7.04,0.0704
+2005,addis_ababa,Injectables,7.6,0.076
+2006,addis_ababa,Injectables,8.8,0.088
+2007,addis_ababa,Injectables,10,0.1
+2008,addis_ababa,Injectables,11.2,0.112
+2009,addis_ababa,Injectables,12.4,0.124
+2010,addis_ababa,Injectables,13.6,0.136
+2011,addis_ababa,Injectables,14.8,0.148
+2012,addis_ababa,Injectables,13.36,0.1336
+2013,addis_ababa,Injectables,11.92,0.1192
+2014,addis_ababa,Injectables,10.48,0.1048
+2015,addis_ababa,Injectables,9.04,0.0904
+2016,addis_ababa,Injectables,7.6,0.076
+2017,addis_ababa,Injectables,8.1,0.081
+2018,addis_ababa,Injectables,8.6,0.086
+2019,addis_ababa,Injectables,9.1,0.091
+2000,addis_ababa,IUDs,1.3,0.013
+2001,addis_ababa,IUDs,1.26,0.0126
+2002,addis_ababa,IUDs,1.22,0.0122
+2003,addis_ababa,IUDs,1.18,0.0118
+2004,addis_ababa,IUDs,1.14,0.0114
+2005,addis_ababa,IUDs,1.1,0.011
+2006,addis_ababa,IUDs,1.083333333,0.010833333
+2007,addis_ababa,IUDs,1.066666667,0.010666667
+2008,addis_ababa,IUDs,1.05,0.0105
+2009,addis_ababa,IUDs,1.033333333,0.010333333
+2010,addis_ababa,IUDs,1.016666667,0.010166667
+2011,addis_ababa,IUDs,1,0.01
+2012,addis_ababa,IUDs,1.56,0.0156
+2013,addis_ababa,IUDs,2.12,0.0212
+2014,addis_ababa,IUDs,2.68,0.0268
+2015,addis_ababa,IUDs,3.24,0.0324
+2016,addis_ababa,IUDs,3.8,0.038
+2017,addis_ababa,IUDs,3.366666667,0.033666667
+2018,addis_ababa,IUDs,2.933333333,0.029333333
+2019,addis_ababa,IUDs,2.5,0.025
+2000,addis_ababa,Other modern,0,0
+2001,addis_ababa,Other modern,0.08,8.00E-04
+2002,addis_ababa,Other modern,0.16,0.0016
+2003,addis_ababa,Other modern,0.24,0.0024
+2004,addis_ababa,Other modern,0.32,0.0032
+2005,addis_ababa,Other modern,0.4,0.004
+2006,addis_ababa,Other modern,0.333333333,0.003333333
+2007,addis_ababa,Other modern,0.266666667,0.002666667
+2008,addis_ababa,Other modern,0.2,0.002
+2009,addis_ababa,Other modern,0.133333333,0.001333333
+2010,addis_ababa,Other modern,0.066666667,0.000666667
+2011,addis_ababa,Other modern,0,0
+2012,addis_ababa,Other modern,0.06,6.00E-04
+2013,addis_ababa,Other modern,0.12,0.0012
+2014,addis_ababa,Other modern,0.18,0.0018
+2015,addis_ababa,Other modern,0.24,0.0024
+2016,addis_ababa,Other modern,0.3,0.003
+2017,addis_ababa,Other modern,0.6,0.006
+2018,addis_ababa,Other modern,0.9,0.009
+2019,addis_ababa,Other modern,1.2,0.012
+2000,addis_ababa,Other traditional,4.7,0.047
+2001,addis_ababa,Other traditional,4.48,0.0448
+2002,addis_ababa,Other traditional,4.26,0.0426
+2003,addis_ababa,Other traditional,4.04,0.0404
+2004,addis_ababa,Other traditional,3.82,0.0382
+2005,addis_ababa,Other traditional,3.6,0.036
+2006,addis_ababa,Other traditional,3.366666667,0.033666667
+2007,addis_ababa,Other traditional,3.133333333,0.031333333
+2008,addis_ababa,Other traditional,2.9,0.029
+2009,addis_ababa,Other traditional,2.666666667,0.026666667
+2010,addis_ababa,Other traditional,2.433333333,0.024333333
+2011,addis_ababa,Other traditional,2.2,0.022
+2012,addis_ababa,Other traditional,2.24,0.0224
+2013,addis_ababa,Other traditional,2.28,0.0228
+2014,addis_ababa,Other traditional,2.32,0.0232
+2015,addis_ababa,Other traditional,2.36,0.0236
+2016,addis_ababa,Other traditional,2.4,0.024
+2017,addis_ababa,Other traditional,2.066666667,0.020666667
+2018,addis_ababa,Other traditional,1.733333333,0.017333333
+2019,addis_ababa,Other traditional,1.4,0.014
+2000,addis_ababa,Pill,5.2,0.052
+2001,addis_ababa,Pill,4.88,0.0488
+2002,addis_ababa,Pill,4.56,0.0456
+2003,addis_ababa,Pill,4.24,0.0424
+2004,addis_ababa,Pill,3.92,0.0392
+2005,addis_ababa,Pill,3.6,0.036
+2006,addis_ababa,Pill,3.766666667,0.037666667
+2007,addis_ababa,Pill,3.933333333,0.039333333
+2008,addis_ababa,Pill,4.1,0.041
+2009,addis_ababa,Pill,4.266666667,0.042666667
+2010,addis_ababa,Pill,4.433333333,0.044333333
+2011,addis_ababa,Pill,4.6,0.046
+2012,addis_ababa,Pill,4.34,0.0434
+2013,addis_ababa,Pill,4.08,0.0408
+2014,addis_ababa,Pill,3.82,0.0382
+2015,addis_ababa,Pill,3.56,0.0356
+2016,addis_ababa,Pill,3.3,0.033
+2017,addis_ababa,Pill,3.7,0.037
+2018,addis_ababa,Pill,4.1,0.041
+2019,addis_ababa,Pill,4.5,0.045
+2000,addis_ababa,BTL,1.3,0.013
+2001,addis_ababa,BTL,1.2,0.012
+2002,addis_ababa,BTL,1.1,0.011
+2003,addis_ababa,BTL,1,0.01
+2004,addis_ababa,BTL,0.9,0.009
+2005,addis_ababa,BTL,0.8,0.008
+2006,addis_ababa,BTL,0.816666667,0.008166667
+2007,addis_ababa,BTL,0.833333333,0.008333333
+2008,addis_ababa,BTL,0.85,0.0085
+2009,addis_ababa,BTL,0.866666667,0.008666667
+2010,addis_ababa,BTL,0.883333333,0.008833333
+2011,addis_ababa,BTL,0.9,0.009
+2012,addis_ababa,BTL,0.76,0.0076
+2013,addis_ababa,BTL,0.62,0.0062
+2014,addis_ababa,BTL,0.48,0.0048
+2015,addis_ababa,BTL,0.34,0.0034
+2016,addis_ababa,BTL,0.2,0.002
+2017,addis_ababa,BTL,0.133333333,0.001333333
+2018,addis_ababa,BTL,0.066666667,0.000666667
+2019,addis_ababa,BTL,0,0
+2000,addis_ababa,Withdrawal,0.6,0.006
+2001,addis_ababa,Withdrawal,0.62,0.0062
+2002,addis_ababa,Withdrawal,0.64,0.0064
+2003,addis_ababa,Withdrawal,0.66,0.0066
+2004,addis_ababa,Withdrawal,0.68,0.0068
+2005,addis_ababa,Withdrawal,0.7,0.007
+2006,addis_ababa,Withdrawal,0.666666667,0.006666667
+2007,addis_ababa,Withdrawal,0.633333333,0.006333333
+2008,addis_ababa,Withdrawal,0.6,0.006
+2009,addis_ababa,Withdrawal,0.566666667,0.005666667
+2010,addis_ababa,Withdrawal,0.533333333,0.005333333
+2011,addis_ababa,Withdrawal,0.5,0.005
+2012,addis_ababa,Withdrawal,0.48,0.0048
+2013,addis_ababa,Withdrawal,0.46,0.0046
+2014,addis_ababa,Withdrawal,0.44,0.0044
+2015,addis_ababa,Withdrawal,0.42,0.0042
+2016,addis_ababa,Withdrawal,0.4,0.004
+2017,addis_ababa,Withdrawal,0.266666667,0.002666667
+2018,addis_ababa,Withdrawal,0.133333333,0.001333333
+2019,addis_ababa,Withdrawal,0,0
 2000,Afar,Condoms,0.3,0.003
 2001,Afar,Condoms,0.48,0.0048
 2002,Afar,Condoms,0.66,0.0066

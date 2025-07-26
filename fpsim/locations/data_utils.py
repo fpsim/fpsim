@@ -19,6 +19,17 @@ def this_dir():
     thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
     return thisdir
 
+def data_dir(location):
+    # Set data path depending on if the location is a country or region
+    if any(location in v for v in fpd.valid_region_locs.values()):
+        country = next((k for k, v in fpd.valid_region_locs.items() if location in v), None)
+        data_path = this_dir() / country / "regions" / "data"
+        region = True
+    else:
+        data_path = this_dir() / location / "data"
+        region = False
+
+    return data_path, region
 
 def data2interp(data, ages, normalize=False):
     ''' Convert unevenly spaced data into an even spline interpolation '''
@@ -84,7 +95,10 @@ def _check_age_endpoints(df):
 # %% Scalar pars
 def bf_stats(location):
     """ Load breastfeeding stats """
-    bf_data = pd.read_csv(this_dir() / location / 'data' / 'bf_stats.csv')
+    data_path, region = data_dir(location)
+    bf_data = pd.read_csv(data_path / 'bf_stats.csv')
+    if region:
+        bf_data = bf_data[bf_data['region'] == location]
     bf_pars = {
         'breastfeeding_dur_mean' : bf_data.loc[0]['value'],  # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
         'breastfeeding_dur_sd' : bf_data.loc[1]['value']     # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
@@ -133,8 +147,13 @@ def urban_proportion(location):
 
 def age_pyramid(location):
     """Load age pyramid data"""
-    age_pyramid_data = pd.read_csv(this_dir() / location / 'data' / 'age_pyramid.csv')
-    pyramid = age_pyramid_data.to_numpy()
+    data_path, region = data_dir(location)
+    df = pd.read_csv(data_path / 'age_pyramid.csv')
+    if region:
+        df = df[df['region'] == location]
+        df = df.drop('region', axis=1)
+
+    pyramid = df.to_numpy()
     return pyramid
 
 
@@ -301,7 +320,11 @@ def lactational_amenorrhea(location):
     Ethiopia: From DHS Ethiopia 2016 calendar data
     Senegal: From DHS Senegal calendar data
     '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'lam.csv')
+    data_path, region = data_dir(location)
+    df = pd.read_csv(data_path / 'lam.csv')
+    if region:
+        df = df[df['region'] == location]
+
     lactational_amenorrhea = {}
     lactational_amenorrhea['month'] = df['month'].values
     lactational_amenorrhea['rate'] = df['rate'].values
@@ -319,7 +342,11 @@ def sexual_activity(location):
     Data taken from DHS, no trend over years for now
     Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
     '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'sexually_active.csv')
+    data_path, region = data_dir(location)
+    df = pd.read_csv(data_path / 'sexually_active.csv')
+    if region:
+        df = df[df['region'] == location]
+
     sexually_active = df['probs'].values / 100  # Convert from percent to rate per woman
     activity_ages = df['age'].values
     activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active)
@@ -337,7 +364,11 @@ def sexual_activity_pp(location):
     Postpartum month 0 refers to the first month after delivery
     TODO-- Add code for processing this for other countries to data_processing
     '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'sexually_active_pp.csv')
+    data_path, region = data_dir(location)
+    df = pd.read_csv(data_path / 'sexually_active_pp.csv')
+    if region:
+        df = df[df['region'] == location]
+
     postpartum_activity = {}
     postpartum_activity['month'] = df['month'].values
     postpartum_activity['percent_active'] = df['probs'].values
@@ -350,7 +381,11 @@ def debut_age(location):
     Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
     Use sexual_debut_age_probs.py under locations/data_processing to output for other DHS countries
     """
-    df = pd.read_csv(this_dir() / location / 'data' / 'debut_age.csv')
+    data_path, region = data_dir(location)
+    df = pd.read_csv(data_path / 'debut_age.csv')
+    if region:
+        df = df[df['region'] == location]
+
     debut_age = {}
     debut_age['ages'] = df['age'].values
     debut_age['probs'] = df['probs'].values
@@ -479,7 +514,7 @@ def education_distributions(location):
     """
 
     # Load empirical data
-    data_path = this_dir() / location / "data"
+    data_path, region = data_dir(location)
 
     education ={"edu_objective":
                     {"data_file": "edu_objective.csv",
@@ -494,8 +529,17 @@ def education_distributions(location):
     education_data = dict()
     education_dict = dict()
     for edu_key in education.keys():
-        education_data[edu_key] = pd.read_csv(data_path / education[edu_key]["data_file"])
-        education_dict[edu_key] = education[edu_key]["process_function"](education_data[edu_key])
+        file_path = data_path / education[edu_key]["data_file"]
+        try:
+            df = pd.read_csv(file_path)
+        except:
+            # Try one level up; likely a regional location so pull from country data
+            fallback_path = data_path.parent.parent / 'data' / education[edu_key]["data_file"]
+            df = pd.read_csv(fallback_path)
+
+        education_data[edu_key] = df
+        education_dict[edu_key] = education[edu_key]["process_function"](df)
+
     education_dict.update({"age_start": 6.0})
     return education_dict, education_data
 
@@ -626,11 +670,14 @@ def process_dur_use(methods, location, df=None):
 
 
 def mcpr(location):
+    data_path, region = data_dir(location)
+    df = pd.read_csv(data_path / 'cpr.csv')
+    if region:
+        df = df[df['region'] == location]
 
     mcpr = {}
-    cpr_data = pd.read_csv(this_dir() / location / 'data' / 'cpr.csv')
-    mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
-    mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
+    mcpr['mcpr_years'] = df['year'].to_numpy()
+    mcpr['mcpr_rates'] = df['cpr'].to_numpy() / 100
 
     return mcpr
 

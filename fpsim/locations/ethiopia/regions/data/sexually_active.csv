@@ -1,15 +1,15 @@
-﻿region,age,perc
-Addis Ababa,0,0
-Addis Ababa,5,0
-Addis Ababa,10,0
-Addis Ababa,15,4.938183
-Addis Ababa,20,23.485852
-Addis Ababa,25,45.095993
-Addis Ababa,30,44.119399
-Addis Ababa,35,42.884594
-Addis Ababa,40,41.354786
-Addis Ababa,45,30.629064
-Addis Ababa,50,30.629064
+﻿region,age,probs
+addis_ababa,0,0
+addis_ababa,5,0
+addis_ababa,10,0
+addis_ababa,15,4.938183
+addis_ababa,20,23.485852
+addis_ababa,25,45.095993
+addis_ababa,30,44.119399
+addis_ababa,35,42.884594
+addis_ababa,40,41.354786
+addis_ababa,45,30.629064
+addis_ababa,50,30.629064
 Afar,0,0
 Afar,5,0
 Afar,10,0

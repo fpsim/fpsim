@@ -1,4 +1,4 @@
-﻿region,age,prob
+﻿region,age,probs
 Tigray,10,0.014265584
 Tigray,11,0.015507039
 Tigray,12,0.038723286
@@ -186,32 +186,32 @@ Harari,29,0.006848731
 Harari,30,0.00152656
 Harari,32,0.001877233
 Harari,34,0.001479413
-Addis Ababa,10,0.000828736
-Addis Ababa,11,0.003942353
-Addis Ababa,12,0.011094006
-Addis Ababa,13,0.029339851
-Addis Ababa,14,0.052426885
-Addis Ababa,15,0.079717637
-Addis Ababa,16,0.096484168
-Addis Ababa,17,0.104760943
-Addis Ababa,18,0.131719112
-Addis Ababa,19,0.083204152
-Addis Ababa,20,0.093413604
-Addis Ababa,21,0.057568403
-Addis Ababa,22,0.057262044
-Addis Ababa,23,0.041523251
-Addis Ababa,24,0.04248246
-Addis Ababa,25,0.052014386
-Addis Ababa,26,0.00996998
-Addis Ababa,27,0.015998999
-Addis Ababa,28,0.00822554
-Addis Ababa,29,0.006738219
-Addis Ababa,30,0.010725858
-Addis Ababa,31,0.004297451
-Addis Ababa,32,0.002406533
-Addis Ababa,33,0.001013699
-Addis Ababa,35,0.002012376
-Addis Ababa,37,0.000829355
+addis_ababa,10,0.000828736
+addis_ababa,11,0.003942353
+addis_ababa,12,0.011094006
+addis_ababa,13,0.029339851
+addis_ababa,14,0.052426885
+addis_ababa,15,0.079717637
+addis_ababa,16,0.096484168
+addis_ababa,17,0.104760943
+addis_ababa,18,0.131719112
+addis_ababa,19,0.083204152
+addis_ababa,20,0.093413604
+addis_ababa,21,0.057568403
+addis_ababa,22,0.057262044
+addis_ababa,23,0.041523251
+addis_ababa,24,0.04248246
+addis_ababa,25,0.052014386
+addis_ababa,26,0.00996998
+addis_ababa,27,0.015998999
+addis_ababa,28,0.00822554
+addis_ababa,29,0.006738219
+addis_ababa,30,0.010725858
+addis_ababa,31,0.004297451
+addis_ababa,32,0.002406533
+addis_ababa,33,0.001013699
+addis_ababa,35,0.002012376
+addis_ababa,37,0.000829355
 Dire Dawa,10,0.002984216
 Dire Dawa,11,0.002764409
 Dire Dawa,12,0.013809837

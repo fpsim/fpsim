@@ -1,5 +1,5 @@
 "year","region","cpr","mcpr"
-2000,"Addis Ababa",21,15.6
+2000,"addis_ababa",21,15.6
 2000,"Afar",6.6,6.3
 2000,"Amhara",6,5.4
 2000,"Benishangul-Gumuz",6.7,6.3
@@ -10,7 +10,7 @@
 2000,"SNNPR",4.7,3.7
 2000,"Somali",3.4,2.9
 2000,"Tigray",6.9,6.3
-2001,"Addis Ababa",20.9,15.7
+2001,"addis_ababa",20.9,15.7
 2001,"Afar",6.6,6.2
 2001,"Amhara",7.1,6.6
 2001,"Benishangul-Gumuz",7.2,6.7
@@ -21,7 +21,7 @@
 2001,"SNNPR",5.4,4.5
 2001,"Somali",3.2,2.7
 2001,"Tigray",7.8,7.2
-2002,"Addis Ababa",20.8,15.9
+2002,"addis_ababa",20.8,15.9
 2002,"Afar",6.6,6.1
 2002,"Amhara",8.2,7.7
 2002,"Benishangul-Gumuz",7.7,7.2
@@ -32,7 +32,7 @@
 2002,"SNNPR",6.1,5.4
 2002,"Somali",3,2.5
 2002,"Tigray",8.6,8.2
-2003,"Addis Ababa",20.8,16
+2003,"addis_ababa",20.8,16
 2003,"Afar",6.5,6.1
 2003,"Amhara",9.3,8.9
 2003,"Benishangul-Gumuz",8.1,7.6
@@ -43,7 +43,7 @@
 2003,"SNNPR",6.8,6.2
 2003,"Somali",2.7,2.4
 2003,"Tigray",9.5,9.1
-2004,"Addis Ababa",20.7,16.2
+2004,"addis_ababa",20.7,16.2
 2004,"Afar",6.5,6
 2004,"Amhara",10.4,10
 2004,"Benishangul-Gumuz",8.6,8.1
@@ -54,7 +54,7 @@
 2004,"SNNPR",7.5,7.1
 2004,"Somali",2.5,2.2
 2004,"Tigray",10.3,10.1
-2005,"Addis Ababa",20.6,16.3
+2005,"addis_ababa",20.6,16.3
 2005,"Afar",6.5,5.9
 2005,"Amhara",11.5,11.2
 2005,"Benishangul-Gumuz",9.1,8.5
@@ -65,7 +65,7 @@
 2005,"SNNPR",8.2,7.9
 2005,"Somali",2.3,2
 2005,"Tigray",11.2,11
-2006,"Addis Ababa",21.7,17.7
+2006,"addis_ababa",21.7,17.7
 2006,"Afar",6.8,6.2
 2006,"Amhara",13.4,13.1
 2006,"Benishangul-Gumuz",11,10.4
@@ -76,7 +76,7 @@
 2006,"SNNPR",9.7,9.3
 2006,"Somali",2.5,2.2
 2006,"Tigray",12,11.8
-2007,"Addis Ababa",22.9,19.1
+2007,"addis_ababa",22.9,19.1
 2007,"Afar",7,6.5
 2007,"Amhara",15.4,15
 2007,"Benishangul-Gumuz",12.9,12.3
@@ -87,7 +87,7 @@
 2007,"SNNPR",11.2,10.8
 2007,"Somali",2.7,2.4
 2007,"Tigray",12.9,12.5
-2008,"Addis Ababa",24,20.6
+2008,"addis_ababa",24,20.6
 2008,"Afar",7.3,6.8
 2008,"Amhara",17.4,16.9
 2008,"Benishangul-Gumuz",14.9,14.2
@@ -98,7 +98,7 @@
 2008,"SNNPR",12.7,12.2
 2008,"Somali",2.9,2.5
 2008,"Tigray",13.7,13.2
-2009,"Addis Ababa",25.1,22
+2009,"addis_ababa",25.1,22
 2009,"Afar",7.6,7.2
 2009,"Amhara",19.3,18.8
 2009,"Benishangul-Gumuz",16.8,16.1
@@ -109,7 +109,7 @@
 2009,"SNNPR",14.2,13.6
 2009,"Somali",3.1,2.7
 2009,"Tigray",14.5,14
-2010,"Addis Ababa",26.3,23.4
+2010,"addis_ababa",26.3,23.4
 2010,"Afar",7.8,7.5
 2010,"Amhara",21.2,20.7
 2010,"Benishangul-Gumuz",18.7,18
@@ -120,7 +120,7 @@
 2010,"SNNPR",15.7,15.1
 2010,"Somali",3.3,2.9
 2010,"Tigray",15.4,14.8
-2011,"Addis Ababa",27.4,24.8
+2011,"addis_ababa",27.4,24.8
 2011,"Afar",8.1,7.8
 2011,"Amhara",23.2,22.6
 2011,"Benishangul-Gumuz",20.6,19.9
@@ -131,7 +131,7 @@
 2011,"SNNPR",17.2,16.5
 2011,"Somali",3.5,3.1
 2011,"Tigray",16.2,15.5
-2012,"Addis Ababa",27.1,24.5
+2012,"addis_ababa",27.1,24.5
 2012,"Afar",8.5,8.2
 2012,"Amhara",25.4,24.8
 2012,"Benishangul-Gumuz",20.9,20.3
@@ -142,7 +142,7 @@
 2012,"SNNPR",19.1,18.5
 2012,"Somali",3,2.7
 2012,"Tigray",18,17.3
-2013,"Addis Ababa",26.8,24.2
+2013,"addis_ababa",26.8,24.2
 2013,"Afar",8.9,8.7
 2013,"Amhara",27.6,27
 2013,"Benishangul-Gumuz",21.2,20.7
@@ -153,7 +153,7 @@
 2013,"SNNPR",21,20.5
 2013,"Somali",2.5,2.3
 2013,"Tigray",19.8,19.1
-2014,"Addis Ababa",26.6,23.8
+2014,"addis_ababa",26.6,23.8
 2014,"Afar",9.2,9.1
 2014,"Amhara",29.7,29.3
 2014,"Benishangul-Gumuz",21.4,21.1
@@ -164,7 +164,7 @@
 2014,"SNNPR",22.9,22.5
 2014,"Somali",2.1,1.8
 2014,"Tigray",21.6,20.9
-2015,"Addis Ababa",26.3,23.5
+2015,"addis_ababa",26.3,23.5
 2015,"Afar",9.6,9.6
 2015,"Amhara",31.9,31.5
 2015,"Benishangul-Gumuz",21.7,21.5
@@ -175,7 +175,7 @@
 2015,"SNNPR",24.8,24.5
 2015,"Somali",1.6,1.4
 2015,"Tigray",23.4,22.7
-2016,"Addis Ababa",26,23.2
+2016,"addis_ababa",26,23.2
 2016,"Afar",10,10
 2016,"Amhara",34.1,33.7
 2016,"Benishangul-Gumuz",22,21.9
@@ -186,7 +186,7 @@
 2016,"SNNPR",26.7,26.5
 2016,"Somali",1.1,1
 2016,"Tigray",25.2,24.5
-2017,"Addis Ababa",26,23.7
+2017,"addis_ababa",26,23.7
 2017,"Afar",10.4,10.4
 2017,"Amhara",34.2,33.9
 2017,"Benishangul-Gumuz",23.8,23.2
@@ -197,7 +197,7 @@
 2017,"SNNPR",28.3,28
 2017,"Somali",1.7,1.6
 2017,"Tigray",25.7,25.1
-2018,"Addis Ababa",26.1,24.2
+2018,"addis_ababa",26.1,24.2
 2018,"Afar",10.7,10.7
 2018,"Amhara",34.3,34.2
 2018,"Benishangul-Gumuz",25.5,24.6
@@ -208,7 +208,7 @@
 2018,"SNNPR",29.8,29.6
 2018,"Somali",2.2,2.2
 2018,"Tigray",26.3,25.6
-2019,"Addis Ababa",26.1,24.7
+2019,"addis_ababa",26.1,24.7
 2019,"Afar",11.1,11.1
 2019,"Amhara",34.4,34.4
 2019,"Benishangul-Gumuz",27.3,25.9

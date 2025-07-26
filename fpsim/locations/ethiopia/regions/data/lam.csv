@@ -1,16 +1,16 @@
 ﻿region,month,rate
-Addis Ababa,0,1
-Addis Ababa,1,0.8027634
-Addis Ababa,2,0.55477077
-Addis Ababa,3,0.54125213
-Addis Ababa,4,0.18418907
-Addis Ababa,5,0.07955848
-Addis Ababa,6,0.27236815
-Addis Ababa,7,0
-Addis Ababa,8,0
-Addis Ababa,9,0
-Addis Ababa,10,0
-Addis Ababa,11,0
+addis_ababa,0,1
+addis_ababa,1,0.8027634
+addis_ababa,2,0.55477077
+addis_ababa,3,0.54125213
+addis_ababa,4,0.18418907
+addis_ababa,5,0.07955848
+addis_ababa,6,0.27236815
+addis_ababa,7,0
+addis_ababa,8,0
+addis_ababa,9,0
+addis_ababa,10,0
+addis_ababa,11,0
 Afar,0,0.933118
 Afar,1,0.9053771
 Afar,2,0.7320911

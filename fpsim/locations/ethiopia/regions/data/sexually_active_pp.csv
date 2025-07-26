@@ -1,28 +1,28 @@
-﻿region,month,perc
-Addis Ababa,0,0.2804486
-Addis Ababa,1,0
-Addis Ababa,2,0.4280513
-Addis Ababa,3,0.5819274
-Addis Ababa,4,0.7363533
-Addis Ababa,5,0.7753635
-Addis Ababa,6,0.8967487
-Addis Ababa,7,0.9451912
-Addis Ababa,8,0.7157481
-Addis Ababa,9,0.7606989
-Addis Ababa,10,0.6545089
-Addis Ababa,11,0.491917
-Addis Ababa,12,0.9371189
-Addis Ababa,13,0.4345163
-Addis Ababa,14,0.718272
-Addis Ababa,15,0.5769147
-Addis Ababa,16,0.5983957
-Addis Ababa,17,1
-Addis Ababa,18,0.7650677
-Addis Ababa,19,0.7391624
-Addis Ababa,20,0.6923765
-Addis Ababa,21,0.7672215
-Addis Ababa,22,1
-Addis Ababa,23,0.7470624
+﻿region,month,probs
+addis_ababa,0,0.2804486
+addis_ababa,1,0
+addis_ababa,2,0.4280513
+addis_ababa,3,0.5819274
+addis_ababa,4,0.7363533
+addis_ababa,5,0.7753635
+addis_ababa,6,0.8967487
+addis_ababa,7,0.9451912
+addis_ababa,8,0.7157481
+addis_ababa,9,0.7606989
+addis_ababa,10,0.6545089
+addis_ababa,11,0.491917
+addis_ababa,12,0.9371189
+addis_ababa,13,0.4345163
+addis_ababa,14,0.718272
+addis_ababa,15,0.5769147
+addis_ababa,16,0.5983957
+addis_ababa,17,1
+addis_ababa,18,0.7650677
+addis_ababa,19,0.7391624
+addis_ababa,20,0.6923765
+addis_ababa,21,0.7672215
+addis_ababa,22,1
+addis_ababa,23,0.7470624
 Afar,0,0
 Afar,1,0.3223262
 Afar,2,0.6493627

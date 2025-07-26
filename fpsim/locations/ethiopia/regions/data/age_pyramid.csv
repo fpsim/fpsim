@@ -1,21 +1,21 @@
 region,age,male,female
-Addis Ababa,0,85808,84859
-Addis Ababa,5,108489,111190
-Addis Ababa,10,133471,145996
-Addis Ababa,15,147218,186305
-Addis Ababa,20,129919,146393
-Addis Ababa,25,100445,110036
-Addis Ababa,30,70030,69564
-Addis Ababa,35,63485,72648
-Addis Ababa,40,50878,41109
-Addis Ababa,45,42145,31884
-Addis Ababa,50,29904,26223
-Addis Ababa,55,20016,17206
-Addis Ababa,60,15553,15942
-Addis Ababa,65,10196,10025
-Addis Ababa,70,6959,8397
-Addis Ababa,75,4145,4493
-Addis Ababa,80,4791,7015
+addis_ababa,0,85808,84859
+addis_ababa,5,108489,111190
+addis_ababa,10,133471,145996
+addis_ababa,15,147218,186305
+addis_ababa,20,129919,146393
+addis_ababa,25,100445,110036
+addis_ababa,30,70030,69564
+addis_ababa,35,63485,72648
+addis_ababa,40,50878,41109
+addis_ababa,45,42145,31884
+addis_ababa,50,29904,26223
+addis_ababa,55,20016,17206
+addis_ababa,60,15553,15942
+addis_ababa,65,10196,10025
+addis_ababa,70,6959,8397
+addis_ababa,75,4145,4493
+addis_ababa,80,4791,7015
 Afar,0,69062,56153
 Afar,5,112308,82910
 Afar,10,112744,72748
