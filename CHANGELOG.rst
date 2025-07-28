@@ -14,6 +14,14 @@ Version 3.1.0 (2025-07-10)
 - *GitHub info*: PR `575 <https://github.com/fpsim/fpsim/pull/575>`_
 
 
+Version 3.0.3 (2025-07-09)
+---------------------------
+Resolves issues:
+#580 - removes requirement headers for Tutorials 2-5 (redundant because in header of Tutorial 1)
+#578 - modifies sigmoid function in methods.py to use scipy's expit function to avoid runtime warnings (due to overflow with very large/small rhs values)
+- *GitHub info*: PR `581 <https://github.com/fpsim/fpsim/pull/581>`_
+
+
 Version 3.0.2 (2025-07-02)
 ---------------------------
 - Fixes issue 567 (bug in method_mix_by_age_analyzer)
