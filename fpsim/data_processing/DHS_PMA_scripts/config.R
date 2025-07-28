@@ -21,7 +21,7 @@ pma_file2 <- "PMA2020_KEP2_HQFQ_v4.0_1Sep2024.dta"  # Example PMA file, Phase 2 
 pma_file3 <- "PMA2022_KEP3_HQFQ_v4.0_12Jul2023.dta" # Example PMA file, Phase 3 (Use the PMA 'Household and Female' datasets DTA files)
 
 # Contraceptive module for which to generate contraceptive coefficients in contra_coeffs.R
-model_type <- "standard"  # Options: "simple", "standard", "both"
+model_type <- "simple"  # Options: "simple", "standard", "both"
 
 # ------------------------------
 
