@@ -16,7 +16,7 @@ from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs
 
-__all__ = ['Method', 'make_methods', 'ContraPars', 'make_contra_pars', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
+__all__ = ['Method', 'make_methods', 'make_method_list', 'ContraPars', 'make_contra_pars', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
 
 
 # %% Base definition of contraceptive methods -- can be overwritten by locations
@@ -70,7 +70,7 @@ class ContraPars(ss.Pars):
         super().__init__()
 
         # Methods
-        self.method_list = make_method_list()  # Default methods
+        self.methods = make_method_list()  # Default methods
 
         # Probabilities and choices
         self.p_use = ss.bernoulli(p=0.5)
@@ -109,7 +109,7 @@ class ContraceptiveChoice(ss.Connector):
         self.update_pars(pars, **kwargs)
 
         # Copy methods as main attribute
-        self.methods = make_methods(self.pars.method_list)  # Make a copy of the methods list
+        self.methods = make_methods(self.pars.methods)  # Store the methods as an ndict
         self.n_options = len(self.methods)
         self.n_methods = len([m for m in self.methods if m != 'none'])
 
@@ -191,6 +191,9 @@ class ContraceptiveChoice(ss.Connector):
         self.methods[method.name] = method
 
     def remove_method(self, method_label):
+        errormsg = ('remove_method is not currently functional. See example in test_parameters.py if you want to run a '
+                    'simulation with a subset of the standard set of methods. The remove_method logic needs to be'
+                    'replaced with something that can remove a method partway through a simulation.')
         method = self.get_method_by_label(method_label)
         del self.methods[method.name]
 

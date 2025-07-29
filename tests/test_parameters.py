@@ -74,7 +74,7 @@ def test_scale():
 def test_method_changes():
     sc.heading('Test changing methods')
 
-    # Test adding method
+    # # Test adding method
     choice = fp.RandomChoice()
     n = len(choice.methods)
     new_method = fp.Method(
@@ -90,14 +90,15 @@ def test_method_changes():
     ok(f'Methods had expected length after addition ({n+1})')
 
     # Test remove method
-    choice.remove_method('Injectables')
+    methods = [m for m in fp.make_method_list() if m.label != 'Injectables']
+    choice = fp.RandomChoice(methods=methods)
     s2 = fp.Sim(test=True, contraception_module=choice)
     s2.run()
-    assert len(s2.connectors.contraception.methods) == n, 'Methods was not removed'
+    assert len(s2.connectors.contraception.methods) == len(methods), 'Methods was not removed'
     ok(f'Methods have expected length after removal ({n})')
 
     # Test method efficacy
-    methods = sc.dcp(fp.make_methods().Methods) # TEMP
+    methods = sc.dcp(fp.make_methods().Methods)  # TEMP
     for method in methods.values():
         if method.name != 0: method.efficacy = 1  # Make all methods totally effective
     choice = fp.RandomChoice(pars=dict(p_use=1), methods=methods)
@@ -140,7 +141,7 @@ if __name__ == '__main__':
 
     sc.options(backend=None)  # Turn on interactive plots
     with sc.timer():
-        null    = test_null(do_plot=do_plot)
-        scale   = test_scale()
+        # null    = test_null(do_plot=do_plot)
+        # scale   = test_scale()
         meths   = test_method_changes()
-        custom_loc = test_register_custom_location()
+        # custom_loc = test_register_custom_location()
