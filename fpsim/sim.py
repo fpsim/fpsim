@@ -88,74 +88,52 @@ class Sim(ss.Sim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, pars={}, location=None, track_children=False, regional=False,
+    def __init__(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None,
                  contraception_module=None, empowerment_module=None, education_module=None,
                  label=None, people=None, demographics=None, diseases=None, networks=None,
                  interventions=None, analyzers=None, connectors=None, copy_inputs=True, **kwargs):
 
+        # Inputs and defaults
+        self.contra_pars = None    # Parameters for the contraception module - processed later
+        self.edu_pars = None     # Parameters for the education module - processed later
+        self.pars = None        # Parameters for the simulation - processed later
+
+        # Call the constructor of the parent class WITHOUT pars or module args, the make defaults
+        super().__init__(pars=None, label=label)
+        self.pars = fpp.make_sim_pars()  # Make default parameters using values from parameters.py
+        self.fp_pars = fpp.make_fp_pars()
+
+        # Separate the parameters, storing sim pars and fp_pars now and saving module pars to process in init
         # Four sources of par values in decreasing order of priority:
         # 1-2. kwargs == args (if multiple definitions, raise exception)
         # 3. pars
         # 4. default pars
-
         # combine copies of them in this order if copy_inputs
         # remap any as necessary
         # separate into sim and fp-specific pars
+        sim_kwargs = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
+                    interventions=interventions, analyzers=analyzers, connectors=connectors)
+        sim_kwargs = {key: val for key, val in sim_kwargs.items() if val is not None}
+        all_sim_pars, all_fp_pars = self.separate_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, **kwargs)
 
-        args = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
-                    interventions=interventions, analyzers=analyzers)
-        args = {key:val for key,val in args.items() if val is not None} # Remove None inputs
-
-        fp_args = dict(location=location, track_children=track_children, regional=regional)
-        fp_args = {key: val for key, val in fp_args.items() if val is not None}  # Remove None inputs
-
-        # Combine all the pars
-        user_pars = {}
-        for d in [args, fp_args, kwargs]:
-            for key, value in d.items():
-                if key in user_pars:
-                    raise ValueError(f"Duplicate key found: {key}")
-                user_pars[key] = value
-
-        # values provide in pars are overrided by args and kwargs, so only set values that haven't been set yet.
-        for key, value in pars.items():
-            if key not in user_pars:
-                user_pars[key] = value
-
-        user_pars = self.remap_pars(user_pars) # map any old par names to new ones
-        user_sim_pars, user_fp_pars = self.separate_pars(user_pars) # separate out the sim and fp-specific pars. Any pars passed as kwargs that don't map are preserved as sim pars.
-
-        # Get the default starsim parameters for an FPsim sim.
-        default_sim_pars = ss.make_pars() # get starsim default sim pars
-        fpsim_default_sim_pars = fpp.default_sim_pars # get fpsim default sim pars
-        default_sim_pars.update(fpsim_default_sim_pars) # update starsim default sim pars with fpsim default sim pars
-
-        # override the default sim pars with user-provided values
-        sim_pars = sc.mergedicts(default_sim_pars, user_sim_pars, _copy=copy_inputs)
-        # new_sim_pars.update(input_pars) # update with input pars to override defaults
+        self.pars.update(all_sim_pars)
+        self.fp_pars.update(all_fp_pars)
 
         # Process modules by adding them as Starsim connectors
-        contraception_module = contraception_module or sc.dcp(fpm.StandardChoice(location=location))
-        education_module = education_module or sc.dcp(fped.Education(location=location))
+        default_contra = fpm.StandardChoice(location=self.fp_pars.location, pars=self.contra_pars)
+        contraception_module = contraception_module or sc.dcp(default_contra)
+        education_module = education_module or sc.dcp(fped.Education(location=self.fp_pars.location, pars=self.edu_pars))
         connectors = sc.tolist(connectors) + [contraception_module, education_module]
         if empowerment_module is not None:
             connectors += sc.tolist(empowerment_module)
-
-        super().__init__(sim_pars, connectors=connectors)  # Initialize and set the parameters as attributes
-
-        # get the default fp pars
-        if copy_inputs:
-            user_fp_pars = sc.dcp(user_fp_pars)
-        self.fp_pars = fpp.pars(rand_seed=self.pars.rand_seed, **user_fp_pars)
-
-        fpp.validate(fpp.default_pars, self.fp_pars)  # Validate the FP parameters
+        self.pars['connectors'] = connectors  # TODO, check this
 
         # Metadata and settings
         self.test_mode = False
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
 
-        # Add a new parameter to pars that determines the size of the circular buffer
+        # Add a new parameter to pars that determines the size of the circular buffer = TODO, remove?
         unit = self.pars.unit if self.pars.unit != "" else 'year'
         self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
 
@@ -170,7 +148,8 @@ class Sim(ss.Sim):
     def y(self):
         return self.t.yearvec[self.ti]
 
-    def remap_pars(self, pars):
+    @staticmethod
+    def remap_pars(pars):
         """
         Remap the parameters to the new names. This is useful for backwards compatibility.
         """
@@ -180,28 +159,57 @@ class Sim(ss.Sim):
             pars['stop'] = pars.pop('end_year')
         if 'seed' in pars:
             pars['rand_seed'] = pars.pop('seed')
-
+        if 'location' in pars and pars['location'] == 'test':
+            pars['location'] = 'senegal'
+            pars['test'] = True
         return pars
 
-    """
-    Separate the parameters into simulation and fp-specific parameters.
-    """
-    def separate_pars(self, pars):
-        sim_pars = {}
-        fp_pars = {}
+    # def separate_pars(self, pars):
+    def separate_pars(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, sim_kwargs=None, **kwargs):
+        """
+        Separate the parameters into simulation and fp-specific parameters.
+        """
+        # Marge in pars and kwargs
+        all_pars = fpp.mergepars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, kwargs)
+        all_pars = self.remap_pars(all_pars)  # Remap any v2 parameters to v3 names
 
-        # get a copy of the original keys to iterate over
-        par_keys = list(pars.keys())
-        for par in par_keys:
-            if par in fpp.default_pars:
-                fp_pars[par] = pars.pop(par)
-            else:
-                sim_pars[par] = pars.pop(par)
+        # Deal with sim pars
+        user_sim_pars = {k: v for k, v in all_pars.items() if k in self.pars.keys()}
+        for k in user_sim_pars: all_pars.pop(k)
+        sim_pars = sc.mergedicts(user_sim_pars, sim_pars, _copy=True)
+
+        # Deal with fp pars
+        user_fp_pars = {k: v for k, v in all_pars.items() if k in self.fp_pars.keys()}
+        for k in user_fp_pars: all_pars.pop(k)
+        fp_pars = sc.mergedicts(user_fp_pars, fp_pars, _copy=True)
+        if 'location' in fp_pars and fp_pars['location'] is not None:
+            self.fp_pars['location'] = fp_pars['location']
+        self.fp_pars.update_location()  # Update location-specific parameters
+
+        # Deal with contraception module pars
+        default_contra_pars = fpm.make_contra_pars()
+        user_contra_pars = {k: v for k, v in all_pars.items() if k in default_contra_pars.keys()}
+        for k in user_contra_pars: all_pars.pop(k)
+        contra_pars = sc.mergedicts(user_contra_pars, contra_pars, _copy=True)
+
+        # Deal with education pars
+        default_edu_pars = fped.make_edu_pars()
+        user_edu_pars = {k: v for k, v in all_pars.items() if k in default_edu_pars.keys()}
+        for k in user_edu_pars: all_pars.pop(k)
+        edu_pars = sc.mergedicts(user_edu_pars, edu_pars, _copy=True)
+
+        # Raise an exception if there are any leftover pars
+        if all_pars:
+            raise ValueError(f'Unrecognized parameters: {all_pars.keys()}. Refer to parameters.py for parameters.')
+
+        # Store the parameters for the modules - thse will be fed into the modules during init
+        self.contra_pars = contra_pars    # Parameters for contraceptive choice
+        self.edu_pars = edu_pars      # Parameters for the education module
 
         return sim_pars, fp_pars
 
     def init(self, force=False):
-        """ Fully initialize the Sim with people and result storage"""
+        """ Fully initialize the Sim with modules, people and result storage"""
         if force or not self.initialized:
             fpu.set_seed(self.pars['rand_seed'])
             if self.pars.people is None:

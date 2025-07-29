@@ -8,9 +8,18 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 3.1.0 (2025-07-10)
+Version 3.1.0 (2025-07-29)
 ---------------------------
 - Refactors Contraception and Education to Starsim modules (connectors)
+- Exposes all parameters for different modules in the `pars` dictionary passed to the Sim. This means that creating a sim is far more flexible, e.g. all of these will work:
+```
+import fpsim as fp
+sim1 = fp.Sim(prob_use_trend_par=0.3, start=2000)
+sim2 = fp.Sim(pars = dict(prob_use_trend_par=0.3, start=2000))
+sim3 = fp.Sim(contra_pars = dict(prob_use_trend_par=0.3), sim_pars=dict(start=2000))
+sim4 = fp.Sim(start=2000, contraception_module = fp.SimpleChoice(prob_use_trend_par=0.3))
+```
+- Refactors parameters.py, so that all FP parameters inherit from Starsim parameter classes. We now have a `SimPars` class, as well as `FPPars`, `ContraPars`, and `EduPars`. When a Sim is created, any parameters passed in by the user will automatically get assigned to the right modules. This also allowed for a notable simplifaction in the parameter validation logic, since Starsim handles that automatically.
 - *GitHub info*: PR `575 <https://github.com/fpsim/fpsim/pull/575>`_
 
 

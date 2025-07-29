@@ -16,7 +16,7 @@ from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs
 
-__all__ = ['Method', 'make_methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
+__all__ = ['Method', 'make_methods', 'make_method_list', 'ContraPars', 'make_contra_pars', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
 
 
 # %% Base definition of contraceptive methods -- can be overwritten by locations
@@ -35,8 +35,7 @@ class Method:
 def ln(a, b): return dict(dist='lognormal', par1=a, par2=b)
 
 
-def make_methods():
-
+def make_method_list():
     method_list = [
         Method(name='none',     efficacy=0,     modern=False, dur_use=ln(2, 3), label='None'),
         Method(name='pill',     efficacy=0.945, modern=True,  dur_use=ln(2, 3), label='Pill'),
@@ -49,40 +48,81 @@ def make_methods():
         Method(name='othtrad',  efficacy=0.861, modern=False, dur_use=ln(1, 3), label='Other traditional', csv_name='Other.trad'),
         Method(name='othmod',   efficacy=0.880, modern=True, dur_use=ln(1, 3), label='Other modern', csv_name='Other.mod'),
     ]
-
     idx = 0
     for method in method_list:
         method.idx = idx
         idx += 1
+    return sc.dcp(method_list)
 
+
+def make_method_map(method_list):
     method_map = {method.label: method.idx for method in method_list}
-    Methods = ss.ndict(method_list, type=Method)
+    return method_map
 
-    m = sc.prettyobj()
-    m.method_list = sc.dcp(method_list)
-    m.method_map = sc.dcp(method_map)
-    m.Methods = sc.dcp(Methods)
-    return m
+
+def make_methods(method_list=None):
+    if method_list is None: method_list = make_method_list()
+    return ss.ndict(method_list, type=Method)
+
+
+# %% Define parameters
+class ContraPars(ss.Pars):
+    def __init__(self, **kwargs):
+        super().__init__()
+
+        # Methods
+        self.methods = make_method_list()  # Default methods
+
+        # Probabilities and choices
+        self.p_use = ss.bernoulli(p=0.5)
+        self.force_choose = False  # Whether to force non-users to choose a method
+        self.method_mix = 'uniform'  #np.array([1/self.n_methods]*self.n_methods)
+        self.method_weights = None  #np.ones(n_methods)
+
+        # mCPR trend
+        self.prob_use_year = 2000
+        self.prob_use_intercept = 0.0
+        self.prob_use_trend_par = 0.0
+
+        # Settings and other misc
+        self.max_dur = ss.years(100)  # Maximum duration of use in years
+        self.update(kwargs)
+        return
+
+
+def make_contra_pars():
+    """ Shortcut for making a new instance of ContraPars """
+    return ContraPars()
 
 
 # %% Define classes to contain information about the way women choose contraception
 
 class ContraceptiveChoice(ss.Connector):
-    def __init__(self, methods=None, pars=None, **kwargs):
+    def __init__(self, pars=None, **kwargs):
         """
         Base contraceptive choice module
         """
         super().__init__(name='contraception')
-        self.methods = methods or make_methods().Methods
-        self.__dict__.update(kwargs)
+
+        # Handle parameters
+        default_pars = ContraPars()
+        self.define_pars(**default_pars)
+        self.update_pars(pars, **kwargs)
+
+        # Copy methods as main attribute
+        self.methods = make_methods(self.pars.methods)  # Store the methods as an ndict
         self.n_options = len(self.methods)
         self.n_methods = len([m for m in self.methods if m != 'none'])
+
+        # Process pars
+        if self.pars.method_mix == 'uniform':
+            self.pars.method_mix = np.array([1/self.n_methods]*self.n_methods)
+        if self.pars.method_weights is None:
+            self.pars.method_weights = np.ones(self.n_methods)
+
         self.init_dist = None
-        self.define_pars(
-            p_use=ss.bernoulli(p=0.5),
-            force_choose=False,  # Whether to force non-users to choose a method
-        )
-        self.update_pars(pars, **kwargs)
+
+        return
 
     @property
     def average_dur_use(self):
@@ -152,6 +192,9 @@ class ContraceptiveChoice(ss.Connector):
         self.methods[method.name] = method
 
     def remove_method(self, method_label):
+        errormsg = ('remove_method is not currently functional. See example in test_parameters.py if you want to run a '
+                    'simulation with a subset of the standard set of methods. The remove_method logic needs to be'
+                    'replaced with something that can remove a method partway through a simulation.')
         method = self.get_method_by_label(method_label)
         del self.methods[method.name]
 
@@ -193,13 +236,8 @@ class ContraceptiveChoice(ss.Connector):
 
 class RandomChoice(ContraceptiveChoice):
     """ Randomly choose a method of contraception """
-    def __init__(self, pars=None, methods=None, **kwargs):
-        super().__init__(methods=methods)
-        self.define_pars(
-            method_mix=np.array([1/self.n_methods]*self.n_methods),
-            force_choose=False,  # Whether to force non-users to choose a method
-        )
-        self.update_pars(pars, **kwargs)
+    def __init__(self, pars=None, **kwargs):
+        super().__init__(pars=pars, **kwargs)
         self.init_dist = self.pars['method_mix']
         self._method_mix = ss.choice(a=np.arange(1, self.n_methods+1))
         return
@@ -215,17 +253,7 @@ class RandomChoice(ContraceptiveChoice):
 class SimpleChoice(RandomChoice):
     def __init__(self, pars=None, location=None, method_choice_df=None, method_time_df=None, **kwargs):
         """ Args: coefficients """
-        super().__init__()
-        self.define_pars(
-            prob_use_year=2000,
-            prob_use_intercept=0.0,
-            prob_use_trend_par=0.0,
-            force_choose=False,  # Whether to force non-users to choose a method
-            method_weights=np.ones(self.n_methods),
-            max_dur=ss.years(100),  # Maximum duration of use in months
-        )
-        self.update_pars(pars, **kwargs)
-
+        super().__init__(pars=pars, **kwargs)
         # Handle location
         location = fpd.get_location(location)
         self.init_method_pars(location, method_choice_df=method_choice_df, method_time_df=method_time_df)
