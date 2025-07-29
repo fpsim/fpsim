@@ -22,7 +22,7 @@ def ok(string):
 def test_null(do_plot=do_plot):
     sc.heading('Testing no births, no deaths...')
 
-    fp_pars = fp.make_fp_pars()  # For default pars
+    fp_pars = fp.make_fp_pars(location='senegal')  # For default pars
 
     # Set things to zero
     for key in ['exposure_factor']:
@@ -141,6 +141,6 @@ if __name__ == '__main__':
     sc.options(backend=None)  # Turn on interactive plots
     with sc.timer():
         null    = test_null(do_plot=do_plot)
-        scale   = test_scale()
-        meths   = test_method_changes()
-        custom_loc = test_register_custom_location()
+        # scale   = test_scale()
+        # meths   = test_method_changes()
+        # custom_loc = test_register_custom_location()

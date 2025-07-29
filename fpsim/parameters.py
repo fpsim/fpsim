@@ -123,6 +123,8 @@ class FPPars(ss.Pars):
         self.regional = None
 
         self.update(kwargs)
+        if self.location is not None:
+            self.update_location()
 
         return
 
@@ -149,9 +151,9 @@ class FPPars(ss.Pars):
         return
 
 
-def make_fp_pars():
+def make_fp_pars(location=None):
     """ Shortcut for making a new instance of FPPars """
-    return FPPars()
+    return FPPars(location=location)
 
 
 def mergepars(*args):
