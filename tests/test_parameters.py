@@ -98,9 +98,8 @@ def test_method_changes():
     ok(f'Methods have expected length after removal ({n})')
 
     # Test method efficacy
-    methods = sc.dcp(fp.make_methods().Methods)  # TEMP
-    for method in methods.values():
-        if method.name != 0: method.efficacy = 1  # Make all methods totally effective
+    methods = fp.make_method_list()
+    for method in methods: method.efficacy = 1  # Make all methods totally effective
     choice = fp.RandomChoice(pars=dict(p_use=1), methods=methods)
     s3 = fp.Sim(test=True, contraception_module=choice)
     s3.run()
@@ -141,7 +140,7 @@ if __name__ == '__main__':
 
     sc.options(backend=None)  # Turn on interactive plots
     with sc.timer():
-        # null    = test_null(do_plot=do_plot)
-        # scale   = test_scale()
+        null    = test_null(do_plot=do_plot)
+        scale   = test_scale()
         meths   = test_method_changes()
-        # custom_loc = test_register_custom_location()
+        custom_loc = test_register_custom_location()
