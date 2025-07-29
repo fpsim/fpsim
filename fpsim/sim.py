@@ -166,7 +166,7 @@ class Sim(ss.Sim):
         Separate the parameters into simulation and fp-specific parameters.
         """
         # Marge in pars and kwargs
-        all_pars = sc.mergedicts(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, kwargs)
+        all_pars = fpp.mergepars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, kwargs)
         all_pars = self.remap_pars(all_pars)  # Remap any v2 parameters to v3 names
 
         # Deal with sim pars

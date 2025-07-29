@@ -11,7 +11,6 @@ __all__ = ['SimPars', 'FPPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'si
 
 # %% Parameter creation functions
 
-
 class SimPars(ss.SimPars):
     """
     Dictionary with all parameters used within an FPsim.
@@ -22,8 +21,9 @@ class SimPars(ss.SimPars):
 
         # Initialize the parent class
         super().__init__()
+
+        # Basic parameters
         self.n_agents = 1_000  # Number of agents
-        self.pop_scale = None   # Scaled population / total population size
         self.start = 1960   # Start year of simulation
         self.stop = 2020   # End year of simulation
         self.dt = 1/12      # The simulation timestep in 'unit's
@@ -31,10 +31,20 @@ class SimPars(ss.SimPars):
         self.rand_seed = 1      # Random seed
         self.verbose = 1/12   # Verbosity level
         self.use_aging = True   # Whether to age the population
+        self.test = False
+
         # Update with any supplied parameter values and generate things that need to be generated
         self.update(kwargs)
         return
 
+    def update(self, pars=None, create=False, **kwargs):
+        # Pull out test
+        if 'test' in pars or 'test' in kwargs:
+            print('Running in test mode, with smaller population and shorter time period.')
+            self.n_agents = 500
+            self.start = 2000
+        super().update(pars=pars, create=create, **kwargs)
+        return
 
 def make_sim_pars(**kwargs):
     """ Shortcut for making a new instance of SimPars """
@@ -111,8 +121,8 @@ class FPPars(ss.Pars):
         self.track_children = False  # Whether to track children
         self.regional = None
 
-        self.update(kwargs)
         self.update_location()
+        self.update(kwargs)
 
         return
 
@@ -142,6 +152,18 @@ class FPPars(ss.Pars):
 def make_fp_pars():
     """ Shortcut for making a new instance of FPPars """
     return FPPars()
+
+
+def mergepars(*args):
+    """
+    Merge all parameter dictionaries into a single dictionary.
+    This is used to initialize the SimPars class with all relevant parameters.
+    It wraps the sc.mergedicts function to ensure all inputs are dicts
+    """
+    # Convert any Pars objects to plain dicts and merge
+    dicts = [dict(sc.dcp(arg)) for arg in args if arg is not None]
+    merged_pars = sc.mergedicts(*dicts)
+    return merged_pars
 
 
 # Shortcut for accessing default keys

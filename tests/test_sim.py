@@ -68,9 +68,10 @@ def test_sim_creation():
     contra_pars = dict(prob_use_year=2000)
     edu_pars = dict(init_dropout=0.2)
     fp_pars = dict(postpartum_dur=24)
-    sim1 = fp.Sim(pars=par_kwargs, fp_pars=fp_pars, contra_pars=contra_pars, edu_pars=edu_pars, location='kenya')
+    sim1 = fp.Sim(sim_pars=par_kwargs, fp_pars=fp_pars, contra_pars=contra_pars, edu_pars=edu_pars, location='kenya')
     sim1.init()
 
+    assert sim1.pars.n_agents == 500, "Sim par failed"
     assert sim1.connectors.contraception.pars.prob_use_year == contra_pars['prob_use_year'], "Contraception par failed"
     assert sim1.connectors.edu.pars.init_dropout.pars.p == edu_pars['init_dropout'], "Education par failed"
     assert sim1.fp_pars.postpartum_dur == fp_pars['postpartum_dur'], "FP par failed"
@@ -109,10 +110,10 @@ def test_sim_creation():
 
 if __name__ == '__main__':
 
-    s0 = test_simple('ethiopia')
-    s1 = test_random_choice()
-    sims1 = test_simple_choice()
-    sims2 = test_mid_choice()
+    # s0 = test_simple('ethiopia')
+    # s1 = test_random_choice()
+    # sims1 = test_simple_choice()
+    # sims2 = test_mid_choice()
     test_sim_creation()
 
     print('Done.')

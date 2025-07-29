@@ -10,7 +10,7 @@ from fpsim import defaults as fpd
 
 # Global settings
 int_year = 2002 # Year to start the interventions
-parallel   = 0 # Whether to run in serial (for debugging)
+parallel   = 1 # Whether to run in serial (for debugging)
 do_plot  = 0 # Whether to do plotting in interactive mode
 do_plot_as = 0 # Whether or not to plot all age-specific channels
 default_ages = list(fpd.method_age_map.keys())
