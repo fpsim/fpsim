@@ -44,11 +44,19 @@ for (pkg in required_packages) {
 # -------------------------------
 
 # -- Load all the data -- #
-data.raw <- read_dta(dhs_path)
-data.raw.h <- read_dta("") # path to household DHS dataset here
+#data.raw <- read_dta(dhs_path)
+#data.raw.h <- read_dta(dhs_household_path) # path to household DHS dataset here
+dhs_household_data <- read_dta(dhs_household_path)
+# Filter if region and region_code are defined
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path) %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path) 
+}
 
 # -- Make new columns with names that are more readable -- #
-data <- data.raw %>%
+data <- dhs_data %>%
   mutate(
     age = v012,
     parity = v220,
@@ -64,9 +72,11 @@ svydesign_obj_1 = svydesign(
 )
 
 # -- preprocess household data
-data.h <- data.raw.h %>%
+data.h <- dhs_household_data %>%
   select(starts_with("hv103"), starts_with("hv105"), starts_with("hv104"), starts_with("hv109"), 
-         starts_with("hhid"), starts_with("hv001"), starts_with("hv023"), starts_with("hv005")) %>%
+         starts_with("hhid"), starts_with("hv001"), starts_with("hv023"), starts_with("hv005")) 
+
+data.h <- data.h %>%
   gather(var, val, -c(hhid, hv001, hv023, hv005)) %>% mutate(num = substr(var,7,9), var = substr(var,1,5)) %>% spread(var, val) %>%
   filter(hv103 == 1 & hv105 %in% c(6:14) & hv104 == 2) %>% # de facto hh member, age 6-15, female
   rename(edu = hv109, age = hv105) %>%
@@ -223,48 +233,50 @@ table.edu <- table.edu.ind %>%
 # Data available for Burkina Faso, Cote d'Ivoire, DRC, Ghana, India, Indonesia, Kenya, Niger, Nigeria, and Uganda
 
 # Load multiple datasets and add a column wave to each of them
-#data1 <- read_dta(pma1_path)
-#data1 <- data1 %>% mutate(wave = 1, RE_ID = as.character(RE_ID), country = as.character(country), doi_corrected = as.POSIXct(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"))
-data1 <- read_dta(pma1_path) %>%
-  mutate(
-    wave = 1,
-    RE_ID = as.character(RE_ID),
-    country = as.character(country),
-    doi_corrected = parse_date_time(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
-    FQdoi_corrected = parse_date_time(FQdoi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
-    consent_obtained = as.double(consent_obtained)
-  )
+library(haven)
+library(dplyr)
+library(lubridate)
 
-#data2 <- read_dta(pma2_path)
-#data2 <- data2 %>% mutate(wave = 2, RE_ID = as.character(RE_ID), country = as.character(country), doi_corrected = as.POSIXct(doi_corrected,  orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"))
-data2 <- read_dta(pma2_path) %>%
-  mutate(
-    wave = 2,
-    RE_ID = as.character(RE_ID),
-    country = as.character(country),
-    doi_corrected = parse_date_time(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
-    FQdoi_corrected = parse_date_time(FQdoi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
-    consent_obtained = as.double(consent_obtained)
-  )
+# Define a vector of possible wave numbers
+waves <- 1:4
 
-#data3 <- read_dta(pma3_path)
-#data3 <- data3 %>% mutate(wave = 3, RE_ID = as.character(RE_ID), country = as.character(country), doi_corrected = as.POSIXct(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"))
-data3 <- read_dta(pma3_path) %>%
-  mutate(
-    wave = 3,
-    RE_ID = as.character(RE_ID),
-    country = as.character(country),
-    doi_corrected = parse_date_time(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
-    FQdoi_corrected = parse_date_time(FQdoi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
-    consent_obtained = as.double(consent_obtained)
-  )
+# Initialize an empty list to store data frames
+pma_data_list <- list()
 
-# TODO: Add if statement if 4 files available
-#data4 <- read_dta(pma4_path)
-#data4 <- data4 %>% mutate(wave = 4, RE_ID = as.character(RE_ID), country = as.character(country), doi_corrected = as.POSIXct(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"))
+# Loop over each possible wave
+for (i in waves) {
+  var_name <- paste0("pma", i, "_path")
+  
+  if (exists(var_name)) {
+    path <- get(var_name)
+    message("Reading: ", var_name, " from ", path)
+    
+    # Read the data
+    data <- read_dta(path)
+    
+    # Only proceed if RE_ID is now present
+    if (!"RE_ID" %in% names(data)) {
+      warning(paste("Skipping wave", i, "— neither RE_ID nor PMA2020_RE_ID found."))
+      next
+    }
+    
+    data <- read_dta(path) %>%
+      mutate(
+        wave = i,
+        RE_ID = as.character(RE_ID),
+        country = as.character(country),
+        doi_corrected = parse_date_time(doi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
+        FQdoi_corrected = parse_date_time(FQdoi_corrected, orders = c("ymd", "ymd HMS", "Ymd", "mdy"), tz = "UTC"),
+        consent_obtained = as.double(consent_obtained),
+        strata = as.character(strata)
+      )
+    
+    pma_data_list[[length(pma_data_list) + 1]] <- data
+  }
+}
 
-data.raw.pma <- bind_rows(data1, data2, data3) #, data4)
-
+# Bind all available PMA data frames
+data.raw.pma <- bind_rows(pma_data_list)
 
 # recode data for school and birth timing
 weeks_in_a_year <- 52
@@ -354,8 +366,13 @@ stop.school$parity <- as.factor(stop.school$parity)
 # -------------------------------
 # 4. Save Output to Country Directory
 # -------------------------------
+# Create country-based output directory if it doesn't exist
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
 
-output_dir <- file.path(output_dir, country, 'data')
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

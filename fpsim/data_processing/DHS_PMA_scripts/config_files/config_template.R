@@ -7,16 +7,19 @@
 output_dir <- '../../locations/'
 
 # Country label used for subdirectory name within output_dir defined above
-# For example, the current configuration will store processed data in ./Model_Data/Kenya
+# For example, the current configuration will store processed data in ../../locations/nigeria_kano/data
 country <- "nigeria"
+
+# If desire files for a specific country and region, 
+# populate region_variable, region, region_code, and country_region variables
 # region_code: region integer from value_code v024; <int>
 #            Examples: Pakistan Sindh (v024 2018) = 2; 
 #            Nigeria Kano & Kaduna (sstate 2018) = 100 & 110, respectively
 #            Nigeria Kano & Kaduna (v024 1990) = 12 & 11, respectively
 region_variable <- "sstate"
-region <- "kaduna"
+region <- "kano"
 region_code <- 110
-country_region <- "nigeria_kaduna"
+country_region <- "nigeria_kano"
 
 # Base directories
 # DHS location: Update path below relative to config file location
@@ -26,8 +29,9 @@ PMA_Data <- file.path("../../../../data/PMA", country)# Folder (relative to data
 
 # Specific data file paths (relative to above folders or absolute)
 dhs_file <- "Nigeria_Female_2018.DTA"  # Female DHS file; needs to be Individual Recode (IR) DTA file
-dhs_household_file <- "Nigeria_Household_2018.DTA"  # Female DHS file; needs to be Individual Recode (IR) DTA file
+dhs_household_file <- "Nigeria_Household_2018.DTA"  # Household DHS file
 
+# Populate with PMA files, education_dhs_pma.R takes up to 4 pma files
 pma_file1 <- "PMA2020_NGP1_Kano_HQFQ_v3.0_1Sep2024.dta"  # Example PMA file, 2020 Phase 1 (Use the PMA 'Household and Female' datasets DTA files)
 pma_file2 <- "PMA2021_NGP2_Kano_HQFQ_v2.0_1Sep2024.dta"  # Example PMA file, 2022 Phase 2 (Use the PMA 'Household and Female' datasets DTA files)
 pma_file3 <- "PMA2022_NGP3_Kano_HQFQ_v3.0_1Sep2024.dta" # Example PMA file, 2022 Phase 3 (Use the PMA 'Household and Female' datasets DTA files)
@@ -38,6 +42,7 @@ model_type <- "both"  # Options: "simple", "standard", "both"
 # ------------------------------
 
 # Full paths constructed here for use in other scripts
+# education_dhs_pma.R takes up to 4 pma files
 dhs_path <- file.path(DHS_Data, dhs_file)
 dhs_household_path <- file.path(DHS_Data, dhs_household_file)
 pma1_path <- file.path(PMA_Data, pma_file1)
