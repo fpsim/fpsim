@@ -30,7 +30,7 @@ class SimPars(ss.SimPars):
         self.unit = 'year'   # The unit of time for the simulation
         self.rand_seed = 1      # Random seed
         self.verbose = 1/12   # Verbosity level
-        self.use_aging = True,   # Whether to age the population
+        self.use_aging = True   # Whether to age the population
         # Update with any supplied parameter values and generate things that need to be generated
         self.update(kwargs)
         return

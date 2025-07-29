@@ -48,15 +48,14 @@ def make_method_list():
         Method(name='othtrad',  efficacy=0.861, modern=False, dur_use=ln(1, 3), label='Other traditional', csv_name='Other.trad'),
         Method(name='othmod',   efficacy=0.880, modern=True, dur_use=ln(1, 3), label='Other modern', csv_name='Other.mod'),
     ]
-    return sc.dcp(method_list)
-
-
-def make_method_map():
     idx = 0
-    method_list = make_method_list()
     for method in method_list:
         method.idx = idx
         idx += 1
+    return sc.dcp(method_list)
+
+
+def make_method_map(method_list):
     method_map = {method.label: method.idx for method in method_list}
     return method_map
 
