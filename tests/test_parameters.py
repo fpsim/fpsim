@@ -7,6 +7,7 @@ import numpy as np
 import sciris as sc
 import fpsim as fp
 import pytest
+import starsim as ss
 import types
 import fpsim.defaults as fpd
 
@@ -33,7 +34,7 @@ def test_null(do_plot=do_plot):
     for key in ['age_mortality', 'maternal_mortality', 'infant_mortality']:
         pars[key]['probs'] *= 0
 
-    sim = fp.Sim(pars)
+    sim = fp.Sim(pars=pars)
     sim.run()
 
     # Tests
@@ -46,16 +47,16 @@ def test_null(do_plot=do_plot):
 
 
 def test_timestep():
-    pars = fp.pars('test')
-
-    # Set options
-    pars['n_agents'] = 500   # Small population size
-    pars['end_year'] = 2020  # 1961 - 2020 is the normal date range
-    pars['exposure_factor'] = 0.5  # Overall scale factor on probability of becoming pregnant
+    pars = dict(
+        location='test',
+        n_agents = 500,   # Small population size
+        stop = 2020,  # 1961 - 2020 is the normal date range
+        exposure_factor = 0.5 # Overall scale factor on probability of becoming pregnant
+    )
 
     for timestep in range(1, 13):
-        pars['timestep'] = timestep
-        sim = fp.Sim(pars=pars)
+        pars['dt'] = timestep/12
+        sim = fp.Sim(pars=sc.dcp(pars))
         sim.run()
         ok(f'simulation ran for timestep {timestep}')
 
@@ -70,10 +71,10 @@ def test_scale():
     scale = 2
 
     # Make and run sims
-    pars = fp.pars('test')
-    s1 = fp.Sim(pars, scaled_pop=orig_pop)
-    s2 = fp.Sim(pars, scaled_pop=scale*orig_pop)
-    msim = fp.parallel(s1, s2)
+    pars = dict(location='test')
+    s1 = fp.Sim(pars=pars)
+    s2 = fp.Sim(pars=pars, pop_scale=scale)
+    msim = ss.parallel([s1, s2], shrink=False)
     s1, s2 = msim.sims
 
 
@@ -103,14 +104,14 @@ def test_method_changes():
     choice.add_method(new_method)
     s1 = fp.Sim(location='test', contraception_module=choice)
     s1.run()
-    assert len(s1.contraception_module.methods) == n+1, 'Method was not added'
+    assert len(s1.fp_pars['contraception_module'].methods) == n+1, 'Method was not added'
     ok(f'Methods had expected length after addition ({n+1})')
 
     # Test remove method
     choice.remove_method('Injectables')
     s2 = fp.Sim(location='test', contraception_module=choice)
     s2.run()
-    assert len(s2.contraception_module.methods) == n, 'Methods was not removed'
+    assert len(s2.fp_pars['contraception_module'].methods) == n, 'Methods was not removed'
     ok(f'Methods have expected length after removal ({n})')
 
     # Test method efficacy
@@ -138,14 +139,14 @@ def test_validation():
     with pytest.raises(ValueError):
         p = sc.dcp(pars)
         p['not_a_par'] = 4
-        p.validate()
+        fp.validate(fp.default_pars, p)
     ok('Invalid name was caught by validation')
 
     # Missing value not allowed
     with pytest.raises(ValueError):
         p = sc.dcp(pars)
         p.pop('exposure_factor')
-        p.validate()
+        fp.validate(fp.default_pars, p)
     ok('Missing parameter was caught by validation')
 
     return pars
@@ -157,9 +158,9 @@ def test_save_load():
     filename = 'tmp_pars.json'
 
     pars = fp.pars()
-    pars.to_json(filename)
+    fp.pars_to_json(pars, filename)
     assert os.path.exists(filename), 'Did not write file to disk'
-    pars.from_json(filename)
+    fp.pars_from_json(filename)
     os.remove(filename)
     ok('pars.from_json() and pars.to_json() work')
 
@@ -169,14 +170,14 @@ def test_save_load():
 def test_long_params():
     sc.heading('Test longitudinal params')
     # Define pars
-    pars = fp.pars(location='senegal')
+    pars = dict(location='senegal')
 
     # Make and run sim
-    s = fp.Sim(pars)
+    s = fp.Sim(pars=pars)
     s.run()
 
     expected_rows = len(s.people)
-    expected_cols = s.tiperyear
+    expected_cols = s.fp_pars['tiperyear']
 
     for key in s.people.longitude.keys():
         df = s.people.longitude[key]
