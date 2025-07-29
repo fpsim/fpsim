@@ -12,6 +12,24 @@ from . import locations as fplocs
 
 
 # %% Class for updating education
+class EduPars(ss.Pars):
+    """
+    Parameters for the education module.
+    This class defines the parameters used in the education module.
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.age_start = 6  # Age at which education starts
+        self.age_stop = 25  # Age at which education stops - assumption
+        self.init_dropout = ss.bernoulli(p=0)  # Initial dropout probability
+        self.update(kwargs)
+        return
+
+
+def make_edu_pars():
+    """ Shortcut for making a new instance of ContraPars """
+    return EduPars()
+
 
 class Education(ss.Connector):
     def __init__(self, pars=None, location=None, **kwargs):
@@ -24,11 +42,8 @@ class Education(ss.Connector):
         super().__init__(name='edu')
 
         # Define parameters
-        self.define_pars(
-            age_start=6,  # Age at which education starts
-            age_stop=25,  # Age at which education stops - assumption
-            init_dropout=ss.bernoulli(p=0),  # Initial dropout probability
-        )
+        default_pars = EduPars()
+        self.define_pars(**default_pars)
         self.update_pars(pars, **kwargs)
 
         # Probabilities of dropping out - calculated using data inputs

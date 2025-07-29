@@ -61,10 +61,70 @@ def test_mid_choice():
     return m.sims
 
 
+def test_sim_creation():
+    sc.heading('Test creating a sim in different ways')
+
+    contra_pars = dict(prob_use_year=2000)
+    edu_pars = dict(init_dropout=0.2)
+    fp_pars = dict(postpartum_dur=24)
+
+    # Test 1: par passed in separate dicts
+    sim1 = fp.Sim(pars=par_kwargs, fp_pars=fp_pars, contra_pars=contra_pars, edu_pars=edu_pars, location='kenya')
+
+    sim1.init()
+
+    # assert sim1.diseases.ng.pars.eff_condom == 0.6, "Disease parameter not set correctly"
+    # assert len(sim1.diseases) == 5, "Incorrect number of diseases initialized"
+    # assert len(sim1.connectors) > 0, "No connectors initialized"
+    #
+    # demographics = [sti.Pregnancy(), ss.Deaths()]  # Replace the default ss.Pregnancy module with the sti one
+    # networks = sti.StructuredSexual()
+    # diseases = [sti.Gonorrhea(), 'hiv']
+    #
+    # sim2 = sti.Sim(
+    #     pars=pars,
+    #     networks=networks,
+    #     demographics=demographics,
+    #     diseases=diseases,
+    #     connectors=True,
+    # )
+    #
+    # sim2.init()
+    #
+    # assert isinstance(sim2.networks.structuredsexual, sti.StructuredSexual), "Network not initialized correctly"
+    # assert len(sim2.diseases) == 2, "Incorrect number of diseases initialized"
+    # assert len(sim2.connectors) > 0, "No connectors initialized"
+    # assert len(sim2.demographics) == 2, "Incorrect number of demographics initialized"
+    #
+    # # Test 3: flat pars dict
+    # pars = dict(
+    #     start=2010,  # Sim par
+    #     beta_m2f=0.05,  # STI parameter applied to all STIs
+    #     prop_f0=0.45,
+    #     location='zimbabwe',
+    #     datafolder='./test_data/',
+    #     diseases=['ng', 'ct', 'tv'],
+    #     ng=dict(eff_condom=0.6),  # Gonorrhea-specific parameter
+    # )
+    #
+    # sim3 = sti.Sim(**pars)
+    # sim3.init()
+    #
+    # assert sim3.diseases.ng.pars.beta_m2f == pars['beta_m2f'], "Disease parameter not set correctly"
+    # assert sim3.diseases.ct.pars.beta_m2f == pars['beta_m2f'], "Disease parameter not set correctly"
+    # assert sim3.diseases.ng.pars.eff_condom == pars['ng']['eff_condom'], "Disease parameter not set correctly"
+    # assert sim3.networks.structuredsexual.pars.prop_f0 == pars['prop_f0'], "Network parameter not set correctly"
+    # assert len(sim3.networks) == 2, "Default networks not added"
+    # assert len(sim3.diseases) == 3, "Incorrect number of diseases initialized"
+
+    return
+
+
 if __name__ == '__main__':
 
-    s0 = test_simple('ethiopia')
-    s1 = test_random_choice()
-    sims1 = test_simple_choice()
-    sims2 = test_mid_choice()
+    # s0 = test_simple('ethiopia')
+    # s1 = test_random_choice()
+    # sims1 = test_simple_choice()
+    # sims2 = test_mid_choice()
+    test_sim_creation()
     print('Done.')
