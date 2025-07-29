@@ -19,7 +19,7 @@ max_parity_spline = 20   # Used for parity splines
 location_registry = {}  # Registry for external custom locations
 valid_country_locs = ['senegal', 'kenya', 'ethiopia']
 valid_region_locs = {
-    'ethiopia': ['addis_ababa']
+    'ethiopia': ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
 }
 
 #%% Defaults when creating a new person
