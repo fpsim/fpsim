@@ -88,7 +88,7 @@ class Sim(ss.Sim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, location=None,
+    def __init__(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None,
                  contraception_module=None, empowerment_module=None, education_module=None,
                  label=None, people=None, demographics=None, diseases=None, networks=None,
                  interventions=None, analyzers=None, connectors=None, copy_inputs=True, **kwargs):
@@ -115,13 +115,14 @@ class Sim(ss.Sim):
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         sim_kwargs = {key: val for key, val in sim_kwargs.items() if val is not None}
         all_sim_pars, all_fp_pars = self.separate_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, **kwargs)
+
         self.pars.update(all_sim_pars)
         self.fp_pars.update(all_fp_pars)
 
         # Process modules by adding them as Starsim connectors
-        default_contra = fpm.StandardChoice(location=location, pars=self.contra_pars)
+        default_contra = fpm.StandardChoice(location=self.fp_pars.location, pars=self.contra_pars)
         contraception_module = contraception_module or sc.dcp(default_contra)
-        education_module = education_module or sc.dcp(fped.Education(location=location, pars=self.edu_pars))
+        education_module = education_module or sc.dcp(fped.Education(location=self.fp_pars.location, pars=self.edu_pars))
         connectors = sc.tolist(connectors) + [contraception_module, education_module]
         if empowerment_module is not None:
             connectors += sc.tolist(empowerment_module)
@@ -158,6 +159,9 @@ class Sim(ss.Sim):
             pars['stop'] = pars.pop('end_year')
         if 'seed' in pars:
             pars['rand_seed'] = pars.pop('seed')
+        if 'location' in pars and pars['location'] == 'test':
+            pars['location'] = 'default'
+            pars['test'] = True
         return pars
 
     # def separate_pars(self, pars):
@@ -178,6 +182,9 @@ class Sim(ss.Sim):
         user_fp_pars = {k: v for k, v in all_pars.items() if k in self.fp_pars.keys()}
         for k in user_fp_pars: all_pars.pop(k)
         fp_pars = sc.mergedicts(user_fp_pars, fp_pars, _copy=True)
+        if 'location' in fp_pars and fp_pars['location'] is not None:
+            self.fp_pars['location'] = fp_pars['location']
+        self.fp_pars.update_location()  # Update location-specific parameters
 
         # Deal with contraception module pars
         default_contra_pars = fpm.make_contra_pars()

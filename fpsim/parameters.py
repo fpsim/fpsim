@@ -122,7 +122,6 @@ class FPPars(ss.Pars):
         self.track_children = False  # Whether to track children
         self.regional = None
 
-        self.update_location()
         self.update(kwargs)
 
         return
