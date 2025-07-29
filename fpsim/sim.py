@@ -160,7 +160,7 @@ class Sim(ss.Sim):
         if 'seed' in pars:
             pars['rand_seed'] = pars.pop('seed')
         if 'location' in pars and pars['location'] == 'test':
-            pars['location'] = 'default'
+            pars['location'] = 'senegal'
             pars['test'] = True
         return pars
 
