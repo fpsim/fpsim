@@ -4,9 +4,10 @@ Handle sim parameters
 
 import sciris as sc
 import starsim as ss
+import fpsim as fp
 from . import defaults as fpd
 
-__all__ = ['SimPars', 'FPPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'sim_par_keys']
+__all__ = ['SimPars', 'FPPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'sim_par_keys', 'all_pars']
 
 
 # %% Parameter creation functions
@@ -169,3 +170,16 @@ def mergepars(*args):
 # Shortcut for accessing default keys
 par_keys = make_fp_pars().keys()
 sim_par_keys = make_sim_pars().keys()
+
+
+# ALL PARS
+def all_pars():
+    """
+    Return a dictionary with all parameters used within an FPsim.
+    This includes both simulation parameters and family planning parameters.
+    """
+    sim_pars = make_sim_pars()
+    fp_pars = make_fp_pars()
+    contra_pars = fp.ContraPars()
+    edu_pars = fp.EduPars()
+    return mergepars(sim_pars, fp_pars, contra_pars, edu_pars)

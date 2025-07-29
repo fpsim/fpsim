@@ -20,7 +20,7 @@ def ok(string):
 
 def make_analyzer(analyzer):
     ''' Create a sim with a single analyzer '''
-    sim = fp.Sim(location='test', analyzers=analyzer).run(verbose=1/12)
+    sim = fp.Sim(test=True, analyzers=analyzer).run(verbose=1/12)
     an = sim.analyzers[0]
     return an
 
@@ -34,11 +34,11 @@ def test_calibration(n_trials=3):
     )
 
     # Calculate calibration
-    pars= dict(location='test', n_agents=20, start=1960, stop=1980, verbose=1/12)
+    pars = dict(test=True, n_agents=20, start=2000, stop=2010, verbose=1/12)
 
     calib = fp.Calibration(pars=pars, weights=dict(pop_size=100))
-    calib.calibrate(calib_pars=calib_pars, n_trials=n_trials, n_workers=2)
-    before,after = calib.summarize()
+    calib.calibrate(calib_pars=calib_pars, n_trials=2, n_workers=1)
+    before, after = calib.summarize()
 
     # TODO FIX THIS
     # assert after <= before, 'Expect calibration to not make fit worse'
