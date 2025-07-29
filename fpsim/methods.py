@@ -60,7 +60,8 @@ def make_method_map(method_list):
     return method_map
 
 
-def make_methods(method_list):
+def make_methods(method_list=None):
+    if method_list is None: method_list = make_method_list()
     return ss.ndict(method_list, type=Method)
 
 
