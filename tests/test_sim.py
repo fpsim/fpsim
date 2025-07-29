@@ -110,10 +110,10 @@ def test_sim_creation():
 
 if __name__ == '__main__':
 
-    # s0 = test_simple('ethiopia')
-    # s1 = test_random_choice()
-    # sims1 = test_simple_choice()
-    # sims2 = test_mid_choice()
-    # test_sim_creation()
+    s0 = test_simple('ethiopia')
+    s1 = test_random_choice()
+    sims1 = test_simple_choice()
+    sims2 = test_mid_choice()
+    test_sim_creation()
 
     print('Done.')
