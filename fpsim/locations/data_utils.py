@@ -98,7 +98,7 @@ def bf_stats(location):
     data_path, region = data_dir(location)
     bf_data = pd.read_csv(data_path / 'bf_stats.csv')
     if region:
-        bf_data = bf_data[bf_data['region'] == location]
+        bf_data = bf_data[bf_data['region'] == location].reset_index(drop=True)
     bf_pars = {
         'breastfeeding_dur_mean' : bf_data.loc[0]['value'],  # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
         'breastfeeding_dur_sd' : bf_data.loc[1]['value']     # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R

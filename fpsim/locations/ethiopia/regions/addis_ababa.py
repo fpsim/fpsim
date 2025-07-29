@@ -7,7 +7,6 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 from .. import ethiopia as eth
-from scipy import interpolate as si
 from fpsim import defaults as fpd
 import fpsim.locations.data_utils as fpld
 
