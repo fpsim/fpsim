@@ -115,7 +115,6 @@ class Sim(ss.Sim):
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         sim_kwargs = {key: val for key, val in sim_kwargs.items() if val is not None}
         all_sim_pars, all_fp_pars = self.separate_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, **kwargs)
-
         self.pars.update(all_sim_pars)
         self.fp_pars.update(all_fp_pars)
 

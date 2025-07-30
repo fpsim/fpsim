@@ -1,8 +1,8 @@
 """
 Set the parameters for a location-specific FPsim model.
 """
-import os
 import numpy as np
+from pathlib import Path
 from fpsim import defaults as fpd
 import fpsim.locations.data_utils as fpld
 
@@ -18,20 +18,21 @@ def scalar_pars():
 
 def filenames():
     """ Data files for use with calibration, etc -- not needed for running a sim """
-    base_dir = os.path.dirname(os.path.abspath(__file__))
-    files = {}
-    files['base'] = os.path.join(base_dir, 'data')
-    files['basic_wb'] = 'basic_wb.yaml' # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=KE
-    files['popsize'] = 'popsize.csv' # Downloaded from World Bank: https://data.worldbank.org/indicator/SP.POP.TOTL?locations=KE
-    files['mcpr'] = 'cpr.csv'  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-    files['tfr'] = 'tfr.csv'   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=KE
-    files['asfr'] = 'asfr.csv' # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-    files['ageparity'] = 'ageparity.csv' # Choose from either DHS 2014 or PMA 2022
-    files['spacing'] = 'birth_spacing_dhs.csv' # From DHS
-    files['methods'] = 'mix.csv' # From PMA
-    files['afb'] = 'afb.table.csv' # From DHS
-    files['use'] = 'use.csv' # From PMA
-    files['education'] = 'edu_initialization.csv' # From DHS
+    base_dir = Path(__file__).resolve().parent / 'data'
+    files = {
+        'base': base_dir,
+        'basic_wb': base_dir / 'basic_wb.yaml', # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
+        'popsize': base_dir / 'popsize.csv', # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
+        'mcpr': base_dir / 'cpr.csv',  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+        'tfr': base_dir / 'tfr.csv',   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
+        'asfr': base_dir / 'asfr.csv', # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
+        'ageparity': base_dir / 'ageparity.csv', # Choose from either DHS 2016 or PMA 2022
+        'spacing': base_dir / 'birth_spacing_dhs.csv', # From DHS
+        'methods': base_dir / 'mix.csv', # From PMA
+        'afb': base_dir / 'afb.table.csv', # From DHS
+        'use': base_dir / 'use.csv', # From PMA
+        'education': base_dir / 'edu_initialization.csv', # From DHS
+    }
     return files
 
 
