@@ -479,10 +479,9 @@ class People(ss.People):
         The mean and the std dev are both drawn from that distribution in the DHS data.
         """
         mean, sd = self.sim.fp_pars['breastfeeding_dur_mean'], self.sim.fp_pars['breastfeeding_dur_sd']
-        a, b = 0, 50 # Truncate at 0 to ensure positive durations
-        a_std, b_std = (a - mean) / sd, (b - mean) / sd
-        breastfeed_durs = truncnorm.rvs(a_std, b_std, loc=mean, scale=sd, size=len(uids))
-        breastfeed_durs = np.ceil(breastfeed_durs)
+        a, b = 0, 50  # Truncate at 0 to ensure positive durations
+        breastfeed_durs = fpu.sample(dist='normal_int', par1=mean, par2=sd, size=len(uids))
+        breastfeed_durs = np.clip(breastfeed_durs, a, b)
         breastfeed_finished = uids[self.breastfeed_dur[uids] >= breastfeed_durs]
         breastfeed_continue = uids[self.breastfeed_dur[uids] < breastfeed_durs]
         self.reset_breastfeeding(breastfeed_finished)

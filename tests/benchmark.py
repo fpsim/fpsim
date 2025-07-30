@@ -33,7 +33,7 @@ if __name__ == '__main__':
         people_init     = ppl.__init__,
         update_method   = ppl.update_method,    # 95% of ppl.update_methods() runtime is spent here
         set_dur_method  = method_choice.set_dur_method,    # 98% of ppl.update_methods() runtime is spent here
-    )['set_dur_method']
+    )['step']
 
     if do_profile:
         sc.profile(run_sim, to_profile)
