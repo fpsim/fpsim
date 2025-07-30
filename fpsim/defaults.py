@@ -22,42 +22,6 @@ valid_region_locs = {
     'ethiopia': ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
 }
 
-#%% Defaults when creating a new person
-# class State:
-#     def __init__(self, name, val=None, dtype=None, ncols=None):
-#         """
-#         Initialize a state
-#         Args:
-#             name (str): name of state
-#             val (list, array, float, or str): value(s) to populate array with
-#             dtype (dtype): datatype. Inferred from val if not provided.
-#             ncols (int): number of cols, needed for 2d states like birth_ages (n_agents * n_births)
-#         """
-#         self.name = name
-#         self.val = val
-#         self.dtype = dtype
-#         self.ncols = ncols
-#
-#     @property
-#     def ndim(self):
-#         return 1 if self.ncols is None else 2
-#
-#     def new(self, n, vals=None):
-#         """
-#         Define an empty array with the correct value and data type
-#         """
-#         if vals is None: vals = self.val  # Use default if none provided
-#
-#         if isinstance(vals, np.ndarray):
-#             assert len(vals) == n
-#             arr = vals
-#         else:
-#             if self.dtype is None: dtype = object if isinstance(vals, str) else None
-#             else: dtype = self.dtype
-#             shape = n if self.ncols is None else (n, self.ncols)
-#             arr = np.full(shape=shape, fill_value=vals, dtype=dtype)
-#         return arr
-
 
 # Parse locations
 def get_location(location, printmsg=False):
@@ -83,6 +47,7 @@ def get_location(location, printmsg=False):
         raise NotImplementedError(errormsg)
 
     return location
+
 
 # Register custom location (for external users)
 def register_location(name, location_ref):
@@ -136,30 +101,6 @@ person_defaults = [
     ss.FloatArr('remainder_months', default=0),
     ss.FloatArr('personal_fecundity', default=0),
 
-    # Empowerment - states will remain at these values if use_empowerment is False
-    ss.State('paid_employment', default=False),
-    ss.State('decision_wages', default=False),
-    ss.State('decision_health', default=False),
-    ss.State('decision_purchase', default=False),
-    ss.State('buy_decision_major', default=False),  # whether she has decision making ability over major purchases
-    ss.State('buy_decision_daily', default=False),  # whether she has decision making over daily household purchases
-    ss.State('buy_decision_clothes', default=False),  # whether she has decision making over clothing purchases
-    ss.State('decide_spending_partner', default=False),  # whether she has decision makking over her partner's wages
-    ss.State('has_savings', default=False),  # whether she has savings
-    ss.State('has_fin_knowl', default=False),  # whether she knows where to get financial info
-    ss.State('has_fin_goals', default=False),  # whether she has financial goals
-    ss.State('sexual_autonomy', default=False),  # whether she has ability to refuse sex
-
-    # Composite empowerment attributes
-    ss.FloatArr('financial_autonomy', default=0),
-    ss.FloatArr('decision_making', default=0),
-
-    # Empowerment - fertility intent
-    ss.State('fertility_intent', default=False),
-    ss.Arr('categorical_intent', dtype="<U6",
-           default="no"),  # default listed as "cannot", but its overridden with "no" during init
-    ss.State('intent_to_use', default=False),
-
     # Partnership information -- states will remain at these values if use_partnership is False
     ss.State('partnered', default=False),
     ss.FloatArr('partnership_age', default=-1),
@@ -167,14 +108,6 @@ person_defaults = [
     # Socioeconomic
     ss.State('urban', default=True),
     ss.FloatArr('wealthquintile', default=3), # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
-
-    # Education - states will remain at these values if use_education is False
-    ss.FloatArr('edu_objective', default=0),
-    ss.FloatArr('edu_attainment', default=0),
-    ss.State('edu_dropout', default=False),
-    ss.State('edu_interrupted', default=False),
-    ss.State('edu_completed', default=False),
-    ss.State('edu_started', default=False),
 
     # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
     # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and
@@ -291,27 +224,6 @@ nonscaling_array_results = sc.autolist(
     'wq5',
     'nonpostpartum',
     'proportion_short_interval',
-
-    # Education
-    'edu_objective',
-    'edu_attainment',
-
-    # Empowerment and intent: all zero unless using an empowerment module
-    # Todo move these to the empowerment module results section
-    # 'perc_contra_intent',
-    # 'perc_fertil_intent',
-    # 'paid_employment',
-    # 'decision_wages',
-    # 'decide_spending_partner',
-    # "buy_decision_major",
-    # "buy_decision_daily",
-    # "buy_decision_clothes",
-    # "decision_health",
-    # "has_savings",
-    # "has_fin_knowl",
-    # "has_fin_goals",
-    # "financial_autonomy",
-    # "decision_making",
 )
 
 
@@ -364,20 +276,4 @@ to_annualize = {
     # 'new_users'       : 'new_users'
     }
 
-# People's states for which we will need circular buffers
-longitude_keys = [
-    'on_contra',
-    'intent_to_use',
-    'buy_decision_major',
-    'buy_decision_clothes',
-    'buy_decision_daily',
-    'has_fin_knowl',
-    'has_fin_goals',
-    'financial_autonomy',
-    'has_fin_goals',
-    'paid_employment',
-    'has_savings',
-    'decision_wages',
-    'decide_spending_partner',
-    'decision_health'
-]
+

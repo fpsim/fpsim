@@ -209,7 +209,6 @@ def make_scen(*args, **kwargs):
 make_scen.__doc__ +=  '\n\n' + Scenario.__doc__
 
 
-
 class Scenarios(sc.prettyobj):
     '''
     Run different intervention scenarios.
@@ -234,8 +233,8 @@ class Scenarios(sc.prettyobj):
     '''
 
     def __init__(self, pars=None, repeats=None, scens=None, **kwargs):
-        self.sim_par_keys = fpp.default_sim_pars.keys()
-        self.fp_pars_keys = fpp.default_pars.keys()
+        self.sim_par_keys = fpp.sim_par_keys
+        self.fp_pars_keys = fpp.par_keys
 
         self.repeats = repeats if repeats is not None else 1
         self.scens = sc.dcp(sc.tolist(scens))
@@ -256,7 +255,6 @@ class Scenarios(sc.prettyobj):
         except:
             return 0
 
-
     def add_scen(self, scen=None, label=None):
         ''' Add a scenario or scenarios to the Scenarios object '''
         if isinstance(scen, Scenario):
@@ -265,7 +263,6 @@ class Scenarios(sc.prettyobj):
         else:
             self.scens.append(Scenario(label=label, spec=scen))
         return
-
 
     def update_pars(self, **kwargs):
         new_sim_pars = {}
