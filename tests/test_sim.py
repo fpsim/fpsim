@@ -34,7 +34,7 @@ def test_simple_choice():
 
     # Make & run sim
     sims = sc.autolist()
-    for location in ['kenya', 'ethiopia', 'senegal']:
+    for location in ['kenya', 'ethiopia', 'senegal', 'amhara']:
         method_choice = fp.SimpleChoice(location=location)
         sim = fp.Sim(pars=par_kwargs, location=location, contraception_module=method_choice, analyzers=fp.cpr_by_age())
         sims += sim
@@ -49,7 +49,7 @@ def test_mid_choice():
     sc.heading('Test sims with default contraceptive choice module')
 
     sims = sc.autolist()
-    for location in ['kenya', 'ethiopia', 'senegal']:
+    for location in ['kenya', 'ethiopia', 'senegal', 'amhara']:
         ms = fp.StandardChoice(location=location)
         edu = fp.Education(location=location)
         s = fp.Sim(pars=par_kwargs, location=location, contraception_module=ms, education_module=edu)

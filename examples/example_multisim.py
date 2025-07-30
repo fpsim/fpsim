@@ -10,12 +10,12 @@ do_plot = True
 pars1 = fp.pars(location='amhara')
 pars1['n_agents'] = 500 # Small population size
 pars1['end_year'] = 2020 # 1961 - 2020 is the normal date range
-pars1['exposure_correction'] = 1.0 # Overall scale factor on probability of becoming pregnant
+pars1['exposure_factor'] = 1.0 # Overall scale factor on probability of becoming pregnant
 
 pars2 = fp.pars(location='somali')
 pars2['n_agents'] = 500 # Small population size
 pars2['end_year'] = 2020 # 1961 - 2020 is the normal date range
-pars2['exposure_correction'] = 1.0 # Overall scale factor on probability of becoming pregnant
+pars2['exposure_factor'] = 1.0 # Overall scale factor on probability of becoming pregnant
 
 
 if __name__ == '__main__':

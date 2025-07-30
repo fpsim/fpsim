@@ -4,6 +4,7 @@ Simple example usage for FPsim
 
 import sciris as sc
 import fpsim as fp
+from fpsim import plotting as plt
 
 # Set options
 do_plot = True
@@ -18,6 +19,7 @@ sim.run()
 
 if do_plot:
     sim.plot()
+    plt.plot_calib(sim)
 
 sc.toc()
 print('Done.')
