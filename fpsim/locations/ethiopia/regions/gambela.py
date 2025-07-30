@@ -2,7 +2,7 @@
 Set the parameters for FPsim, specifically for Ethiopia.
 '''
 
-import os
+from pathlib import Path
 import numpy as np
 from .. import ethiopia as eth
 from fpsim import defaults as fpd
@@ -21,14 +21,14 @@ def scalar_pars():
 
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
-    base_dir = os.path.dirname(os.path.abspath(__file__))
+    base_dir = Path(__file__).resolve().parent / 'data'
     files = eth.filenames()
-    files['base'] = os.path.join(base_dir, 'data')
-    files['mcpr'] = 'cpr.csv'
-    files['tfr'] = 'tfr.csv' ## From DHS 2016
-    files['asfr'] = 'asfr.csv' ## From DHS 2016
-    files['methods'] = 'mix.csv' ## From DHS 20
-    files['use'] = 'use.csv'  ## From PMA 2019
+    files['base'] = base_dir
+    files['mcpr'] = base_dir / 'cpr.csv'
+    files['tfr'] = base_dir / 'tfr.csv' ## From DHS 2016
+    files['asfr'] = base_dir / 'asfr.csv' ## From DHS 2016
+    files['methods'] = base_dir / 'mix.csv' ## From DHS 2016
+    files['use'] = base_dir / 'use.csv'  ## From PMA 2019
     return files
 
 def exposure_age():

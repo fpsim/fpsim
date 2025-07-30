@@ -78,24 +78,23 @@ class Config:
             val_data_mapping = {k: v for k, v in val_data_mapping.items() if k in keys}
 
         loc_mod = getattr(fp.locations, location)
-        base_path = Path(loc_mod.filenames()['base'])
+        file_paths = loc_mod.filenames()
         val_data = sc.objdict()
 
         for key, filename in val_data_mapping.items():
-            filepath = base_path / filename
-            if filepath.exists():
-                val_data[key] = pd.read_csv(filepath)
-            else:
-                # Try fallback in case regional location is using country level data
-                fallback_path = base_path.parent.parent / 'data' / filename
-                if fallback_path.exists():
-                    val_data[key] = pd.read_csv(fallback_path)
-                else:
-                    raise FileNotFoundError(f"Validation file not found.")
-            # Filter data to region if location is region-level
+            file_path = file_paths.get(key, None)
+            if file_path is None:
+                raise ValueError(f"No path defined for key '{key}' in filenames() for location '{location}'.")
+
+            if not Path(file_path).exists():
+                raise FileNotFoundError(f"File not found: {file_path}")
+
+            val_data[key] = pd.read_csv(file_path)
+
+            # Filter to region if 'region' column exists
             if 'region' in val_data[key].columns:
-                val_data[key] = val_data[key][val_data[key].region == location].copy()
-                val_data[key] = val_data[key].drop(['region'], axis=1)
+                val_data[key] = val_data[key][val_data[key]['region'] == location].copy()
+                val_data[key].drop(columns=['region'], inplace=True)
 
         return val_data
 
@@ -234,8 +233,8 @@ def plot_methods(sim):
     }
 
     # Method data_use from data - country PMA data (data_use.csv)
-    no_use = data_use.iloc[0]['perc']
-    any_method = data_use.iloc[1]['perc']
+    no_use = data_use.loc[data_use['use'] == 0, 'perc'].values[0]
+    any_method = data_use.loc[data_use['use'] == 1, 'perc'].values[0]
     data_methods_use = {
         'No method use': no_use,
         'Any method': any_method
