@@ -76,6 +76,13 @@ def test_plotting_class():
     plt.plot_all(sim)
     return sim
 
+def test_plotting_regional():
+    sc.heading('Test plotting class functions for region location...')
+    par_kwargs = dict(stop=2019)
+
+    sim = fp.Sim(pars=par_kwargs, location='amhara').run()
+    plt.plot_all(sim)
+    return sim
 
 def test_samples(do_plot=False, verbose=True):
     sc.heading('Samples distribution')

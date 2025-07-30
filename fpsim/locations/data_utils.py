@@ -398,11 +398,13 @@ def birth_spacing_pref(location):
     Returns an array of birth spacing preferences by closest postpartum month.
     If the CSV file is missing, a default table with equal weights is used.
     """
-    filepath = this_dir() / location / 'data' / 'birth_spacing_pref.csv'
+    data_path, region = data_dir(location)
 
     # Try to read the CSV, fallback to dummy df if not found
     try:
-        df = pd.read_csv(filepath)
+        df = pd.read_csv(data_path / 'birth_spacing_pref.csv')
+        if region:
+            df = df[df['region'] == location]
     except FileNotFoundError:
         print(f"birth_spacing_pref.csv not found for {location}, using default weights of 1.")
         months = np.arange(0, 39, 3)  # 0 to 36 months in 3-month intervals
@@ -551,12 +553,24 @@ def process_contra_use(which, location):
         which: either 'simple' or 'mid'
     """
 
-    # Read in data
-    alldfs = [
-        pd.read_csv(this_dir() / location / 'data' / f'contra_coef_{which}.csv'),
-        pd.read_csv(this_dir() / location / 'data' / f'contra_coef_{which}_pp1.csv'),
-        pd.read_csv(this_dir() / location / 'data' / f'contra_coef_{which}_pp6.csv'),
-    ]
+    def try_read_data(path):
+        return [
+            pd.read_csv(path / f'contra_coef_{which}.csv'),
+            pd.read_csv(path / f'contra_coef_{which}_pp1.csv'),
+            pd.read_csv(path / f'contra_coef_{which}_pp6.csv'),
+        ]
+
+    data_path, region = data_dir(location)
+
+    try:
+        # Try pulling data from location's data path; fall back to country data dir if not available
+        alldfs = try_read_data(data_path)
+    except FileNotFoundError:
+        if region:
+            fallback_path = data_path.parent.parent / 'data'
+            alldfs = try_read_data(fallback_path)
+        else:
+            raise  # Re-raise if it's not a region or the fallback also fails
 
     contra_use_pars = dict()
 
@@ -588,8 +602,17 @@ def process_contra_use(which, location):
 
 def process_markovian_method_choice(methods, location, df=None):
     """ Choice of method is age and previous method """
+
+    data_path, region = data_dir(location)
+
     if df is None:
-        df = pd.read_csv(this_dir() / location / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+        try:
+            df = pd.read_csv(data_path / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+        except FileNotFoundError:
+            if region:
+                fallback_path = data_path.parent.parent / 'data'
+                df = pd.read_csv(fallback_path / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+
     csv_map = {method.csv_name: method.name for method in methods.values()}
     idx_map = {method.csv_name: method.idx for method in methods.values()}
     idx_df = {}
@@ -628,8 +651,17 @@ def process_markovian_method_choice(methods, location, df=None):
 
 def process_dur_use(methods, location, df=None):
     """ Process duration of use parameters"""
+
+    data_path, region = data_dir(location)
+
     if df is None:
-        df = pd.read_csv(this_dir() / location / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+        try:
+            df = pd.read_csv(data_path / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+        except FileNotFoundError:
+            if region:
+                fallback_path = data_path.parent.parent / 'data'
+                df = pd.read_csv(fallback_path / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+
     for method in methods.values():
         if method.name == 'btl':
             method.dur_use = dict(dist='unif', par1=1000, par2=1200)

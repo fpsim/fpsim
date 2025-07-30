@@ -4,18 +4,12 @@ Set the parameters for FPsim, specifically for Ethiopia.
 
 import os
 import numpy as np
-import pandas as pd
-import sciris as sc
 from .. import ethiopia as eth
 from fpsim import defaults as fpd
 import fpsim.locations.data_utils as fpld
 
 
 # %% Housekeeping
-
-def this_dir():
-    thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
-    return thisdir
 
 def scalar_pars():
     scalar_pars = eth.scalar_pars()
@@ -62,53 +56,6 @@ def exposure_parity():
 
     return exposure_parity_interp
 
-def birth_spacing_pref():
-    '''
-    Returns an array of birth spacing preferences by closest postpartum month.
-    Applied to postpartum pregnancy likelihoods.
-
-    NOTE: spacing bins must be uniform!
-    '''
-    postpartum_spacing = np.array([
-        [0, 1],
-        [3, 1],
-        [6, 1],
-        [9, 1],
-        [12, 1],
-        [15, 1],
-        [18, 1],
-        [21, 1],
-        [24, 1],
-        [27, 1],
-        [30, 1],
-        [33, 1],
-        [36, 1],
-    ])
-
-    # Calculate the intervals and check they're all the same
-    intervals = np.diff(postpartum_spacing[:, 0])
-    interval = intervals[0]
-    assert np.all(
-        intervals == interval), f'In order to be computed in an array, birth spacing preference bins must be equal width, not {intervals}'
-    pref_spacing = {}
-    pref_spacing['interval'] = interval  # Store the interval (which we've just checked is always the same)
-    pref_spacing['n_bins'] = len(intervals)  # Actually n_bins - 1, but we're counting 0 so it's OK
-    pref_spacing['months'] = postpartum_spacing[:, 0]
-    pref_spacing['preference'] = postpartum_spacing[:, 1]  # Store the actual birth spacing data
-
-    return pref_spacing
-
-def region_proportions(location):
-    '''
-    Defines the proportion of the population in the region to establish the probability of living there.
-    '''
-    region_data = pd.read_csv(this_dir() / 'data' / 'region.csv')
-    region_dict = {}
-    region_dict['mean'] = region_data.loc[region_data['region'] == location]['mean']
-    region_dict['urban'] = region_data.loc[region_data['region'] == location]['urban']
-
-    return region_dict
-
 # %% Make and validate parameters
 
 def make_pars(location='tigray', seed=None):
@@ -142,13 +89,10 @@ def make_pars(location='tigray', seed=None):
     pars['debut_age'] = fpld.debut_age(location) # From DHS 2016
     pars['exposure_age'] = exposure_age()
     pars['exposure_parity'] = exposure_parity()
-    pars['spacing_pref'] = birth_spacing_pref()
+    pars['spacing_pref'] = fpld.birth_spacing_pref(location)
 
     # Contraceptive methods
     pars['mcpr'] = fpld.mcpr(location)
-
-    # Regional parameters
-    pars['region'] = region_proportions(location) # This function returns extrapolated and raw data
 
     #TODO: The latest version of FPsim uses age_partnership and wealth_quintile which these region files don't incorporate;
     # could possibly retrieve this data regionally?

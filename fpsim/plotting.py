@@ -9,6 +9,7 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 from . import defaults as fpd
+from pathlib import Path
 
 # Default Settings
 min_age = 15
@@ -51,12 +52,13 @@ class Config:
         return cls._figs_directory
 
     @classmethod
-    def load_validation_data(cls, country, val_data_mapping=None, keys=None):
+    def load_validation_data(cls, location, val_data_mapping=None, keys=None):
         """
-        Load validation data for the specified country.
+        Load validation data for the specified country or region.
+        Falls back to country-level data if region-specific file is not found.
 
         Args:
-            country (str): The name of the country folder.
+            location (str): The name of the location folder (region or country).
             val_data_mapping (dict, optional): Custom mapping of validation data keys to filenames.
                                                Defaults to `default_val_data_mapping`.
             keys (str or list of str, optional): Specific metric(s) to load (e.g., 'asfr' or ['asfr', 'tfr']).
@@ -75,14 +77,25 @@ class Config:
         if keys is not None:
             val_data_mapping = {k: v for k, v in val_data_mapping.items() if k in keys}
 
-        base_path = getattr(fp.locations, country).filenames()['base']
+        loc_mod = getattr(fp.locations, location)
+        base_path = Path(loc_mod.filenames()['base'])
         val_data = sc.objdict()
 
         for key, filename in val_data_mapping.items():
-            filepath = os.path.join(base_path, filename)
-            if not os.path.exists(filepath):
-                raise FileNotFoundError(f"Validation data file not found: {filepath}")
-            val_data[key] = pd.read_csv(filepath)
+            filepath = base_path / filename
+            if filepath.exists():
+                val_data[key] = pd.read_csv(filepath)
+            else:
+                # Try fallback in case regional location is using country level data
+                fallback_path = base_path.parent.parent / 'data' / filename
+                if fallback_path.exists():
+                    val_data[key] = pd.read_csv(fallback_path)
+                else:
+                    raise FileNotFoundError(f"Validation file not found.")
+            # Filter data to region if location is region-level
+            if 'region' in val_data[key].columns:
+                val_data[key] = val_data[key][val_data[key].region == location].copy()
+                val_data[key] = val_data[key].drop(['region'], axis=1)
 
         return val_data
 
@@ -224,7 +237,7 @@ def plot_methods(sim):
     no_use = data_use.iloc[0]['perc']
     any_method = data_use.iloc[1]['perc']
     data_methods_use = {
-        'No data_use': no_use,
+        'No method use': no_use,
         'Any method': any_method
     }
 
