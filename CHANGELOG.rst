@@ -8,8 +8,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-<<<<<<< HEAD
-Version 3.1.0 (2025-07-29)
+Version 3.1.0 (2025-07-31)
 ---------------------------
 - Refactors Contraception and Education to Starsim modules (connectors)
 - Exposes all parameters for different modules in the `pars` dictionary passed to the Sim. This means that creating a sim is far more flexible, e.g. all of these will work:
@@ -22,7 +21,8 @@ sim4 = fp.Sim(start=2000, contraception_module = fp.SimpleChoice(prob_use_trend_
 ```
 - Refactors parameters.py, so that all FP parameters inherit from Starsim parameter classes. We now have a `SimPars` class, as well as `FPPars`, `ContraPars`, and `EduPars`. When a Sim is created, any parameters passed in by the user will automatically get assigned to the right modules. This also allowed for a notable simplifaction in the parameter validation logic, since Starsim handles that automatically.
 - *GitHub info*: PR `575 <https://github.com/fpsim/fpsim/pull/575>`_
-=======
+
+
 Version 3.0.4 (2025-07-30)
 ---------------------------
 - Updates ethiopia/regions model files according to latest template used in country files
@@ -34,7 +34,6 @@ Version 3.0.4 (2025-07-30)
 - Removes deprecated region logic in experiment.py and sim.py
 - Tiny updates to sim and multisim examples
 - *GitHub info*: PR `581 <https://github.com/fpsim/fpsim/pull/592>`_
->>>>>>> subnational-cleanup
 
 
 Version 3.0.3 (2025-07-09)
