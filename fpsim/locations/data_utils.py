@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 import yaml
+import fpsim as fp
 from scipy import interpolate as si
 from fpsim import defaults as fpd
-from fpsim import utils as fpu
 import fpsim.shared_data as sd
 
 sd_dir = os.path.dirname(sd.__file__)  # path to the shared_data directory
@@ -19,17 +19,23 @@ def this_dir():
     thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
     return thisdir
 
-def data_dir(location):
-    # Set data path depending on if the location is a country or region
-    if any(location in v for v in fpd.valid_region_locs.values()):
-        country = next((k for k, v in fpd.valid_region_locs.items() if location in v), None)
-        data_path = this_dir() / country / "regions" / "data"
-        region = True
-    else:
-        data_path = this_dir() / location / "data"
-        region = False
+def read_data(location, filename, **kwargs):
+    # Obtain base path from location filenames
+    loc_mod = getattr(fp.locations, location)
+    data_path = loc_mod.filenames()['base']
+    try:
+        # Read data from data_path
+        df = pd.read_csv(data_path / filename, **kwargs)
+    except FileNotFoundError:
+        # Try one level up; likely a regional location so pull from country data
+        fallback_path = data_path.parent.parent / 'data'
+        df = pd.read_csv(fallback_path / filename, **kwargs)
 
-    return data_path, region
+    # If data for location is region-level data, filter by location and remove 'region' column
+    if 'region' in df.columns:
+        df = df[df['region'] == location].reset_index(drop=True).drop('region', axis=1)
+
+    return df
 
 def data2interp(data, ages, normalize=False):
     ''' Convert unevenly spaced data into an even spline interpolation '''
@@ -95,10 +101,7 @@ def _check_age_endpoints(df):
 # %% Scalar pars
 def bf_stats(location):
     """ Load breastfeeding stats """
-    data_path, region = data_dir(location)
-    bf_data = pd.read_csv(data_path / 'bf_stats.csv')
-    if region:
-        bf_data = bf_data[bf_data['region'] == location].reset_index(drop=True)
+    bf_data = read_data(location, 'bf_stats.csv')
     bf_pars = {
         'breastfeeding_dur_mean' : bf_data.loc[0]['value'],  # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
         'breastfeeding_dur_sd' : bf_data.loc[1]['value']     # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
@@ -108,7 +111,7 @@ def bf_stats(location):
 
 def scalar_probs(location):
     """ Load abortion and twins probabilities """
-    data = pd.read_csv(this_dir() / location / 'data' / 'scalar_probs.csv')
+    data = read_data(location, 'scalar_probs.csv')
     abortion_prob = data.loc[data['param']=='abortion_prob', 'prob'].values[0]   # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
     twins_prob = data.loc[data['param']=='twins_prob', 'prob'].values[0]         # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
 
@@ -125,7 +128,7 @@ def age_spline(which):
 
 def age_partnership(location):
     """ Probabilities of being partnered at age X"""
-    age_partnership_data = pd.read_csv(this_dir() / location / 'data' / 'age_partnership.csv')
+    age_partnership_data = read_data(location, 'age_partnership.csv')
     partnership_dict = {}
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
@@ -135,24 +138,19 @@ def age_partnership(location):
 def wealth(location):
     """ Process percent distribution of people in each wealth quintile"""
     cols = ["quintile", "percent"]
-    wealth_data = pd.read_csv(this_dir() / location / 'data' / 'wealth.csv', header=0, names=cols)
+    wealth_data = read_data(location, 'wealth.csv', header=0, names=cols)
     return wealth_data
 
 
 def urban_proportion(location):
     """Load information about the proportion of people who live in an urban setting"""
-    urban_data = pd.read_csv(this_dir() / location / 'data' / 'urban.csv')
+    urban_data = read_data(location, 'urban.csv')
     return urban_data["mean"][0]  # Return this value as a float
 
 
 def age_pyramid(location):
     """Load age pyramid data"""
-    data_path, region = data_dir(location)
-    df = pd.read_csv(data_path / 'age_pyramid.csv')
-    if region:
-        df = df[df['region'] == location]
-        df = df.drop('region', axis=1)
-
+    df = read_data(location, 'age_pyramid.csv')
     pyramid = df.to_numpy()
     return pyramid
 
@@ -168,8 +166,8 @@ def age_mortality(location, data_year=None):
     https://population.un.org/dataportal/data/indicators/59/locations/404/start/1950/end/2030/table/pivotbylocation
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     """
-    mortality_data = pd.read_csv(this_dir() / location / 'data' / 'mortality_prob.csv')
-    mortality_trend = pd.read_csv(this_dir() / location / 'data' / 'mortality_trend.csv')
+    mortality_data = read_data(location, 'mortality_prob.csv')
+    mortality_trend = read_data(location, 'mortality_trend.csv')
 
     if data_year is None:
         error_msg = "Please provide a data year to calculate mortality rates"
@@ -214,7 +212,7 @@ def maternal_mortality(location):
     42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
     expressed per 100,000 live births, for a specified time period.
     """
-    df = pd.read_csv(this_dir() / location / 'data' / 'maternal_mortality.csv')
+    df = read_data(location, 'maternal_mortality.csv')
     maternal_mortality = {}
     maternal_mortality['year'] = df['year'].values
     maternal_mortality['probs'] = df['probs'].values / 100000  # ratio per 100,000 live births
@@ -226,7 +224,7 @@ def infant_mortality(location):
     From World Bank indicators for infant mortality (< 1 year) for Kenya, per 1000 live births
     From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
     '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'infant_mortality.csv')
+    df = read_data(location, 'infant_mortality.csv')
 
     infant_mortality = {}
     infant_mortality['year'] = df['year'].values
@@ -262,7 +260,7 @@ def stillbirth(location):
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
     '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'stillbirths.csv')
+    df = read_data(location, 'stillbirths.csv')
     stillbirth_rate = {}
     stillbirth_rate['year'] = df['year'].values
     stillbirth_rate['probs'] =df['probs'].values / 1000  # Rate per 1000 total births
@@ -320,10 +318,7 @@ def lactational_amenorrhea(location):
     Ethiopia: From DHS Ethiopia 2016 calendar data
     Senegal: From DHS Senegal calendar data
     '''
-    data_path, region = data_dir(location)
-    df = pd.read_csv(data_path / 'lam.csv')
-    if region:
-        df = df[df['region'] == location]
+    df = read_data(location, 'lam.csv')
 
     lactational_amenorrhea = {}
     lactational_amenorrhea['month'] = df['month'].values
@@ -342,10 +337,7 @@ def sexual_activity(location):
     Data taken from DHS, no trend over years for now
     Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
     '''
-    data_path, region = data_dir(location)
-    df = pd.read_csv(data_path / 'sexually_active.csv')
-    if region:
-        df = df[df['region'] == location]
+    df = read_data(location, 'sexually_active.csv')
 
     sexually_active = df['probs'].values / 100  # Convert from percent to rate per woman
     activity_ages = df['age'].values
@@ -364,10 +356,7 @@ def sexual_activity_pp(location):
     Postpartum month 0 refers to the first month after delivery
     TODO-- Add code for processing this for other countries to data_processing
     '''
-    data_path, region = data_dir(location)
-    df = pd.read_csv(data_path / 'sexually_active_pp.csv')
-    if region:
-        df = df[df['region'] == location]
+    df = read_data(location, 'sexually_active_pp.csv')
 
     postpartum_activity = {}
     postpartum_activity['month'] = df['month'].values
@@ -381,10 +370,7 @@ def debut_age(location):
     Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
     Use sexual_debut_age_probs.py under locations/data_processing to output for other DHS countries
     """
-    data_path, region = data_dir(location)
-    df = pd.read_csv(data_path / 'debut_age.csv')
-    if region:
-        df = df[df['region'] == location]
+    df = read_data(location, 'debut_age.csv')
 
     debut_age = {}
     debut_age['ages'] = df['age'].values
@@ -398,13 +384,9 @@ def birth_spacing_pref(location):
     Returns an array of birth spacing preferences by closest postpartum month.
     If the CSV file is missing, a default table with equal weights is used.
     """
-    data_path, region = data_dir(location)
-
     # Try to read the CSV, fallback to dummy df if not found
     try:
-        df = pd.read_csv(data_path / 'birth_spacing_pref.csv')
-        if region:
-            df = df[df['region'] == location]
+        df = read_data(location, 'birth_spacing_pref.csv')
     except FileNotFoundError:
         print(f"birth_spacing_pref.csv not found for {location}, using default weights of 1.")
         months = np.arange(0, 39, 3)  # 0 to 36 months in 3-month intervals
@@ -514,10 +496,6 @@ def education_distributions(location):
             education_data (dict): Contains the unmodified empirical data from CSV files.
             education_dict (dict): Contains the processed empirical data to use in simulations.
     """
-
-    # Load empirical data
-    data_path, region = data_dir(location)
-
     education ={"edu_objective":
                     {"data_file": "edu_objective.csv",
                      "process_function": education_objective},
@@ -531,14 +509,7 @@ def education_distributions(location):
     education_data = dict()
     education_dict = dict()
     for edu_key in education.keys():
-        file_path = data_path / education[edu_key]["data_file"]
-        try:
-            df = pd.read_csv(file_path)
-        except:
-            # Try one level up; likely a regional location so pull from country data
-            fallback_path = data_path.parent.parent / 'data' / education[edu_key]["data_file"]
-            df = pd.read_csv(fallback_path)
-
+        df = read_data(location, education[edu_key]["data_file"])
         education_data[edu_key] = df
         education_dict[edu_key] = education[edu_key]["process_function"](df)
 
@@ -548,29 +519,17 @@ def education_distributions(location):
  
 def process_contra_use(which, location):
     """
-    Process cotraceptive use parameters.
+    Process contraceptive use parameters.
     Args:
         which: either 'simple' or 'mid'
     """
 
-    def try_read_data(path):
-        return [
-            pd.read_csv(path / f'contra_coef_{which}.csv'),
-            pd.read_csv(path / f'contra_coef_{which}_pp1.csv'),
-            pd.read_csv(path / f'contra_coef_{which}_pp6.csv'),
-        ]
-
-    data_path, region = data_dir(location)
-
-    try:
-        # Try pulling data from location's data path; fall back to country data dir if not available
-        alldfs = try_read_data(data_path)
-    except FileNotFoundError:
-        if region:
-            fallback_path = data_path.parent.parent / 'data'
-            alldfs = try_read_data(fallback_path)
-        else:
-            raise  # Re-raise if it's not a region or the fallback also fails
+    # Read in data
+    alldfs = [
+        read_data(location, f'contra_coef_{which}.csv'),
+        read_data(location, f'contra_coef_{which}_pp1.csv'),
+        read_data(location, f'contra_coef_{which}_pp6.csv'),
+    ]
 
     contra_use_pars = dict()
 
@@ -603,15 +562,8 @@ def process_contra_use(which, location):
 def process_markovian_method_choice(methods, location, df=None):
     """ Choice of method is age and previous method """
 
-    data_path, region = data_dir(location)
-
     if df is None:
-        try:
-            df = pd.read_csv(data_path / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
-        except FileNotFoundError:
-            if region:
-                fallback_path = data_path.parent.parent / 'data'
-                df = pd.read_csv(fallback_path / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+        df = read_data(location, 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
 
     csv_map = {method.csv_name: method.name for method in methods.values()}
     idx_map = {method.csv_name: method.idx for method in methods.values()}
@@ -652,15 +604,8 @@ def process_markovian_method_choice(methods, location, df=None):
 def process_dur_use(methods, location, df=None):
     """ Process duration of use parameters"""
 
-    data_path, region = data_dir(location)
-
     if df is None:
-        try:
-            df = pd.read_csv(data_path / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
-        except FileNotFoundError:
-            if region:
-                fallback_path = data_path.parent.parent / 'data'
-                df = pd.read_csv(fallback_path / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+        df = read_data(location, 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
 
     for method in methods.values():
         if method.name == 'btl':
@@ -702,10 +647,7 @@ def process_dur_use(methods, location, df=None):
 
 
 def mcpr(location):
-    data_path, region = data_dir(location)
-    df = pd.read_csv(data_path / 'cpr.csv')
-    if region:
-        df = df[df['region'] == location]
+    df = read_data(location, 'cpr.csv')
 
     mcpr = {}
     mcpr['mcpr_years'] = df['year'].to_numpy()

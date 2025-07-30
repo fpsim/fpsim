@@ -25,6 +25,8 @@ to regionally disaggregate the data** (see `locations/ethiopia/regions/data` for
 5. At the top of `defaults.py` in the Global Defaults section, add the country name as a key to the `valid_region_locs` dictionary with the region names listed in 
 an array as its corresponding value (see `defaults.py` ethiopia regions as an example).
 
+> Note: The experiment and calibration class have not been updated to run with regional models as of yet; however, the plotting class 
+> can be used to plot model output vs available data. 
 
 ## Adding a Location in an (external) Analysis Repo
 

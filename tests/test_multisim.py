@@ -64,4 +64,4 @@ if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer(): # Start timing
         msim = test_multisim()
-        # msim_eth = test_eth_multisim()
+        msim_eth = test_eth_multisim()
