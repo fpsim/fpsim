@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 import sciris as sc
 import yaml
+import fpsim as fp
 from scipy import interpolate as si
 from fpsim import defaults as fpd
-from fpsim import utils as fpu
 import fpsim.shared_data as sd
 
 sd_dir = os.path.dirname(sd.__file__)  # path to the shared_data directory
@@ -19,6 +19,23 @@ def this_dir():
     thisdir = sc.path(sc.thisdir(__file__))  # For loading CSV files
     return thisdir
 
+def read_data(location, filename, **kwargs):
+    # Obtain base path from location filenames
+    loc_mod = getattr(fp.locations, location)
+    data_path = loc_mod.filenames()['base']
+    try:
+        # Read data from data_path
+        df = pd.read_csv(data_path / filename, **kwargs)
+    except FileNotFoundError:
+        # Try one level up; likely a regional location so pull from country data
+        fallback_path = data_path.parent.parent / 'data'
+        df = pd.read_csv(fallback_path / filename, **kwargs)
+
+    # If data for location is region-level data, filter by location and remove 'region' column
+    if 'region' in df.columns:
+        df = df[df['region'] == location].reset_index(drop=True).drop('region', axis=1)
+
+    return df
 
 def data2interp(data, ages, normalize=False):
     ''' Convert unevenly spaced data into an even spline interpolation '''
@@ -84,7 +101,7 @@ def _check_age_endpoints(df):
 # %% Scalar pars
 def bf_stats(location):
     """ Load breastfeeding stats """
-    bf_data = pd.read_csv(this_dir() / location / 'data' / 'bf_stats.csv')
+    bf_data = read_data(location, 'bf_stats.csv')
     bf_pars = {
         'breastfeeding_dur_mean' : bf_data.loc[0]['value'],  # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
         'breastfeeding_dur_sd' : bf_data.loc[1]['value']     # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
@@ -94,7 +111,7 @@ def bf_stats(location):
 
 def scalar_probs(location):
     """ Load abortion and twins probabilities """
-    data = pd.read_csv(this_dir() / location / 'data' / 'scalar_probs.csv')
+    data = read_data(location, 'scalar_probs.csv')
     abortion_prob = data.loc[data['param']=='abortion_prob', 'prob'].values[0]   # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
     twins_prob = data.loc[data['param']=='twins_prob', 'prob'].values[0]         # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
 
@@ -111,7 +128,7 @@ def age_spline(which):
 
 def age_partnership(location):
     """ Probabilities of being partnered at age X"""
-    age_partnership_data = pd.read_csv(this_dir() / location / 'data' / 'age_partnership.csv')
+    age_partnership_data = read_data(location, 'age_partnership.csv')
     partnership_dict = {}
     partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
     partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
@@ -121,20 +138,20 @@ def age_partnership(location):
 def wealth(location):
     """ Process percent distribution of people in each wealth quintile"""
     cols = ["quintile", "percent"]
-    wealth_data = pd.read_csv(this_dir() / location / 'data' / 'wealth.csv', header=0, names=cols)
+    wealth_data = read_data(location, 'wealth.csv', header=0, names=cols)
     return wealth_data
 
 
 def urban_proportion(location):
     """Load information about the proportion of people who live in an urban setting"""
-    urban_data = pd.read_csv(this_dir() / location / 'data' / 'urban.csv')
+    urban_data = read_data(location, 'urban.csv')
     return urban_data["mean"][0]  # Return this value as a float
 
 
 def age_pyramid(location):
     """Load age pyramid data"""
-    age_pyramid_data = pd.read_csv(this_dir() / location / 'data' / 'age_pyramid.csv')
-    pyramid = age_pyramid_data.to_numpy()
+    df = read_data(location, 'age_pyramid.csv')
+    pyramid = df.to_numpy()
     return pyramid
 
 
@@ -149,8 +166,8 @@ def age_mortality(location, data_year=None):
     https://population.un.org/dataportal/data/indicators/59/locations/404/start/1950/end/2030/table/pivotbylocation
     Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
     """
-    mortality_data = pd.read_csv(this_dir() / location / 'data' / 'mortality_prob.csv')
-    mortality_trend = pd.read_csv(this_dir() / location / 'data' / 'mortality_trend.csv')
+    mortality_data = read_data(location, 'mortality_prob.csv')
+    mortality_trend = read_data(location, 'mortality_trend.csv')
 
     if data_year is None:
         error_msg = "Please provide a data year to calculate mortality rates"
@@ -195,7 +212,7 @@ def maternal_mortality(location):
     42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
     expressed per 100,000 live births, for a specified time period.
     """
-    df = pd.read_csv(this_dir() / location / 'data' / 'maternal_mortality.csv')
+    df = read_data(location, 'maternal_mortality.csv')
     maternal_mortality = {}
     maternal_mortality['year'] = df['year'].values
     maternal_mortality['probs'] = df['probs'].values / 100000  # ratio per 100,000 live births
@@ -207,7 +224,7 @@ def infant_mortality(location):
     From World Bank indicators for infant mortality (< 1 year) for Kenya, per 1000 live births
     From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
     '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'infant_mortality.csv')
+    df = read_data(location, 'infant_mortality.csv')
 
     infant_mortality = {}
     infant_mortality['year'] = df['year'].values
@@ -243,7 +260,7 @@ def stillbirth(location):
     From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
     https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
     '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'stillbirths.csv')
+    df = read_data(location, 'stillbirths.csv')
     stillbirth_rate = {}
     stillbirth_rate['year'] = df['year'].values
     stillbirth_rate['probs'] =df['probs'].values / 1000  # Rate per 1000 total births
@@ -301,7 +318,8 @@ def lactational_amenorrhea(location):
     Ethiopia: From DHS Ethiopia 2016 calendar data
     Senegal: From DHS Senegal calendar data
     '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'lam.csv')
+    df = read_data(location, 'lam.csv')
+
     lactational_amenorrhea = {}
     lactational_amenorrhea['month'] = df['month'].values
     lactational_amenorrhea['rate'] = df['rate'].values
@@ -319,7 +337,8 @@ def sexual_activity(location):
     Data taken from DHS, no trend over years for now
     Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
     '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'sexually_active.csv')
+    df = read_data(location, 'sexually_active.csv')
+
     sexually_active = df['probs'].values / 100  # Convert from percent to rate per woman
     activity_ages = df['age'].values
     activity_interp_model = si.interp1d(x=activity_ages, y=sexually_active)
@@ -337,7 +356,8 @@ def sexual_activity_pp(location):
     Postpartum month 0 refers to the first month after delivery
     TODO-- Add code for processing this for other countries to data_processing
     '''
-    df = pd.read_csv(this_dir() / location / 'data' / 'sexually_active_pp.csv')
+    df = read_data(location, 'sexually_active_pp.csv')
+
     postpartum_activity = {}
     postpartum_activity['month'] = df['month'].values
     postpartum_activity['percent_active'] = df['probs'].values
@@ -350,7 +370,8 @@ def debut_age(location):
     Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
     Use sexual_debut_age_probs.py under locations/data_processing to output for other DHS countries
     """
-    df = pd.read_csv(this_dir() / location / 'data' / 'debut_age.csv')
+    df = read_data(location, 'debut_age.csv')
+
     debut_age = {}
     debut_age['ages'] = df['age'].values
     debut_age['probs'] = df['probs'].values
@@ -363,11 +384,9 @@ def birth_spacing_pref(location):
     Returns an array of birth spacing preferences by closest postpartum month.
     If the CSV file is missing, a default table with equal weights is used.
     """
-    filepath = this_dir() / location / 'data' / 'birth_spacing_pref.csv'
-
     # Try to read the CSV, fallback to dummy df if not found
     try:
-        df = pd.read_csv(filepath)
+        df = read_data(location, 'birth_spacing_pref.csv')
     except FileNotFoundError:
         print(f"birth_spacing_pref.csv not found for {location}, using default weights of 1.")
         months = np.arange(0, 39, 3)  # 0 to 36 months in 3-month intervals
@@ -477,10 +496,6 @@ def education_distributions(location):
             education_data (dict): Contains the unmodified empirical data from CSV files.
             education_dict (dict): Contains the processed empirical data to use in simulations.
     """
-
-    # Load empirical data
-    data_path = this_dir() / location / "data"
-
     education ={"edu_objective":
                     {"data_file": "edu_objective.csv",
                      "process_function": education_objective},
@@ -494,24 +509,26 @@ def education_distributions(location):
     education_data = dict()
     education_dict = dict()
     for edu_key in education.keys():
-        education_data[edu_key] = pd.read_csv(data_path / education[edu_key]["data_file"])
-        education_dict[edu_key] = education[edu_key]["process_function"](education_data[edu_key])
+        df = read_data(location, education[edu_key]["data_file"])
+        education_data[edu_key] = df
+        education_dict[edu_key] = education[edu_key]["process_function"](df)
+
     education_dict.update({"age_start": 6.0})
     return education_dict, education_data
 
  
 def process_contra_use(which, location):
     """
-    Process cotraceptive use parameters.
+    Process contraceptive use parameters.
     Args:
         which: either 'simple' or 'mid'
     """
 
     # Read in data
     alldfs = [
-        pd.read_csv(this_dir() / location / 'data' / f'contra_coef_{which}.csv'),
-        pd.read_csv(this_dir() / location / 'data' / f'contra_coef_{which}_pp1.csv'),
-        pd.read_csv(this_dir() / location / 'data' / f'contra_coef_{which}_pp6.csv'),
+        read_data(location, f'contra_coef_{which}.csv'),
+        read_data(location, f'contra_coef_{which}_pp1.csv'),
+        read_data(location, f'contra_coef_{which}_pp6.csv'),
     ]
 
     contra_use_pars = dict()
@@ -544,8 +561,10 @@ def process_contra_use(which, location):
 
 def process_markovian_method_choice(methods, location, df=None):
     """ Choice of method is age and previous method """
+
     if df is None:
-        df = pd.read_csv(this_dir() / location / 'data' / 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+        df = read_data(location, 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+
     csv_map = {method.csv_name: method.name for method in methods.values()}
     idx_map = {method.csv_name: method.idx for method in methods.values()}
     idx_df = {}
@@ -584,8 +603,10 @@ def process_markovian_method_choice(methods, location, df=None):
 
 def process_dur_use(methods, location, df=None):
     """ Process duration of use parameters"""
+
     if df is None:
-        df = pd.read_csv(this_dir() / location / 'data' / 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+        df = read_data(location, 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+
     for method in methods.values():
         if method.name == 'btl':
             method.dur_use = dict(dist='unif', par1=1000, par2=1200)
@@ -626,11 +647,11 @@ def process_dur_use(methods, location, df=None):
 
 
 def mcpr(location):
+    df = read_data(location, 'cpr.csv')
 
     mcpr = {}
-    cpr_data = pd.read_csv(this_dir() / location / 'data' / 'cpr.csv')
-    mcpr['mcpr_years'] = cpr_data['year'].to_numpy()
-    mcpr['mcpr_rates'] = cpr_data['cpr'].to_numpy() / 100
+    mcpr['mcpr_years'] = df['year'].to_numpy()
+    mcpr['mcpr_rates'] = df['cpr'].to_numpy() / 100
 
     return mcpr
 

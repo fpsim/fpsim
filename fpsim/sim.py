@@ -88,7 +88,7 @@ class Sim(ss.Sim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, pars={}, location=None, track_children=False, regional=False,
+    def __init__(self, pars={}, location=None, track_children=False,
                  contraception_module=None, empowerment_module=None, education_module=None,
                  label=None, people=None, demographics=None, diseases=None, networks=None,
                  interventions=None, analyzers=None, connectors=None, copy_inputs=True, data=None, **kwargs):
@@ -106,7 +106,7 @@ class Sim(ss.Sim):
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         args = {key:val for key,val in args.items() if val is not None} # Remove None inputs
 
-        fp_args = dict(location=location, track_children=track_children, regional=regional)
+        fp_args = dict(location=location, track_children=track_children)
         fp_args = {key: val for key, val in fp_args.items() if val is not None}  # Remove None inputs
 
         # Combine all the pars

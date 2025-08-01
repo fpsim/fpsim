@@ -2,13 +2,33 @@
 
 This folder stores the location-specific files for FPsim models (both the `<model>.py` file as well as location-specific data). 
 
-To add a new location to this repo:
+## Adding a Location to this Repo
+
+### To add a country model:
 
 1. Create a new folder with the (lowercase) location name `<name>`.
 2. Create a folder `<name>/data` and add the source data files there (see the 'Model Parameters' section below for the specific files required for an FPsim model to run). Many of the data files have corresponding R processing scripts to format the data, and some are from specific studies and need to be formatted manually. For the proper format of each file, refer to the files in `locations/kenya/data`. **Note that the filenames MUST match the naming conventions defined in the table(s) below.
 3. Copy the template model file `locations/template_loc/template.py` to the new location folder and change its name to `<name>.py`. Modify any lines designated with 'USER-EDITABLE' to your specifications. This file is used to configure a specific FPsim model and generate its location parameter values.
-4. Add `from . import <name>` to `__init__.py`.
-5. In `defaults.py` under the `get_location` function, add the (lowercase) location name to the `valid_country_locs` array.
+4. Add `from . import <name>` to `locations/__init__.py`.
+5. At the top of `defaults.py` in the Global Defaults section, add the (lowercase) location name to the `valid_country_locs` array.
+
+### To add regional model(s):
+1. Create a new folder with the (lowercase) country name `<country>`, and a subdirectory called `regions`.
+2. Create a folder `<country>/regions/data`; this is where any available region-specific data will be stored for use in the model. (See the Model 
+Parameters table below for a list of all required files for the FPsim model to run.) The model depends on having all listed data files, but 
+**if regional data for a given parameter is not available, you may substitute country-level data instead.** In such cases, be sure to include this country data in `locations/<country>/data` and follow the guidance 
+provided in the comments in template.py in Step 3 below to use it accordingly. Many data files have accompanying R scripts for preprocessing, while others—especially those 
+derived from specific studies—may require manual formatting. Each region-level file should be stored in `locations/<country>/regions/data` and follow the schema found in `locations/kenya/data` **with the addition of a `region` column
+to regionally disaggregate the data** (see `locations/ethiopia/regions/data` for examples). Both country- and region-level filenames must match the naming conventions specified in the table(s) below.
+3. For each region, copy the template model file `locations/template_loc/template.py` to the `locations/{country}/regions` folder and change its name to `<region>.py`. Modify any lines designated with 'USER-EDITABLE' to your specifications. This file is used to configure a specific FPsim model and generate its location parameter values.
+4. Add `from .{country}.regions import {region}` to `locations/__init__.py`.
+5. At the top of `defaults.py` in the Global Defaults section, add the country name as a key to the `valid_region_locs` dictionary with the region names listed in 
+an array as its corresponding value (see `defaults.py` ethiopia regions as an example).
+
+> Note: The experiment and calibration class have not been updated to run with regional models as of yet; however, the plotting class 
+> can be used to plot model output vs available data. 
+
+## Adding a Location in an (external) Analysis Repo
 
 To add a new location in an analysis repo:
 1. Create a `locations` directory in your analysis repo, and copy into it the following from `fpsim/locations`:
@@ -21,7 +41,7 @@ To add a new location in an analysis repo:
    10. `fp.defaults.register_location('<name>', <name>)`
 8. To run fpsim with your location, ensure you also have fpsim installed (either via pip or locally) so that the core model code can be used.
 
-
+## Model Data
 ### Model Parameters
 
 The following table lists the metrics used to parameterize any model within FPsim. Most data sources are context-specific 

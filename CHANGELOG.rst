@@ -8,6 +8,19 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 3.0.4 (2025-07-30)
+---------------------------
+- Updates ethiopia/regions model files according to latest template used in country files
+- Updates data_utils.py and plotting.py to be usable with both country and region model locations
+- In conjunction with two changes above, modifies ethiopia region data filenames to be consistent with country data filenames
+- Shifts valid_country_locs and valid_region_locs to top of defaults.py for easier modification
+- Updates locations/README to document the steps to add region model(s) according to changes and expected format above
+- Slight change to filenames() function format in template and model files to more robustly capture filepaths with correct base_dir
+- Removes deprecated region logic in experiment.py and sim.py
+- Tiny updates to sim and multisim examples
+- *GitHub info*: PR `581 <https://github.com/fpsim/fpsim/pull/592>`_
+
+
 Version 3.0.3 (2025-07-09)
 ---------------------------
 Resolves issues:

@@ -84,15 +84,6 @@ class Experiment(sc.prettyobj):
             data = sc.loadjson(path, **kwargs)
         elif path.suffix == '.csv':
             data = pd.read_csv(path, **kwargs)
-            if str(path).endswith('region.csv'):
-                region = self.location
-                if region == 'benishangul_gumuz':
-                    region = region.replace('_', '-').title()  # Replace underscore with dash and capitalize each word
-                elif region == 'snnpr':
-                    region = 'SNNPR'
-                else:
-                    region = region.replace('_', ' ').title()
-                data = data.loc[data['region'] == region]
         elif path.suffix == '.yaml':
             with open(path) as f:
                 data = yaml.safe_load(f, **kwargs)
@@ -251,11 +242,7 @@ class Experiment(sc.prettyobj):
 
         # Save asfr and asfr_bins to data dictionary
         year_data = asfr[asfr['year'] == self.sim.pars['stop']]
-        if 'region' in age_bins:
-            age_bins.remove('region')
-            self.data['asfr'] = year_data.drop(['year', 'region'], axis=1).values.tolist()[0]
-        else:
-            self.data['asfr'] = year_data.drop(['year'], axis=1).values.tolist()[0]
+        self.data['asfr'] = year_data.drop(['year'], axis=1).values.tolist()[0]
         self.data['asfr_bins'] = age_bins
 
         # Model extraction
@@ -412,13 +399,8 @@ class Experiment(sc.prettyobj):
 
         # Update data method mix using non-user percentage from 'use' file
         data_use = self.load_data('use')
-        if 'region' in data_use.columns:
-            latest_data = data_use[data_use['year'] == data_use['year'].max()]
-            data_method_counts['None'] = latest_data.loc[latest_data['var1'] == 0, 'perc'].values[0]
-            use_freq = (latest_data.loc[latest_data['var1'] == 1, 'perc'].values[0]) / 100
-        else:
-            data_method_counts['None'] = data_use.loc[0, 'perc']
-            use_freq = (data_use.loc[1, 'perc'])/100
+        data_method_counts['None'] = data_use.loc[0, 'perc']
+        use_freq = (data_use.loc[1, 'perc'])/100
         for key, value in data_method_counts.items():
             value /= 100
             if key != 'None':
