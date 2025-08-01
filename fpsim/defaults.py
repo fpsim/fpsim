@@ -17,7 +17,7 @@ max_age_preg   = 50   # Maximum age to become pregnant
 max_parity     = 20   # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
 max_parity_spline = 20   # Used for parity splines
 location_registry = {}  # Registry for external custom locations
-valid_country_locs = ['senegal', 'kenya', 'ethiopia']
+valid_country_locs = ['senegal', 'kenya', 'ethiopia', 'cotedivoire', 'niger']
 valid_region_locs = {
     'ethiopia': ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
 }
