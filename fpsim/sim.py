@@ -336,32 +336,6 @@ class Sim(ss.Sim):
         pp.fillna(0, inplace=True)
         return pp
 
-    def to_df(self, include_range=False):
-        """
-        Export all sim results to a dataframe
-
-        Args:
-            include_range (bool): if True, and if the sim results have best, high, and low, then export all of them; else just best
-        """
-        raw_res = sc.odict(defaultdict=list)
-        for reskey in self.results.keys():
-            res = self.results[reskey]
-            if isinstance(res, dict):
-                for blh, blhres in res.items():  # Best, low, high
-                    if len(blhres) == self.npts:
-                        if not include_range and blh != 'best':
-                            continue
-                        if include_range:
-                            blhkey = f'{reskey}_{blh}'
-                        else:
-                            blhkey = reskey
-                        raw_res[blhkey] += blhres.tolist()
-            elif sc.isarray(res) and len(res) == self.npts:
-                raw_res[reskey] += res.tolist()
-        df = pd.DataFrame(raw_res)
-        self.df = df
-        return df
-
     # Function to scale all y-axes in fig based on input channel
     @staticmethod
     def conform_y_axes(figure, bottom=0, top=100):
@@ -638,6 +612,8 @@ class Sim(ss.Sim):
         raw_res = sc.odict(defaultdict=list)
         for reskey in self.results.keys():
             res = self.results[reskey]
+            if reskey == 'timevec': # Convert to floating-point years
+                res = res.years
             if isinstance(res, dict):
                 for blh, blhres in res.items():  # Best, low, high
                     if len(blhres) == self.t.npts:
