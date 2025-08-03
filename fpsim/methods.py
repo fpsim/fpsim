@@ -138,6 +138,7 @@ class ContraceptiveChoice(ss.Connector):
          duration on that method. This method is called by the simulation to initialise the
          people object at the beginning of the simulation and new people born during the simulation.
          """
+        super().init_post()
         ppl = self.sim.people
         fecund = ppl.female & (ppl.age < self.sim.fp_pars['age_limit_fecundity'])
         fecund_uids = fecund.uids
