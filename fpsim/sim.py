@@ -278,10 +278,6 @@ class Sim(ss.Sim):
         self.update_mortality()
         self.people.step()
 
-    def finalize(self):
-        self.finalize_results()
-        super().finalize()
-
     def finalize_results(self):
         # Convert all results to Numpy arrays
         for key, arr in self.results.items():
@@ -303,6 +299,7 @@ class Sim(ss.Sim):
         self.results['cum_short_intervals_by_year'] = np.cumsum(self.results['short_intervals_over_year'])
         self.results['cum_secondary_births_by_year'] = np.cumsum(self.results['secondary_births_over_year'])
         self.results['cum_pregnancies_by_year'] = np.cumsum(self.results['pregnancies_over_year'])
+        super().finalize_results() # Scale results
         return
 
     def store_postpartum(self):
