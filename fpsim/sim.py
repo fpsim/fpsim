@@ -224,12 +224,13 @@ class Sim(ss.Sim):
         """
         super().init_results()  # Initialize the base results
 
-        scaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
+        years = self.t.timevec.years
+        scaling_kw = dict(shape=self.t.npts, timevec=years, dtype=int, scale=True)
 
         for key in fpd.scaling_array_results:
             self.results += ss.Result(key, label=key, **scaling_kw)
 
-        nonscaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=float, scale=False)
+        nonscaling_kw = dict(shape=self.t.npts, timevec=years, dtype=float, scale=False)
         for key in fpd.nonscaling_array_results:
             self.results += ss.Result(key, label=key, **nonscaling_kw)
 
@@ -473,8 +474,8 @@ class Sim(ss.Sim):
                     y, low, high = this_res, None, None
 
                 # Figure out x axis
-                years = res['tfr_years']
-                timepoints = res.timevec  # Likewise
+                years = res.tfr_years
+                timepoints = res.timevec.years  # Likewise
                 x = None
                 for x_opt in [years, timepoints]:
                     if len(y) == len(x_opt):

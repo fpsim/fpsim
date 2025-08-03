@@ -173,7 +173,7 @@ class Experiment(sc.prettyobj):
 
 
     def model_mcpr(self, sres=None):
-        model = {'years': sres['mcpr'].timevec, 'mcpr': sres['mcpr']}
+        model = {'years': sres['mcpr'].timevec.years, 'mcpr': sres['mcpr']}
         model_frame = pd.DataFrame(model)
 
         # Filter to matching years

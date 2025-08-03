@@ -146,7 +146,7 @@ def plot_cpr_by_age(sim):
     age_bins = ['<18', '18-20', '20-25', '25-35', '>35']
     for age_key in age_bins:
         ares = sim.analyzers['cpr_by_age'].results[age_key]
-        ax.plot(sim.results['timevec'], ares, label=age_key)
+        ax.plot(sim.results.timevec.years, ares, label=age_key)
     ax.legend(loc='best', frameon=False)
     ax.set_ylim([0, 1])
     ax.set_ylabel('CPR')
@@ -374,7 +374,7 @@ def plot_cpr(sim):
     # Align data for RMSE calculation
     years = data_cpr['year']
     data_values = data_cpr['cpr'].values
-    model_values = np.interp(years, res['timevec'], res['cpr'] * 100)  # Interpolate model CPR to match data years
+    model_values = np.interp(years, res.timevec.years, res.cpr*100)  # Interpolate model CPR to match data years
 
     # Compute mean-normalized RMSE
     rmse_scores['cpr'] = compute_rmse(model_values, data_values)
