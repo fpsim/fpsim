@@ -65,22 +65,22 @@ def register_location(name, location_ref):
 # or updated during the course of a simulation.
 person_defaults = [
     # Contraception
-    ss.State('on_contra', default=False),  # whether she's on contraception
+    ss.BoolState('on_contra', default=False),  # whether she's on contraception
     ss.FloatArr('method', default=0),  # Which method to use. 0 used for those on no method
     ss.FloatArr('ti_contra', default=0),  # time point at which to set method
     ss.FloatArr('barrier', default=0),
-    ss.State('ever_used_contra', default=False),  # Ever been on contraception. 0 for never having used
+    ss.BoolState('ever_used_contra', default=False),  # Ever been on contraception. 0 for never having used
 
     # Sexual and reproductive history
     ss.FloatArr('parity', default=0),
-    ss.State('pregnant', default=False),
-    ss.State('fertile', default=False),
-    ss.State('sexually_active', default=False),
-    ss.State('sexual_debut', default=False),
+    ss.BoolState('pregnant', default=False),
+    ss.BoolState('fertile', default=False),
+    ss.BoolState('sexually_active', default=False),
+    ss.BoolState('sexual_debut', default=False),
     ss.FloatArr('sexual_debut_age', default=-1),
     ss.FloatArr('fated_debut', default=-1),
     ss.FloatArr('first_birth_age', default=-1),
-    ss.State('lactating', default=False),
+    ss.BoolState('lactating', default=False),
     ss.FloatArr('gestation', default=0),
     ss.FloatArr('preg_dur', default=0),
     ss.FloatArr('stillbirth', default=0),
@@ -88,12 +88,12 @@ person_defaults = [
     ss.FloatArr('abortion', default=0),
     ss.FloatArr('pregnancies', default=0),
     ss.FloatArr('months_inactive', default=0),
-    ss.State('postpartum', default=False),
+    ss.BoolState('postpartum', default=False),
     ss.FloatArr('mothers', default=-1),
     ss.FloatArr('short_interval', default=0),
     ss.FloatArr('secondary_birth', default=0), # no functions ever set this value. Used in empowerment?
     ss.FloatArr('postpartum_dur', default=0),
-    ss.State('lam', default=False),
+    ss.BoolState('lam', default=False),
     ss.FloatArr('breastfeed_dur', default=0),
     ss.FloatArr('breastfeed_dur_total', default=0),
 
@@ -102,11 +102,11 @@ person_defaults = [
     ss.FloatArr('personal_fecundity', default=0),
 
     # Partnership information -- states will remain at these values if use_partnership is False
-    ss.State('partnered', default=False),
+    ss.BoolState('partnered', default=False),
     ss.FloatArr('partnership_age', default=-1),
 
     # Socioeconomic
-    ss.State('urban', default=True),
+    ss.BoolState('urban', default=True),
     ss.FloatArr('wealthquintile', default=3), # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
 
     # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
