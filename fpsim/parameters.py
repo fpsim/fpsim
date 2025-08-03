@@ -39,12 +39,13 @@ class SimPars(ss.SimPars):
         return
 
     def update(self, pars=None, create=False, **kwargs):
+        kwargs = sc.mergedicts(pars, kwargs)
         # Pull out test
-        if 'test' in pars or 'test' in kwargs:
+        if 'test' in kwargs:
             print('Running in test mode, with smaller population and shorter time period.')
             self.n_agents = 500
             self.start = 2000
-        super().update(pars=pars, create=create, **kwargs)
+        super().update(create=create, **kwargs)
         return
 
 def make_sim_pars(**kwargs):

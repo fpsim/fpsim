@@ -421,7 +421,7 @@ class SimpleChoice(RandomChoice):
                     raise ValueError(errormsg)
 
         dt = ppl.sim.t.dt_year * fpd.mpy
-        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, self.pars['max_dur'].v)  # Include a maximum. Durs seem way too high
+        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, self.pars['max_dur'].years)  # Include a maximum. Durs seem way too high
 
         return timesteps_til_update
 
@@ -518,7 +518,7 @@ class StandardChoice(SimpleChoice):
         Return an array of probabilities that each woman will use contraception.
         """
         ppl = self.sim.people
-        year = self.t.now()
+        year = self.t.now('year')
 
         # Figure out which coefficients to use
         if event is None : p = self.contra_use_pars[0]

@@ -141,14 +141,14 @@ class People(ss.People):
 
         fecund = uids[(self.female[uids] == True) & (self.age[uids] < self.sim.fp_pars['age_limit_fecundity'])]
 
-        time_to_debut = (self.fated_debut[fecund]-self.age[fecund])/self.sim.t.dt
+        time_to_debut = (self.fated_debut[fecund]-self.age[fecund])/self.sim.t.dt_year
 
         # If ti_contra is less than one timestep away, we want to also set it to 0 so floor time_to_debut.
         self.ti_contra[fecund] = np.maximum(np.floor(time_to_debut), 0)
 
         # Validation
         time_to_set_contra = self.ti_contra[fecund] == 0
-        if not np.array_equal(((self.age[fecund] - self.fated_debut[fecund]) > -self.sim.t.dt), time_to_set_contra):
+        if not np.array_equal(((self.age[fecund] - self.fated_debut[fecund]) > -self.sim.t.dt_year), time_to_set_contra):
             errormsg = 'Should be choosing contraception for everyone past fated debut age.'
             raise ValueError(errormsg)
         return

@@ -134,7 +134,7 @@ class Sim(ss.Sim):
 
         # Add a new parameter to pars that determines the size of the circular buffer = TODO, remove?
         # Calculate time intervals per year (replaces ss.time_ratio from Starsim v2)
-        self.fp_pars['tiperyear'] = int(1.0 / self.pars.dt.years)
+        self.fp_pars['tiperyear'] = int(1.0 / self.pars.dt)
 
         return
 
