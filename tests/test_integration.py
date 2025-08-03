@@ -5,8 +5,6 @@ Test different components of the simulation behave as expected
 # Imports
 import sciris as sc
 import fpsim as fp
-from fpsim import utils as fpu
-from fpsim import people as fpppl
 from fpsim import defaults as fpd
 from fpsim import methods as fpm
 from fpsim import interventions as fpi

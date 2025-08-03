@@ -304,7 +304,7 @@ class SimpleChoice(RandomChoice):
         Return an array of probabilities that each woman will use contraception.
         """
         ppl = self.sim.people
-        year = self.t.now()
+        year = self.t.now('year')
 
         # Figure out which coefficients to use
         if event is None : p = self.contra_use_pars[0]
