@@ -1,12 +1,9 @@
 """
 Run tests on individual parameters.
 """
-
-import os
 import numpy as np
 import sciris as sc
 import fpsim as fp
-import pytest
 import starsim as ss
 import types
 import fpsim.defaults as fpd
@@ -49,8 +46,6 @@ def test_null(do_plot=do_plot):
 def test_scale():
     sc.heading('Test scale factor')
 
-    # Test settings
-    orig_pop = 100
     scale = 2
 
     # Make and run sims
@@ -64,7 +59,7 @@ def test_scale():
     orig = s1.results.total_births.sum()
     expected = scale*orig
     actual = s2.results.total_births.sum()
-    assert expected == actual, 'Total births should scale exactly with scale factor'
+    assert expected == actual, f'Total births should scale exactly with scale factor, but {expected} != {actual}'
     assert np.array_equal(s1.results.mcpr, s2.results.mcpr), 'Scale factor should not change MCPR'
     ok(f'{actual} births = {scale}*{orig} as expected')
 

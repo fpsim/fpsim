@@ -98,7 +98,7 @@ class Sim(ss.Sim):
         self.edu_pars = None     # Parameters for the education module - processed later
         self.pars = None        # Parameters for the simulation - processed later
 
-        # Call the constructor of the parent class WITHOUT pars or module args, the make defaults
+        # Call the constructor of the parent class WITHOUT pars or module args, then make defaults
         super().__init__(pars=None, label=label)
         self.pars = fpp.make_sim_pars()  # Make default parameters using values from parameters.py
         self.fp_pars = fpp.make_fp_pars()
@@ -114,7 +114,7 @@ class Sim(ss.Sim):
         sim_kwargs = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         sim_kwargs = {key: val for key, val in sim_kwargs.items() if val is not None}
-        all_sim_pars, all_fp_pars = self.separate_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, **kwargs)
+        all_sim_pars, all_fp_pars = self.separate_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, copy_inputs=copy_inputs, **kwargs)
         self.pars.update(all_sim_pars)
         self.fp_pars.update(all_fp_pars)
 
@@ -133,8 +133,8 @@ class Sim(ss.Sim):
         self.summary = None
 
         # Add a new parameter to pars that determines the size of the circular buffer = TODO, remove?
-        unit = self.pars.unit if self.pars.unit != "" else 'year'
-        self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
+        # Calculate time intervals per year (replaces ss.time_ratio from Starsim v2)
+        self.fp_pars['tiperyear'] = int(1.0 / self.pars.dt)
 
         return
 
@@ -164,23 +164,23 @@ class Sim(ss.Sim):
         return pars
 
     # def separate_pars(self, pars):
-    def separate_pars(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, sim_kwargs=None, **kwargs):
+    def separate_pars(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, sim_kwargs=None, copy_inputs=True, **kwargs):
         """
         Separate the parameters into simulation and fp-specific parameters.
         """
         # Marge in pars and kwargs
-        all_pars = fpp.mergepars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, kwargs)
-        all_pars = self.remap_pars(all_pars)  # Remap any v2 parameters to v3 names
+        all_pars = fpp.mergepars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, kwargs, copy_inputs=copy_inputs)
+        all_pars = self.remap_pars(all_pars)  # Remap any FPsim v2 parameters to v3 names
 
         # Deal with sim pars
         user_sim_pars = {k: v for k, v in all_pars.items() if k in self.pars.keys()}
         for k in user_sim_pars: all_pars.pop(k)
-        sim_pars = sc.mergedicts(user_sim_pars, sim_pars, _copy=True)
+        sim_pars = sc.mergedicts(user_sim_pars, sim_pars)
 
         # Deal with fp pars
         user_fp_pars = {k: v for k, v in all_pars.items() if k in self.fp_pars.keys()}
         for k in user_fp_pars: all_pars.pop(k)
-        fp_pars = sc.mergedicts(user_fp_pars, fp_pars, _copy=True)
+        fp_pars = sc.mergedicts(user_fp_pars, fp_pars)
         if 'location' in fp_pars and fp_pars['location'] is not None:
             self.fp_pars['location'] = fp_pars['location']
         self.fp_pars.update_location()  # Update location-specific parameters
@@ -189,13 +189,13 @@ class Sim(ss.Sim):
         default_contra_pars = fpm.make_contra_pars()
         user_contra_pars = {k: v for k, v in all_pars.items() if k in default_contra_pars.keys()}
         for k in user_contra_pars: all_pars.pop(k)
-        contra_pars = sc.mergedicts(user_contra_pars, contra_pars, _copy=True)
+        contra_pars = sc.mergedicts(user_contra_pars, contra_pars)
 
         # Deal with education pars
         default_edu_pars = fped.make_edu_pars()
         user_edu_pars = {k: v for k, v in all_pars.items() if k in default_edu_pars.keys()}
         for k in user_edu_pars: all_pars.pop(k)
-        edu_pars = sc.mergedicts(user_edu_pars, edu_pars, _copy=True)
+        edu_pars = sc.mergedicts(user_edu_pars, edu_pars)
 
         # Raise an exception if there are any leftover pars
         if all_pars:
@@ -224,12 +224,13 @@ class Sim(ss.Sim):
         """
         super().init_results()  # Initialize the base results
 
-        scaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
+        tv = self.t.timevec # Was timevec.years, which makes some thing simpler but the inconsitency causes bugs
+        scaling_kw = dict(shape=self.t.npts, timevec=tv, dtype=int, scale=True)
 
         for key in fpd.scaling_array_results:
             self.results += ss.Result(key, label=key, **scaling_kw)
 
-        nonscaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=float, scale=False)
+        nonscaling_kw = dict(shape=self.t.npts, timevec=tv, dtype=float, scale=False)
         for key in fpd.nonscaling_array_results:
             self.results += ss.Result(key, label=key, **nonscaling_kw)
 
@@ -277,10 +278,6 @@ class Sim(ss.Sim):
         self.update_mortality()
         self.people.step()
 
-    def finalize(self):
-        self.finalize_results()
-        super().finalize()
-
     def finalize_results(self):
         # Convert all results to Numpy arrays
         for key, arr in self.results.items():
@@ -302,6 +299,7 @@ class Sim(ss.Sim):
         self.results['cum_short_intervals_by_year'] = np.cumsum(self.results['short_intervals_over_year'])
         self.results['cum_secondary_births_by_year'] = np.cumsum(self.results['secondary_births_over_year'])
         self.results['cum_pregnancies_by_year'] = np.cumsum(self.results['pregnancies_over_year'])
+        super().finalize_results() # Scale results
         return
 
     def store_postpartum(self):
@@ -337,32 +335,6 @@ class Sim(ss.Sim):
                           columns=['Age', 'PP0to5', 'PP6to11', 'PP12to23', 'NonPP', 'Pregnant', 'Parity'])
         pp.fillna(0, inplace=True)
         return pp
-
-    def to_df(self, include_range=False):
-        """
-        Export all sim results to a dataframe
-
-        Args:
-            include_range (bool): if True, and if the sim results have best, high, and low, then export all of them; else just best
-        """
-        raw_res = sc.odict(defaultdict=list)
-        for reskey in self.results.keys():
-            res = self.results[reskey]
-            if isinstance(res, dict):
-                for blh, blhres in res.items():  # Best, low, high
-                    if len(blhres) == self.npts:
-                        if not include_range and blh != 'best':
-                            continue
-                        if include_range:
-                            blhkey = f'{reskey}_{blh}'
-                        else:
-                            blhkey = reskey
-                        raw_res[blhkey] += blhres.tolist()
-            elif sc.isarray(res) and len(res) == self.npts:
-                raw_res[reskey] += res.tolist()
-        df = pd.DataFrame(raw_res)
-        self.df = df
-        return df
 
     # Function to scale all y-axes in fig based on input channel
     @staticmethod
@@ -473,8 +445,8 @@ class Sim(ss.Sim):
                     y, low, high = this_res, None, None
 
                 # Figure out x axis
-                years = res['tfr_years']
-                timepoints = res.timevec  # Likewise
+                years = res.tfr_years
+                timepoints = res.timevec.years  # Likewise
                 x = None
                 for x_opt in [years, timepoints]:
                     if len(y) == len(x_opt):
@@ -640,6 +612,8 @@ class Sim(ss.Sim):
         raw_res = sc.odict(defaultdict=list)
         for reskey in self.results.keys():
             res = self.results[reskey]
+            if reskey == 'timevec': # Convert to floating-point years
+                res = res.years
             if isinstance(res, dict):
                 for blh, blhres in res.items():  # Best, low, high
                     if len(blhres) == self.t.npts:

@@ -3,12 +3,11 @@ Run tests on the interventions.
 """
 
 import sciris as sc
-import pylab as pl
 import fpsim as fp
 import numpy as np
 
-parallel   = 1 # Whether to run in serial (for debugging)
-do_plot  = 1 # Whether to do plotting in interactive mode
+parallel = False # Whether to run in serial (for debugging)
+do_plot = 1 # Whether to do plotting in interactive mode
 # sc.options(backend='agg') # Turn off interactive plots
 
 

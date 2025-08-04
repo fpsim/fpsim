@@ -89,7 +89,7 @@ class change_par(ss.Intervention):
         self.counter = 0
         self.inds = sc.autolist()
         for y in years:
-            self.inds += sc.findnearest(sim.timevec, y)
+            self.inds += sc.findnearest(sim.timevec.years, y)
 
         # Store original value
         self.orig_val = sc.dcp(sim.fp_pars[self.par])
@@ -324,12 +324,12 @@ class update_methods(ss.Intervention):
             if self.pars.method_mix is not None:
                 this_mix = self.pars.method_mix / np.sum(self.pars.method_mix) # Renormalise in case they are not adding up to 1
                 cm.pars['method_mix'] = this_mix
-            
+
             # Change in switching matrix
             if self.pars.method_choice_pars is not None:
                 print(f'Changed contraceptive switching matrix in year {sim.y}')
                 cm.method_choice_pars = self.pars.method_choice_pars
-                
+
         return
 
 

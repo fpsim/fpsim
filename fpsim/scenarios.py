@@ -405,9 +405,9 @@ class Scenarios(sc.prettyobj):
         def analyze_sim(sim):
             def aggregate_channel(channel, is_sum=True, is_t=False):
                 if is_t:
-                    year = sim.results['timevec']
+                    year = sim.results.timevec.years
                 else:
-                    year = sim.results['tfr_years'].values
+                    year = sim.results.tfr_years.values
                 channel_results = sim.results[channel]
                 inds = sc.findinds((year >= start), year <= end)
 

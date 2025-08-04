@@ -8,6 +8,13 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 3.2.0 (2025-08-04)
+---------------------------
+- Updates to be compatible with / require Starsim v3.0.1; baselines have changed but otherwise functionality is (more or less) unchanged.
+- Fixed a bug with ``fp.Sim(copy_inputs=False`` being ignored.
+- *GitHub info*: PR `575 <https://github.com/fpsim/fpsim/pull/575>`_
+
+
 Version 3.1.0 (2025-07-31)
 ---------------------------
 - Refactors Contraception and Education to Starsim modules (connectors)
