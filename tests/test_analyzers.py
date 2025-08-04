@@ -1,17 +1,14 @@
 """
 Run tests on the analyzers, including calibration.
 """
-
+import numpy as np
 import sciris as sc
-import fpsim as fp
 import starsim as ss
-import pytest
-
+import fpsim as fp
 
 do_plot = 1
-sc.options(backend='agg') # Turn off interactive plots
+sc.options(interactive=False) # Turn off interactive plots
 max_pregnancy_loss = 0.5 # Maximum allowed fraction of pregnancies to allow to not end in birth (including stillbirths)
-
 
 def ok(string):
     ''' Print out a successful test nicely '''
@@ -64,8 +61,8 @@ def test_snapshot():
     ok(f'Took {len(timesteps)} snapshots')
     pop0 = len(shots[0])
     pop1 = len(shots[1])
-    # assert pop1 > pop0, 'Expected population to grow'
-    # ok(f'Population grew ({pop1} > {pop0})')
+    assert pop1 > pop0, 'Expected population to grow'
+    ok(f'Population grew ({pop1} > {pop0})')
 
     return snap
 
@@ -80,23 +77,25 @@ def test_age_pyramids():
 
     return ap
 
+
 def test_longitudinal():
     sc.heading('Testing longitudinal history analyzer...')
     keys=['age']
     lh = fp.longitudinal_history(keys)
 
-    sim = fp.Sim(analyzers=lh)
+    sim = fp.Sim(analyzers=lh, copy_inputs=False)
     sim.init()
     sim.run(verbose=1/12)
 
     # The difference between the largest and smallest age should for each person be equal to (1 year - 1/timestepsperyear)
     # Based on the default params, the value in slot 0 is the max and in slot 1 is the min. There will be some rounding error
     # so we use pytest.approx to compare.
-    min_age = sim.analyzers.longitudinal_history.age[ss.uids(1), 0]
-    max_age = sim.analyzers.longitudinal_history.age[ss.uids(1), 1]
-    assert max_age - min_age == pytest.approx(1/sim.fp_pars['tiperyear'], rel=1e-2), 'Expected age difference to be equal to 1 year minus the timestep size'
+    ages = np.sort(lh.age[ss.uids(1), :])
+    age_diffs = np.diff(ages)
+    assert np.allclose(age_diffs, 1/sim.fp_pars['tiperyear'], rtol=1e-2), f'Expected age differences to be equal to 1 year minus the timestep size, not {age_diffs}'
 
     return
+
 
 def test_method_mix_by_age():
     sc.heading('Testing method mix by age analyzer...')
@@ -111,7 +110,6 @@ def test_method_mix_by_age():
     assert sim.analyzers.method_mix_by_age.mmba_results is not None, 'Method mix by age results should not be empty'
 
     return sim.analyzers.method_mix_by_age
-
 
 
 if __name__ == '__main__':

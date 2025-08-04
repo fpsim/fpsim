@@ -157,14 +157,18 @@ def make_fp_pars(location=None):
     return FPPars(location=location)
 
 
-def mergepars(*args):
+def mergepars(*args, copy_inputs=True): # TODO: sc.mergedicts() may already have most/all of the required functionality
     """
     Merge all parameter dictionaries into a single dictionary.
     This is used to initialize the SimPars class with all relevant parameters.
     It wraps the sc.mergedicts function to ensure all inputs are dicts
     """
     # Convert any Pars objects to plain dicts and merge
-    dicts = [dict(sc.dcp(arg)) for arg in args if arg is not None]
+    if copy_inputs:
+        dicts = [dict(sc.dcp(arg)) for arg in args if arg is not None]
+    else:
+        dicts = [dict(arg) for arg in args if arg is not None]
+
     merged_pars = sc.mergedicts(*dicts)
     return merged_pars
 

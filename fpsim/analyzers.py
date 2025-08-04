@@ -2,19 +2,12 @@
 Specify the core analyzers available in FPsim. Other analyzers can be
 defined by the user by inheriting from these classes.
 '''
-
 import numpy as np
 import sciris as sc
-import matplotlib.pyplot as pl
-from . import defaults as fpd
-from . import utils as fpu
-import fpsim as fp
-import fpsim.arrays as fpa
-from .settings import options as fpo
+import starsim as ss
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
-import starsim as ss
-
+import fpsim as fp
 
 #%% Generic analyzer classes
 __all__ = ['snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder', 'track_as', 'longitudinal_history']
@@ -22,6 +15,7 @@ __all__ = ['snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeo
 __all__ += ['education_recorder']
 # Analyzers for debugging
 __all__ += ['state_tracker', 'method_mix_over_time']
+
 
 class snapshot(ss.Analyzer):
     '''
@@ -81,14 +75,14 @@ class cpr_by_age(ss.Analyzer):
     '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)   # Initialize the Analyzer object
-        self.age_bins = [v[1] for v in fpd.method_age_map.values()]
+        self.age_bins = [v[1] for v in fp.method_age_map.values()]
         return
 
     def init_results(self):
         super().init_results()
 
         # Define results for each age group based on the method_age_map
-        for k in fpd.method_age_map.keys():
+        for k in fp.method_age_map.keys():
             self.define_results(ss.Result(name=k,dtype=float, scale=False))
         self.define_results(ss.Result(name='total',dtype=float, scale=False))
         return
@@ -96,7 +90,7 @@ class cpr_by_age(ss.Analyzer):
     def step(self):
         sim = self.sim
         ppl = sim.people
-        for key, (age_low, age_high) in fpd.method_age_map.items():
+        for key, (age_low, age_high) in fp.method_age_map.items():
             match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
             denom_conds = match_low_high * (ppl.female) * ppl.alive
             num_conds = denom_conds * (ppl.method != 0)
@@ -114,7 +108,7 @@ class method_mix_by_age(ss.Analyzer):
     '''
     def __init__(self, **kwargs):
         super().__init__(**kwargs)   # Initialize the Analyzer object
-        self.age_bins = [v[1] for v in fpd.method_age_map.values()]
+        self.age_bins = [v[1] for v in fp.method_age_map.values()]
         self.mmba_results = None
         self.n_methods = None
         return
@@ -126,14 +120,15 @@ class method_mix_by_age(ss.Analyzer):
         sim = self.sim
         ppl = sim.people
         n_methods = len(sim.connectors.contraception.methods)
-        self.mmba_results = {k: np.zeros(n_methods) for k in fpd.method_age_map.keys()}
-        for key, (age_low, age_high) in fpd.method_age_map.items():
+        self.mmba_results = {k: np.zeros(n_methods) for k in fp.method_age_map.keys()}
+        for key, (age_low, age_high) in fp.method_age_map.items():
             match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
             denom_conds = match_low_high * (ppl.female == True) * ppl.alive
             for mn in range(n_methods):
                 num_conds = denom_conds * (ppl.method == mn)
                 self.mmba_results[key][mn] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
         return
+
 
 class education_recorder(ss.Analyzer):
         '''
@@ -175,6 +170,7 @@ class education_recorder(ss.Analyzer):
             """
              Process data in snapshots so we can plot it easily
             """
+            # TODO: should insert super().finalize() here (at the end probably), and same for other analyzers
             if self.finalized:
                 raise RuntimeError('Analyzer already finalized')
             self.finalized = True
@@ -197,44 +193,44 @@ class education_recorder(ss.Analyzer):
             pl_args = sc.mergedicts(pl_args)
             rows, cols = sc.get_rows_cols(2)
 
-            fig = pl.figure(**fig_args)
+            fig = plt.figure(**fig_args)
             keys2 = ['edu_completed', 'edu_interrupted', 'edu_dropout']
             keys3 = ['pregnant', 'alive']
 
             k = 0
-            pl.subplot(rows, cols, k + 1)
+            plt.subplot(rows, cols, k + 1)
             age_data = self.trajectories["age"]
             state = "edu_attainment"
             data = self.trajectories[state]
-            pl.step(self.time, data[:, index], color="black", label=f"{state}", where='mid', **pl_args)
+            plt.step(self.time, data[:, index], color="black", label=f"{state}", where='mid', **pl_args)
             state = "edu_objective"
             data = self.trajectories[state]
-            pl.step(self.time, data[:, index], color="red", ls="--", label=f"{state}", where='mid', **pl_args)
-            pl.ylim([0, 24])
-            pl.title('Education')
-            pl.ylabel('Education (years)')
-            pl.xlabel('Timesteps')
-            pl.legend()
+            plt.step(self.time, data[:, index], color="red", ls="--", label=f"{state}", where='mid', **pl_args)
+            plt.ylim([0, 24])
+            plt.title('Education')
+            plt.ylabel('Education (years)')
+            plt.xlabel('Timesteps')
+            plt.legend()
 
             k += 1
             for state in sc.mergelists(keys2, keys3):
-                pl.subplot(rows, cols, k + 1)
+                plt.subplot(rows, cols, k + 1)
                 data = self.trajectories[state]
                 if state in keys2:
                     if state  == 'edu_interrupted':
-                        pl.step(self.time, 3*data[:, index], color=[0.7, 0.7, 0.7], label=f"{state}", ls=":", where='mid', **pl_args)
+                        plt.step(self.time, 3*data[:, index], color=[0.7, 0.7, 0.7], label=f"{state}", ls=":", where='mid', **pl_args)
                     elif state == "edu_dropout":
-                        pl.step(self.time, 3*data[:, index], color="black", label=f"{state}", ls=":", where='mid', **pl_args)
+                        plt.step(self.time, 3*data[:, index], color="black", label=f"{state}", ls=":", where='mid', **pl_args)
                     else:
-                        pl.step(self.time, 3*data[:, index], color="#2ca25f", label=f"{state}", where='mid', **pl_args)
+                        plt.step(self.time, 3*data[:, index], color="#2ca25f", label=f"{state}", where='mid', **pl_args)
                 elif state  == 'pregnant':
-                    pl.step(self.time, data[:, index], color="#dd1c77", label=f"{state}", where='mid', **pl_args)
+                    plt.step(self.time, data[:, index], color="#dd1c77", label=f"{state}", where='mid', **pl_args)
                 elif state == 'alive':
                     plt.step(self.time, 4*data[:, index],  color="black", ls="--", label=f"{state}", where='mid', **pl_args)
-                pl.title(f"Education trajectories - Start age: {int(age_data[0, index])}; final age {int(age_data[-1, index])}.")
-                pl.ylabel('State')
-                pl.xlabel('Timesteps')
-                pl.legend()
+                plt.title(f"Education trajectories - Start age: {int(age_data[0, index])}; final age {int(age_data[-1, index])}.")
+                plt.ylabel('State')
+                plt.xlabel('Timesteps')
+                plt.legend()
             return fig
 
         def plot_waterfall(self, max_timepoints=30, min_age=18, max_age=40, fig_args=None, pl_args=None):
@@ -349,7 +345,7 @@ class lifeof_recorder(ss.Analyzer):
         self.trajectories = {}  # Store education trajectories
         methods = fp.make_methods()
         self.method_map = {idx: method.label for idx, method in enumerate(methods.values())}
-        self.m2y = 1.0/fpd.mpy  # Transform timesteps in months to years
+        self.m2y = 1.0/fp.mpy  # Transform timesteps in months to years
 
         return
 
@@ -400,8 +396,8 @@ class lifeof_recorder(ss.Analyzer):
         ymin, ymax = 0, 4
         rows, cols = sc.get_rows_cols(1)
 
-        fig = pl.figure(**fig_args)
-        pl.subplot(rows, cols,1)
+        fig = plt.figure(**fig_args)
+        plt.subplot(rows, cols,1)
 
         preg_outcome_state = ["parity", "stillbirth", "miscarriage", "abortion"]
         preg_outcome_symbl = {"stillbirth": u"\u29BB",
@@ -419,7 +415,7 @@ class lifeof_recorder(ss.Analyzer):
         state = "alive"
         temp = self._state_intervals(state, index)
         temp_age = self._transform_to_age(temp, index)
-        al_bar = pl.broken_barh(temp_age,
+        al_bar = plt.broken_barh(temp_age,
                                 (3.5, 0.25),
                                 facecolors="lemonchiffon", label=f"{state}",
                                 hatch="..")
@@ -428,18 +424,18 @@ class lifeof_recorder(ss.Analyzer):
         yoffset = 0.25
         yp = [ymin-yoffset, ymin+yoffset, (ymax-ymin)/2, ymax-yoffset, ymax+yoffset],
         xp = temp_age[0, 0]*np.ones(len(yp))
-        pl.plot(xp, yp, color='k', ls=':', marker=">")
+        plt.plot(xp, yp, color='k', ls=':', marker=">")
 
 
         # Mark the age at the end of the simulation (if they died before the yellowish "alive" bar will stop befor this line)
         sim_len = len(self.time) * self.m2y
         xp = (temp_age[0, 0] + sim_len) *len(yp)
-        pl.plot(xp, yp, color='k', ls=':', marker="<")
+        plt.plot(xp, yp, color='k', ls=':', marker="<")
 
         # Sexually active
         state = "sexually_active"
         temp = self._state_intervals(state, index)
-        sa_bar = pl.broken_barh(self._transform_to_age(temp, index),
+        sa_bar = plt.broken_barh(self._transform_to_age(temp, index),
                        (1, 1), facecolors="#9bf1fe", label=f"{state}")
 
         # Is she on contraception?
@@ -460,7 +456,7 @@ class lifeof_recorder(ss.Analyzer):
         contramethod = self.trajectories[state][:, index]
         bbox = dict(boxstyle="round", fc="w", ec="none", alpha=0.8)
         for start, age in zip(temp[:, 0], temp_age[:, 0]):
-            pl.annotate(
+            plt.annotate(
                 f"{self.method_map[contramethod[start]]}",
                 (age, on_contra_yo + on_contra_height/2), xycoords='data',
                 xytext=(age, on_contra_yo + on_contra_height/2), textcoords='data',
@@ -470,7 +466,7 @@ class lifeof_recorder(ss.Analyzer):
         # Pregnant
         state = "pregnant"
         temp = self._state_intervals(state, index)
-        pr_bar = pl.broken_barh(self._transform_to_age(temp, index),
+        pr_bar = plt.broken_barh(self._transform_to_age(temp, index),
                        (2, 1), facecolors="deeppink", label=f"{state}")
 
         # What happened with the pregnancy?
@@ -484,20 +480,20 @@ class lifeof_recorder(ss.Analyzer):
             lbl = f"{preg_outcome_lbl[state]}"
             marker = f"${preg_outcome_symbl[state]}$"
             age = self.trajectories["age"][:, index]
-            po = pl.plot(age, 2.5*temp, marker=marker, label=f"{lbl}",  **pl_args)
+            po = plt.plot(age, 2.5*temp, marker=marker, label=f"{lbl}",  **pl_args)
             po_plots.append(po[0])
 
 
         # Postpartum
         state = "postpartum"
         temp = self._state_intervals(state, index)
-        pp_bar = pl.broken_barh(self._transform_to_age(temp, index),
+        pp_bar = plt.broken_barh(self._transform_to_age(temp, index),
                        (0.7, 2.5), facecolors="oldlace", label=f"{state}")
 
         # Lam period
         state = "lam"
         temp = self._state_intervals(state, index)
-        lam_bar = pl.broken_barh(self._transform_to_age(temp, index),
+        lam_bar = plt.broken_barh(self._transform_to_age(temp, index),
                        (0.7, 2.5), facecolors="none", edgecolors="#a5a5a5",
                        label=f"{state}",
                        hatch="\\\\\\"
@@ -505,11 +501,11 @@ class lifeof_recorder(ss.Analyzer):
 
 
         # Labels and annotations
-        pl.xlim(-0.5, 95)
-        pl.ylim(ymin, ymax)
-        pl.xlabel('Age (years)')
-        pl.ylabel('')
-        pl.title(f"Life course of a woman")
+        plt.xlim(-0.5, 95)
+        plt.ylim(ymin, ymax)
+        plt.xlabel('Age (years)')
+        plt.ylabel('')
+        plt.title('Life course of a woman')
 
         # Hierarchical legend
         # TODO: figure out a better/systematic way to do the bbox anchoring of multiple legends
@@ -644,10 +640,10 @@ class age_pyramids(ss.Analyzer):
         """
         Plots self.data as 2D pyramid plot
         """
-        fig = pl.figure()
-        pl.pcolormesh(self.data.T)
-        pl.xlabel('Timestep')
-        pl.ylabel('Age (years)')
+        fig = plt.figure()
+        plt.pcolormesh(self.data.T)
+        plt.xlabel('Timestep')
+        plt.ylabel('Age (years)')
         return fig
 
     def plot3d(self):
@@ -655,10 +651,10 @@ class age_pyramids(ss.Analyzer):
         Plots self.data as 3D pyramid plot
         """
         print('Warning, very slow...')
-        fig = pl.figure()
+        fig = plt.figure()
         sc.bar3d(self.data.T)
-        pl.xlabel('Timestep')
-        pl.ylabel('Age (years)')
+        plt.xlabel('Timestep')
+        plt.ylabel('Age (years)')
         return fig
 
 
@@ -692,7 +688,7 @@ class method_mix_over_time(ss.Analyzer):
         return
 
     def plot(self, style=None):
-        with fpo.with_style(style):
+        with fp.options.with_style(style):
             fig, ax = plt.subplots(figsize=(10, 5))
 
             for method in self.methods:
@@ -711,7 +707,7 @@ class state_tracker(ss.Analyzer):
     living women who live in rural settings)
     '''
 
-    def __init__(self, state_name=None, min_age=fpd.min_age, max_age=fpd.max_age):
+    def __init__(self, state_name=None, min_age=fp.min_age, max_age=fp.max_age):
         """
         Initializes bins and data variables
         """
@@ -754,7 +750,7 @@ class state_tracker(ss.Analyzer):
         Plots self.data as a line
         """
         colors = ["steelblue", "slategray", "black"]
-        with fpo.with_style(style):
+        with fp.options.with_style(style):
             fig, ax1 = plt.subplots(figsize=(10, 5))
 
             ax2 = ax1.twinx()
@@ -1003,8 +999,7 @@ class longitudinal_history(ss.Analyzer):
     Analyzer for tracking longitudinal history of individuals. The longitude object acts as a circular buffer,
     tracking the most recent 1 year of values for each key specified in longitude_keys.
     """
-
-    def __init__(self, longitude_keys, tiperyear=12):
+    def __init__(self, longitude_keys, tiperyear=12): # TODO: this is hard-coded to match sim.fp_pars['tiperyear'], which is not ideal; need to move init logic to init_pre()
         super().__init__()
 
         self.longitude_keys = longitude_keys
@@ -1013,11 +1008,10 @@ class longitudinal_history(ss.Analyzer):
 
         for key in self.longitude_keys:
             self.longitude[key] = np.empty( shape=(tiperyear), dtype=list)  # Initialize with empty lists
-            states.append(
-                fpa.TwoDimensionalArr(name=key, ncols=tiperyear)
-            )
+            states.append(fp.TwoDimensionalArr(name=key, ncols=tiperyear))
 
         self.define_states(*states)
+        return
 
     def step(self):
         """
@@ -1031,5 +1025,6 @@ class longitudinal_history(ss.Analyzer):
         for key in self.longitude_keys:
             attr = getattr(self, key)
             attr[:, index] = getattr(ppl, key).values
+            print(attr[:, index])
 
         return
