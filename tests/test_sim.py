@@ -12,7 +12,7 @@ parallel = 1  # Whether to run in serial (for debugging)
 
 def test_simple(location='kenya'):
     sc.heading('Test simplest possible FPsim run')
-    sim = fp.Sim(location=location)
+    sim = fp.Sim(location=location, test=True)
     sim.run()
     return sim
 
@@ -110,9 +110,9 @@ def test_sim_creation():
 if __name__ == '__main__':
 
     s0 = test_simple('ethiopia')
-    s1 = test_random_choice()
-    sims1 = test_simple_choice()
-    sims2 = test_mid_choice()
-    test_sim_creation()
+    # s1 = test_random_choice()
+    # sims1 = test_simple_choice()
+    # sims2 = test_mid_choice()
+    # test_sim_creation()
 
     print('Done.')
