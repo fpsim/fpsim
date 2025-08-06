@@ -25,7 +25,7 @@ class SimPars(ss.SimPars):
 
         # Basic parameters
         self.n_agents = 1_000  # Number of agents
-        self.start = 1960   # Start year of simulation
+        self.start = 2000   # Start year of simulation
         self.stop = 2020   # End year of simulation
         self.dt = 1/12      # The simulation timestep in 'unit's
         self.unit = 'year'   # The unit of time for the simulation
@@ -40,7 +40,7 @@ class SimPars(ss.SimPars):
 
     def update(self, pars=None, create=False, **kwargs):
         # Pull out test
-        if 'test' in pars or 'test' in kwargs:
+        if kwargs.get('test') or pars.get('test'):
             print('Running in test mode, with smaller population and shorter time period.')
             self.n_agents = 500
             self.start = 2000
