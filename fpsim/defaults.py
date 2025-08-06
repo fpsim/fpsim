@@ -63,7 +63,7 @@ def register_location(name, location_ref):
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
 # or updated during the course of a simulation.
-person_defaults = [
+fpmod_states = [
     # Contraception
     ss.State('on_contra', default=False),  # whether she's on contraception
     ss.FloatArr('method', default=0),  # Which method to use. 0 used for those on no method
@@ -101,14 +101,6 @@ person_defaults = [
     ss.FloatArr('remainder_months', default=0),
     ss.FloatArr('personal_fecundity', default=0),
 
-    # Partnership information -- states will remain at these values if use_partnership is False
-    ss.State('partnered', default=False),
-    ss.FloatArr('partnership_age', default=-1),
-
-    # Socioeconomic
-    ss.State('urban', default=True),
-    ss.FloatArr('wealthquintile', default=3), # her current wealth quintile, an indicator of the economic status of her household, 1: poorest quintile; 5: wealthiest quintile
-
     # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
     # need to be added manually. Eventually these will become part of a separate module tracking pregnancies and
     # pregnancy outcomes.
@@ -116,6 +108,11 @@ person_defaults = [
     fpa.TwoDimensionalArr('stillborn_ages', ncols=max_parity),  # Ages at time of stillbirths
     fpa.TwoDimensionalArr('miscarriage_ages', ncols=max_parity),  # Ages at time of miscarriages
     fpa.TwoDimensionalArr('abortion_ages', ncols=max_parity),  # Ages at time of abortions
+
+    ss.State('partnered', default=False),  # Will remain at these values if use_partnership is False
+    ss.FloatArr('partnership_age', default=-1),  # Will remain at these values if use_partnership is False
+    ss.State('urban', default=True),  # Urban/rural
+    ss.FloatArr('wealthquintile', default=3),  # Wealth quintile
 ]
 
 # Postpartum keys to months

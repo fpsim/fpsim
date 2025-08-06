@@ -1,114 +1,32 @@
 """
-Defines the People class
+Defines the FPmod class
 """
 
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
+from scipy.stats import truncnorm
 from . import utils as fpu
-import fpsim as fp
+from . import defaults as fpd
 from . import demographics as fpdmg
 import starsim as ss
 
 # Specify all externally visible things this file defines
-__all__ = ['People']
+__all__ = ['FPmod']
 
 
 # %% Define classes
 
-class People(ss.People):
+class FPmod(ss.Module):
     """
-    Class for all the people in the simulation.
-
-    Age pyramid is a 2d array with columns: age, male count, female count
+    Class for storing and updating FP-related events
     """
 
-    def __init__(self, n_agents=None, age_pyramid=None, **kwargs):
-
-        # Person defaults
-        # self.person_defaults = [
-        #     ss.State('partnered', default=False),  # Will remain at these values if use_partnership is False
-        #     ss.FloatArr('partnership_age', default=-1),  # Will remain at these values if use_partnership is False
-        #     ss.State('urban', default=True),  # Urban/rural
-        #     ss.FloatArr('wealthquintile', default=3),  # Wealth quintile
-        # ]
-        self.person_defaults = sc.dcp(fp.fpmod_states)
-
-        # Process age/sex data
-        ages = age_pyramid[:, 0]
-        age_counts = age_pyramid[:, 1] + age_pyramid[:, 2]
-        age_data = np.array([ages, age_counts]).T
-        f_frac = age_pyramid[:, 2].sum() / age_pyramid[:, 1:3].sum()
-
-        # Initialization
-        super().__init__(n_agents, age_data, extra_states=self.person_defaults, **kwargs)
-        self.female.default.set(p=f_frac)
-
-        self.binom = ss.bernoulli(p=0.5)
-
-        return
-
-    def init_vals(self, uids=None):
-        super().init_vals()
-
-        sim = self.sim
-        fp_pars = sim.fp_pars
-
-        if uids is None:
-            uids = self.alive.uids
-
-        _urban = self.get_urban(len(uids))
-
-        # Initialize sociodemographic states
-        self.urban[uids] = _urban  # Urban (1) or rural (0)
-        self.update_wealthquintile(uids)
-
-        # Parameters on sexual and reproductive history
-        self.fertile[uids] = fpu.n_binomial(1 - fp_pars['primary_infertility'], len(uids))
-
-        # Sexual activity
-        # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        self.fated_debut[uids] = fp_pars['debut_age']['ages'][fpu.n_multinomial(fp_pars['debut_age']['probs'], len(uids))]
-        fecund = self.female & (self.age < fp_pars['age_limit_fecundity'])
-        self.check_sexually_active(uids[fecund[uids]])
-        self.update_time_to_choose(uids)
-
-        # Fecundity variation
-        fv = [fp_pars['fecundity_var_low'], fp_pars['fecundity_var_high']]
-        fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
-        self.personal_fecundity[uids] = np.random.random(len(uids)) * fac
-
-        # Partnership
-        if fp_pars['use_partnership']:
-            fpdmg.init_partnership_states(uids)
-
-        # Store keys
-        self._keys = [s.name for s in self.states.values()]
-
-        return
-
-    @property
-    def yei(self):
-        """
-        The index of year-ending as of the same date expressed in ti
-        or 12-months ago as of the same date.
-        """
-        return (self.ti + 1) % self.tiperyear
-
-    def get_urban(self, n):
-        """ Get initial distribution of urban """
-        n_agents = n
-        urban_prop = self.sim.fp_pars['urban_prop']
-        urban = fpu.n_binomial(urban_prop, n_agents)
-        return urban
-
-    def update_wealthquintile(self, uids):
-        if self.sim.fp_pars['wealth_quintile'] is None:
-            return
-        wq_probs = self.sim.fp_pars['wealth_quintile']['percent']
-        vals = np.random.choice(len(wq_probs), size=len(uids), p=wq_probs)+1
-        self.wealthquintile[uids] = vals
+    def __init__(self, pars=None, name='fp', **kwargs):
+        super().__init__(name=name)
+        self.define_pars()
+        self.update_pars(pars=pars, **kwargs)
         return
 
     def update_time_to_choose(self, uids=None):
@@ -148,7 +66,7 @@ class People(ss.People):
     def decide_death_outcome(self, uids):
         """ Decide if person dies at a timestep """
         sim = self.sim
-        timestep = sim.t.dt_year * fp.mpy  # timestep in months
+        timestep = sim.t.dt_year * fpd.mpy # timestep in months
         trend_val = sim.fp_pars['mortality_probs']['gen_trend']
         age_mort = sim.fp_pars['age_mortality']
         f_spline = age_mort['f_spline'] * trend_val
@@ -248,7 +166,7 @@ class People(ss.People):
         self.months_inactive[inactive] += 1
 
         return
-
+ 
     def check_conception(self, uids):
         """
         Decide if person (female) becomes pregnant at a timestep.
@@ -275,8 +193,8 @@ class People(ss.People):
         lam_eff = pars['LAM_efficacy']
 
         # Change to a monthly probability and set pregnancy probabilities
-        lam_probs = fpu.annprob2ts((1 - lam_eff) * preg_eval_lam, self.sim.t.dt_year * fp.mpy)
-        nonlam_probs = fpu.annprob2ts((1 - method_eff) * preg_eval_nonlam, self.sim.t.dt_year * fp.mpy)
+        lam_probs = fpu.annprob2ts((1 - lam_eff) * preg_eval_lam, self.sim.t.dt_year * fpd.mpy)
+        nonlam_probs = fpu.annprob2ts((1 - method_eff) * preg_eval_nonlam, self.sim.t.dt_year * fpd.mpy)
         preg_probs[lam] = lam_probs
         preg_probs[nonlam] = nonlam_probs
 
@@ -289,7 +207,7 @@ class People(ss.People):
         # This encapsulates background factors and is experimental and tunable.
         preg_probs *= pars['exposure_factor']
         preg_probs *= pars['exposure_age'][self.int_age_clip(active_uids)]
-        preg_probs *= pars['exposure_parity'][np.minimum(self.parity[active_uids], fp.max_parity).astype(int)]
+        preg_probs *= pars['exposure_parity'][np.minimum(self.parity[active_uids], fpd.max_parity).astype(int)]
 
         # Use a single binomial trial to check for conception successes this month
         self.binom.set(p=preg_probs)
@@ -372,7 +290,7 @@ class People(ss.People):
         breastfeed_finished = uids[self.breastfeed_dur[uids] >= breastfeed_durs]
         breastfeed_continue = uids[self.breastfeed_dur[uids] < breastfeed_durs]
         self.reset_breastfeeding(breastfeed_finished)
-        self.breastfeed_dur[breastfeed_continue] += self.sim.t.dt_year * fp.mpy
+        self.breastfeed_dur[breastfeed_continue] += self.sim.t.dt_year * fpd.mpy
         return
 
     def update_postpartum(self, uids):
@@ -388,10 +306,10 @@ class People(ss.People):
 
         # Count the state of the agent for postpartum -- # TOOD: refactor, what is this loop doing?
         postpart = uids[(self.postpartum[uids] == True)]
-        for key, (pp_low, pp_high) in fp.postpartum_map.items():
+        for key, (pp_low, pp_high) in fpd.postpartum_map.items():
             this_pp_bin = postpart[(self.postpartum_dur[postpart] >= pp_low) & (self.postpartum_dur[postpart] < pp_high)]
             self.sim.results[key][self.sim.ti] += len(this_pp_bin)
-        self.postpartum_dur[postpart] += self.sim.t.dt_year * fp.mpy
+        self.postpartum_dur[postpart] += self.sim.t.dt_year * fpd.mpy
 
         return
 
@@ -399,7 +317,7 @@ class People(ss.People):
         """ Advance pregnancy in time and check for miscarriage """
 
         preg = uids[self.pregnant[uids] == True]
-        self.gestation[preg] += self.sim.t.dt_year * fp.mpy
+        self.gestation[preg] += self.sim.t.dt_year * fpd.mpy
 
         # Check for miscarriage at the end of the first trimester
         end_first_tri = preg[(self.gestation[preg] == self.sim.fp_pars['end_first_tri'])]
@@ -531,20 +449,20 @@ class People(ss.People):
                 pidx = (self.parity[prev_birth_single] - 1).astype(int)
                 all_ints = [self.birth_ages[r, pidx] - self.birth_ages[r, pidx-1] for r in prev_birth_single]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
-                short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int']/fp.mpy))
+                short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int']/fpd.mpy))
                 sim.results['short_intervals'][ti] += short_ints
             if len(prev_birth_twins):
                 pidx = (self.parity[prev_birth_twins] - 2).astype(int)
                 all_ints = [self.birth_ages[r, pidx] - self.birth_ages[r, pidx-1] for r in prev_birth_twins]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
-                short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int']/fp.mpy))
+                short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int']/fpd.mpy))
                 sim.results['short_intervals'][ti] += short_ints
 
             # Calculate total births
             sim.results['total_births'][ti] = len(stillborn) + sim.results['births'][ti]
 
             live_age = self.age[live]
-            for key, (age_low, age_high) in fp.age_bin_map.items():
+            for key, (age_low, age_high) in fpd.age_bin_map.items():
                 match_low_high = live[(self.age[live] >=age_low) & (self.age[live] < age_high)]
                 birth_bins = len(match_low_high)
 
@@ -572,7 +490,7 @@ class People(ss.People):
         if uids is None:
             uids = self.alive.uids
 
-        for key, (age_low, age_high) in fp.age_bin_map.items():
+        for key, (age_low, age_high) in fpd.age_bin_map.items():
             this_age_bin = uids[(self.age[uids] >= age_low) & (self.age[uids] < age_high)]
             self.sim.results[f'total_women_{key}'][self.sim.ti] += len(this_age_bin)
 
@@ -675,7 +593,7 @@ class People(ss.People):
         # Update methods for those who are eligible
         ready = nonpreg[self.ti_contra[nonpreg] <= self.sim.ti]
         if len(ready):
-            self.sim.connectors.contraception.update_contra(ready)
+            self.update_method(ready)
             self.sim.results['switchers'][self.sim.ti] = len(ready)  # Track how many people switch methods (incl on/off)
 
         methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
@@ -707,7 +625,7 @@ class People(ss.People):
         self.track_mcpr()
         self.track_cpr()
         self.track_acpr()
-        age_min = self.age >= fp.min_age
+        age_min = self.age >= fpd.min_age
         age_max = self.age < sim.fp_pars['age_limit_fecundity']
 
         res['total_women_fecund'][ti] = np.sum(self.female * age_min * age_max)
@@ -735,15 +653,15 @@ class People(ss.People):
         res['pp12to23'][ti] = percent12to23
         res['nonpostpartum'][ti] = nonpostpartum
 
-        time_months = int(np.round(ti * sim.t.dt_year * fp.mpy))  # time since the beginning of the sim, expresse in months
+        time_months = int(np.round(ti * sim.t.dt_year * fpd.mpy))  # time since the beginning of the sim, expresse in months
 
         # Start calculating annual metrics after we have at least 1 year of data. These are annual metrics, and so are not the same dimensions as a standard results object.
-        if (time_months >= fp.mpy) and (time_months % fp.mpy) == 0:
-                index = int(time_months / fp.mpy) - 1
+        if (time_months >= fpd.mpy) and (time_months % fpd.mpy) == 0:
+                index = int(time_months / fpd.mpy) - 1
                 res['tfr_years'][index] = (sim.t.yearvec[ti]-1.0)  # Subtract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
                 stop_index = ti
                 start_index = int(stop_index - sim.fp_pars['tiperyear'])
-                for res_name, new_res_name in fp.to_annualize.items():
+                for res_name, new_res_name in fpd.to_annualize.items():
                     res_over_year = self.annualize_results(res_name, start_index, stop_index)
                     annual_res_name = f'{new_res_name}_over_year'
                     res[annual_res_name][index] = (res_over_year)
@@ -759,7 +677,7 @@ class People(ss.People):
                 self.calculate_annual_ratios()
 
                 tfr = 0
-                for key in fp.age_bin_map.keys():
+                for key in fpd.age_bin_map.keys():
                     age_bin_births_year = np.sum(res['total_births_' + key][start_index:stop_index])
                     age_bin_total_women_year = res['total_women_' + key][stop_index]
                     age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
@@ -772,9 +690,9 @@ class People(ss.People):
 
     def get_annual_index(self):
         time_months = int(np.round(
-            self.sim.ti * self.sim.t.dt_year * fp.mpy))  # time since the beginning of the sim, expresse in months
+            self.sim.ti * self.sim.t.dt_year * fpd.mpy))  # time since the beginning of the sim, expresse in months
 
-        return int(time_months / fp.mpy) - 1
+        return int(time_months / fpd.mpy) - 1
 
     def annualize_results(self, key, start_index, stop_index):
         return np.sum(self.sim.results[key][start_index:stop_index])
@@ -812,8 +730,8 @@ class People(ss.People):
     def int_age_clip(self, uids=None):
         ''' Return ages as integers, clipped to maximum allowable age for pregnancy '''
         if uids is None:
-            return np.minimum(self.int_age(), fp.max_age_preg)
-        return np.minimum(self.int_age(uids), fp.max_age_preg)
+            return np.minimum(self.int_age(), fpd.max_age_preg)
+        return np.minimum(self.int_age(uids), fpd.max_age_preg)
 
     def update_post(self):
         """ Final updates at the very end of the timestep """
@@ -833,7 +751,7 @@ class People(ss.People):
             fecundity aged women using that method on that year
         """
 
-        min_age = fp.min_age
+        min_age = fpd.min_age
         max_age = self.sim.fp_pars['age_limit_fecundity']
 
         # filtering for women with appropriate characteristics

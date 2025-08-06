@@ -207,8 +207,91 @@ class ContraceptiveChoice(ss.Connector):
         users, non_users = self.pars.p_use.split(uids)
         return users, non_users
 
-    def choose_method(self, uids, event=None):
-        pass
+    def update_contra(self, uids):
+        """ Update contraceptive choices for a set of users. """
+        sim = self.sim
+        ti = sim.ti
+        ppl = sim.people
+
+        # If people are 1 or 6m postpartum, we use different parameters for updating their contraceptive decisions
+        is_pp1 = (ppl.postpartum_dur[uids] == 1)
+        is_pp6 = (ppl.postpartum_dur[uids] == 6) & ~ppl.on_contra[uids]  # They may have decided to use contraception after 1m
+        pp0 = uids[~(is_pp1 | is_pp6)]
+        pp1 = uids[is_pp1]
+        pp6 = uids[is_pp6]
+
+        # Update choices for people who aren't postpartum
+        if len(pp0):
+
+            # If force_choose is True, then all non-users will be made to pick a method
+            if self.pars['force_choose']:
+                must_use = pp0[~ppl.on_contra[pp0]]
+                choosers = pp0[ppl.on_contra[pp0]]
+
+                if len(must_use):
+                    self.start_contra(must_use)  # Start contraception for those who must use
+                    ppl.method[must_use] = self.choose_method(must_use)
+
+            else:
+                choosers = pp0
+
+            # Get previous users and see whether they will switch methods or stop using
+            if len(choosers):
+
+                users, non_users = self.get_contra_users(choosers)
+
+                if len(non_users):
+                    ppl.on_contra[non_users] = False  # Set non-users to not using contraception
+                    ppl.method[non_users] = 0  # Set method to zero for non-users
+
+                # For those who keep using, choose their next method
+                if len(users):
+                    self.start_contra(users)
+                    ppl.method[users] = self.choose_method(users)
+
+            # Validate
+            n_methods = len(self.methods)
+            invalid_vals = (ppl.method[pp0] >= n_methods) * (ppl.method[pp0] < 0) * (np.isnan(ppl.method[pp0]))
+            if invalid_vals.any():
+                errormsg = f'Invalid method set: ti={pp0.ti}, inds={invalid_vals.nonzero()[-1]}'
+                raise ValueError(errormsg)
+
+        # Now update choices for postpartum people. Logic here is simpler because none of these
+        # people should be using contraception currently. We first check that's the case, then
+        # have them choose their contraception options.
+        ppdict = {'pp1': pp1, 'pp6': pp6}
+        for event, pp in ppdict.items():
+            if len(pp):
+                if ppl.on_contra[pp].any():
+                    errormsg = 'Postpartum women should not currently be using contraception.'
+                    raise ValueError(errormsg)
+                users, _ = self.get_contra_users(pp, event=event)
+                self.start_contra(users)
+                on_contra = pp[ppl.on_contra[pp]]
+                off_contra = pp[~ppl.on_contra[pp]]
+
+                # Set method for those who use contraception
+                if len(on_contra):
+                    method_used = self.choose_method(on_contra, event=event)
+                    ppl.method[on_contra] = method_used
+
+                if len(off_contra):
+                    ppl.method[off_contra] = 0
+                    if event == 'pp1':  # For women 1m postpartum, choose again when they are 6 months pp
+                        ppl.ti_contra[off_contra] = ti + 5
+
+        # Set duration of use for everyone, and reset the time they'll next update
+        durs_fixed = (ppl.postpartum_dur[uids] == 1) & (ppl.method[uids] == 0)
+        update_durs = uids[~durs_fixed]
+        dur_methods = self.set_dur_method(update_durs)
+
+        # Check validity
+        if (dur_methods < 0).any():
+            raise ValueError('Negative duration of method use')
+
+        ppl.ti_contra[update_durs] = ti + dur_methods
+
+        return
 
     def set_dur_method(self, uids, method_used=None):
         # todo make this aware of starsim time units. right now assumes average_dur_use is in years and timestep par is in years
