@@ -66,7 +66,7 @@ def exposure_parity():
 
 # %% Make and validate parameters
 
-def make_pars(location='ethiopia', seed=None):
+def make_pars(location='ethiopia'):
     """
     Take all parameters and construct into a dictionary
     """

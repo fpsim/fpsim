@@ -41,17 +41,17 @@ def test_multisim(do_plot=do_plot):
     return msim
 
 def test_eth_multisim():
-    sim1 = fp.Sim(pars=fp.pars(location='addis_ababa'))
-    sim2 = fp.Sim(pars=fp.pars(location='afar'))
-    sim3 = fp.Sim(pars=fp.pars(location='amhara'))
-    sim4 = fp.Sim(pars=fp.pars(location='benishangul_gumuz'))
-    sim5 = fp.Sim(pars=fp.pars(location='dire_dawa'))
-    sim6 = fp.Sim(pars=fp.pars(location='gambela'))
-    sim7 = fp.Sim(pars=fp.pars(location='harari'))
-    sim8 = fp.Sim(pars=fp.pars(location='oromia'))
-    sim9 = fp.Sim(pars=fp.pars(location='snnpr'))
-    sim10 = fp.Sim(pars=fp.pars(location='somali'))
-    sim11 = fp.Sim(pars=fp.pars(location='tigray'))
+    sim1 = fp.Sim(location='addis_ababa')
+    sim2 = fp.Sim(location='afar')
+    sim3 = fp.Sim(location='amhara')
+    sim4 = fp.Sim(location='benishangul_gumuz')
+    sim5 = fp.Sim(location='dire_dawa')
+    sim6 = fp.Sim(location='gambela')
+    sim7 = fp.Sim(location='harari')
+    sim8 = fp.Sim(location='oromia')
+    sim9 = fp.Sim(location='snnpr')
+    sim10 = fp.Sim(location='somali')
+    sim11 = fp.Sim(location='tigray')
     msim = fp.MultiSim(sims=[sim1, sim2, sim3, sim4, sim5, sim6, sim7, sim8, sim9, sim10, sim11])
 
     msim.run()

@@ -207,7 +207,8 @@ def plot_methods(sim):
 
     # Setup
     ppl = sim.people
-    model_labels_all = [m.label for m in sim.fp_pars['contraception_module'].methods.values()]
+    cm = sim.connectors.contraception
+    model_labels_all = [m.label for m in cm.methods.values()]
     model_labels_methods = sc.dcp(model_labels_all)
     model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 
@@ -664,7 +665,7 @@ def plot_education(sim):
     for i in range(len(ppl)):
         if ppl.alive.values[i] and ppl.female.values[i] and min_age <= ppl.age.values[i] < max_age:
             age_bin = age_bins[sc.findinds(age_bins <= ppl.age.values[i])[-1]]
-            model_edu_years[age_bin].append(ppl.edu_attainment.values[i])
+            model_edu_years[age_bin].append(ppl.edu.attainment.values[i])
 
     # Calculate average # of years of educational attainment for each age
     model_edu_mean = []

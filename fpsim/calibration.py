@@ -11,8 +11,8 @@ import sciris as sc
 import seaborn as sns
 import starsim as ss
 import optuna as op
-from . import experiment as fpe
 from . import parameters as fpp
+from . import experiment as fpe
 
 
 __all__ = ['Calibration']
@@ -59,7 +59,6 @@ class Calibration(sc.prettyobj):
         self.configure_optuna(**kwargs)
         return
 
-
     def set_optuna_defaults(self):
         ''' Create a (mutable) dictionary with default global settings '''
         ''' Set defaults for Optuna '''
@@ -71,7 +70,6 @@ class Calibration(sc.prettyobj):
         g.n_workers = sc.cpu_count()
         self.g = g
         return
-
 
     def configure_optuna(self, **kwargs):
         ''' Update Optuna configuration, if required '''
@@ -88,7 +86,6 @@ class Calibration(sc.prettyobj):
             raise ValueError(errormsg)
 
         return
-
 
     def validate_pars(self):
         '''
@@ -117,7 +114,7 @@ class Calibration(sc.prettyobj):
         for key,val in self.calib_pars.items():
 
             # Check that the key is a valid parameter
-            all_par_keys = ss.Pars().keys() + list(fpp.default_pars.keys())
+            all_par_keys = fpp.all_pars().keys()
             # if key not in par_keys:
             if key not in all_par_keys:
                 errormsg = f'Key "{key}" is not present the available parameter keys: {sc.newlinejoin(all_par_keys)}'
@@ -148,7 +145,6 @@ class Calibration(sc.prettyobj):
                 errormsg = f'Values must be in monotonic increasing order [best, low, high], but you have: {v}'
                 raise ValueError(errormsg) from E
         return
-
 
     def run_exp(self, calib_pars, return_exp=False, **kwargs):
         ''' Create and run an experiment '''
