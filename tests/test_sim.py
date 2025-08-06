@@ -6,8 +6,7 @@ import fpsim as fp
 import sciris as sc
 
 
-# par_kwargs = dict(n_agents=1000, start_year=1960, end_year=2020, seed=1, verbose=1)
-par_kwargs = dict(n_agents=500, start=2000, stop=2010, unit='year', dt=1/12, rand_seed=1, verbose=1/12)
+par_kwargs = dict(test=True)
 parallel = 1  # Whether to run in serial (for debugging)
 
 
