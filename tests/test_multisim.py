@@ -33,8 +33,7 @@ def test_multisim(do_plot=do_plot):
     assert sum(births.low) < sum(births.high), 'Expecting the higher bound of births to be higher than the lower bound'
 
     if do_plot:
-        msim.plot(plot_sims=True)
-        msim.plot(plot_sims=False)
+        msim.plot()
 
     return msim
 

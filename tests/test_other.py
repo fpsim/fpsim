@@ -46,10 +46,10 @@ def test_options():
 def test_to_df():
     sc.heading('Testing other sim methods...')
 
-    sim = fp.Sim(location='test').run()
+    sim = fp.Sim(test=True).run()
 
     df = sim.to_df()
-    births = df.births.sum()
+    births = df.fp_births.sum()
     last = df.timevec.values[-1]
     assert last == sim.pars.stop, 'Last years do not match'
     assert births > 0, 'Expected births'
@@ -75,6 +75,7 @@ def test_plotting_class():
     sim = fp.Sim().run()
     plt.plot_all(sim)
     return sim
+
 
 def test_plotting_regional():
     sc.heading('Test plotting class functions for region location...')
@@ -200,10 +201,10 @@ if __name__ == '__main__':
 
     # sc.options(backend=None) # Turn on interactive plots
 
-    opts = test_options()
-    df   = test_to_df()
-    ppl  = test_plot_people()
+    # opts = test_options()
+    # df   = test_to_df()
+    # ppl  = test_plot_people()
     sim = test_plotting_class()
-    res  = test_samples()
-    method = test_method_usage()
+    # res  = test_samples()
+    # method = test_method_usage()
     # sim = test_track_as(run_track_as)

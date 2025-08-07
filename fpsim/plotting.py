@@ -158,7 +158,7 @@ def plot_cpr_by_age(sim):
 def plot_asfr(sim):
     """Plots age-specific fertility rate"""
 
-    data = Config.load_validation_data(sim.fp_pars['location'], keys='asfr')['asfr']
+    data = Config.load_validation_data(sim.pars['location'], keys='asfr')['asfr']
 
     x = [1, 2, 3, 4, 5, 6, 7, 8]
 
@@ -201,7 +201,7 @@ def plot_methods(sim):
     Plots both dichotomous method data_use and non-data_use and contraceptive mix
     """
     # Load data
-    data = Config.load_validation_data(sim.fp_pars['location'], keys=['methods', 'use'])
+    data = Config.load_validation_data(sim.pars['location'], keys=['methods', 'use'])
     data_methods = data['methods']
     data_use = data['use']
 
@@ -210,15 +210,10 @@ def plot_methods(sim):
     cm = sim.connectors.contraception
     model_labels_all = [m.label for m in cm.methods.values()]
     model_labels_methods = sc.dcp(model_labels_all)
-    model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
-
-    # Extract from model
-    # TODO: refactor, this shouldn't need to loop over people, can just data_use a histogram
-    for i in range(len(ppl)):
-        if ppl.alive.values[i] and ppl.female.values[i] and ppl.age.values[i] >= min_age and ppl.age.values[i] < max_age:
-            model_method_counts[int(ppl.method.values[i])] += 1
-
-    model_method_counts[:] /= model_method_counts[:].sum()
+    mm = ppl.fp.method[ppl.female & (ppl.age >= min_age) & (ppl.age < max_age)]
+    mm_counts, _ = np.histogram(mm, bins=len(model_labels_all))
+    mm_counts = mm_counts/mm_counts.sum()
+    model_method_counts = sc.odict(zip(model_labels_all, mm_counts))
 
     # Method mix from data - country PMA data (mix.csv)
     data_methods_mix = {
@@ -299,7 +294,7 @@ def plot_ageparity(sim):
     Plot an age-parity distribution for model vs data
     """
     # Load data
-    ageparity_data = Config.load_validation_data(sim.fp_pars['location'], keys=['ageparity'])['ageparity']
+    ageparity_data = Config.load_validation_data(sim.pars['location'], keys=['ageparity'])['ageparity']
 
     # Set up
     ppl = sim.people
@@ -367,21 +362,21 @@ def plot_cpr(sim):
     Plot contraceptive prevalence rate for model vs data
     '''
     # Import data
-    data_cpr = Config.load_validation_data(sim.fp_pars['location'], keys=['mcpr'])['mcpr']
+    data_cpr = Config.load_validation_data(sim.pars['location'], keys=['mcpr'])['mcpr']
     data_cpr = data_cpr[data_cpr['year'] <= sim.pars['stop']]  # Restrict years to plot
     res = sim.results
 
     # Align data for RMSE calculation
     years = data_cpr['year']
     data_values = data_cpr['cpr'].values
-    model_values = np.interp(years, res['timevec'], res['cpr'] * 100)  # Interpolate model CPR to match data years
+    model_values = np.interp(years, res['timevec'], res.contraception.cpr * 100)  # Interpolate model CPR to match data years
 
     # Compute mean-normalized RMSE
     rmse_scores['cpr'] = compute_rmse(model_values, data_values)
 
     # Plot
     pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
-    pl.plot(res['timevec'], res['cpr'] * 100, label='FPsim', color='cornflowerblue')
+    pl.plot(res['timevec'], res.contraception.cpr * 100, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
     pl.ylabel('Percent')
     if Config.show_rmse is True:
@@ -400,20 +395,20 @@ def plot_tfr(sim):
     """
     # Load data
     res = sim.results
-    data_tfr = Config.load_validation_data(sim.fp_pars['location'], keys=['tfr'])['tfr']
+    data_tfr = Config.load_validation_data(sim.pars['location'], keys=['tfr'])['tfr']
 
     # Align model and data years for RMSE calculation
     data_years = data_tfr['year']
     data_tfr_values = data_tfr['tfr']
-    model_tfr_values = np.interp(data_years, res['tfr_years'],
-                                 res['tfr_rates'])  # Interpolate model to match data years
+    model_tfr_values = np.interp(data_years, res.fp.tfr_years,
+                                 res.fp.tfr_rates)  # Interpolate model to match data years
 
     # Compute mean-normalized RMSE
     rmse_scores['tfr'] = compute_rmse(model_tfr_values, data_tfr_values)
 
     # Plot
     pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
-    pl.plot(res['tfr_years'], res['tfr_rates'], label='FPsim', color='cornflowerblue')
+    pl.plot(res.fp.tfr_years, res.fp.tfr_rates, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
     pl.ylabel('Rate')
     if Config.show_rmse is True:
@@ -430,7 +425,7 @@ def plot_pop_growth(sim):
     """
     Plot annual population growth rate for model vs data
     """
-    data_popsize = Config.load_validation_data(sim.fp_pars['location'], keys=['popsize'])['popsize']
+    data_popsize = Config.load_validation_data(sim.pars.fp['location'], keys=['popsize'])['popsize']
     res = sim.results
 
     # Import data
@@ -439,7 +434,7 @@ def plot_pop_growth(sim):
     data_population = data_popsize['population'].to_numpy()
 
     # Extract from model
-    model_growth_rate = pop_growth_rate(res['tfr_years'], res['pop_size'])
+    model_growth_rate = pop_growth_rate(res.timevec, res.n_alive)
 
     data_growth_rate = pop_growth_rate(data_pop_years, data_population)
 
@@ -456,10 +451,10 @@ def plot_pop_growth(sim):
 
 def plot_afb(sim):
     """Plot age at first birth: model vs survey data"""
-    data_afb = Config.load_validation_data(sim.fp_pars['location'], keys='afb')['afb']
+    data_afb = Config.load_validation_data(sim.pars['location'], keys='afb')['afb']
 
     # Extract model AFB values
-    model_afb = [age for age in sim.people.first_birth_age if age != -1]
+    model_afb = [age for age in sim.people.fp.first_birth_age if age != -1]
     model_afb = np.array(model_afb)
 
     # Clean and bin data AFB values
@@ -501,7 +496,7 @@ def plot_birth_spacing(sim):
     Plot birth space and age at first birth for model vs data
     """
     # Load data
-    data_spacing = Config.load_validation_data(sim.fp_pars['location'], keys=['spacing'])['spacing']
+    data_spacing = Config.load_validation_data(sim.pars['location'], keys=['spacing'])['spacing']
 
     # Set up
     ppl = sim.people
@@ -648,7 +643,7 @@ def plot_education(sim):
     pl.clf()
 
     # Extract education from data
-    data_education = Config.load_validation_data(sim.fp_pars['location'], keys=['education'])['education']
+    data_education = Config.load_validation_data(sim.pars['location'], keys=['education'])['education']
 
     data_edu = data_education[['age', 'edu']].sort_values(by='age')
     data_edu = data_edu.query(f"{min_age} <= age < {max_age}").copy()
