@@ -507,7 +507,7 @@ def plot_birth_spacing(sim):
     for i in range(len(ppl)):
         if ppl.alive.values[i] and ppl.female.values[i] and ppl.age.values[i] >= min_age and ppl.age.values[i] < max_age:
             if ppl.parity.values[i] > 1:
-                clean_ages = ppl.birth_ages.values[i][~np.isnan(ppl.birth_ages.values[i])]
+                clean_ages = ppl.fp.birth_ages.values[i][~np.isnan(ppl.fp.birth_ages.values[i])]
                 for d in range(len(clean_ages) - 1):
                     space = clean_ages[d + 1] - clean_ages[d]
                     if space > 0:
