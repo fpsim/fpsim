@@ -40,6 +40,8 @@ class FPmod(ss.Module):
         self._p_conceive = ss.bernoulli(p=0)
         self._p_abortion = ss.bernoulli(p=0)
         self._p_active = ss.bernoulli(p=0)
+        self._p_stillbirth = ss.bernoulli(p=0)  # Probability of stillbirth
+        self._p_twins = ss.bernoulli(p=0)  # Probability of twins
 
         return
 
@@ -168,6 +170,17 @@ class FPmod(ss.Module):
         self.months_inactive[active] = 0
         self.months_inactive[inactive] += 1
 
+        return
+
+    def start_partnership(self, uids):
+        """
+        Decide if an agent has reached their age at first partnership. Age-based data from DHS.
+        """
+        ppl = self.sim.people
+        is_not_partnered = self.partnered[uids] == 0
+        reached_partnership_age = ppl.age[uids] >= self.partnership_age[uids]
+        first_timers = uids[is_not_partnered & reached_partnership_age]
+        self.partnered[first_timers] = True
         return
 
     def update_time_to_choose(self, uids=None):
@@ -444,11 +457,10 @@ class FPmod(ss.Module):
         """
         if uids is None:
             uids = self.pregnant.uids
-        if len(uids):
-            print('hi')
         sim = self.sim
         fp_pars = self.pars
         ti = self.ti
+        ppl = sim.people
 
         # Update states
         deliv = uids[(self.gestation[uids] == self.preg_dur[uids])]
@@ -465,23 +477,23 @@ class FPmod(ss.Module):
             still_prob = fp_pars['mortality_probs']['stillbirth']
             rate_ages = fp_pars['stillbirth_rate']['ages']
 
-            age_ind = np.searchsorted(rate_ages, self.age[deliv], side="left")
+            age_ind = np.searchsorted(rate_ages, ppl.age[deliv], side="left")
             prev_idx_is_less = ((age_ind == len(rate_ages)) | (
-                    np.fabs(self.age[deliv] - rate_ages[np.maximum(age_ind - 1, 0)]) < np.fabs(
-                self.age[deliv] - rate_ages[np.minimum(age_ind, len(rate_ages) - 1)])))
+                    np.fabs(ppl.age[deliv] - rate_ages[np.maximum(age_ind - 1, 0)]) < np.fabs(
+                ppl.age[deliv] - rate_ages[np.minimum(age_ind, len(rate_ages) - 1)])))
             age_ind[prev_idx_is_less] -= 1  # adjusting for quirks of np.searchsorted
             still_prob = still_prob * (fp_pars['stillbirth_rate']['age_probs'][age_ind]) if len(self) > 0 else 0
 
-            self.binom.set(p=still_prob)
-            stillborn, live = self.binom.filter(deliv, both=True)
+            self._p_stillbirth.set(p=still_prob)
+            stillborn, live = self._p_stillbirth.split(deliv)
 
             self.stillbirth[stillborn] += 1  # Track how many stillbirths an agent has had
             self.lactating[stillborn] = False  # Set agents of stillbith to not lactate
             self.results['stillbirths'][ti] = len(stillborn)
 
             # Handle twins
-            self.binom.set(fp_pars['twins_prob'])
-            twin, single = self.binom.filter(live, both=True)
+            self._p_twins.set(fp_pars['twins_prob'])
+            twin, single = self._p_twins.split(live)
             self.results['births'][ti] += 2 * len(twin)  # only add births to population if born alive
             self.results['births'][ti] += len(single)
 
@@ -489,18 +501,18 @@ class FPmod(ss.Module):
             for parity in np.unique(self.parity[single]):
                 single_uids = single[self.parity[single] == parity]
                 # for uid in single_uids:
-                self.birth_ages[ss.uids(single_uids), int(parity)] = self.age[ss.uids(single_uids)]
-                if parity == 0: self.first_birth_age[single_uids] = self.age[single_uids]
+                self.birth_ages[ss.uids(single_uids), int(parity)] = ppl.age[ss.uids(single_uids)]
+                if parity == 0: self.first_birth_age[single_uids] = ppl.age[single_uids]
             for parity in np.unique(self.parity[twin]):
                 twin_uids = twin[self.parity[twin] == parity]
                 # for uid in twin_uids:
-                self.birth_ages[twin_uids, int(parity)] = self.age[twin_uids]
-                self.birth_ages[twin_uids, int(parity) + 1] = self.age[twin_uids]
-                if parity == 0: self.first_birth_age[twin_uids] = self.age[twin_uids]
+                self.birth_ages[twin_uids, int(parity)] = ppl.age[twin_uids]
+                self.birth_ages[twin_uids, int(parity) + 1] = ppl.age[twin_uids]
+                if parity == 0: self.first_birth_age[twin_uids] = ppl.age[twin_uids]
             for parity in np.unique(self.parity[stillborn]):
                 uids = stillborn[self.parity[stillborn] == parity]
                 # for uid in uids:
-                self.stillborn_ages[uids, int(parity)] = self.age[uids]
+                self.stillborn_ages[uids, int(parity)] = ppl.age[uids]
 
             self.parity[single] += 1
             self.parity[twin] += 2  # Add 2 because matching DHS "total children ever born (alive) v201"
@@ -594,8 +606,8 @@ class FPmod(ss.Module):
         # Update methods for those who are eligible
         ready = nonpreg[self.ti_contra[nonpreg] <= self.ti]
         if len(ready):
-            self.update_method(ready)
-            self.sim.results['switchers'][self.sim.ti] = len(ready)  # Track how many people switch methods (incl on/off)
+            self.sim.connectors.contraception.update_contra(ready)
+            self.results['switchers'][self.ti] = len(ready)  # Track how many people switch methods (incl on/off)
 
         methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
         if not methods_ok:

@@ -111,8 +111,8 @@ fpmod_states = [
 
     ss.State('partnered', default=False),  # Will remain at these values if use_partnership is False
     ss.FloatArr('partnership_age', default=-1),  # Will remain at these values if use_partnership is False
-    ss.State('urban', default=True),  # Urban/rural
-    ss.FloatArr('wealthquintile', default=3),  # Wealth quintile
+    # ss.State('urban', default=True),  # Urban/rural
+    # ss.FloatArr('wealthquintile', default=3),  # Wealth quintile
 ]
 
 # Postpartum keys to months

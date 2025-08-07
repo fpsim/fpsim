@@ -227,12 +227,13 @@ class ContraceptiveChoice(ss.Connector):
     def update_contra(self, uids):
         """ Update contraceptive choices for a set of users. """
         sim = self.sim
-        ti = sim.ti
+        ti = self.ti
         ppl = sim.people
+        fpppl = ppl.fp  # Shorter name for people.fp
 
         # If people are 1 or 6m postpartum, we use different parameters for updating their contraceptive decisions
-        is_pp1 = (ppl.postpartum_dur[uids] == 1)
-        is_pp6 = (ppl.postpartum_dur[uids] == 6) & ~ppl.on_contra[uids]  # They may have decided to use contraception after 1m
+        is_pp1 = (fpppl.postpartum_dur[uids] == 1)
+        is_pp6 = (fpppl.postpartum_dur[uids] == 6) & ~fpppl.on_contra[uids]  # They may have decided to use contraception after 1m
         pp0 = uids[~(is_pp1 | is_pp6)]
         pp1 = uids[is_pp1]
         pp6 = uids[is_pp6]
@@ -242,12 +243,12 @@ class ContraceptiveChoice(ss.Connector):
 
             # If force_choose is True, then all non-users will be made to pick a method
             if self.pars['force_choose']:
-                must_use = pp0[~ppl.on_contra[pp0]]
-                choosers = pp0[ppl.on_contra[pp0]]
+                must_use = pp0[~fpppl.on_contra[pp0]]
+                choosers = pp0[fpppl.on_contra[pp0]]
 
                 if len(must_use):
                     self.start_contra(must_use)  # Start contraception for those who must use
-                    ppl.method[must_use] = self.choose_method(must_use)
+                    fpppl.method[must_use] = self.choose_method(must_use)
 
             else:
                 choosers = pp0
@@ -258,17 +259,17 @@ class ContraceptiveChoice(ss.Connector):
                 users, non_users = self.get_contra_users(choosers)
 
                 if len(non_users):
-                    ppl.on_contra[non_users] = False  # Set non-users to not using contraception
-                    ppl.method[non_users] = 0  # Set method to zero for non-users
+                    fpppl.on_contra[non_users] = False  # Set non-users to not using contraception
+                    fpppl.method[non_users] = 0  # Set method to zero for non-users
 
                 # For those who keep using, choose their next method
                 if len(users):
                     self.start_contra(users)
-                    ppl.method[users] = self.choose_method(users)
+                    fpppl.method[users] = self.choose_method(users)
 
             # Validate
             n_methods = len(self.methods)
-            invalid_vals = (ppl.method[pp0] >= n_methods) * (ppl.method[pp0] < 0) * (np.isnan(ppl.method[pp0]))
+            invalid_vals = (fpppl.method[pp0] >= n_methods) * (fpppl.method[pp0] < 0) * (np.isnan(fpppl.method[pp0]))
             if invalid_vals.any():
                 errormsg = f'Invalid method set: ti={pp0.ti}, inds={invalid_vals.nonzero()[-1]}'
                 raise ValueError(errormsg)
@@ -279,26 +280,26 @@ class ContraceptiveChoice(ss.Connector):
         ppdict = {'pp1': pp1, 'pp6': pp6}
         for event, pp in ppdict.items():
             if len(pp):
-                if ppl.on_contra[pp].any():
+                if fpppl.on_contra[pp].any():
                     errormsg = 'Postpartum women should not currently be using contraception.'
                     raise ValueError(errormsg)
                 users, _ = self.get_contra_users(pp, event=event)
                 self.start_contra(users)
-                on_contra = pp[ppl.on_contra[pp]]
-                off_contra = pp[~ppl.on_contra[pp]]
+                on_contra = pp[fpppl.on_contra[pp]]
+                off_contra = pp[~fpppl.on_contra[pp]]
 
                 # Set method for those who use contraception
                 if len(on_contra):
                     method_used = self.choose_method(on_contra, event=event)
-                    ppl.method[on_contra] = method_used
+                    fpppl.method[on_contra] = method_used
 
                 if len(off_contra):
-                    ppl.method[off_contra] = 0
+                    fpppl.method[off_contra] = 0
                     if event == 'pp1':  # For women 1m postpartum, choose again when they are 6 months pp
-                        ppl.ti_contra[off_contra] = ti + 5
+                        fpppl.ti_contra[off_contra] = ti + 5
 
         # Set duration of use for everyone, and reset the time they'll next update
-        durs_fixed = (ppl.postpartum_dur[uids] == 1) & (ppl.method[uids] == 0)
+        durs_fixed = (fpppl.postpartum_dur[uids] == 1) & (fpppl.method[uids] == 0)
         update_durs = uids[~durs_fixed]
         dur_methods = self.set_dur_method(update_durs)
 
@@ -306,7 +307,7 @@ class ContraceptiveChoice(ss.Connector):
         if (dur_methods < 0).any():
             raise ValueError('Negative duration of method use')
 
-        ppl.ti_contra[update_durs] = ti + dur_methods
+        fpppl.ti_contra[update_durs] = ti + dur_methods
 
         return
 
@@ -319,7 +320,7 @@ class ContraceptiveChoice(ss.Connector):
 
     def set_method(self, uids):
         """ Wrapper for choosing method and assigning duration of use """
-        ppl = self.sim.people
+        ppl = self.sim.people.fp
         method_used = self.choose_method(uids)
         ppl.method[uids] = method_used
 
@@ -583,7 +584,7 @@ class SimpleChoice(RandomChoice):
 
                 for mname, method in self.methods.items():
                     # Get people of this age who are using this method
-                    using_this_method = match_low_high & (ppl.method[uids] == method.idx)
+                    using_this_method = match_low_high & (ppl.fp.method[uids] == method.idx)
                     switch_iinds = using_this_method.nonzero()[-1]
 
                     if len(switch_iinds):
