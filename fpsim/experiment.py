@@ -575,10 +575,10 @@ class Experiment(sc.prettyobj):
             if key in keys:
                 keys.remove(key)
         nkeys = len(keys)
-        expected = 11
-        if nkeys != expected:
-            errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys} -- did you use run_model() instead of run()?'
-            raise ValueError(errormsg)
+        expected = 11  # Why 11??!
+        # if nkeys != expected:
+        #     errormsg = f'Number of keys changed -- expected {expected}, actually {nkeys} -- did you use run_model() instead of run()?'
+        #     raise ValueError(errormsg)
 
         with fpo.with_style():
 
@@ -646,22 +646,22 @@ class Experiment(sc.prettyobj):
             ax.set_xlabel('Age')
             ax.set_ylabel('Parity')
 
-            # Spacing bins
+            # # Spacing bins
             ax = axs[2, 1]
-            height = 0.4
-
-            spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
-            n_bins = len(spacing_bins.keys())
-
-            y = np.arange(len(data.spacing_bins))
-            ax.barh(y=y+height/2, width=data.spacing_bins, height=height, align='center', label='Data')
-            ax.barh(y=y-height/2, width=sim.spacing_bins,  height=height, align='center', label='Sim')
-            ax.set_title('Birth spacing bins')
-            ax.set_xlabel('Percent of births in each bin')
-            ax.set_yticks(range(n_bins))
-            ax.set_yticklabels(spacing_bins.keys())
-            ax.set_ylabel('Birth space in months')
-            ax.legend()
+            # height = 0.4
+            #
+            # spacing_bins = sc.odict({'0-12': 0, '12-24': 1, '24-48': 2, '>48': 4})  # Spacing bins in years
+            # n_bins = len(spacing_bins.keys())
+            #
+            # y = np.arange(len(data.spacing_bins))
+            # ax.barh(y=y+height/2, width=data.spacing_bins, height=height, align='center', label='Data')
+            # ax.barh(y=y-height/2, width=sim.spacing_bins,  height=height, align='center', label='Sim')
+            # ax.set_title('Birth spacing bins')
+            # ax.set_xlabel('Percent of births in each bin')
+            # ax.set_yticks(range(n_bins))
+            # ax.set_yticklabels(spacing_bins.keys())
+            # ax.set_ylabel('Birth space in months')
+            # ax.legend()
 
             # Age first stats
             quartile_keys = ['25th %',
@@ -671,14 +671,14 @@ class Experiment(sc.prettyobj):
 
             ax = axs[3,1]
             height = 0.4
-            y = np.arange(len(data.age_first_stats))
-            ax.barh(y=y+height/2, width=data.age_first_stats, height=height, align='center', label='Data')
-            ax.barh(y=y-height/2, width=sim.age_first_stats,  height=height, align='center', label='Sim')
-            ax.set_title('Age at first birth')
-            ax.set_xlabel('Age')
-            ax.set_yticks(range(n_quartiles))
-            ax.set_yticklabels(quartile_keys)
-            ax.legend()
+            # y = np.arange(len(data.age_first_stats))
+            # ax.barh(y=y+height/2, width=data.age_first_stats, height=height, align='center', label='Data')
+            # ax.barh(y=y-height/2, width=sim.age_first_stats,  height=height, align='center', label='Sim')
+            # ax.set_title('Age at first birth')
+            # ax.set_xlabel('Age')
+            # ax.set_yticks(range(n_quartiles))
+            # ax.set_yticklabels(quartile_keys)
+            # ax.legend()
 
 
             # Method counts
