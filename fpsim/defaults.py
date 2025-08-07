@@ -2,10 +2,12 @@
 Define defaults for use throughout FPsim
 """
 
+# Imports
 import numpy as np
 import sciris as sc
 import starsim as ss
 import fpsim.arrays as fpa
+
 
 #%% Global defaults
 useSI          = True
@@ -21,7 +23,6 @@ valid_country_locs = ['senegal', 'kenya', 'ethiopia']
 valid_region_locs = {
     'ethiopia': ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
 }
-
 
 # Parse locations
 def get_location(location, printmsg=False):

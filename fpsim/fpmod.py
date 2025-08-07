@@ -28,7 +28,7 @@ class FPmod(ss.Module):
             default_pars.update_location(location)  # Update location-specific parameters
         self.define_pars(**default_pars)
         self.update_pars(pars, **kwargs)
-        self.define_states(*fpd.fpmod_states)
+        self.define_states(*fp.fpmod_states)
 
         # Distributions
         self._p_fertile = ss.bernoulli(p=1-self.pars['primary_infertility'])  # Probability of primary fertility
@@ -536,7 +536,6 @@ class FPmod(ss.Module):
             # Calculate total births
             self.results['total_births'][ti] = len(stillborn) + self.results['births'][ti]
 
-            live_age = ppl.age[live]
             for key, (age_low, age_high) in fpd.age_bin_map.items():
                 match_low_high = live[(ppl.age[live] >= age_low) & (ppl.age[live] < age_high)]
                 birth_bins = len(match_low_high)
@@ -546,7 +545,7 @@ class FPmod(ss.Module):
             self.check_maternal_mortality(live)  # Mothers of only live babies eligible to match definition of maternal mortality ratio
             i_death = self.check_infant_mortality(live)
 
-            # Grow the population with the new births
+            # Grow the population with the new live births
             new_uids = ppl.grow(len(live) - len(i_death))
             ppl.age[new_uids] = 0
             self.set_states(uids=new_uids)
@@ -575,11 +574,8 @@ class FPmod(ss.Module):
         """
         ppl = self.sim.people
 
-        # Set states - fecundity, sexual debut, personal fecundability, and time to choose contraception
-        self.set_states(upper_age=self.t.dt)
-
-        # normally SS handles deaths at end of timestep, but to match the previous version's logic, we start it here.
-        # dead agents are removed so we don't have to filter for alive after this.
+        # Normally SS handles deaths at end of timestep, but to match the previous version's logic, we start it here.
+        # Dead agents are removed, so we don't have to filter for alive after this.
         self.decide_death_outcome(ppl.alive.uids)
 
         # Update pregnancy with maternal mortality outcome
@@ -588,8 +584,8 @@ class FPmod(ss.Module):
         # Reselect for live agents after exposure to maternal mortality and infant mortality
         fecund = (ppl.female & (ppl.age < self.pars['age_limit_fecundity'])).uids
 
-        nonpreg = fecund[self.pregnant[fecund] == False]
-        lact = fecund[self.lactating[fecund] == True]
+        nonpreg = fecund[~self.pregnant[fecund]]
+        lact = fecund[self.lactating[fecund]]
 
         # # Check who has reached their age at first partnership and set partnered attribute to True.
         self.start_partnership(ppl.female.uids)
@@ -653,7 +649,6 @@ class FPmod(ss.Module):
         res['nonpostpartum'][ti] = nonpostpartum
 
         return
-
 
     def finalize_results(self):
         # Calculate cumulative totals

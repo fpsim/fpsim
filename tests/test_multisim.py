@@ -23,9 +23,8 @@ def test_multisim(do_plot=do_plot):
         sim = fp.Sim(pars=pars, label=f'Exposure {exposure}')
         sims.append(sim)
 
-    msim = fp.MultiSim(sims)
+    msim = ss.MultiSim(sims)
     msim.run(parallel=parallel) # Run sims in parallel
-    # msim.to_df() # Test to_df
 
     msim.reduce()
     msim.summarize()
@@ -52,7 +51,7 @@ def test_eth_multisim():
     sim9 = fp.Sim(location='snnpr')
     sim10 = fp.Sim(location='somali')
     sim11 = fp.Sim(location='tigray')
-    msim = fp.MultiSim(sims=[sim1, sim2, sim3, sim4, sim5, sim6, sim7, sim8, sim9, sim10, sim11])
+    msim = ss.MultiSim(sims=[sim1, sim2, sim3, sim4, sim5, sim6, sim7, sim8, sim9, sim10, sim11])
 
     msim.run()
 
