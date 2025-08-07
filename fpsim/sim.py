@@ -225,29 +225,33 @@ class Sim(ss.Sim):
         super().init_results()  # Initialize the base results
 
         scaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
+        nonscaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=float, scale=False)
 
-        for key in fpd.scaling_array_results:
+        # Add event counts - these are all integers, and are scaled by the number of agents
+        # We compute new results for each event type, and also cumulative results
+        for key in fpd.event_counts:
+            self.results += ss.Result(key, label=key, **scaling_kw)
+            self.results += ss.Result(f'cum_{key}', label=key, dtype=int, scale=False)  # TODO, check
+
+        # Add people counts - these are all integers, and are scaled by the number of agents
+        # However, for these we do not include cumulative totals
+        for key in fpd.people_counts:
             self.results += ss.Result(key, label=key, **scaling_kw)
 
-        nonscaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=float, scale=False)
-        for key in fpd.nonscaling_array_results:
+        for key in fpd.rate_results:
             self.results += ss.Result(key, label=key, **nonscaling_kw)
-
-        annual_kw = dict(shape=(self.pars.stop - self.pars.start), timevec=range(self.pars.start, self.pars.stop), dtype=float, scale=False)
-        for key in fpd.float_annual_results:
-            self.results += ss.Result(key, label=key, **annual_kw)
 
         for key in fpd.dict_annual_results:
             if key == 'method_usage':
                 self.results[key] = ss.Results(module=self)
                 for i, method in enumerate(self.connectors.contraception.methods):
-                    self.results[key] += ss.Result(method, label=method, **annual_kw)
+                    self.results[key] += ss.Result(method, label=method, **scaling_kw)
 
         # Store age-specific fertility rates
-        self.results['asfr'] = ss.Results(module=self) # ['asfr'] = {}
+        self.results['asfr'] = ss.Results(module=self)  # ['asfr'] = {}
         for key in fpd.age_bin_map.keys():
-            self.results.asfr += ss.Result(key, label=key, **annual_kw)
-            self.results += ss.Result(f"tfr_{key}", label=key, **annual_kw)
+            self.results.asfr += ss.Result(key, label=key, **nonscaling_kw)
+            self.results += ss.Result(f"tfr_{key}", label=key, **nonscaling_kw)
 
         return
 
@@ -293,15 +297,16 @@ class Sim(ss.Sim):
                     self.results[key] = np.array(arr)  # Convert any lists to arrays
 
         # Calculate cumulative totals
-        self.results['cum_maternal_deaths_by_year'] = np.cumsum(self.results['maternal_deaths_over_year'])
-        self.results['cum_infant_deaths_by_year'] = np.cumsum(self.results['infant_deaths_over_year'])
-        self.results['cum_live_births_by_year'] = np.cumsum(self.results['live_births_over_year'])
-        self.results['cum_stillbirths_by_year'] = np.cumsum(self.results['stillbirths_over_year'])
-        self.results['cum_miscarriages_by_year'] = np.cumsum(self.results['miscarriages_over_year'])
-        self.results['cum_abortions_by_year'] = np.cumsum(self.results['abortions_over_year'])
-        self.results['cum_short_intervals_by_year'] = np.cumsum(self.results['short_intervals_over_year'])
-        self.results['cum_secondary_births_by_year'] = np.cumsum(self.results['secondary_births_over_year'])
-        self.results['cum_pregnancies_by_year'] = np.cumsum(self.results['pregnancies_over_year'])
+
+        self.results['cum_maternal_deaths'] = np.cumsum(self.results['maternal_deaths'])
+        self.results['cum_infant_deaths'] = np.cumsum(self.results['infant_deaths'])
+        self.results['cum_births'] = np.cumsum(self.results['births'])
+        self.results['cum_stillbirths'] = np.cumsum(self.results['stillbirths'])
+        self.results['cum_miscarriages'] = np.cumsum(self.results['miscarriages'])
+        self.results['cum_abortions'] = np.cumsum(self.results['abortions'])
+        self.results['cum_short_intervals'] = np.cumsum(self.results['short_intervals'])
+        self.results['cum_secondary_births'] = np.cumsum(self.results['secondary_births'])
+        self.results['cum_pregnancies'] = np.cumsum(self.results['pregnancies'])
         return
 
     def store_postpartum(self):

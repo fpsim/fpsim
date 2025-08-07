@@ -20,7 +20,6 @@ __all__ = ['People']
 class People(ss.People):
     """
     Class for all the people in the simulation.
-
     Age pyramid is a 2d array with columns: age, male count, female count
     """
 
@@ -44,7 +43,6 @@ class People(ss.People):
         # Initialization
         super().__init__(n_agents, age_data, extra_states=self.person_defaults, **kwargs)
         self.female.default.set(p=f_frac)
-
         self.binom = ss.bernoulli(p=0.5)
 
         return
@@ -87,14 +85,6 @@ class People(ss.People):
         self._keys = [s.name for s in self.states.values()]
 
         return
-
-    @property
-    def yei(self):
-        """
-        The index of year-ending as of the same date expressed in ti
-        or 12-months ago as of the same date.
-        """
-        return (self.ti + 1) % self.tiperyear
 
     def get_urban(self, n):
         """ Get initial distribution of urban """
@@ -176,7 +166,7 @@ class People(ss.People):
             self.postpartum[died] = False,
             self.lam[died] = False,
             self.breastfeed_dur[died] = 0,
-            sim.results['deaths'][sim.ti] += len(died)
+            # sim.results['deaths'][sim.ti] += len(died)
             self.request_death(died)
             self.step_die() # to match the order of ops from earlier FPsim version
             self.remove_dead()
@@ -187,7 +177,6 @@ class People(ss.People):
         """
         Decide if an agent has reached their age at first partnership. Age-based data from DHS.
         """
-
         is_not_partnered = self.partnered[uids] == 0
         reached_partnership_age = self.age[uids] >= self.partnership_age[uids]
         first_timers = uids[is_not_partnered & reached_partnership_age]
@@ -442,7 +431,6 @@ class People(ss.People):
         death = self.binom.filter(uids)
         self.request_death(death)
         self.sim.results['maternal_deaths'][self.sim.ti] += len(death)
-        self.sim.results['deaths'][self.sim.ti] += len(death)
         return death
 
     def check_infant_mortality(self, uids):
@@ -578,69 +566,6 @@ class People(ss.People):
 
         return
 
-    def track_mcpr(self):
-        """
-        Track for purposes of calculating mCPR at the end of the timestep after all people are updated
-        Not including LAM users in mCPR as this model counts all women passively using LAM but
-        DHS data records only women who self-report LAM which is much lower.
-        Follows the DHS definition of mCPR
-        """
-        cm = self.sim.connectors.contraception
-        modern_methods_num = [idx for idx, m in enumerate(cm.methods.values()) if m.modern]
-        method_age = (self.sim.fp_pars['method_age'] <= self.age)
-        fecund_age = self.age < self.sim.fp_pars['age_limit_fecundity']
-        denominator = method_age * fecund_age * self.female * (self.alive)
-        numerator = np.isin(self.method, modern_methods_num)
-        no_method_mcpr = np.sum((self.method == 0) * denominator)
-        on_method_mcpr = np.sum(numerator * denominator)
-        self.sim.results['no_methods_mcpr'][self.sim.ti] += no_method_mcpr
-        self.sim.results['on_methods_mcpr'][self.sim.ti] += on_method_mcpr
-
-        return
-
-    def track_cpr(self):
-        """
-        Track for purposes of calculating newer ways to conceptualize contraceptive prevalence
-        at the end of the timestep after all people are updated
-        Includes women using any method of contraception, including LAM
-        Denominator of possible users includes all women aged 15-49
-        """
-        denominator = ((self.sim.fp_pars['method_age'] <= self.age) * (self.age < self.sim.fp_pars['age_limit_fecundity']) * (
-                self.female == True) * (self.alive))
-        numerator = self.method != 0
-        no_method_cpr = np.sum((self.method == 0) * denominator)
-        on_method_cpr = np.sum(numerator * denominator)
-        self.sim.results['no_methods_cpr'][self.sim.ti] += no_method_cpr
-        self.sim.results['on_methods_cpr'][self.sim.ti] += on_method_cpr
-
-        return
-
-    def track_acpr(self):
-        """
-        Track for purposes of calculating newer ways to conceptualize contraceptive prevalence
-        at the end of the timestep after all people are updated
-        Denominator of possible users excludes pregnant women and those not sexually active in the last 4 weeks
-        Used to compare new metrics of contraceptive prevalence and eventually unmet need to traditional mCPR definitions
-        """
-        denominator = ((self.sim.fp_pars['method_age'] <= self.age) * (self.age < self.sim.fp_pars['age_limit_fecundity']) * (
-                self.female == True) * (self.pregnant == 0) * (self.sexually_active == 1) * (self.alive))
-        numerator = self.method != 0
-        no_method_cpr = np.sum((self.method == 0) * denominator)
-        on_method_cpr = np.sum(numerator * denominator)
-        self.sim.results['no_methods_acpr'][self.sim.ti] += no_method_cpr
-        self.sim.results['on_methods_acpr'][self.sim.ti] += on_method_cpr
-
-        return
-
-    def birthday_filter(self, uids=None):
-        """
-        Returns uids of people who celebrated their bdays on this timestep."""
-        if uids is None:
-            uids = self.alive.uids
-        age_diff = self.age - np.floor(self.age)
-        had_bday = uids & (age_diff <= self.sim.t.dt_year)
-        return had_bday
-
     def step(self):
         """
         Perform all updates to people within a single timestep
@@ -704,14 +629,11 @@ class People(ss.People):
         sim = self.sim
         res = sim.results
         ti = sim.ti
-        self.track_mcpr()
-        self.track_cpr()
-        self.track_acpr()
         age_min = self.age >= fp.min_age
         age_max = self.age < sim.fp_pars['age_limit_fecundity']
 
-        res['total_women_fecund'][ti] = np.sum(self.female * age_min * age_max)
-        res['urban_women'][ti] = np.sum(self.urban * self.female) / np.sum(self.female) * 100
+        res['n_fecund'][ti] = np.sum(self.female * age_min * age_max)
+        res['n_urban'][ti] = np.sum(self.urban * self.female)
         res['ever_used_contra'][ti] = np.sum(self.ever_used_contra * self.female) / np.sum(self.female) * 100
         res['parity0to1'][ti] = np.sum((self.parity <= 1) & self.female) / np.sum(self.female) * 100
         res['parity2to3'][ti] = np.sum((self.parity >= 2) & (self.parity <= 3) & self.female) / np.sum(self.female) * 100
@@ -721,81 +643,63 @@ class People(ss.People):
         # Update wealth
         self._step_results_wq()
 
-        percent0to5 = (res.pp0to5[ti] / res.total_women_fecund[ti]) * 100
-        percent6to11 = (res.pp6to11[ti] / res.total_women_fecund[ti]) * 100
-        percent12to23 = (res.pp12to23[ti] / res.total_women_fecund[ti]) * 100
-        nonpostpartum = ((res.total_women_fecund[ti] - res.pp0to5[ti] - res.pp6to11[ti] - res.pp12to23[ti]) / res.total_women_fecund[ti]) * 100
+        percent0to5 = (res.pp0to5[ti] / res.n_fecund[ti]) * 100
+        percent6to11 = (res.pp6to11[ti] / res.n_fecund[ti]) * 100
+        percent12to23 = (res.pp12to23[ti] / res.n_fecund[ti]) * 100
+        nonpostpartum = ((res.n_fecund[ti] - res.pp0to5[ti] - res.pp6to11[ti] - res.pp12to23[ti]) / res.n_fecund[ti]) * 100
 
         # Store results
-        res['mcpr'][ti] = sc.safedivide(res.on_methods_mcpr[ti], (res.no_methods_mcpr[ti] + res.on_methods_mcpr[ti]))
-        res['cpr'][ti] = sc.safedivide(res.on_methods_cpr[ti], (res.no_methods_cpr[ti] + res.on_methods_cpr[ti]))
-        res['acpr'][ti] = sc.safedivide(res.on_methods_acpr[ti], (res.no_methods_acpr[ti] + res.on_methods_acpr[ti]))
         res['pp0to5'][ti] = percent0to5
         res['pp6to11'][ti] = percent6to11
         res['pp12to23'][ti] = percent12to23
         res['nonpostpartum'][ti] = nonpostpartum
 
-        time_months = int(np.round(ti * sim.t.dt_year * fp.mpy))  # time since the beginning of the sim, expresse in months
-
-        # Start calculating annual metrics after we have at least 1 year of data. These are annual metrics, and so are not the same dimensions as a standard results object.
-        if (time_months >= fp.mpy) and (time_months % fp.mpy) == 0:
-                index = int(time_months / fp.mpy) - 1
-                res['tfr_years'][index] = (sim.t.yearvec[ti]-1.0)  # Subtract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
-                stop_index = ti
-                start_index = int(stop_index - sim.fp_pars['tiperyear'])
-                for res_name, new_res_name in fp.to_annualize.items():
-                    res_over_year = self.annualize_results(res_name, start_index, stop_index)
-                    annual_res_name = f'{new_res_name}_over_year'
-                    res[annual_res_name][index] = (res_over_year)
-
-                computed_method_usage = self.compute_method_usage()
-                for i in range(len(computed_method_usage)):
-                    res['method_usage'][i][index] = (computed_method_usage[i])
-                res['pop_size'][index] = (res['n_alive'][ti])
-                res['mcpr_by_year'][index] = (res['mcpr'][ti])
-                res['cpr_by_year'][index] = (res['cpr'][ti])
-
-                # Calculate annual ratios
-                self.calculate_annual_ratios()
-
-                tfr = 0
-                for key in fp.age_bin_map.keys():
-                    age_bin_births_year = np.sum(res['total_births_' + key][start_index:stop_index])
-                    age_bin_total_women_year = res['total_women_' + key][stop_index]
-                    age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
-                    res[f'asfr'][key][index] = (age_bin_births_per_woman * 1000)
-                    res[f'tfr_{key}'][index] = (age_bin_births_per_woman * 1000)
-                    tfr += age_bin_births_per_woman
-                res['tfr_rates'][index] = (tfr * 5)  # 5 corresponds to size of age bins
+        # time_months = int(np.round(ti * sim.t.dt_year * fp.mpy))  # time since the beginning of the sim, expresse in months
+        #
+        # # Start calculating annual metrics after we have at least 1 year of data. These are annual metrics, and so are not the same dimensions as a standard results object.
+        # if (time_months >= fp.mpy) and (time_months % fp.mpy) == 0:
+        #         index = int(time_months / fp.mpy) - 1
+        #         res['tfr_years'][index] = (sim.t.yearvec[ti]-1.0)  # Subtract one year as we're calculating the statistics between 1st jan 'year-1' and 1st jan 'year'. Results correspond to 'year-1'.
+        #         stop_index = ti
+        #         start_index = int(stop_index - sim.fp_pars['tiperyear'])
+        #         for res_name, new_res_name in fp.to_annualize.items():
+        #             res_over_year = self.annualize_results(res_name, start_index, stop_index)
+        #             annual_res_name = f'{new_res_name}_over_year'
+        #             res[annual_res_name][index] = (res_over_year)
+        #
+        #         computed_method_usage = self.compute_method_usage()
+        #         for i in range(len(computed_method_usage)):
+        #             res['method_usage'][i][index] = (computed_method_usage[i])
+        #         res['pop_size'][index] = (res['n_alive'][ti])
+        #
+        #         # Calculate annual ratios
+        #         self.calculate_annual_ratios()
+        #
+        #         tfr = 0
+        #         for key in fp.age_bin_map.keys():
+        #             age_bin_births_year = np.sum(res['total_births_' + key][start_index:stop_index])
+        #             age_bin_total_women_year = res['total_women_' + key][stop_index]
+        #             age_bin_births_per_woman = sc.safedivide(age_bin_births_year, age_bin_total_women_year)
+        #             res[f'asfr'][key][index] = (age_bin_births_per_woman * 1000)
+        #             res[f'tfr_{key}'][index] = (age_bin_births_per_woman * 1000)
+        #             tfr += age_bin_births_per_woman
+        #         res['tfr_rates'][index] = (tfr * 5)  # 5 corresponds to size of age bins
 
         return
 
-    def get_annual_index(self):
-        time_months = int(np.round(
-            self.sim.ti * self.sim.t.dt_year * fp.mpy))  # time since the beginning of the sim, expresse in months
-
-        return int(time_months / fp.mpy) - 1
-
-    def annualize_results(self, key, start_index, stop_index):
-        return np.sum(self.sim.results[key][start_index:stop_index])
-
-    def calculate_annual_ratios(self):
-        index = self.get_annual_index()
-        live_births_over_year = self.sim.results['live_births_over_year'][index]
-
-        maternal_mortality_ratio = sc.safedivide(self.sim.results['maternal_deaths_over_year'][index], live_births_over_year) * 100000
-        self.sim.results['mmr'][index] = (maternal_mortality_ratio)
-
-        infant_mortality_rate = sc.safedivide(self.sim.results['infant_deaths_over_year'][index], live_births_over_year) * 1000
-        self.sim.results['imr'][index] = (infant_mortality_rate)
-
-        self.sim.results['proportion_short_interval_by_year'][index] = (sc.safedivide(self.sim.results['short_intervals_over_year'][index], self.sim.results['secondary_births_over_year'][index]))
-        return
+    # def get_annual_index(self):
+    #     time_months = int(np.round(
+    #         self.sim.ti * self.sim.t.dt_year * fp.mpy))  # time since the beginning of the sim, expresse in months
+    #
+    #     return int(time_months / fp.mpy) - 1
+    #
+    # def annualize_results(self, key, start_index, stop_index):
+    #     return np.sum(self.sim.results[key][start_index:stop_index])
 
     def _step_results_wq(self):
         """" Calculate step results on wealthquintile """
         for i in range(1, 6):
-            self.sim.results[f'wq{i}'][self.sim.ti] = (np.sum((self.wealthquintile == i) & self.female) / np.sum(self.female) * 100)
+            self.sim.results[f'wq{i}'][self.sim.ti] = np.sum((self.wealthquintile == i) & self.female)
         return
 
     @staticmethod

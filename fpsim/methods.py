@@ -124,6 +124,22 @@ class ContraceptiveChoice(ss.Connector):
 
         return
 
+    def init_results(self):
+        """
+        Initialize results for this module
+        """
+        self.define_results(
+            ss.Result('n_at_risk_non_users', scale=False, label="Number of non-users at risk of pregnancy (aCPR)"),
+            ss.Result('n_at_risk_users', scale=False, label="Number of users at risk of pregnancy (aCPR)"),
+            ss.Result('n_non_users', scale=False, label="Number of non-users (CPR)"),
+            ss.Result('n_mod_users', scale=False, label="Number of modern contraceptive users (mCPR)"),
+            ss.Result('n_users', scale=False, label="Number of contraceptive users (CPR)"),
+            ss.Result('mcpr', scale=False, label="Modern contraceptive prevalence rate (mCPR)"),
+            ss.Result('cpr', scale=False, label="Contraceptive prevalence rate (CPR)"),
+            ss.Result('acpr', scale=False, label="Active contraceptive prevalence rate (aCPR)"),
+        )
+        return
+
     @property
     def average_dur_use(self):
         av = 0
@@ -195,8 +211,9 @@ class ContraceptiveChoice(ss.Connector):
         errormsg = ('remove_method is not currently functional. See example in test_parameters.py if you want to run a '
                     'simulation with a subset of the standard set of methods. The remove_method logic needs to be'
                     'replaced with something that can remove a method partway through a simulation.')
-        method = self.get_method_by_label(method_label)
-        del self.methods[method.name]
+        raise NotImplementedError(errormsg)
+        # method = self.get_method_by_label(method_label)
+        # del self.methods[method.name]
 
     def get_prob_use(self, uids, event=None):
         pass
@@ -315,6 +332,46 @@ class ContraceptiveChoice(ss.Connector):
     def step(self):
         # TODO, could move all update logic to here...
         pass
+
+    def update_results(self):
+        """
+        Note that we are not including LAM users in mCPR as this model counts
+        all women passively using LAM but DHS data records only women who self-report
+        LAM which is much lower. Follows the DHS definition of mCPR.
+        """
+        ppl = self.sim.people
+        method_age = self.sim.fp_pars['method_age'] <= ppl.age
+        fecund_age = ppl.age < self.sim.fp_pars['age_limit_fecundity']
+        denominator = method_age * fecund_age * ppl.female * ppl.alive
+
+        # Track mCPR
+        modern_methods_num = [idx for idx, m in enumerate(self.methods.values()) if m.modern]
+        numerator = np.isin(ppl.method, modern_methods_num)
+        n_no_method = np.sum((ppl.method == 0) * denominator)
+        n_mod_users = np.sum(numerator * denominator)
+        self.results['n_non_users'][self.ti] += n_no_method
+        self.results['n_mod_users'][self.ti] += n_mod_users
+        self.results['mcpr'][self.ti] += sc.safedivide(n_mod_users, sum(denominator))
+
+        # Track CPR: includes newer ways to conceptualize contraceptive prevalence.
+        # Includes women using any method of contraception, including LAM
+        numerator = ppl.method != 0
+        cpr = np.sum(numerator * denominator)
+        self.results['n_users'][self.ti] += cpr
+        self.results['cpr'][self.ti] += sc.safedivide(cpr, sum(denominator))
+
+        # Track aCPR
+        # Denominator of possible users excludes pregnant women and those not sexually active in the last 4 weeks
+        # Used to compare new metrics of contraceptive prevalence and eventually unmet need to traditional mCPR definitions
+        denominator = method_age * fecund_age * ppl.female * ~ppl.pregnant * ppl.sexually_active
+        numerator = ppl.method != 0
+        n_at_risk_non_users = np.sum((ppl.method == 0) * denominator)
+        n_at_risk_users = np.sum(numerator * denominator)
+        self.results['n_at_risk_non_users'][self.ti] += n_at_risk_non_users
+        self.results['n_at_risk_users'][self.ti] += n_at_risk_users
+        self.results['acpr'][self.ti] = sc.safedivide(n_at_risk_users, sum(denominator))
+
+        return
 
 
 class RandomChoice(ContraceptiveChoice):
