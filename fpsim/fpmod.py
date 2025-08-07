@@ -21,11 +21,15 @@ class FPmod(ss.Module):
     Class for storing and updating FP-related events
     """
 
-    def __init__(self, pars=None, name='fp', **kwargs):
+    def __init__(self, pars=None, location=None, name='fp', **kwargs):
         super().__init__(name=name)
         default_pars = fp.FPPars()
+        if location is not None:
+            default_pars.update_location(location)  # Update location-specific parameters
         self.define_pars(**default_pars)
         self.update_pars(pars, **kwargs)
+
+
         return
 
     def init_results(self):

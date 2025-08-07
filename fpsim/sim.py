@@ -119,9 +119,9 @@ class Sim(ss.Sim):
         self.pars.update(all_sim_pars)
 
         # Process modules by adding them as Starsim connectors
-        default_contra = fpm.StandardChoice(location=self.fp_pars.location, pars=self.contra_pars)
-        default_edu = fped.Education(location=self.fp_pars.location, pars=self.edu_pars)
-        default_fp = fp.FPmod(pars=self.fp_pars)
+        default_contra = fpm.StandardChoice(location=self.pars.location, pars=self.contra_pars)
+        default_edu = fped.Education(location=self.pars.location, pars=self.edu_pars)
+        default_fp = fp.FPmod(location=self.pars.location, pars=self.fp_pars)
         contraception_module = contraception_module or sc.dcp(default_contra)
         education_module = education_module or sc.dcp(default_edu)
         fp_module = fp_module or sc.dcp(default_fp)
@@ -204,9 +204,6 @@ class Sim(ss.Sim):
 
         # Store the parameters for the modules - thse will be fed into the modules during init
         self.fp_pars = fp_pars    # Parameters for the family planning module
-        if 'location' in fp_pars and fp_pars['location'] is not None:
-            self.fp_pars['location'] = fp_pars['location']
-        self.fp_pars.update_location()  # Update location-specific parameters
         self.contra_pars = contra_pars    # Parameters for contraceptive choice
         self.edu_pars = edu_pars      # Parameters for the education module
         return sim_pars
