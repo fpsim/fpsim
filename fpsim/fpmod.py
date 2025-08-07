@@ -339,7 +339,7 @@ class FPmod(ss.Module):
         if len(lam_candidates) > 0:
             probs = self.pars['lactational_amenorrhea']['rate'][(self.postpartum_dur[lam_candidates]).astype(int)]
             self._p_lam.set(p=probs)
-            self.lam[lam_candidates] = self.p_lam.rvs(lam_candidates)
+            self.lam[lam_candidates] = self._p_lam.rvs(lam_candidates)
 
         not_postpartum = uids[self.postpartum[uids] == 0]
         over5mo = self.postpartum_dur[uids] > max_lam_dur
@@ -548,7 +548,7 @@ class FPmod(ss.Module):
 
             # Grow the population with the new births
             new_uids = ppl.grow(len(live) - len(i_death))
-            self.age[new_uids] = 0
+            ppl.age[new_uids] = 0
             self.set_states(uids=new_uids)
             if new_uids is not None:
                 return new_uids
