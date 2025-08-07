@@ -213,7 +213,8 @@ class Sim(ss.Sim):
         if force or not self.initialized:
             fpu.set_seed(self.pars['rand_seed'])
             if self.pars.people is None:
-                self.pars.people = fpppl.People(n_agents=self.pars.n_agents, age_pyramid=self.fp_pars['age_pyramid'])
+                ap = self.pars['connectors'][-1].pars['age_pyramid']  # TODO TEMP
+                self.pars.people = fpppl.People(n_agents=self.pars.n_agents, age_pyramid=ap)
             super().init(force=force)
 
         return self
