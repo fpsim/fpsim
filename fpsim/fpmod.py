@@ -56,9 +56,9 @@ class FPmod(ss.Module):
             uids = within_age.uids
             return uids
 
-    def set_states(self, upper_age=None):
+    def set_states(self, uids=None, upper_age=None):
         ppl = self.sim.people
-        uids = self._get_uids(upper_age=upper_age)
+        if uids is None: uids = self._get_uids(upper_age=upper_age)
 
         # Fertility
         self.fertile[uids] = self._p_fertile.rvs(uids)
@@ -431,9 +431,9 @@ class FPmod(ss.Module):
         prob = self.pars['mortality_probs']['maternal'] * self.pars['maternal_mortality_factor']
         self._p_mat_mort.set(p=prob)
         death = self._p_mat_mort.filter(uids)
-        self.request_death(death)
-        self.sim.results['maternal_deaths'][self.ti] += len(death)
-        return death
+        self.sim.people.request_death(death)
+        self.results['maternal_deaths'][self.ti] += len(death)
+        return
 
     def check_infant_mortality(self, uids):
         """
@@ -534,25 +534,22 @@ class FPmod(ss.Module):
                 self.results['short_intervals'][ti] += short_ints
 
             # Calculate total births
-            self.results['total_births'][ti] = len(stillborn) + sim.results['births'][ti]
+            self.results['total_births'][ti] = len(stillborn) + self.results['births'][ti]
 
-            live_age = self.age[live]
+            live_age = ppl.age[live]
             for key, (age_low, age_high) in fpd.age_bin_map.items():
-                match_low_high = live[(self.age[live] >=age_low) & (self.age[live] < age_high)]
+                match_low_high = live[(ppl.age[live] >= age_low) & (ppl.age[live] < age_high)]
                 birth_bins = len(match_low_high)
-
                 self.results[f'total_births_{key}'][ti] += birth_bins
 
             # Check mortality
-            maternal_deaths = self.check_maternal_mortality(live)  # Mothers of only live babies eligible to match definition of maternal mortality ratio
+            self.check_maternal_mortality(live)  # Mothers of only live babies eligible to match definition of maternal mortality ratio
             i_death = self.check_infant_mortality(live)
 
-            new_uids = self.grow(len(live) - len(i_death))
-
-            # Be sure to reset the new agents to the correct states!
-            self.init_vals(new_uids)
+            # Grow the population with the new births
+            new_uids = ppl.grow(len(live) - len(i_death))
             self.age[new_uids] = 0
-
+            self.set_states(uids=new_uids)
             if new_uids is not None:
                 return new_uids
 
