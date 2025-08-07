@@ -52,17 +52,17 @@ def test_change_par():
     s2 = make_sim(interventions=[sc.dcp(cp1), cp2], label='Low exposure, reset')
 
     # Run
-    m = fp.parallel(s0, s1, s2, parallel=parallel, compute_stats=False)
+    m = ss.parallel(s0, s1, s2, parallel=parallel)
     s0, s1, s2 = m.sims[:] # Replace with run versions
 
     # Test exposure factor change
-    base_births = s0.results['births'].sum()
-    cp1_births   = s1.results['births'].sum()
-    cp2_births  = s2.results['births'].sum()
-    assert s1.pars.fp['exposure_factor'] == ec, f'change_pars() did not change exposure factor to {ec}'
+    base_births = s0.results.fp.births.sum()
+    cp1_births   = s1.results.fp.births.sum()
+    cp2_births  = s2.results.fp.births.sum()
+    assert s1.pars.fp.exposure_factor == ec, f'change_pars() did not change exposure factor to {ec}'
     assert cp1_births < base_births, f'Reducing exposure factor should reduce births, but {cp1_births} is not less than the baseline of {base_births}'
 
-    assert s2.pars.fp['exposure_factor'] == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
+    assert s2.pars.fp.exposure_factor == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
     # assert cp2_births <= base_births, f'Reducing exposure factor temporarily should reduce births, but {cp2_births} is not less than the baseline of {base_births}'
 
     return m
@@ -88,8 +88,8 @@ def test_change_people_state():
     ms = fp.SimpleChoice(location='kenya')
 
     # Change ever user
-    prior_use_lift = fp.change_people_state('ever_used_contra', years=2019, new_val=True, eligibility=np.arange(500), prop=1, annual=False)
-    prior_use_gone = fp.change_people_state('ever_used_contra', years=2020, new_val=False, eligibility=np.arange(500), prop=1, annual=False)
+    prior_use_lift = fp.change_people_state('fp.ever_used_contra', years=2019, new_val=True, eligibility=np.arange(500), prop=1, annual=False)
+    prior_use_gone = fp.change_people_state('fp.ever_used_contra', years=2020, new_val=False, eligibility=np.arange(500), prop=1, annual=False)
 
     # Make and run sim
     s0 = fp.Sim(pars=pars, contraception_module=sc.dcp(ms), label="Baseline")
@@ -116,9 +116,9 @@ def test_change_people_state():
 
 if __name__ == '__main__':
     s0 = test_intervention_fn()
-    # s1 = test_change_par()
-    # s3 = test_plot()
-    # s4, s5, s6 = test_change_people_state()
+    s1 = test_change_par()
+    s3 = test_plot()
+    s4, s5, s6 = test_change_people_state()
 
     print('Done.')
 

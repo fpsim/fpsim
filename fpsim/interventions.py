@@ -62,12 +62,11 @@ class change_par(ss.Intervention):
 
         return
 
-
     def init_pre(self, sim):
         super().init_pre(sim)
 
         # Validate parameter name
-        if self.par not in sim.fp_pars:
+        if self.par not in sim.pars.fp:
             errormsg = f'Parameter "{self.par}" is not a valid sim parameter'
             raise ValueError(errormsg)
 
@@ -92,27 +91,25 @@ class change_par(ss.Intervention):
             self.inds += sc.findnearest(sim.timevec, y)
 
         # Store original value
-        self.orig_val = sc.dcp(sim.fp_pars[self.par])
+        self.orig_val = sc.dcp(sim.pars.fp[self.par])
 
         return
-
 
     def step(self):
         sim = self.sim
         if len(self.inds) > self.counter:
             ind = self.inds[self.counter] # Find the current index
             if sim.ti == ind: # Check if the current timestep matches
-                curr_val = sc.dcp(sim.fp_pars[self.par])
+                curr_val = sc.dcp(sim.pars.fp[self.par])
                 val = self.vals[self.counter]
                 if val == 'reset':
                     val = self.orig_val
-                sim.fp_pars[self.par] = val # Update the parameter value -- that's it!
+                sim.pars.fp[self.par] = val  # Update the parameter value -- that's it!
                 if self.verbose:
                     label = f'Sim "{sim.label}": ' if sim.label else ''
-                    print(f'{label}On {sim.y}, change {self.counter+1}/{len(self.inds)} applied: "{self.par}" from {curr_val} to {sim.fp_pars[self.par]}')
+                    print(f'{label}On {sim.y}, change {self.counter+1}/{len(self.inds)} applied: "{self.par}" from {curr_val} to {sim.pars.fp[self.par]}')
                 self.counter += 1
         return
-
 
     def finalize(self):
         # Check that all changes were applied
@@ -466,7 +463,7 @@ class change_initiation(ss.Intervention):
         # Though it is trickier because we need to reset many postpartum-related attributes
         ppl = self.sim.people
         eligible = ((ppl.sex == 0) & (ppl.alive) &                 # living women
-                              (ppl.age < self.sim.fp_pars['age_limit_fecundity']) &  # who are fecund
+                              (ppl.age < self.sim.pars.fp['age_limit_fecundity']) &  # who are fecund
                               (ppl.sexual_debut) &                           # who already had their sexual debut
                               (~ppl.pregnant)    &                           # who are not currently pregnant
                               (~ppl.postpartum)  &                           # who are not in postpartum
