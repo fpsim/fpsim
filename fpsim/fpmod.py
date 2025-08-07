@@ -39,17 +39,32 @@ class FPmod(ss.Module):
         self._p_lam = ss.bernoulli(p=0)  # Probability of LAM
         self._p_conceive = ss.bernoulli(p=0)
         self._p_abortion = ss.bernoulli(p=0)
+        self._p_active = ss.bernoulli(p=0)
+
         return
 
-    def init_vals(self, uids=None):
+    def _get_uids(self, upper_age=None, female_only=True):
+        people = self.sim.people
+        if upper_age is None: upper_age = 1000
+        within_age = people.age <= upper_age
+        if female_only:
+            f_uids = (within_age & people.female).uids
+            return f_uids
+        else:
+            uids = within_age.uids
+            return uids
+
+    def set_states(self, upper_age=None):
         ppl = self.sim.people
-        # Parameters on sexual and reproductive history
+        uids = self._get_uids(upper_age=upper_age)
+
+        # Fertility
         self.fertile[uids] = self._p_fertile.rvs(uids)
 
         # Sexual activity
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
         self.fated_debut[uids] = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], len(uids))]
-        fecund = self.female & (ppl.age < self.pars['age_limit_fecundity'])
+        fecund = ppl.female & (ppl.age < self.pars['age_limit_fecundity'])
         self.check_sexually_active(uids[fecund[uids]])
         self.update_time_to_choose(uids)
 
@@ -57,6 +72,11 @@ class FPmod(ss.Module):
         fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.personal_fecundity[uids] = np.random.random(len(uids)) * fac
+        return
+
+    def init_post(self):
+        super().init_post()
+        self.set_states()
         return
 
     def init_results(self):
@@ -94,6 +114,59 @@ class FPmod(ss.Module):
         for key in fpd.age_bin_map.keys():
             self.results.asfr += ss.Result(key, label=key, **nonscaling_kw)
             self.results += ss.Result(f"tfr_{key}", label=key, **nonscaling_kw)
+
+        return
+
+    def check_sexually_active(self, uids=None):
+        """
+        Decide if agent is sexually active based either time-on-postpartum month
+        or their age if not postpartum.
+
+        Agents can revert to active or not active each timestep. Postpartum and
+        general age-based data from DHS.
+        """
+        ppl = self.sim.people
+
+        if uids is None:
+            uids = self.alive.uids
+
+        # Set postpartum probabilities
+        match_low = (self.postpartum_dur[uids] >= 0)
+        match_high = (self.postpartum_dur[uids] <= self.pars['postpartum_dur'])
+        match = (self.postpartum[uids]) & match_low & match_high
+        pp = uids[match]
+        non_pp = uids[(ppl.age[uids] >= self.fated_debut[uids]) & ~match]
+
+        # Adjust for postpartum women's birth spacing preferences
+        if len(pp):
+            pref = self.pars['spacing_pref']  # Shorten since used a lot
+            spacing_bins = self.postpartum_dur[pp] / pref['interval']  # Main calculation: divide the duration by the interval
+            spacing_bins = np.array(np.minimum(spacing_bins, pref['n_bins']), dtype=int)  # Bound by longest bin
+            probs_pp = self.pars['sexual_activity_pp']['percent_active'][(self.postpartum_dur[pp]).astype(int)]
+            # Adjust the probability: check the overall probability with print(pref['preference'][spacing_bins].mean())
+            probs_pp *= pref['preference'][spacing_bins]
+            self._p_active.set(p=probs_pp)
+            self.sexually_active[pp] = self._p_active.rvs(pp)
+
+        # Set non-postpartum probabilities
+        if len(non_pp):
+            probs_non_pp = self.pars['sexual_activity'][ppl.int_age(non_pp)]
+            self.sexually_active[non_pp] = fpu.binomial_arr(probs_non_pp)
+
+            # Set debut to True if sexually active for the first time
+            # Record agent age at sexual debut in their memory
+            never_sex = self.sexual_debut[non_pp] == 0
+            now_active = self.sexually_active[non_pp] == 1
+            first_debut = non_pp[now_active & never_sex]
+            self.sexual_debut[first_debut] = True
+            self.sexual_debut_age[first_debut] = ppl.age[first_debut]
+
+        active_sex = (self.sexually_active[uids] == 1)
+        debuted = (self.sexual_debut[uids] == 1)
+        active = uids[(active_sex & debuted)]
+        inactive = uids[(~active_sex & debuted)]
+        self.months_inactive[active] = 0
+        self.months_inactive[inactive] += 1
 
         return
 
@@ -364,10 +437,14 @@ class FPmod(ss.Module):
         self.ti_contra[death] = self.ti + 1  # Trigger update to contraceptive choices following infant death
         return death
 
-    def process_delivery(self, uids):
+    def process_delivery(self, uids=None):
         """
         Decide if pregnant woman gives birth and explore maternal mortality and child mortality
         """
+        if uids is None:
+            uids = self.pregnant.uids
+        if len(uids):
+            print('hi')
         sim = self.sim
         fp_pars = self.pars
         ti = self.ti
@@ -488,12 +565,15 @@ class FPmod(ss.Module):
         """
         ppl = self.sim.people
 
+        # Set states - fecundity, sexual debut, personal fecundability, and time to choose contraception
+        self.set_states(upper_age=self.t.dt)
+
         # normally SS handles deaths at end of timestep, but to match the previous version's logic, we start it here.
         # dead agents are removed so we don't have to filter for alive after this.
         self.decide_death_outcome(ppl.alive.uids)
 
         # Update pregnancy with maternal mortality outcome
-        self.process_delivery(self.pregnant.uids)  # Deliver with birth outcomes if reached pregnancy duration
+        self.process_delivery()  # Deliver with birth outcomes if reached pregnancy duration
 
         # Reselect for live agents after exposure to maternal mortality and infant mortality
         fecund = (ppl.female & (ppl.age < self.pars['age_limit_fecundity'])).uids
@@ -502,22 +582,19 @@ class FPmod(ss.Module):
         lact = fecund[self.lactating[fecund] == True]
 
         # # Check who has reached their age at first partnership and set partnered attribute to True.
-        # TODO, where should this go?
-        # self.start_partnership(ppl.female.uids)
+        self.start_partnership(ppl.female.uids)
 
         # Complete all updates. Note that these happen in a particular order!
         self.progress_pregnancy(self.pregnant.uids)  # Advance gestation in timestep, handle miscarriage
 
         # Check if agents are sexually active, and update their intent to use contraception
-        # TODO, where should this go? Remove??
-        # self.check_sexually_active(nonpreg)
+        self.check_sexually_active(nonpreg)
 
         # Update methods for those who are eligible
         ready = nonpreg[self.ti_contra[nonpreg] <= self.ti]
-        # TODO, put this back
-        # if len(ready):
-            # self.update_method(ready)
-            # self.sim.results['switchers'][self.sim.ti] = len(ready)  # Track how many people switch methods (incl on/off)
+        if len(ready):
+            self.update_method(ready)
+            self.sim.results['switchers'][self.sim.ti] = len(ready)  # Track how many people switch methods (incl on/off)
 
         methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
         if not methods_ok:
