@@ -28,24 +28,33 @@ class FPmod(ss.Module):
             default_pars.update_location(location)  # Update location-specific parameters
         self.define_pars(**default_pars)
         self.update_pars(pars, **kwargs)
+        self.define_states(*fpd.fpmod_states)
 
-        # Define states
-
+        # Distributions
+        self._p_fertile = ss.bernoulli(p=1-self.pars['primary_infertility'])  # Probability of primary fertility
+        self._p_death = ss.bernoulli(p=0)  # Probability of death - TODO, remove?
+        self._p_miscarriage = ss.bernoulli(p=0)  # Probability of miscarriage
+        self._p_mat_mort = ss.bernoulli(p=0)  # Probability of maternal mortality
+        self._p_inf_mort = ss.bernoulli(p=0)  # Probability of infant mortality
+        self._p_lam = ss.bernoulli(p=0)  # Probability of LAM
+        self._p_conceive = ss.bernoulli(p=0)
+        self._p_abortion = ss.bernoulli(p=0)
         return
 
     def init_vals(self, uids=None):
+        ppl = self.sim.people
         # Parameters on sexual and reproductive history
-        self.fertile[uids] = fpu.n_binomial(1 - fp_pars['primary_infertility'], len(uids))
+        self.fertile[uids] = self._p_fertile.rvs(uids)
 
         # Sexual activity
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        self.fated_debut[uids] = fp_pars['debut_age']['ages'][fpu.n_multinomial(fp_pars['debut_age']['probs'], len(uids))]
-        fecund = self.female & (self.age < fp_pars['age_limit_fecundity'])
+        self.fated_debut[uids] = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], len(uids))]
+        fecund = self.female & (ppl.age < self.pars['age_limit_fecundity'])
         self.check_sexually_active(uids[fecund[uids]])
         self.update_time_to_choose(uids)
 
         # Fecundity variation
-        fv = [fp_pars['fecundity_var_low'], fp_pars['fecundity_var_high']]
+        fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
         fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
         self.personal_fecundity[uids] = np.random.random(len(uids)) * fac
         return
@@ -57,8 +66,8 @@ class FPmod(ss.Module):
         """
         super().init_results()  # Initialize the base results
 
-        scaling_kw = dict(dtype=int, scale=True)
-        nonscaling_kw = dict(dtype=float, scale=False)
+        scaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
+        nonscaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=float, scale=False)
 
         # Add event counts - these are all integers, and are scaled by the number of agents
         # We compute new results for each event type, and also cumulative results
@@ -109,41 +118,28 @@ class FPmod(ss.Module):
             raise ValueError(errormsg)
         return
 
-    def update_mothers(self, uids):
-        """
-        Add link between newly added individuals and their mothers
-        """
-        if uids is None:
-            uids = self.alive.uids
-
-        for mother_index, postpartum in enumerate(uids[self.postpartum[uids]]):
-            if postpartum and self.postpartum_dur[uids][mother_index] < 2:
-                for child in self.children[uids][mother_index]:
-                    self.mothers[uids][child] = mother_index
-        return
-
     def decide_death_outcome(self, uids):
         """ Decide if person dies at a timestep """
-        sim = self.sim
-        timestep = sim.t.dt_year * fpd.mpy # timestep in months
-        trend_val = sim.fp_pars['mortality_probs']['gen_trend']
-        age_mort = sim.fp_pars['age_mortality']
+        ppl = self.sim.people
+        timestep = self.t.dt_year * fpd.mpy # timestep in months
+        trend_val = self.pars['mortality_probs']['gen_trend']
+        age_mort = self.pars['age_mortality']
         f_spline = age_mort['f_spline'] * trend_val
         m_spline = age_mort['m_spline'] * trend_val
-        over_one = self.age[uids] >= 1
-        female = uids[over_one & self.female[uids]]
-        male = uids[over_one & self.male[uids]]
-        f_ages = self.int_age(female)
-        m_ages = self.int_age(male)
+        over_one = ppl.age[uids] >= 1
+        female = uids[over_one & ppl.female[uids]]
+        male = uids[over_one & ppl.male[uids]]
+        f_ages = ppl.int_age(female)
+        m_ages = ppl.int_age(male)
 
         f_mort_prob = fpu.annprob2ts(f_spline[f_ages], timestep)
         m_mort_prob = fpu.annprob2ts(m_spline[m_ages], timestep)
 
-        self.binom.set(p=f_mort_prob)
-        f_died = self.binom.filter(female)
-
-        self.binom.set(p=m_mort_prob)
-        m_died = self.binom.filter(male)
+        # TODO; combine to single call
+        self._p_death.set(p=f_mort_prob)
+        f_died = self._p_death.filter(female)
+        self._p_death.set(p=m_mort_prob)
+        m_died = self._p_death.filter(male)
 
         for died in [f_died, m_died]:
             self.pregnant[died] = False,
@@ -153,10 +149,9 @@ class FPmod(ss.Module):
             self.postpartum[died] = False,
             self.lam[died] = False,
             self.breastfeed_dur[died] = 0,
-            sim.results['deaths'][sim.ti] += len(died)
-            self.request_death(died)
-            self.step_die() # to match the order of ops from earlier FPsim version
-            self.remove_dead()
+            ppl.request_death(died)
+            ppl.step_die()  # to match the order of ops from earlier FPsim version
+            ppl.remove_dead()
 
         return
 
@@ -164,6 +159,7 @@ class FPmod(ss.Module):
         """
         Decide if person (female) becomes pregnant at a timestep.
         """
+        ppl = self.sim.people
         if uids is None:
             uids = self.alive.uids
 
@@ -175,9 +171,9 @@ class FPmod(ss.Module):
         preg_probs = np.zeros(len(active_uids))  # Use full array
 
         # Find monthly probability of pregnancy based on fecundity and use of contraception including LAM - from data
-        pars = self.sim.fp_pars  # Shorten
-        preg_eval_lam = pars['age_fecundity'][self.int_age_clip(lam_uids)] * self.personal_fecundity[lam_uids]
-        preg_eval_nonlam = pars['age_fecundity'][self.int_age_clip(nonlam_uids)] * self.personal_fecundity[nonlam_uids]
+        pars = self.pars  # Shorten
+        preg_eval_lam = pars['age_fecundity'][ppl.int_age_clip(lam_uids)] * self.personal_fecundity[lam_uids]
+        preg_eval_nonlam = pars['age_fecundity'][ppl.int_age_clip(nonlam_uids)] * self.personal_fecundity[nonlam_uids]
 
         # Get each woman's degree of protection against conception based on her contraception or LAM
         cm = self.sim.connectors.contraception
@@ -194,34 +190,34 @@ class FPmod(ss.Module):
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from PRESTO data
         nullip = self.parity[active_uids] == 0
         nullip_uids = active_uids[nullip]
-        preg_probs[nullip] *= pars['fecundity_ratio_nullip'][self.int_age_clip(nullip_uids)]
+        preg_probs[nullip] *= pars['fecundity_ratio_nullip'][ppl.int_age_clip(nullip_uids)]
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity.
         # This encapsulates background factors and is experimental and tunable.
         preg_probs *= pars['exposure_factor']
-        preg_probs *= pars['exposure_age'][self.int_age_clip(active_uids)]
+        preg_probs *= pars['exposure_age'][ppl.int_age_clip(active_uids)]
         preg_probs *= pars['exposure_parity'][np.minimum(self.parity[active_uids], fpd.max_parity).astype(int)]
 
         # Use a single binomial trial to check for conception successes this month
-        self.binom.set(p=preg_probs)
-        conceived = self.binom.filter(active_uids)
+        self._p_conceive.set(p=preg_probs)
+        conceived = self._p_conceive.filter(active_uids)
 
-        self.sim.results['pregnancies'][self.sim.ti] += len(conceived)  # track all pregnancies
+        self.results['pregnancies'][self.ti] += len(conceived)  # track all pregnancies
         unintended = conceived[self.method[conceived] != 0]
-        self.sim.results['method_failures'][self.sim.ti] += len(unintended)  # unintended pregnancies due to method failure
+        self.results['method_failures'][self.ti] += len(unintended)  # unintended pregnancies due to method failure
 
         # Check for abortion
-        self.binom.set(p=pars['abortion_prob'])
-        abort, preg = self.binom.filter(conceived, both=True)
+        self._p_abortion.set(p=pars['abortion_prob'])
+        abort, preg = self._p_abortion.split(conceived)
 
         # Update states
         n_aborts = len(abort)
-        self.sim.results['abortions'][self.sim.ti] = n_aborts
+        self.results['abortions'][self.ti] = n_aborts
         if n_aborts:
             for abort_uid in abort:
                 # put abortion age in first nan slot
                 abortion_age_index = np.where(np.isnan(self.abortion_ages[abort_uid]))[0][0]
-                self.abortion_ages[abort_uid, abortion_age_index] = self.age[abort_uid]
+                self.abortion_ages[abort_uid, abortion_age_index] = ppl.age[abort_uid]
             self.postpartum[abort] = False
             self.abortion[abort] += 1  # Add 1 to number of abortions agent has had
             self.postpartum_dur[abort] = 0
@@ -235,7 +231,7 @@ class FPmod(ss.Module):
         """
         Update the selected agents to be pregnant. This also sets their method to no contraception.
         """
-        pregdur = [self.sim.fp_pars['preg_dur_low'], self.sim.fp_pars['preg_dur_high']]
+        pregdur = [self.pars['preg_dur_low'], self.pars['preg_dur_high']]
         self.pregnant[uids] = True
         self.gestation[uids] = 1  # Start the counter at 1
         self.preg_dur[uids] = np.random.randint(pregdur[0], pregdur[1] + 1, size=len(uids))  # Duration of this pregnancy
@@ -251,15 +247,12 @@ class FPmod(ss.Module):
         Check to see if postpartum agent meets criteria for
         Lactation amenorrhea method (LAM) LAM in this time step
         """
-        max_lam_dur = self.sim.fp_pars['max_lam_dur']
+        max_lam_dur = self.pars['max_lam_dur']
         lam_candidates = uids[(self.postpartum[uids]) * (self.postpartum_dur[uids] <= max_lam_dur)]
         if len(lam_candidates) > 0:
-            probs = self.sim.fp_pars['lactational_amenorrhea']['rate'][(self.postpartum_dur[lam_candidates]).astype(int)]
-
-            self.binom.set(p=probs)
-            lam_true, lam_false = self.binom.filter(lam_candidates, both=True)
-            self.lam[lam_false] = False
-            self.lam[lam_true] = True
+            probs = self.pars['lactational_amenorrhea']['rate'][(self.postpartum_dur[lam_candidates]).astype(int)]
+            self._p_lam.set(p=probs)
+            self.lam[lam_candidates] = self.p_lam.rvs(lam_candidates)
 
         not_postpartum = uids[self.postpartum[uids] == 0]
         over5mo = self.postpartum_dur[uids] > max_lam_dur
@@ -276,7 +269,7 @@ class FPmod(ss.Module):
         from the 2018 DHS variable for breastfeeding months.
         The mean and the std dev are both drawn from that distribution in the DHS data.
         """
-        mean, sd = self.sim.fp_pars['breastfeeding_dur_mean'], self.sim.fp_pars['breastfeeding_dur_sd']
+        mean, sd = self.pars['breastfeeding_dur_mean'], self.pars['breastfeeding_dur_sd']
         a, b = 0, 50  # Truncate at 0 to ensure positive durations
         breastfeed_durs = fpu.sample(dist='normal_int', par1=mean, par2=sd, size=len(uids))
         breastfeed_durs = np.clip(breastfeed_durs, a, b)
@@ -293,7 +286,7 @@ class FPmod(ss.Module):
         """
 
         # Stop postpartum episode if reach max length (set to 24 months)
-        pp_done = uids[(self.postpartum_dur[uids] >= self.sim.fp_pars['postpartum_dur'])]
+        pp_done = uids[(self.postpartum_dur[uids] >= self.pars['postpartum_dur'])]
         self.postpartum[pp_done] = False
         self.postpartum_dur[pp_done] = 0
 
@@ -301,37 +294,37 @@ class FPmod(ss.Module):
         postpart = uids[(self.postpartum[uids] == True)]
         for key, (pp_low, pp_high) in fpd.postpartum_map.items():
             this_pp_bin = postpart[(self.postpartum_dur[postpart] >= pp_low) & (self.postpartum_dur[postpart] < pp_high)]
-            self.sim.results[key][self.sim.ti] += len(this_pp_bin)
-        self.postpartum_dur[postpart] += self.sim.t.dt_year * fpd.mpy
+            self.results[key][self.ti] += len(this_pp_bin)
+        self.postpartum_dur[postpart] += self.t.dt_year * fpd.mpy
 
         return
 
     def progress_pregnancy(self, uids):
         """ Advance pregnancy in time and check for miscarriage """
-
+        ppl = self.sim.people
         preg = uids[self.pregnant[uids] == True]
-        self.gestation[preg] += self.sim.t.dt_year * fpd.mpy
+        self.gestation[preg] += self.t.dt_year * fpd.mpy
 
         # Check for miscarriage at the end of the first trimester
-        end_first_tri = preg[(self.gestation[preg] == self.sim.fp_pars['end_first_tri'])]
-        miscarriage_probs = self.sim.fp_pars['miscarriage_rates'][self.int_age_clip(end_first_tri)]
-        self.binom.set(p=miscarriage_probs)
-        miscarriage = self.binom.filter(end_first_tri)
+        end_first_tri = preg[(self.gestation[preg] == self.pars['end_first_tri'])]
+        miscarriage_probs = self.pars['miscarriage_rates'][ppl.int_age_clip(end_first_tri)]
+        self._p_miscarriage.set(p=miscarriage_probs)
+        miscarriage = self._p_miscarriage.filter(end_first_tri)
 
         # Reset states and track miscarriages
         n_miscarriages = len(miscarriage)
-        self.sim.results['miscarriages'][self.sim.ti] = n_miscarriages
+        self.results['miscarriages'][self.ti] = n_miscarriages
 
         if n_miscarriages:
             for miscarriage_uid in miscarriage:
                 # put miscarriage age in first nan slot
                 miscarriage_age_index = np.where(np.isnan(self.miscarriage_ages[miscarriage_uid]))[0][0]
-                self.miscarriage_ages[miscarriage_uid, miscarriage_age_index] = self.age[miscarriage_uid]
+                self.miscarriage_ages[miscarriage_uid, miscarriage_age_index] = ppl.age[miscarriage_uid]
             self.pregnant[miscarriage] = False
             self.miscarriage[miscarriage] += 1  # Add 1 to number of miscarriages agent has had
             self.postpartum[miscarriage] = False
             self.gestation[miscarriage] = 0  # Reset gestation counter
-            self.ti_contra[miscarriage] = self.sim.ti+1  # Update contraceptive choices
+            self.ti_contra[miscarriage] = self.ti+1  # Update contraceptive choices
 
         return
 
@@ -348,28 +341,27 @@ class FPmod(ss.Module):
         """
         Check for probability of maternal mortality
         """
-        prob = self.sim.fp_pars['mortality_probs']['maternal'] * self.sim.fp_pars['maternal_mortality_factor']
-        self.binom.set(p=prob)
-        death = self.binom.filter(uids)
+        prob = self.pars['mortality_probs']['maternal'] * self.pars['maternal_mortality_factor']
+        self._p_mat_mort.set(p=prob)
+        death = self._p_mat_mort.filter(uids)
         self.request_death(death)
-        self.sim.results['maternal_deaths'][self.sim.ti] += len(death)
-        self.sim.results['deaths'][self.sim.ti] += len(death)
+        self.sim.results['maternal_deaths'][self.ti] += len(death)
         return death
 
     def check_infant_mortality(self, uids):
         """
         Check for probability of infant mortality (death < 1 year of age)
         """
-        death_prob = (self.sim.fp_pars['mortality_probs']['infant'])
+        death_prob = (self.pars['mortality_probs']['infant'])
         if len(uids) > 0:
-            age_inds = sc.findnearest(self.sim.fp_pars['infant_mortality']['ages'], self.age[uids])
-            death_prob = death_prob * (self.sim.fp_pars['infant_mortality']['age_probs'][age_inds])
-        self.binom.set(p=death_prob)
-        death = self.binom.filter(uids)
+            age_inds = sc.findnearest(self.pars['infant_mortality']['ages'], self.sim.people.age[uids])
+            death_prob = death_prob * (self.pars['infant_mortality']['age_probs'][age_inds])
+        self._p_inf_mort.set(p=death_prob)
+        death = self._p_inf_mort.filter(uids)
 
-        self.sim.results['infant_deaths'][self.sim.ti] += len(death)
+        self.results['infant_deaths'][self.ti] += len(death)
         self.reset_breastfeeding(death)
-        self.ti_contra[death] = self.sim.ti + 1  # Trigger update to contraceptive choices following infant death
+        self.ti_contra[death] = self.ti + 1  # Trigger update to contraceptive choices following infant death
         return death
 
     def process_delivery(self, uids):
@@ -377,8 +369,8 @@ class FPmod(ss.Module):
         Decide if pregnant woman gives birth and explore maternal mortality and child mortality
         """
         sim = self.sim
-        fp_pars = sim.fp_pars
-        ti = sim.ti
+        fp_pars = self.pars
+        ti = self.ti
 
         # Update states
         deliv = uids[(self.gestation[uids] == self.preg_dur[uids])]
@@ -407,13 +399,13 @@ class FPmod(ss.Module):
 
             self.stillbirth[stillborn] += 1  # Track how many stillbirths an agent has had
             self.lactating[stillborn] = False  # Set agents of stillbith to not lactate
-            sim.results['stillbirths'][ti] = len(stillborn)
+            self.results['stillbirths'][ti] = len(stillborn)
 
             # Handle twins
             self.binom.set(fp_pars['twins_prob'])
             twin, single = self.binom.filter(live, both=True)
-            sim.results['births'][ti] += 2 * len(twin)  # only add births to population if born alive
-            sim.results['births'][ti] += len(single)
+            self.results['births'][ti] += 2 * len(twin)  # only add births to population if born alive
+            self.results['births'][ti] += len(single)
 
             # Record ages of agents when live births / stillbirths occur
             for parity in np.unique(self.parity[single]):
@@ -443,23 +435,23 @@ class FPmod(ss.Module):
                 all_ints = [self.birth_ages[r, pidx] - self.birth_ages[r, pidx-1] for r in prev_birth_single]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
                 short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int']/fpd.mpy))
-                sim.results['short_intervals'][ti] += short_ints
+                self.results['short_intervals'][ti] += short_ints
             if len(prev_birth_twins):
                 pidx = (self.parity[prev_birth_twins] - 2).astype(int)
                 all_ints = [self.birth_ages[r, pidx] - self.birth_ages[r, pidx-1] for r in prev_birth_twins]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
                 short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int']/fpd.mpy))
-                sim.results['short_intervals'][ti] += short_ints
+                self.results['short_intervals'][ti] += short_ints
 
             # Calculate total births
-            sim.results['total_births'][ti] = len(stillborn) + sim.results['births'][ti]
+            self.results['total_births'][ti] = len(stillborn) + sim.results['births'][ti]
 
             live_age = self.age[live]
             for key, (age_low, age_high) in fpd.age_bin_map.items():
                 match_low_high = live[(self.age[live] >=age_low) & (self.age[live] < age_high)]
                 birth_bins = len(match_low_high)
 
-                sim.results[f'total_births_{key}'][ti] += birth_bins
+                self.results[f'total_births_{key}'][ti] += birth_bins
 
             # Check mortality
             maternal_deaths = self.check_maternal_mortality(live)  # Mothers of only live babies eligible to match definition of maternal mortality ratio
@@ -483,9 +475,10 @@ class FPmod(ss.Module):
         if uids is None:
             uids = self.alive.uids
 
+        age = self.sim.people.age
         for key, (age_low, age_high) in fpd.age_bin_map.items():
-            this_age_bin = uids[(self.age[uids] >= age_low) & (self.age[uids] < age_high)]
-            self.sim.results[f'total_women_{key}'][self.sim.ti] += len(this_age_bin)
+            this_age_bin = uids[(age[uids] >= age_low) & (age[uids] < age_high)]
+            self.results[f'total_women_{key}'][self.ti] += len(this_age_bin)
 
         return
 
@@ -493,38 +486,38 @@ class FPmod(ss.Module):
         """
         Perform all updates to people within a single timestep
         """
+        ppl = self.sim.people
 
         # normally SS handles deaths at end of timestep, but to match the previous version's logic, we start it here.
         # dead agents are removed so we don't have to filter for alive after this.
-        self.decide_death_outcome(self.alive.uids)
+        self.decide_death_outcome(ppl.alive.uids)
 
         # Update pregnancy with maternal mortality outcome
         self.process_delivery(self.pregnant.uids)  # Deliver with birth outcomes if reached pregnancy duration
 
         # Reselect for live agents after exposure to maternal mortality and infant mortality
-        fecund = ((self.female) & (self.age < self.sim.fp_pars['age_limit_fecundity'])).uids
+        fecund = (ppl.female & (ppl.age < self.pars['age_limit_fecundity'])).uids
 
         nonpreg = fecund[self.pregnant[fecund] == False]
         lact = fecund[self.lactating[fecund] == True]
 
-        # Check who has reached their age at first partnership and set partnered attribute to True.
-        self.start_partnership(self.female.uids)
+        # # Check who has reached their age at first partnership and set partnered attribute to True.
+        # TODO, where should this go?
+        # self.start_partnership(ppl.female.uids)
 
         # Complete all updates. Note that these happen in a particular order!
         self.progress_pregnancy(self.pregnant.uids)  # Advance gestation in timestep, handle miscarriage
 
-        # Update mothers
-        if self.sim.fp_pars['track_children']:
-            self.update_mothers()
-
         # Check if agents are sexually active, and update their intent to use contraception
-        self.check_sexually_active(nonpreg)
+        # TODO, where should this go? Remove??
+        # self.check_sexually_active(nonpreg)
 
         # Update methods for those who are eligible
-        ready = nonpreg[self.ti_contra[nonpreg] <= self.sim.ti]
-        if len(ready):
-            self.update_method(ready)
-            self.sim.results['switchers'][self.sim.ti] = len(ready)  # Track how many people switch methods (incl on/off)
+        ready = nonpreg[self.ti_contra[nonpreg] <= self.ti]
+        # TODO, put this back
+        # if len(ready):
+            # self.update_method(ready)
+            # self.sim.results['switchers'][self.sim.ti] = len(ready)  # Track how many people switch methods (incl on/off)
 
         methods_ok = np.array_equal(self.on_contra.nonzero()[-1], self.method.nonzero()[-1])
         if not methods_ok:

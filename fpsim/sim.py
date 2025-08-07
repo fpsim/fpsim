@@ -243,7 +243,7 @@ class Sim(ss.Sim):
     def start_step(self):
         super().start_step()
         self.update_mortality()
-        self.people.step()
+        # self.people.step()
 
     def finalize(self):
         self.finalize_results()

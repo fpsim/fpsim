@@ -70,6 +70,14 @@ class People(ss.People):
 
         return
 
+    @property
+    def ever_used_contra(self):
+        return self.sim.connectors.fp.ever_used_contra  # TODO, fix
+
+    @property
+    def parity(self):
+        return self.sim.connectors.fp.parity  # TODO, fix
+
     def init_urban(self, n):
         """ Get initial distribution of urban """
         n_agents = n

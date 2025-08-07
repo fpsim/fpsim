@@ -159,7 +159,7 @@ class ContraceptiveChoice(ss.Connector):
         fecund_uids = fecund.uids
 
         # Look for women who have reached the time to choose
-        time_to_set_contra_uids = fecund_uids[(ppl.ti_contra[fecund_uids] == 0)]
+        time_to_set_contra_uids = fecund_uids[(ppl.fp.ti_contra[fecund_uids] == 0)]
         self.init_contraception(time_to_set_contra_uids)
         return
 
@@ -174,15 +174,15 @@ class ContraceptiveChoice(ss.Connector):
 
     def start_contra(self, uids):
         """ Wrapper method to start contraception for a set of users """
-        self.sim.people.on_contra[uids] = True
-        self.sim.people.ever_used_contra[uids] = 1
+        self.sim.people.fp.on_contra[uids] = True
+        self.sim.people.fp.ever_used_contra[uids] = 1
         return
 
     def init_methods(self, uids):
         # Set initial distribution of methods
-        self.sim.people.method[uids] = self.init_method_dist(uids)
+        self.sim.people.fp.method[uids] = self.init_method_dist(uids)
         method_dur = self.set_dur_method(uids)
-        self.sim.people.ti_contra[uids] = self.ti + method_dur
+        self.sim.people.fp.ti_contra[uids] = self.ti + method_dur
         return
 
     def get_method_by_label(self, method_label):
@@ -523,7 +523,7 @@ class SimpleChoice(RandomChoice):
         ppl = self.sim.people
 
         dur_method = np.zeros(len(uids), dtype=float)
-        if method_used is None: method_used = ppl.method[uids]
+        if method_used is None: method_used = ppl.fp.method[uids]
 
         for mname, method in self.methods.items():
             dur_use = method.dur_use
