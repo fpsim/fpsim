@@ -51,7 +51,6 @@ class snapshot(ss.Analyzer):
         self.snapshots = sc.odict() # Store the actual snapshots
         return
 
-
     def step(self):
         """
         Apply snapshot at each timestep listed in timesteps and
@@ -130,7 +129,7 @@ class method_mix_by_age(ss.Analyzer):
             match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
             denom_conds = match_low_high * (ppl.female == True) * ppl.alive
             for mn in range(n_methods):
-                num_conds = denom_conds * (ppl.method == mn)
+                num_conds = denom_conds * (ppl.fp.method == mn)
                 self.mmba_results[key][mn] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
         return
 
@@ -620,7 +619,7 @@ class age_pyramids(ss.Analyzer):
         super().init_pre(sim, force)
         if self.bins is None:
             # If no bins are provided, use default bins which exceed the maximum allowed age to ensure all agent ages are captured
-            self.bins = np.arange(0, sim.fp_pars['max_age']+2)
+            self.bins = np.arange(0, sim.pars.fp['max_age']+2)
         nbins = len(self.bins)-1
 
         # self.data will contain the proportions of individuals in each age bin at each timestep
@@ -686,7 +685,7 @@ class method_mix_over_time(ss.Analyzer):
         sim = self.sim
         ppl = sim.people
         for m_idx, method in enumerate(self.methods):
-            eligible = ppl.female & ppl.alive & (ppl.method == m_idx)
+            eligible = ppl.female & ppl.alive & (ppl.fp.method == m_idx)
             self.results[method][sim.ti] = np.count_nonzero(eligible)
         return
 

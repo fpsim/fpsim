@@ -104,6 +104,6 @@ if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
         calib = test_calibration()
-        # snap  = test_snapshot()
-        # ap    = test_age_pyramids()
-        # mmba  = test_method_mix_by_age()
+        snap  = test_snapshot()
+        ap    = test_age_pyramids()
+        mmba  = test_method_mix_by_age()
