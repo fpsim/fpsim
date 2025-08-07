@@ -131,9 +131,6 @@ class FPPars(ss.Pars):
         """
         Update the location-specific parameters based on the current location.
         """
-        if location is None:
-            location = fpd.get_location(location, printmsg=True)  # Handle location
-
         # Import the location module
         from . import locations as fplocs
 

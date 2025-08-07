@@ -147,7 +147,7 @@ class Calibration(sc.prettyobj):
         return
 
     def run_exp(self, calib_pars, return_exp=False, **kwargs):
-        ''' Create and run an experiment '''
+        """ Create and run an experiment """
         pars = sc.mergedicts(sc.dcp(self.pars), calib_pars)
         exp = fpe.Experiment(pars=pars, **kwargs)
         exp.run(weights=self.weights)
@@ -155,7 +155,6 @@ class Calibration(sc.prettyobj):
             return exp
         else:
             return exp.fit.mismatch
-
 
     def run_trial(self, trial):
         ''' Define the objective for Optuna '''

@@ -118,6 +118,9 @@ class Sim(ss.Sim):
         all_sim_pars = self.separate_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, **kwargs)
         self.pars.update(all_sim_pars)
 
+        # Set the location
+        self.pars.location = fpd.get_location(self.pars.location, printmsg=True)  # Handle location
+
         # Process modules by adding them as Starsim connectors
         default_contra = fpm.StandardChoice(location=self.pars.location, pars=self.contra_pars)
         default_edu = fped.Education(location=self.pars.location, pars=self.edu_pars)
@@ -131,13 +134,8 @@ class Sim(ss.Sim):
         self.pars['connectors'] = connectors  # TODO, check this
 
         # Metadata and settings
-        # self.test_mode = False
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
-
-        # # Add a new parameter to pars that determines the size of the circular buffer = TODO, remove?
-        # unit = self.pars.unit if self.pars.unit != "" else 'year'
-        # self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
 
         return
 

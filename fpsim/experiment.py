@@ -21,7 +21,6 @@ min_age = 15
 max_age = 50
 bin_size = 5
 first_birth_age = 25  # age to start assessing first birth age in model
-mpy = 12  # Months per year
 
 # Flags for what to run
 default_flags = sc.objdict(
@@ -42,21 +41,18 @@ default_flags = sc.objdict(
 
 
 class Experiment(sc.prettyobj):
-    '''
-    Class for running calibration to data. Effectively, it runs a single sim and
-    compares it to data.
+    """
+    Class for running a single sim and comparing it to data.
 
     Args:
         pars (dict): dictionary of parameters
         flags (dict): which analyses to run; see ``fp.experiment.default_flags`` for options
         label (str): label of experiment
         kwargs (dict): passed into pars
-    '''
+    """
 
-    # def __init__(self, sim_pars={}, fp_pars={}, flags=None, label=None, **kwargs):
     def __init__(self, pars=None, flags=None, label=None, **kwargs):
         self.flags = sc.mergedicts(default_flags, flags, _copy=True)  # Set flags for what gets run
-
         self.pars = pars
 
         if len(kwargs):
@@ -64,8 +60,6 @@ class Experiment(sc.prettyobj):
                 if k in self.pars:
                     self.pars[k] = v
 
-        # if 'location' not in pars: self.pars['location'] = 'test'
-        # self.location = self.pars['location']
         self.model = sc.objdict()
         self.data = sc.objdict()
         self.method_keys = None
@@ -74,8 +68,8 @@ class Experiment(sc.prettyobj):
         return
 
     def load_data(self, key, **kwargs):
-        ''' Load data from various formats '''
-        files = self.sim.fp_pars['filenames']
+        """ Load data from various formats """
+        files = self.sim.pars.fp['filenames']
         path = Path(files['base']) / files[key]
         if path.suffix == '.obj':
             data = sc.load(path, **kwargs)
@@ -92,14 +86,10 @@ class Experiment(sc.prettyobj):
         return data
 
     def extract_data(self):
-        ''' Load data '''
+        """ Load data """
 
         json = self.load_data('basic_wb')
-
         self.data.update(json)
-
-        #self.data['pregnancy_parity'] = self.load_data('pregnancy_parity')
-
         # Extract population size over time
         n = self.sim.pars.n_agents
 
@@ -108,32 +98,20 @@ class Experiment(sc.prettyobj):
         self.data['pop_size']  = pop_size.population.to_numpy() / (pop_size.population[0] / n)  # Corrected for # of agents, needs manual adjustment for # agents
 
         # Extract population growth rate
-        data_growth_rate = self.pop_growth_rate(self.data['pop_years'], self.data['pop_size'])
+        data_growth_rate = np.diff(self.data['pop_size']) / self.data['pop_size'][:-1] * 100  # Percent change
         self.data['pop_growth_rate'] = data_growth_rate
 
         # Extract mcpr over time
         mcpr = self.load_data('mcpr')
         self.data['mcpr_years'] = mcpr.iloc[:,0].to_numpy()
-        #self.data['cpr'] = mcpr.iloc[:,1].to_numpy()
         self.data['mcpr'] = mcpr.iloc[:,2].to_numpy()
 
         self.initialized = True
 
         return
 
-    def pop_growth_rate(self, years, population):
-        growth_rate = np.zeros(len(years) - 1)
-
-        for i in range(len(years)):
-            if population[i] == population[-1]:
-                break
-            growth_rate[i] = ((population[i + 1] - population[i]) / population[i]) * 100
-
-        return growth_rate
-
-
     def run_model(self, pars=None, **kwargs):
-        ''' Create the sim and run the model '''
+        """ Create the sim and run the model """
 
         if pars is None:
             pars = self.pars
@@ -148,32 +126,33 @@ class Experiment(sc.prettyobj):
 
         return
 
-
     def extract_model(self):
         sres = self.sim.results
+        sim_df = sres.to_df(resample='year', use_years=True, sep='_')
+        fp_df = sres.fp.to_df(resample='year', use_years=True, sep='_')
         if self.flags.popsize:  self.model_pop_size(sres)
         if self.flags.mcpr:     self.model_mcpr(sres)
-        if self.flags.mmr:      self.model_mmr(sres)
-        if self.flags.infant_m: self.model_infant_mortality_rate(sres)
-        if self.flags.cdr:      self.model_crude_death_rate(sres)
-        if self.flags.cbr:      self.model_crude_birth_rate(sres)
+        if self.flags.mmr:      self.model_mmr(fp_df)
+        if self.flags.infant_m: self.model_imr(fp_df)
+        if self.flags.cdr:      self.model_crude_death_rate(fp_df, sim_df)
+        if self.flags.cbr:      self.model_crude_birth_rate(fp_df)
         if self.flags.tfr:      self.model_data_tfr(sres)
         if self.flags.asfr:     self.model_data_asfr(sres)
         return
 
-
     def model_pop_size(self, sres=None):
-        self.model['pop_size'] = sres['pop_size']
-        self.model['pop_years'] = sres['tfr_years']
-
-        model_growth_rate = self.pop_growth_rate(self.model['pop_years'], self.model['pop_size'])
+        df = sres.to_df(resample='year', use_years=True, sep='_')
+        pop = df['n_alive']
+        self.model['pop_size'] = pop
+        self.model['pop_years'] = df.index
+        model_growth_rate = np.diff(pop) / pop[:-1] * 100  # Percent change
         self.model['pop_growth_rate'] = model_growth_rate
 
         return
 
-
     def model_mcpr(self, sres=None):
-        model = {'years': sres['mcpr'].timevec, 'mcpr': sres['mcpr']}
+        df = sres.contraception.to_df(resample='year', use_years=True)
+        model = {'years': df.index, 'mcpr': df['mcpr']}
         model_frame = pd.DataFrame(model)
 
         # Filter to matching years
@@ -187,47 +166,34 @@ class Experiment(sc.prettyobj):
 
         return
 
-
-    def model_mmr(self, sres=None):
-        '''
-        Calculate maternal mortality in model over most recent 3 years
-        '''
-        maternal_deaths = np.sum(sres['maternal_deaths'][-mpy * 3:])
-        births_last_3_years = np.sum(sres['births'][-mpy * 3:])
-        self.model['maternal_mortality_ratio'] = sc.safedivide(maternal_deaths, births_last_3_years) * 100000
-
+    def model_mmr(self, df=None):
+        self.model['maternal_mortality_ratio'] = df['mmr'].values[-3:].sum()
         return
 
-    def model_infant_mortality_rate(self, sres=None):
-
-        infant_deaths = np.sum(sres['infant_deaths'][-mpy:])
-        births_last_year = np.sum(sres['births'][-mpy:])
-        self.model['infant_mortality_rate'] = sc.safedivide(infant_deaths, births_last_year) * 1000
-
+    def model_imr(self, df=None):
+        self.model['infant_mortality_ratio'] = df['imr'].values[-3:].sum()
         return
 
-    def model_crude_death_rate(self, sres=None):
-        total_deaths = np.sum(sres['deaths'][-mpy:]) + \
-                       np.sum(sres['infant_deaths'][-mpy:]) + \
-                       np.sum(sres['maternal_deaths'][-mpy:])
-        self.model['crude_death_rate'] = (total_deaths / sres['pop_size'][-1]) * 1000
+    def model_crude_death_rate(self, fp_df=None, sim_df=None):
+        total_deaths = sim_df['new_deaths'][-1] + \
+                       fp_df['infant_deaths'][-1] + \
+                       fp_df['maternal_deaths'][-1]
+        self.model['crude_death_rate'] = (total_deaths / sim_df['n_alive'][-1]) * 1000
         return
 
-    def model_crude_birth_rate(self, sres=None):
-        births_last_year = np.sum(sres['births'][-mpy:])
-        self.model['crude_birth_rate'] = (births_last_year / sres['pop_size'][-1]) * 1000
+    def model_crude_birth_rate(self, fp_df=None, sim_df=None):
+        births_last_year = fp_df['births'][-1]
+        self.model['crude_birth_rate'] = (births_last_year / sim_df['n_alive'][-1]) * 1000
         return
 
-
-    def model_data_tfr(self, sres=None):
-
+    def model_data_tfr(self, fp_df=None):
         # Extract tfr over time in data - keep here to ignore dhs data if not using tfr for calibration
         tfr = self.load_data('tfr')  # From DHS
         self.data['tfr_years'] = tfr['year'].to_numpy()
         self.data['total_fertility_rate'] = tfr['tfr'].to_numpy()
 
-        self.model['tfr_years'] = sres['tfr_years']
-        self.model['total_fertility_rate'] = sres['tfr_rates']
+        self.model['tfr_years'] = fp_df['tfr_rates']
+        self.model['total_fertility_rate'] = fp_df['tfr_rates']
         return
 
     def model_data_asfr(self, sres=None, ind=-1):

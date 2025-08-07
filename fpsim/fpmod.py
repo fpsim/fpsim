@@ -105,16 +105,15 @@ class FPmod(ss.Module):
         for key in fpd.rate_results:
             self.results += ss.Result(key, label=key, **nonscaling_kw)
 
-        for key in fpd.dict_annual_results:
-            if key == 'method_usage':
-                self.results[key] = ss.Results(module=self)
-                for i, method in enumerate(self.sim.connectors.contraception.methods):
-                    self.results[key] += ss.Result(method, label=method, **scaling_kw)
+        # Additional results
+        self.method_results = ss.Results(module=self)
+        for i, method in enumerate(self.sim.connectors.contraception.methods):
+            self.method_results += ss.Result(method, label=method, **scaling_kw)
 
         # Store age-specific fertility rates
-        self.results['asfr'] = ss.Results(module=self)  # ['asfr'] = {}
+        self.asfr_results = ss.Results(module=self)  # ['asfr'] = {}
         for key in fpd.age_bin_map.keys():
-            self.results.asfr += ss.Result(key, label=key, **nonscaling_kw)
+            self.asfr_results += ss.Result(key, label=key, **nonscaling_kw)
             self.results += ss.Result(f"tfr_{key}", label=key, **nonscaling_kw)
 
         return
@@ -651,14 +650,6 @@ class FPmod(ss.Module):
         return
 
     def finalize_results(self):
-        # Calculate cumulative totals
-        self.results['cum_maternal_deaths'] = np.cumsum(self.results['maternal_deaths'])
-        self.results['cum_infant_deaths'] = np.cumsum(self.results['infant_deaths'])
-        self.results['cum_births'] = np.cumsum(self.results['births'])
-        self.results['cum_stillbirths'] = np.cumsum(self.results['stillbirths'])
-        self.results['cum_miscarriages'] = np.cumsum(self.results['miscarriages'])
-        self.results['cum_abortions'] = np.cumsum(self.results['abortions'])
-        self.results['cum_short_intervals'] = np.cumsum(self.results['short_intervals'])
-        self.results['cum_secondary_births'] = np.cumsum(self.results['secondary_births'])
-        self.results['cum_pregnancies'] = np.cumsum(self.results['pregnancies'])
+        for res in fpd.event_counts:
+            self.results[f'cum_{res}'] = np.cumsum(self.results[res])
         return

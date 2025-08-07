@@ -4,6 +4,7 @@ Test running sims
 
 import fpsim as fp
 import sciris as sc
+import starsim as ss
 
 
 par_kwargs = dict(test=True)
@@ -14,6 +15,7 @@ def test_simple(location='kenya'):
     sc.heading('Test simplest possible FPsim run')
     sim = fp.Sim(location=location, test=True)
     sim.run()
+    sim.to_df(resample='year', use_years=True)
     return sim
 
 
@@ -38,7 +40,7 @@ def test_simple_choice():
         sim = fp.Sim(pars=par_kwargs, location=location, contraception_module=method_choice, analyzers=fp.cpr_by_age())
         sims += sim
 
-    m = ss.parallel(sims, parallel=parallel, compute_stats=False)
+    m = ss.parallel(sims, parallel=parallel)
     print(f'✓ (successfully ran SimpleChoice)')
 
     return m.sims
@@ -54,7 +56,7 @@ def test_mid_choice():
         s = fp.Sim(pars=par_kwargs, location=location, contraception_module=ms, education_module=edu)
         sims += s
 
-    m = ss.parallel(sims, parallel=parallel, compute_stats=False)
+    m = ss.parallel(sims, parallel=parallel)
     print(f'✓ (successfully ran StandardChoice)')
 
     return m.sims
@@ -73,7 +75,7 @@ def test_sim_creation():
     assert sim1.pars.n_agents == 500, "Sim par failed"
     assert sim1.connectors.contraception.pars.prob_use_year == contra_pars['prob_use_year'], "Contraception par failed"
     assert sim1.connectors.edu.pars.init_dropout.pars.p == edu_pars['init_dropout'], "Education par failed"
-    assert sim1.fp_pars.postpartum_dur == fp_pars['postpartum_dur'], "FP par failed"
+    assert sim1.pars.fp.postpartum_dur == fp_pars['postpartum_dur'], "FP par failed"
 
     # Test 2: separate modules
     contra_mod = fp.SimpleChoice(location='kenya', prob_use_trend_par=0.3)
@@ -84,7 +86,7 @@ def test_sim_creation():
 
     assert sim2.connectors.contraception.pars.prob_use_trend_par == 0.3, "Contraception par failed"
     assert sim2.connectors.edu.pars.init_dropout.pars.p == 0.1, "Education par failed"
-    assert sim2.fp_pars.postpartum_dur == 21, "FP par failed"
+    assert sim2.pars.fp.postpartum_dur == 21, "FP par failed"
 
     # Test 3: flat pars dict
     pars = dict(
@@ -100,7 +102,7 @@ def test_sim_creation():
 
     assert sim3.connectors.contraception.pars.prob_use_intercept == 0.5, "Contraception par failed"
     assert sim3.connectors.edu.pars.init_dropout.pars.p == 0.15, "Education par failed"
-    assert sim3.fp_pars.postpartum_dur == 18, "FP par failed"
+    assert sim3.pars.fp.postpartum_dur == 18, "FP par failed"
 
     print('✓ (successfully created sims with different methods)')
 
@@ -109,7 +111,7 @@ def test_sim_creation():
 
 if __name__ == '__main__':
 
-    sim = test_simple('ethiopia')
+    sim = test_simple(None)
     s1 = test_random_choice()
     sims1 = test_simple_choice()
     sims2 = test_mid_choice()

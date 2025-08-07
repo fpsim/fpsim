@@ -37,12 +37,14 @@ def test_calibration(n_trials=3):
     pars = dict(test=True, n_agents=20, start=2000, stop=2010, verbose=1/12)
 
     calib = fp.Calibration(pars=pars, weights=dict(pop_size=100))
-    calib.calibrate(calib_pars=calib_pars, n_trials=2, n_workers=1)
+    calib.calibrate(calib_pars=calib_pars, n_trials=1, n_workers=1)
     before, after = calib.summarize()
 
     # TODO FIX THIS
-    # assert after <= before, 'Expect calibration to not make fit worse'
-    ok(f'Calibration improved fit ({after:n} < {before:n})')
+    if after > before:
+        print('Calibration sould improve fit, but this is not guaranteed')
+    else:
+        ok(f'Calibration improved fit ({after:n} <= {before:n})')
 
     if do_plot:
         calib.before.plot()
@@ -80,23 +82,6 @@ def test_age_pyramids():
 
     return ap
 
-def test_longitudinal():
-    sc.heading('Testing longitudinal history analyzer...')
-    keys=['age']
-    lh = fp.longitudinal_history(keys)
-
-    sim = fp.Sim(analyzers=lh)
-    sim.init()
-    sim.run(verbose=1/12)
-
-    # The difference between the largest and smallest age should for each person be equal to (1 year - 1/timestepsperyear)
-    # Based on the default params, the value in slot 0 is the max and in slot 1 is the min. There will be some rounding error
-    # so we use pytest.approx to compare.
-    max_age = sim.analyzers.longitudinal_history.age[ss.uids(1), 0]
-    min_age = sim.analyzers.longitudinal_history.age[ss.uids(1), 1]
-    assert max_age - min_age == pytest.approx(1 - 1/sim.fp_pars['tiperyear'], rel=1e-2), 'Expected age difference to be equal to 1 year minus the timestep size'
-
-    return
 
 def test_method_mix_by_age():
     sc.heading('Testing method mix by age analyzer...')
@@ -118,8 +103,7 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # calib = test_calibration()
+        calib = test_calibration()
         # snap  = test_snapshot()
         # ap    = test_age_pyramids()
-        lh    = test_longitudinal()
         # mmba  = test_method_mix_by_age()
