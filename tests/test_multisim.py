@@ -19,25 +19,25 @@ def test_multisim(do_plot=do_plot):
     sims = []
     for i in range(3):
         exposure = 0.5 + 0.5*i # Run a sweep over exposure
-        pars = dict(location='test', exposure_factor=exposure)
+        pars = dict(test=True, exposure_factor=exposure)
         sim = fp.Sim(pars=pars, label=f'Exposure {exposure}')
         sims.append(sim)
 
     msim = ss.MultiSim(sims)
-    msim.run(parallel=parallel) # Run sims in parallel
+    msim.run(parallel=parallel)  # Run sims in parallel
 
     msim.reduce()
     msim.summarize()
 
-    births = msim.results.births
+    births = msim.results.fp_births
     assert sum(births.low) < sum(births.high), 'Expecting the higher bound of births to be higher than the lower bound'
 
     if do_plot:
         msim.plot(plot_sims=True)
         msim.plot(plot_sims=False)
-        msim.plot_age_first_birth()
 
     return msim
+
 
 def test_eth_multisim():
     sim1 = fp.Sim(location='addis_ababa')
@@ -59,8 +59,9 @@ def test_eth_multisim():
         msim.plot()
     return msim
 
+
 if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
-    with sc.timer(): # Start timing
+    with sc.timer():  # Start timing
         msim = test_multisim()
         msim_eth = test_eth_multisim()
