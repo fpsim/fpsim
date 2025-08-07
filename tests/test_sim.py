@@ -38,7 +38,7 @@ def test_simple_choice():
         sim = fp.Sim(pars=par_kwargs, location=location, contraception_module=method_choice, analyzers=fp.cpr_by_age())
         sims += sim
 
-    m = fp.parallel(sims, parallel=parallel, compute_stats=False)
+    m = ss.parallel(sims, parallel=parallel, compute_stats=False)
     print(f'✓ (successfully ran SimpleChoice)')
 
     return m.sims
@@ -54,7 +54,7 @@ def test_mid_choice():
         s = fp.Sim(pars=par_kwargs, location=location, contraception_module=ms, education_module=edu)
         sims += s
 
-    m = fp.parallel(sims, parallel=parallel, compute_stats=False)
+    m = ss.parallel(sims, parallel=parallel, compute_stats=False)
     print(f'✓ (successfully ran StandardChoice)')
 
     return m.sims
@@ -109,10 +109,10 @@ def test_sim_creation():
 
 if __name__ == '__main__':
 
-    # sim = test_simple('ethiopia')
-    # s1 = test_random_choice()
+    sim = test_simple('ethiopia')
+    s1 = test_random_choice()
     sims1 = test_simple_choice()
-    # sims2 = test_mid_choice()
-    # test_sim_creation()
+    sims2 = test_mid_choice()
+    test_sim_creation()
 
     print('Done.')
