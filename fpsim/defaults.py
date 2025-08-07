@@ -194,7 +194,6 @@ people_counts = sc.autolist(
     'new_users',
     'ever_used_contra',
     'switchers',
-    'n_urban',
     'n_fecund',
     'pp0to5',
     'pp6to11',
@@ -203,12 +202,16 @@ people_counts = sc.autolist(
     'parity2to3',
     'parity4to5',
     'parity6plus',
-    'wq1',
-    'wq2',
-    'wq3',
-    'wq4',
-    'wq5',
     'nonpostpartum',
+)
+
+sim_results = sc.autolist(
+    'n_urban',
+    'n_wq1',
+    'n_wq2',
+    'n_wq3',
+    'n_wq4',
+    'n_wq5',
 )
 
 # Rates and other results that aren't scaled

@@ -219,6 +219,16 @@ class Sim(ss.Sim):
 
         return self
 
+    def init_results(self):
+        """
+        Initialize the results dictionary. This is called at the start of the simulation.
+        """
+        super().init_results()
+        scaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
+        for key in fpd.sim_results:
+            self.results += ss.Result(key, label=key, **scaling_kw)
+        return
+
     def update_mortality(self):
         """
         Update infant and maternal mortality for the sim's current year.
