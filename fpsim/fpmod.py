@@ -29,7 +29,6 @@ class FPmod(ss.Module):
         self.define_pars(**default_pars)
         self.update_pars(pars, **kwargs)
 
-
         return
 
     def init_results(self):
@@ -59,7 +58,7 @@ class FPmod(ss.Module):
         for key in fpd.dict_annual_results:
             if key == 'method_usage':
                 self.results[key] = ss.Results(module=self)
-                for i, method in enumerate(self.connectors.contraception.methods):
+                for i, method in enumerate(self.sim.connectors.contraception.methods):
                     self.results[key] += ss.Result(method, label=method, **scaling_kw)
 
         # Store age-specific fertility rates
