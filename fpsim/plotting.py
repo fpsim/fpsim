@@ -171,7 +171,7 @@ def plot_asfr(sim):
     asfr_model = []
     for key in age_bin_map:
         x_labels.append(key)
-        asfr_model.append(sim.results['asfr'][key][-1])
+        asfr_model.append(sim.connectors.fp.asfr_results[key][-1])
 
     # Compute mean-normalized RMSE
     rmse_scores['asfr'] = compute_rmse(asfr_model, asfr_data)
@@ -425,7 +425,7 @@ def plot_pop_growth(sim):
     """
     Plot annual population growth rate for model vs data
     """
-    data_popsize = Config.load_validation_data(sim.pars.fp['location'], keys=['popsize'])['popsize']
+    data_popsize = Config.load_validation_data(sim.pars['location'], keys=['popsize'])['popsize']
     res = sim.results
 
     # Import data
@@ -440,7 +440,7 @@ def plot_pop_growth(sim):
 
     # Plot
     pl.plot(data_pop_years[1:], data_growth_rate, label='World Bank', color='black')
-    pl.plot(res['tfr_years'][1:], model_growth_rate, label='FPsim', color='cornflowerblue')
+    pl.plot(res.fp.tfr_years[1:], model_growth_rate, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
     pl.ylabel('Rate')
     pl.title(f'Population Growth Rate - Model vs Data')
@@ -448,6 +448,7 @@ def plot_pop_growth(sim):
 
     save_figure('popgrowth.png')
     pl.show()
+
 
 def plot_afb(sim):
     """Plot age at first birth: model vs survey data"""
