@@ -27,7 +27,7 @@ default_flags = sc.objdict(
     popsize       = 1, # Population size and growth over time on whole years, adjusted for n number of agents; 'pop_size'
     ageparity   = 1, # Population distribution of agents in each age/parity bin (age-parity plot); 'ageparity'
     first_birth   = 1, # Age at first birth mean with standard deviation; 'age_first_birth'
-    birth_space   = 1, # Birth spacing both in bins and mean with standard deviation; 'spacing'
+    birth_space   = 0, # Birth spacing both in bins and mean with standard deviation; 'spacing'
     mcpr          = 1, # Modern contraceptive prevalence; 'mcpr'
     methods       = 1, # Overall percentage of method use and method use among users; 'methods'
     mmr           = 1, # Maternal mortality ratio at end of sim in model vs data; 'maternal_mortality_ratio'
@@ -36,7 +36,7 @@ default_flags = sc.objdict(
     cbr           = 1, # Crude birth rate (per 1000 inhabitants); 'crude_birth_rate'
     tfr           = 1, # Total fertility rate
     asfr          = 1, # Age-specific fertility rate
-    education     = 1, # Education metrics
+    education     = 0, # Education metrics
 )
 
 
@@ -351,7 +351,6 @@ class Experiment(sc.prettyobj):
 
     def extract_methods(self):
         data_method_counts = sc.odict()
-        model_method_counts = sc.odict()
 
         # Extract from data
         data_methods = self.load_data('methods')
@@ -379,15 +378,17 @@ class Experiment(sc.prettyobj):
         # Make labels
         data_labels = data_method_counts.keys()
         for d in range(len(data_labels)):
-            if data_method_counts[d] > 0.01:
-                data_labels[d] = f'{data_labels[d]}: {data_method_counts[d] * 100:0.1f}%'
-            else:
-                data_labels[d] = ''
+            data_labels[d] = f'{data_labels[d]}: {data_method_counts[d] * 100:0.1f}%'
+            # if data_method_counts[d] > 0.01:
+            #     data_labels[d] = f'{data_labels[d]}: {data_method_counts[d] * 100:0.1f}%'
+            # else:
+            #     data_labels[d] = ''
         for d in range(len(model_labels)):
-            if model_method_counts[d] > 0.01:
-                model_labels[d] = f'{model_labels[d]}: {model_method_counts[d] * 100:0.1f}%'
-            else:
-                model_labels[d] = ''
+            model_labels[d] = f'{model_labels[d]}: {model_method_counts[d] * 100:0.1f}%'
+            # if model_method_counts[d] > 0.01:
+            #     model_labels[d] = f'{model_labels[d]}: {model_method_counts[d] * 100:0.1f}%'
+            # else:
+            #     model_labels[d] = ''
 
         self.data['method_counts'] = np.array(data_method_counts.values())
         self.model['method_counts'] = np.array(model_method_counts)
