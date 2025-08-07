@@ -30,7 +30,7 @@ def filenames():
         'methods': base_dir / 'mix.csv', # From PMA
         'afb': base_dir / 'afb.table.csv', # From DHS
         'use': base_dir / 'use.csv', # From PMA
-        'education': base_dir / 'edu_initialization.csv', # From DHS
+        'education': base_dir / 'edu_initialization.csv',  # From DHS
     }
     return files
 
