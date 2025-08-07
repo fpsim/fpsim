@@ -541,20 +541,19 @@ class FPmod(ss.Module):
 
     def update_results(self):
         super().update_results()
-        sim = self.sim
-        res = sim.results
-        ti = sim.ti
-        age_min = self.age >= fp.min_age
-        age_max = self.age < sim.pars.fp['age_limit_fecundity']
+        ppl = self.sim.people
+        ti = self.ti
+        age_min = ppl.age >= fp.min_age
+        age_max = ppl.age < self.pars['age_limit_fecundity']
 
-        res['n_fecund'][ti] = np.sum(self.female * age_min * age_max)
-        res['n_urban'][ti] = np.sum(self.urban * self.female)
-        res['ever_used_contra'][ti] = np.sum(self.ever_used_contra * self.female) / np.sum(self.female) * 100
-        res['parity0to1'][ti] = np.sum((self.parity <= 1) & self.female) / np.sum(self.female) * 100
-        res['parity2to3'][ti] = np.sum((self.parity >= 2) & (self.parity <= 3) & self.female) / np.sum(self.female) * 100
-        res['parity4to5'][ti] = np.sum((self.parity >= 4) & (self.parity <= 5) & self.female) / np.sum(self.female) * 100
-        res['parity6plus'][ti] = np.sum((self.parity >= 6) & self.female) / np.sum(self.female) * 100
+        self.results.n_fecund[ti] = np.sum(ppl.female * age_min * age_max)
+        self.results.ever_used_contra[ti] = np.sum(self.ever_used_contra * ppl.female) / np.sum(ppl.female) * 100
+        self.results.parity0to1[ti] = np.sum((self.parity <= 1) & ppl.female) / np.sum(ppl.female) * 100
+        self.results.parity2to3[ti] = np.sum((self.parity >= 2) & (self.parity <= 3) & ppl.female) / np.sum(ppl.female) * 100
+        self.results.parity4to5[ti] = np.sum((self.parity >= 4) & (self.parity <= 5) & ppl.female) / np.sum(ppl.female) * 100
+        self.results.parity6plus[ti] = np.sum((self.parity >= 6) & ppl.female) / np.sum(ppl.female) * 100
 
+        res = self.results
         percent0to5 = (res.pp0to5[ti] / res.n_fecund[ti]) * 100
         percent6to11 = (res.pp6to11[ti] / res.n_fecund[ti]) * 100
         percent12to23 = (res.pp12to23[ti] / res.n_fecund[ti]) * 100
@@ -566,3 +565,18 @@ class FPmod(ss.Module):
         res['pp12to23'][ti] = percent12to23
         res['nonpostpartum'][ti] = nonpostpartum
 
+        return
+
+
+    def finalize_results(self):
+        # Calculate cumulative totals
+        self.results['cum_maternal_deaths'] = np.cumsum(self.results['maternal_deaths'])
+        self.results['cum_infant_deaths'] = np.cumsum(self.results['infant_deaths'])
+        self.results['cum_births'] = np.cumsum(self.results['births'])
+        self.results['cum_stillbirths'] = np.cumsum(self.results['stillbirths'])
+        self.results['cum_miscarriages'] = np.cumsum(self.results['miscarriages'])
+        self.results['cum_abortions'] = np.cumsum(self.results['abortions'])
+        self.results['cum_short_intervals'] = np.cumsum(self.results['short_intervals'])
+        self.results['cum_secondary_births'] = np.cumsum(self.results['secondary_births'])
+        self.results['cum_pregnancies'] = np.cumsum(self.results['pregnancies'])
+        return

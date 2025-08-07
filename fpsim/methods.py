@@ -346,8 +346,8 @@ class ContraceptiveChoice(ss.Connector):
 
         # Track mCPR
         modern_methods_num = [idx for idx, m in enumerate(self.methods.values()) if m.modern]
-        numerator = np.isin(ppl.method, modern_methods_num)
-        n_no_method = np.sum((ppl.method == 0) * denominator)
+        numerator = np.isin(ppl.fp.method, modern_methods_num)
+        n_no_method = np.sum((ppl.fp.method == 0) * denominator)
         n_mod_users = np.sum(numerator * denominator)
         self.results['n_non_users'][self.ti] += n_no_method
         self.results['n_mod_users'][self.ti] += n_mod_users
@@ -355,7 +355,7 @@ class ContraceptiveChoice(ss.Connector):
 
         # Track CPR: includes newer ways to conceptualize contraceptive prevalence.
         # Includes women using any method of contraception, including LAM
-        numerator = ppl.method != 0
+        numerator = ppl.fp.method != 0
         cpr = np.sum(numerator * denominator)
         self.results['n_users'][self.ti] += cpr
         self.results['cpr'][self.ti] += sc.safedivide(cpr, sum(denominator))
@@ -363,9 +363,9 @@ class ContraceptiveChoice(ss.Connector):
         # Track aCPR
         # Denominator of possible users excludes pregnant women and those not sexually active in the last 4 weeks
         # Used to compare new metrics of contraceptive prevalence and eventually unmet need to traditional mCPR definitions
-        denominator = method_age * fecund_age * ppl.female * ~ppl.pregnant * ppl.sexually_active
-        numerator = ppl.method != 0
-        n_at_risk_non_users = np.sum((ppl.method == 0) * denominator)
+        denominator = method_age * fecund_age * ppl.female * ~ppl.fp.pregnant * ppl.fp.sexually_active
+        numerator = ppl.fp.method != 0
+        n_at_risk_non_users = np.sum((ppl.fp.method == 0) * denominator)
         n_at_risk_users = np.sum(numerator * denominator)
         self.results['n_at_risk_non_users'][self.ti] += n_at_risk_non_users
         self.results['n_at_risk_users'][self.ti] += n_at_risk_users

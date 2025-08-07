@@ -116,7 +116,7 @@ class People(ss.People):
     def _step_results_wq(self):
         """" Calculate step results on wealthquintile """
         for i in range(1, 6):
-            self.sim.results[f'wq{i}'][self.sim.ti] = np.sum((self.wealthquintile == i) & self.female)
+            self.sim.results[f'n_wq{i}'][self.sim.ti] = np.sum((self.wealthquintile == i) & self.female)
         return
 
     @staticmethod
@@ -125,13 +125,13 @@ class People(ss.People):
         return np.sum(a & b) / np.sum(b)
 
     def int_age(self, uids=None):
-        ''' Return ages as an integer '''
+        """ Return ages as an integer """
         if uids is None:
             return np.array(self.age, dtype=np.int64)
         return np.array(self.age[uids], dtype=np.int64)
 
     def int_age_clip(self, uids=None):
-        ''' Return ages as integers, clipped to maximum allowable age for pregnancy '''
+        """ Return ages as integers, clipped to maximum allowable age for pregnancy """
         if uids is None:
             return np.minimum(self.int_age(), fp.max_age_preg)
         return np.minimum(self.int_age(uids), fp.max_age_preg)
@@ -148,7 +148,6 @@ class People(ss.People):
     def compute_method_usage(self):
         """
         Computes method mix proportions from a sim object
-
         Returns:
             list of lists where list[years_after_start][method_index] == proportion of
             fecundity aged women using that method on that year

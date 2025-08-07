@@ -254,68 +254,7 @@ class Sim(ss.Sim):
         super().start_step()
         self.update_mortality()
         # self.people.step()
-
-    def finalize(self):
-        self.finalize_results()
-        super().finalize()
-
-    def finalize_results(self):
-        # Convert all results to Numpy arrays
-        # for key, arr in self.results.items():
-        #     if isinstance(arr, list):
-        #         # These keys have list of lists with different lengths
-        #         if key in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr_age_by_group',
-        #                     'mmr_age_by_group', 'as_stillbirths', 'stillbirth_ages']:
-        #             self.results[key] = np.array(arr, dtype=object)
-        #         else:
-        #             self.results[key] = np.array(arr)  # Convert any lists to arrays
-
-        # Calculate cumulative totals
-        self.results['cum_maternal_deaths'] = np.cumsum(self.results['maternal_deaths'])
-        self.results['cum_infant_deaths'] = np.cumsum(self.results['infant_deaths'])
-        self.results['cum_births'] = np.cumsum(self.results['births'])
-        self.results['cum_stillbirths'] = np.cumsum(self.results['stillbirths'])
-        self.results['cum_miscarriages'] = np.cumsum(self.results['miscarriages'])
-        self.results['cum_abortions'] = np.cumsum(self.results['abortions'])
-        self.results['cum_short_intervals'] = np.cumsum(self.results['short_intervals'])
-        self.results['cum_secondary_births'] = np.cumsum(self.results['secondary_births'])
-        self.results['cum_pregnancies'] = np.cumsum(self.results['pregnancies'])
         return
-
-    # def store_postpartum(self):
-    #     """
-    #     Stores snapshot of who is currently pregnant, their parity, and various
-    #     postpartum states in final step of model for use in calibration
-    #     """
-    #
-    #     min_age = 12.5
-    #     max_age = self['age_limit_fecundity']
-    #
-    #     ppl = self.people
-    #     rows = []
-    #     for i in range(len(ppl)):
-    #         if ppl.alive[i] and ppl.sex[i] == 0 and min_age <= ppl.age[i] < max_age:
-    #             row = dict(
-    #                 Age=int(round(ppl.age[i])),
-    #                 PP0to5=None,
-    #                 PP6to11=None,
-    #                 PP12to23=None,
-    #                 NonPP=1 if not ppl.postpartum[i] else 0,
-    #                 Pregnant=1 if ppl.pregnant[i] else 0,
-    #                 Parity=ppl.parity[i],
-    #             )
-    #             if ppl.postpartum[i]:
-    #                 pp_dur = ppl.postpartum_dur[i]
-    #                 row['PP0to5'] = 1 if 0 <= pp_dur < 6 else 0
-    #                 row['PP6to11'] = 1 if 6 <= pp_dur < 12 else 0
-    #                 row['PP12to23'] = 1 if 12 <= pp_dur <= 24 else 0
-    #             rows.append(row)
-    #
-    #     pp = pd.DataFrame(rows, index=None,
-    #                       columns=['Age', 'PP0to5', 'PP6to11', 'PP12to23', 'NonPP', 'Pregnant', 'Parity'])
-    #     pp.fillna(0, inplace=True)
-    #     return pp
-
 
     # Function to scale all y-axes in fig based on input channel
     @staticmethod
