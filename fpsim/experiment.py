@@ -135,9 +135,9 @@ class Experiment(sc.prettyobj):
         if self.flags.mmr:      self.model_mmr(fp_df)
         if self.flags.infant_m: self.model_imr(fp_df)
         if self.flags.cdr:      self.model_crude_death_rate(fp_df, sim_df)
-        if self.flags.cbr:      self.model_crude_birth_rate(fp_df)
-        if self.flags.tfr:      self.model_data_tfr(sres)
-        if self.flags.asfr:     self.model_data_asfr(sres)
+        if self.flags.cbr:      self.model_crude_birth_rate(fp_df, sim_df)
+        if self.flags.tfr:      self.model_data_tfr(fp_df)
+        if self.flags.asfr:     self.model_data_asfr(fp_df)
         return
 
     def model_pop_size(self, sres=None):
@@ -175,15 +175,15 @@ class Experiment(sc.prettyobj):
         return
 
     def model_crude_death_rate(self, fp_df=None, sim_df=None):
-        total_deaths = sim_df['new_deaths'][-1] + \
-                       fp_df['infant_deaths'][-1] + \
-                       fp_df['maternal_deaths'][-1]
-        self.model['crude_death_rate'] = (total_deaths / sim_df['n_alive'][-1]) * 1000
+        total_deaths = sim_df['new_deaths'].values[-1] + \
+                       fp_df['infant_deaths'].values[-1] + \
+                       fp_df['maternal_deaths'].values[-1]
+        self.model['crude_death_rate'] = (total_deaths / sim_df['n_alive'].values[-1]) * 1000
         return
 
     def model_crude_birth_rate(self, fp_df=None, sim_df=None):
-        births_last_year = fp_df['births'][-1]
-        self.model['crude_birth_rate'] = (births_last_year / sim_df['n_alive'][-1]) * 1000
+        births_last_year = fp_df['births'].values[-1]
+        self.model['crude_birth_rate'] = (births_last_year / sim_df['n_alive'].values[-1]) * 1000
         return
 
     def model_data_tfr(self, fp_df=None):
@@ -192,11 +192,11 @@ class Experiment(sc.prettyobj):
         self.data['tfr_years'] = tfr['year'].to_numpy()
         self.data['total_fertility_rate'] = tfr['tfr'].to_numpy()
 
-        self.model['tfr_years'] = fp_df['tfr_rates']
+        self.model['tfr_years'] = fp_df['tfr_years']
         self.model['total_fertility_rate'] = fp_df['tfr_rates']
         return
 
-    def model_data_asfr(self, sres=None, ind=-1):
+    def model_data_asfr(self, ind=-1):
 
         # Extract ASFR for different age bins
         asfr = self.load_data('asfr')  # From DHS
@@ -212,8 +212,9 @@ class Experiment(sc.prettyobj):
         age_bins = list(fpd.age_bin_map.keys())
         self.model['asfr_bins'] = age_bins
         self.model['asfr'] = []
+        df = self.sim.connectors.fp.asfr_results.to_df(resample='year', use_years=True)
         for ab in age_bins:
-            val = sres['asfr'][ab][ind] # Only use one index (default: last) CK: TODO: match year automatically
+            val = df[ab].values[ind]  # Only use one index (default: last) CK: TODO: match year automatically
             self.model['asfr'].append(val)
 
         # Check
