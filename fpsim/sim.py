@@ -251,7 +251,6 @@ class Sim(ss.Sim):
     def start_step(self):
         super().start_step()
         self.update_mortality()
-        # self.people.step()
         return
 
     # Function to scale all y-axes in fig based on input channel

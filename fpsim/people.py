@@ -109,8 +109,8 @@ class People(ss.People):
 
     def update_results(self):
         """Calculate and return the results for this specific time step"""
-        # Update wealth
-        self._step_results_wq()
+        super().update_results()  # Updates n_alive and other base results
+        self._step_results_wq()  # Updates wealth quintile results
         return
 
     def _step_results_wq(self):

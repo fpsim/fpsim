@@ -458,13 +458,11 @@ class Experiment(sc.prettyobj):
 
         return
 
-
     def run(self, pars=None, keep_people=False, compute_fit=True, **kwargs):
         ''' Run the model and post-process the results '''
         self.run_model(pars=pars)
         self.post_process_results(keep_people=keep_people, compute_fit=compute_fit, **kwargs)
         return self
-
 
     def compare(self):
         ''' Create and print a comparison between model and data '''
@@ -494,7 +492,6 @@ class Experiment(sc.prettyobj):
 
         self.comparison_df = pd.DataFrame.from_dict(comparison)
         return self.comparison_df
-
 
     def summarize(self, as_df=False):
         '''
@@ -531,7 +528,6 @@ class Experiment(sc.prettyobj):
             return self.summary.df
         else:
             return self.summary
-
 
     def to_json(self, filename=None, tostring=False, indent=2, verbose=False, **kwargs):
         '''
@@ -719,7 +715,6 @@ class Experiment(sc.prettyobj):
         return fps.tidy_up(fig=fig, do_show=do_show, do_save=do_save, filename=filename)
 
 
-
 class Fit(sc.prettyobj):
     '''
     A class for calculating the fit between the model and the data. Note the
@@ -792,7 +787,6 @@ class Fit(sc.prettyobj):
         self.compute_losses()
         self.compute_mismatch()
         return self.mismatch
-
 
     def reconcile_inputs(self, verbose=False):
         ''' Find matching keys and indices between the model and the data '''
