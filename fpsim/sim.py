@@ -19,7 +19,7 @@ from . import methods as fpm
 from . import education as fped
 
 # Specify all externally visible things this file defines
-__all__ = ['Sim', 'MultiSim', 'parallel']
+__all__ = ['Sim']
 
 
 #%% Plotting helper functions
@@ -90,19 +90,19 @@ class Sim(ss.Sim):
     """
 
     def __init__(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None,
-                 contraception_module=None, empowerment_module=None, education_module=None,
+                 fp_module=None, contraception_module=None, empowerment_module=None, education_module=None,
                  label=None, people=None, demographics=None, diseases=None, networks=None,
                  interventions=None, analyzers=None, connectors=None, copy_inputs=True, **kwargs):
 
         # Inputs and defaults
         self.contra_pars = None    # Parameters for the contraception module - processed later
         self.edu_pars = None     # Parameters for the education module - processed later
+        self.fp_pars = None       # Parameters for the family planning module - processed later
         self.pars = None        # Parameters for the simulation - processed later
 
         # Call the constructor of the parent class WITHOUT pars or module args, the make defaults
         super().__init__(pars=None, label=label)
         self.pars = fpp.make_sim_pars()  # Make default parameters using values from parameters.py
-        self.fp_pars = fpp.make_fp_pars()
 
         # Separate the parameters, storing sim pars and fp_pars now and saving module pars to process in init
         # Four sources of par values in decreasing order of priority:
@@ -115,15 +115,17 @@ class Sim(ss.Sim):
         sim_kwargs = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         sim_kwargs = {key: val for key, val in sim_kwargs.items() if val is not None}
-        all_sim_pars, all_fp_pars = self.separate_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, **kwargs)
+        all_sim_pars = self.separate_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, **kwargs)
         self.pars.update(all_sim_pars)
-        self.fp_pars.update(all_fp_pars)
 
         # Process modules by adding them as Starsim connectors
         default_contra = fpm.StandardChoice(location=self.fp_pars.location, pars=self.contra_pars)
+        default_edu = fped.Education(location=self.fp_pars.location, pars=self.edu_pars)
+        default_fp = fp.FPmod(pars=self.fp_pars)
         contraception_module = contraception_module or sc.dcp(default_contra)
-        education_module = education_module or sc.dcp(fped.Education(location=self.fp_pars.location, pars=self.edu_pars))
-        connectors = sc.tolist(connectors) + [contraception_module, education_module]
+        education_module = education_module or sc.dcp(default_edu)
+        fp_module = fp_module or sc.dcp(default_fp)
+        connectors = sc.tolist(connectors) + [contraception_module, education_module, fp_module]
         if empowerment_module is not None:
             connectors += sc.tolist(empowerment_module)
         self.pars['connectors'] = connectors  # TODO, check this
@@ -179,12 +181,10 @@ class Sim(ss.Sim):
         sim_pars = sc.mergedicts(user_sim_pars, sim_pars, _copy=True)
 
         # Deal with fp pars
-        user_fp_pars = {k: v for k, v in all_pars.items() if k in self.fp_pars.keys()}
+        default_fp_pars = fpp.make_fp_pars()
+        user_fp_pars = {k: v for k, v in all_pars.items() if k in default_fp_pars.keys()}
         for k in user_fp_pars: all_pars.pop(k)
         fp_pars = sc.mergedicts(user_fp_pars, fp_pars, _copy=True)
-        if 'location' in fp_pars and fp_pars['location'] is not None:
-            self.fp_pars['location'] = fp_pars['location']
-        self.fp_pars.update_location()  # Update location-specific parameters
 
         # Deal with contraception module pars
         default_contra_pars = fpm.make_contra_pars()
@@ -203,10 +203,13 @@ class Sim(ss.Sim):
             raise ValueError(f'Unrecognized parameters: {all_pars.keys()}. Refer to parameters.py for parameters.')
 
         # Store the parameters for the modules - thse will be fed into the modules during init
+        self.fp_pars = fp_pars    # Parameters for the family planning module
+        if 'location' in fp_pars and fp_pars['location'] is not None:
+            self.fp_pars['location'] = fp_pars['location']
+        self.fp_pars.update_location()  # Update location-specific parameters
         self.contra_pars = contra_pars    # Parameters for contraceptive choice
         self.edu_pars = edu_pars      # Parameters for the education module
-
-        return sim_pars, fp_pars
+        return sim_pars
 
     def init(self, force=False):
         """ Fully initialize the Sim with modules, people and result storage"""
