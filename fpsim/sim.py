@@ -9,6 +9,7 @@ import seaborn as sns
 import sciris as sc
 import pandas as pd
 import starsim as ss
+import fpsim as fp
 from .settings import options as fpo
 from . import utils as fpu
 from . import defaults as fpd
@@ -128,13 +129,13 @@ class Sim(ss.Sim):
         self.pars['connectors'] = connectors  # TODO, check this
 
         # Metadata and settings
-        self.test_mode = False
+        # self.test_mode = False
         fpu.set_metadata(self)  # Set version, date, and git info
         self.summary = None
 
-        # Add a new parameter to pars that determines the size of the circular buffer = TODO, remove?
-        unit = self.pars.unit if self.pars.unit != "" else 'year'
-        self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
+        # # Add a new parameter to pars that determines the size of the circular buffer = TODO, remove?
+        # unit = self.pars.unit if self.pars.unit != "" else 'year'
+        # self.fp_pars['tiperyear'] = ss.time_ratio('year', 1, unit, self.pars.dt)
 
         return
 
@@ -217,44 +218,6 @@ class Sim(ss.Sim):
 
         return self
 
-    def init_results(self):
-        """
-        Initialize result storage. Most default results are either arrays or lists; these are
-        all stored in defaults.py. Any other results with different formats can also be added here.
-        """
-        super().init_results()  # Initialize the base results
-
-        scaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
-        nonscaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=float, scale=False)
-
-        # Add event counts - these are all integers, and are scaled by the number of agents
-        # We compute new results for each event type, and also cumulative results
-        for key in fpd.event_counts:
-            self.results += ss.Result(key, label=key, **scaling_kw)
-            self.results += ss.Result(f'cum_{key}', label=key, dtype=int, scale=False)  # TODO, check
-
-        # Add people counts - these are all integers, and are scaled by the number of agents
-        # However, for these we do not include cumulative totals
-        for key in fpd.people_counts:
-            self.results += ss.Result(key, label=key, **scaling_kw)
-
-        for key in fpd.rate_results:
-            self.results += ss.Result(key, label=key, **nonscaling_kw)
-
-        for key in fpd.dict_annual_results:
-            if key == 'method_usage':
-                self.results[key] = ss.Results(module=self)
-                for i, method in enumerate(self.connectors.contraception.methods):
-                    self.results[key] += ss.Result(method, label=method, **scaling_kw)
-
-        # Store age-specific fertility rates
-        self.results['asfr'] = ss.Results(module=self)  # ['asfr'] = {}
-        for key in fpd.age_bin_map.keys():
-            self.results.asfr += ss.Result(key, label=key, **nonscaling_kw)
-            self.results += ss.Result(f"tfr_{key}", label=key, **nonscaling_kw)
-
-        return
-
     def update_mortality(self):
         """
         Update infant and maternal mortality for the sim's current year.
@@ -287,17 +250,16 @@ class Sim(ss.Sim):
 
     def finalize_results(self):
         # Convert all results to Numpy arrays
-        for key, arr in self.results.items():
-            if isinstance(arr, list):
-                # These keys have list of lists with different lengths
-                if key in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr_age_by_group',
-                            'mmr_age_by_group', 'as_stillbirths', 'stillbirth_ages']:
-                    self.results[key] = np.array(arr, dtype=object)
-                else:
-                    self.results[key] = np.array(arr)  # Convert any lists to arrays
+        # for key, arr in self.results.items():
+        #     if isinstance(arr, list):
+        #         # These keys have list of lists with different lengths
+        #         if key in ['imr_numerator', 'imr_denominator', 'mmr_numerator', 'mmr_denominator', 'imr_age_by_group',
+        #                     'mmr_age_by_group', 'as_stillbirths', 'stillbirth_ages']:
+        #             self.results[key] = np.array(arr, dtype=object)
+        #         else:
+        #             self.results[key] = np.array(arr)  # Convert any lists to arrays
 
         # Calculate cumulative totals
-
         self.results['cum_maternal_deaths'] = np.cumsum(self.results['maternal_deaths'])
         self.results['cum_infant_deaths'] = np.cumsum(self.results['infant_deaths'])
         self.results['cum_births'] = np.cumsum(self.results['births'])
@@ -309,39 +271,39 @@ class Sim(ss.Sim):
         self.results['cum_pregnancies'] = np.cumsum(self.results['pregnancies'])
         return
 
-    def store_postpartum(self):
-        """
-        Stores snapshot of who is currently pregnant, their parity, and various
-        postpartum states in final step of model for use in calibration
-        """
-
-        min_age = 12.5
-        max_age = self['age_limit_fecundity']
-
-        ppl = self.people
-        rows = []
-        for i in range(len(ppl)):
-            if ppl.alive[i] and ppl.sex[i] == 0 and min_age <= ppl.age[i] < max_age:
-                row = dict(
-                    Age=int(round(ppl.age[i])),
-                    PP0to5=None,
-                    PP6to11=None,
-                    PP12to23=None,
-                    NonPP=1 if not ppl.postpartum[i] else 0,
-                    Pregnant=1 if ppl.pregnant[i] else 0,
-                    Parity=ppl.parity[i],
-                )
-                if ppl.postpartum[i]:
-                    pp_dur = ppl.postpartum_dur[i]
-                    row['PP0to5'] = 1 if 0 <= pp_dur < 6 else 0
-                    row['PP6to11'] = 1 if 6 <= pp_dur < 12 else 0
-                    row['PP12to23'] = 1 if 12 <= pp_dur <= 24 else 0
-                rows.append(row)
-
-        pp = pd.DataFrame(rows, index=None,
-                          columns=['Age', 'PP0to5', 'PP6to11', 'PP12to23', 'NonPP', 'Pregnant', 'Parity'])
-        pp.fillna(0, inplace=True)
-        return pp
+    # def store_postpartum(self):
+    #     """
+    #     Stores snapshot of who is currently pregnant, their parity, and various
+    #     postpartum states in final step of model for use in calibration
+    #     """
+    #
+    #     min_age = 12.5
+    #     max_age = self['age_limit_fecundity']
+    #
+    #     ppl = self.people
+    #     rows = []
+    #     for i in range(len(ppl)):
+    #         if ppl.alive[i] and ppl.sex[i] == 0 and min_age <= ppl.age[i] < max_age:
+    #             row = dict(
+    #                 Age=int(round(ppl.age[i])),
+    #                 PP0to5=None,
+    #                 PP6to11=None,
+    #                 PP12to23=None,
+    #                 NonPP=1 if not ppl.postpartum[i] else 0,
+    #                 Pregnant=1 if ppl.pregnant[i] else 0,
+    #                 Parity=ppl.parity[i],
+    #             )
+    #             if ppl.postpartum[i]:
+    #                 pp_dur = ppl.postpartum_dur[i]
+    #                 row['PP0to5'] = 1 if 0 <= pp_dur < 6 else 0
+    #                 row['PP6to11'] = 1 if 6 <= pp_dur < 12 else 0
+    #                 row['PP12to23'] = 1 if 12 <= pp_dur <= 24 else 0
+    #             rows.append(row)
+    #
+    #     pp = pd.DataFrame(rows, index=None,
+    #                       columns=['Age', 'PP0to5', 'PP6to11', 'PP12to23', 'NonPP', 'Pregnant', 'Parity'])
+    #     pp.fillna(0, inplace=True)
+    #     return pp
 
     def to_df(self, include_range=False):
         """

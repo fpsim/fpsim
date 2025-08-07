@@ -4,12 +4,10 @@ Defines the FPmod class
 
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
-import pylab as pl
 import sciris as sc
-from scipy.stats import truncnorm
+import fpsim as fp
 from . import utils as fpu
 from . import defaults as fpd
-from . import demographics as fpdmg
 import starsim as ss
 
 # Specify all externally visible things this file defines
@@ -25,8 +23,47 @@ class FPmod(ss.Module):
 
     def __init__(self, pars=None, name='fp', **kwargs):
         super().__init__(name=name)
-        self.define_pars()
-        self.update_pars(pars=pars, **kwargs)
+        default_pars = fp.FPPars()
+        self.define_pars(**default_pars)
+        self.update_pars(pars, **kwargs)
+        return
+
+    def init_results(self):
+        """
+        Initialize result storage. Most default results are either arrays or lists; these are
+        all stored in defaults.py. Any other results with different formats can also be added here.
+        """
+        super().init_results()  # Initialize the base results
+
+        scaling_kw = dict(dtype=int, scale=True)
+        nonscaling_kw = dict(dtype=float, scale=False)
+
+        # Add event counts - these are all integers, and are scaled by the number of agents
+        # We compute new results for each event type, and also cumulative results
+        for key in fpd.event_counts:
+            self.results += ss.Result(key, label=key, **scaling_kw)
+            self.results += ss.Result(f'cum_{key}', label=key, dtype=int, scale=False)  # TODO, check
+
+        # Add people counts - these are all integers, and are scaled by the number of agents
+        # However, for these we do not include cumulative totals
+        for key in fpd.people_counts:
+            self.results += ss.Result(key, label=key, **scaling_kw)
+
+        for key in fpd.rate_results:
+            self.results += ss.Result(key, label=key, **nonscaling_kw)
+
+        for key in fpd.dict_annual_results:
+            if key == 'method_usage':
+                self.results[key] = ss.Results(module=self)
+                for i, method in enumerate(self.connectors.contraception.methods):
+                    self.results[key] += ss.Result(method, label=method, **scaling_kw)
+
+        # Store age-specific fertility rates
+        self.results['asfr'] = ss.Results(module=self)  # ['asfr'] = {}
+        for key in fpd.age_bin_map.keys():
+            self.results.asfr += ss.Result(key, label=key, **nonscaling_kw)
+            self.results += ss.Result(f"tfr_{key}", label=key, **nonscaling_kw)
+
         return
 
     def update_time_to_choose(self, uids=None):
