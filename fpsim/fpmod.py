@@ -29,6 +29,25 @@ class FPmod(ss.Module):
         self.define_pars(**default_pars)
         self.update_pars(pars, **kwargs)
 
+        # Define states
+
+        return
+
+    def init_vals(self, uids=None):
+        # Parameters on sexual and reproductive history
+        self.fertile[uids] = fpu.n_binomial(1 - fp_pars['primary_infertility'], len(uids))
+
+        # Sexual activity
+        # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
+        self.fated_debut[uids] = fp_pars['debut_age']['ages'][fpu.n_multinomial(fp_pars['debut_age']['probs'], len(uids))]
+        fecund = self.female & (self.age < fp_pars['age_limit_fecundity'])
+        self.check_sexually_active(uids[fecund[uids]])
+        self.update_time_to_choose(uids)
+
+        # Fecundity variation
+        fv = [fp_pars['fecundity_var_low'], fp_pars['fecundity_var_high']]
+        fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
+        self.personal_fecundity[uids] = np.random.random(len(uids)) * fac
         return
 
     def init_results(self):
@@ -526,4 +545,31 @@ class FPmod(ss.Module):
             raise ValueError(errormsg)
 
         return
+
+    def update_results(self):
+        super().update_results()
+        sim = self.sim
+        res = sim.results
+        ti = sim.ti
+        age_min = self.age >= fp.min_age
+        age_max = self.age < sim.pars.fp['age_limit_fecundity']
+
+        res['n_fecund'][ti] = np.sum(self.female * age_min * age_max)
+        res['n_urban'][ti] = np.sum(self.urban * self.female)
+        res['ever_used_contra'][ti] = np.sum(self.ever_used_contra * self.female) / np.sum(self.female) * 100
+        res['parity0to1'][ti] = np.sum((self.parity <= 1) & self.female) / np.sum(self.female) * 100
+        res['parity2to3'][ti] = np.sum((self.parity >= 2) & (self.parity <= 3) & self.female) / np.sum(self.female) * 100
+        res['parity4to5'][ti] = np.sum((self.parity >= 4) & (self.parity <= 5) & self.female) / np.sum(self.female) * 100
+        res['parity6plus'][ti] = np.sum((self.parity >= 6) & self.female) / np.sum(self.female) * 100
+
+        percent0to5 = (res.pp0to5[ti] / res.n_fecund[ti]) * 100
+        percent6to11 = (res.pp6to11[ti] / res.n_fecund[ti]) * 100
+        percent12to23 = (res.pp12to23[ti] / res.n_fecund[ti]) * 100
+        nonpostpartum = ((res.n_fecund[ti] - res.pp0to5[ti] - res.pp6to11[ti] - res.pp12to23[ti]) / res.n_fecund[ti]) * 100
+
+        # Store results
+        res['pp0to5'][ti] = percent0to5
+        res['pp6to11'][ti] = percent6to11
+        res['pp12to23'][ti] = percent12to23
+        res['nonpostpartum'][ti] = nonpostpartum
 

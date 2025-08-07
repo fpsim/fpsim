@@ -234,9 +234,9 @@ class Sim(ss.Sim):
 
         self.fp_pars['mortality_probs'] = {}
         for key1, key2 in mapping.items():
-            ind = sc.findnearest(self.fp_pars[key1]['year'], self.y)
-            val = self.fp_pars[key1]['probs'][ind]
-            self.fp_pars['mortality_probs'][key2] = val
+            ind = sc.findnearest(self.pars.fp[key1]['year'], self.y)
+            val = self.pars.fp[key1]['probs'][ind]
+            self.pars.fp['mortality_probs'][key2] = val
 
         return
 

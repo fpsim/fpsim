@@ -155,7 +155,7 @@ class ContraceptiveChoice(ss.Connector):
          people object at the beginning of the simulation and new people born during the simulation.
          """
         ppl = self.sim.people
-        fecund = ppl.female & (ppl.age < self.sim.fp_pars['age_limit_fecundity'])
+        fecund = ppl.female & (ppl.age < self.sim.pars.fp['age_limit_fecundity'])
         fecund_uids = fecund.uids
 
         # Look for women who have reached the time to choose
@@ -340,8 +340,8 @@ class ContraceptiveChoice(ss.Connector):
         LAM which is much lower. Follows the DHS definition of mCPR.
         """
         ppl = self.sim.people
-        method_age = self.sim.fp_pars['method_age'] <= ppl.age
-        fecund_age = ppl.age < self.sim.fp_pars['age_limit_fecundity']
+        method_age = self.sim.pars.fp['method_age'] <= ppl.age
+        fecund_age = ppl.age < self.sim.pars.fp['age_limit_fecundity']
         denominator = method_age * fecund_age * ppl.female * ppl.alive
 
         # Track mCPR
