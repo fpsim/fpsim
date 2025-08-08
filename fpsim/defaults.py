@@ -99,6 +99,7 @@ fpmod_states = [
     ss.FloatArr('breastfeed_dur_total', default=0),
 
     # Timesteps of significant events
+    ss.FloatArr('ti_conceived'),
     ss.FloatArr('ti_pregnant'),
     ss.FloatArr('ti_delivery'),
     ss.FloatArr('ti_last_delivery'),

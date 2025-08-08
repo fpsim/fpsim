@@ -109,12 +109,25 @@ def test_sim_creation():
     return
 
 
+def test_senegal():
+    sc.heading('Test Senegal sim')
+
+    # Make the sim
+    exp = fp.Experiment(pars=dict(location='senegal'))
+    exp.run()
+
+    print(f'✓ (successfully ran Senegal sim)')
+
+    return sim
+
+
 if __name__ == '__main__':
 
-    sim = test_simple(None)
-    s1 = test_random_choice()
-    sims1 = test_simple_choice()
-    sims2 = test_mid_choice()
-    test_sim_creation()
+    sim = test_simple('senegal')
+    # s1 = test_random_choice()
+    # sims1 = test_simple_choice()
+    # sims2 = test_mid_choice()
+    # test_sim_creation()
+    # sim = test_senegal()
 
     print('Done.')

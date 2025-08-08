@@ -30,7 +30,7 @@ class FPmod(ss.Module):
         self.update_pars(pars, **kwargs)
         self.define_states(*fp.fpmod_states)
 
-        # Distributions
+        # Distributions: binary outcomes
         self._p_fertile = ss.bernoulli(p=1-self.pars['primary_infertility'])  # Probability of primary fertility
         self._p_death = ss.bernoulli(p=0)  # Probability of death - TODO, remove?
         self._p_miscarriage = ss.bernoulli(p=0)  # Probability of miscarriage
@@ -42,6 +42,15 @@ class FPmod(ss.Module):
         self._p_active = ss.bernoulli(p=0)
         self._p_stillbirth = ss.bernoulli(p=0)  # Probability of stillbirth
         self._p_twins = ss.bernoulli(p=0)  # Probability of twins
+        self._p_breastfeed = ss.bernoulli(p=1)  # Probability of breastfeeding, set to 1 for consistency
+
+        # Duration distributions - TODO, move all these to parameters
+        self._dur_pregnancy = ss.uniform(low=self.pars['preg_dur_low'], high=self.pars['preg_dur_high'])
+        self._dur_breastfeeding = ss.normal(loc=self.pars['breastfeeding_dur_mean'], scale=self.pars['breastfeeding_dur_sd'])
+        self._dur_postpartum = ss.uniform(low=self.pars['postpartum_dur'], high=self.pars['postpartum_dur'])
+
+        # All other distributions
+        self._personal_fecundity = ss.uniform(low=self.pars['fecundity_var_low'], high=self.pars['fecundity_var_high'])
 
         # Define ASFR and method mix
         self.asfr_bins = np.array([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100])
@@ -77,9 +86,7 @@ class FPmod(ss.Module):
         self.update_time_to_choose(uids)
 
         # Fecundity variation
-        fv = [self.pars['fecundity_var_low'], self.pars['fecundity_var_high']]
-        fac = (fv[1] - fv[0]) + fv[0]  # Stretch fecundity by a factor bounded by [f_var[0], f_var[1]]
-        self.personal_fecundity[uids] = np.random.random(len(uids)) * fac
+        self.personal_fecundity[uids] = self._personal_fecundity.rvs(uids)
         return
 
     def init_post(self):
@@ -269,8 +276,8 @@ class FPmod(ss.Module):
         lam_eff = pars['LAM_efficacy']
 
         # Change to a monthly probability and set pregnancy probabilities
-        lam_probs = fpu.annprob2ts((1 - lam_eff) * preg_eval_lam, self.sim.t.dt_year * fpd.mpy)
-        nonlam_probs = fpu.annprob2ts((1 - method_eff) * preg_eval_nonlam, self.sim.t.dt_year * fpd.mpy)
+        lam_probs = fpu.annprob2ts((1 - lam_eff) * preg_eval_lam, self.t.dt_year * fpd.mpy)
+        nonlam_probs = fpu.annprob2ts((1 - method_eff) * preg_eval_nonlam, self.t.dt_year * fpd.mpy)
         preg_probs[lam] = lam_probs
         preg_probs[nonlam] = nonlam_probs
 
@@ -288,6 +295,7 @@ class FPmod(ss.Module):
         # Use a single binomial trial to check for conception successes this month
         self._p_conceive.set(p=preg_probs)
         conceived = self._p_conceive.filter(active_uids)
+        self.ti_conceived[conceived] = self.ti
 
         self.results['pregnancies'][self.ti] += len(conceived)  # track all pregnancies
         unintended = conceived[self.method[conceived] != 0]
@@ -308,6 +316,7 @@ class FPmod(ss.Module):
             self.postpartum[abort] = False
             self.abortion[abort] += 1  # Add 1 to number of abortions agent has had
             self.postpartum_dur[abort] = 0
+            self.ti_abortion[abort] = self.ti
 
         # Make selected agents pregnant
         self.make_pregnant(preg)
@@ -316,74 +325,60 @@ class FPmod(ss.Module):
 
     def make_pregnant(self, uids):
         """
-        Update the selected agents to be pregnant. This also sets their method to no contraception.
+        Update the selected agents to be pregnant. This also sets their method to no contraception
+        and determines the length of pregnancy and expected time of delivery.
         """
-        pregdur = [self.pars['preg_dur_low'], self.pars['preg_dur_high']]
         self.pregnant[uids] = True
         self.gestation[uids] = 1  # Start the counter at 1
-        self.preg_dur[uids] = np.random.randint(pregdur[0], pregdur[1] + 1, size=len(uids))  # Duration of this pregnancy
+        self.preg_dur[uids] = self._dur_pregnancy.rvs(uids)  # Set pregnancy duration
         self.postpartum[uids] = False
         self.postpartum_dur[uids] = 0
         self.reset_breastfeeding(uids)  # Stop lactating if becoming pregnant
         self.on_contra[uids] = False  # Not using contraception during pregnancy
         self.method[uids] = 0  # Method zero due to non-use
+
+        # Set times
+        self.ti_delivery[uids] = self.ti + self.preg_dur[uids]  # Set time of delivery
+        self.ti_pregnant[uids] = self.ti
+
         return
 
-    def check_lam(self, uids):
+    def check_lam(self):
         """
         Check to see if postpartum agent meets criteria for
         Lactation amenorrhea method (LAM) LAM in this time step
         """
         max_lam_dur = self.pars['max_lam_dur']
-        lam_candidates = uids[(self.postpartum[uids]) * (self.postpartum_dur[uids] <= max_lam_dur)]
-        if len(lam_candidates) > 0:
-            probs = self.pars['lactational_amenorrhea']['rate'][(self.postpartum_dur[lam_candidates]).astype(int)]
+        lam_candidates = self.postpartum & ((self.ti - self.ti_delivery) <= max_lam_dur)
+        if lam_candidates.any():
+            timesteps_since_birth = (self.ti - self.ti_delivery[lam_candidates]).astype(int)
+            probs = self.pars['lactational_amenorrhea']['rate'][timesteps_since_birth]
             self._p_lam.set(p=probs)
             self.lam[lam_candidates] = self._p_lam.rvs(lam_candidates)
 
-        not_postpartum = uids[self.postpartum[uids] == 0]
-        over5mo = self.postpartum_dur[uids] > max_lam_dur
-        not_breastfeeding = self.breastfeed_dur[uids] == 0
-        not_lam = uids[not_postpartum & over5mo & not_breastfeeding]
+        # Switch LAM off for anyone not postpartum, over 5 months postpartum, or not breastfeeding
+        not_postpartum = ~self.postpartum
+        over5mo = (self.ti - self.ti_delivery) > max_lam_dur
+        not_breastfeeding = ~self.lactating
+        not_lam = not_postpartum & over5mo & not_breastfeeding
         self.lam[not_lam] = False
 
         return
 
-    def update_breastfeeding(self, uids):
+    def update_breastfeeding(self):
         """
-        Track breastfeeding, and update time of breastfeeding for individual pregnancy.
-        Agents are randomly assigned a duration value based on a truncated normal distribution drawn
-        from the 2018 DHS variable for breastfeeding months.
-        The mean and the std dev are both drawn from that distribution in the DHS data.
+        Update breastfeeding status, resetting to False for anyone finished
         """
-        mean, sd = self.pars['breastfeeding_dur_mean'], self.pars['breastfeeding_dur_sd']
-        a, b = 0, 50  # Truncate at 0 to ensure positive durations
-        breastfeed_durs = fpu.sample(dist='normal_int', par1=mean, par2=sd, size=len(uids))
-        breastfeed_durs = np.clip(breastfeed_durs, a, b)
-        breastfeed_finished = uids[self.breastfeed_dur[uids] >= breastfeed_durs]
-        breastfeed_continue = uids[self.breastfeed_dur[uids] < breastfeed_durs]
-        self.reset_breastfeeding(breastfeed_finished)
-        self.breastfeed_dur[breastfeed_continue] += self.sim.t.dt_year * fpd.mpy
+        bf_done = self.lactating & (self.ti_stop_breastfeeding <= self.ti)  # time to stop
+        self.lactating[bf_done] = False
         return
 
-    def update_postpartum(self, uids):
+    def update_postpartum(self):
         """
-        Track duration of extended postpartum period (0-24 months after birth).
-        Only enter this function if agent is postpartum.
+        Update postpartum status, resetting to False for anyone finished
         """
-
-        # Stop postpartum episode if reach max length (set to 24 months)
-        pp_done = uids[(self.postpartum_dur[uids] >= self.pars['postpartum_dur'])]
+        pp_done = self.postpartum & (self.ti_stop_postpartum <= self.ti)  # time to stop
         self.postpartum[pp_done] = False
-        self.postpartum_dur[pp_done] = 0
-
-        # Count the state of the agent for postpartum -- # TOOD: refactor, what is this loop doing?
-        postpart = uids[(self.postpartum[uids] == True)]
-        for key, (pp_low, pp_high) in fpd.postpartum_map.items():
-            this_pp_bin = postpart[(self.postpartum_dur[postpart] >= pp_low) & (self.postpartum_dur[postpart] < pp_high)]
-            self.results[key][self.ti] += len(this_pp_bin)
-        self.postpartum_dur[postpart] += self.t.dt_year * fpd.mpy
-
         return
 
     def progress_pregnancy(self, uids):
@@ -466,14 +461,23 @@ class FPmod(ss.Module):
         # Update states
         deliv = uids[(self.gestation[uids] == self.preg_dur[uids])]
         if len(deliv):  # check for any deliveries
+
+            # Set states
             self.pregnant[deliv] = False
             self.gestation[deliv] = 0  # Reset gestation counter
             self.lactating[deliv] = True
             self.postpartum[deliv] = True  # Start postpartum state at time of birth
-            self.breastfeed_dur[deliv] = 0  # Start at 0, will update before leaving timestep in separate function
-            self.postpartum_dur[deliv] = 0
+
+            # Set durations
+            will_breastfeed, wont_breastfeed = self._p_breastfeed.split(deliv)
+            self.breastfeed_dur[will_breastfeed] = self._dur_breastfeeding.rvs(will_breastfeed)  # Draw durations
+            self.postpartum_dur[deliv] = self._dur_postpartum.rvs(deliv)  # Set postpartum duration
+
             self.ti_contra[deliv] = ti + 1  # Trigger a call to re-evaluate whether to use contraception when 1month pp
             self.ti_delivery[deliv] = ti  # Record the time of delivery
+            self.ti_stop_breastfeeding[will_breastfeed] = ti + self.breastfeed_dur[will_breastfeed]
+            self.ti_stop_breastfeeding[wont_breastfeed] = ti + 1  # If not breastfeeding, stop lactating next timestep
+            self.ti_stop_postpartum[deliv] = ti + self.postpartum_dur[deliv]
 
             # Handle stillbirth
             still_prob = fp_pars['mortality_probs']['stillbirth']
@@ -594,9 +598,10 @@ class FPmod(ss.Module):
             errormsg = 'Agents not using contraception are not the same as agents who are using None method'
             raise ValueError(errormsg)
 
-        self.update_postpartum(nonpreg)  # Updates postpartum counter if postpartum
-        self.update_breastfeeding(lact)
-        self.check_lam(nonpreg)
+        # Update states
+        self.update_postpartum()  # Updates postpartum counter if postpartum
+        self.update_breastfeeding()
+        self.check_lam()
         self.check_conception(nonpreg)  # Decide if conceives and initialize gestation counter at 0
 
         # Add check for ti contra
