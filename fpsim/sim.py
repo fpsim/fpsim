@@ -261,7 +261,7 @@ class Sim(ss.Sim):
         return figure
 
     def plot(self, key=None, to_plot=None, xlims=None, ylims=None, do_save=None, do_show=True, filename='fpsim.png', style=None,
-             fig_args=None,
+             fig=None, fig_args=None, fig_kw=None, plot_kw=None,
              plot_args=None, axis_args=None, fill_args=None, label=None, new_fig=True, colors=None):
         """
         Plot the results -- can supply arguments for both the figure and the plots.
