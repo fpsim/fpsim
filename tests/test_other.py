@@ -162,7 +162,7 @@ def test_samples(verbose=True):
 
 
 def test_method_usage(sim=None):
-    '''Test that method usage proportions add to 1 and correspond to population'''
+    """ Test that method usage proportions add to 1 and correspond to population """
     if sim is None:
         sim = fp.Sim(test=True).run()
 
@@ -170,7 +170,7 @@ def test_method_usage(sim=None):
     for timestep, proportions in enumerate(method_usage):
 
         assert np.isclose(sum(proportions), 1, atol=0.0001)
-        pop = sim.results['pop_size'][timestep]
+        pop = sim.results['n_alive'][timestep]
 
         # Checking that proportion isn't calculated from a larger population than expected
         for proportion in proportions:
@@ -205,9 +205,9 @@ if __name__ == '__main__':
     sim = fp.Sim(test=True).run()
 
     # opts = test_options()
-    # df   = test_to_df(sim=sim)
-    # ppl  = test_plot_people()
-    # sim = test_plotting_class()
+    # df   = test_to_df(sim)
+    # ppl  = test_plot_people(sim)
+    # sim = test_plotting_class(sim)
     # res  = test_samples()
-    method = test_method_usage()
+    method = test_method_usage(sim)
     # sim = test_track_as(run_track_as)

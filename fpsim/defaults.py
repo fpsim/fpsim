@@ -98,6 +98,20 @@ fpmod_states = [
     ss.FloatArr('breastfeed_dur', default=0),
     ss.FloatArr('breastfeed_dur_total', default=0),
 
+    # Timesteps of significant events
+    ss.FloatArr('ti_pregnant'),
+    ss.FloatArr('ti_delivery'),
+    ss.FloatArr('ti_last_delivery'),
+    ss.FloatArr('ti_live_birth'),
+    ss.FloatArr('ti_stillbirth'),
+    ss.FloatArr('ti_postpartum'),
+    ss.FloatArr('ti_miscarriage'),
+    ss.FloatArr('ti_abortion'),
+    ss.FloatArr('ti_stop_postpartum'),
+    ss.FloatArr('ti_stop_breastfeeding'),
+    ss.FloatArr('ti_debut'),
+    ss.FloatArr('ti_dead'),
+
     # Fecundity
     ss.FloatArr('remainder_months', default=0),
     ss.FloatArr('personal_fecundity', default=0),

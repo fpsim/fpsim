@@ -43,6 +43,12 @@ class FPmod(ss.Module):
         self._p_stillbirth = ss.bernoulli(p=0)  # Probability of stillbirth
         self._p_twins = ss.bernoulli(p=0)  # Probability of twins
 
+        # Define ASFR and method mix
+        self.asfr_bins = np.array([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100])
+        self.asfr_width = self.asfr_bins[1]-self.asfr_bins[0]
+        self.asfr = None  # Storing this separately from results as it has a different format
+        self.method_mix = None
+
         return
 
     def _get_uids(self, upper_age=None, female_only=True):
@@ -105,16 +111,11 @@ class FPmod(ss.Module):
         for key in fpd.rate_results:
             self.results += ss.Result(key, label=key, **nonscaling_kw)
 
-        # Additional results
-        self.method_results = ss.Results(module=self)
-        for i, method in enumerate(self.sim.connectors.contraception.methods):
-            self.method_results += ss.Result(method, label=method, **scaling_kw)
-
-        # Store age-specific fertility rates
-        self.asfr_results = ss.Results(module=self)  # ['asfr'] = {}
-        for key in fpd.age_bin_map.keys():
-            self.asfr_results += ss.Result(key, label=key, **nonscaling_kw)
-            self.results += ss.Result(f"tfr_{key}", label=key, **nonscaling_kw)
+        # Additional results with different formats, stored separately
+        # These will not be appended to sim.results, and must be accessed
+        # via eg. sim.connectors.fp.method_mix
+        self.method_mix = np.zeros((self.sim.connectors.contraception.n_options, self.t.npts))
+        self.asfr = np.zeros((len(self.asfr_bins)-1, self.t.npts))
 
         return
 
@@ -411,6 +412,7 @@ class FPmod(ss.Module):
             self.postpartum[miscarriage] = False
             self.gestation[miscarriage] = 0  # Reset gestation counter
             self.ti_contra[miscarriage] = self.ti+1  # Update contraceptive choices
+            self.ti_miscarriage[miscarriage] = self.ti  # Record the time of miscarriage
 
         return
 
@@ -471,6 +473,7 @@ class FPmod(ss.Module):
             self.breastfeed_dur[deliv] = 0  # Start at 0, will update before leaving timestep in separate function
             self.postpartum_dur[deliv] = 0
             self.ti_contra[deliv] = ti + 1  # Trigger a call to re-evaluate whether to use contraception when 1month pp
+            self.ti_delivery[deliv] = ti  # Record the time of delivery
 
             # Handle stillbirth
             still_prob = fp_pars['mortality_probs']['stillbirth']
@@ -483,9 +486,13 @@ class FPmod(ss.Module):
             age_ind[prev_idx_is_less] -= 1  # adjusting for quirks of np.searchsorted
             still_prob = still_prob * (fp_pars['stillbirth_rate']['age_probs'][age_ind]) if len(self) > 0 else 0
 
+            # Sort into stillbirths and live births and record times
             self._p_stillbirth.set(p=still_prob)
             stillborn, live = self._p_stillbirth.split(deliv)
+            self.ti_live_birth[live] = ti  # Record the time of live birth
+            self.ti_stillbirth[stillborn] = ti  # Record the time of stillbirth
 
+            # Update states for mothers of stillborns
             self.stillbirth[stillborn] += 1  # Track how many stillbirths an agent has had
             self.lactating[stillborn] = False  # Set agents of stillbith to not lactate
             self.results['stillbirths'][ti] = len(stillborn)
@@ -647,6 +654,29 @@ class FPmod(ss.Module):
         res['pp12to23'][ti] = percent12to23
         res['nonpostpartum'][ti] = nonpostpartum
 
+        # Update ancillary results: ASFR and method mix
+        self.compute_method_usage()
+        self.compute_asfr()
+        return
+
+    def compute_method_usage(self):
+        """ Store number of women using each method """
+        ppl = self.sim.people
+        min_age = fpd.min_age
+        max_age = self.pars['age_limit_fecundity']
+        bool_list_uids = ppl.female & (ppl.age >= min_age) * (ppl.age <= max_age)
+        filtered_methods = self.method[bool_list_uids]
+        m_counts, _ = np.histogram(filtered_methods, bins=self.sim.connectors.contraception.n_options)
+        self.method_mix[:, self.ti] = m_counts / np.sum(m_counts) if np.sum(m_counts) > 0 else 0
+        return
+
+    def compute_asfr(self):
+        """ Computes age-specific fertility rates (ASFR) """
+        new_mother_uids = (self.ti_live_birth == self.ti).uids
+        new_mother_ages = self.sim.people.age[new_mother_uids]
+        births_by_age, _ = np.histogram(new_mother_ages, bins=self.asfr_bins)
+        women_by_age, _ = np.histogram(self.sim.people.age[self.sim.people.female], bins=self.asfr_bins)
+        self.asfr[:, self.ti] = sc.safedivide(births_by_age / women_by_age)
         return
 
     def finalize_results(self):
