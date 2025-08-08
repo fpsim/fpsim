@@ -260,13 +260,14 @@ class Sim(ss.Sim):
             axes.set_ylim([bottom, top])
         return figure
 
-    def plot(self, to_plot=None, xlims=None, ylims=None, do_save=None, do_show=True, filename='fpsim.png', style=None,
+    def plot(self, key=None, to_plot=None, xlims=None, ylims=None, do_save=None, do_show=True, filename='fpsim.png', style=None,
              fig_args=None,
              plot_args=None, axis_args=None, fill_args=None, label=None, new_fig=True, colors=None):
         """
         Plot the results -- can supply arguments for both the figure and the plots.
 
         Args:
+            key   (str/dict): Alias for to_plot
             to_plot   (str/dict): What to plot (e.g. 'default' or 'cpr'), or a dictionary of result:label pairs
             xlims     (list/dict): passed to pl.xlim() (use ``[None, None]`` for default)
             ylims     (list/dict): passed to pl.ylim()
@@ -282,7 +283,9 @@ class Sim(ss.Sim):
             new_fig   (bool): Whether to create a new figure (true unless part of a multisim)
             colors    (list/dict): Colors for plots with multiple lines
         """
-        if to_plot is None: to_plot = 'default'
+        if to_plot is None:
+            if key is not None: to_plot = key
+            else: to_plot = 'default'
         fig_args = sc.mergedicts(dict(figsize=(16, 10), nrows=None, ncols=None), fig_args)
         plot_args = sc.mergedicts(dict(lw=2, alpha=0.7), plot_args)
         axis_args = sc.mergedicts(dict(left=0.1, bottom=0.05, right=0.9, top=0.97, wspace=0.2, hspace=0.25), axis_args)

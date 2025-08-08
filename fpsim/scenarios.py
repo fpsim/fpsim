@@ -233,10 +233,9 @@ class Scenarios(sc.prettyobj):
         scens.run()
     '''
 
-    def __init__(self, repeats=None, scens=None, location=None):
+    def __init__(self, repeats=None, scens=None):
         self.sim_par_keys = fpp.sim_par_keys
         self.fp_pars_keys = fpp.par_keys
-        self.location = location
 
         self.repeats = repeats if repeats is not None else 1
         self.scens = sc.dcp(sc.tolist(scens))
@@ -292,7 +291,7 @@ class Scenarios(sc.prettyobj):
 
             sim = fps.Sim(pars=pars, **kwargs)
 
-            sim.scenlabel = scenlabel  # Special label for scenarios objects
+            sim.scenlabel = scenlabel # Special label for scenarios objects
             if sim.label is None:
                 sim.label = scenlabel # Include here if no other label
             sims += sim
@@ -359,7 +358,8 @@ class Scenarios(sc.prettyobj):
         if self.repeats == 1:
             self.msim = ss.MultiSim(*[s for s in self.simslist])
         else:
-            self.msim = ss.MultiSim(*[s for s in self.simslist])
+            errormsg = 'Scenarios with repeats > 1 are not supported.'
+            raise ValueError(errormsg)
 
         # Run
         self.msim.run(**kwargs)
