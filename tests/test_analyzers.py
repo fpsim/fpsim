@@ -25,6 +25,13 @@ def make_analyzer(analyzer):
     return an
 
 
+def test_exp():
+    pars = dict(test=True)
+    exp = fp.Experiment(pars=pars)
+    exp.run()
+    return exp
+
+
 def test_calibration(n_trials=3):
     ''' Compare the current default sim against the saved baseline '''
     sc.heading('Testing calibration...')
@@ -103,7 +110,8 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        calib = test_calibration()
-        snap  = test_snapshot()
-        ap    = test_age_pyramids()
-        mmba  = test_method_mix_by_age()
+        exp   = test_exp()
+        # calib = test_calibration()
+        # snap  = test_snapshot()
+        # ap    = test_age_pyramids()
+        # mmba  = test_method_mix_by_age()

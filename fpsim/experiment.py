@@ -191,9 +191,8 @@ class Experiment(sc.prettyobj):
         tfr = self.load_data('tfr')  # From DHS
         self.data['tfr_years'] = tfr['year'].to_numpy()
         self.data['total_fertility_rate'] = tfr['tfr'].to_numpy()
-
-        self.model['tfr_years'] = fp_df['tfr_years']
-        self.model['total_fertility_rate'] = fp_df['tfr_rates']
+        self.model['tfr_years'] = fp_df.index
+        self.model['total_fertility_rate'] = fp_df['tfr']
         return
 
     def model_data_asfr(self, ind=-1):
@@ -210,11 +209,7 @@ class Experiment(sc.prettyobj):
         # Model extraction
         age_bins = list(fpd.age_bin_map.keys())
         self.model['asfr_bins'] = age_bins
-        self.model['asfr'] = []
-        df = self.sim.connectors.fp.asfr_results.to_df(resample='year', use_years=True)
-        for ab in age_bins:
-            val = df[ab].values[ind]  # Only use one index (default: last) CK: TODO: match year automatically
-            self.model['asfr'].append(val)
+        self.model['asfr'] = self.sim.connectors.fp.asfr[2:-1, -1]  # TODO fix
 
         # Check
         assert self.data['asfr_bins'] == self.model['asfr_bins'], f'ASFR data age bins do not match sim: {sc.strjoin(age_bins)}'
@@ -226,15 +221,10 @@ class Experiment(sc.prettyobj):
         age_keys = list(fpd.age_bin_map.keys())[1:]
         age_bins = pl.arange(min_age, max_age, bin_size)
         parity_bins = pl.arange(0, 7)  # Plot up to parity 6
-        n_age = len(age_bins)
         n_parity = len(parity_bins)
 
         sky_raw_data = self.load_data('ageparity')
-        # sky_parity = sky_raw_data[2].to_numpy() # Not used currently
-        sky_parity = sky_raw_data['parity'].to_numpy()
-        sky_props = sky_raw_data['percentage'].to_numpy()
         sky_arr = sc.odict()
-
         sky_arr['Data'] = pl.zeros((len(age_keys), len(parity_bins)))
 
         for age, row in sky_raw_data.iterrows():
@@ -287,7 +277,7 @@ class Experiment(sc.prettyobj):
             model_spacing_counts[:] *= 100  # Percentages
 
         # Extract age at first birth from model
-        any_births_uids = ppl.alive.uids[(ppl.female==True) & (ppl.fp.parity>0)]
+        any_births_uids = ppl.alive.uids[ppl.female & (ppl.fp.parity>0)]
         model_age_first = np.stack(ppl.fp.birth_ages[any_births_uids])[:,0]
 
         # Extract birth spaces and age at first birth from data
