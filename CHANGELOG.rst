@@ -29,10 +29,10 @@ Version 3.2.0 (2025-08-15)
 * **Misc changes**
   * `longitudinal_history` analyzer moved from the fpsim repo to the kenya_empowerment repo
   * Added attributes to people for storing the timesteps at which significant events occur, e.g. `ti_live_birth`, to make it easier to create analyzers related to these events
-  * Removes `total_births_{by_age}` and `total_women_{by_age}` - these were previously needed to calculate the total fertility rate, but this is no longer needed, and the addition of these results increases the size of the results considerably. If these results are needed, they can be computed with an analyzer or people snapshot.
+  * Removes `total_births_{by_age}` and `total_women_{by_age}` - these were previously needed to calculate the total fertility rate, but this is no longer needed, and the addition of these results increases the size of the results object considerably. If these results are needed, they can be computed with an analyzer or people snapshot.
   * Renames `urban_women` to `n_urban` for consistency with other results, e.g. `n_wq1`, `n_fecund`. 
   * Removes the `extract_employment` method from the `Experiment` class, as this is no longer functional.
-  * 
+  * Removes the `MultiSim` class.
 
 
 
