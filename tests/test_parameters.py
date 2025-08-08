@@ -141,7 +141,7 @@ if __name__ == '__main__':
 
     sc.options(backend=None)  # Turn on interactive plots
     with sc.timer():
-        # null    = test_null(do_plot=do_plot)
-        # scale   = test_scale()
+        null    = test_null(do_plot=do_plot)
+        scale   = test_scale()
         meths   = test_method_changes()
-        # custom_loc = test_register_custom_location()
+        custom_loc = test_register_custom_location()
