@@ -168,11 +168,7 @@ def plot_asfr(sim):
 
     # Extract ASFR from simulation results
     x_labels = []
-    asfr_model = []
-    for key in age_bin_map:
-        x_labels.append(key)
-        asfr_model.append(sim.connectors.fp.asfr_results[key][-1])
-
+    asfr_model = sim.connectors.fp.asfr[2:-1, -1]
     # Compute mean-normalized RMSE
     rmse_scores['asfr'] = compute_rmse(asfr_model, asfr_data)
 
@@ -395,20 +391,20 @@ def plot_tfr(sim):
     """
     # Load data
     res = sim.results
+    df = res.fp.to_df(resample='year', use_years=True)
     data_tfr = Config.load_validation_data(sim.pars['location'], keys=['tfr'])['tfr']
 
     # Align model and data years for RMSE calculation
     data_years = data_tfr['year']
     data_tfr_values = data_tfr['tfr']
-    model_tfr_values = np.interp(data_years, res.fp.tfr_years,
-                                 res.fp.tfr_rates)  # Interpolate model to match data years
+    model_tfr_values = np.interp(data_years, df.index, df.tfr)  # Interpolate to match data years (??)
 
     # Compute mean-normalized RMSE
     rmse_scores['tfr'] = compute_rmse(model_tfr_values, data_tfr_values)
 
     # Plot
     pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
-    pl.plot(res.fp.tfr_years, res.fp.tfr_rates, label='FPsim', color='cornflowerblue')
+    pl.plot(df.index, df.tfr, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
     pl.ylabel('Rate')
     if Config.show_rmse is True:
@@ -435,12 +431,11 @@ def plot_pop_growth(sim):
 
     # Extract from model
     model_growth_rate = pop_growth_rate(res.timevec, res.n_alive)
-
     data_growth_rate = pop_growth_rate(data_pop_years, data_population)
 
     # Plot
     pl.plot(data_pop_years[1:], data_growth_rate, label='World Bank', color='black')
-    pl.plot(res.fp.tfr_years[1:], model_growth_rate, label='FPsim', color='cornflowerblue')
+    pl.plot(res.fp.timevec[1:], model_growth_rate, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
     pl.ylabel('Rate')
     pl.title(f'Population Growth Rate - Model vs Data')

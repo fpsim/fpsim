@@ -657,10 +657,11 @@ class FPmod(ss.Module):
         new_mother_ages = self.sim.people.age[new_mother_uids]
         births_by_age, _ = np.histogram(new_mother_ages, bins=self.asfr_bins)
         women_by_age, _ = np.histogram(self.sim.people.age[self.sim.people.female], bins=self.asfr_bins)
-        self.asfr[:, self.ti] = sc.safedivide(births_by_age / women_by_age)
+        self.asfr[:, self.ti] = sc.safedivide(births_by_age, women_by_age)
         return
 
     def finalize_results(self):
+        super().finalize_results()
         for res in fpd.event_counts:
             self.results[f'cum_{res}'] = np.cumsum(self.results[res])
         return
