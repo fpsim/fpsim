@@ -560,20 +560,6 @@ class FPmod(ss.Module):
 
         return
 
-    def update_age_bin_totals(self, uids):
-        """
-        Count how many total live women in each 5-year age bin 10-50, for tabulating ASFR
-        """
-        if uids is None:
-            uids = self.alive.uids
-
-        age = self.sim.people.age
-        for key, (age_low, age_high) in fpd.age_bin_map.items():
-            this_age_bin = uids[(age[uids] >= age_low) & (age[uids] < age_high)]
-            self.results[f'total_women_{key}'][self.ti] += len(this_age_bin)
-
-        return
-
     def step(self):
         """
         Perform all updates to people within a single timestep
@@ -617,9 +603,6 @@ class FPmod(ss.Module):
         self.update_breastfeeding(lact)
         self.check_lam(nonpreg)
         self.check_conception(nonpreg)  # Decide if conceives and initialize gestation counter at 0
-
-        # Update results
-        self.update_age_bin_totals(fecund)
 
         # Add check for ti contra
         if (self.ti_contra < 0).any():
