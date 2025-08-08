@@ -262,7 +262,7 @@ class Education(ss.Connector):
                                 self.interrupted &
                                 ~self.completed &
                                 ~self.dropped &
-                                (ppl.fp.postpartum_dur > 0.5 * self.sim.pars.fp['postpartum_dur'])
+                                ((self.ti - ppl.fp.ti_delivery) > 9)  # 9 months postpartum
                                 )
         self.interrupted[postpartum_students] = False
         return

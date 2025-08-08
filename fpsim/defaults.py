@@ -72,31 +72,37 @@ fpmod_states = [
     ss.FloatArr('barrier', default=0),
     ss.State('ever_used_contra', default=False),  # Ever been on contraception. 0 for never having used
 
-    # Sexual and reproductive history
-    ss.FloatArr('parity', default=0),
-    ss.State('pregnant', default=False),
-    ss.State('fertile', default=False),
-    ss.State('sexually_active', default=False),
-    ss.State('sexual_debut', default=False),
+    # Sexual and reproductive states, all False by default and set during simulation
+    ss.State('lam'),
+    ss.State('pregnant'),
+    ss.State('fertile'),
+    ss.State('sexually_active'),
+    ss.State('sexual_debut'),
+    ss.State('lactating'),
+    ss.State('postpartum'),
+
+    # Ages of key events
     ss.FloatArr('sexual_debut_age', default=-1),
     ss.FloatArr('fated_debut', default=-1),
     ss.FloatArr('first_birth_age', default=-1),
-    ss.State('lactating', default=False),
-    ss.FloatArr('gestation', default=0),
-    ss.FloatArr('preg_dur', default=0),
-    ss.FloatArr('stillbirth', default=0),
-    ss.FloatArr('miscarriage', default=0),
-    ss.FloatArr('abortion', default=0),
-    ss.FloatArr('pregnancies', default=0),
-    ss.FloatArr('months_inactive', default=0),
-    ss.State('postpartum', default=False),
-    ss.FloatArr('mothers', default=-1),
-    ss.FloatArr('short_interval', default=0),
-    ss.FloatArr('secondary_birth', default=0), # no functions ever set this value. Used in empowerment?
-    ss.FloatArr('postpartum_dur', default=0),
-    ss.State('lam', default=False),
-    ss.FloatArr('breastfeed_dur', default=0),
-    ss.FloatArr('breastfeed_dur_total', default=0),
+
+    # Counts of events
+    ss.FloatArr('parity', default=0),           # Number of births including stillbirths
+    ss.FloatArr('n_births', default=0),         # Number of live births
+    ss.FloatArr('n_stillbirths', default=0),    # Number of stillbirths
+    ss.FloatArr('n_miscarriages', default=0),   # Number of miscarriages
+    ss.FloatArr('n_abortions', default=0),      # Number of abortions
+    ss.FloatArr('n_pregnancies', default=0),    # Number of pregnancies, including miscarriages, stillbirths, abortions
+    ss.FloatArr('months_inactive', default=0),  # TODO, what does this store?
+    ss.FloatArr('short_interval', default=0),   # TODO, what does this store?
+
+    # Durations and counters
+    ss.FloatArr('gestation', default=0),  # TODO, remove?
+    ss.FloatArr('remainder_months', default=0),  # TODO, remove?
+    ss.FloatArr('dur_pregnancy', default=0),
+    ss.FloatArr('dur_postpartum', default=0),
+    ss.FloatArr('dur_breastfeed', default=0),
+    ss.FloatArr('dur_breastfeed_total', default=0),
 
     # Timesteps of significant events
     ss.FloatArr('ti_conceived'),
@@ -114,7 +120,6 @@ fpmod_states = [
     ss.FloatArr('ti_dead'),
 
     # Fecundity
-    ss.FloatArr('remainder_months', default=0),
     ss.FloatArr('personal_fecundity', default=0),
 
     # Add these states to the people object. They are not tracked by timestep in the way other states are, so they
