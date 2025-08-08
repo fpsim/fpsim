@@ -11,7 +11,6 @@ import fpsim.locations.data_utils as fpld
 
 def scalar_pars():
     scalar_pars = {
-        'location': 'senegal',
     }
     return scalar_pars
 

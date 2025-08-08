@@ -5,6 +5,7 @@ Class to define and run scenarios
 import numpy as np
 import pandas as pd
 import sciris as sc
+import starsim as ss
 from . import parameters as fpp
 from . import sim as fps
 from . import interventions as fpi
@@ -101,7 +102,7 @@ class Scenario(sc.prettyobj, sc.dictobj):
         # Scenarios can be combined
         s8 = s1 + s2
     '''
-    def __init__(self, spec=None, label=None, pars=None, year=None, matrix=None, ages=None, # Basic settings
+    def __init__(self, spec=None, label=None, pars=None, year=None, # Basic settings
                  eff=None, dur_use=None, p_use=None, method_mix=None, # Option 1
                  par=None, par_years=None, par_vals=None, # Option 4
                  interventions=None, # Option 5
@@ -185,7 +186,6 @@ class Scenario(sc.prettyobj, sc.dictobj):
         self.label = label
         return
 
-
     def run(self, run_args=None, **kwargs):
         '''
         Shortcut for creating and running a Scenarios object based on the current scenario.
@@ -205,7 +205,8 @@ def make_scen(*args, **kwargs):
     ''' Alias for ``fp.Scenario()``. '''
     return Scenario(*args, **kwargs)
 
-# Ensure the function ahs the same docstring as the class
+
+# Ensure the function has the same docstring as the class
 make_scen.__doc__ +=  '\n\n' + Scenario.__doc__
 
 
@@ -232,7 +233,7 @@ class Scenarios(sc.prettyobj):
         scens.run()
     '''
 
-    def __init__(self, pars=None, repeats=None, scens=None, **kwargs):
+    def __init__(self, repeats=None, scens=None):
         self.sim_par_keys = fpp.sim_par_keys
         self.fp_pars_keys = fpp.par_keys
 
@@ -296,7 +297,6 @@ class Scenarios(sc.prettyobj):
             sims += sim
         return sims
 
-
     def make_scens(self):
         ''' Convert a scenario specification into a list of sims '''
         for i,scen in enumerate(self.scens):
@@ -344,8 +344,7 @@ class Scenarios(sc.prettyobj):
             self.simslist.append(sims)
         return
 
-
-    def run(self, recompute=True, *args, **kwargs):
+    def run(self, **kwargs):
         ''' Actually run a list of sims '''
 
         # Check that it's set up
@@ -356,20 +355,19 @@ class Scenarios(sc.prettyobj):
             self.make_scens()
 
         # Create msim
-        msims = sc.autolist()
-        for sims in self.simslist:
-            msims += fps.MultiSim(sims)
-        self.msim = fps.MultiSim.merge(*msims)
+        if self.repeats == 1:
+            self.msim = ss.MultiSim(*[s for s in self.simslist])
+        else:
+            errormsg = 'Scenarios with repeats > 1 are not supported.'
+            raise ValueError(errormsg)
 
         # Run
         self.msim.run(**kwargs)
         self.already_run = True
 
         # Process
-        self.msim_merged =self.msim.remerge(recompute=recompute)
         self.analyze_sims()
         return
-
 
     def check_run(self):
         ''' Give a meaningful error message if the scenarios haven't been run '''
@@ -402,37 +400,6 @@ class Scenarios(sc.prettyobj):
         if start is None: start = sim0.pars['start']
         if end   is None: end   = sim0.pars['stop']
 
-        def analyze_sim(sim):
-            def aggregate_channel(channel, is_sum=True, is_t=False):
-                if is_t:
-                    year = sim.results['timevec']
-                else:
-                    year = sim.results['tfr_years'].values
-                channel_results = sim.results[channel]
-                inds = sc.findinds((year >= start), year <= end)
-
-                if is_sum:
-                    return channel_results[inds].sum()
-                else:
-                    return channel_results[inds].mean()
-
-            # Defines how we calculate each channel, first number is is_sum: 1 = aggregate as sum, 0 = aggregate as mean
-            # The second parameter defines whether to aggregate by year or by timestep where 1 = use sim.t (timestep), 0 = use sim.tfr_years (years)
-            agg_param_dict = {'method_failures_over_year': (1, 0),
-                              'pop_size': (1, 0),
-                              'tfr_rates': (0, 0),
-                              'maternal_deaths_over_year': (1, 0),
-                              'infant_deaths_over_year': (1, 0),
-                              'mcpr': (0, 1),
-                              'births': (1, 1)}
-            results_dict = {}
-
-            for channel in agg_param_dict:
-                parameters = agg_param_dict[channel]
-                results_dict[channel] = aggregate_channel(channel, parameters[0], parameters[1])
-
-            return results_dict
-
         # Split the sims up by scenario
         results = sc.objdict()
         sims = sc.objdict(defaultdict=sc.autolist)
@@ -449,16 +416,15 @@ class Scenarios(sc.prettyobj):
         raw = sc.ddict(list)
         for key,sims in sims.items():
             for sim in sims:
-                results_dict = analyze_sim(sim)
+                results_df = sim.to_df()
                 raw['scenario'] += [key]      # Append scenario key
-                raw['births']   += [results_dict['births']] # Append births
-                raw['fails']    += [results_dict['method_failures_over_year']]  # Append failures
-                raw['popsize']  += [results_dict['pop_size']]    # Append population size
-                raw['tfr']      += [results_dict['tfr_rates']]    # Append mean tfr rates
-                raw['infant_deaths'] += [results_dict['infant_deaths_over_year']]
-                raw['maternal_deaths'] += [results_dict['maternal_deaths_over_year']]
-                raw['mcpr'] += [results_dict['mcpr']]
-
+                raw['births']   += [results_df['fp_births']] # Append births
+                raw['fails']    += [results_df['fp_method_failures']]  # Append failures
+                raw['popsize']  += [results_df['n_alive']]    # Append population size
+                raw['tfr']      += [results_df['fp_tfr']]    # Append mean tfr rates
+                raw['infant_deaths'] += [results_df['fp_infant_deaths']]
+                raw['maternal_deaths'] += [results_df['fp_maternal_deaths']]
+                raw['mcpr'] += [results_df['contraception_mcpr']]
 
         # Calculate basic stats
         results.stats = sc.objdict()

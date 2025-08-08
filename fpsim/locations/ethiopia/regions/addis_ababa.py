@@ -13,7 +13,6 @@ import fpsim.locations.data_utils as fpld
 
 def scalar_pars():
     scalar_pars = eth.scalar_pars()
-    scalar_pars['location'] = 'addis_ababa'
     # calibrated params
     scalar_pars['fecundity_var_low'] = 0.94
     scalar_pars['fecundity_var_high'] = 1.0

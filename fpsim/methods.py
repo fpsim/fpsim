@@ -124,6 +124,22 @@ class ContraceptiveChoice(ss.Connector):
 
         return
 
+    def init_results(self):
+        """
+        Initialize results for this module
+        """
+        self.define_results(
+            ss.Result('n_at_risk_non_users', scale=False, label="Number of non-users at risk of pregnancy (aCPR)"),
+            ss.Result('n_at_risk_users', scale=False, label="Number of users at risk of pregnancy (aCPR)"),
+            ss.Result('n_non_users', scale=False, label="Number of non-users (CPR)"),
+            ss.Result('n_mod_users', scale=False, label="Number of modern contraceptive users (mCPR)"),
+            ss.Result('n_users', scale=False, label="Number of contraceptive users (CPR)"),
+            ss.Result('mcpr', scale=False, label="Modern contraceptive prevalence rate (mCPR)"),
+            ss.Result('cpr', scale=False, label="Contraceptive prevalence rate (CPR)"),
+            ss.Result('acpr', scale=False, label="Active contraceptive prevalence rate (aCPR)"),
+        )
+        return
+
     @property
     def average_dur_use(self):
         av = 0
@@ -139,11 +155,11 @@ class ContraceptiveChoice(ss.Connector):
          people object at the beginning of the simulation and new people born during the simulation.
          """
         ppl = self.sim.people
-        fecund = ppl.female & (ppl.age < self.sim.fp_pars['age_limit_fecundity'])
+        fecund = ppl.female & (ppl.age < self.sim.pars.fp['age_limit_fecundity'])
         fecund_uids = fecund.uids
 
         # Look for women who have reached the time to choose
-        time_to_set_contra_uids = fecund_uids[(ppl.ti_contra[fecund_uids] == 0)]
+        time_to_set_contra_uids = fecund_uids[(ppl.fp.ti_contra[fecund_uids] == 0)]
         self.init_contraception(time_to_set_contra_uids)
         return
 
@@ -158,15 +174,15 @@ class ContraceptiveChoice(ss.Connector):
 
     def start_contra(self, uids):
         """ Wrapper method to start contraception for a set of users """
-        self.sim.people.on_contra[uids] = True
-        self.sim.people.ever_used_contra[uids] = 1
+        self.sim.people.fp.on_contra[uids] = True
+        self.sim.people.fp.ever_used_contra[uids] = 1
         return
 
     def init_methods(self, uids):
         # Set initial distribution of methods
-        self.sim.people.method[uids] = self.init_method_dist(uids)
+        self.sim.people.fp.method[uids] = self.init_method_dist(uids)
         method_dur = self.set_dur_method(uids)
-        self.sim.people.ti_contra[uids] = self.ti + method_dur
+        self.sim.people.fp.ti_contra[uids] = self.ti + method_dur
         return
 
     def get_method_by_label(self, method_label):
@@ -195,8 +211,9 @@ class ContraceptiveChoice(ss.Connector):
         errormsg = ('remove_method is not currently functional. See example in test_parameters.py if you want to run a '
                     'simulation with a subset of the standard set of methods. The remove_method logic needs to be'
                     'replaced with something that can remove a method partway through a simulation.')
-        method = self.get_method_by_label(method_label)
-        del self.methods[method.name]
+        raise NotImplementedError(errormsg)
+        # method = self.get_method_by_label(method_label)
+        # del self.methods[method.name]
 
     def get_prob_use(self, uids, event=None):
         pass
@@ -207,8 +224,92 @@ class ContraceptiveChoice(ss.Connector):
         users, non_users = self.pars.p_use.split(uids)
         return users, non_users
 
-    def choose_method(self, uids, event=None):
-        pass
+    def update_contra(self, uids):
+        """ Update contraceptive choices for a set of users. """
+        sim = self.sim
+        ti = self.ti
+        ppl = sim.people
+        fpppl = ppl.fp  # Shorter name for people.fp
+
+        # If people are 1 or 6m postpartum, we use different parameters for updating their contraceptive decisions
+        is_pp1 = (fpppl.postpartum_dur[uids] == 1)
+        is_pp6 = (fpppl.postpartum_dur[uids] == 6) & ~fpppl.on_contra[uids]  # They may have decided to use contraception after 1m
+        pp0 = uids[~(is_pp1 | is_pp6)]
+        pp1 = uids[is_pp1]
+        pp6 = uids[is_pp6]
+
+        # Update choices for people who aren't postpartum
+        if len(pp0):
+
+            # If force_choose is True, then all non-users will be made to pick a method
+            if self.pars['force_choose']:
+                must_use = pp0[~fpppl.on_contra[pp0]]
+                choosers = pp0[fpppl.on_contra[pp0]]
+
+                if len(must_use):
+                    self.start_contra(must_use)  # Start contraception for those who must use
+                    fpppl.method[must_use] = self.choose_method(must_use)
+
+            else:
+                choosers = pp0
+
+            # Get previous users and see whether they will switch methods or stop using
+            if len(choosers):
+
+                users, non_users = self.get_contra_users(choosers)
+
+                if len(non_users):
+                    fpppl.on_contra[non_users] = False  # Set non-users to not using contraception
+                    fpppl.method[non_users] = 0  # Set method to zero for non-users
+
+                # For those who keep using, choose their next method
+                if len(users):
+                    self.start_contra(users)
+                    fpppl.method[users] = self.choose_method(users)
+
+            # Validate
+            n_methods = len(self.methods)
+            invalid_vals = (fpppl.method[pp0] >= n_methods) * (fpppl.method[pp0] < 0) * (np.isnan(fpppl.method[pp0]))
+            if invalid_vals.any():
+                errormsg = f'Invalid method set: ti={pp0.ti}, inds={invalid_vals.nonzero()[-1]}'
+                raise ValueError(errormsg)
+
+        # Now update choices for postpartum people. Logic here is simpler because none of these
+        # people should be using contraception currently. We first check that's the case, then
+        # have them choose their contraception options.
+        ppdict = {'pp1': pp1, 'pp6': pp6}
+        for event, pp in ppdict.items():
+            if len(pp):
+                if fpppl.on_contra[pp].any():
+                    errormsg = 'Postpartum women should not currently be using contraception.'
+                    raise ValueError(errormsg)
+                users, _ = self.get_contra_users(pp, event=event)
+                self.start_contra(users)
+                on_contra = pp[fpppl.on_contra[pp]]
+                off_contra = pp[~fpppl.on_contra[pp]]
+
+                # Set method for those who use contraception
+                if len(on_contra):
+                    method_used = self.choose_method(on_contra, event=event)
+                    fpppl.method[on_contra] = method_used
+
+                if len(off_contra):
+                    fpppl.method[off_contra] = 0
+                    if event == 'pp1':  # For women 1m postpartum, choose again when they are 6 months pp
+                        fpppl.ti_contra[off_contra] = ti + 5
+
+        # Set duration of use for everyone, and reset the time they'll next update
+        durs_fixed = (fpppl.postpartum_dur[uids] == 1) & (fpppl.method[uids] == 0)
+        update_durs = uids[~durs_fixed]
+        dur_methods = self.set_dur_method(update_durs)
+
+        # Check validity
+        if (dur_methods < 0).any():
+            raise ValueError('Negative duration of method use')
+
+        fpppl.ti_contra[update_durs] = ti + dur_methods
+
+        return
 
     def set_dur_method(self, uids, method_used=None):
         # todo make this aware of starsim time units. right now assumes average_dur_use is in years and timestep par is in years
@@ -219,7 +320,7 @@ class ContraceptiveChoice(ss.Connector):
 
     def set_method(self, uids):
         """ Wrapper for choosing method and assigning duration of use """
-        ppl = self.sim.people
+        ppl = self.sim.people.fp
         method_used = self.choose_method(uids)
         ppl.method[uids] = method_used
 
@@ -232,6 +333,46 @@ class ContraceptiveChoice(ss.Connector):
     def step(self):
         # TODO, could move all update logic to here...
         pass
+
+    def update_results(self):
+        """
+        Note that we are not including LAM users in mCPR as this model counts
+        all women passively using LAM but DHS data records only women who self-report
+        LAM which is much lower. Follows the DHS definition of mCPR.
+        """
+        ppl = self.sim.people
+        method_age = self.sim.pars.fp['method_age'] <= ppl.age
+        fecund_age = ppl.age < self.sim.pars.fp['age_limit_fecundity']
+        denominator = method_age * fecund_age * ppl.female * ppl.alive
+
+        # Track mCPR
+        modern_methods_num = [idx for idx, m in enumerate(self.methods.values()) if m.modern]
+        numerator = np.isin(ppl.fp.method, modern_methods_num)
+        n_no_method = np.sum((ppl.fp.method == 0) * denominator)
+        n_mod_users = np.sum(numerator * denominator)
+        self.results['n_non_users'][self.ti] += n_no_method
+        self.results['n_mod_users'][self.ti] += n_mod_users
+        self.results['mcpr'][self.ti] += sc.safedivide(n_mod_users, sum(denominator))
+
+        # Track CPR: includes newer ways to conceptualize contraceptive prevalence.
+        # Includes women using any method of contraception, including LAM
+        numerator = ppl.fp.method != 0
+        cpr = np.sum(numerator * denominator)
+        self.results['n_users'][self.ti] += cpr
+        self.results['cpr'][self.ti] += sc.safedivide(cpr, sum(denominator))
+
+        # Track aCPR
+        # Denominator of possible users excludes pregnant women and those not sexually active in the last 4 weeks
+        # Used to compare new metrics of contraceptive prevalence and eventually unmet need to traditional mCPR definitions
+        denominator = method_age * fecund_age * ppl.female * ~ppl.fp.pregnant * ppl.fp.sexually_active
+        numerator = ppl.fp.method != 0
+        n_at_risk_non_users = np.sum((ppl.fp.method == 0) * denominator)
+        n_at_risk_users = np.sum(numerator * denominator)
+        self.results['n_at_risk_non_users'][self.ti] += n_at_risk_non_users
+        self.results['n_at_risk_users'][self.ti] += n_at_risk_users
+        self.results['acpr'][self.ti] = sc.safedivide(n_at_risk_users, sum(denominator))
+
+        return
 
 
 class RandomChoice(ContraceptiveChoice):
@@ -383,7 +524,7 @@ class SimpleChoice(RandomChoice):
         ppl = self.sim.people
 
         dur_method = np.zeros(len(uids), dtype=float)
-        if method_used is None: method_used = ppl.method[uids]
+        if method_used is None: method_used = ppl.fp.method[uids]
 
         for mname, method in self.methods.items():
             dur_use = method.dur_use
@@ -443,7 +584,7 @@ class SimpleChoice(RandomChoice):
 
                 for mname, method in self.methods.items():
                     # Get people of this age who are using this method
-                    using_this_method = match_low_high & (ppl.method[uids] == method.idx)
+                    using_this_method = match_low_high & (ppl.fp.method[uids] == method.idx)
                     switch_iinds = using_this_method.nonzero()[-1]
 
                     if len(switch_iinds):

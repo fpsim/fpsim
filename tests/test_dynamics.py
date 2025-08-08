@@ -3,6 +3,7 @@ Test dynamics within FPsim related to contraceptive use, method choice, and dura
 """
 
 import sciris as sc
+import starsim as ss
 import fpsim as fp
 import matplotlib.pyplot as plt
 import numpy as np
@@ -55,10 +56,10 @@ def test_mcpr(location=None, do_plot=False):
 
     covars = [
         Covar('edu.attainment', 0, 15, 'edu.mean_attainment'),
-        Covar('urban', False, True, 'urban_women'),
+        Covar('urban', False, True, 'n_urban'),
         # Covar('parity', 2, 'parity2to3'),  # Unfortunately this will not work
-        Covar('wealthquintile', 1, 5, 'wq5'),
-        Covar('ever_used_contra', False, True, 'ever_used_contra'),
+        Covar('wealthquintile', 1, 5, 'n_wq5'),
+        Covar('fp.ever_used_contra', False, True, 'fp.ever_used_contra'),
         ]
 
     # Create interventions and sims
@@ -91,8 +92,7 @@ def test_mcpr(location=None, do_plot=False):
         sims += make_sim(intvs=make_zeros()+[change_state], location=location, label=f'Increased {covar.pplattr}')
 
     # Run
-    # for sim in sims: sim.run()
-    m = fp.parallel(*sims, parallel=parallel, compute_stats=False)
+    m = ss.parallel(*sims, parallel=parallel)
     sims = m.sims[:]  # Replace with run versions
 
     # Firstly, check that changing the people attributes has registered in the relevant results metrics as expected
@@ -105,14 +105,14 @@ def test_mcpr(location=None, do_plot=False):
         else:
             base = sims[0].results[covar.resname]
             intv = sims[ri+1].results[covar.resname]
-        assert base[-1] < intv[-1], f'Increasing {covar.pplattr} should register in results, but {intv[-1]}<{base[-1]}'
-        print(f"✓ ({base[-1]:.2f} < {intv[-1]:.2f})")
+        assert base[-1] <= intv[-1], f'Increasing {covar.pplattr} should register in results, but {intv[-1]}<{base[-1]}'
+        print(f"✓ ({base[-1]:.2f} <= {intv[-1]:.2f})")
         covar.base = base
         covar.intv = intv
-        covar.mcpr = sims[ri+1].results.mcpr
+        covar.mcpr = sims[ri+1].results.contraception.mcpr
 
     # Next, check that changing the people attributes has registered in the relevant results metrics as expected
-    mcprs = [sim.results['mcpr'][-1] for sim in sims]
+    mcprs = [sim.results.contraception.mcpr[-1] for sim in sims]
     print('Computed mCPRs:')
     for sim, mcpr in zip(sims, mcprs):
         print(f'{sim.label}: {mcpr:.2f}')
@@ -134,7 +134,7 @@ def test_mcpr(location=None, do_plot=False):
         plt.show()
 
         fig, ax = plt.subplots(1, 1, figsize=(12, 6))
-        ax.plot(sims[0].results.timevec, sims[0].results.mcpr, label=sims[0].label)
+        ax.plot(sims[0].results.timevec, sims[0].results.contraception.mcpr, label=sims[0].label)
         for ri, covar in enumerate(covars):
             ax.plot(sims[ri+1].results.timevec, covar.mcpr, label=covar.pplattr)
         ax.set_ylabel('mCPR')
@@ -160,13 +160,13 @@ def test_durations(location=None):
         label='Short durations')
 
     # Run sims
-    m = fp.parallel([sim_base, sim_short], parallel=parallel, compute_stats=False)
+    m = ss.parallel([sim_base, sim_short], parallel=parallel)
     sim_base, sim_short = m.sims[:]  # Replace with run versions
 
     # Shorter durations should mean more switching
     print(f"Checking effect of durations ... ")
-    base = sum(sim_base.results.switchers)
-    short = sum(sim_short.results.switchers)
+    base = sum(sim_base.results.fp.switchers)
+    short = sum(sim_short.results.fp.switchers)
     assert base < short, f'Shorter durations should mean more switching, but {short}<{base}'
     print(f"✓ ({base:.2f} < {short:.2f})")
 

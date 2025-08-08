@@ -32,6 +32,7 @@ class SimPars(ss.SimPars):
         self.rand_seed = 1      # Random seed
         self.verbose = 1/12   # Verbosity level
         self.use_aging = True   # Whether to age the population
+        self.location = None  # CONTEXT-SPECIFIC ####
         self.test = False
 
         # Update with any supplied parameter values and generate things that need to be generated
@@ -47,6 +48,7 @@ class SimPars(ss.SimPars):
         super().update(pars=pars, create=create, **kwargs)
         return
 
+
 def make_sim_pars(**kwargs):
     """ Shortcut for making a new instance of SimPars """
     return SimPars(**kwargs)
@@ -55,9 +57,6 @@ def make_sim_pars(**kwargs):
 class FPPars(ss.Pars):
     def __init__(self, **kwargs):
         super().__init__()
-
-        # Basic parameters
-        self.location = None   # CONTEXT-SPECIFIC ####
 
         # Settings - what aspects are being modeled - TODO, remove
         self.use_partnership = 0
@@ -123,37 +122,34 @@ class FPPars(ss.Pars):
         self.regional = None
 
         self.update(kwargs)
-        if self.location is not None:
-            self.update_location()
+        # if self.location is not None:
+        #     self.update_location()
 
         return
 
-    def update_location(self):
+    def update_location(self, location=None):
         """
         Update the location-specific parameters based on the current location.
         """
-        if self.location is None:
-            self.location = fpd.get_location(self.location, printmsg=True)  # Handle location
-
         # Import the location module
         from . import locations as fplocs
 
         # Use external registry for locations first
-        if self.location in fpd.location_registry:
-            location_module = fpd.location_registry[self.location]
+        if location in fpd.location_registry:
+            location_module = fpd.location_registry[location]
             location_pars = location_module.make_pars()
-        elif hasattr(fplocs, self.location):
-            location_pars = getattr(fplocs, self.location).make_pars()
+        elif hasattr(fplocs, location):
+            location_pars = getattr(fplocs, location).make_pars()
         else:
-            raise NotImplementedError(f'Could not find location function for "{self.location}"')
+            raise NotImplementedError(f'Could not find location function for "{location}"')
 
         self.update(**location_pars)
         return
 
 
-def make_fp_pars(location=None):
+def make_fp_pars():
     """ Shortcut for making a new instance of FPPars """
-    return FPPars(location=location)
+    return FPPars()
 
 
 def mergepars(*args):

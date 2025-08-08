@@ -3,7 +3,7 @@ Run tests on the interventions.
 """
 
 import sciris as sc
-import pylab as pl
+import starsim as ss
 import fpsim as fp
 import numpy as np
 
@@ -16,7 +16,7 @@ def make_sim(**kwargs):
     '''
     Define a default simulation for testing the baseline.
     '''
-    sim = fp.Sim(location='test', **kwargs)
+    sim = fp.Sim(test=True, **kwargs)
     return sim
 
 
@@ -52,19 +52,18 @@ def test_change_par():
     s2 = make_sim(interventions=[sc.dcp(cp1), cp2], label='Low exposure, reset')
 
     # Run
-    m = fp.parallel(s0, s1, s2, parallel=parallel, compute_stats=False)
+    m = ss.parallel(s0, s1, s2, parallel=parallel)
     s0, s1, s2 = m.sims[:] # Replace with run versions
 
     # Test exposure factor change
-    base_births = s0.results['births'].sum()
-    cp1_births   = s1.results['births'].sum()
-    cp2_births  = s2.results['births'].sum()
-    assert s1.fp_pars['exposure_factor'] == ec, f'change_pars() did not change exposure factor to {ec}'
+    base_births = s0.results.fp.births.sum()
+    cp1_births   = s1.results.fp.births.sum()
+    cp2_births  = s2.results.fp.births.sum()
+    assert s1.pars.fp.exposure_factor == ec, f'change_pars() did not change exposure factor to {ec}'
     assert cp1_births < base_births, f'Reducing exposure factor should reduce births, but {cp1_births} is not less than the baseline of {base_births}'
 
-    assert s2.fp_pars['exposure_factor'] == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
+    assert s2.pars.fp.exposure_factor == 1.0, f'Exposure factor should be reset back to 1.0, but it is {s2["exposure_factor"]}'
     # assert cp2_births <= base_births, f'Reducing exposure factor temporarily should reduce births, but {cp2_births} is not less than the baseline of {base_births}'
-
 
     return m
 
@@ -89,23 +88,23 @@ def test_change_people_state():
     ms = fp.SimpleChoice(location='kenya')
 
     # Change ever user
-    prior_use_lift = fp.change_people_state('ever_used_contra', years=2019, new_val=True, eligibility=np.arange(500), prop=1, annual=False)
-    prior_use_gone = fp.change_people_state('ever_used_contra', years=2020, new_val=False, eligibility=np.arange(500), prop=1, annual=False)
+    prior_use_lift = fp.change_people_state('fp.ever_used_contra', years=2019, new_val=True, eligibility=np.arange(500), prop=1, annual=False)
+    prior_use_gone = fp.change_people_state('fp.ever_used_contra', years=2020, new_val=False, eligibility=np.arange(500), prop=1, annual=False)
 
     # Make and run sim
     s0 = fp.Sim(pars=pars, contraception_module=sc.dcp(ms), label="Baseline")
     s1 = fp.Sim(pars=pars, contraception_module=sc.dcp(ms), interventions=prior_use_lift, label="All prior_use set to True")
     s2 = fp.Sim(pars=pars, contraception_module=sc.dcp(ms), interventions=prior_use_gone, label="Prior use removed from 500 people")
-    msim = fp.parallel(s0, s1, s2)
+    msim = ss.parallel(s0, s1, s2)
     s0, s1, s2 = msim.sims
 
     # Test people state change
-    s0_used_contra = np.sum(s0.people['ever_used_contra'])
-    s1_used_contra = np.sum(s1.people['ever_used_contra'])
+    s0_used_contra = np.sum(s0.people.fp.ever_used_contra)
+    s1_used_contra = np.sum(s1.people.fp.ever_used_contra)
 
-    s2auids = s2.people['ever_used_contra'].auids
+    s2auids = s2.people.fp.ever_used_contra.auids
     s2subset = s2auids[s2auids < 500]
-    s2_500_used_contra = np.sum(s2.people['ever_used_contra'][s2subset])
+    s2_500_used_contra = np.sum(s2.people.fp.ever_used_contra[s2subset])
 
     print(f"Checking change_state CPR trends ... ")
     assert s1_used_contra > s0_used_contra, f'Increasing prior use should increase the number of people with who have used contraception, but {s1_used_contra} is not greater than the baseline of {s0_used_contra}'
