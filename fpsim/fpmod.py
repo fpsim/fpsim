@@ -542,11 +542,6 @@ class FPmod(ss.Module):
             # Calculate total births
             self.results['total_births'][ti] = len(stillborn) + self.results['births'][ti]
 
-            for key, (age_low, age_high) in fpd.age_bin_map.items():
-                match_low_high = live[(ppl.age[live] >= age_low) & (ppl.age[live] < age_high)]
-                birth_bins = len(match_low_high)
-                self.results[f'total_births_{key}'][ti] += birth_bins
-
             # Check mortality
             self.check_maternal_mortality(live)  # Mothers of only live babies eligible to match definition of maternal mortality ratio
             i_death = self.check_infant_mortality(live)
