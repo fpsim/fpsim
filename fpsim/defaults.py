@@ -200,9 +200,9 @@ event_counts = sc.autolist(
     'method_failures',
 )
 
-for age_group in age_bin_map.keys():
-    event_counts += 'total_births_' + age_group
-    event_counts += 'total_women_' + age_group
+# for age_group in age_bin_map.keys():
+#     event_counts += 'total_births_' + age_group
+#     event_counts += 'total_women_' + age_group
 
 people_counts = sc.autolist(
     'contra_access',
@@ -231,33 +231,8 @@ sim_results = sc.autolist(
 
 # Rates and other results that aren't scaled
 rate_results = sc.autolist(
-    'tfr_years',
-    'tfr_rates',
+    'tfr',
     'mmr',
     'imr',
     'p_short_interval',
 )
-
-dict_annual_results = sc.autolist(
-    'method_usage',
-)
-
-# # Map between key names in results and annualised results, some of them are different
-# # TODO, remove??
-# to_annualize = {
-#     'method_failures' :'method_failures',
-#     'infant_deaths'   :'infant_deaths',
-#     'total_births'    :'total_births',
-#     'births'          :'live_births',  # X
-#     'stillbirths'     :'stillbirths',
-#     'miscarriages'    :'miscarriages',
-#     'abortions'       :'abortions',
-#     'short_intervals' : 'short_intervals',
-#     'secondary_births': 'secondary_births',
-#     'maternal_deaths' : 'maternal_deaths',
-#     'pregnancies'     : 'pregnancies',
-#     # 'contra_access'   : 'contra_access', # do these get moved?
-#     # 'new_users'       : 'new_users'
-#     }
-
-

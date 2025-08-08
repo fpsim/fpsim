@@ -657,6 +657,9 @@ class FPmod(ss.Module):
         # Update ancillary results: ASFR and method mix
         self.compute_method_usage()
         self.compute_asfr()
+
+        # Use ASFR results to update TFR results
+        self.results.tfr[self.ti] = sum(self.asfr[:, ti])*self.asfr_width
         return
 
     def compute_method_usage(self):
