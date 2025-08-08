@@ -54,8 +54,6 @@ def test_eth_multisim():
 
     msim.run()
 
-    if do_plot:
-        msim.plot()
     return msim
 
 
