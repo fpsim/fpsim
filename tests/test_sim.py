@@ -115,19 +115,20 @@ def test_senegal():
     # Make the sim
     exp = fp.Experiment(pars=dict(location='senegal'))
     exp.run()
+    exp.summarize()
 
     print(f'✓ (successfully ran Senegal sim)')
 
-    return sim
+    return exp
 
 
 if __name__ == '__main__':
 
-    sim = test_simple('senegal')
+    # sim = test_simple('senegal')
     # s1 = test_random_choice()
     # sims1 = test_simple_choice()
     # sims2 = test_mid_choice()
     # test_sim_creation()
-    # sim = test_senegal()
+    exp = test_senegal()
 
     print('Done.')

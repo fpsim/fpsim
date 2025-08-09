@@ -253,6 +253,20 @@ class Sim(ss.Sim):
         self.update_mortality()
         return
 
+    def update_results(self):
+        """
+        Update the results for the current time step. This is called at the end of each time step.
+        """
+        super().update_results()
+
+        # Update the results with the current values
+        self.results['cum_live_births_by_year'].append(self.people.n_live_births)
+        self.results['cum_stillbirths_by_year'].append(self.people.n_stillbirths)
+        self.results['cum_maternal_deaths_by_year'].append(self.people.n_maternal_deaths)
+        self.results['cum_infant_deaths_by_year'].append(self.people.n_infant_deaths)
+
+        return
+
     # Function to scale all y-axes in fig based on input channel
     @staticmethod
     def conform_y_axes(figure, bottom=0, top=100):

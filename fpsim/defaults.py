@@ -71,6 +71,7 @@ fpmod_states = [
     ss.FloatArr('ti_contra', default=0),  # time point at which to set method
     ss.FloatArr('barrier', default=0),
     ss.State('ever_used_contra', default=False),  # Ever been on contraception. 0 for never having used
+    ss.FloatArr('rel_sus', default=0),  # Relative susceptibility to pregnancy, set to 1 for active fecund women
 
     # Sexual and reproductive states, all False by default and set during simulation
     ss.State('lam'),
@@ -205,10 +206,6 @@ event_counts = sc.autolist(
     'infant_deaths',
     'method_failures',
 )
-
-# for age_group in age_bin_map.keys():
-#     event_counts += 'total_births_' + age_group
-#     event_counts += 'total_women_' + age_group
 
 people_counts = sc.autolist(
     'contra_access',

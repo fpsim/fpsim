@@ -102,7 +102,7 @@ class FPmod(ss.Module):
         super().init_results()  # Initialize the base results
 
         scaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
-        nonscaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=float, scale=False)
+        nonscaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=float, scale=False, summarize_by='sum')
 
         # Add event counts - these are all integers, and are scaled by the number of agents
         # We compute new results for each event type, and also cumulative results
@@ -234,6 +234,10 @@ class FPmod(ss.Module):
         self._p_death.set(p=m_mort_prob)
         m_died = self._p_death.filter(male)
 
+        # Need to update results here, as after remove_dead has been called the UIDs will be excluded
+        # TODO: consider refactoring this so deaths are handled at the end, like with other Starsim modules
+        self.sim.results['new_deaths'][self.ti] += len(f_died) + len(m_died)  # Track all deaths
+
         for died in [f_died, m_died]:
             self.pregnant[died] = False
             self.gestation[died] = False
@@ -256,28 +260,24 @@ class FPmod(ss.Module):
             uids = self.alive.uids
 
         active_uids = uids[(self.sexually_active[uids] & self.fertile[uids])]
-        lam = self.lam[active_uids]
-        lam_uids = active_uids[lam]
-        nonlam = ~self.lam[active_uids]
-        nonlam_uids = active_uids[nonlam]
-        preg_probs = np.zeros(len(active_uids))  # Use full array
 
         # Find monthly probability of pregnancy based on fecundity and use of contraception including LAM - from data
         pars = self.pars  # Shorten
-        preg_eval_lam = pars['age_fecundity'][ppl.int_age_clip(lam_uids)] * self.personal_fecundity[lam_uids]
-        preg_eval_nonlam = pars['age_fecundity'][ppl.int_age_clip(nonlam_uids)] * self.personal_fecundity[nonlam_uids]
+        fecundity = pars['age_fecundity'][ppl.int_age_clip(active_uids)] * self.personal_fecundity[active_uids]
 
         # Get each woman's degree of protection against conception based on her contraception or LAM
         cm = self.sim.connectors.contraception
         eff_array = np.array([m.efficacy for m in cm.methods.values()])
         method_eff = eff_array[self.method.astype(int)]
         lam_eff = pars['LAM_efficacy']
+        lam = self.lam[active_uids]
+        lam_uids = active_uids[lam]
 
-        # Change to a monthly probability and set pregnancy probabilities
-        lam_probs = fpu.annprob2ts((1 - lam_eff) * (1 - method_eff[lam_uids]) * preg_eval_lam, self.t.dt_year * fpd.mpy)
-        nonlam_probs = fpu.annprob2ts((1 - method_eff[nonlam_uids]) * preg_eval_nonlam, self.t.dt_year * fpd.mpy)
-        preg_probs[lam] = lam_probs
-        preg_probs[nonlam] = nonlam_probs
+        # Set baseline susceptibility to pregnancy
+        self.rel_sus[active_uids] = 1  # Reset relative susceptibility
+        self.rel_sus[:] *= 1 - method_eff
+        self.rel_sus[lam_uids] *= 1 - lam_eff
+        preg_probs = fpu.annprob2ts(self.rel_sus[active_uids] * fecundity, self.t.dt_year * fpd.mpy)
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from PRESTO data
         nullip = self.parity[active_uids] == 0
@@ -455,11 +455,7 @@ class FPmod(ss.Module):
         ppl = sim.people
 
         # Update states
-        deliv_old = uids[(self.gestation[uids] == self.dur_pregnancy[uids])]
         deliv = uids[self.pregnant[uids] & (self.ti_delivery[uids] <= self.ti)]  # Check for those who are due this timestep
-        if not np.array_equal(deliv_old, deliv):
-            errormsg = 'Old and new methods not the same'
-            raise ValueError(errormsg)
         if len(deliv):  # check for any deliveries
 
             # Set states
@@ -567,6 +563,7 @@ class FPmod(ss.Module):
         Perform all updates to people within a single timestep
         """
         ppl = self.sim.people
+        self.rel_sus[:] = 0  # Reset relative susceptibility to pregnancy
 
         # Normally SS handles deaths at end of timestep, but to match the previous version's logic, we start it here.
         # Dead agents are removed, so we don't have to filter for alive after this.
@@ -574,8 +571,6 @@ class FPmod(ss.Module):
         self.decide_death_outcome(alive)
 
         # Process delivery, including maternal and infant mortality outcomes
-        if self.ti >= 9:
-            print('hi')
         self.process_delivery()  # Deliver with birth outcomes if reached pregnancy duration
 
         # Reselect for live agents after exposure to maternal mortality and infant mortality
@@ -648,7 +643,7 @@ class FPmod(ss.Module):
         self.compute_asfr()
 
         # Use ASFR results to update TFR results
-        self.results.tfr[self.ti] = sum(self.asfr[:, ti])*self.asfr_width
+        self.results.tfr[self.ti] = sum(self.asfr[:, ti])*self.asfr_width/1000
         return
 
     def compute_method_usage(self):
@@ -663,12 +658,17 @@ class FPmod(ss.Module):
         return
 
     def compute_asfr(self):
-        """ Computes age-specific fertility rates (ASFR) """
-        new_mother_uids = (self.ti_live_birth == self.ti).uids
+        """
+        Computes age-specific fertility rates (ASFR)
+        Calculates all women who've given birth in the previous 12 months and extracts their ages at
+        time of birth. Since this is calculated each timestep, the annualized results should compute
+        the mean, not the sum.
+        """
+        new_mother_uids = (self.ti_live_birth == self.ti).uids  # All births in the last year
         new_mother_ages = self.sim.people.age[new_mother_uids]
         births_by_age, _ = np.histogram(new_mother_ages, bins=self.asfr_bins)
         women_by_age, _ = np.histogram(self.sim.people.age[self.sim.people.female], bins=self.asfr_bins)
-        self.asfr[:, self.ti] = sc.safedivide(births_by_age, women_by_age)
+        self.asfr[:, self.ti] = sc.safedivide(births_by_age, women_by_age) * 1000
         return
 
     def finalize_results(self):
