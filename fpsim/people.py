@@ -109,7 +109,15 @@ class People(ss.People):
 
     def update_results(self):
         """Calculate and return the results for this specific time step"""
-        super().update_results()  # Updates n_alive and other base results
+        # TODO: this is commented out because the base class calculated deaths in a way that overwrites the
+        # FPsim way. In FPsim, deaths are removed at the beginning of the timestep not the end, so we can't
+        # calculate deaths using np.count_nonzero(self.ti_dead == ti)
+        # super().update_results()  # Updates n_alive and other base results
+        ti = self.sim.ti
+        res = self.sim.results
+        res.n_alive[ti] = np.count_nonzero(self.alive)
+        # res.new_deaths[ti] = np.count_nonzero(self.ti_dead == ti)
+        res.cum_deaths[ti] = np.sum(res.new_deaths[:ti]) # TODO: inefficient to compute the cumulative sum on every timestep!
         self._step_results_wq()  # Updates wealth quintile results
         return
 
