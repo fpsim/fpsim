@@ -232,8 +232,8 @@ class ContraceptiveChoice(ss.Connector):
         fpppl = ppl.fp  # Shorter name for people.fp
 
         # If people are 1 or 6m postpartum, we use different parameters for updating their contraceptive decisions
-        is_pp1 = (fpppl.postpartum_dur[uids] == 1)
-        is_pp6 = (fpppl.postpartum_dur[uids] == 6) & ~fpppl.on_contra[uids]  # They may have decided to use contraception after 1m
+        is_pp1 = (self.ti - fpppl.ti_delivery[uids]) == 1  # Delivered last timestep
+        is_pp6 = ((self.ti - fpppl.ti_delivery[uids]) == 6) & ~fpppl.on_contra[uids]  # They may have decided to use contraception after 1m
         pp0 = uids[~(is_pp1 | is_pp6)]
         pp1 = uids[is_pp1]
         pp6 = uids[is_pp6]
@@ -299,7 +299,7 @@ class ContraceptiveChoice(ss.Connector):
                         fpppl.ti_contra[off_contra] = ti + 5
 
         # Set duration of use for everyone, and reset the time they'll next update
-        durs_fixed = (fpppl.postpartum_dur[uids] == 1) & (fpppl.method[uids] == 0)
+        durs_fixed = ((self.ti - fpppl.ti_delivery[uids]) == 1) & (fpppl.method[uids] == 0)
         update_durs = uids[~durs_fixed]
         dur_methods = self.set_dur_method(update_durs)
 

@@ -158,12 +158,11 @@ def test_contraception():
     assert sim.results.fp.pregnancies[12:].sum() > 0, "Expected pregnancies after contraception switch"
     print(f'✓ (no pregnancies with 100% effective contraception)')
 
-    pp1 = (sim.people.fp.postpartum_dur==1).uids
+    pp1 = (sim.people.fp.ti_delivery == sim.t.ti).uids
     assert sim.people.fp.on_contra[pp1].sum() == 0, "Expected no contraception use immediately postpartum"
     print(f'✓ (no contraception use postpartum)')
-    pp2plus = (sim.people.fp.postpartum_dur == 2).uids
-    assert (sim.people.fp.on_contra==True).sum() < sim.pars['n_agents'], "Expected some agents to be off of birth control at any given time"
-    print(f'✓ (contraception use rate {sim.people.fp.on_contra[pp2plus].sum()/len(pp2plus):.2f}, as expected)')
+    assert (sim.people.fp.on_contra == True).sum() < sim.pars['n_agents'], "Expected some agents to be off of birth control at any given time"
+    print(f'✓ (contraception use rate {sim.people.fp.on_contra.sum()/len(sim.people):.2f}, as expected)')
 
     return sim
 
@@ -232,11 +231,16 @@ def test_education_preg():
         sim.init()
         sim.people.age[:] = 15
         sim.people.female[:] = True
+        fpppl = sim.people.fp
         if pregnant:
-            sim.people.fp.pregnant[:] = True
-            sim.people.fp.method[:] = 0
-            sim.people.fp.on_contra[:] = False
-            sim.people.fp.ti_contra[:] = 12
+            fpppl.gestation[:] = 1  # Start the counter at 1
+            fpppl.dur_pregnancy[:] = 9  # Set pregnancy duration
+            fpppl.ti_delivery[:] = 9  # Set time of delivery
+            fpppl.ti_pregnant[:] = 0
+            fpppl.pregnant[:] = True
+            fpppl.method[:] = 0
+            fpppl.on_contra[:] = False
+            fpppl.ti_contra[:] = 12
         return sim
 
     sim_base = make_sim()
