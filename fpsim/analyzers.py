@@ -1,15 +1,13 @@
-'''
+"""
 Specify the core analyzers available in FPsim. Other analyzers can be
 defined by the user by inheriting from these classes.
-'''
+"""
 
 import numpy as np
 import sciris as sc
 import matplotlib.pyplot as pl
 from . import defaults as fpd
-from . import utils as fpu
 import fpsim as fp
-import fpsim.arrays as fpa
 from .settings import options as fpo
 import matplotlib.pyplot as plt
 import matplotlib.ticker as ticker
@@ -17,11 +15,12 @@ import starsim as ss
 
 
 #%% Generic analyzer classes
-__all__ = ['snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder', 'track_as', 'longitudinal_history']
+__all__ = ['snapshot', 'cpr_by_age', 'method_mix_by_age', 'age_pyramids', 'lifeof_recorder', 'track_as']
 # Specific analyzers
 __all__ += ['education_recorder']
 # Analyzers for debugging
 __all__ += ['state_tracker', 'method_mix_over_time']
+
 
 class snapshot(ss.Analyzer):
     '''
@@ -51,7 +50,6 @@ class snapshot(ss.Analyzer):
         self.timesteps = timesteps # String representations
         self.snapshots = sc.odict() # Store the actual snapshots
         return
-
 
     def step(self):
         """
@@ -99,11 +97,11 @@ class cpr_by_age(ss.Analyzer):
         for key, (age_low, age_high) in fpd.method_age_map.items():
             match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
             denom_conds = match_low_high * (ppl.female) * ppl.alive
-            num_conds = denom_conds * (ppl.method != 0)
+            num_conds = denom_conds * (ppl.fp.method != 0)
             self.results[key][sim.ti] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
 
         total_denom_conds = (ppl.female) * ppl.alive
-        total_num_conds = total_denom_conds * (ppl.method != 0)
+        total_num_conds = total_denom_conds * (ppl.fp.method != 0)
         self.results['total'][sim.ti] = sc.safedivide(np.count_nonzero(total_num_conds), np.count_nonzero(total_denom_conds))
         return
 
@@ -131,7 +129,7 @@ class method_mix_by_age(ss.Analyzer):
             match_low_high = (ppl.age >= age_low) & (ppl.age < age_high)
             denom_conds = match_low_high * (ppl.female == True) * ppl.alive
             for mn in range(n_methods):
-                num_conds = denom_conds * (ppl.method == mn)
+                num_conds = denom_conds * (ppl.fp.method == mn)
                 self.mmba_results[key][mn] = sc.safedivide(np.count_nonzero(num_conds), np.count_nonzero(denom_conds))
         return
 
@@ -621,7 +619,7 @@ class age_pyramids(ss.Analyzer):
         super().init_pre(sim, force)
         if self.bins is None:
             # If no bins are provided, use default bins which exceed the maximum allowed age to ensure all agent ages are captured
-            self.bins = np.arange(0, sim.fp_pars['max_age']+2)
+            self.bins = np.arange(0, sim.pars.fp['max_age']+2)
         nbins = len(self.bins)-1
 
         # self.data will contain the proportions of individuals in each age bin at each timestep
@@ -687,7 +685,7 @@ class method_mix_over_time(ss.Analyzer):
         sim = self.sim
         ppl = sim.people
         for m_idx, method in enumerate(self.methods):
-            eligible = ppl.female & ppl.alive & (ppl.method == m_idx)
+            eligible = ppl.female & ppl.alive & (ppl.fp.method == m_idx)
             self.results[method][sim.ti] = np.count_nonzero(eligible)
         return
 
@@ -997,39 +995,3 @@ class track_as(ss.Analyzer):
 
         return
 
-
-class longitudinal_history(ss.Analyzer):
-    """
-    Analyzer for tracking longitudinal history of individuals. The longitude object acts as a circular buffer,
-    tracking the most recent 1 year of values for each key specified in longitude_keys.
-    """
-
-    def __init__(self, longitude_keys, tiperyear=12):
-        super().__init__()
-
-        self.longitude_keys = longitude_keys
-        self.longitude = sc.objdict()
-        states = []
-
-        for key in self.longitude_keys:
-            self.longitude[key] = np.empty( shape=(tiperyear), dtype=list)  # Initialize with empty lists
-            states.append(
-                fpa.TwoDimensionalArr(name=key, ncols=tiperyear)
-            )
-
-        self.define_states(*states)
-
-    def step(self):
-        """
-        Updates longitudinal params in people object
-        """
-        ppl = self.sim.people
-        # Calculate column index in which to store current vals
-        index = int(self.sim.ti % self.sim.fp_pars['tiperyear'])
-
-        # Store the current params in people.longitude object
-        for key in self.longitude_keys:
-            attr = getattr(self, key)
-            attr[:, index] = getattr(ppl, key).values
-
-        return

@@ -31,6 +31,7 @@ f_age_pyramid = np.ndarray(shape=(2,3), dtype=float)
 f_age_pyramid[0,:] = [0, 100, 100]
 f_age_pyramid[0,:] = [75, 100, 100]
 
+
 def test_pregnant_women():
     sc.heading('Test pregnancy and birth outcomes... ')
 
@@ -66,7 +67,7 @@ def test_pregnant_women():
     sim.init()
 
     # Override fecundity to maximize pregnancies and minimize variation during test
-    sim.people.personal_fecundity[:] = 1
+    sim.people.fp.personal_fecundity[:] = 1
 
     sim.run()
 
@@ -76,31 +77,31 @@ def test_pregnant_women():
     # expected number of pregnancies, stillborns, living infants, and miscarriages/abortions
     # pregnancy rate: 11.2% per month or approx 80% per year
     print(f'Checking pregnancy and birth outcomes from {n_agents} women... ')
-    assert 0.85 * n_agents > sim.results.pregnancies[0:12].sum() > 0.75 * n_agents, "Expected number of pregnancies not met"
-    print(f'✓ ({sim.results.pregnancies[0:12].sum()} pregnancies, as expected)')
+    assert 0.85 * n_agents > sim.results.fp.pregnancies[0:12].sum() > 0.75 * n_agents, "Expected number of pregnancies not met"
+    print(f'✓ ({sim.results.fp.pregnancies[0:12].sum()} pregnancies, as expected)')
 
     # stillbirth rate: 2.5% of all pregnancies, but only count completed pregnancies
-    assert 0.06 * sim.results.pregnancies[0:3].sum() > sim.results.stillbirths[9:12].sum() > 0.01 * sim.results.pregnancies[0:3].sum() , "Expected number of stillbirths not met"
-    print(f'✓ ({sim.results.stillbirths[9:12].sum()} stillbirths, as expected)')
+    assert 0.06 * sim.results.fp.pregnancies[0:3].sum() > sim.results.fp.stillbirths[9:12].sum() > 0.01 * sim.results.fp.pregnancies[0:3].sum() , "Expected number of stillbirths not met"
+    print(f'✓ ({sim.results.fp.stillbirths[9:12].sum()} stillbirths, as expected)')
 
     # miscarriage rate: 10% of all pregnancies. Miscarriages are calculated at end of 1st trimester, so pregnancies from months 0-9
     # have miscarriages from months 3-12.
-    pregnancies = sim.results.pregnancies[0:9].sum()
-    miscarriages = sim.results.miscarriages[3:12].sum()
+    pregnancies = sim.results.fp.pregnancies[0:9].sum()
+    miscarriages = sim.results.fp.miscarriages[3:12].sum()
     assert 0.15 * pregnancies > miscarriages > 0.05 * pregnancies, "Expected number of miscarriages not met"
     print(f'✓ ({miscarriages} miscarriages, as expected)')
 
     # abortion rate: 8% of all pregnancies
     # abortions occur at same timestep as conception, so all pregnancies were checked for abortions
-    pregnancies = sim.results.pregnancies.sum()
-    abortions = sim.results.abortions.sum()
+    pregnancies = sim.results.fp.pregnancies.sum()
+    abortions = sim.results.fp.abortions.sum()
     assert 0.13 * pregnancies > abortions > 0.03 * pregnancies, "Expected number of abortions not met"
     print(f'✓ ({abortions} abortions, as expected)')
 
     # live birth rate: 79.5% of all pregnancies
     # no premature births so all births are full term
-    pregnancies = sim.results.pregnancies[0:3].sum()
-    live_births = sim.results.births[9:12].sum()
+    pregnancies = sim.results.fp.pregnancies[0:3].sum()
+    live_births = sim.results.fp.births[9:12].sum()
     assert 0.85 * pregnancies > live_births > 0.75 * pregnancies, "Expected number of live births not met"
     print(f'✓ ({live_births} live births from {pregnancies} pregnancies, as expected)')
 
@@ -148,21 +149,21 @@ def test_contraception():
     sim = fp.Sim(pars=custom_pars, contraception_module=contra_mod, interventions=[p_use_change, p_use_change2])
     sim.init()
     # Override fecundity to maximize pregnancies and minimize variation during test
-    sim.people.personal_fecundity[:] = 1
+    sim.people.fp.personal_fecundity[:] = 1
 
     sim.run(verbose=1/12)
 
     print(f'Checking pregnancy and birth outcomes from {sim.pars.n_agents} women... ')
-    assert sim.results.pregnancies[0:12].sum() == 0, "Expected no pregnancies"
-    assert sim.results.pregnancies[12:].sum() > 0, "Expected pregnancies after contraception switch"
+    assert sim.results.fp.pregnancies[0:12].sum() == 0, "Expected no pregnancies"
+    assert sim.results.fp.pregnancies[12:].sum() > 0, "Expected pregnancies after contraception switch"
     print(f'✓ (no pregnancies with 100% effective contraception)')
 
-    pp1 = (sim.people.postpartum_dur==1).uids
-    assert sim.people.on_contra[pp1].sum() == 0, "Expected no contraception use immediately postpartum"
+    pp1 = (sim.people.fp.postpartum_dur==1).uids
+    assert sim.people.fp.on_contra[pp1].sum() == 0, "Expected no contraception use immediately postpartum"
     print(f'✓ (no contraception use postpartum)')
-    pp2plus = (sim.people.postpartum_dur == 2).uids
-    assert (sim.people.on_contra==True).sum() < sim.pars['n_agents'], "Expected some agents to be off of birth control at any given time"
-    print(f'✓ (contraception use rate {sim.people.on_contra[pp2plus].sum()/len(pp2plus):.2f}, as expected)')
+    pp2plus = (sim.people.fp.postpartum_dur == 2).uids
+    assert (sim.people.fp.on_contra==True).sum() < sim.pars['n_agents'], "Expected some agents to be off of birth control at any given time"
+    print(f'✓ (contraception use rate {sim.people.fp.on_contra[pp2plus].sum()/len(pp2plus):.2f}, as expected)')
 
     return sim
 
@@ -204,15 +205,15 @@ def test_method_selection_dependencies():
     pars['age_pyramid'] = f15_age_pyramid
     sim1 = fp.Sim(location="kenya", pars=pars, contraception_module=method, analyzers=[cpr, snapshots])
     sim1.init()
-    sim1.people.ever_used_contra[:] = True
+    sim1.people.fp.ever_used_contra[:] = True
 
     # custom init forces age, sex and other person defaults
     # p_use by age: <18: ~.18, 18-20: ~.49, 20-25: ~.54, 25-35: ~.52, 35-50: ~.32
     sim1.run()
 
-    contra_ending_t2 = sim1['analyzers'][1].snapshots['1']['ti_contra'] == 2
-    ending_contra_type = sim1['analyzers'][1].snapshots['1']['method'][contra_ending_t2]
-    new_contra_type = sim1['analyzers'][1].snapshots['2']['method'][contra_ending_t2]
+    contra_ending_t2 = sim1['analyzers'][1].snapshots['1'].fp.ti_contra == 2
+    ending_contra_type = sim1['analyzers'][1].snapshots['1'].fp.method[contra_ending_t2]
+    new_contra_type = sim1['analyzers'][1].snapshots['2'].fp.method[contra_ending_t2]
 
     # Compare methods. All should have changed.
     print(f"Checking agents change methods at ti_contra ... ")
@@ -232,22 +233,22 @@ def test_education_preg():
         sim.people.age[:] = 15
         sim.people.female[:] = True
         if pregnant:
-            sim.people.pregnant[:] = True
-            sim.people.method[:] = 0
-            sim.people.on_contra[:] = False
-            sim.people.ti_contra[:] = 12
+            sim.people.fp.pregnant[:] = True
+            sim.people.fp.method[:] = 0
+            sim.people.fp.on_contra[:] = False
+            sim.people.fp.ti_contra[:] = 12
         return sim
 
     sim_base = make_sim()
     sim_preg = make_sim(pregnant=True)
-    m = fp.parallel([sim_base, sim_preg], parallel=parallel, compute_stats=False)
+    m = ss.parallel([sim_base, sim_preg], parallel=parallel)
     sim_base, sim_preg = m.sims[:]  # Replace with run versions
 
     # Check that education has increased
     base_edu = sim_base.results.edu.mean_attainment[-1]
     preg_edu = sim_preg.results.edu.mean_attainment[-1]
-    base_births = sum(sim_base.results.births)
-    preg_births = sum(sim_preg.results.births)
+    base_births = sum(sim_base.results.fp.births)
+    preg_births = sum(sim_preg.results.fp.births)
     assert base_births < preg_births, f'With more pregnancy there should be more births, but {preg_births}<{base_births}'
     assert preg_edu < base_edu, f'With more pregnancy there should be lower education levels, but {preg_edu}>{base_edu}'
     print(f"✓ (Higher teen pregnancy ({preg_births:.0f} vs {base_births:.0f}) -> less education ({preg_edu:.2f} < {base_edu:.2f}))")
@@ -265,7 +266,7 @@ def plot_results(sim):
 
     # mCPR
     ax = axes[0]
-    ax.plot(sim.results.timevec, sim.results.cpr)
+    ax.plot(sim.results.timevec, sim.results.contraception.cpr)
     ax.set_ylim([0, 1])
     ax.set_ylabel('CPR')
     ax.set_title('CPR')
@@ -284,7 +285,7 @@ def plot_results(sim):
     # Plot method mix
     ax = axes[2]
     oc_uids = sim.people.on_contra.uids
-    method_props = [len(oc_uids[sim.people.method[oc_uids] == i]) / len(oc_uids) for i in range(1, 10)]
+    method_props = [len(oc_uids[sim.people.fp.method[oc_uids] == i]) / len(oc_uids) for i in range(1, 10)]
     method_labels = [m.name for m in sim.people.contraception_module.methods.values() if m.label != 'None']
     ax.bar(method_labels, method_props)
     ax.set_ylabel('Proportion among all users')
@@ -299,7 +300,6 @@ if __name__ == '__main__':
     sc.options(interactive=False)
     s1 = test_pregnant_women()
     s2 = test_contraception()
-    # s3, s4, s5 = test_simplechoice_contraception_dependencies()
     s6 = test_method_selection_dependencies()
     s7, s8 = test_education_preg()
     print("All tests passed!")
