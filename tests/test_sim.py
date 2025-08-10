@@ -124,11 +124,49 @@ def test_senegal():
 
 if __name__ == '__main__':
 
-    sim = test_simple('senegal')
-    s1 = test_random_choice()
-    sims1 = test_simple_choice()
-    sims2 = test_mid_choice()
-    test_sim_creation()
-    exp = test_senegal()
+    # sim = test_simple('senegal')
+    # s1 = test_random_choice()
+    # sims1 = test_simple_choice()
+    # sims2 = test_mid_choice()
+    # test_sim_creation()
+    # exp = test_senegal()
 
     print('Done.')
+
+    import fpsim as fp
+    import sciris as sc
+    import starsim as ss
+
+    pars = dict(
+        n_agents   = 1_000,
+        location   = 'kenya',
+        start_year = 2000,
+        end_year   = 2020,
+        exposure_factor = 1.0  # Overall scale factor on probability of becoming pregnant
+    )
+    method_choice = fp.RandomChoice()
+    s1 = fp.Sim(pars=pars, contraception_module=method_choice, label="Baseline")
+
+    Methods = fp.make_methods()
+    for method in Methods.values(): print(f"{method.idx}: {method.label}")
+    change_efficacy_intervention = fp.update_methods(eff={"Injectables": 0.99}, year=2010)  # new efficacy starts in 2010
+
+    s2 = fp.Sim(pars=pars, contraception_module=method_choice,
+                     interventions=change_efficacy_intervention,
+                     label="More effective Injectables")
+
+    # The baseline duration for Injectables is a lognormal with parameter par1=2, and par2=3
+    change_duration_intervention = fp.update_methods(dur_use={'Injectables': dict(dist='lognormal', par1=3, par2=0.2)}, year=2010)
+
+    # Define a simulaiton for this intervention called s3
+    s3 = fp.Sim(pars=pars, contraception_module=method_choice,
+                     interventions=change_duration_intervention,
+                     label="Longer time on Injectables")
+
+    # The values in method_mix should add up to 1, but if they don't, the intervention update_methods() will autamotailly normalize them to add up to 1.
+    change_mix = fp.update_methods(method_mix=[0.25, 0.05, 0.05, 0.0, 0.05, 0.3, 0.1, 0.1, 0.0], year=2010.0)
+
+    # Define a simulation for this intervention called s4
+    s4 = fp.Sim(pars=pars, contraception_module=method_choice,
+                interventions=change_mix,
+                label='Different mix')
