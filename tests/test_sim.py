@@ -102,6 +102,19 @@ def test_sim_creation():
     assert sim3.connectors.edu.pars.init_dropout.pars.p == 0.15, "Education par failed"
     assert sim3.fp_pars.postpartum_dur == 18, "FP par failed"
 
+    # Test 4: mixed types: some flat pars, some in dicts, and some modules
+    fp_pars = dict(short_int=20)
+    contra_pars = dict(prob_use_year=2010)
+    education_module = fp.Education(location='kenya', age_start=7)
+    sim4 = fp.Sim(pars, fp_pars=fp_pars, contra_pars=contra_pars, education_module=education_module)
+    sim4.init()
+
+    assert sim4.connectors.contraception.pars.prob_use_intercept == 0.5, "Contraception par failed"
+    assert sim4.connectors.contraception.pars.prob_use_year == 2010, "Contraception par failed"
+    assert sim4.connectors.edu.pars.age_start == 7, "Education par failed"
+    assert sim4.fp_pars.short_int == 20, "FP par failed"
+    assert sim4.fp_pars.postpartum_dur == 18, "FP par failed"
+
     print('✓ (successfully created sims with different methods)')
 
     return
