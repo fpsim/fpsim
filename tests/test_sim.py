@@ -114,8 +114,8 @@ def test_sim_creation():
     assert sim4.connectors.contraception.pars.prob_use_intercept == 0.5, "Contraception par failed"
     assert sim4.connectors.contraception.pars.prob_use_year == 2010, "Contraception par failed"
     assert sim4.connectors.edu.pars.age_start == 7, "Education par failed"
-    assert sim4.fp_pars.short_int == 20, "FP par failed"
-    assert sim4.fp_pars.postpartum_dur == 18, "FP par failed"
+    assert sim4.pars.fp.short_int == 20, "FP par failed"
+    assert sim4.pars.fp.postpartum_dur == 18, "FP par failed"
 
     print('✓ (successfully created sims with different methods)')
 
