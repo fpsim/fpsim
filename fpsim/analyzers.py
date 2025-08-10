@@ -339,9 +339,9 @@ class lifeof_recorder(ss.Analyzer):
     def __init__(self, **kwargs):
         super().__init__(**kwargs)  # Initialize the Analyzer object
         self.snapshots = sc.odict()  # Store the actual snapshots
-        self.keys = ['method', 'pregnant', 'lam', 'postpartum', 'sexually_active',
-                     'abortion', 'stillbirth', 'parity', 'method',
-                     'miscarriage', 'age', 'on_contra', 'alive']
+        self.keys = ['fp.method', 'fp.pregnant', 'fp.lam', 'fp.postpartum', 'fp.sexually_active',
+                     'fp.n_abortions', 'fp.n_stillbirths', 'fp.parity',
+                     'fp.n_miscarriages', 'age', 'fp.on_contra', 'alive']
         self.max_agents = 0  # maximum number of agents this analyzer tracks
         self.time = []
         self.trajectories = {}  # Store education trajectories
@@ -360,8 +360,12 @@ class lifeof_recorder(ss.Analyzer):
         females = sim.people.female.uids
         self.snapshots[str(sim.ti)] = {}
         for key in self.keys:
-            self.snapshots[str(sim.ti)][key] = sc.dcp(
-                sim.people[key][females])  # Take snapshot!
+            if '.' in key:
+                mod, rkey = key.split('.')
+                snap = sc.dcp(sim.people[mod][rkey][females])  # Take snapshot!
+            else:
+                snap = sc.dcp(sim.people[key][females])  # Take snapshot!
+            self.snapshots[str(sim.ti)][key] = snap
             self.max_agents = max(self.max_agents, len(females))
         return
 
@@ -373,8 +377,7 @@ class lifeof_recorder(ss.Analyzer):
             raise RuntimeError('Analyzer already finalized')
         self.finalized = True
         # Process data so we can plot it easily
-        self.time = np.array([key for key in self.snapshots.keys()],
-                             dtype=int)
+        self.time = np.array([key for key in self.snapshots.keys()], dtype=int)
         for state in self.keys:
             self.trajectories[state] = np.full(
                 (len(self.time), self.max_agents), np.nan)
@@ -401,17 +404,16 @@ class lifeof_recorder(ss.Analyzer):
         fig = pl.figure(**fig_args)
         pl.subplot(rows, cols,1)
 
-        preg_outcome_state = ["parity", "stillbirth", "miscarriage", "abortion"]
-        preg_outcome_symbl = {"stillbirth": u"\u29BB",
-                              "parity": u"\u29C2",       # use to determine live births
-                              "miscarriage" : u"\u29B0",
-                              "abortion": u"\u2A09"}
+        preg_outcome_state = ["fp.parity", "fp.n_stillbirths", "fp.n_miscarriages", "fp.n_abortions"]
+        preg_outcome_symbl = {"fp.n_stillbirths": u"\u29BB",
+                              "fp.parity": u"\u29C2",       # use to determine live births
+                              "fp.n_miscarriages" : u"\u29B0",
+                              "fp.n_abortions": u"\u2A09"}
 
-
-        preg_outcome_lbl = {"stillbirth": "Stillbirth",
-                            "parity": "Live birth",      # use to determine live births
-                            "miscarriage": "Miscarriage",
-                            "abortion": "Abortion"}
+        preg_outcome_lbl = {"fp.n_stillbirths": "Stillbirth",
+                            "fp.parity": "Live birth",      # use to determine live births
+                            "fp.n_miscarriages": "Miscarriage",
+                            "fp.n_abortions": "Abortion"}
 
         # Alive
         state = "alive"
@@ -428,14 +430,13 @@ class lifeof_recorder(ss.Analyzer):
         xp = temp_age[0, 0]*np.ones(len(yp))
         pl.plot(xp, yp, color='k', ls=':', marker=">")
 
-
         # Mark the age at the end of the simulation (if they died before the yellowish "alive" bar will stop befor this line)
         sim_len = len(self.time) * self.m2y
         xp = (temp_age[0, 0] + sim_len) *len(yp)
         pl.plot(xp, yp, color='k', ls=':', marker="<")
 
         # Sexually active
-        state = "sexually_active"
+        state = "fp.sexually_active"
         temp = self._state_intervals(state, index)
         sa_bar = pl.broken_barh(self._transform_to_age(temp, index),
                        (1, 1), facecolors="#9bf1fe", label=f"{state}")
@@ -445,7 +446,7 @@ class lifeof_recorder(ss.Analyzer):
         # NOTE: the context manager does not work (known matplotlib bug)
         # but if we set the a thicker hatch linewidth as common value for all bars
         # then some hatch patters look ugly ¯\_(ツ)_/¯ ...
-            state = "on_contra"
+            state = "fp.on_contra"
             temp = self._state_intervals(state, index)
             temp_age = self._transform_to_age(temp, index)
             on_contra_yo, on_contra_height = 1, 1
@@ -454,7 +455,7 @@ class lifeof_recorder(ss.Analyzer):
                                      facecolors="none", label=f"{state}", hatch="//")
 
         # What contraceptive method is she on?
-        state = "method"
+        state = "fp.method"
         contramethod = self.trajectories[state][:, index]
         bbox = dict(boxstyle="round", fc="w", ec="none", alpha=0.8)
         for start, age in zip(temp[:, 0], temp_age[:, 0]):
@@ -466,7 +467,7 @@ class lifeof_recorder(ss.Analyzer):
                 bbox=bbox)
 
         # Pregnant
-        state = "pregnant"
+        state = "fp.pregnant"
         temp = self._state_intervals(state, index)
         pr_bar = pl.broken_barh(self._transform_to_age(temp, index),
                        (2, 1), facecolors="deeppink", label=f"{state}")
@@ -485,22 +486,20 @@ class lifeof_recorder(ss.Analyzer):
             po = pl.plot(age, 2.5*temp, marker=marker, label=f"{lbl}",  **pl_args)
             po_plots.append(po[0])
 
-
         # Postpartum
-        state = "postpartum"
+        state = "fp.postpartum"
         temp = self._state_intervals(state, index)
         pp_bar = pl.broken_barh(self._transform_to_age(temp, index),
                        (0.7, 2.5), facecolors="oldlace", label=f"{state}")
 
         # Lam period
-        state = "lam"
+        state = "fp.lam"
         temp = self._state_intervals(state, index)
         lam_bar = pl.broken_barh(self._transform_to_age(temp, index),
                        (0.7, 2.5), facecolors="none", edgecolors="#a5a5a5",
                        label=f"{state}",
                        hatch="\\\\\\"
                        )
-
 
         # Labels and annotations
         pl.xlim(-0.5, 95)
@@ -549,7 +548,6 @@ class lifeof_recorder(ss.Analyzer):
 
         # Set the minor ticks at every year
         ax.xaxis.set_minor_locator(ticker.MultipleLocator(1))
-
 
         return fig
 
