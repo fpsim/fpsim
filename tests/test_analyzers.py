@@ -64,8 +64,8 @@ def test_snapshot():
     ok(f'Took {len(timesteps)} snapshots')
     pop0 = len(shots[0])
     pop1 = len(shots[1])
-    # assert pop1 > pop0, 'Expected population to grow'
-    # ok(f'Population grew ({pop1} > {pop0})')
+    assert pop1 > pop0, 'Expected population to grow'
+    ok(f'Population grew ({pop1} > {pop0})')
 
     return snap
 
@@ -118,8 +118,8 @@ if __name__ == '__main__':
 
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():
-        # calib = test_calibration()
-        # snap  = test_snapshot()
-        # ap    = test_age_pyramids()
+        calib = test_calibration()
+        snap  = test_snapshot()
+        ap    = test_age_pyramids()
         lh    = test_longitudinal()
-        # mmba  = test_method_mix_by_age()
+        mmba  = test_method_mix_by_age()
