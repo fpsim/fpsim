@@ -18,7 +18,6 @@ Version 3.2.0 (2025-08-15)
   * Introduces specific distributions for each random event; these distributions are CRN-safe and will eventually move FPsim to a CRN-safe model.
   * `sim.fp_pars` is now `sim.pars.fp`, which will make it consistent with other parameters like `sim.pars.hiv`.
   * Moves the `location` parameter from the `FPPars` class to the `SimPars` class.
-  * FIxes a bug in how the mCPR was being calculated.
 
 
 * **Result tidying**
@@ -33,8 +32,7 @@ Version 3.2.0 (2025-08-15)
   * Renames `urban_women` to `n_urban` for consistency with other results, e.g. `n_wq1`, `n_fecund`. 
   * Removes the `extract_employment` method from the `Experiment` class, as this is no longer functional.
   * Removes the `MultiSim` class.
-
-
+  * Numerous bugfixes; see PR for details.
 
 
 Version 3.1.0 (2025-07-31)
