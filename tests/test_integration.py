@@ -158,12 +158,11 @@ def test_contraception():
     assert sim.results.fp.pregnancies[12:].sum() > 0, "Expected pregnancies after contraception switch"
     print(f'✓ (no pregnancies with 100% effective contraception)')
 
-    pp1 = (sim.people.fp.postpartum_dur==1).uids
+    pp1 = (sim.people.fp.ti_delivery == sim.t.ti).uids
     assert sim.people.fp.on_contra[pp1].sum() == 0, "Expected no contraception use immediately postpartum"
     print(f'✓ (no contraception use postpartum)')
-    pp2plus = (sim.people.fp.postpartum_dur == 2).uids
-    assert (sim.people.fp.on_contra==True).sum() < sim.pars['n_agents'], "Expected some agents to be off of birth control at any given time"
-    print(f'✓ (contraception use rate {sim.people.fp.on_contra[pp2plus].sum()/len(pp2plus):.2f}, as expected)')
+    assert (sim.people.fp.on_contra == True).sum() < sim.pars['n_agents'], "Expected some agents to be off of birth control at any given time"
+    print(f'✓ (contraception use rate {sim.people.fp.on_contra.sum()/len(sim.people):.2f}, as expected)')
 
     return sim
 
@@ -298,10 +297,10 @@ def plot_results(sim):
 if __name__ == '__main__':
 
     sc.options(interactive=False)
-    s1 = test_pregnant_women()
+    # s1 = test_pregnant_women()
     s2 = test_contraception()
-    s6 = test_method_selection_dependencies()
-    s7, s8 = test_education_preg()
+    # s6 = test_method_selection_dependencies()
+    # s7, s8 = test_education_preg()
     print("All tests passed!")
 
 
