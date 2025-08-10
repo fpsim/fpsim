@@ -231,11 +231,16 @@ def test_education_preg():
         sim.init()
         sim.people.age[:] = 15
         sim.people.female[:] = True
+        fpppl = sim.people.fp
         if pregnant:
-            sim.people.fp.pregnant[:] = True
-            sim.people.fp.method[:] = 0
-            sim.people.fp.on_contra[:] = False
-            sim.people.fp.ti_contra[:] = 12
+            fpppl.gestation[:] = 1  # Start the counter at 1
+            fpppl.dur_pregnancy[:] = 9  # Set pregnancy duration
+            fpppl.ti_delivery[:] = 9  # Set time of delivery
+            fpppl.ti_pregnant[:] = 0
+            fpppl.pregnant[:] = True
+            fpppl.method[:] = 0
+            fpppl.on_contra[:] = False
+            fpppl.ti_contra[:] = 12
         return sim
 
     sim_base = make_sim()
@@ -297,10 +302,10 @@ def plot_results(sim):
 if __name__ == '__main__':
 
     sc.options(interactive=False)
-    # s1 = test_pregnant_women()
+    s1 = test_pregnant_women()
     s2 = test_contraception()
-    # s6 = test_method_selection_dependencies()
-    # s7, s8 = test_education_preg()
+    s6 = test_method_selection_dependencies()
+    s7, s8 = test_education_preg()
     print("All tests passed!")
 
 
