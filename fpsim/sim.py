@@ -164,7 +164,6 @@ class Sim(ss.Sim):
             pars['test'] = True
         return pars
 
-    # def separate_pars(self, pars):
     def separate_pars(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, sim_kwargs=None, **kwargs):
         """
         Separate the parameters into simulation and fp-specific parameters.

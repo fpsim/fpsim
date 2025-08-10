@@ -429,6 +429,7 @@ class FPmod(ss.Module):
     def check_infant_mortality(self, uids):
         """
         Check for probability of infant mortality (death < 1 year of age)
+        TODO: should this be removed if we are using standard death rates, which already include infant mortality?
         """
         death_prob = (self.pars['mortality_probs']['infant'])
         if len(uids) > 0:
@@ -659,12 +660,10 @@ class FPmod(ss.Module):
 
     def compute_asfr(self):
         """
-        Computes age-specific fertility rates (ASFR)
-        Calculates all women who've given birth in the previous 12 months and extracts their ages at
-        time of birth. Since this is calculated each timestep, the annualized results should compute
-        the mean, not the sum.
+        Computes age-specific fertility rates (ASFR). Since this is calculated each timestep,
+        the annualized results should compute the sum.
         """
-        new_mother_uids = (self.ti_live_birth == self.ti).uids  # All births in the last year
+        new_mother_uids = (self.ti_live_birth == self.ti).uids
         new_mother_ages = self.sim.people.age[new_mother_uids]
         births_by_age, _ = np.histogram(new_mother_ages, bins=self.asfr_bins)
         women_by_age, _ = np.histogram(self.sim.people.age[self.sim.people.female], bins=self.asfr_bins)
@@ -675,4 +674,10 @@ class FPmod(ss.Module):
         super().finalize_results()
         for res in fpd.event_counts:
             self.results[f'cum_{res}'] = np.cumsum(self.results[res])
+
+        # Aggregate the ASFR results, taking rolling 12-month sums
+        asfr = np.zeros((len(self.asfr_bins)-1, self.t.npts))
+        for i in range(len(self.asfr_bins)-1):
+            asfr[i, (fpd.mpy-1):] = np.convolve(self.asfr[i, :], np.ones(fpd.mpy), mode='valid')
+        self.asfr = asfr
         return

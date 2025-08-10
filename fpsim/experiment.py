@@ -175,9 +175,10 @@ class Experiment(sc.prettyobj):
         return
 
     def model_crude_death_rate(self, fp_df=None, sim_df=None):
-        total_deaths = sim_df['new_deaths'].values[-1] + \
-                       fp_df['infant_deaths'].values[-1] + \
-                       fp_df['maternal_deaths'].values[-1]
+        """ Calculate the crude death rate from the model results. """
+        total_deaths = sim_df['new_deaths'].values[-2] + \
+                       fp_df['infant_deaths'].values[-2] + \
+                       fp_df['maternal_deaths'].values[-2]
         self.model['crude_death_rate'] = sc.safedivide(total_deaths, sim_df['n_alive'].values[-1]) * 1000
         return
 
