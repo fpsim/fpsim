@@ -211,7 +211,7 @@ class ContraceptiveChoice(ss.Connector):
         errormsg = ('remove_method is not currently functional. See example in test_parameters.py if you want to run a '
                     'simulation with a subset of the standard set of methods. The remove_method logic needs to be'
                     'replaced with something that can remove a method partway through a simulation.')
-        raise NotImplementedError(errormsg)
+        raise ValueError(errormsg)
         # method = self.get_method_by_label(method_label)
         # del self.methods[method.name]
 
