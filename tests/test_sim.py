@@ -170,3 +170,8 @@ if __name__ == '__main__':
     s4 = fp.Sim(pars=pars, contraception_module=method_choice,
                 interventions=change_mix,
                 label='Different mix')
+    simlist = sc.autolist([s1, s2, s3, s4])
+    msim = ss.MultiSim(sims=simlist)
+    msim.run(parallel=False)
+
+    msim.plot(key='cpr')
