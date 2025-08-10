@@ -27,12 +27,13 @@ if __name__ == '__main__':
 
     sim, method_choice = make_sim()
     ppl = sim.people
+    # TODO: replace this function with Starsim benchmarking / profiling tools once Starsim v3 port is complete
     to_profile = sc.objdict(
         run             = sim.run,
-        step            = ppl.step,           # 70% of sim.run() runtime is spent here
+        step            = ppl.step,
         people_init     = ppl.__init__,
-        update_method   = ppl.update_method,    # 95% of ppl.update_methods() runtime is spent here
-        set_dur_method  = method_choice.set_dur_method,    # 98% of ppl.update_methods() runtime is spent here
+        update_method   = ppl.update_method,
+        set_dur_method  = method_choice.set_dur_method,
     )['step']
 
     if do_profile:
