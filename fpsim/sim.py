@@ -300,44 +300,44 @@ class Sim(ss.Sim):
                 nrows, ncols = 2, 3
 
             res = self.results  # Shorten since heavily used
-            agelim = ('-'.join([str(self.fp_pars['low_age_short_int']), str(
-                self.fp_pars['high_age_short_int'])]))  ## age limit to be added to the title of short birth interval plot
+            agelim = ('-'.join([str(self.pars.fp['low_age_short_int']), str(
+                self.pars.fp['high_age_short_int'])]))  ## age limit to be added to the title of short birth interval plot
 
             if isinstance(to_plot, dict):
                 pass
             elif isinstance(to_plot, str):
                 if to_plot == 'default':
                     to_plot = {
-                        'mcpr_by_year':                'Modern contraceptive prevalence rate (%)',
-                        'cum_live_births_by_year':     'Live births',
-                        'cum_stillbirths_by_year':     'Stillbirths',
-                        'cum_maternal_deaths_by_year': 'Maternal deaths',
-                        'cum_infant_deaths_by_year':   'Infant deaths',
-                        'imr':                         'Infant mortality rate',
+                        'contraception.mcpr':   'Modern contraceptive prevalence rate (%)',
+                        'fp.cum_births':           'Live births',
+                        'fp.cum_stillbirths':      'Stillbirths',
+                        'fp.cum_maternal_deaths':  'Maternal deaths',
+                        'fp.cum_infant_deaths':    'Infant deaths',
+                        'fp.imr':                  'Infant mortality rate',
                     }
                 elif to_plot == 'cpr':
                     to_plot = {
-                        'mcpr': 'MCPR (modern contraceptive prevalence rate)',
-                        'cpr':  'CPR (contraceptive prevalence rate)',
-                        'acpr': 'ACPR (alternative contraceptive prevalence rate)',
+                        'contraception.mcpr': 'MCPR (modern contraceptive prevalence rate)',
+                        'contraception.cpr':  'CPR (contraceptive prevalence rate)',
+                        'contraception.acpr': 'ACPR (alternative contraceptive prevalence rate)',
                     }
                 elif to_plot == 'mortality':
                     to_plot = {
-                        'mmr':                         'Maternal mortality ratio',
-                        'cum_maternal_deaths_by_year': 'Maternal deaths',
-                        'cum_infant_deaths_by_year':   'Infant deaths',
-                        'imr':                         'Infant mortality rate',
+                        'contraception.mmr':                 'Maternal mortality ratio',
+                        'fp.cum_maternal_deaths': 'Maternal deaths',
+                        'fp.cum_infant_deaths':   'Infant deaths',
+                        'fp.imr':                 'Infant mortality rate',
                         }
-                elif to_plot == 'apo': #adverse pregnancy outcomes
+                elif to_plot == 'apo':  #adverse pregnancy outcomes
                     to_plot = {
-                        'cum_pregnancies_by_year':     'Pregnancies',
-                        'cum_stillbirths_by_year':     'Stillbirths',
-                        'cum_miscarriages_by_year':    'Miscarriages',
-                        'cum_abortions_by_year':       'Abortions',
+                        'fp.cum_pregnancies':     'Pregnancies',
+                        'fp.cum_stillbirths':     'Stillbirths',
+                        'fp.cum_miscarriages':    'Miscarriages',
+                        'fp.cum_abortions':       'Abortions',
                         }
                 elif to_plot == 'method':
                     to_plot = {
-                        'method_usage':                 'Method usage'
+                        'method_mix':                 'Method mix'
                     }
                 elif to_plot == 'short-interval':
                     to_plot = {
@@ -355,8 +355,11 @@ class Sim(ss.Sim):
                 rows, cols = 1, 3
             for p, key, reslabel in sc.odict(to_plot).enumitems():
                 ax = pl.subplot(rows, cols, p + 1)
-
-                this_res = res[key]
+                if '.' in key:
+                    mod, rkey = key.split('.')
+                    this_res = res[mod][rkey]
+                else:
+                    this_res = res[key]
                 is_dist = hasattr(this_res, 'best')
                 if is_dist:
                     y, low, high = this_res.best, this_res.low, this_res.high
@@ -364,23 +367,11 @@ class Sim(ss.Sim):
                     y, low, high = this_res, None, None
 
                 # Figure out x axis
-                years = res['tfr_years']
-                timepoints = res.timevec  # Likewise
-                x = None
-                for x_opt in [years, timepoints]:
-                    if len(y) == len(x_opt):
-                        x = x_opt
-                        break
-                if x is None:
-                    errormsg = f'Could not figure out how to plot {key}: result of length {len(y)} does not match a known x-axis'
-                    raise RuntimeError(errormsg)
+                x = res.timevec
 
-                percent_keys = ['mcpr_by_year', 'mcpr', 'cpr', 'acpr', 'method_usage',
-                                'proportion_short_interval_by_year']
-                if (
-                        'cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'proportion_short_interval_' in key) and 'by_year' not in key:
-                    percent_keys = percent_keys + list(to_plot.keys())
-                if key in percent_keys and key != 'method_usage':
+                percent_keys = ['mcpr', 'cpr', 'acpr', 'method_mix',
+                                'proportion_short_interval']
+                if key in percent_keys and key != 'method_mix':
                     y = y * 100 # why doesn't *= syntax work here? Is it overloaded on Result objects?
                     if is_dist:
                         low *= 100
@@ -396,13 +387,15 @@ class Sim(ss.Sim):
                         plotlabel = self.label
 
                 # Actually plot
-                if key == "method_usage":
-                    data = self.format_method_df(timeseries=True)
-                    method_names = data['Method'].unique()
-                    flipped_data = {method: [percentage for percentage in data[data['Method'] == method]['Percentage']]
-                                    for method in method_names}
-                    colors = [colors[method] for method in method_names] if isinstance(colors, dict) else colors
-                    ax.stackplot(data["Year"].unique(), list(flipped_data.values()), labels=method_names, colors=colors)
+                if key == "method_mix":
+                    errormsg = 'Plotting method mix currently not working'
+                    raise ValueError(errormsg)
+                    # data = self.format_method_df(timeseries=True)
+                    # method_names = data['Method'].unique()
+                    # flipped_data = {method: [percentage for percentage in data[data['Method'] == method]['Percentage']]
+                    #                 for method in method_names}
+                    # colors = [colors[method] for method in method_names] if isinstance(colors, dict) else colors
+                    # ax.stackplot(data["Year"].unique(), list(flipped_data.values()), labels=method_names, colors=colors)
                 else:
                     ax.plot(x, y, label=plotlabel, **plot_args)
 
@@ -418,8 +411,6 @@ class Sim(ss.Sim):
                             intv.plot_intervention(self, ax)
 
                 # Handle annotations
-                as_plot = (
-                                  'cpr_' in key or 'acpr_' in key or 'mcpr_' in key or 'pregnancies_' in key or 'stillbirths' in key or 'tfr_' in key or 'imr_' in key or 'mmr_' in key or 'births_' in key or 'proportion_short_interval_' in key) and 'by_year' not in key
                 fixaxis(useSI=fpd.useSI, set_lim=new_fig)  # If it's not a new fig, don't set the lim
                 if key in percent_keys:
                     pl.ylabel('Percentage')
@@ -427,14 +418,10 @@ class Sim(ss.Sim):
                     pl.ylabel('Deaths per 100,000 live births')
                 elif 'imr' in key:
                     pl.ylabel('Deaths per 1,000 live births')
-                elif 'tfr_' in key:
+                elif 'tfr' in key:
                     pl.ylabel('Fertility rate per 1,000 women')
-                elif 'mmr_' in key:
-                    pl.ylabel('Maternal deaths per 10,000 births')
-                elif 'stillbirths_' in key:
+                elif 'stillbirths' in key:
                     pl.ylabel('Number of stillbirths')
-                elif 'intent' or 'employment' in key:
-                    pl.ylabel('Percentage')
                 else:
                     pl.ylabel('Count')
                 pl.xlabel('Year')
@@ -443,9 +430,9 @@ class Sim(ss.Sim):
                     pl.xlim(xlims)
                 if ylims is not None:
                     pl.ylim(ylims)
-                if (key == "method_usage") or as_plot:  # need to overwrite legend for some plots
+                if (key == "method_usage"):  # need to overwrite legend for some plots
                     ax.legend(loc='upper left', frameon=True)
-                if 'cpr' in to_plot and '_' not in to_plot:
+                if 'cpr' in to_plot:
                     if is_dist:
                         top = int(np.ceil(max(self.results['acpr'].high) / 10.0)) * 10  # rounding up to nearest 10
                     else:
@@ -484,7 +471,7 @@ class Sim(ss.Sim):
         Returns:
             pandas.DataFrame with columns ["Percentage", "Method", "Sim", "Seed"] and optionally "Year" if timeseries
         """
-        inv_method_map = {index: name for name, index in self.fp_pars['methods']['map'].items()}
+        inv_method_map = {index: name for name, index in self.pars.fp['methods']['map'].items()}
 
         def get_df_from_result(method_list):
             df_dict = {"Percentage": [], "Method": [], "Sim": [], "Seed": []}
@@ -513,7 +500,8 @@ class Sim(ss.Sim):
         """Pretty print availbale results keys, sorted alphabetically"""
         output = 'Result keys:\n'
         keylen = 35  # Maximum key length  -- "interactive"
-        for k in sorted(self.results.keys()):
+        all_keys = self.results.flatten(sep='.').keys()
+        for k in sorted(all_keys):
             keystr = sc.colorize(f'  {k:<{keylen}s} ', fg='blue', output=True)
             reprstr = sc.indent(n=0, text=keystr, width=None)
             output += f'{reprstr}'
