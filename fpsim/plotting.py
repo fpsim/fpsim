@@ -9,6 +9,7 @@ import seaborn as sns
 import pandas as pd
 import numpy as np
 from . import defaults as fpd
+from pathlib import Path
 
 # Default Settings
 min_age = 15
@@ -51,12 +52,13 @@ class Config:
         return cls._figs_directory
 
     @classmethod
-    def load_validation_data(cls, country, val_data_mapping=None, keys=None):
+    def load_validation_data(cls, location, val_data_mapping=None, keys=None):
         """
-        Load validation data for the specified country.
+        Load validation data for the specified country or region.
+        Falls back to country-level data if region-specific file is not found.
 
         Args:
-            country (str): The name of the country folder.
+            location (str): The name of the location folder (region or country).
             val_data_mapping (dict, optional): Custom mapping of validation data keys to filenames.
                                                Defaults to `default_val_data_mapping`.
             keys (str or list of str, optional): Specific metric(s) to load (e.g., 'asfr' or ['asfr', 'tfr']).
@@ -75,14 +77,24 @@ class Config:
         if keys is not None:
             val_data_mapping = {k: v for k, v in val_data_mapping.items() if k in keys}
 
-        base_path = getattr(fp.locations, country).filenames()['base']
+        loc_mod = getattr(fp.locations, location)
+        file_paths = loc_mod.filenames()
         val_data = sc.objdict()
 
         for key, filename in val_data_mapping.items():
-            filepath = os.path.join(base_path, filename)
-            if not os.path.exists(filepath):
-                raise FileNotFoundError(f"Validation data file not found: {filepath}")
-            val_data[key] = pd.read_csv(filepath)
+            file_path = file_paths.get(key, None)
+            if file_path is None:
+                raise ValueError(f"No path defined for key '{key}' in filenames() for location '{location}'.")
+
+            if not Path(file_path).exists():
+                raise FileNotFoundError(f"File not found: {file_path}")
+
+            val_data[key] = pd.read_csv(file_path)
+
+            # Filter to region if 'region' column exists
+            if 'region' in val_data[key].columns:
+                val_data[key] = val_data[key][val_data[key]['region'] == location].copy()
+                val_data[key].drop(columns=['region'], inplace=True)
 
         return val_data
 
@@ -195,7 +207,8 @@ def plot_methods(sim):
 
     # Setup
     ppl = sim.people
-    model_labels_all = [m.label for m in sim.fp_pars['contraception_module'].methods.values()]
+    cm = sim.connectors.contraception
+    model_labels_all = [m.label for m in cm.methods.values()]
     model_labels_methods = sc.dcp(model_labels_all)
     model_method_counts = sc.odict().make(keys=model_labels_all, vals=0.0)
 
@@ -221,10 +234,10 @@ def plot_methods(sim):
     }
 
     # Method data_use from data - country PMA data (data_use.csv)
-    no_use = data_use.iloc[0]['perc']
-    any_method = data_use.iloc[1]['perc']
+    no_use = data_use.loc[data_use['use'] == 0, 'perc'].values[0]
+    any_method = data_use.loc[data_use['use'] == 1, 'perc'].values[0]
     data_methods_use = {
-        'No data_use': no_use,
+        'No method use': no_use,
         'Any method': any_method
     }
 
@@ -652,7 +665,7 @@ def plot_education(sim):
     for i in range(len(ppl)):
         if ppl.alive.values[i] and ppl.female.values[i] and min_age <= ppl.age.values[i] < max_age:
             age_bin = age_bins[sc.findinds(age_bins <= ppl.age.values[i])[-1]]
-            model_edu_years[age_bin].append(ppl.edu_attainment.values[i])
+            model_edu_years[age_bin].append(ppl.edu.attainment.values[i])
 
     # Calculate average # of years of educational attainment for each age
     model_edu_mean = []
