@@ -54,25 +54,24 @@ class Experiment(sc.prettyobj):
     '''
 
     # def __init__(self, sim_pars={}, fp_pars={}, flags=None, label=None, **kwargs):
-    def __init__(self, pars={}, flags=None, label=None, **kwargs):
+    def __init__(self, pars=None, flags=None, label=None, **kwargs):
         self.flags = sc.mergedicts(default_flags, flags, _copy=True)  # Set flags for what gets run
 
-        self.pars = sc.mergedicts(fpp.default_sim_pars, pars)
+        self.pars = pars
 
         if len(kwargs):
             for k, v in kwargs.items():
                 if k in self.pars:
                     self.pars[k] = v
 
-        if 'location' not in pars: self.pars['location'] = 'test'
-        self.location = self.pars['location']
+        # if 'location' not in pars: self.pars['location'] = 'test'
+        # self.location = self.pars['location']
         self.model = sc.objdict()
         self.data = sc.objdict()
         self.method_keys = None
         self.initialized = False
         self.label = label
         return
-
 
     def load_data(self, key, **kwargs):
         ''' Load data from various formats '''
@@ -91,7 +90,6 @@ class Experiment(sc.prettyobj):
             errormsg = f'Unrecognized file format for: {path}'
             raise ValueError(errormsg)
         return data
-
 
     def extract_data(self):
         ''' Load data '''
@@ -122,7 +120,6 @@ class Experiment(sc.prettyobj):
         self.initialized = True
 
         return
-
 
     def pop_growth_rate(self, years, population):
         growth_rate = np.zeros(len(years) - 1)
@@ -413,7 +410,7 @@ class Experiment(sc.prettyobj):
         model_methods = ppl.method[alive_f_uids]
         model_method_counts,_ = np.histogram(model_methods, bins=np.arange(11))
         model_method_counts = model_method_counts/model_method_counts.sum()
-        model_labels = [m.label for m in self.sim.fp_pars['contraception_module'].methods.values()]
+        model_labels = [m.label for m in self.sim.connectors.contraception.methods.values()]
 
         # Make labels
         data_labels = data_method_counts.keys()

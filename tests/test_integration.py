@@ -115,8 +115,8 @@ def test_contraception():
     # test 2: contraception use restarts after postpartum period
 
     methods = ss.ndict([
-        fpm.Method(name='none', efficacy=0, modern=False, dur_use=fpm.ln(2, 3), label='None'),
-        fpm.Method(name='test',     efficacy=1.0, modern=True,  dur_use=fpm.ln(2, 3), label='Test'),
+        fpm.Method(name='none', efficacy=0, modern=False, dur_use=1/12, label='None'),
+        fpm.Method(name='test', efficacy=1.0, modern=True,  dur_use=1/12, label='Test'),
     ])
     contra_mod = fpm.RandomChoice(methods=methods, pars={'p_use': 1.0})
 
@@ -137,7 +137,7 @@ def test_contraception():
 
     custom_pars = {
         'start_year': 2000,
-        'end_year': 2003,
+        'end_year': 2005,
         'n_agents': 1000,
         'age_pyramid': f24_age_pyramid,
         'debut_age': debut_age,
@@ -150,7 +150,7 @@ def test_contraception():
     # Override fecundity to maximize pregnancies and minimize variation during test
     sim.people.personal_fecundity[:] = 1
 
-    sim.run()
+    sim.run(verbose=1/12)
 
     print(f'Checking pregnancy and birth outcomes from {sim.pars.n_agents} women... ')
     assert sim.results.pregnancies[0:12].sum() == 0, "Expected no pregnancies"
@@ -226,7 +226,7 @@ def test_education_preg():
     sc.heading('Testing that lower fertility rate leads to more education...')
 
     def make_sim(pregnant=False):
-        pars = dict(start=2000, stop=2010, n_agents=10000, verbose=0.1)
+        pars = dict(start=2000, stop=2010, n_agents=1000)
         sim = fp.Sim(pars=pars)
         sim.init()
         sim.people.age[:] = 15
@@ -244,8 +244,8 @@ def test_education_preg():
     sim_base, sim_preg = m.sims[:]  # Replace with run versions
 
     # Check that education has increased
-    base_edu = sim_base.results.edu_attainment[-1]
-    preg_edu = sim_preg.results.edu_attainment[-1]
+    base_edu = sim_base.results.edu.mean_attainment[-1]
+    preg_edu = sim_preg.results.edu.mean_attainment[-1]
     base_births = sum(sim_base.results.births)
     preg_births = sum(sim_preg.results.births)
     assert base_births < preg_births, f'With more pregnancy there should be more births, but {preg_births}<{base_births}'
