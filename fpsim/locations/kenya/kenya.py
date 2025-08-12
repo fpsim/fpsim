@@ -10,7 +10,6 @@ import fpsim.locations.data_utils as fpld
 
 def scalar_pars():
     scalar_pars = {
-        'location':             'kenya',
         'postpartum_dur':       23,
     }
     return scalar_pars

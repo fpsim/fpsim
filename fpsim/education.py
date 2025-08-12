@@ -209,7 +209,7 @@ class Education(ss.Connector):
         """
         ppl = self.sim.people
         # Hinder education progression if a woman is pregnant and towards the end of the first trimester
-        pregnant_students = self.in_school & ppl.pregnant & (ppl.gestation == ppl.sim.fp_pars['end_first_tri'])
+        pregnant_students = self.in_school & ppl.fp.pregnant & (ppl.fp.gestation == self.sim.pars.fp['end_first_tri'])
         self.interrupted[pregnant_students] = True
         return
 
@@ -225,13 +225,13 @@ class Education(ss.Connector):
             age_cutoffs = parity1['age']
 
             # Parity 1
-            p1_students = self.in_school & (ppl.parity == 1)
+            p1_students = self.in_school & (ppl.fp.parity == 1)
             p1_age_idx = np.searchsorted(age_cutoffs, ppl.age[p1_students], "right") - 1
             p1_idx = mother_students[p1_students].nonzero()[-1]
             p_drop[p1_idx] = parity1['percent'][p1_age_idx]
 
             # Parity 2+
-            p2_students = self.in_school & (ppl.parity > 1)
+            p2_students = self.in_school & (ppl.fp.parity > 1)
             p2_age_idx = np.searchsorted(age_cutoffs, ppl.age[p2_students], "right") - 1
             p2_idx = mother_students[p2_students].nonzero()[-1]
             p_drop[p2_idx] = parity2['percent'][p2_age_idx]
@@ -258,11 +258,11 @@ class Education(ss.Connector):
         ppl = self.sim.people
         # Basic mechanism to resume education post-pregnancy:
         # If education was interrupted due to pregnancy, resume after 9 months pospartum
-        postpartum_students = (ppl.postpartum &
+        postpartum_students = (ppl.fp.postpartum &
                                 self.interrupted &
                                 ~self.completed &
                                 ~self.dropped &
-                                (ppl.postpartum_dur > 0.5 * ppl.sim.fp_pars['postpartum_dur'])
+                                ((self.ti - ppl.fp.ti_delivery) > 9)  # 9 months postpartum
                                 )
         self.interrupted[postpartum_students] = False
         return

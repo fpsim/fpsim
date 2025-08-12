@@ -22,7 +22,8 @@ def ok(string):
 def test_null(do_plot=do_plot):
     sc.heading('Testing no births, no deaths...')
 
-    fp_pars = fp.make_fp_pars(location='senegal')  # For default pars
+    fp_pars = fp.make_fp_pars()  # For default pars
+    fp_pars.update_location('senegal')
 
     # Set things to zero
     for key in ['exposure_factor']:
@@ -38,10 +39,11 @@ def test_null(do_plot=do_plot):
     sim.run()
 
     # Tests
-    for key in ['births', 'deaths']:
-        n = sim.results[key].sum()
-        assert n == 0, f'Expecting {key} to be 0, not {n}'
-        ok(f'{key} was 0, as expected')
+    n = sim.results.fp.births.sum()
+    assert n == 0, f'Expecting 0 births, not {n}'
+    n = sim.results.new_deaths.sum()
+    assert n == 0, f'Expecting 0 deaths, not {n}'
+    ok(f'Births and deaths are 0, as expected')
 
     return sim
 
@@ -50,7 +52,6 @@ def test_scale():
     sc.heading('Test scale factor')
 
     # Test settings
-    orig_pop = 100
     scale = 2
 
     # Make and run sims
@@ -61,11 +62,11 @@ def test_scale():
     s1, s2 = msim.sims
 
     # Tests
-    orig = s1.results.total_births.sum()
+    orig = s1.results.fp.total_births.sum()
     expected = scale*orig
-    actual = s2.results.total_births.sum()
+    actual = s2.results.fp.total_births.sum()
     assert expected == actual, 'Total births should scale exactly with scale factor'
-    assert np.array_equal(s1.results.mcpr, s2.results.mcpr), 'Scale factor should not change MCPR'
+    assert np.array_equal(s1.results.contraception.mcpr, s2.results.contraception.mcpr), 'Scale factor should not change MCPR'
     ok(f'{actual} births = {scale}*{orig} as expected')
 
     return [s1, s2]
@@ -103,7 +104,7 @@ def test_method_changes():
     choice = fp.RandomChoice(pars=dict(p_use=1), methods=methods)
     s3 = fp.Sim(test=True, contraception_module=choice)
     s3.run()
-    assert s3.results.births.sum() == 0, f'Expecting births to be 0, not {n}'
+    assert s3.results.fp.births.sum() == 0, f'Expecting births to be 0, not {n}'
     ok(f'No births with completely effective contraception, as expected')
 
 
