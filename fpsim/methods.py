@@ -129,11 +129,11 @@ class ContraceptiveChoice(ss.Connector):
         Initialize results for this module
         """
         self.define_results(
-            ss.Result('n_at_risk_non_users', scale=False, label="Number of non-users at risk of pregnancy (aCPR)"),
-            ss.Result('n_at_risk_users', scale=False, label="Number of users at risk of pregnancy (aCPR)"),
-            ss.Result('n_non_users', scale=False, label="Number of non-users (CPR)"),
-            ss.Result('n_mod_users', scale=False, label="Number of modern contraceptive users (mCPR)"),
-            ss.Result('n_users', scale=False, label="Number of contraceptive users (CPR)"),
+            ss.Result('n_at_risk_non_users', scale=True, label="Number of non-users at risk of pregnancy (aCPR)"),
+            ss.Result('n_at_risk_users', scale=True, label="Number of users at risk of pregnancy (aCPR)"),
+            ss.Result('n_non_users', scale=True, label="Number of non-users (CPR)"),
+            ss.Result('n_mod_users', scale=True, label="Number of modern contraceptive users (mCPR)"),
+            ss.Result('n_users', scale=True, label="Number of contraceptive users (CPR)"),
             ss.Result('mcpr', scale=False, label="Modern contraceptive prevalence rate (mCPR)"),
             ss.Result('cpr', scale=False, label="Contraceptive prevalence rate (CPR)"),
             ss.Result('acpr', scale=False, label="Active contraceptive prevalence rate (aCPR)"),

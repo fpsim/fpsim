@@ -31,7 +31,7 @@ class FPmod(ss.Module):
         self.define_states(*fp.fpmod_states)
 
         # Distributions: binary outcomes
-        self._p_fertile = ss.bernoulli(p=1-self.pars['primary_infertility'])  # Probability of primary fertility
+        self._p_fertile = ss.bernoulli(p=1-self.pars['primary_infertility'])  # Probability that a woman is fertile, i.e. 1 - primary infertility
         self._p_death = ss.bernoulli(p=0)  # Probability of death - TODO, remove?
         self._p_miscarriage = ss.bernoulli(p=0)  # Probability of miscarriage
         self._p_mat_mort = ss.bernoulli(p=0)  # Probability of maternal mortality
