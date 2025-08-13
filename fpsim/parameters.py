@@ -41,7 +41,7 @@ class SimPars(ss.SimPars):
 
     def update(self, pars=None, create=False, **kwargs):
         # Pull out test
-        if kwargs.get('test') or pars.get('test'):
+        if kwargs.get('test') or (pars is not None and pars.get('test')):
             print('Running in test mode, with smaller population and shorter time period.')
             self.n_agents = 500
             self.start = 2000

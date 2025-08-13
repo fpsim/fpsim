@@ -64,11 +64,11 @@ class Education(ss.Connector):
         self.define_states(
             ss.FloatArr('objective'),  # Education objectives
             ss.FloatArr('attainment', default=0),  # Education attainment - initialized as 0, reset if data provided
-            ss.State('started', default=False),  # Whether education has been started
-            ss.State('in_school'),  # Currently in school
-            ss.State('completed'),  # Whether education is completed
-            ss.State('dropped'),  # Whether education was dropped
-            ss.State('interrupted', default=False),
+            ss.BoolState('started', default=False),  # Whether education has been started
+            ss.BoolState('in_school'),  # Currently in school
+            ss.BoolState('completed'),  # Whether education is completed
+            ss.BoolState('dropped'),  # Whether education was dropped
+            ss.BoolState('interrupted', default=False),
         )
 
         # Store things that will be processed after sim initialization
