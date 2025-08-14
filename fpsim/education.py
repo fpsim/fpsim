@@ -164,8 +164,8 @@ class Education(ss.Connector):
     def _get_uids(self, upper_age=None):
         """ Get uids of females younger than upper_age """
         people = self.sim.people
-        if upper_age is None: upper_age = 1000
-        within_age = people.age < upper_age
+        if upper_age is None: upper_age = ss.years(100)
+        within_age = people.age < upper_age.years
         return (within_age & people.female).uids
 
     def init_objectives(self, upper_age=None):

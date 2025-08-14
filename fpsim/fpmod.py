@@ -199,7 +199,7 @@ class FPmod(ss.Module):
 
         fecund = uids[(ppl.female[uids] == True) & (ppl.age[uids] < self.pars['age_limit_fecundity'])]
 
-        time_to_debut = (self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt
+        time_to_debut = (self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt.value
 
         # If ti_contra is less than one timestep away, we want to also set it to 0 so floor time_to_debut.
         self.ti_contra[fecund] = np.maximum(np.floor(time_to_debut), 0)
@@ -268,7 +268,7 @@ class FPmod(ss.Module):
         # Get each woman's degree of protection against conception based on her contraception or LAM
         cm = self.sim.connectors.contraception
         eff_array = np.array([m.efficacy for m in cm.methods.values()])
-        method_eff = eff_array[self.method.astype(int)]
+        method_eff = eff_array[self.method]
         lam_eff = pars['LAM_efficacy']
         lam = self.lam[active_uids]
         lam_uids = active_uids[lam]

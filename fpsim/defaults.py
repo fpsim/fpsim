@@ -67,7 +67,7 @@ def register_location(name, location_ref):
 fpmod_states = [
     # Contraception
     ss.BoolState('on_contra', default=False),  # whether she's on contraception
-    ss.FloatArr('method', default=0),  # Which method to use. 0 used for those on no method
+    ss.IntArr('method', default=0),  # Which method to use. 0 used for those on no method
     ss.FloatArr('ti_contra', default=0),  # time point at which to set method
     ss.FloatArr('barrier', default=0),
     ss.BoolState('ever_used_contra', default=False),  # Ever been on contraception. 0 for never having used
