@@ -128,6 +128,8 @@ class ContraceptiveChoice(ss.Connector):
         """
         Initialize results for this module
         """
+        super().init_results()
+
         self.define_results(
             ss.Result('n_at_risk_non_users', scale=True, label="Number of non-users at risk of pregnancy (aCPR)"),
             ss.Result('n_at_risk_users', scale=True, label="Number of users at risk of pregnancy (aCPR)"),
@@ -154,6 +156,7 @@ class ContraceptiveChoice(ss.Connector):
          duration on that method. This method is called by the simulation to initialise the
          people object at the beginning of the simulation and new people born during the simulation.
          """
+        super().init_post()
         ppl = self.sim.people
         fecund = ppl.female & (ppl.age < self.sim.pars.fp['age_limit_fecundity'])
         fecund_uids = fecund.uids
