@@ -564,7 +564,8 @@ class SimpleChoice(RandomChoice):
                     errormsg = 'Unrecognized type for duration of use: expecting a distribution dict or a number'
                     raise ValueError(errormsg)
 
-        dt = ppl.sim.t.dt_year * fpd.mpy
+        # dt = ppl.sim.t.dt_year * fpd.mpy
+        dt = self.t.dt.months
         timesteps_til_update = np.clip(np.round(dur_method/dt), 1, self.pars['max_dur'].years)  # Include a maximum. Durs seem way too high
 
         return timesteps_til_update

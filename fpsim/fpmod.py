@@ -199,10 +199,10 @@ class FPmod(ss.Module):
 
         fecund = uids[(ppl.female[uids] == True) & (ppl.age[uids] < self.pars['age_limit_fecundity'])]
 
-        time_to_debut = (self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt.value
+        ti_to_debut = ss.years(self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt # (self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt.value
 
         # If ti_contra is less than one timestep away, we want to also set it to 0 so floor time_to_debut.
-        self.ti_contra[fecund] = np.maximum(np.floor(time_to_debut), 0)
+        self.ti_contra[fecund] = np.maximum(np.floor(ti_to_debut), 0)
 
         # Validation
         time_to_set_contra = self.ti_contra[fecund] == 0
