@@ -12,6 +12,7 @@ import numpy as np
 import sciris as sc
 import starsim as ss
 from scipy.special import expit
+from scipy.stats import fisk
 from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs
@@ -68,7 +69,7 @@ class Method:
         ppl = sim.people
         if sim.connectors.contraception.age_bins is not None:
             age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
-            scale = np.exp(np.log(self.dur_use.base_scale) + self.dur_use.age_factors[age_bins])
+            scale = np.exp(self.dur_use.base_scale + self.dur_use.age_factors[age_bins])
         else:
             scale = np.exp(self.dur_use.base_scale)
         return scale
@@ -78,9 +79,9 @@ class Method:
         ppl = sim.people
         if sim.connectors.contraception.age_bins is not None:
             age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
-            scale = np.exp(np.log(self.dur_use.base_scale) + self.dur_use.age_factors[age_bins])
+            scale = np.exp(self.dur_use.base_scale + self.dur_use.age_factors[age_bins])
         else:
-            scale = np.exp(np.log(self.dur_use.base_scale))
+            scale = np.exp(self.dur_use.base_scale)
         return scale
 
     def set_dur_use(self, dist_type, par1=None, par2=None, age_factors=None, **kwargs):
@@ -108,7 +109,7 @@ class Method:
 
         elif dist_type == 'llogis':
 
-            self.dur_use = ss.fisk(c=np.exp(par1), scale=self.llogis_scale_callback)
+            self.dur_use = Fisk(c=np.exp(par1), scale=self.llogis_scale_callback)
             self.dur_use.base_c = par1  # This is the scale parameter for the log-logistic distribution
             self.dur_use.base_scale = par2
 
@@ -162,6 +163,11 @@ def make_methods(method_list=None):
     if method_list is None: method_list = make_method_list()
     return ss.ndict(method_list, type=Method)
 
+
+class Fisk(ss.Dist):
+    def __init__(self, c=0.0, scale=1.0, **kwargs):
+        super().__init__(distname='fisk', dist=fisk, c=c, scale=scale, **kwargs)
+        return
 
 # %% Define parameters
 class ContraPars(ss.Pars):
