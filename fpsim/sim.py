@@ -208,7 +208,7 @@ class Sim(ss.Sim):
     def init(self, force=False):
         """ Fully initialize the Sim with modules, people and result storage"""
         if force or not self.initialized:
-            fpu.set_seed(self.pars['rand_seed'])
+            # fpu.set_seed(self.pars['rand_seed']) # shouldn't be needed anymore
             if self.pars.people is None:
                 ap = self.pars['connectors'][-1].pars['age_pyramid']  # TODO TEMP
                 self.pars.people = fpppl.People(n_agents=self.pars.n_agents, age_pyramid=ap)

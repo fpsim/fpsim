@@ -44,6 +44,12 @@ class FPmod(ss.Module):
         self._p_twins = ss.bernoulli(p=0)  # Probability of twins
         self._p_breastfeed = ss.bernoulli(p=1)  # Probability of breastfeeding, set to 1 for consistency
 
+        def age_adjusted_non_pp_active(self, sim, uids):
+            return self.pars['sexual_activity'][sim.people.int_age(uids)]
+        self._p_non_pp_active = ss.bernoulli(p=age_adjusted_non_pp_active)  # Probability of being sexually active if not postpartum
+
+
+
         # Duration distributions - TODO, move all these to parameters
         self._dur_pregnancy = ss.uniform(low=self.pars['preg_dur_low'], high=self.pars['preg_dur_high'])
         self._dur_breastfeeding = ss.normal(loc=self.pars['breastfeeding_dur_mean'], scale=self.pars['breastfeeding_dur_sd'])
@@ -51,6 +57,7 @@ class FPmod(ss.Module):
 
         # All other distributions
         self._personal_fecundity = ss.uniform(low=self.pars['fecundity_var_low'], high=self.pars['fecundity_var_high'])
+        self._fated_debut = ss.choice(a=self.pars['debut_age']['ages'], p=self.pars['debut_age']['probs'])
 
         # Define ASFR and method mix
         self.asfr_bins = np.array([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100])
@@ -80,7 +87,7 @@ class FPmod(ss.Module):
 
         # Sexual activity
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        self.fated_debut[uids] = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], len(uids))]
+        self.fated_debut[uids] = self._fated_debut.rvs(uids)
         fecund = ppl.female & (ppl.age < self.pars['age_limit_fecundity'])
         self.check_sexually_active(uids[fecund[uids]])
         self.update_time_to_choose(uids)
@@ -158,8 +165,7 @@ class FPmod(ss.Module):
 
         # Set non-postpartum probabilities
         if len(non_pp):
-            probs_non_pp = self.pars['sexual_activity'][ppl.int_age(non_pp)]
-            self.sexually_active[non_pp] = fpu.binomial_arr(probs_non_pp)
+            self.sexually_active[non_pp] = self._p_non_pp_active.rvs(non_pp)
 
             # Set debut to True if sexually active for the first time
             # Record agent age at sexual debut in their memory

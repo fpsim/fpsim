@@ -13,7 +13,6 @@ import sciris as sc
 import starsim as ss
 from scipy.special import expit
 from scipy.stats import fisk
-from . import utils as fpu
 from . import defaults as fpd
 from . import locations as fplocs
 
