@@ -30,9 +30,107 @@ class Method:
         self.modern = modern
         self.dur_use = dur_use
 
+    def gamma_scale_callback(self, sim, uids):
+        """ Sample from gamma distribution with age factors """
+        ppl = sim.people
+        if sim.connectors.contraception.age_bins is not None:
+            age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
+            scale = 1 / np.exp(self.dur_use.base_scale + self.dur_use.age_factors[age_bins])
+        else:
+            scale = 1 / np.exp(self.dur_use.base_scale)
+        return scale
 
-# Helper function for setting lognormals
-def ln(a, b): return dict(dist='lognormal', par1=a, par2=b)
+    def expon_scale_callback(self, sim, uids):
+        """ Sample from exponential distribution with age factors """
+        ppl = sim.people
+        if sim.connectors.contraception.age_bins is not None:
+            age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
+            scale = 1 / np.exp(self.dur_use.base_scale + self.dur_use.age_factors[age_bins])
+        else:
+            scale = 1 / np.exp(self.dur_use.base_scale)
+        return scale
+
+    def lognorm_mean_callback(self, sim, uids):
+        """ Sample from lognormal distribution with age factors """
+        ppl = sim.people
+        if sim.connectors.contraception.age_bins is not None:
+            # Use age bins to apply age factors
+            age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
+            age_factors = self.dur_use.age_factors[age_bins]
+            mean = np.exp(self.dur_use.base_mean + age_factors[age_bins])
+        else:
+            # If no age bins, just use the base mean
+            mean = np.exp(self.dur_use.base_mean)
+        return mean
+
+    def llogis_scale_callback(self, sim, uids):
+        """ Sample from log-logistic distribution with age factors """
+        ppl = sim.people
+        if sim.connectors.contraception.age_bins is not None:
+            age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
+            scale = np.exp(np.log(self.dur_use.base_scale) + self.dur_use.age_factors[age_bins])
+        else:
+            scale = np.exp(self.dur_use.base_scale)
+        return scale
+
+    def weibull_scale_callback(self, sim, uids):
+        """ Sample from Weibull distribution with age factors """
+        ppl = sim.people
+        if sim.connectors.contraception.age_bins is not None:
+            age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
+            scale = np.exp(np.log(self.dur_use.base_scale) + self.dur_use.age_factors[age_bins])
+        else:
+            scale = np.exp(np.log(self.dur_use.base_scale))
+        return scale
+
+    def set_dur_use(self, dist_type, par1=None, par2=None, age_factors=None, **kwargs):
+        """
+        Set the duration of use for this method.
+        Args:
+            dist_type: Type of distribution to use (e.g., 'lognorm', 'gamma', etc.)
+            par1: First parameter for the distribution (e.g., mean for lognorm, shape for gamma)
+            par2: Second parameter for the distribution (e.g., std for lognorm, scale for gamma)
+            age_factors: Optional age factors to apply to the duration
+            kwargs: Additional parameters for the distribution
+        """
+
+        if dist_type == 'lognorm':
+            # Lognormal distribution
+            self.dur_use = ss.lognorm_ex(mean=self.lognorm_mean_callback, std=np.exp(par2))
+            self.dur_use.base_mean = par1
+            self.dur_use.base_std = par2
+
+        elif dist_type == 'gamma':
+            # Gamma distribution
+            self.dur_use = ss.gamma(a=np.exp(par1), scale=self.gamma_scale_callback)
+            self.dur_use.base_a = par1
+            self.dur_use.base_scale = par2
+
+        elif dist_type == 'llogis':
+
+            self.dur_use = ss.fisk(c=np.exp(par1), scale=self.llogis_scale_callback)
+            self.dur_use.base_c = par1  # This is the scale parameter for the log-logistic distribution
+            self.dur_use.base_scale = par2
+
+        elif dist_type == 'weibull':
+
+            self.dur_use = ss.weibull(c=par1, scale=self.weibull_scale_callback)
+            self.dur_use.base_c = par1
+            self.dur_use.base_scale = par2  # This is the scale parameter for the Weibull distribution
+
+        elif dist_type == 'exponential':
+            # Exponential distribution
+
+            self.dur_use = ss.expon(scale=self.expon_scale_callback)
+            self.dur_use.base_scale = par1
+
+        if age_factors is not None:
+            self.dur_use.age_factors = age_factors
+
+
+
+# Helper function for setting lognormals - now returns Starsim distribution  
+def ln(a, b): return ss.lognorm_ex(mean=a, std=b)
 
 
 def make_method_list():
@@ -121,6 +219,10 @@ class ContraceptiveChoice(ss.Connector):
             self.pars.method_weights = np.ones(self.n_methods)
 
         self.init_dist = None
+        
+        # Initialize choice distributions for method selection
+        self._method_choice_dist = ss.choice(a=self.n_methods, p=np.ones(self.n_methods)/self.n_methods)
+        self._jitter_dist = ss.normal(loc=0, scale=1e-4)
 
         return
 
@@ -145,9 +247,16 @@ class ContraceptiveChoice(ss.Connector):
     @property
     def average_dur_use(self):
         av = 0
+        # todo verify property names
         for m in self.methods.values():
-            if sc.isnumber(m.dur_use): av += m.dur_use
-            elif isinstance(m.dur_use, dict): av += m.dur_use['par1']
+            if sc.isnumber(m.dur_use): 
+                av += m.dur_use
+            elif hasattr(m.dur_use, 'mean'):
+                # Starsim distribution object
+                av += m.dur_use.mean()
+            elif hasattr(m.dur_use, 'scale'):
+                # For distributions that use scale parameter as approximation of mean
+                av += m.dur_use.scale
         return av / len(self.methods)
 
     def init_post(self):
@@ -435,7 +544,8 @@ class SimpleChoice(RandomChoice):
                     these_probs = self.init_dist[key]
                     these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
                     these_probs = these_probs/np.sum(these_probs)  # Renormalize
-                    these_choices = fpu.n_multinomial(these_probs, len(ppl_this_age))  # Choose
+                    self._method_choice_dist.set(a=len(these_probs), p=these_probs)
+                    these_choices = self._method_choice_dist.rvs(len(ppl_this_age))  # Choose
                     # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
                     choice_array[this_age_bools] = np.array(list(self.init_dist.method_idx))[these_choices]
             return choice_array.astype(int)
@@ -474,53 +584,6 @@ class SimpleChoice(RandomChoice):
         self.pars.p_use.set(p=prob_use)  # Set the probability of use parameter
         return
 
-    @staticmethod
-    def _lognormal_dpars(dur_use, ai):
-        par1 = np.exp(dur_use['par1'] + dur_use['age_factors'][ai])  # par1 is the 'meanlog' from the csv file. exp(par1) is the 'scale' parameter
-        par2 = np.exp(dur_use['par2'])
-        return par1, par2
-
-    @staticmethod
-    def _llogis_dpars(dur_use, ai):
-        par1 = np.exp(dur_use['par1'])
-        par2 = np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
-        return par1, par2
-
-    @staticmethod
-    def _weibull_dpars(dur_use, ai):
-        par1 = np.exp(dur_use['par1'])
-        par2 = np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
-        return par1, par2
-
-    @staticmethod
-    def _exp_dpars(dur_use, ai):
-        par1 = 1/np.exp(dur_use['par1'] + dur_use['age_factors'][ai])
-        return par1, None
-
-    @staticmethod
-    def _gamma_dpars(dur_use, ai):
-        par1 = np.exp(dur_use['par1'])
-        par2 = 1/np.exp(dur_use['par2'] + dur_use['age_factors'][ai])
-        return par1, par2
-
-    @staticmethod
-    def _make_dict(dur_use, par1, par2):
-        return dict(dist=dur_use['dist'], par1=par1, par2=par2)
-
-    def _get_dist_funs(self, dist_name):
-        if dist_name == 'lognormal_sps':
-            return self._lognormal_dpars, self._make_dict
-        elif dist_name == 'gamma':
-            return self._gamma_dpars, self._make_dict
-        elif dist_name == 'llogis':
-            return self._llogis_dpars, self._make_dict
-        elif dist_name == 'weibull':
-            return self._weibull_dpars, self._make_dict
-        elif dist_name == 'exponential':
-            return self._exp_dpars, self._make_dict
-        else:
-            raise ValueError(
-                f'Unrecognized distribution type {dist_name} for duration of use')
 
     def set_dur_method(self, uids, method_used=None):
         """ Time on method depends on age and method """
@@ -531,37 +594,18 @@ class SimpleChoice(RandomChoice):
 
         for mname, method in self.methods.items():
             dur_use = method.dur_use
-            users = np.nonzero(method_used == method.idx)[-1]
+            user_idxs = np.nonzero(method_used == method.idx)[-1]
+            users = uids[user_idxs]  # Get the users of this method
             n_users = len(users)
 
             if n_users:
-                if isinstance(dur_use, dict):
-                    # NOTE: List of available/supported distros can be a property of the class?
-                    if not (dur_use['dist'] in ['lognormal', 'lognormal_sps', 'gamma', 'llogis', 'exponential', 'weibull', 'unif']):
-                        # bail early
-                        raise ValueError(
-                            f'Unrecognized distribution type for duration of use: {dur_use["dist"]}')
-
-                    if 'age_factors' in dur_use.keys():
-                        # Get functions based on distro and set for every agent
-                        dist_pars_fun, make_dist_dict = self._get_dist_funs(dur_use['dist'])
-                        age_bins = np.digitize(ppl.age[uids[users]], self.age_bins)
-                        par1, par2 = dist_pars_fun(dur_use, age_bins)
-
-                        # Transform to parameters needed by fpsim distributions
-                        dist_dict = make_dist_dict(dur_use, par1, par2)
-                    else:
-                        par1 = dur_use['par1']
-                        par2 = dur_use['par2']
-                        dist_dict = dict(dist=dur_use['dist'], par1=par1, par2=par2)
-
-                    # Draw samples of how many months women use this method
-                    dur_method[users] = fpu.sample(**dist_dict, size=n_users)
-
+                if hasattr(dur_use, 'rvs'):
+                    # Starsim distribution object
+                    dur_method[user_idxs] = dur_use.rvs(users)
                 elif sc.isnumber(dur_use):
-                    dur_method[users] = dur_use
+                    dur_method[user_idxs] = dur_use
                 else:
-                    errormsg = 'Unrecognized type for duration of use: expecting a distribution dict or a number'
+                    errormsg = 'Unrecognized type for duration of use: expecting a Starsim distribution or a number'
                     raise ValueError(errormsg)
 
         # dt = ppl.sim.t.dt_year * fpd.mpy
@@ -579,7 +623,6 @@ class SimpleChoice(RandomChoice):
             if event == 'pp6': mcp = self.method_choice_pars[6]
 
             # Initialize arrays and get parameters
-            jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
             choice_array = np.zeros(len(uids))
 
             # Loop over age groups and methods
@@ -602,10 +645,12 @@ class SimpleChoice(RandomChoice):
                             except:
                                 errormsg = f'Cannot find {key} in method switch for {mname}!'
                                 raise ValueError(errormsg)
-                            these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                            self._jitter_dist.set(scale=jitter)
+                            these_probs = [p if p > 0 else p+abs(self._jitter_dist.rvs(1)[0]) for p in these_probs]  # No 0s
                             these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
                             these_probs = these_probs/sum(these_probs)  # Renormalize
-                            these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
+                            self._method_choice_dist.set(a=len(these_probs), p=these_probs)
+                            these_choices = self._method_choice_dist.rvs(len(switch_iinds))  # Choose
 
                             # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
                             choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
@@ -615,7 +660,6 @@ class SimpleChoice(RandomChoice):
     def choose_method_post_birth(self, uids, jitter=1e-4):
         ppl = self.sim.people
         mcp = self.method_choice_pars[1]
-        jitter_dist = dict(dist='normal_pos', par1=jitter, par2=jitter)
         choice_array = np.zeros(len(uids))
 
         # Loop over age groups and methods
@@ -625,10 +669,12 @@ class SimpleChoice(RandomChoice):
 
             if len(switch_iinds):
                 these_probs = mcp[key]
-                these_probs = [p if p > 0 else p+fpu.sample(**jitter_dist)[0] for p in these_probs]  # No 0s
+                self._jitter_dist.set(scale=jitter)
+                these_probs = [p if p > 0 else p+abs(self._jitter_dist.rvs(1)[0]) for p in these_probs]  # No 0s
                 these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
                 these_probs = these_probs/sum(these_probs)  # Renormalize
-                these_choices = fpu.n_multinomial(these_probs, len(switch_iinds))  # Choose
+                self._method_choice_dist.set(a=len(these_probs), p=these_probs)
+                these_choices = self._method_choice_dist.rvs(len(switch_iinds))  # Choose
                 choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
 
         return choice_array
