@@ -262,6 +262,7 @@ def plot_methods(sim):
     df_use = pd.DataFrame({'PMA': data_use_percent, 'FPsim': model_use_percent}, index=use_labels)
 
     # Plot mix
+    fig, ax = pl.subplots()
     ax = df_mix.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'})
     ax.set_xlabel('Percent users')
     if Config.show_rmse is True:
@@ -274,6 +275,7 @@ def plot_methods(sim):
     if Config.do_show: pl.show()
 
     # Plot data_use
+    fig, ax = pl.subplots()
     ax = df_use.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'})
     ax.set_xlabel('Percent')
     if Config.show_rmse is True:
@@ -334,6 +336,7 @@ def plot_ageparity(sim):
 
     # Find diff to help visualize in plotting
     sky_arr['Diff_data-model'] = sky_arr['Data'] - sky_arr['Model']
+    fig, ax = pl.subplots()
 
     # Plot ageparity
     for key in ['Data', 'Model', 'Diff_data-model']:
@@ -372,6 +375,7 @@ def plot_cpr(sim):
     rmse_scores['cpr'] = compute_rmse(model_values, data_values)
 
     # Plot
+    fig, ax = pl.subplots()
     pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
     pl.plot(res['timevec'], res.contraception.cpr * 100, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
@@ -404,6 +408,7 @@ def plot_tfr(sim):
     rmse_scores['tfr'] = compute_rmse(model_tfr_values, data_tfr_values)
 
     # Plot
+    fig, ax = pl.subplots()
     pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
     pl.plot(df.index, df.tfr, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
@@ -435,6 +440,7 @@ def plot_pop_growth(sim):
     data_growth_rate = pop_growth_rate(data_pop_years, data_population)
 
     # Plot
+    fig, ax = pl.subplots()
     pl.plot(data_pop_years[1:], data_growth_rate, label='World Bank', color='black')
     pl.plot(res.fp.timevec[1:], model_growth_rate, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
@@ -449,6 +455,7 @@ def plot_pop_growth(sim):
 def plot_afb(sim):
     """Plot age at first birth: model vs survey data"""
     data_afb = Config.load_validation_data(sim.pars['location'], keys='afb')['afb']
+    fig, ax = pl.subplots()
 
     # Extract model AFB values
     model_afb = [age for age in sim.people.fp.first_birth_age if age != -1]
@@ -540,6 +547,7 @@ def plot_birth_spacing(sim):
         'Diff': diff
     }, index=spacing_bins.keys())
 
+    fig, ax = pl.subplots()
     ax = bins_frame.plot.barh(color={'Data': 'black', 'Model': 'cornflowerblue', 'Diff': 'red'})
     ax.set_xlabel('Percent of live birth spaces')
     ax.set_ylabel('Birth spacing (months)')
