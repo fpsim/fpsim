@@ -8,6 +8,48 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 3.2.0 (2025-08-15)
+---------------------------
+
+* **FPmod Class**
+  This release moves the majority of FP logic from the `People` class to a new `FPmod` class. This is intended to make it more straightforward in the future to combine FP analyses with other analyses. This has several downstream implications for how to use the model and access results:
+  * Most FP results are now stored in `sim.results.fp`, e.g. `sim.results.fp.pregnancies`. This will lead to eventual consistency with combined Starsim models, e.g. `sim.results.hiv.infections`.
+  * Similarly, results related to contraception are stored in `sim.results.contraception`, e.g. `sim.result.contraception.mcpr`.
+  * Introduces specific distributions for each random event; these distributions are CRN-safe and will eventually move FPsim to a CRN-safe model.
+  * `sim.fp_pars` is now `sim.pars.fp`, which will make it consistent with other parameters like `sim.pars.hiv`.
+  * Moves the `location` parameter from the `FPPars` class to the `SimPars` class.
+
+
+* **Result tidying**
+  * All the `tfr_{by_age}` results have been moved to an age-specific result structure. This means, for instance, that you would access the fertility rate for 20-24yos via `sim.connectors.fp.asfr[4, :]` instead of `sim.results.tfr_20-24`. 
+  * All the `{result}_over_year` results have been removed. Annualized results can be easily calculated after a sim has been run, using `sim.results.to_df(resample='year')`. 
+
+
+* **Misc changes**
+  * `longitudinal_history` analyzer moved from the fpsim repo to the kenya_empowerment repo
+  * Added attributes to people for storing the timesteps at which significant events occur, e.g. `ti_live_birth`, to make it easier to create analyzers related to these events
+  * Removes `total_births_{by_age}` and `total_women_{by_age}` - these were previously needed to calculate the total fertility rate, but this is no longer needed, and the addition of these results increases the size of the results object considerably. If these results are needed, they can be computed with an analyzer or people snapshot.
+  * Renames `urban_women` to `n_urban` for consistency with other results, e.g. `n_wq1`, `n_fecund`. 
+  * Removes the `extract_employment` method from the `Experiment` class, as this is no longer functional.
+  * Removes the `MultiSim` class.
+  * Numerous bugfixes; see PR for details.
+
+
+Version 3.1.0 (2025-07-31)
+---------------------------
+- Refactors Contraception and Education to Starsim modules (connectors)
+- Exposes all parameters for different modules in the `pars` dictionary passed to the Sim. This means that creating a sim is far more flexible, e.g. all of these will work:
+```
+import fpsim as fp
+sim1 = fp.Sim(prob_use_trend_par=0.3, start=2000)
+sim2 = fp.Sim(pars = dict(prob_use_trend_par=0.3, start=2000))
+sim3 = fp.Sim(contra_pars = dict(prob_use_trend_par=0.3), sim_pars=dict(start=2000))
+sim4 = fp.Sim(start=2000, contraception_module = fp.SimpleChoice(prob_use_trend_par=0.3))
+```
+- Refactors parameters.py, so that all FP parameters inherit from Starsim parameter classes. We now have a `SimPars` class, as well as `FPPars`, `ContraPars`, and `EduPars`. When a Sim is created, any parameters passed in by the user will automatically get assigned to the right modules. This also allowed for a notable simplifaction in the parameter validation logic, since Starsim handles that automatically.
+- *GitHub info*: PR `575 <https://github.com/fpsim/fpsim/pull/575>`_
+
+
 Version 3.0.4 (2025-07-30)
 ---------------------------
 - Updates ethiopia/regions model files according to latest template used in country files

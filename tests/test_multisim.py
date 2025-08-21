@@ -19,49 +19,46 @@ def test_multisim(do_plot=do_plot):
     sims = []
     for i in range(3):
         exposure = 0.5 + 0.5*i # Run a sweep over exposure
-        pars = dict(location='test', exposure_factor=exposure)
+        pars = dict(test=True, exposure_factor=exposure)
         sim = fp.Sim(pars=pars, label=f'Exposure {exposure}')
         sims.append(sim)
 
-    msim = fp.MultiSim(sims)
-    msim.run(parallel=parallel) # Run sims in parallel
-    # msim.to_df() # Test to_df
+    msim = ss.MultiSim(sims)
+    msim.run(parallel=parallel)  # Run sims in parallel
 
     msim.reduce()
     msim.summarize()
 
-    births = msim.results.births
+    births = msim.results.fp_births
     assert sum(births.low) < sum(births.high), 'Expecting the higher bound of births to be higher than the lower bound'
 
     if do_plot:
-        msim.plot(plot_sims=True)
-        msim.plot(plot_sims=False)
-        msim.plot_age_first_birth()
+        msim.plot()
 
     return msim
 
+
 def test_eth_multisim():
-    sim1 = fp.Sim(pars=fp.pars(location='addis_ababa'))
-    sim2 = fp.Sim(pars=fp.pars(location='afar'))
-    sim3 = fp.Sim(pars=fp.pars(location='amhara'))
-    sim4 = fp.Sim(pars=fp.pars(location='benishangul_gumuz'))
-    sim5 = fp.Sim(pars=fp.pars(location='dire_dawa'))
-    sim6 = fp.Sim(pars=fp.pars(location='gambela'))
-    sim7 = fp.Sim(pars=fp.pars(location='harari'))
-    sim8 = fp.Sim(pars=fp.pars(location='oromia'))
-    sim9 = fp.Sim(pars=fp.pars(location='snnpr'))
-    sim10 = fp.Sim(pars=fp.pars(location='somali'))
-    sim11 = fp.Sim(pars=fp.pars(location='tigray'))
-    msim = fp.MultiSim(sims=[sim1, sim2, sim3, sim4, sim5, sim6, sim7, sim8, sim9, sim10, sim11])
+    sim1 = fp.Sim(location='addis_ababa')
+    sim2 = fp.Sim(location='afar')
+    sim3 = fp.Sim(location='amhara')
+    sim4 = fp.Sim(location='benishangul_gumuz')
+    sim5 = fp.Sim(location='dire_dawa')
+    sim6 = fp.Sim(location='gambela')
+    sim7 = fp.Sim(location='harari')
+    sim8 = fp.Sim(location='oromia')
+    sim9 = fp.Sim(location='snnpr')
+    sim10 = fp.Sim(location='somali')
+    sim11 = fp.Sim(location='tigray')
+    msim = ss.MultiSim(sims=[sim1, sim2, sim3, sim4, sim5, sim6, sim7, sim8, sim9, sim10, sim11])
 
     msim.run()
 
-    if do_plot:
-        msim.plot()
     return msim
+
 
 if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
-    with sc.timer(): # Start timing
+    with sc.timer():  # Start timing
         msim = test_multisim()
         msim_eth = test_eth_multisim()

@@ -10,7 +10,6 @@ import fpsim.locations.data_utils as fpld
 
 def scalar_pars():
     scalar_pars = {
-        'location':             'kenya',
         'postpartum_dur':       23,
     }
     return scalar_pars
@@ -67,7 +66,7 @@ def exposure_parity():
 
 # %% Make and validate parameters
 
-def make_pars(location='kenya', seed=None):
+def make_pars(location='kenya'):
     """
     Take all parameters and construct into a dictionary
     """

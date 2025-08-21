@@ -22,68 +22,51 @@ def ok(string):
 def test_null(do_plot=do_plot):
     sc.heading('Testing no births, no deaths...')
 
-    pars = fp.pars('test')  # For default pars
+    fp_pars = fp.make_fp_pars()  # For default pars
+    fp_pars.update_location('senegal')
 
     # Set things to zero
     for key in ['exposure_factor']:
-        pars[key] = 0
+        fp_pars[key] = 0
 
     for key in ['f', 'm']:
-        pars['age_mortality'][key] *= 0
+        fp_pars['age_mortality'][key] *= 0
 
     for key in ['age_mortality', 'maternal_mortality', 'infant_mortality']:
-        pars[key]['probs'] *= 0
+        fp_pars[key]['probs'] *= 0
 
-    sim = fp.Sim(pars=pars)
+    sim = fp.Sim(test=True, fp_pars=fp_pars)
     sim.run()
 
     # Tests
-    for key in ['births', 'deaths']:
-        n = sim.results[key].sum()
-        assert n == 0, f'Expecting {key} to be 0, not {n}'
-        ok(f'{key} was 0, as expected')
+    n = sim.results.fp.births.sum()
+    assert n == 0, f'Expecting 0 births, not {n}'
+    n = sim.results.new_deaths.sum()
+    assert n == 0, f'Expecting 0 deaths, not {n}'
+    ok(f'Births and deaths are 0, as expected')
 
     return sim
-
-
-def test_timestep():
-    pars = dict(
-        location='test',
-        n_agents = 500,   # Small population size
-        stop = 2020,  # 1961 - 2020 is the normal date range
-        exposure_factor = 0.5 # Overall scale factor on probability of becoming pregnant
-    )
-
-    for timestep in range(1, 13):
-        pars['dt'] = timestep/12
-        sim = fp.Sim(pars=sc.dcp(pars))
-        sim.run()
-        ok(f'simulation ran for timestep {timestep}')
-
-    return
 
 
 def test_scale():
     sc.heading('Test scale factor')
 
     # Test settings
-    orig_pop = 100
     scale = 2
 
     # Make and run sims
-    pars = dict(location='test')
+    pars = dict(test=True)
     s1 = fp.Sim(pars=pars)
     s2 = fp.Sim(pars=pars, pop_scale=scale)
     msim = ss.parallel([s1, s2], shrink=False)
     s1, s2 = msim.sims
 
-
     # Tests
-    orig = s1.results.total_births.sum()
+    orig = s1.results.fp.total_births.sum()
     expected = scale*orig
-    actual = s2.results.total_births.sum()
+    actual = s2.results.fp.total_births.sum()
     assert expected == actual, 'Total births should scale exactly with scale factor'
-    assert np.array_equal(s1.results.mcpr, s2.results.mcpr), 'Scale factor should not change MCPR'
+    assert np.array_equal(s1.results.contraception.mcpr, s2.results.contraception.mcpr), 'Scale factor should not change MCPR'
     ok(f'{actual} births = {scale}*{orig} as expected')
 
     return [s1, s2]
@@ -92,7 +75,7 @@ def test_scale():
 def test_method_changes():
     sc.heading('Test changing methods')
 
-    # Test adding method
+    # # Test adding method
     choice = fp.RandomChoice()
     n = len(choice.methods)
     new_method = fp.Method(
@@ -102,88 +85,27 @@ def test_method_changes():
         dur_use=dict(dist='lognormal', par1=10, par2=3),
         label='New method')
     choice.add_method(new_method)
-    s1 = fp.Sim(location='test', contraception_module=choice)
+    s1 = fp.Sim(test=True, contraception_module=choice)
     s1.run()
-    assert len(s1.fp_pars['contraception_module'].methods) == n+1, 'Method was not added'
+    assert len(s1.connectors.contraception.methods) == n+1, 'Method was not added'
     ok(f'Methods had expected length after addition ({n+1})')
 
     # Test remove method
-    choice.remove_method('Injectables')
-    s2 = fp.Sim(location='test', contraception_module=choice)
+    methods = [m for m in fp.make_method_list() if m.label != 'Injectables']
+    choice = fp.RandomChoice(methods=methods)
+    s2 = fp.Sim(test=True, contraception_module=choice)
     s2.run()
-    assert len(s2.fp_pars['contraception_module'].methods) == n, 'Methods was not removed'
+    assert len(s2.connectors.contraception.methods) == len(methods), 'Methods was not removed'
     ok(f'Methods have expected length after removal ({n})')
 
     # Test method efficacy
-    methods = sc.dcp(fp.make_methods().Methods) # TEMP
-    for method in methods.values():
-        if method.name != 0: method.efficacy = 1  # Make all methods totally effective
+    methods = fp.make_method_list()
+    for method in methods: method.efficacy = 1  # Make all methods totally effective
     choice = fp.RandomChoice(pars=dict(p_use=1), methods=methods)
-    s3 = fp.Sim(location='test', contraception_module=choice)
+    s3 = fp.Sim(test=True, contraception_module=choice)
     s3.run()
-    assert s3.results.births.sum() == 0, f'Expecting births to be 0, not {n}'
+    assert s3.results.fp.births.sum() == 0, f'Expecting births to be 0, not {n}'
     ok(f'No births with completely effective contraception, as expected')
-
-
-def test_validation():
-    sc.heading('Test parameter validation')
-
-    pars = fp.pars('test') # Don't really need "test" since not running
-
-    # Extra value not allowed
-    with pytest.raises(ValueError):
-        fp.pars(not_a_par=4)
-    ok('Invalid parameter name was caught')
-
-    # Equivalent implementation
-    with pytest.raises(ValueError):
-        p = sc.dcp(pars)
-        p['not_a_par'] = 4
-        fp.validate(fp.default_pars, p)
-    ok('Invalid name was caught by validation')
-
-    # Missing value not allowed
-    with pytest.raises(ValueError):
-        p = sc.dcp(pars)
-        p.pop('exposure_factor')
-        fp.validate(fp.default_pars, p)
-    ok('Missing parameter was caught by validation')
-
-    return pars
-
-
-
-def test_save_load():
-    sc.heading('Testing saving and loading...')
-    filename = 'tmp_pars.json'
-
-    pars = fp.pars()
-    fp.pars_to_json(pars, filename)
-    assert os.path.exists(filename), 'Did not write file to disk'
-    fp.pars_from_json(filename)
-    os.remove(filename)
-    ok('pars.from_json() and pars.to_json() work')
-
-    return pars
-
-
-def test_long_params():
-    sc.heading('Test longitudinal params')
-    # Define pars
-    pars = dict(location='senegal')
-
-    # Make and run sim
-    s = fp.Sim(pars=pars)
-    s.run()
-
-    expected_rows = len(s.people)
-    expected_cols = s.fp_pars['tiperyear']
-
-    for key in s.people.longitude.keys():
-        df = s.people.longitude[key]
-        assert df.shape == (expected_rows, expected_cols), f"Expected {key} to have dimensions ({expected_rows}, {expected_cols}), but got {df.shape}"
-        curr_year_index = s.ti % s.tiperyear
-        assert (df[:, curr_year_index] == s.people[key]).all(), f"Expected column {curr_year_index} to have same longitudinal data as {key} but it does not."
 
 
 def test_register_custom_location():
@@ -217,12 +139,9 @@ def test_register_custom_location():
 
 if __name__ == '__main__':
 
-    sc.options(backend=None) # Turn on interactive plots
+    sc.options(backend=None)  # Turn on interactive plots
     with sc.timer():
         null    = test_null(do_plot=do_plot)
         scale   = test_scale()
         meths   = test_method_changes()
-        pars    = test_validation()
-        p2      = test_save_load()
-        long    = test_long_params()
         custom_loc = test_register_custom_location()

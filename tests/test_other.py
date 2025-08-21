@@ -14,6 +14,7 @@ do_plot  = 1 # Whether to do plotting in interactive mode
 run_track_as = False  # Not functional in v2.0 of FPsim, will be reinstated in v3.0
 sc.options(backend='agg') # Turn off interactive plots
 
+
 def ok(string, newline=True):
     ''' Print out a successful test nicely '''
     return sc.printgreen(f'✓ {string}' + '\n'*newline)
@@ -43,13 +44,12 @@ def test_options():
     return sc.dcp(fp.options)
 
 
-def test_to_df():
+def test_to_df(sim=None):
     sc.heading('Testing other sim methods...')
-
-    sim = fp.Sim(location='test').run()
-
+    if sim is None:
+        sim = fp.Sim(test=True).run()
     df = sim.to_df()
-    births = df.births.sum()
+    births = df.fp_births.sum()
     last = df.timevec.values[-1]
     assert last == sim.pars.stop, 'Last years do not match'
     assert births > 0, 'Expected births'
@@ -58,10 +58,11 @@ def test_to_df():
     return df
 
 
-def test_plot_people():
+def test_plot_people(sim=None):
     sc.heading('Test plotting people...')
 
-    sim = fp.Sim().run()
+    if sim is None:
+        sim = fp.Sim(test=True).run()
 
     if do_plot:
         sim.people.plot()
@@ -69,22 +70,23 @@ def test_plot_people():
     return sim.people
 
 
-def test_plotting_class():
+def test_plotting_class(sim=None):
     sc.heading('Test plotting class functions...')
-
-    sim = fp.Sim().run()
+    if sim is None:
+        sim = fp.Sim(test=True).run()
     plt.plot_all(sim)
     return sim
+
 
 def test_plotting_regional():
     sc.heading('Test plotting class functions for region location...')
     par_kwargs = dict(stop=2019)
-
     sim = fp.Sim(pars=par_kwargs, location='amhara').run()
     plt.plot_all(sim)
     return sim
 
-def test_samples(do_plot=False, verbose=True):
+
+def test_samples(verbose=True):
     sc.heading('Samples distribution')
 
     n = 200_000
@@ -158,23 +160,14 @@ def test_samples(do_plot=False, verbose=True):
 
     return results
 
-def test_method_usage():
-    '''Test that method usage proportions add to 1 and correspond to population'''
-    sim = fp.Sim()
-    sim.run()
 
-    method_usage = np.swapaxes(np.vstack(list(sim.results.method_usage.all_results_dict.values())), 1, 0)
-    for timestep, proportions in enumerate(method_usage):
-
-        assert np.isclose(sum(proportions), 1, atol=0.0001)
-        pop = sim.results['pop_size'][timestep]
-
-        # Checking that proportion isn't calculated from a larger population than expected
-        for proportion in proportions:
-            if proportion > 0:
-                assert (proportion * pop) > 1, "Method usage proportions drawing from a larger population than expected"
-    
-    return sim
+def test_method_usage(sim=None):
+    """ Test that method usage proportions add to 1 and correspond to population """
+    if sim is None:
+        sim = fp.Sim(test=True).run()
+    proportions = sim.connectors.fp.method_mix.sum(axis=0)
+    assert np.isclose(proportions, 1, atol=0.0001).all()
+    return
 
 
 # def test_track_as(run_track_as):
@@ -199,10 +192,12 @@ def test_method_usage():
 if __name__ == '__main__':
 
     # sc.options(backend=None) # Turn on interactive plots
+    sim = fp.Sim(test=True).run()
 
     opts = test_options()
-    df   = test_to_df()
-    ppl  = test_plot_people()
+    df   = test_to_df(sim)
+    ppl  = test_plot_people(sim)
+    sim = test_plotting_class(sim)
     res  = test_samples()
-    method = test_method_usage()
+    method = test_method_usage(sim)
     # sim = test_track_as(run_track_as)

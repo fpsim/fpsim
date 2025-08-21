@@ -62,12 +62,11 @@ class change_par(ss.Intervention):
 
         return
 
-
     def init_pre(self, sim):
         super().init_pre(sim)
 
         # Validate parameter name
-        if self.par not in sim.fp_pars:
+        if self.par not in sim.pars.fp:
             errormsg = f'Parameter "{self.par}" is not a valid sim parameter'
             raise ValueError(errormsg)
 
@@ -92,27 +91,25 @@ class change_par(ss.Intervention):
             self.inds += sc.findnearest(sim.timevec, y)
 
         # Store original value
-        self.orig_val = sc.dcp(sim.fp_pars[self.par])
+        self.orig_val = sc.dcp(sim.pars.fp[self.par])
 
         return
-
 
     def step(self):
         sim = self.sim
         if len(self.inds) > self.counter:
             ind = self.inds[self.counter] # Find the current index
             if sim.ti == ind: # Check if the current timestep matches
-                curr_val = sc.dcp(sim.fp_pars[self.par])
+                curr_val = sc.dcp(sim.pars.fp[self.par])
                 val = self.vals[self.counter]
                 if val == 'reset':
                     val = self.orig_val
-                sim.fp_pars[self.par] = val # Update the parameter value -- that's it!
+                sim.pars.fp[self.par] = val  # Update the parameter value -- that's it!
                 if self.verbose:
                     label = f'Sim "{sim.label}": ' if sim.label else ''
-                    print(f'{label}On {sim.y}, change {self.counter+1}/{len(self.inds)} applied: "{self.par}" from {curr_val} to {sim.fp_pars[self.par]}')
+                    print(f'{label}On {sim.y}, change {self.counter+1}/{len(self.inds)} applied: "{self.par}" from {curr_val} to {sim.pars.fp[self.par]}')
                 self.counter += 1
         return
-
 
     def finalize(self):
         # Check that all changes were applied
@@ -154,7 +151,9 @@ class change_people_state(ss.Intervention):
             prop=prop,
             annual=annual
         )
-
+        self.module_name = None
+        if '.' in state_name:
+            self.module_name, self.pars.state_name = state_name.split('.')
         self.annual_perc = None
         return
 
@@ -220,7 +219,10 @@ class change_people_state(ss.Intervention):
     def step(self):
         if self.pars.years[0] <= self.sim.y <= self.pars.years[1]:  # Inclusive range
             eligible_uids = self.check_eligibility()
-            self.sim.people[self.pars.state_name][eligible_uids] = self.pars.new_val
+            if self.module_name is not None:
+                self.sim.people[self.module_name][self.pars.state_name][eligible_uids] = self.pars.new_val
+            else:
+                self.sim.people[self.pars.state_name][eligible_uids] = self.pars.new_val
         return
 
 
@@ -268,14 +270,14 @@ class update_methods(ss.Intervention):
         super().init_pre(sim)
         self._validate()
         par_name = None
-        if self.pars.p_use is not None and isinstance(sim.fp_pars['contraception_module'], fpm.SimpleChoice):
+        if self.pars.p_use is not None and isinstance(sim.connectors.contraception, fpm.SimpleChoice):
             par_name = 'p_use'
-        if self.pars.method_mix is not None and isinstance(sim.fp_pars['contraception_module'], fpm.SimpleChoice, ):
+        if self.pars.method_mix is not None and isinstance(sim.connectors.contraception, fpm.SimpleChoice):
             par_name = 'method_mix'
 
         if par_name is not None:
             errormsg = (
-                f"Contraceptive module  {type(sim.fp_pars['contraception_module'])} does not have `{par_name}` parameter. "
+                f"Contraceptive module  {type(sim.connectors.contraception)} does not have `{par_name}` parameter. "
                 f"For this type of module, the probability of contraceptive use depends on people attributes and can't be reset using this intervention.")
             print(errormsg)
 
@@ -297,33 +299,33 @@ class update_methods(ss.Intervention):
         based on scenario specifications.
         """
         sim = self.sim
-        ppl = sim.people
+        cm = sim.connectors.contraception
         if not self.applied and sim.y >= self.pars.year:
             self.applied = True # Ensure we don't apply this more than once
 
             # Implement efficacy
             if self.pars.eff is not None:
                 for k, rawval in self.pars.eff.items():
-                    ppl.contraception_module.update_efficacy(method_label=k, new_efficacy=rawval)
+                    cm.update_efficacy(method_label=k, new_efficacy=rawval)
 
             # Implement changes in duration of use
             if self.pars.dur_use is not None:
                 for k, rawval in self.pars.dur_use.items():
-                    ppl.contraception_module.update_duration(method_label=k, new_duration=rawval)
+                    cm.update_duration(method_label=k, new_duration=rawval)
 
             # Change in probability of use
             if self.pars.p_use is not None:
-                ppl.contraception_module.pars['p_use'] = self.pars.p_use
+                cm.pars['p_use'].set(self.pars.p_use)
 
             # Change in method mix
             if self.pars.method_mix is not None:
                 this_mix = self.pars.method_mix / np.sum(self.pars.method_mix) # Renormalise in case they are not adding up to 1
-                ppl.contraception_module.pars['method_mix'] = this_mix
+                cm.pars['method_mix'] = this_mix
             
             # Change in switching matrix
             if self.pars.method_choice_pars is not None:
                 print(f'Changed contraceptive switching matrix in year {sim.y}')
-                self.sim.people.contraception_module.method_choice_pars = self.pars.method_choice_pars
+                cm.method_choice_pars = self.pars.method_choice_pars
                 
         return
 
@@ -461,7 +463,7 @@ class change_initiation(ss.Intervention):
         # Though it is trickier because we need to reset many postpartum-related attributes
         ppl = self.sim.people
         eligible = ((ppl.sex == 0) & (ppl.alive) &                 # living women
-                              (ppl.age < self.sim.fp_pars['age_limit_fecundity']) &  # who are fecund
+                              (ppl.age < self.sim.pars.fp['age_limit_fecundity']) &  # who are fecund
                               (ppl.sexual_debut) &                           # who already had their sexual debut
                               (~ppl.pregnant)    &                           # who are not currently pregnant
                               (~ppl.postpartum)  &                           # who are not in postpartum

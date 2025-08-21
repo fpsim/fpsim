@@ -10,7 +10,6 @@ import fpsim.locations.data_utils as fpld
 
 def scalar_pars():
     scalar_pars = {
-        'location':             'ethiopia',
         'postpartum_dur':       23,
     }
     return scalar_pars
@@ -31,7 +30,7 @@ def filenames():
         'methods': base_dir / 'mix.csv', # From PMA
         'afb': base_dir / 'afb.table.csv', # From DHS
         'use': base_dir / 'use.csv', # From PMA
-        'education': base_dir / 'edu_initialization.csv', # From DHS
+        'education': base_dir / 'edu_initialization.csv',  # From DHS
     }
     return files
 
@@ -66,7 +65,7 @@ def exposure_parity():
 
 # %% Make and validate parameters
 
-def make_pars(location='ethiopia', seed=None):
+def make_pars(location='ethiopia'):
     """
     Take all parameters and construct into a dictionary
     """

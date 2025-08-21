@@ -11,7 +11,6 @@ import fpsim.locations.data_utils as fpld
 
 def scalar_pars():
     scalar_pars = {
-        'location': 'senegal',
     }
     return scalar_pars
 
@@ -65,7 +64,7 @@ def exposure_parity():
 
 # %% Make and validate parameters
 
-def make_pars(location='senegal', seed=None):
+def make_pars(location='senegal'):
     """
     Take all parameters and construct into a dictionary
     """
