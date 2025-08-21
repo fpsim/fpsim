@@ -23,6 +23,7 @@ rmse_scores = {}
 class Config:
     """Configuration for plots"""
     do_save = True
+    do_show = True
     show_rmse = True
     _figs_directory = 'figures'
 
@@ -152,7 +153,7 @@ def plot_cpr_by_age(sim):
     ax.set_ylabel('CPR')
     ax.set_title('CPR')
     save_figure('cpr_by_age.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
 
 def plot_asfr(sim):
@@ -189,7 +190,7 @@ def plot_asfr(sim):
     sc.boxoff()
 
     save_figure('asfr.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
 
 def plot_methods(sim):
@@ -270,7 +271,7 @@ def plot_methods(sim):
 
     pl.tight_layout()
     save_figure('method_mix.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
     # Plot data_use
     ax = df_use.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'})
@@ -282,7 +283,7 @@ def plot_methods(sim):
 
     pl.tight_layout()
     save_figure('method_use.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
 
 def plot_ageparity(sim):
@@ -350,7 +351,7 @@ def plot_ageparity(sim):
         pl.draw()
 
         save_figure(f'ageparity_{key.lower()}.png')
-        pl.show()
+        if Config.do_show: pl.show()
 
 
 def plot_cpr(sim):
@@ -382,7 +383,7 @@ def plot_cpr(sim):
     pl.legend()
 
     save_figure('cpr.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
 
 def plot_tfr(sim):
@@ -414,7 +415,7 @@ def plot_tfr(sim):
     pl.legend()
 
     save_figure('tfr.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
 
 def plot_pop_growth(sim):
@@ -442,7 +443,7 @@ def plot_pop_growth(sim):
     pl.legend()
 
     save_figure('popgrowth.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
 
 def plot_afb(sim):
@@ -484,7 +485,7 @@ def plot_afb(sim):
     pl.legend()
 
     save_figure('age_first_birth.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
 
 def plot_birth_spacing(sim):
@@ -548,7 +549,7 @@ def plot_birth_spacing(sim):
         ax.set_title('Birth Spacing - Model vs Data')
 
     save_figure('birth_spacing_bins.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
 
 def plot_paid_work(sim, data_employment):
@@ -629,7 +630,7 @@ def plot_paid_work(sim, data_employment):
     ax.legend()
 
     save_figure('paid_employment.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
 
 def plot_education(sim):
@@ -698,7 +699,7 @@ def plot_education(sim):
     ax.legend()
 
     save_figure('education.png')
-    pl.show()
+    if Config.do_show: pl.show()
 
 
 def plot_all(sim):
