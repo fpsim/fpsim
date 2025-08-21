@@ -10,6 +10,7 @@ import fpsim as fp
 from scipy import interpolate as si
 from fpsim import defaults as fpd
 import fpsim.shared_data as sd
+from pathlib import Path
 
 sd_dir = os.path.dirname(sd.__file__)  # path to the shared_data directory
 
@@ -25,7 +26,7 @@ def read_data(location, filename, **kwargs):
     data_path = loc_mod.filenames()['base']
     try:
         # Read data from data_path
-        df = pd.read_csv(data_path / filename, **kwargs)
+        df = pd.read_csv(Path(data_path) / filename, **kwargs)
     except FileNotFoundError:
         # Try one level up; likely a regional location so pull from country data
         fallback_path = data_path.parent.parent / 'data'
