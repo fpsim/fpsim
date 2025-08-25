@@ -48,7 +48,7 @@ plt.Config.do_save = True
 
 def run_sim():
         # Set up sim for country
-        pars = fp.pars(location=country)
+        pars = dict(location=country)
         pars['n_agents'] = 100 # Small population size
         pars['end_year'] = 2020 # 1960 - 2020 is the normal date range
 
