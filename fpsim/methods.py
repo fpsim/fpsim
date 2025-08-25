@@ -429,7 +429,6 @@ class ContraceptiveChoice(ss.Connector):
         return
 
     def set_dur_method(self, uids, method_used=None):
-        # todo make this aware of starsim time units. right now assumes average_dur_use is in years and timestep par is in years
         dt = self.t.dt_year
         timesteps_til_update = np.full(len(uids), np.round(self.average_dur_use/dt), dtype=int)
         return timesteps_til_update
