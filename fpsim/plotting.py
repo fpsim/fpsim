@@ -413,7 +413,7 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     ax.set_xlabel('Year')
     ax.set_ylabel('Percent')
     if Config.show_rmse is True:
-        ax.set_title(f"Contraceptive Prevalence Rate\n(RMSE: {rmse_scores['cpr']:.2f})")
+        ax.set_title(f"Modern contraceptive Prevalence Rate\n(RMSE: {rmse_scores['cpr']:.2f})")
     else:
         ax.set_title(f'Modern contraceptive Prevalence Rate')
     ax.legend(**legend_kwargs)
