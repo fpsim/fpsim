@@ -409,7 +409,7 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     # Plot
     if ax is None: fig, ax = pl.subplots()
     ax.plot(plot_data['year'], plot_data['cpr'], label='UN Data Portal', color='black')
-    ax.plot(res['timevec'][si:], res.contraception.cpr[si:] * 100, label='FPsim', color='cornflowerblue')
+    ax.plot(res['timevec'][si:], res.contraception.mcpr[si:] * 100, label='FPsim', color='cornflowerblue')
     ax.set_xlabel('Year')
     ax.set_ylabel('Percent')
     if Config.show_rmse is True:
@@ -450,6 +450,7 @@ def plot_tfr(sim, ax=None, start_year=1990, stop_year=2020, legend_kwargs={}):
     ax.plot(plot_model.index, plot_model.tfr, label='FPsim', color='cornflowerblue')
     ax.set_xlabel('Year')
     ax.set_ylabel('Rate')
+    ax.set_ylim(bottom=0)
     if Config.show_rmse is True:
         ax.set_title(f"Total Fertility Rate\n(RMSE: {rmse_scores['tfr']:.2f})")
     else:
