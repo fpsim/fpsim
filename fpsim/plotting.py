@@ -174,8 +174,13 @@ def plot_asfr(sim, ax=None):
     # Compute mean-normalized RMSE
     rmse_scores['asfr'] = compute_rmse(asfr_model, asfr_data)
 
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
+
     # Plot
-    if ax is None: fig, ax = pl.subplots()
     kw = dict(lw=3, alpha=0.7, markersize=10)
     ax.plot(x, asfr_data, marker='^', color='black', label="UN data", **kw)
     ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
@@ -190,7 +195,7 @@ def plot_asfr(sim, ax=None):
     ax.legend(frameon=False)
     sc.boxoff(ax=ax)
 
-    if ax is None: save_figure('asfr.png')
+    if save_individual: save_figure('asfr.png')
     if Config.do_show: pl.show()
     return ax
 
@@ -246,8 +251,13 @@ def plot_method_mix(sim, ax=None, legend_kwargs={}):
     df_mix = pd.DataFrame({'PMA': mix_percent_data, 'FPsim': mix_percent_model}, index=data_methods_mix.keys())
     df_mix = df_mix.iloc[::-1]
 
-    # Plot mix
-    if ax is None: fig, ax = pl.subplots()
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
+
+    # Plot
     df_mix.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'}, ax=ax)
     ax.set_xlabel('Percent users')
     ax.legend(**legend_kwargs)
@@ -256,7 +266,7 @@ def plot_method_mix(sim, ax=None, legend_kwargs={}):
     else:
         ax.set_title(f'Contraceptive Method Mix')
 
-    if ax is None:
+    if save_individual:
         pl.tight_layout()
         save_figure('method_mix.png')
     if Config.do_show: pl.show()
@@ -299,8 +309,13 @@ def plot_method_use(sim, ax=None, legend_kwargs={}):
 
     rmse_scores['use'] = compute_rmse(model_use_percent, data_use_percent)
 
-    # Plot data_use
-    if ax is None: fig, ax = pl.subplots()
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
+
+    # Plot
     df_use.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'}, ax=ax)
     ax.set_xlabel('Percent')
     ax.legend(**legend_kwargs)
@@ -309,7 +324,7 @@ def plot_method_use(sim, ax=None, legend_kwargs={}):
     else:
         ax.set_title(f'Contraceptive Use')
 
-    if ax is None:
+    if save_individual:
         pl.tight_layout()
         save_figure('method_use.png')
     if Config.do_show: pl.show()
@@ -364,9 +379,13 @@ def plot_ageparity(sim, ax=None):
 
     # Find diff to help visualize in plotting
     sky_arr['Diff_data-model'] = sky_arr['Data'] - sky_arr['Model']
-    if ax is None: fig, ax = pl.subplots()
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
 
-    # Plot ageparity
+    # Plot
     for key in ['Data', 'Model', 'Diff_data-model']:
 
         pl.pcolormesh(sky_arr[key], cmap='parula')
@@ -380,7 +399,7 @@ def plot_ageparity(sim, ax=None):
         # pl.gca().view_init(30, 45)
         pl.draw()
 
-        if ax is None: save_figure(f'ageparity_{key.lower()}.png')
+        if save_individual: save_figure(f'ageparity_{key.lower()}.png')
         if Config.do_show: pl.show()
     return ax
 
@@ -389,6 +408,7 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     '''
     Plot contraceptive prevalence rate for model vs data
     '''
+
     # Import data
     data_cpr = Config.load_validation_data(sim.pars['location'], keys=['mcpr'])['mcpr']
     data_cpr = data_cpr[data_cpr['year'] <= sim.pars['stop']]  # Restrict years to plot
@@ -397,7 +417,7 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     # Align data for RMSE calculation
     years = data_cpr['year']
     data_values = data_cpr['cpr'].values
-    model_values = np.interp(years, res['timevec'], res.contraception.cpr * 100)  # Interpolate model CPR to match data years
+    model_values = np.interp(years, res['timevec'].years, res.contraception.mcpr * 100)  # Interpolate model CPR to match data years
 
     # Compute mean-normalized RMSE
     rmse_scores['cpr'] = compute_rmse(model_values, data_values)
@@ -406,8 +426,13 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     plot_data = data_cpr.loc[data_cpr.year >= start_year]
     si = sc.findfirst(res['timevec'] >= start_year)
 
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
+
     # Plot
-    if ax is None: fig, ax = pl.subplots()
     ax.plot(plot_data['year'], plot_data['cpr'], label='UN Data Portal', color='black')
     ax.plot(res['timevec'][si:], res.contraception.mcpr[si:] * 100, label='FPsim', color='cornflowerblue')
     ax.set_xlabel('Year')
@@ -415,10 +440,10 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     if Config.show_rmse is True:
         ax.set_title(f"Modern contraceptive Prevalence Rate\n(RMSE: {rmse_scores['cpr']:.2f})")
     else:
-        ax.set_title(f'Modern contraceptive Prevalence Rate')
+        ax.set_title(f'Modern contraceptive prevalence rate')
     ax.legend(**legend_kwargs)
 
-    if ax is None: save_figure('cpr.png')
+    if save_individual: save_figure('cpr.png')
     if Config.do_show: pl.show()
     return ax
 
@@ -444,8 +469,13 @@ def plot_tfr(sim, ax=None, start_year=1990, stop_year=2020, legend_kwargs={}):
     plot_data = data_tfr.loc[(data_tfr['year'] >= start_year) & (data_tfr['year'] <= stop_year)]
     plot_model = df.loc[(df.index >= start_year) & (df.index <= stop_year)]
 
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
+
     # Plot
-    if ax is None: fig, ax = pl.subplots()
     ax.plot(plot_data['year'], plot_data['tfr'], label='World Bank', color='black')
     ax.plot(plot_model.index, plot_model.tfr, label='FPsim', color='cornflowerblue')
     ax.set_xlabel('Year')
@@ -457,7 +487,7 @@ def plot_tfr(sim, ax=None, start_year=1990, stop_year=2020, legend_kwargs={}):
         ax.set_title(f'Total Fertility Rate')
     ax.legend(**legend_kwargs)
 
-    if ax is None: save_figure('tfr.png')
+    if save_individual: save_figure('tfr.png')
     if Config.do_show: pl.show()
     return ax
 
@@ -478,8 +508,13 @@ def plot_pop_growth(sim, ax=None, legend_kwargs={}):
     model_growth_rate = pop_growth_rate(res.timevec, res.n_alive)
     data_growth_rate = pop_growth_rate(data_pop_years, data_population)
 
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
+
     # Plot
-    if ax is None: fig, ax = pl.subplots()
     ax.plot(data_pop_years[1:], data_growth_rate, label='World Bank', color='black')
     ax.plot(res.fp.timevec[1:], model_growth_rate, label='FPsim', color='cornflowerblue')
     ax.set_xlabel('Year')
@@ -487,7 +522,7 @@ def plot_pop_growth(sim, ax=None, legend_kwargs={}):
     ax.set_title(f'Population Growth Rate')
     ax.legend(**legend_kwargs)
 
-    if ax is None: save_figure('popgrowth.png')
+    if save_individual: save_figure('popgrowth.png')
     if Config.do_show: pl.show()
     return ax
 
@@ -495,7 +530,12 @@ def plot_pop_growth(sim, ax=None, legend_kwargs={}):
 def plot_afb(sim, ax=None, legend_kwargs={}):
     """Plot age at first birth: model vs survey data"""
     data_afb = Config.load_validation_data(sim.pars['location'], keys='afb')['afb']
-    if ax is None: fig, ax = pl.subplots()
+
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
 
     # Extract model AFB values
     model_afb = [age for age in sim.people.fp.first_birth_age if age != -1]
@@ -531,7 +571,7 @@ def plot_afb(sim, ax=None, legend_kwargs={}):
         ax.set_title('Age at First Birth')
     ax.legend(**legend_kwargs)
 
-    if ax is None: save_figure('age_first_birth.png')
+    if save_individual: save_figure('age_first_birth.png')
     if Config.do_show: pl.show()
     return ax
 
@@ -588,7 +628,13 @@ def plot_birth_spacing(sim, ax=None, legend_kwargs={}, min_age=15, max_age=50):
         'Diff': diff
     }, index=spacing_bins.keys())
 
-    if ax is None: fig, ax = pl.subplots()
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
+
+    # Plot
     bins_frame.plot.barh(color={'Data': 'black', 'Model': 'cornflowerblue', 'Diff': 'red'}, ax=ax)
     ax.set_xlabel('Percent of live birth spaces')
     ax.set_ylabel('Birth spacing (months)')
@@ -598,7 +644,7 @@ def plot_birth_spacing(sim, ax=None, legend_kwargs={}, min_age=15, max_age=50):
     else:
         ax.set_title('Birth Spacing')
 
-    if ax is None: save_figure('birth_spacing_bins.png')
+    if save_individual: save_figure('birth_spacing_bins.png')
     if Config.do_show: pl.show()
     return ax
 

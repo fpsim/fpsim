@@ -217,7 +217,6 @@ def run_t6():
     freepars = dict(
             fecundity_var_low = [0.95, 0.925, 0.975],       # [best, low, high]
             fecundity_var_high = [1.05, 1.0, 1.3],
-            exposure_factor = [2.0, 0.95, 2.5],
     )
     calibration = fp.Calibration(pars, calib_pars=freepars, n_trials=2)
     calibration.calibrate()
