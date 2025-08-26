@@ -38,7 +38,9 @@ def test_multisim(do_plot=do_plot):
     return msim
 
 
-def test_eth_multisim():
+def devtest_eth_multisim():
+    # TODO: deprecate this?
+    sc.heading('Testing Ethiopia multisim...')
     sim1 = fp.Sim(location='addis_ababa')
     sim2 = fp.Sim(location='afar')
     sim3 = fp.Sim(location='amhara')
@@ -61,4 +63,4 @@ if __name__ == '__main__':
     sc.options(backend=None) # Turn on interactive plots
     with sc.timer():  # Start timing
         msim = test_multisim()
-        msim_eth = test_eth_multisim()
+        msim_eth = devtest_eth_multisim()
