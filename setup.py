@@ -19,7 +19,7 @@ CLASSIFIERS = [
     "Programming Language :: Python",
     "Topic :: Software Development :: Libraries :: Python Modules",
     "Development Status :: 5 - Production/Stable",
-    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
 ]
 
 setup(
@@ -40,7 +40,7 @@ setup(
         'numpy',
         'numba',
         'scipy',
-        'starsim==2.3.1',
+        'starsim>=3.0.2',
         'pandas>=1.3', 
         'sciris>=2.1.0',
         'matplotlib>=3.5.0',

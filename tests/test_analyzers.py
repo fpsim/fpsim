@@ -8,7 +8,7 @@ import starsim as ss
 import pytest
 
 
-do_plot = 1
+do_plot = 0
 sc.options(backend='agg') # Turn off interactive plots
 max_pregnancy_loss = 0.5 # Maximum allowed fraction of pregnancies to allow to not end in birth (including stillbirths)
 
@@ -88,6 +88,20 @@ def test_age_pyramids():
         ap.plot()
 
     return ap
+
+
+def test_lifeof_recorder_analyzer():
+    sc.heading('Testing life of an analyzer...')
+
+    # Create a sim with the life of analyzer
+    analyzer = fp.lifeof_recorder()
+
+    sim = make_analyzer(analyzer)
+
+    if do_plot:
+        sim.plot()
+
+    return sim
 
 
 def test_method_mix_by_age():
