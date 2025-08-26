@@ -40,16 +40,16 @@ def test_pregnant_women():
     ])
     contra_mod = fpm.RandomChoice(methods=methods)
 
-    # force all to have debuted
+    # force all to have debuted at age 20
     debut_age = {}
     debut_age['ages']=np.arange(10, 45, dtype=float)
     debut_age['probs']=np.zeros(35, dtype=float)
-    debut_age['probs'][10:20] = 1.0
+    debut_age['probs'][10] = 1
 
     # force all women to have the same fecundity and be sexually active
     # Note: not all agents will be active at t==0 but will be after t==1
     sexual_activity = np.zeros(51, dtype=float)
-    sexual_activity[20:30] = 1/10
+    sexual_activity[20:30] = 1
 
     custom_pars = {
         'start_year': 2000,
@@ -70,12 +70,13 @@ def test_pregnant_women():
     sim.run()
 
     n_agents = sim.pars['n_agents']
+    fecundity24 = sim.pars.fp['age_fecundity'][24]
 
     # all women are 24 and can become pregnant, so we can look at percentages to estimate the
     # expected number of pregnancies, stillborns, living infants, and miscarriages/abortions
     # pregnancy rate: 11.2% per month or approx 80% per year
     print(f'Checking pregnancy and birth outcomes from {n_agents} women... ')
-    assert 0.85 * n_agents > sim.results.fp.pregnancies[0:12].sum() > 0.75 * n_agents, "Expected number of pregnancies not met"
+    assert (fecundity24*1.1) * n_agents > sim.results.fp.pregnancies[0:12].sum() > (fecundity24*0.9) * n_agents, "Expected number of pregnancies not met"
     print(f'✓ ({sim.results.fp.pregnancies[0:12].sum()} pregnancies, as expected)')
 
     # stillbirth rate: 2.5% of all pregnancies, but only count completed pregnancies
