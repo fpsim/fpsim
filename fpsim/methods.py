@@ -743,6 +743,8 @@ class StandardChoice(SimpleChoice):
 
         # Add time trend
         rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
+        # This parameter can be positive or negative
+        rhs += self.pars['prob_use_intercept']
 
         # Finish
         prob_use = expit(rhs)

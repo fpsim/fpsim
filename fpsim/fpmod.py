@@ -204,7 +204,6 @@ class FPmod(ss.Module):
             uids = self.alive.uids
 
         fecund = uids[(ppl.female[uids] == True) & (ppl.age[uids] < self.pars['age_limit_fecundity'])]
-
         ti_to_debut = ss.years(self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt
 
         # If ti_contra is less than one timestep away, we want to also set it to 0 so floor time_to_debut.
@@ -291,6 +290,7 @@ class FPmod(ss.Module):
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity.
         # This encapsulates background factors and is experimental and tunable.
+        # TODO: This is fragile. Can't multiply probabilities by arbitrary scalars.
         preg_probs *= pars['exposure_factor']
         preg_probs *= pars['exposure_age'][ppl.int_age_clip(active_uids)]
         preg_probs *= pars['exposure_parity'][np.minimum(self.parity[active_uids], fpd.max_parity).astype(int)]
