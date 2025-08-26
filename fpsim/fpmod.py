@@ -281,7 +281,8 @@ class FPmod(ss.Module):
         self.rel_sus[active_uids] = 1  # Reset relative susceptibility
         self.rel_sus[:] *= 1 - method_eff
         self.rel_sus[lam_uids] *= 1 - lam_eff
-        preg_probs = ss.probperyear(self.rel_sus[active_uids] * fecundity).to_prob(self.t.dt)
+        raw_probs = np.minimum(fecundity * self.rel_sus[active_uids], 1.0)
+        preg_probs = ss.probperyear(raw_probs).to_prob(self.t.dt)
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from PRESTO data
         nullip = self.parity[active_uids] == 0
