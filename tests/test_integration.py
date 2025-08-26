@@ -49,7 +49,7 @@ def test_pregnant_women():
     # force all women to have the same fecundity and be sexually active
     # Note: not all agents will be active at t==0 but will be after t==1
     sexual_activity = np.zeros(51, dtype=float)
-    sexual_activity[20:30] = 1.0
+    sexual_activity[20:30] = 1/10
 
     custom_pars = {
         'start_year': 2000,
