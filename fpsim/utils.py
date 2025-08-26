@@ -32,12 +32,6 @@ def digitize_ages(ages, age_group_lb):
     """
     return np.digitize(ages, age_group_lb) - 1  # returns 0-based indices of the group
 
-def annprob2ts(prob_annual, dt):
-    ''' Convert an annual probability into a timestep probability '''
-    prob_timestep = 1 - ((1-np.minimum(1,prob_annual))**(dt.years))
-    return prob_timestep
-
-
 
 @nb.njit((nb.float64[:], nb.float64, nb.float64), cache=True)
 def numba_miscarriage_prob(miscarriage_rates, age, resolution):
@@ -188,7 +182,6 @@ class DuplicateNameException(Exception):
     """
     Raised when either multiple instances of Module or State, or of any other type
     passed to ndict have duplicate names."""
-
 
     def __init__(self, obj):
         msg = f"A {type(obj)} with name `{obj.name}` has already been added."

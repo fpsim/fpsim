@@ -205,7 +205,7 @@ class FPmod(ss.Module):
 
         fecund = uids[(ppl.female[uids] == True) & (ppl.age[uids] < self.pars['age_limit_fecundity'])]
 
-        ti_to_debut = ss.years(self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt # (self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt.value
+        ti_to_debut = ss.years(self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt
 
         # If ti_contra is less than one timestep away, we want to also set it to 0 so floor time_to_debut.
         self.ti_contra[fecund] = np.maximum(np.floor(ti_to_debut), 0)
@@ -230,8 +230,8 @@ class FPmod(ss.Module):
         f_ages = ppl.int_age(female)
         m_ages = ppl.int_age(male)
 
-        f_mort_prob = fpu.annprob2ts(f_spline[f_ages], self.t.dt)
-        m_mort_prob = fpu.annprob2ts(m_spline[m_ages], self.t.dt)
+        f_mort_prob = ss.peryear(f_spline[f_ages]).to_prob(self.t.dt)
+        m_mort_prob = ss.peryear(m_spline[m_ages]).to_prob(self.t.dt)
 
         # TODO; combine to single call
         self._p_death.set(p=f_mort_prob)
@@ -282,7 +282,7 @@ class FPmod(ss.Module):
         self.rel_sus[active_uids] = 1  # Reset relative susceptibility
         self.rel_sus[:] *= 1 - method_eff
         self.rel_sus[lam_uids] *= 1 - lam_eff
-        preg_probs = fpu.annprob2ts(self.rel_sus[active_uids] * fecundity, self.t.dt)
+        preg_probs = ss.peryear(self.rel_sus[active_uids] * fecundity).to_prob(self.t.dt)
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from PRESTO data
         nullip = self.parity[active_uids] == 0
