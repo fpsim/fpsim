@@ -121,6 +121,7 @@ class method_mix_by_age(ss.Analyzer):
         pass
 
     def finalize(self):
+        super().finalize()
         sim = self.sim
         ppl = sim.people
         n_methods = len(sim.connectors.contraception.methods)
