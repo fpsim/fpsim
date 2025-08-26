@@ -175,7 +175,7 @@ def test_durations(location=None):
 
 if __name__ == '__main__':
 
-    sims1 = test_mcpr(location='ethiopia', do_plot=True)
+    sims1 = test_mcpr(location='ethiopia', do_plot=False)
     sims2 = test_durations()
 
     print('Done.')
