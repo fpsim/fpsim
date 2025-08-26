@@ -8,7 +8,7 @@ import starsim as ss
 import pytest
 
 
-do_plot = 1
+do_plot = 0
 sc.options(backend='agg') # Turn off interactive plots
 max_pregnancy_loss = 0.5 # Maximum allowed fraction of pregnancies to allow to not end in birth (including stillbirths)
 
