@@ -121,6 +121,7 @@ class method_mix_by_age(ss.Analyzer):
         pass
 
     def finalize(self):
+        super().finalize()
         sim = self.sim
         ppl = sim.people
         n_methods = len(sim.connectors.contraception.methods)
@@ -384,6 +385,7 @@ class lifeof_recorder(ss.Analyzer):
                 stop_idx = len(self.snapshots[t][state])
                 self.trajectories[state][ti, 0:stop_idx] = \
                 self.snapshots[t][state]
+        super().finalize()
         return
 
     def plot(self, index=0, fig_args=None, pl_args=None):

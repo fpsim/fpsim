@@ -118,6 +118,7 @@ class change_par(ss.Intervention):
         if n_counter != n_vals:
             errormsg = f'Not all values were applied ({n_vals} ≠ {n_counter})'
             raise RuntimeError(errormsg)
+        super().finalize()
         return
 
 
