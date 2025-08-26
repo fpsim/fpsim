@@ -7,7 +7,7 @@ import fpsim as fp
 import starsim as ss
 
 parallel  = True
-do_plot = 1
+do_plot = 0
 sc.options(backend='agg') # Turn off interactive plots
 
 
