@@ -164,6 +164,7 @@ def make_methods(method_list=None):
 
 
 class Fisk(ss.Dist):
+    """ Wrapper for scipy's fisk distribution to make it compatible with starsim """
     def __init__(self, c=0.0, scale=1.0, **kwargs):
         super().__init__(distname='fisk', dist=fisk, c=c, scale=scale, **kwargs)
         return
@@ -455,6 +456,7 @@ class ContraceptiveChoice(ss.Connector):
         all women passively using LAM but DHS data records only women who self-report
         LAM which is much lower. Follows the DHS definition of mCPR.
         """
+        super().update_results()
         ppl = self.sim.people
         method_age = self.sim.pars.fp['method_age'] <= ppl.age
         fecund_age = ppl.age < self.sim.pars.fp['age_limit_fecundity']
@@ -561,7 +563,7 @@ class SimpleChoice(RandomChoice):
         Return an array of probabilities that each woman will use contraception.
         """
         ppl = self.sim.people
-        year = self.t.now().years
+        year = self.t.year
 
         # Figure out which coefficients to use
         if event is None : p = self.contra_use_pars[0]
@@ -711,7 +713,7 @@ class StandardChoice(SimpleChoice):
         Return an array of probabilities that each woman will use contraception.
         """
         ppl = self.sim.people
-        year = self.t.now().years
+        year = self.t.year
 
         # Figure out which coefficients to use
         if event is None : p = self.contra_use_pars[0]

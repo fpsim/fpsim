@@ -826,6 +826,7 @@ class track_as(ss.Analyzer):
         return
 
     def init_results(self):
+        super().init_results()
         self.results['imr_age_by_group'] = []
         self.results['mmr_age_by_group'] = []
         self.results['stillbirth_ages'] = []

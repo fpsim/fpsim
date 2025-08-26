@@ -352,8 +352,8 @@ class change_initiation_prob(ss.Intervention):
         return
 
     def init_pre(self, sim=None):
-        super().initialize()
-        self._validate()
+        super().init_pre(sim)
+        # self._validate()
         if isinstance(sim.people.contraception_module, (fpm.SimpleChoice)):
             self.par_name = 'prob_use_intercept'
 
@@ -419,7 +419,7 @@ class change_initiation(ss.Intervention):
         return
 
     def init_pre(self, sim=None):
-        super().initialize()
+        super().init_pre(sim)
 
         # Lastly, adjust the probability by the sim's timestep, if it's an annual probability
         if self.annual:

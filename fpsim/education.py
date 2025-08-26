@@ -279,6 +279,7 @@ class Education(ss.Connector):
 
     def update_results(self):
         """ Update results for education module """
+        super().update_results()
         ppl = self.sim.people
         f = ppl.female & (ppl.age >= 15)
         self.results.mean_attainment[self.ti] = np.mean(self.attainment[f])
