@@ -229,32 +229,9 @@ def run_t6():
 
 if __name__ == '__main__':
 
-    import fpsim as fp
-
-    sim = fp.Sim()
-    sim.run()
-    fig = sim.plot(do_show=False)
-    pars = dict(
-        n_agents   = 10_000,
-        location   = 'kenya',
-        start_year = 2000,
-        end_year   = 2020,
-    )
-    sim = fp.Sim(pars)
-    sim.run()
-    sim.results.fp['pregnancies']
-    sim.list_available_results()
-    sim = fp.Sim(n_agents=10e3, location='kenya', start_year=2000, end_year=2020)
-    sim.run()
-    sim = fp.Sim(pars, n_agents=100) # Use parameters defined above, but overrides the value `n_agents` in pars, and uses instead 100 agents, not 10,000
-    sim.run()
-
-    sim.plot(do_show=False) # the default
-    sim.plot('cpr', do_show=False)
-
-    # run_t3()
-    # run_t4()
-    # run_t5()
-    # run_t6()
+    run_t3()
+    run_t4()
+    run_t5()
+    run_t6()
 
     print('Done.')
