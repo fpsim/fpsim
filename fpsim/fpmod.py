@@ -44,6 +44,12 @@ class FPmod(ss.Module):
         self._p_twins = ss.bernoulli(p=0)  # Probability of twins
         self._p_breastfeed = ss.bernoulli(p=1)  # Probability of breastfeeding, set to 1 for consistency
 
+        def age_adjusted_non_pp_active(self, sim, uids):
+            return self.pars['sexual_activity'][sim.people.int_age(uids)]
+        self._p_non_pp_active = ss.bernoulli(p=age_adjusted_non_pp_active)  # Probability of being sexually active if not postpartum
+
+
+
         # Duration distributions - TODO, move all these to parameters
         self._dur_pregnancy = ss.uniform(low=self.pars['preg_dur_low'], high=self.pars['preg_dur_high'])
         self._dur_breastfeeding = ss.normal(loc=self.pars['breastfeeding_dur_mean'], scale=self.pars['breastfeeding_dur_sd'])
@@ -51,6 +57,7 @@ class FPmod(ss.Module):
 
         # All other distributions
         self._personal_fecundity = ss.uniform(low=self.pars['fecundity_var_low'], high=self.pars['fecundity_var_high'])
+        self._fated_debut = ss.choice(a=self.pars['debut_age']['ages'], p=self.pars['debut_age']['probs'])
 
         # Define ASFR and method mix
         self.asfr_bins = np.array([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100])
@@ -80,7 +87,7 @@ class FPmod(ss.Module):
 
         # Sexual activity
         # Default initialization for fated_debut; subnational debut initialized in subnational.py otherwise
-        self.fated_debut[uids] = self.pars['debut_age']['ages'][fpu.n_multinomial(self.pars['debut_age']['probs'], len(uids))]
+        self.fated_debut[uids] = self._fated_debut.rvs(uids)
         fecund = ppl.female & (ppl.age < self.pars['age_limit_fecundity'])
         self.check_sexually_active(uids[fecund[uids]])
         self.update_time_to_choose(uids)
@@ -158,8 +165,7 @@ class FPmod(ss.Module):
 
         # Set non-postpartum probabilities
         if len(non_pp):
-            probs_non_pp = self.pars['sexual_activity'][ppl.int_age(non_pp)]
-            self.sexually_active[non_pp] = fpu.binomial_arr(probs_non_pp)
+            self.sexually_active[non_pp] = self._p_non_pp_active.rvs(non_pp)
 
             # Set debut to True if sexually active for the first time
             # Record agent age at sexual debut in their memory
@@ -198,10 +204,10 @@ class FPmod(ss.Module):
             uids = self.alive.uids
 
         fecund = uids[(ppl.female[uids] == True) & (ppl.age[uids] < self.pars['age_limit_fecundity'])]
-        time_to_debut = (self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt
+        ti_to_debut = ss.years(self.fated_debut[fecund]-ppl.age[fecund])/self.t.dt
 
         # If ti_contra is less than one timestep away, we want to also set it to 0 so floor time_to_debut.
-        self.ti_contra[fecund] = np.maximum(np.floor(time_to_debut), 0)
+        self.ti_contra[fecund] = np.maximum(np.floor(ti_to_debut), 0)
 
         # Validation
         time_to_set_contra = self.ti_contra[fecund] == 0
@@ -213,7 +219,6 @@ class FPmod(ss.Module):
     def decide_death_outcome(self, uids):
         """ Decide if person dies at a timestep """
         ppl = self.sim.people
-        timestep = self.t.dt_year * fpd.mpy # timestep in months
         trend_val = self.pars['mortality_probs']['gen_trend']
         age_mort = self.pars['age_mortality']
         f_spline = age_mort['f_spline'] * trend_val
@@ -224,8 +229,8 @@ class FPmod(ss.Module):
         f_ages = ppl.int_age(female)
         m_ages = ppl.int_age(male)
 
-        f_mort_prob = fpu.annprob2ts(f_spline[f_ages], timestep)
-        m_mort_prob = fpu.annprob2ts(m_spline[m_ages], timestep)
+        f_mort_prob = ss.peryear(f_spline[f_ages]).to_prob(self.t.dt)
+        m_mort_prob = ss.peryear(m_spline[m_ages]).to_prob(self.t.dt)
 
         # TODO; combine to single call
         self._p_death.set(p=f_mort_prob)
@@ -267,7 +272,7 @@ class FPmod(ss.Module):
         # Get each woman's degree of protection against conception based on her contraception or LAM
         cm = self.sim.connectors.contraception
         eff_array = np.array([m.efficacy for m in cm.methods.values()])
-        method_eff = eff_array[self.method.astype(int)]
+        method_eff = eff_array[self.method]
         lam_eff = pars['LAM_efficacy']
         lam = self.lam[active_uids]
         lam_uids = active_uids[lam]
@@ -276,7 +281,7 @@ class FPmod(ss.Module):
         self.rel_sus[active_uids] = 1  # Reset relative susceptibility
         self.rel_sus[:] *= 1 - method_eff
         self.rel_sus[lam_uids] *= 1 - lam_eff
-        preg_probs = fpu.annprob2ts(self.rel_sus[active_uids] * fecundity, self.t.dt_year * fpd.mpy)
+        preg_probs = ss.probperyear(self.rel_sus[active_uids] * fecundity).to_prob(self.t.dt)
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from PRESTO data
         nullip = self.parity[active_uids] == 0
@@ -378,7 +383,7 @@ class FPmod(ss.Module):
         """ Advance pregnancy in time and check for miscarriage """
         ppl = self.sim.people
         preg = uids[self.pregnant[uids]]
-        self.gestation[preg] += self.t.dt_year * fpd.mpy
+        self.gestation[preg] += self.t.dt.months
 
         # Check for miscarriage at the end of the first trimester
         end_first_tri = preg[(self.gestation[preg] == self.pars['end_first_tri'])]
@@ -533,13 +538,13 @@ class FPmod(ss.Module):
                 pidx = (self.parity[prev_birth_single] - 1).astype(int)
                 all_ints = [self.birth_ages[r, pidx] - self.birth_ages[r, pidx-1] for r in prev_birth_single]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
-                short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int']/fpd.mpy))
+                short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int'].years))
                 self.results['short_intervals'][ti] += short_ints
             if len(prev_birth_twins):
                 pidx = (self.parity[prev_birth_twins] - 2).astype(int)
                 all_ints = [self.birth_ages[r, pidx] - self.birth_ages[r, pidx-1] for r in prev_birth_twins]
                 latest_ints = np.array([r[~np.isnan(r)][-1] for r in all_ints])
-                short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int']/fpd.mpy))
+                short_ints = np.count_nonzero(latest_ints < (fp_pars['short_int'].years))
                 self.results['short_intervals'][ti] += short_ints
 
             # Calculate total births

@@ -88,7 +88,7 @@ class change_par(ss.Intervention):
         self.counter = 0
         self.inds = sc.autolist()
         for y in years:
-            self.inds += sc.findnearest(sim.timevec, y)
+            self.inds += sc.findnearest([t.years for t in sim.timevec], y) # todo : this is not the most efficient way to do this. check before release
 
         # Store original value
         self.orig_val = sc.dcp(sim.pars.fp[self.par])
@@ -118,6 +118,7 @@ class change_par(ss.Intervention):
         if n_counter != n_vals:
             errormsg = f'Not all values were applied ({n_vals} ≠ {n_counter})'
             raise RuntimeError(errormsg)
+        super().finalize()
         return
 
 
