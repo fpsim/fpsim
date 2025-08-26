@@ -78,7 +78,7 @@ def devtest_plotting_class(sim=None):
     return sim
 
 
-def test_plotting_regional():
+def devtest_plotting_regional():
     sc.heading('Test plotting class functions for region location...')
     par_kwargs = dict(stop=2019)
     sim = fp.Sim(pars=par_kwargs, location='amhara').run()
@@ -123,5 +123,6 @@ if __name__ == '__main__':
     df   = test_to_df(sim)
     ppl  = test_plot_people(sim)
     # sim = devtest_plotting_class(sim)  # Moving to devtest as not critical
+    # sim  = devtest_plotting_regional()
     method = test_method_usage(sim)
     # sim = test_track_as(run_track_as)

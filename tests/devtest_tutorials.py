@@ -225,12 +225,14 @@ def run_t6():
 
     fig = calibration.plot_trend()
     fig = calibration.plot_best()
+    return
+
 
 if __name__ == '__main__':
 
-    # run_t3()
-    # run_t4()
-    # run_t5()
+    run_t3()
+    run_t4()
+    run_t5()
     run_t6()
 
     print('Done.')
