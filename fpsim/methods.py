@@ -430,7 +430,6 @@ class ContraceptiveChoice(ss.Connector):
 
     def set_dur_method(self, uids, method_used=None):
         # todo make this aware of starsim time units. right now assumes average_dur_use is in years and timestep par is in years
-        # dt = ppl.sim.t.dt_year * fpd.mpy
         dt = self.t.dt_year
         timesteps_til_update = np.full(len(uids), np.round(self.average_dur_use/dt), dtype=int)
         return timesteps_til_update
@@ -613,7 +612,6 @@ class SimpleChoice(RandomChoice):
                     errormsg = 'Unrecognized type for duration of use: expecting a Starsim distribution or a number'
                     raise ValueError(errormsg)
 
-        # dt = ppl.sim.t.dt_year * fpd.mpy
         dt = self.t.dt.months
         timesteps_til_update = np.clip(np.round(dur_method/dt), 1, self.pars['max_dur'].years)  # Include a maximum. Durs seem way too high
 

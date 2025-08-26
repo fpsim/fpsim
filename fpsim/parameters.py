@@ -71,7 +71,7 @@ class FPPars(ss.Pars):
         self.preg_dur_low = 9       # Months
         self.preg_dur_high = 9      # Months
         self.max_lam_dur = 5        # Duration of lactational amenorrhea (months)
-        self.short_int = 24         # Duration of a short birth interval between live births (months)
+        self.short_int = ss.months(24)         # Duration of a short birth interval between live births (months)
         self.low_age_short_int = 0  # age limit for tracking the age-specific short birth interval
         self.high_age_short_int = 20    # age limit for tracking the age-specific short birth interval
         self.postpartum_dur = 35    # Months
