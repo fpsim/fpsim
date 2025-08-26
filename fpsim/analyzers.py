@@ -347,7 +347,6 @@ class lifeof_recorder(ss.Analyzer):
         self.trajectories = {}  # Store education trajectories
         methods = fp.make_methods()
         self.method_map = {idx: method.label for idx, method in enumerate(methods.values())}
-        self.m2y = 1.0/fpd.mpy  # Transform timesteps in months to years
 
         return
 
@@ -431,7 +430,7 @@ class lifeof_recorder(ss.Analyzer):
         pl.plot(xp, yp, color='k', ls=':', marker=">")
 
         # Mark the age at the end of the simulation (if they died before the yellowish "alive" bar will stop befor this line)
-        sim_len = len(self.time) * self.m2y
+        sim_len = len(self.time) * self.t.dt_year
         xp = (temp_age[0, 0] + sim_len) *len(yp)
         pl.plot(xp, yp, color='k', ls=':', marker="<")
 
@@ -572,7 +571,7 @@ class lifeof_recorder(ss.Analyzer):
     def _transform_to_age(self, intervals, index):
         age = self.trajectories["age"][:, index]
         intervals_age = np.full(shape=intervals.shape, fill_value=0.0, dtype=np.float64)
-        intervals_age[:, 1] = self.m2y*intervals[:, 1].astype(np.float64)
+        intervals_age[:, 1] = self.t.dt_year *intervals[:, 1].astype(np.float64)
         intervals_age[:, 0] = age[intervals[:, 0]]
         return intervals_age
 

@@ -6,7 +6,6 @@ Defines the People class
 import numpy as np  # Needed for a few things not provided by pl
 import pylab as pl
 import sciris as sc
-from . import utils as fpu
 import fpsim as fp
 from . import demographics as fpdmg
 import starsim as ss
@@ -55,10 +54,10 @@ class People(ss.People):
         if uids is None:
             uids = self.alive.uids
 
-        _urban = self.init_urban(len(uids))
+        _urban = self.init_urban(uids)
 
         # Initialize sociodemographic states
-        self.urban[uids] = _urban  # Urban (1) or rural (0)
+        self.urban[_urban] = True
         self.init_wealthquintile(uids)
 
         # Partnership
@@ -78,11 +77,11 @@ class People(ss.People):
     def parity(self):
         return self.sim.connectors.fp.parity  # TODO, fix
 
-    def init_urban(self, n):
+    def init_urban(self, uids):
         """ Get initial distribution of urban """
-        n_agents = n
         urban_prop = self.sim.pars.fp['urban_prop']
-        urban = fpu.n_binomial(urban_prop, n_agents)
+        self.binom.set(p=urban_prop)  # Set the probability of being urban
+        urban = self.binom.filter(uids)
         return urban
 
     def init_wealthquintile(self, uids):
@@ -90,7 +89,8 @@ class People(ss.People):
         if wq is None:
             return
         wq_probs = wq['percent']
-        vals = np.random.choice(len(wq_probs), size=len(uids), p=wq_probs)+1
+        wq_choice = ss.choice(a=len(wq_probs), p=wq_probs, strict=False)
+        vals = wq_choice.rvs(len(uids))+1
         self.wealthquintile[uids] = vals
         return
 

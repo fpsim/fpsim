@@ -164,8 +164,8 @@ class Education(ss.Connector):
     def _get_uids(self, upper_age=None):
         """ Get uids of females younger than upper_age """
         people = self.sim.people
-        if upper_age is None: upper_age = ss.years(100)
-        within_age = people.age < upper_age.years
+        if upper_age is None: upper_age = 1000
+        within_age = people.age < upper_age
         return (within_age & people.female).uids
 
     def init_objectives(self, upper_age=None):
@@ -178,7 +178,7 @@ class Education(ss.Connector):
         return
 
     def step(self):
-        self.init_objectives(upper_age=self.t.dt)  # set objectives for new agents
+        self.init_objectives(upper_age=self.t.dt.years)  # set objectives for new agents
 
         # All updates for education. Note, these are done in a particular order!
         self.start_education()      # Check if anyone needs to start school

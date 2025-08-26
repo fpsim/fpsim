@@ -90,6 +90,20 @@ def test_age_pyramids():
     return ap
 
 
+def test_lifeof_recorder_analyzer():
+    sc.heading('Testing life of an analyzer...')
+
+    # Create a sim with the life of analyzer
+    analyzer = fp.lifeof_recorder()
+
+    sim = make_analyzer(analyzer)
+
+    if do_plot:
+        sim.plot()
+
+    return sim
+
+
 def test_method_mix_by_age():
     sc.heading('Testing method mix by age analyzer...')
 
