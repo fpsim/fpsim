@@ -385,6 +385,7 @@ class lifeof_recorder(ss.Analyzer):
                 stop_idx = len(self.snapshots[t][state])
                 self.trajectories[state][ti, 0:stop_idx] = \
                 self.snapshots[t][state]
+        super().finalize()
         return
 
     def plot(self, index=0, fig_args=None, pl_args=None):
