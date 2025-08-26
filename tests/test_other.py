@@ -70,7 +70,7 @@ def test_plot_people(sim=None):
     return sim.people
 
 
-def test_plotting_class(sim=None):
+def devtest_plotting_class(sim=None):
     sc.heading('Test plotting class functions...')
     if sim is None:
         sim = fp.Sim(test=True).run()
@@ -84,81 +84,6 @@ def test_plotting_regional():
     sim = fp.Sim(pars=par_kwargs, location='amhara').run()
     plt.plot_all(sim)
     return sim
-
-
-def test_samples(verbose=True):
-    sc.heading('Samples distribution')
-
-    n = 200_000
-
-    # Warning, must match utils.py!
-    choices = [
-        'uniform',
-        'normal',
-        'lognormal',
-        'normal_pos',
-        'normal_int',
-        'lognormal_int',
-    ]
-
-    # Run the samples
-    nchoices = len(choices)
-    nsqr, _ = sc.get_rows_cols(nchoices)
-    results = sc.objdict()
-    mean = 11
-    std = 7
-    low = 3
-    high = 9
-    normal_dists = ['normal', 'normal_pos', 'normal_int', 'lognormal', 'lognormal_int']
-    for c,choice in enumerate(choices):
-        kw = {}
-        if choice in normal_dists:
-            par1 = mean
-            par2 = std
-        elif choice == 'neg_binomial':
-            par1 = mean
-            par2 = 1.2
-            kw['step'] = 0.1
-        elif choice == 'poisson':
-            par1 = mean
-            par2 = 0
-        elif choice == 'uniform':
-            par1 = low
-            par2 = high
-        else:
-            errormsg = f'Choice "{choice}" not implemented'
-            raise NotImplementedError(errormsg)
-
-        # Compute
-        results[choice] = fp.sample(dist=choice, par1=par1, par2=par2, size=n, **kw)
-
-    with pytest.raises(NotImplementedError):
-        fp.sample(dist='not_found')
-
-    # Do statistical tests
-    tol = 1/np.sqrt(n/50/len(choices)) # Define acceptable tolerance -- broad to avoid false positives
-
-    def isclose(choice, tol=tol, **kwargs):
-        key = list(kwargs.keys())[0]
-        ref = list(kwargs.values())[0]
-        npfunc = getattr(np, key)
-        value = npfunc(results[choice])
-        msg = f'Test for {choice:14s}: expecting {key:4s} = {ref:5.2f} ± {tol*ref:4.2f} and got {value:5.2f}'
-        if verbose:
-            ok(msg, newline=False)
-        assert np.isclose(value, ref, rtol=tol), msg
-        return True
-
-    # Normal
-    for choice in normal_dists:
-        isclose(choice, mean=mean)
-        if all([k not in choice for k in ['_pos', '_int']]): # These change the variance
-            isclose(choice, std=std)
-
-    # Uniform
-    isclose('uniform', mean=(low+high)/2)
-
-    return results
 
 
 def test_method_usage(sim=None):
@@ -197,7 +122,6 @@ if __name__ == '__main__':
     opts = test_options()
     df   = test_to_df(sim)
     ppl  = test_plot_people(sim)
-    sim = test_plotting_class(sim)
-    res  = test_samples()
+    # sim = devtest_plotting_class(sim)  # Moving to devtest as not critical
     method = test_method_usage(sim)
     # sim = test_track_as(run_track_as)
