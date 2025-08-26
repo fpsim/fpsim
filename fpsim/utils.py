@@ -183,6 +183,7 @@ class DuplicateNameException(Exception):
     Raised when either multiple instances of Module or State, or of any other type
     passed to ndict have duplicate names."""
 
+
     def __init__(self, obj):
         msg = f"A {type(obj)} with name `{obj.name}` has already been added."
         super().__init__(msg)
