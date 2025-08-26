@@ -48,7 +48,7 @@ def test_to_df(sim=None):
     sc.heading('Testing other sim methods...')
     if sim is None:
         sim = fp.Sim(test=True).run()
-    df = sim.to_df()
+    df = sim.to_df(resample='year', use_years=True)
     births = df.fp_births.sum()
     last = df.timevec.values[-1]
     assert last == sim.pars.stop, 'Last years do not match'
