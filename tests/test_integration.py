@@ -120,11 +120,11 @@ def test_contraception():
     ])
     contra_mod = fpm.RandomChoice(methods=methods, pars={'p_use': 1.0})
 
-    # force all to have debuted
+    # force all to have debuted at age 20
     debut_age = {}
     debut_age['ages']=np.arange(10, 45, dtype=float)
     debut_age['probs']=np.zeros(35, dtype=float)
-    debut_age['probs'][10:20] = 1.0
+    debut_age['probs'][10] = 1.0
 
     sexual_activity = np.zeros(51, dtype=float)
     sexual_activity[20:30] = 1.0
@@ -191,7 +191,7 @@ def test_method_selection_dependencies():
     # force all to have debuted and sexually active
     debut_age = {
         'ages': np.arange(10, 45, dtype=float),
-        'probs': np.ones(35, dtype=float)
+        'probs': np.ones(35, dtype=float)/35
     }
 
     pars['debut_age'] = debut_age
