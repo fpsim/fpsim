@@ -9,6 +9,11 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
+Version 3.4.0 (2025-09-08)
+---------------------------
+TBC
+
+
 Version 3.3.1 (2025-08-28)
 ---------------------------
 Minor release to add missing changelog.
