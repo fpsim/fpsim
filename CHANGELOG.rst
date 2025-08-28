@@ -8,22 +8,40 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
-Version 3.3.1 (2025-09-22)
+
+
+
+Version 3.3.2 (2025-09-22)
 ---------------------------
 
-  This release adds several priority regions with preliminary calibrations to FPsim Version 3.3.0. These countries/regions are: Cote d'Ivore, Niger, Pakistan Sindh region, Nigeria with regions Kano, Kaduna, and Lagos. 
+  This release adds several priority regions with preliminary calibrations to FPsim Version 3.3.0. These countries/regions are: Cote d'Ivore, Niger, Pakistan Sindh region, Nigeria with regions Kano, Kaduna, and Lagos.
 
 * **DHS data processing scripts**
   * Changed DHS and PMA data processing R scripts to filter to region level is specified in config.R file inputs region_variable (either “v024” or for Nigeria specifically, “sstate”), region name (e.g. “kaduna”), region_code (integer, e.g. 110 for Nigeria Kaduna), and country_region folder name (e.g. nigeria_kaduna). Script path:  fpsim/fpsim/data_processing/DHS_PMA_scripts/*.R.
-  * Created DHS/PMA config_files sub folder within fpsim/data_processing/DHS_PMA_scripts/ to store previously run config files for future reference. Config files by country/region and saved as config_{country_region}.R 
-  * Updated fpsim/fpsim/data_processing/DHS_PMA_scripts/breastfeeding_stats.R script to accept the “still breastfeeding” status as either the value code (95) or the string (“still breastfeeding”) 
+  * Created DHS/PMA config_files sub folder within fpsim/data_processing/DHS_PMA_scripts/ to store previously run config files for future reference. Config files by country/region and saved as config_{country_region}.R
+  * Updated fpsim/fpsim/data_processing/DHS_PMA_scripts/breastfeeding_stats.R script to accept the “still breastfeeding” status as either the value code (95) or the string (“still breastfeeding”)
 
 
 * **New  locations**
-  * Added additional locations (countries or subregions) to fpsim/fpsim/locations/{country_region} folders to store DHS, PMA, UN, and World Bank data.  
-  * Created location specific fpsim/fpsim/locations/{country_region}/run_{country}.py files to store parameters of calibrated models (calibrated to FPsim v3.3.0), run and save the calibrated model, and generate and save figures of the calibration (fpsim/plotting.py script, plot_calib function) in a “calib_results” directory. Also generated a README.md file for each country{_region} describing any manual edits to data files after generation by the DHS_PMA_scripts. 
-  * Added the following countries and country/regions to defaults.py valid_country_locs = ['senegal', 'kenya', 'ethiopia', 'cotedivoire', 'niger', 'nigeria_kano', 'nigeria_kaduna', ‘nigeria_lagos’, 'pakistan_sindh'] 
-  * Added country/region imports to the fpsim/locations/__init__.py  
+  * Added additional locations (countries or subregions) to fpsim/fpsim/locations/{country_region} folders to store DHS, PMA, UN, and World Bank data.
+  * Created location specific fpsim/fpsim/locations/{country_region}/run_{country}.py files to store parameters of calibrated models (calibrated to FPsim v3.3.0), run and save the calibrated model, and generate and save figures of the calibration (fpsim/plotting.py script, plot_calib function) in a “calib_results” directory. Also generated a README.md file for each country{_region} describing any manual edits to data files after generation by the DHS_PMA_scripts.
+  * Added the following countries and country/regions to defaults.py valid_country_locs = ['senegal', 'kenya', 'ethiopia', 'cotedivoire', 'niger', 'nigeria_kano', 'nigeria_kaduna', ‘nigeria_lagos’, 'pakistan_sindh']
+  * Added country/region imports to the fpsim/locations/__init__.py
+
+
+
+Version 3.3.1 (2025-08-28)
+---------------------------
+Minor release to add missing changelog.
+
+
+Version 3.3.0 (2025-08-27)
+---------------------------
+Updates the FPsim code to be compatible with the most recent version of Starsim (v3.0.2). The most recent Starsim release included many improvements to the logic of time, probability, and rates. FPsim now benefits from these improvements; in particular:
+- fp.defaults.mpy has been removed
+- All of the logic of FPsim is now agnostic to the timestep. This means that everything will still work if you want to use a timestep of 3 months instead of 1, for instance.
+- There were previously many places in the code where random draws occured. These have all been replaced with Starsim distributions, so it is now possible to take advantage of Starsim's common random number generation.
+- The `archive` folder has been removed.
 
 
 Version 3.2.0 (2025-08-15)
