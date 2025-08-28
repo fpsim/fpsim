@@ -11,7 +11,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
 
 
 
-Version 3.3.2 (2025-09-22)
+Version 3.4.1 (2025-09-22)
 ---------------------------
 
   This release adds several priority regions with preliminary calibrations to FPsim Version 3.3.0. These countries/regions are: Cote d'Ivore, Niger, Pakistan Sindh region, Nigeria with regions Kano, Kaduna, and Lagos.
@@ -28,6 +28,11 @@ Version 3.3.2 (2025-09-22)
   * Added the following countries and country/regions to defaults.py valid_country_locs = ['senegal', 'kenya', 'ethiopia', 'cotedivoire', 'niger', 'nigeria_kano', 'nigeria_kaduna', ‘nigeria_lagos’, 'pakistan_sindh']
   * Added country/region imports to the fpsim/locations/__init__.py
 
+
+
+Version 3.4.0 (2025-09-08)
+---------------------------
+TBC
 
 
 Version 3.3.1 (2025-08-28)
