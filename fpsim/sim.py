@@ -139,15 +139,15 @@ class Sim(ss.Sim):
 
         return
 
-    # Basic properties
-    @property
-    def ty(self):
-        return self.t.tvec[self.ti]  # years elapsed since beginning of sim (ie, 25.75... )
-
-    @property
-    def y(self):
-        return self.t.yearvec[self.ti]
-
+    # # Basic properties
+    # @property
+    # def ty(self):
+    #     return self.t.tvec[self.ti]  # years elapsed since beginning of sim (ie, 25.75... )
+    #
+    # @property
+    # def y(self):
+    #     return self.t.yearvec[self.ti]
+    #
     @staticmethod
     def remap_pars(pars):
         """
@@ -207,14 +207,73 @@ class Sim(ss.Sim):
 
     def init(self, force=False):
         """ Fully initialize the Sim with modules, people and result storage"""
+
+        # Process the demographics
+        demographics, people, total_pop = self.process_demographics()
+        self.pars['demographics'] = demographics
+        self.pars['people'] = people
+        self.pars['total_pop'] = total_pop
+
         if force or not self.initialized:
-            # fpu.set_seed(self.pars['rand_seed']) # shouldn't be needed anymore
-            if self.pars.people is None:
-                ap = self.pars['connectors'][-1].pars['age_pyramid']  # TODO TEMP
-                self.pars.people = fpppl.People(n_agents=self.pars.n_agents, age_pyramid=ap)
             super().init(force=force)
 
         return self
+
+    def process_demographics(self):
+        """ Create people and demographics if not provided. """
+
+        # Shorten location
+        loc = self.pars.location
+        self.pars['demographics'] = ss.ndict()  # TODO: make it possible to overwrite this
+        demographics = sc.autolist()
+        location_module = fp.get_location_module(loc)
+        dem_pars = location_module.make_dem_pars()
+
+        if self.datafolder is None:
+            # Check that the necessary data files are available
+            indicators = ['age', 'deaths']
+            if self.pars['use_pregnancy']: indicators.append('asfr')
+            else: indicators.append('births')
+            if self.pars['use_migration']: indicators.append('migration')
+            start_year = ss.date(self.pars['start']).year
+            ok, missing = stidl.check_downloaded(location, indicators, year=start_year)
+
+            # If they aren't available, try to download them
+            if not ok:
+                printmsg = (f'Could not find demographic data files for "{location}", attempting to download. '
+                            f'Note that this requires an internet connection.')
+                print(printmsg, end='')
+                stidl.download_data(location=location, indicators=missing, start=start_year)
+
+        # Load birth or fertility rates and turn into module
+        if self.pars['use_pregnancy']:
+            fertility_rates = stidata.get_rates(location, 'asfr', self.datafolder)
+            pregnancy = sti.Pregnancy(fertility_rate=fertility_rates, metadata=dict(data_cols=dict(year='Time', age='AgeStart', value='Value')),)
+            demographics += pregnancy
+        else:
+            birth_rates = stidata.get_rates(location, 'births', self.datafolder)
+            births = ss.Births(birth_rate=birth_rates, metadata=dict(data_cols=dict(year='year', value='cbr')))
+            demographics += births
+
+        # Load death rates and turn into a module
+        death_rates = stidata.get_rates(location, 'death', self.datafolder)
+        deaths = ss.Deaths(death_rate=death_rates, rate_units=1, metadata=dict(data_cols=dict(year='Time', sex='Sex', age='AgeStart', value='Value')))
+        demographics += deaths
+
+        # Optionally add migration
+        if self.pars['use_migration']:
+            migration_data = stidata.get_rates(location, 'migration', self.datafolder)
+            migration = sti.Migration(migration_data=migration_data)
+            demographics += migration
+
+        # Load age data and create people
+        age_data = stidata.get_age_distribution(location, year=self.pars.start, datafolder=self.datafolder)
+        total_pop = int(age_data.value.sum())
+        age_data['value'] /= sum(age_data['value'])  # Normalize the age distribution
+        people = ss.People(self.pars.n_agents, age_data=age_data)
+
+        return demographics, people, total_pop
+
 
     def init_results(self):
         """
@@ -226,31 +285,31 @@ class Sim(ss.Sim):
             self.results += ss.Result(key, label=key, **scaling_kw)
         return
 
-    def update_mortality(self):
-        """
-        Update infant and maternal mortality for the sim's current year.
-        Update general mortality trend as this uses a spline interpolation instead of an array.
-        """
+    # def update_mortality(self):
+    #     """
+    #     Update infant and maternal mortality for the sim's current year.
+    #     Update general mortality trend as this uses a spline interpolation instead of an array.
+    #     """
+    #
+    #     mapping = {
+    #         'age_mortality': 'gen_trend',
+    #         'infant_mortality': 'infant',
+    #         'maternal_mortality': 'maternal',
+    #         'stillbirth_rate': 'stillbirth',
+    #     }
+    #
+    #     self.fp_pars['mortality_probs'] = {}
+    #     for key1, key2 in mapping.items():
+    #         ind = sc.findnearest(self.pars.fp[key1]['year'], self.y)
+    #         val = self.pars.fp[key1]['probs'][ind]
+    #         self.pars.fp['mortality_probs'][key2] = val
+    #
+    #     return
 
-        mapping = {
-            'age_mortality': 'gen_trend',
-            'infant_mortality': 'infant',
-            'maternal_mortality': 'maternal',
-            'stillbirth_rate': 'stillbirth',
-        }
-
-        self.fp_pars['mortality_probs'] = {}
-        for key1, key2 in mapping.items():
-            ind = sc.findnearest(self.pars.fp[key1]['year'], self.y)
-            val = self.pars.fp[key1]['probs'][ind]
-            self.pars.fp['mortality_probs'][key2] = val
-
-        return
-
-    def start_step(self):
-        super().start_step()
-        self.update_mortality()
-        return
+    # def start_step(self):
+    #     super().start_step()
+        # self.update_mortality()
+        # return
 
     # Function to scale all y-axes in fig based on input channel
     @staticmethod
