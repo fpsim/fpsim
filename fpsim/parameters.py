@@ -7,10 +7,27 @@ import starsim as ss
 import fpsim as fp
 from . import defaults as fpd
 
-__all__ = ['SimPars', 'FPPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'sim_par_keys', 'all_pars']
+__all__ = ['get_location_module', 'SimPars', 'FPPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'sim_par_keys', 'all_pars']
 
 
 # %% Parameter creation functions
+
+def get_location_module(location=None):
+    """
+    Helper function to get the location module
+    """
+    # Import the location module
+    from . import locations as fplocs
+
+    # Use external registry for locations first
+    if location in fpd.location_registry:
+        location_module = fpd.location_registry[location]
+    elif hasattr(fplocs, location):
+        location_module = getattr(fplocs, location)
+    else:
+        raise NotImplementedError(f'Could not find location module for "{location}"')
+    return location_module
+
 
 class SimPars(ss.SimPars):
     """
@@ -55,7 +72,7 @@ def make_sim_pars(**kwargs):
 
 
 class FPPars(ss.Pars):
-    def __init__(self, **kwargs):
+    def __init__(self, location=None, **kwargs):
         super().__init__()
 
         # Settings - what aspects are being modeled - TODO, remove
@@ -90,15 +107,10 @@ class FPPars(ss.Pars):
         self.primary_infertility = 0.05
         self.exposure_factor = 1.0    # Overall exposure correction factor
 
-        # Other sim parameters
-        self.mortality_probs = {}
-
         ###################################
         # Context-specific data-derived parameters, all defined within location files
         ###################################
         self.filenames = None
-        self.age_pyramid = None
-        self.age_mortality = None
         self.maternal_mortality = None
         self.infant_mortality = None
         self.miscarriage_rates = None
@@ -122,34 +134,25 @@ class FPPars(ss.Pars):
         self.regional = None
 
         self.update(kwargs)
-        # if self.location is not None:
-        #     self.update_location()
+
+        if location is not None:
+            self.update_location(location=location)
 
         return
 
     def update_location(self, location=None):
         """
-        Update the location-specific parameters based on the current location.
+        Update the location-specific FP parameters
         """
-        # Import the location module
-        from . import locations as fplocs
-
-        # Use external registry for locations first
-        if location in fpd.location_registry:
-            location_module = fpd.location_registry[location]
-            location_pars = location_module.make_pars()
-        elif hasattr(fplocs, location):
-            location_pars = getattr(fplocs, location).make_pars()
-        else:
-            raise NotImplementedError(f'Could not find location function for "{location}"')
-
+        location_module = get_location_module(location)
+        location_pars = location_module.make_fp_pars()
         self.update(**location_pars)
         return
 
 
-def make_fp_pars():
+def make_fp_pars(location=None):
     """ Shortcut for making a new instance of FPPars """
-    return FPPars()
+    return FPPars(location=location)
 
 
 def mergepars(*args):

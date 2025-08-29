@@ -26,7 +26,6 @@ valid_region_locs = {
 
 # Parse locations
 def get_location(location, printmsg=False):
-    default_location = 'senegal'
     if not location:
         if printmsg: print('Location not supplied: using parameters from Senegal')
         location = default_location

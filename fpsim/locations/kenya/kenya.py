@@ -5,15 +5,9 @@ import numpy as np
 from pathlib import Path
 from fpsim import defaults as fpd
 import fpsim.locations.data_utils as fpld
+import starsim as ss
 
 # %% Housekeeping
-
-def scalar_pars():
-    scalar_pars = {
-        'postpartum_dur':       23,
-    }
-    return scalar_pars
-
 
 def filenames():
     """ Data files for use with calibration, etc -- not needed for running a sim """
@@ -66,21 +60,19 @@ def exposure_parity():
 
 # %% Make and validate parameters
 
-def make_pars(location='kenya'):
+def make_fp_pars(location='kenya'):
     """
     Take all parameters and construct into a dictionary
     """
 
     # Scalar parameters and filenames
-    pars = scalar_pars()
+    pars = ss.Pars()
+    pars['postpartum_dur'] = 23
     pars['abortion_prob'], pars['twins_prob'] = fpld.scalar_probs(location)
     pars.update(fpld.bf_stats(location))
     pars['filenames'] = filenames()
 
     # Demographics and pregnancy outcome
-    pars['age_pyramid'] = fpld.age_pyramid(location)
-    pars['age_mortality'] = fpld.age_mortality(location, data_year=2010)
-    pars['urban_prop'] = fpld.urban_proportion(location)
     pars['maternal_mortality'] = fpld.maternal_mortality(location)
     pars['infant_mortality'] = fpld.infant_mortality(location)
     pars['miscarriage_rates'] = fpld.miscarriage()
@@ -106,4 +98,15 @@ def make_pars(location='kenya'):
     pars['age_partnership'] = fpld.age_partnership(location)
     pars['wealth_quintile'] = fpld.wealth(location)
 
+    return pars
+
+
+def make_dem_pars(location='kenya'):
+    """
+    Make demographic parameters for the FPsim model
+    """
+    pars = ss.Pars()
+    pars['age_pyramid'] = fpld.age_pyramid(location)
+    pars['age_mortality'] = fpld.age_mortality(location, data_year=2010)
+    pars['urban_prop'] = fpld.urban_proportion(location)
     return pars
