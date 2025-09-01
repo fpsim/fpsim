@@ -8,7 +8,6 @@ import sciris as sc
 import yaml
 import fpsim as fp
 from scipy import interpolate as si
-import starsim as ss
 from fpsim import defaults as fpd
 import fpsim.shared_data as sd
 
@@ -47,18 +46,31 @@ class DataLoader:
 
         return
 
-    def load(self, contra_mod='mid'):
+    def load(self, contra_mod='mid', return_data=True):
         """ Load all data """
         self.load_fp_data()
         self.load_edu_data()
         self.load_contra_data(contra_mod)
         self.load_death_data()
         self.load_people_data()
-        return
+        if return_data:
+            return self.data
+        else:
+            return
 
     def load_fp_data(self):
-        """ Load data used within the FP module """
+        """
+        Load data used within the FP module. All of these are stored directly as parameters
+        """
         self.data.fp.bf_stats = self.bf_stats()
+        self.data.fp.debut_age = self.debut_age()
+        self.data.fp.female_age_fecundity = self.female_age_fecundity()
+        self.data.fp.fecundity_ratio_nullip = self.fecundity_ratio_nullip()
+        self.data.fp.lactational_amenorrhea = self.lactational_amenorrhea()
+        self.data.fp.sexual_activity = self.sexual_activity()
+        self.data.fp.sexual_activity_pp = self.sexual_activity_pp()
+        self.data.fp.debut_age = self.debut_age()
+        self.data.fp.birth_spacing_pref = self.birth_spacing_pref()
         self.data.fp.abortion_prob, self.data.fp.twins_prob = self.scalar_probs()
         self.data.fp.age_partnership = self.age_partnership()
         self.data.fp.maternal_mortality = self.maternal_mortality()
@@ -80,7 +92,7 @@ class DataLoader:
         mc, init_dist = self.load_method_switching()
         self.data.contra.method_choice = mc
         self.data.contra.init_dist = init_dist
-        self.data.contra.dur_use = self.process_dur_use()
+        self.data.contra.dur_use = self.load_dur_use()
         if contra_mod == 'mid':
             self.data.contra.age_spline = self.age_spline('25_40')
         return
@@ -140,12 +152,6 @@ class DataLoader:
         return abortion_prob, twins_prob
 
     # %% Demographics
-    @staticmethod
-    def age_spline(which):
-        d = pd.read_csv(os.path.join(sd_dir, f'splines_{which}.csv'))
-        d.index = d.age  # Set the age as the index
-        return d
-
     def age_partnership(self):
         """ Probabilities of being partnered at age X"""
         age_partnership_data = self.read_data(self.location, 'age_partnership.csv')
@@ -215,44 +221,6 @@ class DataLoader:
 
         return mortality
 
-    def maternal_mortality(self):
-        """
-        From World Bank indicators for maternal mortality ratio (modeled estimate) per 100,000 live births:
-        https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
-
-        For Senegal, data is risk of maternal death assessed at each pregnancy. Data from Huchon et al. (2013)
-        prospective study on risk of maternal death in Senegal and Mali.
-        Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
-        or its management (excluding accidental or incidental causes) during pregnancy and childbirth or within
-        42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
-        expressed per 100,000 live births, for a specified time period.
-        """
-        df = self.read_data(self.location, 'maternal_mortality.csv')
-        maternal_mortality = {}
-        maternal_mortality['year'] = df['year'].values
-        maternal_mortality['probs'] = df['probs'].values / 100000  # ratio per 100,000 live births
-        return maternal_mortality
-
-    def infant_mortality(self):
-        '''
-        From World Bank indicators for infant mortality (< 1 year) for Kenya, per 1000 live births
-        From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
-        '''
-        df = self.read_data(self.location, 'infant_mortality.csv')
-
-        infant_mortality = {}
-        infant_mortality['year'] = df['year'].values
-        infant_mortality['probs'] = df['probs'].values / 1000  # Rate per 1000 live births, used after stillbirth is filtered out
-
-        # Try to load age adjustments from YAML
-        adjustments = self.load_age_adjustments()
-        if 'infant_mortality' in adjustments:
-            infant_mortality['ages'] = np.array(adjustments['infant_mortality']['ages'])
-            infant_mortality['age_probs'] = np.array(adjustments['infant_mortality']['odds_ratios'])
-
-        return infant_mortality
-
-
     # %% Pregnancy and birth outcomes
     def miscarriage(self):
         """
@@ -286,6 +254,42 @@ class DataLoader:
 
         return stillbirth_rate
 
+    def maternal_mortality(self):
+        """
+        From World Bank indicators for maternal mortality ratio (modeled estimate) per 100,000 live births:
+        https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
+
+        For Senegal, data is risk of maternal death assessed at each pregnancy. Data from Huchon et al. (2013)
+        prospective study on risk of maternal death in Senegal and Mali.
+        Maternal deaths: The annual number of female deaths from any cause related to or aggravated by pregnancy
+        or its management (excluding accidental or incidental causes) during pregnancy and childbirth or within
+        42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
+        expressed per 100,000 live births, for a specified time period.
+        """
+        df = self.read_data(self.location, 'maternal_mortality.csv')
+        maternal_mortality = {}
+        maternal_mortality['year'] = df['year'].values
+        maternal_mortality['probs'] = df['probs'].values / 100000  # ratio per 100,000 live births
+        return maternal_mortality
+
+    def infant_mortality(self):
+        """
+        From World Bank indicators for infant mortality (< 1 year) for Kenya, per 1000 live births
+        From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
+        """
+        df = self.read_data(self.location, 'infant_mortality.csv')
+
+        infant_mortality = {}
+        infant_mortality['year'] = df['year'].values
+        infant_mortality['probs'] = df['probs'].values / 1000  # Rate per 1000 live births, used after stillbirth is filtered out
+
+        # Try to load age adjustments from YAML
+        adjustments = self.load_age_adjustments()
+        if 'infant_mortality' in adjustments:
+            infant_mortality['ages'] = np.array(adjustments['infant_mortality']['ages'])
+            infant_mortality['age_probs'] = np.array(adjustments['infant_mortality']['odds_ratios'])
+
+        return infant_mortality
 
     # %% Fecundity and conception
     @staticmethod
@@ -308,11 +312,11 @@ class DataLoader:
         return fecundity_interp
 
     def fecundity_ratio_nullip(self):
-        '''
+        """
         Returns an array of fecundity ratios for a nulliparous woman vs a gravid woman
         from PRESTO study: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC5712257/
         Approximates primary infertility and its increasing likelihood if a woman has never conceived by age
-        '''
+        """
         df = pd.read_csv(os.path.join(sd_dir, 'fecundity_ratio_nullip.csv'))
 
         # Extract data and interpolate
@@ -486,6 +490,7 @@ class DataLoader:
             data[k]["percent"] = df["percent"][df["parity"] == k].to_numpy()
         return data
 
+    #%% Contraception
     def process_contra_use(self, which):
         """
         Process contraceptive use parameters.
@@ -571,55 +576,16 @@ class DataLoader:
 
         return mc, init_dist
 
-    def process_dur_use(self, methods, df=None):
+    def load_dur_use(self):
         """ Process duration of use parameters"""
+        df = self.read_data(self.location, 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+        return df
 
-        if df is None:
-            df = self.read_data(self.location, 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
-
-        for method in methods.values():
-            if method.name == 'btl':
-                method.dur_use = ss.uniform(low=1000, high=1200)
-            else:
-                mlabel = method.csv_name
-
-                thisdf = df.loc[df.method == mlabel]
-                dist = thisdf.functionform.iloc[0]
-                age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
-
-                # Get age factors if they exist for this distribution
-                age_factors = None
-                if age_ind is not None and age_ind < len(thisdf.estimate.values):
-                    age_factors = thisdf.estimate.values[age_ind:]
-
-                if dist in ['lognormal', 'lnorm']:
-                    par1 = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
-                    par2 = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
-
-                elif dist in ['gamma']:
-                    par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
-                    par2 = thisdf.estimate[thisdf.coef == 'rate'].values[0]   # rate parameter (log space)
-
-                elif dist == 'llogis':
-                    par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
-                    par2 = thisdf.estimate[thisdf.coef == 'scale'].values[0]  # scale parameter (log space)
-
-                elif dist == 'weibull':
-                    par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
-                    par2 = thisdf.estimate[thisdf.coef == 'scale'].values[0]  # scale parameter (log space)
-
-                elif dist == 'exponential':
-                    par1 = thisdf.estimate[thisdf.coef == 'rate'].values[0]   # rate parameter (log space)
-
-                else:
-                    errormsg = f"Duration of use distribution {dist} not recognized"
-                    raise ValueError(errormsg)
-
-                method.set_dur_use(dist_type=dist,
-                                   par1=par1, par2=par2,
-                                   age_factors=age_factors)
-
-        return methods
+    @staticmethod
+    def age_spline(which):
+        d = pd.read_csv(os.path.join(sd_dir, f'splines_{which}.csv'))
+        d.index = d.age  # Set the age as the index
+        return d
 
 
 

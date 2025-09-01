@@ -30,11 +30,12 @@ class FPmod(ss.Module):
         self.update_pars(pars, **kwargs)
         self.define_states(*fp.fpmod_states)
 
-        # Get data if not provided
+        # Get data if not provided. For the FP module, all the data are just used directly as parameters
         if data is None:
             dataloader = fp.get_dataloader(location)
             data = dataloader.load_fp_data()
         self.data = data
+        self.pars.update(self.data)
 
         # Distributions: binary outcomes
         self._p_fertile = ss.bernoulli(p=1-self.pars['primary_infertility'])  # Probability that a woman is fertile, i.e. 1 - primary infertility
@@ -60,7 +61,6 @@ class FPmod(ss.Module):
         self._dur_postpartum = ss.uniform(low=self.pars['postpartum_dur'], high=self.pars['postpartum_dur'])
 
         # All other distributions
-        self._personal_fecundity = ss.uniform(low=self.pars['fecundity_var_low'], high=self.pars['fecundity_var_high'])
         self._fated_debut = ss.choice(a=self.pars['debut_age']['ages'], p=self.pars['debut_age']['probs'])
 
         # Define ASFR and method mix
@@ -97,7 +97,7 @@ class FPmod(ss.Module):
         self.update_time_to_choose(uids)
 
         # Fecundity variation
-        self.personal_fecundity[uids] = self._personal_fecundity.rvs(uids)
+        self.personal_fecundity[uids] = self.pars.fecundity.rvs(uids)
         return
 
     def init_post(self):
