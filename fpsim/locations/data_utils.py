@@ -21,12 +21,81 @@ files.death = 'deaths.csv'
 
 
 # %% Housekeeping and utility functions
+def data2interp(data, ages, normalize=False):
+    """ Convert unevenly spaced data into an even spline interpolation """
+    model = si.interp1d(data[0], data[1])
+    interp = model(ages)
+    if normalize:
+        interp = np.minimum(1, np.maximum(0, interp))
+    return interp
 
+
+# %% Main data loader
 class DataLoader:
     """ Class to load and process data files for a given location """
     def __init__(self, location):
         self.location = location
-        self.data = {}
+
+        # Create a data dictionary keyed by module
+        self.data = sc.objdict(
+            fp=sc.objdict(),
+            edu=sc.objdict(),
+            contra=sc.objdict(),
+            deaths=sc.objdict(),
+            people=sc.objdict(),
+        )
+
+        return
+
+    def load(self, contra_mod='mid'):
+        """ Load all data """
+        self.load_fp_data()
+        self.load_edu_data()
+        self.load_contra_data(contra_mod)
+        self.load_death_data()
+        self.load_people_data()
+        return
+
+    def load_fp_data(self):
+        """ Load data used within the FP module """
+        self.data.fp.bf_stats = self.bf_stats()
+        self.data.fp.abortion_prob, self.data.fp.twins_prob = self.scalar_probs()
+        self.data.fp.age_partnership = self.age_partnership()
+        self.data.fp.maternal_mortality = self.maternal_mortality()
+        self.data.fp.infant_mortality = self.infant_mortality()
+        self.data.fp.miscarriage_rates = self.miscarriage()
+        self.data.fp.stillbirth_rate = self.stillbirth()
+        return
+
+    def load_edu_data(self):
+        """ Load data used within the Education module """
+        self.data.edu.objective = self.education_objective()
+        self.data.edu.attainment = self.education_attainment()
+        self.data.edu.p_dropout = self.education_dropout_probs()
+        return
+
+    def load_contra_data(self, contra_mod='mid'):
+        """ Load data used within the Contraception module """
+        self.data.contra.p_contra = self.process_contra_use(contra_mod)
+        mc, init_dist = self.load_method_switching()
+        self.data.contra.method_choice = mc
+        self.data.contra.init_dist = init_dist
+        self.data.contra.dur_use = self.process_dur_use()
+        if contra_mod == 'mid':
+            self.data.contra.age_spline = self.age_spline('25_40')
+        return
+
+    def load_death_data(self):
+        """ Load death data used within the Death module """
+        self.data.deaths.age_mortality = self.age_mortality(data_year=2010)
+        return
+
+    def load_people_data(self):
+        """ Load data used for initializing people """
+        self.data.people.wealth_quintile = self.wealth()
+        self.data.people.urban_prop = self.urban_proportion()
+        self.data.people.age_pyramid = self.age_pyramid()
+        return
 
     def read_data(self, location, filename, **kwargs):
         # Obtain base path from location filenames
@@ -47,16 +116,7 @@ class DataLoader:
         return df
 
     @staticmethod
-    def data2interp(data, ages, normalize=False):
-        ''' Convert unevenly spaced data into an even spline interpolation '''
-        model = si.interp1d(data[0], data[1])
-        interp = model(ages)
-        if normalize:
-            interp = np.minimum(1, np.maximum(0, interp))
-        return interp
-
-    @staticmethod
-    def load_age_adjustments(self):
+    def load_age_adjustments():
         with open(os.path.join(sd_dir, 'age_adjustments.yaml'), 'r') as f:
             adjustments = yaml.safe_load(f)
         return adjustments
@@ -94,7 +154,7 @@ class DataLoader:
         partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
         return  partnership_dict
 
-    def wealth(sekf):
+    def wealth(self):
         """ Process percent distribution of people in each wealth quintile"""
         cols = ["quintile", "percent"]
         wealth_data = self.read_data(self.location, 'wealth.csv', header=0, names=cols)
@@ -205,14 +265,14 @@ class DataLoader:
 
         # Extract data and interpolate
         miscarriage_rates = np.array([df['age'].values, df['prob'].values])
-        miscarriage_interp = self.data2interp(miscarriage_rates, fpd.spline_preg_ages)
+        miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
         return miscarriage_interp
 
     def stillbirth(self):
-        '''
+        """
         From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
         https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
-        '''
+        """
         df = self.read_data(self.location, 'stillbirths.csv')
         stillbirth_rate = {}
         stillbirth_rate['year'] = df['year'].values
@@ -257,19 +317,38 @@ class DataLoader:
 
         # Extract data and interpolate
         fecundity_ratio_nullip = np.array([df['age'].values, df['prob'].values])
-        fecundity_nullip_interp = self.data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
+        fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
 
         return fecundity_nullip_interp
 
+    @staticmethod
+    def exposure_age():
+        """
+        Returns an array of experimental factors to be applied to account for residual exposure
+        to either pregnancy or live birth by age.  Exposure to pregnancy will increase factor number
+        and residual likelihood of avoiding live birth (mostly abortion, also miscarriage), will decrease
+        factor number.
+        To be implemented by derived classes
+        """
+        pass
+
+    @staticmethod
+    def exposure_parity():
+        """
+        Returns an array of experimental factors to be applied to account for residual exposure
+        to either pregnancy or live birth by parity. Immplemented by derived
+        """
+        pass
+
     def lactational_amenorrhea(self):
-        '''
+        """
         Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
         Exclusively breastfeeding (bf + water alone), menses have not returned.  Extended out 5-11 months to better match data
         as those women continue to be postpartum insusceptible.
         Kenya: From DHS Kenya 2014 calendar data
         Ethiopia: From DHS Ethiopia 2016 calendar data
         Senegal: From DHS Senegal calendar data
-        '''
+        """
         df = self.read_data(self.location, 'lam.csv')
 
         lactational_amenorrhea = {}
@@ -278,7 +357,7 @@ class DataLoader:
         return lactational_amenorrhea
 
     def sexual_activity(self):
-        '''
+        """
         Returns a linear interpolation of rates of female sexual activity, defined as
         percentage women who have had sex within the last four weeks.
         From STAT Compiler DHS https://www.statcompiler.com/en/
@@ -287,7 +366,7 @@ class DataLoader:
         Excludes women who answer "never had sex", probabilities are only applied to agents who have sexually debuted
         Data taken from DHS, no trend over years for now
         Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
-        '''
+        """
         df = self.read_data(self.location, 'sexually_active.csv')
 
         sexually_active = df['probs'].values / 100  # Convert from percent to rate per woman
@@ -298,21 +377,20 @@ class DataLoader:
         return activity_interp
 
     def sexual_activity_pp(self):
-        '''
+        """
         Returns an array of monthly likelihood of having resumed sexual activity within 0-35 months postpartum
         Uses 2014 Kenya DHS individual recode (postpartum (v222), months since last birth, and sexual activity within 30 days.
         Data is weighted.
         Limited to 23 months postpartum (can use any limit you want 0-23 max)
         Postpartum month 0 refers to the first month after delivery
         TODO-- Add code for processing this for other countries to data_processing
-        '''
+        """
         df = self.read_data(self.location, 'sexually_active_pp.csv')
 
         postpartum_activity = {}
         postpartum_activity['month'] = df['month'].values
         postpartum_activity['percent_active'] = df['probs'].values
         return postpartum_activity
-
 
     def debut_age(self):
         """
@@ -337,7 +415,7 @@ class DataLoader:
         try:
             df = self.read_data(self.location, 'birth_spacing_pref.csv')
         except FileNotFoundError:
-            print(f"birth_spacing_pref.csv not found for {location}, using default weights of 1.")
+            print(f"birth_spacing_pref.csv not found for {self.location}, using default weights of 1.")
             months = np.arange(0, 39, 3)  # 0 to 36 months in 3-month intervals
             weights = np.ones_like(months, dtype=float)
             df = pd.DataFrame({'month': months, 'weights': weights})
@@ -357,7 +435,6 @@ class DataLoader:
         }
 
         return pref_spacing
-
 
     # %% Education
     def education_objective(self):
@@ -409,7 +486,7 @@ class DataLoader:
             data[k]["percent"] = df["percent"][df["parity"] == k].to_numpy()
         return data
 
-    def process_contra_use(self, which, location):
+    def process_contra_use(self, which):
         """
         Process contraceptive use parameters.
         Args:
@@ -450,12 +527,14 @@ class DataLoader:
 
         return contra_use_pars
 
-
-    def process_markovian_method_choice(self, methods, location, df=None):
+    def load_method_switching(self, methods=None):
         """ Choice of method is age and previous method """
 
-        if df is None:
-            df = self.read_data(self.location, 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+        df = self.read_data(self.location, 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+
+        # Get default methods - TODO, think of something better
+        if methods is None:
+            methods = fp.make_methods()
 
         csv_map = {method.csv_name: method.name for method in methods.values()}
         idx_map = {method.csv_name: method.idx for method in methods.values()}
@@ -492,7 +571,7 @@ class DataLoader:
 
         return mc, init_dist
 
-    def process_dur_use(self, methods, location, df=None):
+    def process_dur_use(self, methods, df=None):
         """ Process duration of use parameters"""
 
         if df is None:
@@ -541,16 +620,6 @@ class DataLoader:
                                    age_factors=age_factors)
 
         return methods
-
-
-    def mcpr(self):
-        df = self.read_data(self.location, 'cpr.csv')
-
-        mcpr = {}
-        mcpr['mcpr_years'] = df['year'].to_numpy()
-        mcpr['mcpr_rates'] = df['cpr'].to_numpy() / 100
-
-        return mcpr
 
 
 

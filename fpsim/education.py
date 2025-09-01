@@ -32,7 +32,7 @@ def make_edu_pars():
 
 
 class Education(ss.Connector):
-    def __init__(self, pars=None, location=None, **kwargs):
+    def __init__(self, pars=None, location=None, data=None, **kwargs):
         """
         Initialize the Education module.
         Args:
@@ -49,16 +49,11 @@ class Education(ss.Connector):
         # Probabilities of dropping out - calculated using data inputs
         self._p_dropout = ss.bernoulli(p=0)
 
-        # Handle location
-        location = fp.get_location(location)
-        # Get the correct module, from either registry or built-in
-        if location in fp.location_registry:
-            location_module = fp.location_registry[location]
-        else:
-            location_module = fplocs  # fallback to built-in only if not registered
-
-        # Get the education data for the location
-        edu_data, _ = location_module.data_utils.education_distributions(location)  # This function returns extrapolated and raw data
+        # Get data if not provided
+        if data is None:
+            dataloader = fp.get_dataloader(location)
+            data = dataloader.load_edu_data()
+        self.data = data
 
         # Education states
         self.define_states(
@@ -72,10 +67,10 @@ class Education(ss.Connector):
         )
 
         # Store things that will be processed after sim initialization
-        self.attainment_data = edu_data['edu_attainment']
-        self.dropout_data = edu_data['edu_dropout_probs']
+        self.attainment_data = self.data['attainment']
+        self.dropout_data = self.data['p_dropout']
         self._objective_dists = None
-        self.set_objective_dists(edu_data['edu_objective'])
+        self.set_objective_dists(self.data['objective'])
 
         return
 
