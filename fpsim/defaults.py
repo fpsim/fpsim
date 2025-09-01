@@ -49,11 +49,13 @@ def get_dataloader(location):
     """ Return the data loader module """
     from . import locations as fplocs
 
+    location = get_location(location)
+
     # Use external registry for locations first
     if location in location_registry:
         location_module = location_registry[location]
     elif hasattr(fplocs, location):
-        location_module = getattr(fplocs, location)
+        location_module = getattr(fplocs, location).dataloader()
     else:
         raise NotImplementedError(f'Could not find location module for {location}')
     return location_module

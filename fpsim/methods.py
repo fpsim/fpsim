@@ -188,9 +188,6 @@ class ContraPars(ss.Pars):
         self.prob_use_intercept = 0.0
         self.prob_use_trend_par = 0.0
 
-        # Complex, data-informed parameters
-        self.
-
         # Settings and other misc
         self.max_dur = ss.years(100)  # Maximum duration of use in years
         self.update(kwargs)
@@ -228,6 +225,7 @@ class ContraceptiveChoice(ss.Connector):
             self.pars.method_weights = np.ones(self.n_methods)
 
         self.init_dist = None
+        self.data = {}
         
         # Initialize choice distributions for method selection
         self._method_choice_dist = ss.choice(a=self.n_methods, p=np.ones(self.n_methods)/self.n_methods)
@@ -515,38 +513,31 @@ class SimpleChoice(RandomChoice):
     """
     Simple choice model where method choice depends on age and previous method.
     Uses location-specific data to set parameters, and needs to be initialized with
-    either a location string or a dataloader, which is a module specifically designed
-    for loading data.
+    either a location string or a data dictionary.
     """
-    def __init__(self, pars=None, location=None, dataloader=None, method_choice_df=None, method_time_df=None, **kwargs):
+    def __init__(self, pars=None, location=None, data=None, contra_mod='simple', **kwargs):
         super().__init__(pars=pars, **kwargs)
 
         # Checks
-        if location is None and dataloader is None:
-            errormsg = 'Either location or dataloader must be provided.'
-            raise ValueError(errormsg)
-        if location is not None and dataloader is not None:
-            errormsg = 'Only one of location or dataloader should be provided.'
+        if location is not None and data is not None:
+            errormsg = 'Only one of location or data should be provided.'
             raise ValueError(errormsg)
 
-        # Get data loader
-        if dataloader is not None:
-            fpdl = dataloader
-        else:
-            location = fpd.get_location(location)
-            fpdl = fpd.get_dataloader(location)
+        # Get data if not provided
+        if data is None:
+            dataloader = fpd.get_dataloader(location)
+            data = dataloader.load_contra_data(contra_mod)
 
-        self.init_method_pars(fpdl, method_choice_df=method_choice_df, method_time_df=method_time_df)
+        self.data = data
 
         return
 
-    def init_method_pars(self, dataloader, method_choice_df=None, method_time_df=None):
-        self.contra_use_pars = dataloader.process_contra_use('simple', location)  # Set probability of use
-        method_choice_pars, init_dist = dataloader.data_utils.process_markovian_method_choice(self.methods, location, df=method_choice_df)  # Method choice
-        self.method_choice_pars = method_choice_pars
-        self.init_dist = init_dist
-        self._method_mix.set(p=init_dist)  # TODO check
-        self.methods = dataloader.data_utils.process_dur_use(self.methods, location, df=method_time_df)  # Reset duration of use
+    def init_method_pars(self, data):
+        self.contra_use_pars = data.p_use  # Set probability of use
+        self.method_choice_pars = data.method_choice  # Method choice
+        self.init_dist = data.init_dist
+        self._method_mix.set(p=self.init_dist)  # TODO check
+        self.methods = data.dur_use  # TODO, this is incorrect
 
         # Handle age bins -- find a more robust way to do this
         self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
@@ -704,23 +695,9 @@ class StandardChoice(SimpleChoice):
     Default contraceptive choice module.
     Contraceptive choice is based on age, education, wealth, parity, and prior use.
     """
-    def __init__(self, pars=None, dataloader=None, **kwargs):
+    def __init__(self, pars=None, location=None, data=None, contra_mod='mid', **kwargs):
         # Initialize base class - this adds parameters and default data
-        super().__init__(pars=pars, location=dataloader, **kwargs)
-
-        # Get the correct module, from either registry or built-in
-        if location in fpd.location_registry:
-            location_module = fpd.location_registry[location]
-        else:
-            location_module = fplocs  # fallback to built-in only if not registered
-
-        # Now overwrite the default prob_use parameters with the mid-choice coefficients
-        location = fpd.get_location(location)
-        self.contra_use_pars = location_module.data_utils.process_contra_use('mid', location)  # Process the coefficients
-
-        # Store the age spline
-        self.age_spline = location_module.data_utils.age_spline('25_40')
-
+        super().__init__(pars=pars, location=location, data=data, contra_mod=contra_mod, **kwargs)
         return
 
     def get_prob_use(self, uids, event=None):
@@ -746,7 +723,7 @@ class StandardChoice(SimpleChoice):
         int_age = ppl.int_age(uids)
         int_age[int_age < fpd.min_age] = fpd.min_age
         int_age[int_age >= fpd.max_age_preg] = fpd.max_age_preg-1
-        dfa = self.age_spline.loc[int_age]
+        dfa = self.data.age_spline.loc[int_age]
         rhs += p.age_factors[0] * dfa['knot_1'].values + p.age_factors[1] * dfa['knot_2'].values + p.age_factors[2] * dfa['knot_3'].values
         rhs += (p.age_ever_user_factors[0] * dfa['knot_1'].values * ppl.ever_used_contra[uids]
                 + p.age_ever_user_factors[1] * dfa['knot_2'].values * ppl.ever_used_contra[uids]

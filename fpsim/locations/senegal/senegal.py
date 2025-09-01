@@ -62,46 +62,6 @@ def exposure_parity():
     return exposure_parity_interp
 
 
-# %% Make and validate parameters
-
-def make_pars(location='senegal'):
-    """
-    Take all parameters and construct into a dictionary
-    """
-
-    # Scalar parameters and filenames
-    pars = scalar_pars()
-    pars['abortion_prob'], pars['twins_prob'] = fpld.scalar_probs(location)
-    pars.update(fpld.bf_stats(location))
-    pars['filenames'] = filenames()
-
-    # Demographics and pregnancy outcome
-    pars['age_pyramid'] = fpld.age_pyramid(location)
-    pars['age_mortality'] = fpld.age_mortality(location, data_year=1990)
-    pars['urban_prop'] = fpld.urban_proportion(location)
-    pars['maternal_mortality'] = fpld.maternal_mortality(location)
-    pars['infant_mortality'] = fpld.infant_mortality(location)
-    pars['miscarriage_rates'] = fpld.miscarriage()
-    pars['stillbirth_rate'] = fpld.stillbirth(location)
-
-    # Fecundity
-    pars['age_fecundity'] = fpld.female_age_fecundity()
-    pars['fecundity_ratio_nullip'] = fpld.fecundity_ratio_nullip()
-    pars['lactational_amenorrhea'] = fpld.lactational_amenorrhea(location)
-
-    # Pregnancy exposure
-    pars['sexual_activity'] = fpld.sexual_activity(location)
-    pars['sexual_activity_pp'] = fpld.sexual_activity_pp(location)
-    pars['debut_age'] = fpld.debut_age(location)
-    pars['exposure_age'] = exposure_age()
-    pars['exposure_parity'] = exposure_parity()
-    pars['spacing_pref'] = fpld.birth_spacing_pref(location)
-
-    # Contraceptive methods
-    pars['mcpr'] = fpld.mcpr(location)
-
-    # Demographics: partnership and wealth status
-    pars['age_partnership'] = fpld.age_partnership(location)
-    pars['wealth_quintile'] = fpld.wealth(location)
-
-    return pars
+# %% Load data
+def dataloader(location='senegal'):
+    return fpld.DataLoader(location=location)

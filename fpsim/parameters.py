@@ -6,7 +6,7 @@ import sciris as sc
 import starsim as ss
 import fpsim as fp
 
-__all__ = ['SimPars', 'FPPars', 'ContraPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'sim_par_keys', 'all_pars']
+__all__ = ['SimPars', 'FPPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'sim_par_keys', 'all_pars']
 
 
 # %% Parameter creation functions

@@ -21,7 +21,7 @@ class FPmod(ss.Module):
     Class for storing and updating FP-related events
     """
 
-    def __init__(self, pars=None, location=None, name='fp', **kwargs):
+    def __init__(self, pars=None, location=None, data=None, name='fp', **kwargs):
         super().__init__(name=name)
         default_pars = fp.FPPars()
         if location is not None:
@@ -29,6 +29,12 @@ class FPmod(ss.Module):
         self.define_pars(**default_pars)
         self.update_pars(pars, **kwargs)
         self.define_states(*fp.fpmod_states)
+
+        # Get data if not provided
+        if data is None:
+            dataloader = fp.get_dataloader(location)
+            data = dataloader.load_fp_data()
+        self.data = data
 
         # Distributions: binary outcomes
         self._p_fertile = ss.bernoulli(p=1-self.pars['primary_infertility'])  # Probability that a woman is fertile, i.e. 1 - primary infertility
@@ -47,8 +53,6 @@ class FPmod(ss.Module):
         def age_adjusted_non_pp_active(self, sim, uids):
             return self.pars['sexual_activity'][sim.people.int_age(uids)]
         self._p_non_pp_active = ss.bernoulli(p=age_adjusted_non_pp_active)  # Probability of being sexually active if not postpartum
-
-
 
         # Duration distributions - TODO, move all these to parameters
         self._dur_pregnancy = ss.uniform(low=self.pars['preg_dur_low'], high=self.pars['preg_dur_high'])
