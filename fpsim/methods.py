@@ -128,7 +128,6 @@ class Method:
             self.dur_use.age_factors = age_factors
 
 
-
 # Helper function for setting lognormals - now returns Starsim distribution  
 def ln(a, b): return ss.lognorm_ex(mean=a, std=b)
 
@@ -169,6 +168,7 @@ class Fisk(ss.Dist):
         super().__init__(distname='fisk', dist=fisk, c=c, scale=scale, **kwargs)
         return
 
+
 # %% Define parameters
 class ContraPars(ss.Pars):
     def __init__(self, **kwargs):
@@ -187,6 +187,9 @@ class ContraPars(ss.Pars):
         self.prob_use_year = 2000
         self.prob_use_intercept = 0.0
         self.prob_use_trend_par = 0.0
+
+        # Complex, data-informed parameters
+        self.
 
         # Settings and other misc
         self.max_dur = ss.years(100)  # Maximum duration of use in years
@@ -509,28 +512,41 @@ class RandomChoice(ContraceptiveChoice):
 
 
 class SimpleChoice(RandomChoice):
-    def __init__(self, pars=None, location=None, method_choice_df=None, method_time_df=None, **kwargs):
-        """ Args: coefficients """
+    """
+    Simple choice model where method choice depends on age and previous method.
+    Uses location-specific data to set parameters, and needs to be initialized with
+    either a location string or a dataloader, which is a module specifically designed
+    for loading data.
+    """
+    def __init__(self, pars=None, location=None, dataloader=None, method_choice_df=None, method_time_df=None, **kwargs):
         super().__init__(pars=pars, **kwargs)
-        # Handle location
-        location = fpd.get_location(location)
-        self.init_method_pars(location, method_choice_df=method_choice_df, method_time_df=method_time_df)
+
+        # Checks
+        if location is None and dataloader is None:
+            errormsg = 'Either location or dataloader must be provided.'
+            raise ValueError(errormsg)
+        if location is not None and dataloader is not None:
+            errormsg = 'Only one of location or dataloader should be provided.'
+            raise ValueError(errormsg)
+
+        # Get data loader
+        if dataloader is not None:
+            fpdl = dataloader
+        else:
+            location = fpd.get_location(location)
+            fpdl = fpd.get_dataloader(location)
+
+        self.init_method_pars(fpdl, method_choice_df=method_choice_df, method_time_df=method_time_df)
 
         return
 
-    def init_method_pars(self, location, method_choice_df=None, method_time_df=None):
-        # Get the correct module, from either registry or built-in
-        if location in fpd.location_registry:
-            location_module = fpd.location_registry[location]
-        else:
-            location_module = fplocs  # fallback to built-in only if not registered
-
-        self.contra_use_pars = location_module.data_utils.process_contra_use('simple', location)  # Set probability of use
-        method_choice_pars, init_dist = location_module.data_utils.process_markovian_method_choice(self.methods, location, df=method_choice_df)  # Method choice
+    def init_method_pars(self, dataloader, method_choice_df=None, method_time_df=None):
+        self.contra_use_pars = dataloader.process_contra_use('simple', location)  # Set probability of use
+        method_choice_pars, init_dist = dataloader.data_utils.process_markovian_method_choice(self.methods, location, df=method_choice_df)  # Method choice
         self.method_choice_pars = method_choice_pars
         self.init_dist = init_dist
         self._method_mix.set(p=init_dist)  # TODO check
-        self.methods = location_module.data_utils.process_dur_use(self.methods, location, df=method_time_df)  # Reset duration of use
+        self.methods = dataloader.data_utils.process_dur_use(self.methods, location, df=method_time_df)  # Reset duration of use
 
         # Handle age bins -- find a more robust way to do this
         self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
@@ -588,7 +604,6 @@ class SimpleChoice(RandomChoice):
         # Set
         self.pars.p_use.set(p=prob_use)  # Set the probability of use parameter
         return
-
 
     def set_dur_method(self, uids, method_used=None):
         """ Time on method depends on age and method """
@@ -689,9 +704,9 @@ class StandardChoice(SimpleChoice):
     Default contraceptive choice module.
     Contraceptive choice is based on age, education, wealth, parity, and prior use.
     """
-    def __init__(self, pars=None, location=None, **kwargs):
+    def __init__(self, pars=None, dataloader=None, **kwargs):
         # Initialize base class - this adds parameters and default data
-        super().__init__(pars=pars, location=location, **kwargs)
+        super().__init__(pars=pars, location=dataloader, **kwargs)
 
         # Get the correct module, from either registry or built-in
         if location in fpd.location_registry:

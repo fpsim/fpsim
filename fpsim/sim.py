@@ -92,7 +92,7 @@ class Sim(ss.Sim):
     def __init__(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None,
                  fp_module=None, contraception_module=None, empowerment_module=None, education_module=None,
                  label=None, people=None, demographics=None, diseases=None, networks=None,
-                 interventions=None, analyzers=None, connectors=None, copy_inputs=True, **kwargs):
+                 interventions=None, analyzers=None, connectors=None, dataloader=None, copy_inputs=True, **kwargs):
 
         # Inputs and defaults
         self.contra_pars = None    # Parameters for the contraception module - processed later
@@ -121,8 +121,11 @@ class Sim(ss.Sim):
         # Set the location
         self.pars.location = fpd.get_location(self.pars.location, printmsg=True)  # Handle location
 
+        # Set the datafolder. If none provided, use defaults and print message
+        self.dataloader = dataloader or fpd.get_dataloader(self.pars.location)
+
         # Process modules by adding them as Starsim connectors
-        default_contra = fpm.StandardChoice(location=self.pars.location, pars=self.contra_pars)
+        default_contra = fpm.StandardChoice(dataloader=self.dataloader, pars=self.contra_pars)
         default_edu = fped.Education(location=self.pars.location, pars=self.edu_pars)
         default_fp = fp.FPmod(location=self.pars.location, pars=self.fp_pars)
         contraception_module = contraception_module or sc.dcp(default_contra)
@@ -132,6 +135,8 @@ class Sim(ss.Sim):
         if empowerment_module is not None:
             connectors += sc.tolist(empowerment_module)
         self.pars['connectors'] = connectors  # TODO, check this
+
+        default_deaths = fp.Deaths()
 
         # Metadata and settings
         fpu.set_metadata(self)  # Set version, date, and git info

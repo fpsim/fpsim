@@ -24,29 +24,39 @@ valid_region_locs = {
     'ethiopia': ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
 }
 
+
 # Parse locations
 def get_location(location, printmsg=False):
-    if not location:
-        if printmsg: print('Location not supplied: using parameters from Senegal')
-        location = default_location
-    location = location.lower()  # Ensure it's lowercase
-    if location == 'test':
-        if printmsg: print('Running test simulation using parameters from Senegal')
-        location = default_location
-    if location == 'default':
-        if printmsg: print('Running default simulation using parameters from Senegal')
-        location = default_location
+    if not location or location.lower() in ['test', 'tests', 'default']:
+        location = 'test'
+        if printmsg: print('Location not supplied: using default test parameters')
+    else:
+        location = location.lower()  # Ensure it's lowercase
 
-    # External locations override internal ones
-    if location in location_registry:
-        return location
+        # External locations override internal ones
+        if location in location_registry:
+            return location
 
-    # Define valid locations
-    if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
-        errormsg = f'Location "{location}" is not currently supported'
-        raise NotImplementedError(errormsg)
+        # Define valid locations
+        if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
+            errormsg = f'Location "{location}" is not currently supported'
+            raise NotImplementedError(errormsg)
 
     return location
+
+
+def get_dataloader(location):
+    """ Return the data loader module """
+    from . import locations as fplocs
+
+    # Use external registry for locations first
+    if location in location_registry:
+        location_module = location_registry[location]
+    elif hasattr(fplocs, location):
+        location_module = getattr(fplocs, location)
+    else:
+        raise NotImplementedError(f'Could not find location module for {location}')
+    return location_module
 
 
 # Register custom location (for external users)

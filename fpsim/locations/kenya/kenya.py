@@ -58,7 +58,20 @@ def exposure_parity():
     return exposure_parity_interp
 
 
-# %% Make and validate parameters
+# %% Make module parameters
+
+def process_contra_use(location='kenya', ):
+    """
+    Make contraception parameters for the FPsim model
+    """
+    pars = ss.Pars()
+    pars['contra_use'] = fpld.mcpr(location)
+    pars['method_mix'] = fpld.method_mix(location)
+    pars['age_at_first_birth'] = fpld.age_at_first_birth(location)
+    pars['contraceptive_efficacy'] = fpld.contraceptive_efficacy()
+    pars['filenames'] = filenames()
+    return pars
+
 
 def make_fp_pars(location='kenya'):
     """
