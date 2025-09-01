@@ -527,20 +527,66 @@ class SimpleChoice(RandomChoice):
         if data is None:
             dataloader = fpd.get_dataloader(location)
             data = dataloader.load_contra_data(contra_mod)
-
         self.data = data
+        self.process_data()
 
         return
 
-    def init_method_pars(self, data):
-        self.contra_use_pars = data.p_use  # Set probability of use
+    def process_data(self):
+        data = self.data
+        self.contra_use_pars = data.p_contra  # Set probability of use
         self.method_choice_pars = data.method_choice  # Method choice
         self.init_dist = data.init_dist
         self._method_mix.set(p=self.init_dist)  # TODO check
-        self.methods = data.dur_use  # TODO, this is incorrect
+        self.dur_from_data()
 
         # Handle age bins -- find a more robust way to do this
         self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
+        return
+
+    def dur_from_data(self):
+        df = self.data.dur_use
+        for method in self.methods.values():
+            if method.name == 'btl':
+                method.dur_use = ss.uniform(low=1000, high=1200)
+            else:
+                mlabel = method.csv_name
+
+                thisdf = df.loc[df.method == mlabel]
+                dist = thisdf.functionform.iloc[0]
+                age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
+
+                # Get age factors if they exist for this distribution
+                age_factors = None
+                if age_ind is not None and age_ind < len(thisdf.estimate.values):
+                    age_factors = thisdf.estimate.values[age_ind:]
+
+                if dist in ['lognormal', 'lnorm']:
+                    par1 = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
+                    par2 = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
+
+                elif dist in ['gamma']:
+                    par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
+                    par2 = thisdf.estimate[thisdf.coef == 'rate'].values[0]   # rate parameter (log space)
+
+                elif dist == 'llogis':
+                    par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
+                    par2 = thisdf.estimate[thisdf.coef == 'scale'].values[0]  # scale parameter (log space)
+
+                elif dist == 'weibull':
+                    par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
+                    par2 = thisdf.estimate[thisdf.coef == 'scale'].values[0]  # scale parameter (log space)
+
+                elif dist == 'exponential':
+                    par1 = thisdf.estimate[thisdf.coef == 'rate'].values[0]   # rate parameter (log space)
+
+                else:
+                    errormsg = f"Duration of use distribution {dist} not recognized"
+                    raise ValueError(errormsg)
+
+                method.set_dur_use(dist_type=dist,
+                                   par1=par1, par2=par2,
+                                   age_factors=age_factors)
         return
 
     def init_method_dist(self, uids):
