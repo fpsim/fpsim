@@ -5,29 +5,11 @@ Handle sim parameters
 import sciris as sc
 import starsim as ss
 import fpsim as fp
-from . import defaults as fpd
 
-__all__ = ['get_location_module', 'SimPars', 'FPPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'sim_par_keys', 'all_pars']
+__all__ = ['SimPars', 'FPPars', 'ContraPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'sim_par_keys', 'all_pars']
 
 
 # %% Parameter creation functions
-
-def get_location_module(location=None):
-    """
-    Helper function to get the location module
-    """
-    # Import the location module
-    from . import locations as fplocs
-
-    # Use external registry for locations first
-    if location in fpd.location_registry:
-        location_module = fpd.location_registry[location]
-    elif hasattr(fplocs, location):
-        location_module = getattr(fplocs, location)
-    else:
-        raise NotImplementedError(f'Could not find location module for "{location}"')
-    return location_module
-
 
 class SimPars(ss.SimPars):
     """
@@ -101,11 +83,9 @@ class FPPars(ss.Pars):
         self.LAM_efficacy = 0.98   # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
         self.maternal_mortality_factor = 1
 
-        # Fecundity and exposure
-        self.fecundity_var_low = 0.7
-        self.fecundity_var_high = 1.1
+        # Fecundity and infertility
+        self.fecundity = ss.uniform(low=0.7, high=1.1)  # Personal fecundity distribution
         self.primary_infertility = 0.05
-        self.exposure_factor = 1.0    # Overall exposure correction factor
 
         ###################################
         # Context-specific data-derived parameters, all defined within location files
@@ -124,13 +104,11 @@ class FPPars(ss.Pars):
         self.exposure_age = None
         self.exposure_parity = None
         self.spacing_pref = None
-        self.barriers = None
         self.urban_prop = None
         self.wealth_quintile = None
         self.age_partnership = None
         self.mcpr = None
         self.region = None
-        self.track_children = False  # Whether to track children
         self.regional = None
 
         self.update(kwargs)
@@ -144,7 +122,7 @@ class FPPars(ss.Pars):
         """
         Update the location-specific FP parameters
         """
-        location_module = get_location_module(location)
+        location_module = fp.get_dataloader(location)
         location_pars = location_module.make_fp_pars()
         self.update(**location_pars)
         return

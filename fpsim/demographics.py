@@ -6,6 +6,23 @@ age at first partnership.
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
 import sciris as sc
+import starsim as ss
+import fpsim as fp
+
+
+# %% Initialization methods
+class Deaths(ss.Deaths):
+    """Subclass of Starsim Deaths to handle deaths"""
+
+    def __init__(self, location=None, **kwargs):
+        super().__init__()
+        # Read data
+        location_module = fp.get_location_module(location)
+        death_pars = location_module.make_death_pars()
+        self.define_pars(**default_pars)
+        self.update_pars(pars, **kwargs)
+
+        return
 
 
 # %% Initialization methods
