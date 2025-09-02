@@ -67,15 +67,11 @@ class FPPars(ss.Pars):
 
         # Durations (in months)
         self.end_first_tri = 3      # Months
-        self.preg_dur_low = 9       # Months
-        self.preg_dur_high = 9      # Months
-        self.max_lam_dur = 5        # Duration of lactational amenorrhea (months)
-        self.short_int = ss.months(24)         # Duration of a short birth interval between live births (months)
-        self.low_age_short_int = 0  # age limit for tracking the age-specific short birth interval
-        self.high_age_short_int = 20    # age limit for tracking the age-specific short birth interval
-        self.postpartum_dur = 35    # Months
-        self.breastfeeding_dur_mean = None  # CONTEXT-SPECIFIC #### - Parameter of truncated norm distribution
-        self.breastfeeding_dur_sd = None    # CONTEXT-SPECIFIC #### - Parameter of truncated norm distribution
+        self.dur_pregnancy = ss.uniform(low=ss.months(9), high=ss.months(9))
+        self.dur_breastfeeding = ss.normal(loc=ss.months(24), scale=ss.months(6))
+        self.dur_postpartum = ss.uniform(low=ss.months(35), high=ss.months(35))
+        self.max_lam_dur = 5            # Duration of lactational amenorrhea (months)
+        self.short_int = ss.months(24)  # Duration of a short birth interval between live births (months)
 
         # Pregnancy outcomes
         self.abortion_prob = None   # CONTEXT-SPECIFIC ####

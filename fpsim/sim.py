@@ -99,6 +99,8 @@ class Sim(ss.Sim):
         self.edu_pars = None     # Parameters for the education module - processed later
         self.fp_pars = None       # Parameters for the family planning module - processed later
         self.pars = None        # Parameters for the simulation - processed later
+        self.data = None         # Data dictionary, loaded later
+        self.dataloader = dataloader  # Data loader, if provided
 
         # Call the constructor of the parent class WITHOUT pars or module args, the make defaults
         super().__init__(pars=None, label=label)
@@ -115,20 +117,13 @@ class Sim(ss.Sim):
         sim_kwargs = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         sim_kwargs = {key: val for key, val in sim_kwargs.items() if val is not None}
-        all_sim_pars = self.separate_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, **kwargs)
+        all_sim_pars = self.process_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, sim_kwargs, **kwargs)
         self.pars.update(all_sim_pars)
 
-        # Set the location
-        self.pars.location = fpd.get_location(self.pars.location, printmsg=True)  # Handle location
-
-        # Set the dataloader. If none provided, use defaults and print message
-        self.dataloader = dataloader or fpd.get_dataloader(self.pars.location)
-        self.data = self.dataloader.load()  # Load all data and sort by module
-
         # Process modules by adding them as Starsim connectors
-        default_contra = fpm.StandardChoice(data=self.data.contra, pars=self.contra_pars)
-        default_edu = fped.Education(data=self.data.edu, pars=self.edu_pars)
-        default_fp = fp.FPmod(data=self.data.fp, pars=self.fp_pars)
+        default_contra = fpm.StandardChoice(pars=self.contra_pars)
+        default_edu = fped.Education(pars=self.edu_pars)
+        default_fp = fp.FPmod(pars=self.fp_pars)
         contraception_module = contraception_module or sc.dcp(default_contra)
         education_module = education_module or sc.dcp(default_edu)
         fp_module = fp_module or sc.dcp(default_fp)
@@ -165,7 +160,7 @@ class Sim(ss.Sim):
             pars['test'] = True
         return pars
 
-    def separate_pars(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, sim_kwargs=None, **kwargs):
+    def process_pars(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, sim_kwargs=None, **kwargs):
         """
         Separate the parameters into simulation and fp-specific parameters.
         """
@@ -178,23 +173,32 @@ class Sim(ss.Sim):
         for k in user_sim_pars: all_pars.pop(k)
         sim_pars = sc.mergedicts(user_sim_pars, sim_pars, _copy=True)
 
+        # Get location and load data
+        location = fpd.get_location(sim_pars['location'], printmsg=True)  # Handle location
+        if self.dataloader is None:
+            self.dataloader = fpd.get_dataloader(location)
+        data_dict = self.dataloader.load()  # Load all data and sort by module
+
         # Deal with fp pars
         default_fp_pars = fpp.make_fp_pars()
         user_fp_pars = {k: v for k, v in all_pars.items() if k in default_fp_pars.keys()}
         for k in user_fp_pars: all_pars.pop(k)
-        fp_pars = sc.mergedicts(user_fp_pars, fp_pars, _copy=True)
+        fp_data_pars = data_dict.get('fp', {})
+        fp_pars = sc.mergedicts(fp_data_pars, user_fp_pars, fp_pars, _copy=True)
 
         # Deal with contraception module pars
         default_contra_pars = fpm.make_contra_pars()
         user_contra_pars = {k: v for k, v in all_pars.items() if k in default_contra_pars.keys()}
         for k in user_contra_pars: all_pars.pop(k)
-        contra_pars = sc.mergedicts(user_contra_pars, contra_pars, _copy=True)
+        contra_data_pars = data_dict.get('contra', {})
+        contra_pars = sc.mergedicts(contra_data_pars, user_contra_pars, contra_pars, _copy=True)
 
         # Deal with education pars
         default_edu_pars = fped.make_edu_pars()
         user_edu_pars = {k: v for k, v in all_pars.items() if k in default_edu_pars.keys()}
         for k in user_edu_pars: all_pars.pop(k)
-        edu_pars = sc.mergedicts(user_edu_pars, edu_pars, _copy=True)
+        edu_data_pars = data_dict.get('edu', {})
+        edu_pars = sc.mergedicts(edu_data_pars, user_edu_pars, edu_pars, _copy=True)
 
         # Raise an exception if there are any leftover pars
         if all_pars:
