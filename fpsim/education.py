@@ -8,7 +8,6 @@ import fpsim as fp
 import starsim as ss
 import sciris as sc
 import pandas as pd
-from . import locations as fplocs
 
 
 # %% Class for updating education

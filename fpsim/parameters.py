@@ -6,7 +6,7 @@ import sciris as sc
 import starsim as ss
 import fpsim as fp
 
-__all__ = ['SimPars', 'FPPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'sim_par_keys', 'all_pars']
+__all__ = ['SimPars', 'FPPars', 'make_sim_pars', 'make_fp_pars', 'par_keys', 'sim_par_keys', 'all_pars', 'mergepars']
 
 
 # %% Parameter creation functions
@@ -31,7 +31,7 @@ class SimPars(ss.SimPars):
         self.rand_seed = 1      # Random seed
         self.verbose = 1/12   # Verbosity level
         self.use_aging = True   # Whether to age the population
-        self.location = None  # CONTEXT-SPECIFIC ####
+        self.location = 'senegal'  # Default location
         self.test = False
 
         # Update with any supplied parameter values and generate things that need to be generated
@@ -69,7 +69,7 @@ class FPPars(ss.Pars):
         self.end_first_tri = 3      # Months
         self.dur_pregnancy = ss.uniform(low=ss.months(9), high=ss.months(9))
         self.dur_breastfeeding = ss.normal(loc=ss.months(24), scale=ss.months(6))
-        self.dur_postpartum = ss.uniform(low=ss.months(35), high=ss.months(35))
+        self.dur_postpartum = None  # Updated by data
         self.max_lam_dur = 5            # Duration of lactational amenorrhea (months)
         self.short_int = ss.months(24)  # Duration of a short birth interval between live births (months)
 
@@ -154,4 +154,5 @@ def all_pars():
     fp_pars = make_fp_pars()
     contra_pars = fp.ContraPars()
     edu_pars = fp.EduPars()
-    return mergepars(sim_pars, fp_pars, contra_pars, edu_pars)
+    death_pars = fp.DeathPars()
+    return mergepars(sim_pars, fp_pars, contra_pars, edu_pars, death_pars)

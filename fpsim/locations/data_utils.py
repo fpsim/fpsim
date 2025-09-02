@@ -64,7 +64,9 @@ class DataLoader:
         fp_data.fecundity_ratio_nullip = self.fecundity_ratio_nullip()
         fp_data.lactational_amenorrhea = self.lactational_amenorrhea()
         fp_data.sexual_activity = self.sexual_activity()
-        fp_data.sexual_activity_pp = self.sexual_activity_pp()
+        sexual_activity_pp = self.sexual_activity_pp()
+        fp_data.sexual_activity_pp = sexual_activity_pp
+        fp_data.dur_postpartum = sexual_activity_pp['month'][-1].astype(int)
         fp_data.debut_age = self.debut_age()
         fp_data.spacing_pref = self.birth_spacing_pref()
         fp_data.abortion_prob, fp_data.twins_prob = self.scalar_probs()
