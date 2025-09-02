@@ -10,24 +10,50 @@ import starsim as ss
 import fpsim as fp
 
 
-# %% Initialization methods
+# %% Deaths module
 class Deaths(ss.Deaths):
-    """Subclass of Starsim Deaths to handle deaths"""
+    """
+    Subclass of ss.Deaths to handle FPsim's specific mortality implementation
+    Use of this is optional, and FPsim should run with the base class as well.
+    """
+    def make_p_death(self):
 
-    def __init__(self, location=None, **kwargs):
-        super().__init__()
-        # Read data
-        location_module = fp.get_location_module(location)
-        death_pars = location_module.make_death_pars()
-        self.define_pars(**default_pars)
-        self.update_pars(pars, **kwargs)
+        self.pars['mortality_probs'] = {}
 
-        return
+        ind = sc.findnearest(self.pars['age_mortality']['year'], self.t.now('year'))
+        val = self.pars.fp['age_mortality']['probs'][ind]
+        self.pars['mortality_probs']['gen_trend'] = val
+
+        sim = self.sim
+        ppl = sim.people
+        uids = ppl.auids  # Get the UIDs of all alive people
+        death_rate = np.empty(uids.shape, dtype=ss.dtypes.float)
+
+        trend_val = self.pars['mortality_probs']['gen_trend']
+        age_mort = self.pars['age_mortality']
+        f_spline = age_mort['f_spline'] * trend_val
+        m_spline = age_mort['m_spline'] * trend_val
+        over_one = ppl.age[uids] >= 1
+        female = uids[over_one & ppl.female[uids]]
+        male = uids[over_one & ppl.male[uids]]
+        f_ages = ppl.int_age(female)
+        m_ages = ppl.int_age(male)
+
+        death_rate[male] = m_spline[m_ages]
+        death_rate[female] = f_spline[f_ages]
+        death_rate *= self.pars.rate_units * self.pars.rel_death
+
+        # Scale from rate to probability
+        death_rate = ss.peryear(death_rate)
+        p_death = death_rate.to_prob(self.t.dt)  # Convert to probability per timestep
+        return p_death
 
 
 # %% Initialization methods
 def init_partnership_states(ppl):
-    """Demographics on whether a person is in a partnership, and their expected age at first partnership in a rural or urban setting"""
+    """
+    Initialize partnership status and expected age at first partnership by rural/urban status
+    """
 
     # Get init values for these sociodemographic states
     partnered, partnership_age = get_partnership_init_vals(ppl)

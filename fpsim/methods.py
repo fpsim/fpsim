@@ -637,13 +637,13 @@ class SimpleChoice(RandomChoice):
                 this_age_bools = (ppl.age[uids] >= age_low) & (ppl.age[uids] < age_high)
                 ppl_this_age = this_age_bools.nonzero()[-1]
                 if len(ppl_this_age) > 0:
-                    these_probs = self.init_dist[key]
+                    these_probs = self.pars.init_dist[key]
                     these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
                     these_probs = these_probs/np.sum(these_probs)  # Renormalize
                     self._method_choice_dist.set(a=len(these_probs), p=these_probs)
                     these_choices = self._method_choice_dist.rvs(len(ppl_this_age))  # Choose
                     # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
-                    choice_array[this_age_bools] = np.array(list(self.init_dist.method_idx))[these_choices]
+                    choice_array[this_age_bools] = np.array(list(self.pars.init_dist.method_idx))[these_choices]
             return choice_array.astype(int)
         else:
             errormsg = f'Distribution of contraceptive choices has not been provided.'
@@ -806,7 +806,7 @@ class StandardChoice(SimpleChoice):
         int_age = ppl.int_age(uids)
         int_age[int_age < fpd.min_age] = fpd.min_age
         int_age[int_age >= fpd.max_age_preg] = fpd.max_age_preg-1
-        dfa = self.data.age_spline.loc[int_age]
+        dfa = self.pars.age_spline.loc[int_age]
         rhs += p.age_factors[0] * dfa['knot_1'].values + p.age_factors[1] * dfa['knot_2'].values + p.age_factors[2] * dfa['knot_3'].values
         rhs += (p.age_ever_user_factors[0] * dfa['knot_1'].values * ppl.ever_used_contra[uids]
                 + p.age_ever_user_factors[1] * dfa['knot_2'].values * ppl.ever_used_contra[uids]

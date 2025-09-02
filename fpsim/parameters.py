@@ -100,8 +100,6 @@ class FPPars(ss.Pars):
         self.exposure_age = None
         self.exposure_parity = None
         self.spacing_pref = None
-        self.urban_prop = None
-        self.wealth_quintile = None
         self.age_partnership = None
         self.mcpr = None
         self.region = None

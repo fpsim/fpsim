@@ -214,44 +214,45 @@ class FPmod(ss.Module):
             raise ValueError(errormsg)
         return
 
-    def decide_death_outcome(self, uids):
-        """ Decide if person dies at a timestep """
-        ppl = self.sim.people
-        trend_val = self.pars['mortality_probs']['gen_trend']
-        age_mort = self.pars['age_mortality']
-        f_spline = age_mort['f_spline'] * trend_val
-        m_spline = age_mort['m_spline'] * trend_val
-        over_one = ppl.age[uids] >= 1
-        female = uids[over_one & ppl.female[uids]]
-        male = uids[over_one & ppl.male[uids]]
-        f_ages = ppl.int_age(female)
-        m_ages = ppl.int_age(male)
-
-        f_mort_prob = ss.peryear(f_spline[f_ages]).to_prob(self.t.dt)
-        m_mort_prob = ss.peryear(m_spline[m_ages]).to_prob(self.t.dt)
-
-        # TODO; combine to single call
-        self._p_death.set(p=f_mort_prob)
-        f_died = self._p_death.filter(female)
-        self._p_death.set(p=m_mort_prob)
-        m_died = self._p_death.filter(male)
-
-        # Need to update results here, as after remove_dead has been called the UIDs will be excluded
-        # TODO: consider refactoring this so deaths are handled at the end, like with other Starsim modules
-        self.sim.results['new_deaths'][self.ti] += len(f_died) + len(m_died)  # Track all deaths
-
-        for died in [f_died, m_died]:
-            self.pregnant[died] = False
-            self.gestation[died] = False
-            self.sexually_active[died] = False
-            self.lactating[died] = False
-            self.postpartum[died] = False
-            self.lam[died] = False
-            ppl.request_death(died)
-            ppl.step_die()  # to match the order of ops from earlier FPsim version
-            ppl.remove_dead()
-
-        return
+    # def step_die(self, uids):
+    # # def decide_death_outcome(self, uids):
+    #     """ Decide if person dies at a timestep """
+    #     ppl = self.sim.people
+    #     trend_val = self.pars['mortality_probs']['gen_trend']
+    #     age_mort = self.pars['age_mortality']
+    #     f_spline = age_mort['f_spline'] * trend_val
+    #     m_spline = age_mort['m_spline'] * trend_val
+    #     over_one = ppl.age[uids] >= 1
+    #     female = uids[over_one & ppl.female[uids]]
+    #     male = uids[over_one & ppl.male[uids]]
+    #     f_ages = ppl.int_age(female)
+    #     m_ages = ppl.int_age(male)
+    #
+    #     f_mort_prob = ss.peryear(f_spline[f_ages]).to_prob(self.t.dt)
+    #     m_mort_prob = ss.peryear(m_spline[m_ages]).to_prob(self.t.dt)
+    #
+    #     # TODO; combine to single call
+    #     self._p_death.set(p=f_mort_prob)
+    #     f_died = self._p_death.filter(female)
+    #     self._p_death.set(p=m_mort_prob)
+    #     m_died = self._p_death.filter(male)
+    #
+    #     # Need to update results here, as after remove_dead has been called the UIDs will be excluded
+    #     # TODO: consider refactoring this so deaths are handled at the end, like with other Starsim modules
+    #     self.sim.results['new_deaths'][self.ti] += len(f_died) + len(m_died)  # Track all deaths
+    #
+    #     for died in [f_died, m_died]:
+    #         self.pregnant[died] = False
+    #         self.gestation[died] = False
+    #         self.sexually_active[died] = False
+    #         self.lactating[died] = False
+    #         self.postpartum[died] = False
+    #         self.lam[died] = False
+    #         ppl.request_death(died)
+    #         ppl.step_die()  # to match the order of ops from earlier FPsim version
+    #         ppl.remove_dead()
+    #
+    #     return
 
     def check_conception(self, uids):
         """
@@ -290,9 +291,9 @@ class FPmod(ss.Module):
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity.
         # This encapsulates background factors and is experimental and tunable.
         # TODO: This is fragile. Can't multiply probabilities by arbitrary scalars.
-        preg_probs *= pars['exposure_factor']
-        preg_probs *= pars['exposure_age'][ppl.int_age_clip(active_uids)]
-        preg_probs *= pars['exposure_parity'][np.minimum(self.parity[active_uids], fpd.max_parity).astype(int)]
+        # preg_probs *= pars['exposure_factor']
+        # preg_probs *= pars['exposure_age'][ppl.int_age_clip(active_uids)]
+        # preg_probs *= pars['exposure_parity'][np.minimum(self.parity[active_uids], fpd.max_parity).astype(int)]
 
         # Use a single binomial trial to check for conception successes this month
         self._p_conceive.set(p=preg_probs)
@@ -330,7 +331,7 @@ class FPmod(ss.Module):
         """
         self.pregnant[uids] = True
         self.gestation[uids] = 1  # Start the counter at 1
-        self.dur_pregnancy[uids] = self._dur_pregnancy.rvs(uids)  # Set pregnancy duration
+        self.dur_pregnancy[uids] = self.pars.dur_pregnancy.rvs(uids)  # Set pregnancy duration
         self.reset_postpartum(uids)  # Stop lactating and postpartum status if becoming pregnant
         self.on_contra[uids] = False  # Not using contraception during pregnancy
         self.method[uids] = 0  # Method zero due to non-use
@@ -471,8 +472,8 @@ class FPmod(ss.Module):
 
             # Set durations
             will_breastfeed, wont_breastfeed = self._p_breastfeed.split(deliv)
-            self.dur_breastfeed[will_breastfeed] = self._dur_breastfeeding.rvs(will_breastfeed)  # Draw durations
-            self.dur_postpartum[deliv] = self._dur_postpartum.rvs(deliv)  # Set postpartum duration
+            self.dur_breastfeed[will_breastfeed] = self.pars.dur_breastfeeding.rvs(will_breastfeed)  # Draw durations
+            self.dur_postpartum[deliv] = self.pars.dur_postpartum.rvs(deliv)  # Set postpartum duration
 
             self.ti_contra[deliv] = ti + 1  # Trigger a call to re-evaluate whether to use contraception when 1month pp
             self.ti_delivery[deliv] = ti  # Record the time of delivery
@@ -570,10 +571,10 @@ class FPmod(ss.Module):
         ppl = self.sim.people
         self.rel_sus[:] = 0  # Reset relative susceptibility to pregnancy
 
-        # Normally SS handles deaths at end of timestep, but to match the previous version's logic, we start it here.
-        # Dead agents are removed, so we don't have to filter for alive after this.
-        alive = ppl.alive.uids
-        self.decide_death_outcome(alive)
+        # # Normally SS handles deaths at end of timestep, but to match the previous version's logic, we start it here.
+        # # Dead agents are removed, so we don't have to filter for alive after this.
+        # alive = ppl.alive.uids
+        # self.decide_death_outcome(alive)
 
         # Process delivery, including maternal and infant mortality outcomes
         self.process_delivery()  # Deliver with birth outcomes if reached pregnancy duration

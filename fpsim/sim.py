@@ -133,7 +133,7 @@ class Sim(ss.Sim):
         self.pars['connectors'] = connectors  # TODO, check this
 
         # Process demographics
-        default_deaths = fp.Deaths(data=self.data.deaths)
+        default_deaths = ss.Deaths()
         if demographics is None:
             demographics = sc.autolist()
             demographics += default_deaths
@@ -214,12 +214,9 @@ class Sim(ss.Sim):
         """ Fully initialize the Sim with modules, people and result storage"""
 
         # Load age data and create people
-        age_data = self.data.people.age_pyramid
-        total_pop = int(age_data.value.sum())
-        age_data['value'] /= sum(age_data['value'])  # Normalize the age distribution
-        people = ss.People(self.pars.n_agents, age_data=age_data)
+        people_pars = self.dataloader.data.people
+        people = fp.People(self.pars.n_agents, pars=people_pars)
         self.pars['people'] = people
-        self.pars['total_pop'] = total_pop
 
         if force or not self.initialized:
             super().init(force=force)
@@ -234,6 +231,31 @@ class Sim(ss.Sim):
         scaling_kw = dict(shape=self.t.npts, timevec=self.t.timevec, dtype=int, scale=True)
         for key in fpd.sim_results:
             self.results += ss.Result(key, label=key, **scaling_kw)
+        return
+
+    def update_mortality(self):
+        """
+        Update infant and maternal mortality for the sim's current year.
+        Update general mortality trend as this uses a spline interpolation instead of an array.
+        """
+
+        mapping = {
+            'infant_mortality': 'infant',
+            'maternal_mortality': 'maternal',
+            'stillbirth_rate': 'stillbirth',
+        }
+
+        self.pars.fp['mortality_probs'] = {}
+        for key1, key2 in mapping.items():
+            ind = sc.findnearest(self.pars.fp[key1]['year'], self.t.now('year'))
+            val = self.pars.fp[key1]['probs'][ind]
+            self.pars.fp['mortality_probs'][key2] = val
+
+        return
+
+    def start_step(self):
+        super().start_step()
+        self.update_mortality()
         return
 
     # Function to scale all y-axes in fig based on input channel
