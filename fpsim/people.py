@@ -19,7 +19,11 @@ __all__ = ['People']
 class People(ss.People):
     """
     Class for all the people in the simulation.
-    Age pyramid is a 2d array with columns: age, male count, female count
+    Inherits from starsim.People, and adds a few additional states and methods specific to family planning simulations.
+    Args:
+        n_agents (int): Number of agents to create. If None, will be set later.
+        pars (dict): Dictionary of parameters used to initialize states
+        **kwargs: Additional keyword arguments passed to the parent class initializer.
     """
 
     def __init__(self, n_agents=None, pars=None, **kwargs):

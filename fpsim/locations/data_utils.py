@@ -12,11 +12,6 @@ from fpsim import defaults as fpd
 import fpsim.shared_data as sd
 
 sd_dir = os.path.dirname(sd.__file__)  # path to the shared_data directory
-thisdir = sc.thispath(__file__)
-
-filesdir = thisdir / 'locations'
-files = sc.objdict()
-files.death = 'deaths.csv'
 
 
 # %% Housekeeping and utility functions
@@ -35,7 +30,7 @@ class DataLoader:
     def __init__(self, location):
         self.location = location
 
-        # Create a data dictionary keyed by module
+        # Create a data dictionary keyed by module / purpose
         self.data = sc.objdict(
             fp=sc.objdict(),
             edu=sc.objdict(),
