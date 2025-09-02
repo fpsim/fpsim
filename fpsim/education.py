@@ -22,6 +22,12 @@ class EduPars(ss.Pars):
         self.age_start = 6  # Age at which education starts
         self.age_stop = 25  # Age at which education stops - assumption
         self.init_dropout = ss.bernoulli(p=0)  # Initial dropout probability
+
+        # Data pars
+        self.attainment = None
+        self.objective = None
+        self.p_dropout = None
+
         self.update(kwargs)
         return
 
@@ -50,10 +56,10 @@ class Education(ss.Connector):
         self._p_dropout = ss.bernoulli(p=0)
 
         # Get data if not provided
-        if data is None:
+        if data is None and location is not None:
             dataloader = fp.get_dataloader(location)
             data = dataloader.load_edu_data()
-        self.data = data
+        self.update_pars(data)
 
         # Education states
         self.define_states(
@@ -67,10 +73,10 @@ class Education(ss.Connector):
         )
 
         # Store things that will be processed after sim initialization
-        self.attainment_data = self.data['attainment']
-        self.dropout_data = self.data['p_dropout']
+        self.attainment_data = self.pars['attainment']
+        self.dropout_data = self.pars['p_dropout']
         self._objective_dists = None
-        self.set_objective_dists(self.data['objective'])
+        self.set_objective_dists(self.pars['objective'])
 
         return
 

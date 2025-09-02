@@ -23,19 +23,18 @@ class FPmod(ss.Module):
 
     def __init__(self, pars=None, location=None, data=None, name='fp', **kwargs):
         super().__init__(name=name)
+
+        # Define parameters
         default_pars = fp.FPPars()
-        if location is not None:
-            default_pars.update_location(location)  # Update location-specific parameters
         self.define_pars(**default_pars)
         self.update_pars(pars, **kwargs)
         self.define_states(*fp.fpmod_states)
 
-        # Get data if not provided. For the FP module, all the data are just used directly as parameters
-        if data is None:
+        # Get data parameters if not provided
+        if data is None and location is not None:
             dataloader = fp.get_dataloader(location)
-            data = dataloader.load_fp_data()
-        self.data = data
-        self.pars.update(self.data)
+            data = dataloader.load_edu_data()
+        self.update_pars(data)
 
         # Distributions: binary outcomes
         self._p_fertile = ss.bernoulli(p=1-self.pars['primary_infertility'])  # Probability that a woman is fertile, i.e. 1 - primary infertility
@@ -54,11 +53,6 @@ class FPmod(ss.Module):
         def age_adjusted_non_pp_active(self, sim, uids):
             return self.pars['sexual_activity'][sim.people.int_age(uids)]
         self._p_non_pp_active = ss.bernoulli(p=age_adjusted_non_pp_active)  # Probability of being sexually active if not postpartum
-
-        # Duration distributions - TODO, move all these to parameters
-        self._dur_pregnancy = ss.uniform(low=self.pars['preg_dur_low'], high=self.pars['preg_dur_high'])
-        self._dur_breastfeeding = ss.normal(loc=self.pars['breastfeeding_dur_mean'], scale=self.pars['breastfeeding_dur_sd'])
-        self._dur_postpartum = ss.uniform(low=self.pars['postpartum_dur'], high=self.pars['postpartum_dur'])
 
         # All other distributions
         self._fated_debut = ss.choice(a=self.pars['debut_age']['ages'], p=self.pars['debut_age']['probs'])

@@ -188,6 +188,13 @@ class ContraPars(ss.Pars):
         self.prob_use_intercept = 0.0
         self.prob_use_trend_par = 0.0
 
+        # Data pars, all None by default and populated with data
+        self.age_spline = None
+        self.init_dist = None
+        self.dur_use_df = None
+        self.contra_use_pars = None
+        self.method_choice_pars = None
+
         # Settings and other misc
         self.max_dur = ss.years(100)  # Maximum duration of use in years
         self.update(kwargs)
@@ -516,36 +523,67 @@ class SimpleChoice(RandomChoice):
     either a location string or a data dictionary.
     """
     def __init__(self, pars=None, location=None, data=None, contra_mod='simple', **kwargs):
+        """
+        This module can be initialized in several different ways. The pars dictionary includes
+        all the parameters needed to run the model, some of which are location-specific and created
+        from uploaded csv files. The following options are all valid:
+        1. Provide a location string, in which case the relevant data will be loaded automatically
+        2. Provide a data dict, which will be used to update the pars dict with the data-derived pars
+        3. Provide all parameters directly in the pars dict, including the data-derived ones
+        Args:
+            pars: ContraPars object or dictionary of parameters
+            location: Location string (e.g., 'senegal') to load data from
+            data: Data dictionary, if not using location
+            contra_mod: Which contraception model to use. Default is 'simple'.
+            kwargs: Additional keyword arguments passed to the parent class
+
+        Examples:
+            # Initialize with location string
+            mod = SimpleChoice(location='senegal')
+
+            # Initialize with data dictionary
+            dataloader = fpd.get_dataloader('senegal')
+            data = dataloader.load_contra_data('simple')
+            mod = SimpleChoice(data=data)
+
+            # Initialize with all parameters directly
+            dataloader = fpd.get_dataloader('senegal')
+            data = dataloader.load_contra_data('simple')
+            pars = fp.ContraPars()
+            pars.update(data)
+            mod = SimpleChoice(pars=pars)
+
+            # Initialize implicitly within a Sim
+            sim = fp.Sim(location='senegal', contra_pars=dict(contra_mod='simple'))
+            sim.init()
+            mod = sim.connectors.contraception
+        """
+
         super().__init__(pars=pars, **kwargs)
 
-        # Checks
-        if location is not None and data is not None:
-            errormsg = 'Only one of location or data should be provided.'
-            raise ValueError(errormsg)
-
         # Get data if not provided
-        if data is None:
+        if data is None and location is not None:
             dataloader = fpd.get_dataloader(location)
             data = dataloader.load_contra_data(contra_mod)
-        self.data = data
-        self.process_data()
+        self.update_pars(data)
+        self.process_durations()
+
+        self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.pars.method_choice_pars[0].keys() if k != 'method_idx'])
 
         return
 
-    def process_data(self):
-        data = self.data
-        self.contra_use_pars = data.p_contra  # Set probability of use
-        self.method_choice_pars = data.method_choice  # Method choice
-        self.init_dist = data.init_dist
-        self._method_mix.set(p=self.init_dist)  # TODO check
-        self.dur_from_data()
+    # def process_pars(self, data):
+    #     self.pars.contra_use_pars = data.p_contra  # Set probability of use
+    #     self.method_choice_pars = data.method_choice  # Method choice
+    #     self.init_dist = data.init_dist
+    #     self._method_mix.set(p=self.init_dist)  # TODO check
+    #     self.dur_from_data()
+    #
+    #     # Handle age bins -- find a more robust way to do this
+    #     return
 
-        # Handle age bins -- find a more robust way to do this
-        self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.method_choice_pars[0].keys() if k != 'method_idx'])
-        return
-
-    def dur_from_data(self):
-        df = self.data.dur_use
+    def process_durations(self):
+        df = self.pars.dur_use_df
         for method in self.methods.values():
             if method.name == 'btl':
                 method.dur_use = ss.uniform(low=1000, high=1200)
@@ -591,7 +629,7 @@ class SimpleChoice(RandomChoice):
 
     def init_method_dist(self, uids):
         ppl = self.sim.people
-        if self.init_dist is not None:
+        if self.pars.init_dist is not None:
             choice_array = np.zeros(len(uids))
 
             # Loop over age groups and methods
@@ -619,9 +657,9 @@ class SimpleChoice(RandomChoice):
         year = self.t.year
 
         # Figure out which coefficients to use
-        if event is None : p = self.contra_use_pars[0]
-        if event == 'pp1': p = self.contra_use_pars[1]
-        if event == 'pp6': p = self.contra_use_pars[2]
+        if event is None : p = self.pars.contra_use_pars[0]
+        if event == 'pp1': p = self.pars.contra_use_pars[1]
+        if event == 'pp6': p = self.pars.contra_use_pars[2]
 
         # Initialize probability of use
         rhs = np.full_like(ppl.age[uids], fill_value=p.intercept)
@@ -675,8 +713,8 @@ class SimpleChoice(RandomChoice):
         if event == 'pp1': return self.choose_method_post_birth(uids)
 
         else:
-            if event is None:  mcp = self.method_choice_pars[0]
-            if event == 'pp6': mcp = self.method_choice_pars[6]
+            if event is None:  mcp = self.pars.method_choice_pars[0]
+            if event == 'pp6': mcp = self.pars.method_choice_pars[6]
 
             # Initialize arrays and get parameters
             choice_array = np.zeros(len(uids))
@@ -715,7 +753,7 @@ class SimpleChoice(RandomChoice):
 
     def choose_method_post_birth(self, uids, jitter=1e-4):
         ppl = self.sim.people
-        mcp = self.method_choice_pars[1]
+        mcp = self.pars.method_choice_pars[1]
         choice_array = np.zeros(len(uids))
 
         # Loop over age groups and methods
@@ -742,7 +780,6 @@ class StandardChoice(SimpleChoice):
     Contraceptive choice is based on age, education, wealth, parity, and prior use.
     """
     def __init__(self, pars=None, location=None, data=None, contra_mod='mid', **kwargs):
-        # Initialize base class - this adds parameters and default data
         super().__init__(pars=pars, location=location, data=data, contra_mod=contra_mod, **kwargs)
         return
 
@@ -754,9 +791,9 @@ class StandardChoice(SimpleChoice):
         year = self.t.year
 
         # Figure out which coefficients to use
-        if event is None : p = self.contra_use_pars[0]
-        if event == 'pp1': p = self.contra_use_pars[1]
-        if event == 'pp6': p = self.contra_use_pars[2]
+        if event is None : p = self.pars.contra_use_pars[0]
+        if event == 'pp1': p = self.pars.contra_use_pars[1]
+        if event == 'pp6': p = self.pars.contra_use_pars[2]
 
         # Initialize with intercept
         rhs = np.full_like(ppl.age[uids], fill_value=p.intercept)

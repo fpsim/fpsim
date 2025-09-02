@@ -62,21 +62,23 @@ class DataLoader:
         """
         Load data used within the FP module. All of these are stored directly as parameters
         """
-        self.data.fp.bf_stats = self.bf_stats()
-        self.data.fp.debut_age = self.debut_age()
-        self.data.fp.female_age_fecundity = self.female_age_fecundity()
-        self.data.fp.fecundity_ratio_nullip = self.fecundity_ratio_nullip()
-        self.data.fp.lactational_amenorrhea = self.lactational_amenorrhea()
-        self.data.fp.sexual_activity = self.sexual_activity()
-        self.data.fp.sexual_activity_pp = self.sexual_activity_pp()
-        self.data.fp.debut_age = self.debut_age()
-        self.data.fp.birth_spacing_pref = self.birth_spacing_pref()
-        self.data.fp.abortion_prob, self.data.fp.twins_prob = self.scalar_probs()
-        self.data.fp.age_partnership = self.age_partnership()
-        self.data.fp.maternal_mortality = self.maternal_mortality()
-        self.data.fp.infant_mortality = self.infant_mortality()
-        self.data.fp.miscarriage_rates = self.miscarriage()
-        self.data.fp.stillbirth_rate = self.stillbirth()
+        fp_data = sc.objdict()
+        fp_data.dur_breastfeeding = self.bf_stats()
+        fp_data.debut_age = self.debut_age()
+        fp_data.age_fecundity = self.female_age_fecundity()
+        fp_data.fecundity_ratio_nullip = self.fecundity_ratio_nullip()
+        fp_data.lactational_amenorrhea = self.lactational_amenorrhea()
+        fp_data.sexual_activity = self.sexual_activity()
+        fp_data.sexual_activity_pp = self.sexual_activity_pp()
+        fp_data.debut_age = self.debut_age()
+        fp_data.spacing_pref = self.birth_spacing_pref()
+        fp_data.abortion_prob, fp_data.twins_prob = self.scalar_probs()
+        fp_data.age_partnership = self.age_partnership()
+        fp_data.maternal_mortality = self.maternal_mortality()
+        fp_data.infant_mortality = self.infant_mortality()
+        fp_data.miscarriage_rates = self.miscarriage()
+        fp_data.stillbirth_rate = self.stillbirth()
+        self.data.fp = fp_data
         return
 
     def load_edu_data(self):
@@ -88,11 +90,11 @@ class DataLoader:
 
     def load_contra_data(self, contra_mod='mid'):
         """ Load data used within the Contraception module """
-        self.data.contra.p_contra = self.process_contra_use(contra_mod)
+        self.data.contra.contra_use_pars = self.process_contra_use(contra_mod)
         mc, init_dist = self.load_method_switching()
-        self.data.contra.method_choice = mc
+        self.data.contra.method_choice_pars = mc
         self.data.contra.init_dist = init_dist
-        self.data.contra.dur_use = self.load_dur_use()
+        self.data.contra.dur_use_df = self.load_dur_use()
         if contra_mod == 'mid':
             self.data.contra.age_spline = self.age_spline('25_40')
         return
@@ -137,11 +139,9 @@ class DataLoader:
     def bf_stats(self):
         """ Load breastfeeding stats """
         bf_data = self.read_data(self.location, 'bf_stats.csv')
-        bf_pars = {
-            'breastfeeding_dur_mean' : bf_data.loc[0]['value'],  # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
-            'breastfeeding_dur_sd' : bf_data.loc[1]['value']     # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
-        }
-        return bf_pars
+        bf_mean = bf_data.loc[0]['value']  # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
+        bf_sd = bf_data.loc[1]['value']     # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
+        return [bf_mean, bf_sd]
 
     def scalar_probs(self):
         """ Load abortion and twins probabilities """
