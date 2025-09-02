@@ -9,12 +9,6 @@ import fpsim.locations.data_utils as fpld
 
 # %% Parameters
 
-def scalar_pars():
-    scalar_pars = {
-    }
-    return scalar_pars
-
-
 def filenames():
     ''' Data files for use with calibration, etc -- not needed for running a sim '''
     base_dir = Path(__file__).resolve().parent / 'data'
