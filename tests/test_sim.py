@@ -137,11 +137,11 @@ def test_senegal():
 
 if __name__ == '__main__':
 
-    # sim = test_simple('senegal')
-    # s1 = test_random_choice()
-    # sims1 = test_simple_choice()
-    # sims2 = test_mid_choice()
+    sim = test_simple('senegal')
+    s1 = test_random_choice()
+    sims1 = test_simple_choice()
+    sims2 = test_mid_choice()
     test_sim_creation()
-    # exp = test_senegal()
+    # exp = test_senegal()  # NOT WORKING - need to re-enable loading of calibration data
 
     print('Done.')
