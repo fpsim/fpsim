@@ -32,12 +32,11 @@ class FPmod(ss.Module):
         # Get data parameters if not provided
         if data is None and location is not None:
             dataloader = fp.get_dataloader(location)
-            data = dataloader.load_edu_data()
+            data = dataloader.load_fp_data(return_data=True)
         self.update_pars(data)
 
         # Distributions: binary outcomes
         self._p_fertile = ss.bernoulli(p=1-self.pars['primary_infertility'])  # Probability that a woman is fertile, i.e. 1 - primary infertility
-        self._p_death = ss.bernoulli(p=0)  # Probability of death - TODO, remove?
         self._p_miscarriage = ss.bernoulli(p=0)  # Probability of miscarriage
         self._p_mat_mort = ss.bernoulli(p=0)  # Probability of maternal mortality
         self._p_inf_mort = ss.bernoulli(p=0)  # Probability of infant mortality

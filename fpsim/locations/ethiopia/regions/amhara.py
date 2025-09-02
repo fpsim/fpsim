@@ -58,47 +58,50 @@ def exposure_parity():
 
 # %% Make and validate parameters
 
-def make_pars(location='amhara', seed=None):
-    '''
-    Take all parameters and construct into a dictionary
-    '''
+def dataloader(location='amhara'):
+    return fpld.DataLoader(location=location)
 
-    # Scalar parameters and filenames
-    pars = scalar_pars()
-    pars['abortion_prob'], pars['twins_prob'] = fpld.scalar_probs('ethiopia')
-    pars.update(fpld.bf_stats(location))
-    pars['filenames'] = filenames()
-
-    # Demographics and pregnancy outcome
-    pars['age_pyramid'] = fpld.age_pyramid(location) # Addis Ababa 1994
-    pars['age_mortality'] = fpld.age_mortality('ethiopia', data_year=2020)
-    pars['urban_prop'] = fpld.urban_proportion('ethiopia')
-    pars['maternal_mortality'] = fpld.maternal_mortality('ethiopia')
-    pars['infant_mortality'] = fpld.infant_mortality('ethiopia')
-    pars['miscarriage_rates'] = fpld.miscarriage()
-    pars['stillbirth_rate'] = fpld.stillbirth('ethiopia')
-
-    # Fecundity
-    pars['age_fecundity'] = fpld.female_age_fecundity()
-    pars['fecundity_ratio_nullip'] = fpld.fecundity_ratio_nullip()
-    pars['lactational_amenorrhea'] = fpld.lactational_amenorrhea(location) # From DHS 2016
-
-    # Pregnancy exposure
-    pars['sexual_activity'] = fpld.sexual_activity(location) # From DHS 2016
-    pars['sexual_activity_pp'] = fpld.sexual_activity_pp(location) # From DHS 2016
-    pars['debut_age'] = fpld.debut_age(location) # From DHS 2016
-    pars['exposure_age'] = exposure_age()
-    pars['exposure_parity'] = exposure_parity()
-    pars['spacing_pref'] = fpld.birth_spacing_pref(location)
-
-    # Contraceptive methods
-    pars['mcpr'] = fpld.mcpr(location)
-
-    #TODO: The latest version of FPsim uses age_partnership and wealth_quintile which these region files don't incorporate;
-    # could possibly retrieve this data regionally?
-
-    # Demographics: partnership and wealth status
-    pars['age_partnership'] = fpld.age_partnership('ethiopia')
-    pars['wealth_quintile'] = fpld.wealth('ethiopia')
-
-    return pars
+# def make_pars(location='amhara', seed=None):
+#     '''
+#     Take all parameters and construct into a dictionary
+#     '''
+#
+#     # Scalar parameters and filenames
+#     pars = scalar_pars()
+#     pars['abortion_prob'], pars['twins_prob'] = fpld.scalar_probs('ethiopia')
+#     pars.update(fpld.bf_stats(location))
+#     pars['filenames'] = filenames()
+#
+#     # Demographics and pregnancy outcome
+#     pars['age_pyramid'] = fpld.age_pyramid(location) # Addis Ababa 1994
+#     pars['age_mortality'] = fpld.age_mortality('ethiopia', data_year=2020)
+#     pars['urban_prop'] = fpld.urban_proportion('ethiopia')
+#     pars['maternal_mortality'] = fpld.maternal_mortality('ethiopia')
+#     pars['infant_mortality'] = fpld.infant_mortality('ethiopia')
+#     pars['miscarriage_rates'] = fpld.miscarriage()
+#     pars['stillbirth_rate'] = fpld.stillbirth('ethiopia')
+#
+#     # Fecundity
+#     pars['age_fecundity'] = fpld.female_age_fecundity()
+#     pars['fecundity_ratio_nullip'] = fpld.fecundity_ratio_nullip()
+#     pars['lactational_amenorrhea'] = fpld.lactational_amenorrhea(location) # From DHS 2016
+#
+#     # Pregnancy exposure
+#     pars['sexual_activity'] = fpld.sexual_activity(location) # From DHS 2016
+#     pars['sexual_activity_pp'] = fpld.sexual_activity_pp(location) # From DHS 2016
+#     pars['debut_age'] = fpld.debut_age(location) # From DHS 2016
+#     pars['exposure_age'] = exposure_age()
+#     pars['exposure_parity'] = exposure_parity()
+#     pars['spacing_pref'] = fpld.birth_spacing_pref(location)
+#
+#     # Contraceptive methods
+#     pars['mcpr'] = fpld.mcpr(location)
+#
+#     #TODO: The latest version of FPsim uses age_partnership and wealth_quintile which these region files don't incorporate;
+#     # could possibly retrieve this data regionally?
+#
+#     # Demographics: partnership and wealth status
+#     pars['age_partnership'] = fpld.age_partnership('ethiopia')
+#     pars['wealth_quintile'] = fpld.wealth('ethiopia')
+#
+#     return pars

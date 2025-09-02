@@ -564,7 +564,7 @@ class SimpleChoice(RandomChoice):
         # Get data if not provided
         if data is None and location is not None:
             dataloader = fpd.get_dataloader(location)
-            data = dataloader.load_contra_data(contra_mod)
+            data = dataloader.load_contra_data(contra_mod, return_data=True)
         self.update_pars(data)
         self.process_durations()
 

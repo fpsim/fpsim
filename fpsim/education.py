@@ -57,7 +57,7 @@ class Education(ss.Connector):
         # Get data if not provided
         if data is None and location is not None:
             dataloader = fp.get_dataloader(location)
-            data = dataloader.load_edu_data()
+            data = dataloader.load_edu_data(return_data=True)
         self.update_pars(data)
 
         # Education states
