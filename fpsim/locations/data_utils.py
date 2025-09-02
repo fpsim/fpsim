@@ -53,7 +53,7 @@ class DataLoader:
         else:
             return
 
-    def load_fp_data(self):
+    def load_fp_data(self, return_data=False):
         """
         Load data used within the FP module. All of these are stored directly as parameters
         """
@@ -75,38 +75,61 @@ class DataLoader:
         fp_data.infant_mortality = self.infant_mortality()
         fp_data.miscarriage_rates = self.miscarriage()
         fp_data.stillbirth_rate = self.stillbirth()
-        self.data.fp = fp_data
-        return
+        if return_data:
+            return fp_data
+        else:
+            self.data.fp = fp_data
+            return
 
-    def load_edu_data(self):
+    def load_edu_data(self, return_data=False):
         """ Load data used within the Education module """
-        self.data.edu.objective = self.education_objective()
-        self.data.edu.attainment = self.education_attainment()
-        self.data.edu.p_dropout = self.education_dropout_probs()
-        return
+        edu_data = sc.objdict()
+        edu_data.objective = self.education_objective()
+        edu_data.attainment = self.education_attainment()
+        edu_data.p_dropout = self.education_dropout_probs()
+        if return_data:
+            return edu_data
+        else:
+            self.data.edu = edu_data
+            return
 
-    def load_contra_data(self, contra_mod='mid'):
+    def load_contra_data(self, contra_mod='mid', return_data=False):
         """ Load data used within the Contraception module """
-        self.data.contra.contra_use_pars = self.process_contra_use(contra_mod)
+        contra_data = sc.objdict()
+        contra_data.contra_use_pars = self.process_contra_use(contra_mod)
         mc, init_dist = self.load_method_switching()
-        self.data.contra.method_choice_pars = mc
-        self.data.contra.init_dist = init_dist
-        self.data.contra.dur_use_df = self.load_dur_use()
+        contra_data.method_choice_pars = mc
+        contra_data.init_dist = init_dist
+        contra_data.dur_use_df = self.load_dur_use()
         if contra_mod == 'mid':
-            self.data.contra.age_spline = self.age_spline('25_40')
-        return
+            contra_data.age_spline = self.age_spline('25_40')
+        if return_data:
+            return contra_data
+        else:
+            self.data.contra = contra_data
+            return
 
-    def load_death_data(self):
+    def load_death_data(self, return_data=False):
         """ Load death data used within the Death module """
-        self.data.deaths.age_mortality = self.age_mortality(data_year=2010)
-        return
+        deaths_data = sc.objdict()
+        deaths_data.age_mortality = self.age_mortality(data_year=2010)
+        if return_data:
+            return deaths_data
+        else:
+            self.data.deaths = deaths_data
+            return
 
-    def load_people_data(self):
+    def load_people_data(self, return_data=False):
         """ Load data used for initializing people """
-        self.data.people.wealth_quintile = self.wealth()
-        self.data.people.urban_prop = self.urban_proportion()
-        self.data.people.age_pyramid = self.age_pyramid()
-        return
+        people_data = sc.objdict()
+        people_data.wealth_quintile = self.wealth()
+        people_data.urban_prop = self.urban_proportion()
+        people_data.age_pyramid = self.age_pyramid()
+        if return_data:
+            return people_data
+        else:
+            self.data.people = people_data
+            return
 
     def read_data(self, location, filename, **kwargs):
         # Obtain base path from location filenames
