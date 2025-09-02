@@ -2,6 +2,7 @@ from .version import __version__, __versiondate__
 from .settings import *
 from .utils import *
 from .defaults import *
+from .demographics import *
 from .fpmod import *
 from .parameters import *
 from .people import *

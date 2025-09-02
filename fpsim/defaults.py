@@ -6,6 +6,7 @@ Define defaults for use throughout FPsim
 import numpy as np
 import sciris as sc
 import starsim as ss
+import fpsim
 import fpsim.arrays as fpa
 
 
@@ -27,20 +28,16 @@ valid_region_locs = {
 
 # Parse locations
 def get_location(location, printmsg=False):
-    if not location or location.lower() in ['test', 'tests', 'default']:
-        location = 'test'
-        if printmsg: print('Location not supplied: using default test parameters')
-    else:
-        location = location.lower()  # Ensure it's lowercase
+    location = location.lower()  # Ensure it's lowercase
 
-        # External locations override internal ones
-        if location in location_registry:
-            return location
+    # External locations override internal ones
+    if location in location_registry:
+        return location
 
-        # Define valid locations
-        if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
-            errormsg = f'Location "{location}" is not currently supported'
-            raise NotImplementedError(errormsg)
+    # Define valid locations
+    if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
+        errormsg = f'Location "{location}" is not currently supported'
+        raise NotImplementedError(errormsg)
 
     return location
 
@@ -53,24 +50,12 @@ def get_dataloader(location):
 
     # Use external registry for locations first
     if location in location_registry:
-        location_module = location_registry[location]
+        dataloader = location_registry[location]
     elif hasattr(fplocs, location):
-        location_module = getattr(fplocs, location).dataloader()
+        dataloader = getattr(fplocs, location).dataloader()
     else:
-        raise NotImplementedError(f'Could not find location module for {location}')
-    return location_module
-
-
-# Register custom location (for external users)
-def register_location(name, location_ref):
-    """
-    Register a custom location, either a function (make_pars) or a module (with make_pars + data_utils).
-    """
-    if callable(location_ref):
-        # wrap into a fake module-like object with just make_pars
-        location_ref = type('LocationStub', (), {'make_pars': location_ref})()
-
-    location_registry[name.lower()] = location_ref
+        raise NotImplementedError(f'Could not find dataloader for {location}')
+    return dataloader
 
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
