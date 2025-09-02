@@ -57,7 +57,6 @@ def exposure_parity():
     return exposure_parity_interp
 
 # %% Make and validate parameters
-
 def dataloader(location='amhara'):
     return fpld.DataLoader(location=location)
 
