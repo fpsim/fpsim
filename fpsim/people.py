@@ -22,26 +22,27 @@ class People(ss.People):
     Age pyramid is a 2d array with columns: age, male count, female count
     """
 
-    def __init__(self, n_agents=None, age_pyramid=None, **kwargs):
+    def __init__(self, n_agents=None, pars=None, **kwargs):
 
         # Person defaults
         self.person_defaults = [
             ss.BoolState('partnered', default=False),  # Will remain at these values if use_partnership is False
             ss.FloatArr('partnership_age', default=-1),  # Will remain at these values if use_partnership is False
-            ss.BoolState('urban', default=True),  # Urban/rural
-            ss.FloatArr('wealthquintile', default=3),  # Wealth quintile
+            ss.BoolState('urban', default=ss.bernoulli(p=0.5)),  # Urban/rural
+            ss.FloatArr('wealthquintile', default=ss.choice(a=5)),  # Wealth quintile
         ]
 
         # Process age/sex data
-        ages = age_pyramid[:, 0]
-        age_counts = age_pyramid[:, 1] + age_pyramid[:, 2]
+        ages = pars['age_pyramid'][:, 0]
+        age_counts = pars['age_pyramid'][:, 1] + pars['age_pyramid'][:, 2]
         age_data = np.array([ages, age_counts]).T
-        f_frac = age_pyramid[:, 2].sum() / age_pyramid[:, 1:3].sum()
+        f_frac = pars['age_pyramid'][:, 2].sum() / pars['age_pyramid'][:, 1:3].sum()
 
         # Initialization
         super().__init__(n_agents, age_data, extra_states=self.person_defaults, **kwargs)
         self.female.default.set(p=f_frac)
-        self.binom = ss.bernoulli(p=0.5)
+        self.set_urban(pars)
+        self.set_wealthquintile(pars)
 
         return
 
@@ -53,12 +54,6 @@ class People(ss.People):
 
         if uids is None:
             uids = self.alive.uids
-
-        _urban = self.init_urban(uids)
-
-        # Initialize sociodemographic states
-        self.urban[_urban] = True
-        self.init_wealthquintile(uids)
 
         # Partnership
         if fp_pars['use_partnership']:
@@ -77,21 +72,21 @@ class People(ss.People):
     def parity(self):
         return self.sim.connectors.fp.parity  # TODO, fix
 
-    def init_urban(self, uids):
+    def set_urban(self, pars):
         """ Get initial distribution of urban """
-        urban_prop = self.sim.pars.fp['urban_prop']
-        self.binom.set(p=urban_prop)  # Set the probability of being urban
-        urban = self.binom.filter(uids)
-        return urban
-
-    def init_wealthquintile(self, uids):
-        wq = self.sim.pars.fp['wealth_quintile']
-        if wq is None:
+        if pars.get('urban_prop') is None:
             return
+        urban_prop = pars['urban_prop']
+        self.urban.default.set(p=urban_prop)
+        return
+
+    def set_wealthquintile(self, pars):
+        if pars.get('wealth_quintile') is None:
+            return
+        wq = pars['wealth_quintile']
+        wq_quintiles = wq['quintile']
         wq_probs = wq['percent']
-        wq_choice = ss.choice(a=len(wq_probs), p=wq_probs, strict=False)
-        vals = wq_choice.rvs(len(uids))+1
-        self.wealthquintile[uids] = vals
+        self.wealthquintile.default.set(p=wq_probs, a=wq_quintiles)
         return
 
     def update_age_bin_totals(self, uids):
