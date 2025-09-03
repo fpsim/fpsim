@@ -169,10 +169,10 @@ def plot_asfr(sim, ax=None):
     # Extract ASFR from simulation results
     x_labels = [int(i.split('-')[0]) for i in data_agerange_cols]
     asfr_model = sim.connectors.fp.asfr[2:-1, -1]
-    
+
     # Compute mean-normalized RMSE
     rmse_scores['asfr'] = compute_rmse(asfr_model, asfr_data)
-    
+
     # Determine axis setup
     save_individual = False
     if ax is None:
@@ -422,31 +422,31 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     # Compute mean-normalized RMSE
     rmse_scores['cpr'] = compute_rmse(model_values, data_values)
 
-    # Normalize pandas datetime year data types
-    res['timevec'] = pd.Series(res['timevec'].to_numpy())
-    res['timevec'] = pd.to_datetime(res['timevec']).dt.date
-    data_cpr['year'] = pd.to_datetime(data_cpr['year'], format="%Y").dt.date
-    
-    # Plot 
-    fig, ax = pl.subplots()
-    pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
-    pl.plot(res['timevec'], res.contraception.cpr * 100, label='FPsim', color='cornflowerblue')
-    pl.xlabel('Year')
-    pl.ylabel('Percent')
-    pl.xticks(rotation=45)
+    # Data to plot
+    plot_data = data_cpr.loc[data_cpr.year >= start_year]
+    si = sc.findfirst(res['timevec'] >= start_year)
+
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
+
+    # Plot
+    ax.plot(plot_data['year'], plot_data['cpr'], label='UN Data Portal', color='black')
+    ax.plot(res['timevec'][si:].years, res.contraception.mcpr[si:] * 100, label='FPsim', color='cornflowerblue')
+    ax.set_xlabel('Year')
+    ax.set_ylabel('Percent')
     if Config.show_rmse is True:
         pl.title(f"Contraceptive Prevalence Rate - Model vs Data\n(RMSE: {rmse_scores['cpr']:.2f})")
     else:
         pl.title(f'Contraceptive Prevalence Rate - Model vs Data')
     pl.legend()
 
-    save_figure('cpr.png')
-    if Config.do_show:
-        pl.show()
-
+    if save_individual: save_figure('cpr.png')
+    if Config.do_show: pl.show()
     return ax
-    
-    
+
 
 def plot_tfr(sim, ax=None, start_year=1990, stop_year=2020, legend_kwargs={}):
     """
