@@ -8,6 +8,10 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :local:
    :depth: 1
 
+Version 3.3.1 (2025-09-05)
+---------------------------
+Minor bugfix in plotting.plot_calib(). Fixes x axis units for MCPR plot and reenables ASFR plot.
+
 Version 3.2.0 (2025-08-15)
 ---------------------------
 
