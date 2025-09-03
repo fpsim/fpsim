@@ -8,7 +8,6 @@ import sciris as sc
 import yaml
 import fpsim as fp
 from scipy import interpolate as si
-import starsim as ss
 from fpsim import defaults as fpd
 import fpsim.shared_data as sd
 from pathlib import Path
@@ -613,45 +612,39 @@ def process_dur_use(methods, location, df=None):
 
     for method in methods.values():
         if method.name == 'btl':
-            method.dur_use = ss.uniform(low=1000, high=1200)
+            method.dur_use = dict(dist='unif', par1=1000, par2=1200)
         else:
             mlabel = method.csv_name
 
             thisdf = df.loc[df.method == mlabel]
             dist = thisdf.functionform.iloc[0]
+            method.dur_use = dict()
             age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
-            
-            # Get age factors if they exist for this distribution
-            age_factors = None
-            if age_ind is not None and age_ind < len(thisdf.estimate.values):
-                age_factors = thisdf.estimate.values[age_ind:]
+            method.dur_use['age_factors'] = thisdf.estimate.values[age_ind:]
 
             if dist in ['lognormal', 'lnorm']:
-                par1 = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
-                par2 = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
-
+                method.dur_use['dist'] = 'lognormal_sps'
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
+                method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
             elif dist in ['gamma']:
-                par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
-                par2 = thisdf.estimate[thisdf.coef == 'rate'].values[0]   # rate parameter (log space)
-
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'rate'].values[0]
             elif dist == 'llogis':
-                par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
-                par2 = thisdf.estimate[thisdf.coef == 'scale'].values[0]  # scale parameter (log space)
-
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
             elif dist == 'weibull':
-                par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
-                par2 = thisdf.estimate[thisdf.coef == 'scale'].values[0]  # scale parameter (log space)
-
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'shape'].values[0]
+                method.dur_use['par2'] = thisdf.estimate[thisdf.coef == 'scale'].values[0]
             elif dist == 'exponential':
-                par1 = thisdf.estimate[thisdf.coef == 'rate'].values[0]   # rate parameter (log space)
-
+                method.dur_use['dist'] = dist
+                method.dur_use['par1'] = thisdf.estimate[thisdf.coef == 'rate'].values[0]
+                method.dur_use['par2'] = None
             else:
                 errormsg = f"Duration of use distribution {dist} not recognized"
                 raise ValueError(errormsg)
-
-            method.set_dur_use(dist_type=dist,
-                               par1=par1, par2=par2,
-                               age_factors=age_factors)
 
     return methods
 

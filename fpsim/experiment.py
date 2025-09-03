@@ -283,7 +283,7 @@ class Experiment(sc.prettyobj):
 
         # Extract birth spaces and age at first birth from data
         for i, j in data_spaces.iterrows():
-            space = j['space_mo'] / fpd.mpy # Convert months to years
+            space = j['space_mo'] / fpd.mpy
             ind = sc.findinds(space > spacing_bins[:])[-1]
             data_spacing_counts[ind] += j['Freq']
 

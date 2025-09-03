@@ -154,7 +154,7 @@ def test_durations(location=None):
 
     pars, choice, edu = make_sim_parts(location=location)
     short_choice = sc.dcp(choice)
-    for m in short_choice.methods.values(): m.dur_use = ss.uniform(low=1, high=2)
+    for m in short_choice.methods.values(): m.dur_use = dict(dist='unif', par1=1, par2=2)
     sim_short = fp.Sim(
         pars=pars, contraception_module=short_choice, education_module=edu,
         label='Short durations')
@@ -175,7 +175,7 @@ def test_durations(location=None):
 
 if __name__ == '__main__':
 
-    sims1 = test_mcpr(location='ethiopia', do_plot=False)
+    sims1 = test_mcpr(location='ethiopia', do_plot=True)
     sims2 = test_durations()
 
     print('Done.')

@@ -64,11 +64,11 @@ class Education(ss.Connector):
         self.define_states(
             ss.FloatArr('objective'),  # Education objectives
             ss.FloatArr('attainment', default=0),  # Education attainment - initialized as 0, reset if data provided
-            ss.BoolState('started', default=False),  # Whether education has been started
-            ss.BoolState('in_school'),  # Currently in school
-            ss.BoolState('completed'),  # Whether education is completed
-            ss.BoolState('dropped'),  # Whether education was dropped
-            ss.BoolState('interrupted', default=False),
+            ss.State('started', default=False),  # Whether education has been started
+            ss.State('in_school'),  # Currently in school
+            ss.State('completed'),  # Whether education is completed
+            ss.State('dropped'),  # Whether education was dropped
+            ss.State('interrupted', default=False),
         )
 
         # Store things that will be processed after sim initialization
@@ -178,7 +178,7 @@ class Education(ss.Connector):
         return
 
     def step(self):
-        self.init_objectives(upper_age=self.t.dt.years)  # set objectives for new agents
+        self.init_objectives(upper_age=self.t.dt)  # set objectives for new agents
 
         # All updates for education. Note, these are done in a particular order!
         self.start_education()      # Check if anyone needs to start school
@@ -279,7 +279,6 @@ class Education(ss.Connector):
 
     def update_results(self):
         """ Update results for education module """
-        super().update_results()
         ppl = self.sim.people
         f = ppl.female & (ppl.age >= 15)
         self.results.mean_attainment[self.ti] = np.mean(self.attainment[f])

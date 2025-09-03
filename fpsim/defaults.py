@@ -66,21 +66,21 @@ def register_location(name, location_ref):
 # or updated during the course of a simulation.
 fpmod_states = [
     # Contraception
-    ss.BoolState('on_contra', default=False),  # whether she's on contraception
-    ss.IntArr('method', default=0),  # Which method to use. 0 used for those on no method
+    ss.State('on_contra', default=False),  # whether she's on contraception
+    ss.FloatArr('method', default=0),  # Which method to use. 0 used for those on no method
     ss.FloatArr('ti_contra', default=0),  # time point at which to set method
     ss.FloatArr('barrier', default=0),
-    ss.BoolState('ever_used_contra', default=False),  # Ever been on contraception. 0 for never having used
+    ss.State('ever_used_contra', default=False),  # Ever been on contraception. 0 for never having used
     ss.FloatArr('rel_sus', default=0),  # Relative susceptibility to pregnancy, set to 1 for active fecund women
 
     # Sexual and reproductive states, all False by default and set during simulation
-    ss.BoolState('lam'),
-    ss.BoolState('pregnant'),
-    ss.BoolState('fertile'),
-    ss.BoolState('sexually_active'),
-    ss.BoolState('sexual_debut'),
-    ss.BoolState('lactating'),
-    ss.BoolState('postpartum'),
+    ss.State('lam'),
+    ss.State('pregnant'),
+    ss.State('fertile'),
+    ss.State('sexually_active'),
+    ss.State('sexual_debut'),
+    ss.State('lactating'),
+    ss.State('postpartum'),
 
     # Ages of key events
     ss.FloatArr('sexual_debut_age', default=-1),
@@ -131,7 +131,7 @@ fpmod_states = [
     fpa.TwoDimensionalArr('miscarriage_ages', ncols=max_parity),  # Ages at time of miscarriages
     fpa.TwoDimensionalArr('abortion_ages', ncols=max_parity),  # Ages at time of abortions
 
-    ss.BoolState('partnered', default=False),  # Will remain at these values if use_partnership is False
+    ss.State('partnered', default=False),  # Will remain at these values if use_partnership is False
     ss.FloatArr('partnership_age', default=-1),  # Will remain at these values if use_partnership is False
     # ss.State('urban', default=True),  # Urban/rural
     # ss.FloatArr('wealthquintile', default=3),  # Wealth quintile

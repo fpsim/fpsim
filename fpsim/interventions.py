@@ -88,7 +88,7 @@ class change_par(ss.Intervention):
         self.counter = 0
         self.inds = sc.autolist()
         for y in years:
-            self.inds += sc.findnearest(sim.t.yearvec, y)
+            self.inds += sc.findnearest(sim.timevec, y)
 
         # Store original value
         self.orig_val = sc.dcp(sim.pars.fp[self.par])
@@ -118,7 +118,6 @@ class change_par(ss.Intervention):
         if n_counter != n_vals:
             errormsg = f'Not all values were applied ({n_vals} ≠ {n_counter})'
             raise RuntimeError(errormsg)
-        super().finalize()
         return
 
 
@@ -352,8 +351,8 @@ class change_initiation_prob(ss.Intervention):
         return
 
     def init_pre(self, sim=None):
-        super().init_pre(sim)
-        # self._validate()
+        super().initialize()
+        self._validate()
         if isinstance(sim.people.contraception_module, (fpm.SimpleChoice)):
             self.par_name = 'prob_use_intercept'
 
@@ -419,7 +418,7 @@ class change_initiation(ss.Intervention):
         return
 
     def init_pre(self, sim=None):
-        super().init_pre(sim)
+        super().initialize()
 
         # Lastly, adjust the probability by the sim's timestep, if it's an annual probability
         if self.annual:

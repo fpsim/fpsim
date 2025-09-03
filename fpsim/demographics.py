@@ -6,9 +6,16 @@ age at first partnership.
 # %% Imports
 import numpy as np  # Needed for a few things not provided by pl
 import sciris as sc
+from . import utils as fpu
 
 
 # %% Initialization methods
+def init_urban_states(ppl):
+    """Demographics on whether a person lives in a rural or urban setting"""
+    # Get init vals and populate state in one step
+    ppl.urban = get_urban_init_vals(ppl)
+
+
 def init_partnership_states(ppl):
     """Demographics on whether a person is in a partnership, and their expected age at first partnership in a rural or urban setting"""
 
@@ -18,6 +25,22 @@ def init_partnership_states(ppl):
     # Populate states
     ppl.partnered = partnered
     ppl.partnership_age = partnership_age
+
+
+def get_urban_init_vals(ppl, urban_prop=None):
+    """ Get initial distribution of urban """
+
+    n = len(ppl)
+    urban = np.ones(n, dtype=bool)
+
+    if urban_prop is None:
+        if ppl.pars['urban_prop'] is not None:
+            urban_prop = ppl.pars['urban_prop']
+
+    if urban_prop is not None:
+        urban = fpu.n_binomial(urban_prop, n)
+
+    return urban
 
 
 def get_partnership_init_vals(ppl):
