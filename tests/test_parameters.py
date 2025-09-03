@@ -11,7 +11,7 @@ import starsim as ss
 import types
 import fpsim.defaults as fpd
 
-do_plot = True
+do_plot = False
 sc.options(backend='agg') # Turn off interactive plots
 
 def ok(string):
