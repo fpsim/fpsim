@@ -35,6 +35,11 @@ Version 3.4.0 (2025-09-08)
 TBC
 
 
+Version 3.3.2 (2025-09-05)
+---------------------------
+Minor bugfix in plotting.plot_calib(). Fixes x axis units for MCPR plot and reenables ASFR plot.
+
+
 Version 3.3.1 (2025-08-28)
 ---------------------------
 Minor release to add missing changelog.
