@@ -48,10 +48,11 @@ dat_nonmiss <- dhs_data %>%
   gather(var, val, -v005, -v021, -v023, -caseid) %>% separate(var, into = c("var", "birth")) %>% mutate(birth = as.numeric(birth)) %>% spread(var, val) %>%
   mutate(age_months = as.numeric(b19), # ensure age is numeric
          wt = v005/1e6, # calucalte survey weight
-         still_bf = ifelse(m4 == "still breastfeeding", 1, 0), # create indicator for still breastfeeding
+         still_bf = ifelse(m4 == 95 | m4 == "still breastfeeding", 1, 0), # create indicator for still breastfeeding, 'still breastfeeding' is numeric code = 95
          age_grp = floor(age_months / 2) * 2) %>% # 2 month age bins (it's too noisy with individual age bins)
   filter(age_months < 36 & !is.na(m4))  # include babies less than 3 years old and non-missing data
-print(dat_nonmiss)
+#print(dat_nonmiss)
+
 # -------------------------------
 # 3. Calculate Survey-Weighted BF Proportions
 # -------------------------------
@@ -63,14 +64,15 @@ summary_table <- svyby(~still_bf, ~age_grp,
   arrange(age_grp) %>% mutate(p_stop = lag(still_bf) - still_bf,  # estimate of stopping probability, basically the PDF
                               counts = ifelse(p_stop<0, 0, round(p_stop*10000))) %>% # create pseudo-counts to simulate a sample size, change and negatives to 0
   filter(!is.na(p_stop)) # remove month 0
-print(summary_table)
+#print(summary_table)
+
 # -------------------------------
 # 4. Fit Truncated Normal Distribution
 # -------------------------------
 
 # Create a vector of repeated ages
 ages_rep <- rep(summary_table$age_grp, summary_table$counts)
-print(ages_rep)
+#print(ages_rep)
 # Fit truncated normal distribution
 fit_tnorm <- fitdist(ages_rep, "norm", start = list(mean = mean(ages_rep), sd = sd(ages_rep)))
 summary(fit_tnorm)
