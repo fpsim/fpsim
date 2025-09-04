@@ -23,6 +23,7 @@ rmse_scores = {}
 class Config:
     """Configuration for plots"""
     do_save = True
+    do_show = True
     show_rmse = True
     _figs_directory = 'figures'
 
@@ -101,7 +102,7 @@ class Config:
 def save_figure(filename):
     """Helper function to save a figure if saving is enabled."""
     if Config.do_save:
-        sc.savefig(f"{Config.get_figs_directory()}/{filename}")
+        sc.savefig(f"{Config.get_figs_directory()}/{filename}", bbox_inches='tight')
 
 def compute_rmse(model_vals, data_vals):
     """
@@ -152,7 +153,8 @@ def plot_cpr_by_age(sim):
     ax.set_ylabel('CPR')
     ax.set_title('CPR')
     save_figure('cpr_by_age.png')
-    pl.show()
+    if Config.do_show:
+        pl.show()
 
 
 def plot_asfr(sim):
@@ -189,7 +191,8 @@ def plot_asfr(sim):
     sc.boxoff()
 
     save_figure('asfr.png')
-    pl.show()
+    if Config.do_show:
+        pl.show()
 
 
 def plot_methods(sim):
@@ -270,7 +273,8 @@ def plot_methods(sim):
 
     pl.tight_layout()
     save_figure('method_mix.png')
-    pl.show()
+    if Config.do_show:
+        pl.show()
 
     # Plot data_use
     ax = df_use.plot.barh(color={'PMA': 'black', 'FPsim': 'cornflowerblue'})
@@ -282,7 +286,8 @@ def plot_methods(sim):
 
     pl.tight_layout()
     save_figure('method_use.png')
-    pl.show()
+    if Config.do_show:
+        pl.show()
 
 
 def plot_ageparity(sim):
@@ -350,7 +355,8 @@ def plot_ageparity(sim):
         pl.draw()
 
         save_figure(f'ageparity_{key.lower()}.png')
-        pl.show()
+        if Config.do_show:
+            pl.show()
 
 
 def plot_cpr(sim):
@@ -371,6 +377,7 @@ def plot_cpr(sim):
     rmse_scores['cpr'] = compute_rmse(model_values, data_values)
 
     # Plot
+    fig, ax = pl.subplots()
     pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
     pl.plot(res['timevec'], res.contraception.cpr * 100, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
@@ -382,8 +389,8 @@ def plot_cpr(sim):
     pl.legend()
 
     save_figure('cpr.png')
-    pl.show()
-
+    if Config.do_show:
+        pl.show()
 
 def plot_tfr(sim):
     """
@@ -403,6 +410,7 @@ def plot_tfr(sim):
     rmse_scores['tfr'] = compute_rmse(model_tfr_values, data_tfr_values)
 
     # Plot
+    fig, ax = pl.subplots()
     pl.plot(data_tfr['year'], data_tfr['tfr'], label='World Bank', color='black')
     pl.plot(df.index, df.tfr, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
@@ -411,10 +419,11 @@ def plot_tfr(sim):
         pl.title(f"Total Fertility Rate - Model vs Data\n(RMSE: {rmse_scores['tfr']:.2f})")
     else:
         pl.title(f'Total Fertility Rate - Model vs Data')
-    pl.legend()
+    pl.legend(fontsize=8)
 
     save_figure('tfr.png')
-    pl.show()
+    if Config.do_show:
+        pl.show()
 
 
 def plot_pop_growth(sim):
@@ -434,6 +443,7 @@ def plot_pop_growth(sim):
     data_growth_rate = pop_growth_rate(data_pop_years, data_population)
 
     # Plot
+    fig, ax = pl.subplots()
     pl.plot(data_pop_years[1:], data_growth_rate, label='World Bank', color='black')
     pl.plot(res.fp.timevec[1:], model_growth_rate, label='FPsim', color='cornflowerblue')
     pl.xlabel('Year')
@@ -442,7 +452,8 @@ def plot_pop_growth(sim):
     pl.legend()
 
     save_figure('popgrowth.png')
-    pl.show()
+    if Config.do_show:
+        pl.show()
 
 
 def plot_afb(sim):
@@ -473,6 +484,7 @@ def plot_afb(sim):
     rmse_scores['afb'] = compute_rmse(model_hist, data_hist)
 
     # Plot
+    fig, ax = pl.subplots()
     sns.histplot(model_afb, stat='proportion', kde=True, binwidth=1, color='cornflowerblue', label='FPsim')
     sns.histplot(x=data_afb_vals, stat='proportion', kde=True, weights=data_afb_weights,
                  binwidth=1, color='dimgrey', label='DHS data')
@@ -484,7 +496,8 @@ def plot_afb(sim):
     pl.legend()
 
     save_figure('age_first_birth.png')
-    pl.show()
+    if Config.do_show:
+        pl.show()
 
 
 def plot_birth_spacing(sim):
@@ -548,8 +561,8 @@ def plot_birth_spacing(sim):
         ax.set_title('Birth Spacing - Model vs Data')
 
     save_figure('birth_spacing_bins.png')
-    pl.show()
-
+    if Config.do_show:
+        pl.show()
 
 def plot_paid_work(sim, data_employment):
     """
@@ -629,7 +642,8 @@ def plot_paid_work(sim, data_employment):
     ax.legend()
 
     save_figure('paid_employment.png')
-    pl.show()
+    if Config.do_show:
+        pl.show()
 
 
 def plot_education(sim):
@@ -698,7 +712,8 @@ def plot_education(sim):
     ax.legend()
 
     save_figure('education.png')
-    pl.show()
+    if Config.do_show:
+        pl.show()
 
 
 def plot_all(sim):
