@@ -3,14 +3,6 @@ Script to create a calibrated model of Niger.
 Run the model and generate plots showing the
 discrepancies between the model and data.
 """
-import numpy as np
-import fpsim as fp
-import pandas as pd
-import sciris as sc
-import starsim as ss
-import matplotlib.pyplot as pl
-from fpsim import plotting as fpplt
-
 import sys
 sys.path.insert(0, '/Users/')
 sys.path.insert(0, '/Users/laurynbruce/')
@@ -23,6 +15,15 @@ sys.path.insert(0, '/Users/laurynbruce/Documents/Lauryn_Bruce/UCSD/research/Gate
 sys.path.insert(0, '/Users/laurynbruce/Documents/Lauryn_Bruce/UCSD/research/Gates/project/fpsim/')
 sys.path.insert(0, '/Users/laurynbruce/Documents/Lauryn_Bruce/UCSD/research/Gates/project/fpsim/fpsim/')
 
+import numpy as np
+import fpsim as fp
+import pandas as pd
+import sciris as sc
+import starsim as ss
+import matplotlib.pyplot as pl
+from fpsim import plotting as fpplt
+
+
 # Settings
 country = 'niger'
 fpplt.Config.set_figs_directory('figures/')
@@ -33,6 +34,7 @@ fpplt.Config.show_rmse = False
 
 def make_pars():
     pars = fp.make_fp_pars()  # For default pars
+    print(pars)
     pars.update_location(country)
 
     # Modify individual fecundity and exposure parameters
@@ -42,37 +44,45 @@ def make_pars():
     pars['exposure_factor'] = 1
     
     # Adjust contraceptive choice parameters
-    pars['prob_use_year'] = 2020  # Base year
-    pars['prob_use_trend_par'] = 0.06  # Time trend in contraceptive use - adjust this to get steeper/slower trend
-    pars['prob_use_intercept'] = 0.015  # Intercept for the probability of using contraception - shifts the mCPR level
-    pars['method_weights'] = np.array([0.01, 1.7, 1, 0.5, 1, 1, 1, 0.5, 2])
+    cm_pars = dict(prob_use_year = 2020,  # Base year
+                   prob_use_trend_par = 0.06,  # Time trend in contraceptive use - adjust this to get steeper/slower trend
+                   prob_use_intercept = 0.015,  # Intercept for the probability of using contraception - shifts the mCPR level
+                   method_weights = np.array([0.01, 1.7, 1, 0.5, 1, 1, 1, 0.5, 2]))
 
     # Postpartum sexual activity correction or 'birth spacing preference'. Pulls values from {location}/data/birth_spacing_pref.csv by default
     # Set all to 1 to reset. Option to use 'optimize-space-prefs.py' script in this directory to determine values
     # 'months': array([ 0.,  3.,  6.,  9., 12., 15., 18., 21., 24., 27., 30., 33., 36., 39., 42., 45., 48., 51., 54.]),
-    # The probability of sex --> very indirect, so need a larger term, when you are 2 years postpartum, dhs data sexual activity, probability of sex
+    # The probability of sex --> very indirect, so need a larger term, 
+    # when you are 2 years postpartum, dhs data sexual activity, probability of sex
+    pars['spacing_pref'] = {}
+    pars['spacing_pref']['preference'] = [ 0.,  3.,  6.,  9., 12., 15., 18., 21., 24., 27., 30., 33., 36., 39., 42., 45., 48., 51., 54.]
+    pars['spacing_pref']['preference'] = np.array(pars['spacing_pref']['preference'])
     pars['spacing_pref']['preference'][:3] =  1  # Spacing of 0-6 months
     pars['spacing_pref']['preference'][3:4] = 1  # Spacing of 9 months
     pars['spacing_pref']['preference'][4:8] = 0.8  # Spacing of 12-24 months
     pars['spacing_pref']['preference'][8:16] = 5  # Spacing of 24-48 months, e.g. 4x probabliity of sex
     pars['spacing_pref']['preference'][16:] =  0.1  # Spacing of 48-56 months
  
-    return pars
+    return pars, cm_pars
 
 
 def make_sim(pars=None, stop=2021):
     if pars is None:
-        pars = make_pars()
+        pars, cm_pars = make_pars()
+
+    method_choice = fp.SimpleChoice(pars=cm_pars, location=country)  
 
     # Run the sim
-    sim = fp.Sim(
-        start=2000,
-        stop=stop,
-        n_agents=1000,
-        location=country,
-        pars=pars,
-        analyzers=[fp.cpr_by_age(), fp.method_mix_by_age()],
-    )
+    #sim = fp.Sim(
+    #    start=2000,
+    #    stop=stop,
+    #    n_agents=1000,
+    #    location=country,
+    #    pars=pars,
+    #    analyzers=[fp.cpr_by_age(), fp.method_mix_by_age()],
+    #    contraception_module = method_choice
+    #)
+    sim = fp.Sim(pars=pars, contraception_module=method_choice)
 
     return sim
 
@@ -139,11 +149,11 @@ if __name__ == '__main__':
         # Create simulation with parameters
         sim = make_sim()
         sim.run()
-        sc.saveobj(f'results/{country}_calib.sim', sim)
-    else:
-        sim = sc.loadobj(f'results/{country}_calib.sim')
+    #    sc.saveobj(f'results/{country}_calib.sim', sim)
+    #else:
+    #    sim = sc.loadobj(f'results/{country}_calib.sim')
 
     # Set options for plotting
     # sc.options(fontsize=20)  # Set fontsize
-    plot_calib(sim, single_fig=True)
+    #plot_calib(sim, single_fig=True)
 
