@@ -15,9 +15,9 @@ country <- "nigeria"
 #            Nigeria Kano & Kaduna (sstate 2018) = 100 & 110, respectively
 #            Nigeria Kano & Kaduna (v024 1990) = 12 & 11, respectively
 #region_variable <- "sstate"
-#region <- "kano"
-#region_code <- 100
-#country_region <- "nigeria_kano"
+#region <- "kaduna"
+#region_code <- 110
+#country_region <- "nigeria_kaduna"
 
 # Base directories
 # DHS location: Update path below relative to config file location

@@ -53,9 +53,9 @@ def make_pars():
     # The probability of sex --> very indirect, so need a larger term, 
     # when you are 2 years postpartum, dhs data sexual activity, probability of sex
     pars['spacing_pref']['preference'][:3] =  1  # Spacing of 0-6 months
-    pars['spacing_pref']['preference'][3:6] = 1  # Spacing of 9-15 months
+    pars['spacing_pref']['preference'][3:6] = 0.9  # Spacing of 9-15 months
     pars['spacing_pref']['preference'][6:9] = 2  # Spacing of 18-24 months
-    pars['spacing_pref']['preference'][9:] =  0.7  # Spacing of 27-36 months
+    pars['spacing_pref']['preference'][9:] =  0.5  # Spacing of 27-36 months
  
     return pars, cm_pars
 
