@@ -12,7 +12,6 @@ import fpsim.locations.data_utils as fpld
 
 def scalar_pars():
     scalar_pars = {
-        'location':             'test', # <<< USER-EDITABLE: Adjust name of location
         'postpartum_dur':       23,     # <<< USER-EDITABLE: Adjust/override any parameters that are defined in fpsim/defaults.py
     }
     return scalar_pars
