@@ -1,5 +1,5 @@
 """
-Process datafiles - this file contains functions common to all locations
+Class to load datafiles for creating a localized FPsim model
 """
 import os
 import numpy as np
@@ -287,9 +287,10 @@ class DataLoader:
         expressed per 100,000 live births, for a specified time period.
         """
         df = self.read_data(self.location, 'maternal_mortality.csv')
-        maternal_mortality = {}
-        maternal_mortality['year'] = df['year'].values
-        maternal_mortality['probs'] = df['probs'].values / 100000  # ratio per 100,000 live births
+        maternal_mortality = {
+            'year': df['year'].values,
+            'probs': df['probs'].values / 100000,
+        }
         return maternal_mortality
 
     def infant_mortality(self):
@@ -299,9 +300,10 @@ class DataLoader:
         """
         df = self.read_data(self.location, 'infant_mortality.csv')
 
-        infant_mortality = {}
-        infant_mortality['year'] = df['year'].values
-        infant_mortality['probs'] = df['probs'].values / 1000  # Rate per 1000 live births, used after stillbirth is filtered out
+        infant_mortality = {
+            'year': df['year'].values,
+            'probs': df['probs'].values / 1000,
+        }
 
         # Try to load age adjustments from YAML
         adjustments = self.load_age_adjustments()
@@ -423,11 +425,10 @@ class DataLoader:
         Use sexual_debut_age_probs.py under locations/data_processing to output for other DHS countries
         """
         df = self.read_data(self.location, 'debut_age.csv')
-
-        debut_age = {}
-        debut_age['ages'] = df['age'].values
-        debut_age['probs'] = df['probs'].values
-
+        debut_age = {
+            'ages': df['age'].values,
+            'probs': df['probs'].values,
+        }
         return debut_age
 
     def birth_spacing_pref(self):
