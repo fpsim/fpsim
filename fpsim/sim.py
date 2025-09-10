@@ -194,7 +194,7 @@ class Sim(ss.Sim):
             'fp': (fp.make_fp_pars(), fp_pars),
             'contra': (fp.make_contra_pars(), contra_pars),
             'edu': (fp.make_edu_pars(), edu_pars),
-            'deaths': (fp.make_death_pars, death_pars),
+            'deaths': (fp.make_death_pars(), death_pars),
         }
 
         for module, (module_default_pars, direct_user_pars) in module_par_map.items():
