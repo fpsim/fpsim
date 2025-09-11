@@ -40,7 +40,7 @@ def make_sim(label='Baseline', intvs=None, analyzers=None, location=None, **kwar
     return sim
 
 
-def test_mcpr(location=None, do_plot=False):
+def test_mcpr(location='kenya', do_plot=False):
     sc.heading('Testing that mCPR changes as expected with its covariates...')
 
     # Create covariate changes
@@ -175,7 +175,7 @@ def test_durations(location='kenya'):
 
 if __name__ == '__main__':
 
-    # sims1 = test_mcpr(location='ethiopia', do_plot=False)
+    sims1 = test_mcpr(location='ethiopia', do_plot=False)
     sims2 = test_durations()
 
     print('Done.')

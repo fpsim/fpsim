@@ -98,7 +98,7 @@ class Sim(ss.Sim):
         sim = fp.Sim(n_agents=10e3, location='senegal', label='My small Senegal sim')
     """
 
-    def __init__(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, death_pars=None,
+    def __init__(self, pars=None, sim_pars=None, people_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, death_pars=None,
                  fp_module=None, contraception_module=None, education_module=None,
                  label=None, people=None, demographics=None, diseases=None, networks=None,
                  interventions=None, analyzers=None, connectors=None, dataloader=None, copy_inputs=True, **kwargs):
@@ -108,6 +108,7 @@ class Sim(ss.Sim):
         self.edu_pars = None     # Parameters for the education module - processed later
         self.fp_pars = None       # Parameters for the family planning module - processed later
         self.deaths_pars = None
+        self.people_pars = None
         self.pars = None        # Parameters for the simulation - processed later
         self.data = None         # Data dictionary, loaded later
         self.dataloader = dataloader  # Data loader, if provided
@@ -127,7 +128,7 @@ class Sim(ss.Sim):
         sim_kwargs = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         sim_kwargs = {key: val for key, val in sim_kwargs.items() if val is not None}
-        all_sim_pars = self.process_pars(pars, sim_pars, fp_pars, contra_pars, edu_pars, death_pars, sim_kwargs, **kwargs)
+        all_sim_pars = self.process_pars(pars, sim_pars, people_pars, fp_pars, contra_pars, edu_pars, death_pars, sim_kwargs, **kwargs)
         self.pars.update(all_sim_pars)
 
         # Process modules by adding them as Starsim connectors
@@ -167,12 +168,12 @@ class Sim(ss.Sim):
             pars['test'] = True
         return pars
 
-    def process_pars(self, pars=None, sim_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, death_pars=None, sim_kwargs=None, **kwargs):
+    def process_pars(self, pars=None, sim_pars=None, people_pars=None, fp_pars=None, contra_pars=None, edu_pars=None, death_pars=None, sim_kwargs=None, **kwargs):
         """
         Separate the parameters into simulation and fp-specific parameters.
         """
         # Marge in pars and kwargs
-        all_pars = fp.mergepars(pars, sim_pars, fp_pars, contra_pars, edu_pars, death_pars, sim_kwargs, kwargs)
+        all_pars = fp.mergepars(pars, sim_pars, people_pars, fp_pars, contra_pars, edu_pars, death_pars, sim_kwargs, kwargs)
         all_pars = self.remap_pars(all_pars)  # Remap any v2 parameters to v3 names
 
         # Deal with sim pars
@@ -206,6 +207,7 @@ class Sim(ss.Sim):
             'contra': (fp.make_contra_pars(), contra_pars),
             'edu': (fp.make_edu_pars(), edu_pars),
             'deaths': (fp.make_death_pars(), death_pars),
+            'people': (fp.make_people_pars(), people_pars)
         }
 
         for module, (module_default_pars, direct_user_pars) in module_par_map.items():
@@ -225,8 +227,7 @@ class Sim(ss.Sim):
         """ Fully initialize the Sim with modules, people and result storage"""
 
         # Load age data and create people
-        people_pars = self.dataloader.data.people
-        people = fp.People(self.pars.n_agents, pars=people_pars)
+        people = fp.People(self.pars.n_agents, pars=self.people_pars)
         self.pars['people'] = people
 
         if force or not self.initialized:
