@@ -294,8 +294,6 @@ class Sim(ss.Sim):
                 nrows, ncols = 2, 3
 
             res = self.results  # Shorten since heavily used
-            agelim = ('-'.join([str(self.pars.fp['low_age_short_int']), str(
-                self.pars.fp['high_age_short_int'])]))  ## age limit to be added to the title of short birth interval plot
 
             if isinstance(to_plot, dict):
                 pass
@@ -332,10 +330,6 @@ class Sim(ss.Sim):
                 elif to_plot == 'method':
                     to_plot = {
                         'method_mix':                 'Method mix'
-                    }
-                elif to_plot == 'short-interval':
-                    to_plot = {
-                        'proportion_short_interval_by_year':     f"Proportion of short birth interval [{age_group})" for age_group in agelim.split()
                     }
                 elif to_plot is not None:
                     errormsg = f"Your to_plot value: {to_plot} is not a valid option"
