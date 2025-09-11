@@ -11,10 +11,27 @@ from . import demographics as fpdmg
 import starsim as ss
 
 # Specify all externally visible things this file defines
-__all__ = ['People']
+__all__ = ['People', 'PeoplePars', 'make_people_pars']
 
 
 # %% Define classes
+class PeoplePars(ss.Pars):
+    """
+    Parameters for the deaths module.
+    """
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.age_pyramid = None
+        self.urban_prop = None
+        self.wealth_quintile = None
+        self.update(kwargs)
+        return
+
+
+def make_people_pars():
+    """ Shortcut for making a new instance of ContraPars """
+    return PeoplePars()
+
 
 class People(ss.People):
     """
@@ -37,10 +54,13 @@ class People(ss.People):
         ]
 
         # Process age/sex data
-        ages = pars['age_pyramid'][:, 0]
-        age_counts = pars['age_pyramid'][:, 1] + pars['age_pyramid'][:, 2]
-        age_data = np.array([ages, age_counts]).T
-        f_frac = pars['age_pyramid'][:, 2].sum() / pars['age_pyramid'][:, 1:3].sum()
+        age_data = None
+        f_frac = 0.5
+        if pars.get('age_pyramid') is not None:
+            ages = pars['age_pyramid'][:, 0]
+            age_counts = pars['age_pyramid'][:, 1] + pars['age_pyramid'][:, 2]
+            age_data = np.array([ages, age_counts]).T
+            f_frac = pars['age_pyramid'][:, 2].sum() / pars['age_pyramid'][:, 1:3].sum()
 
         # Initialization
         super().__init__(n_agents, age_data, extra_states=self.person_defaults, **kwargs)
