@@ -183,7 +183,7 @@ class Sim(ss.Sim):
         # Get location and load data
         location = sim_pars.get('location', None)
         if location is None:
-            print(f'No location specified, defaulting to {location}.')
+            print(f'No location specified, checking for dataloader... ')
             location = self.pars.location
         if self.dataloader is None:
             self.dataloader = fpd.get_dataloader(location)

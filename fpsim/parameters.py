@@ -31,7 +31,7 @@ class SimPars(ss.SimPars):
         self.rand_seed = 1      # Random seed
         self.verbose = 1/12   # Verbosity level
         self.use_aging = True   # Whether to age the population
-        self.location = 'senegal'  # Default location
+        self.location = None  # Default location
         self.test = False
 
         # Update with any supplied parameter values and generate things that need to be generated
