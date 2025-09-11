@@ -5,6 +5,7 @@ from .cotedivoire import cotedivoire
 from .niger import niger
 from .nigeria_kano import nigeria_kano
 from .nigeria_kaduna import nigeria_kaduna
+from .nigeria_lagos import nigeria_lagos
 from .pakistan_sindh import pakistan_sindh
 from .ethiopia.regions import addis_ababa
 from .ethiopia.regions import afar
