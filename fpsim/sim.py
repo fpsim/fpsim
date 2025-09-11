@@ -182,7 +182,7 @@ class Sim(ss.Sim):
 
         # Get location
         verbose = sim_pars.get('verbose', self.pars.verbose)
-        veps = 0.001
+        veps = 0
         location = sim_pars.get('location', self.pars.location)
         if location is None:
             sc.printv(f'No location specified, checking for dataloader... ', veps)
