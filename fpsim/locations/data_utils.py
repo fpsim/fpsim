@@ -9,6 +9,8 @@ import yaml
 import fpsim as fp
 from fpsim import defaults as fpd
 import fpsim.shared_data as sd
+from scipy import interpolate as si
+
 
 sd_dir = os.path.dirname(sd.__file__)  # path to the shared_data directory
 
