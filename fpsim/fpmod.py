@@ -65,11 +65,11 @@ class FPmod(ss.Module):
         if isinstance(self.pars['exposure_age'], dict):
             ea = np.array([v for v in self.pars['exposure_age'].values()])
         else:
-            ea = np.array(self.pars['exposure_age'])
+            ea = sc.toarray(self.pars['exposure_age'])
         if isinstance(self.pars['exposure_parity'], dict):
             ep = np.array([v for v in self.pars['exposure_parity'].values()])
         else:
-            ep = np.array(self.pars['exposure_parity'])
+            ep = sc.toarray(self.pars['exposure_parity'])
         self.pars['exposure_age'] = fp.data2interp(ea, fpd.spline_preg_ages)
         self.pars['exposure_parity'] = fp.data2interp(ep, fpd.spline_parities)
 
