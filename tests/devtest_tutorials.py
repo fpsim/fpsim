@@ -181,12 +181,9 @@ def run_t6():
     import numpy as np
 
     country = 'kenya'
-    pars = fp.make_fp_pars()
-    pars.update_location(country)
+    pars = fp.all_pars(location=country)  # For default pars
 
     # Initial free parameters for calibration
-    pars['fecundity_var_low'] = 1
-    pars['fecundity_var_high'] = 1
     pars['exposure_factor'] = 1
 
     # Postpartum sexual activity correction or 'birth spacing preference'. Pulls values from {location}/data/birth_spacing_pref.csv by default
@@ -217,8 +214,6 @@ def run_t6():
     plt.plot_calib(sim)
 
     # Initial free parameters for calibration
-    pars['fecundity_var_low'] = 1
-    pars['fecundity_var_high'] = 1
     pars['exposure_factor'] = 2
 
     # Last free parameter, postpartum sexual activity correction or 'birth spacing preference'. Pulls values from {location}/data/birth_spacing_pref.csv by default
@@ -235,8 +230,6 @@ def run_t6():
     plt.plot_calib(sim)
 
     # Initial free parameters for calibration
-    pars['fecundity_var_low'] = 1
-    pars['fecundity_var_high'] = 1
     pars['exposure_factor'] = 2.5
 
     # Last free parameter, postpartum sexual activity correction or 'birth spacing preference'. Pulls values from {location}/data/birth_spacing_pref.csv by default
@@ -268,8 +261,7 @@ def run_t6():
 
     # Free parameters for calibration
     freepars = dict(
-            fecundity_var_low = [0.95, 0.925, 0.975],       # [best, low, high]
-            fecundity_var_high = [1.05, 1.0, 1.3],
+            exposure_factor = [1, 0.5, 2],       # [best, low, high]
     )
     calibration = fp.Calibration(pars, calib_pars=freepars, n_trials=2)
     calibration.calibrate()
@@ -285,8 +277,8 @@ if __name__ == '__main__':
     # run_t1()
     # run_t2()
     # run_t3()
-    run_t4()
+    # run_t4()
     # run_t5()
-    # run_t6()
+    run_t6()
 
     print('Done.')
