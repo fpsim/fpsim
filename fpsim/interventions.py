@@ -301,7 +301,7 @@ class update_methods(ss.Intervention):
         """
         sim = self.sim
         cm = sim.connectors.contraception
-        if not self.applied and sim.y >= self.pars.year:
+        if not self.applied and sim.t.year >= self.pars.year:
             self.applied = True # Ensure we don't apply this more than once
 
             # Implement efficacy
