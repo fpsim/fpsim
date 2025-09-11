@@ -5,6 +5,7 @@ Test running sims
 import fpsim as fp
 import sciris as sc
 import starsim as ss
+import pytest
 
 
 par_kwargs = dict(test=True)
@@ -13,7 +14,11 @@ parallel = 1  # Whether to run in serial (for debugging)
 
 def test_simple(location='kenya'):
     sc.heading('Test simplest possible FPsim run')
-    sim = fp.Sim(test=True)
+
+    # Check that running without location raises a warning
+    with pytest.warns(RuntimeWarning):
+        sim = fp.Sim(test=True)
+
     sim.run()
     sim.to_df(resample='year', use_years=True)
     return sim
@@ -137,9 +142,9 @@ def test_senegal():
 
 if __name__ == '__main__':
 
-    sim = test_simple('senegal')
+    # sim = test_simple('senegal')
     # s1 = test_random_choice()
-    # sims1 = test_simple_choice()
+    sims1 = test_simple_choice()
     # sims2 = test_mid_choice()
     # test_sim_creation()
     # exp = test_senegal()  # NOT WORKING - need to re-enable loading of calibration data

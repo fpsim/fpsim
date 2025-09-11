@@ -44,6 +44,7 @@ class DataLoader:
             loc_mod = getattr(fp.locations, location)
             data_path = loc_mod.filenames()['base']  # Obtain base path from location filenames
         self.data_path = sc.makepath(data_path)
+        self.location = location
 
         return
 
@@ -149,7 +150,7 @@ class DataLoader:
 
         # If data for location is region-level data, filter by location and remove 'region' column
         if 'region' in df.columns:
-            df = df[df['region'] == location].reset_index(drop=True).drop('region', axis=1)
+            df = df[df['region'] == self.location].reset_index(drop=True).drop('region', axis=1)
 
         return df
 

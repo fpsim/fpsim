@@ -187,6 +187,8 @@ class Sim(ss.Sim):
             location = self.pars.location
         if self.dataloader is None:
             self.dataloader = fpd.get_dataloader(location)
+        if self.pars.verbose > 0:
+            print(f'Loading data from files in {self.dataloader.data_path}... ')
         data_dict = self.dataloader.load()  # Load all data and sort by module
 
         # Deal with all module pars in a loop
