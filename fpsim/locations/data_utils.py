@@ -143,38 +143,49 @@ class DataLoader:
             self.data.people = people_data
             return
 
-    def load_calib_data(self, return_data=False):
+    def load_calib_data(self, data_path=None, data_dict=None, key=None, return_data=True):
         """ Load data used for calibration """
-        calib_data = sc.objdict()
-        calib_data.basic_wb = self.read_data('basic_wb.yaml')  # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
-        calib_data.popsize = self.read_data('popsize.csv')  # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
-        calib_data.mcpr = self.read_data('cpr.csv')  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-        calib_data.tfr = self.read_data('tfr.csv')  # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
-        calib_data.asfr = self.read_data('asfr.csv')  # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-        calib_data.ageparity = self.read_data('ageparity.csv')  # Choose from either DHS 2016 or PMA 2022
-        calib_data.spacing = self.read_data('birth_spacing_dhs.csv')  # From DHS
-        calib_data.methods = self.read_data('mix.csv')  # From PMA
-        calib_data.afb = self.read_data('afb.table.csv')  # From DHS
-        calib_data.use = self.read_data('use.csv')  # From PMA
-        calib_data.education = self.read_data('edu_initialization.csv')  # From DHS
-        if return_data:
-            return calib_data
+        if data_dict is None:
+            data_dict = dict(
+                basic_wb='basic_wb.yaml',
+                popsize='popsize.csv',
+                mcpr='cpr.csv',
+                tfr='tfr.csv',
+                asfr='asfr.csv',
+                ageparity='ageparity.csv',
+                spacing='birth_spacing_dhs.csv',
+                methods='mix.csv',
+                afb='afb.table.csv',
+                use='use.csv',
+            )
+
+        if key is not None:
+            if key in data_dict:
+                filename = data_dict[key]
+                return self.read_data(filename, data_path=data_path)
+            else:
+                errormsg = f'Key {key} not recognized; must be one of: ' + ', '.join(data_dict.keys())
+                raise ValueError(errormsg)
+
         else:
-            self.calib_data = calib_data
-            return
+            for key, filename in data_dict.items():
+                self.calib_data[key] = self.read_data(filename, data_path=data_path)
+            if return_data:
+                return self.calib_data
+            else:
+                return
 
-    def read_data(self, filename, **kwargs):
+    def read_data(self, filename, data_path=None, **kwargs):
         """
-
-        :param filename:
-        :param kwargs:
-        :return:
+        Read in a data file, trying multiple formats and locations as needed
         """
-        filepath = self.data_path / filename
+        if data_path is None:
+            data_path = self.data_path
+        filepath = data_path / filename
         if not os.path.exists(filepath):
             try:
                 # Try one level up; likely a regional location so pull from country data
-                fallback_path = self.data_path.parent.parent / 'data'
+                fallback_path = data_path.parent.parent / 'data'
                 filepath = fallback_path / filename
             except Exception:
                 errormsg = 'Could not find data file: ' + str(filename)
