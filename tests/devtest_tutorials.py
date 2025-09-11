@@ -103,9 +103,11 @@ def run_t4():
     import sciris as sc     # For utilities
     import starsim as ss    # For running multiple sims in parallel
     import matplotlib.pyplot as plt  # For plotting
+
+    location = 'kenya'
     pars = dict(
         n_agents   = 1_000,
-        location   = 'kenya',
+        location   = location,
         start_year = 2000,
         end_year   = 2012,
         exposure_factor = 1.0  # Overall scale factor on probability of becoming pregnant
@@ -121,7 +123,7 @@ def run_t4():
                        (sim.people.edu.objective > 0))
         return is_eligible
 
-    edu = fp.Education()
+    edu = fp.Education(location=location)
     s0 = fp.Sim(pars=pars, education_module=edu, label='Baseline')
 
     change_education = fp.change_people_state(
@@ -130,7 +132,7 @@ def run_t4():
                                 years=2010.0,
                                 new_val=15,  # Give all selected women 15 years of education
                             )
-    edu = fp.Education()
+    edu = fp.Education(location=location)
     s1 = fp.Sim(pars=pars,
                 education_module=edu,
                 interventions=change_education,
@@ -281,9 +283,9 @@ def run_t6():
 if __name__ == '__main__':
 
     # run_t1()
-    run_t2()
+    # run_t2()
     # run_t3()
-    # run_t4()
+    run_t4()
     # run_t5()
     # run_t6()
 
