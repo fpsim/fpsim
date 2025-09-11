@@ -566,21 +566,11 @@ class SimpleChoice(RandomChoice):
             dataloader = fpd.get_dataloader(location)
             data = dataloader.load_contra_data(contra_mod, return_data=True)
         self.update_pars(data)
-        self.process_durations()
+        if self.pars.dur_use_df is not None: self.process_durations()
 
         self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.pars.method_choice_pars[0].keys() if k != 'method_idx'])
 
         return
-
-    # def process_pars(self, data):
-    #     self.pars.contra_use_pars = data.p_contra  # Set probability of use
-    #     self.method_choice_pars = data.method_choice  # Method choice
-    #     self.init_dist = data.init_dist
-    #     self._method_mix.set(p=self.init_dist)  # TODO check
-    #     self.dur_from_data()
-    #
-    #     # Handle age bins -- find a more robust way to do this
-    #     return
 
     def process_durations(self):
         df = self.pars.dur_use_df

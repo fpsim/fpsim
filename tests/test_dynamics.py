@@ -146,7 +146,7 @@ def test_mcpr(location=None, do_plot=False):
     return sims
 
 
-def test_durations(location=None):
+def test_durations(location='kenya'):
     sc.heading('Testing that durations are as expected...')
 
     # Create parameters and modules
@@ -175,7 +175,7 @@ def test_durations(location=None):
 
 if __name__ == '__main__':
 
-    sims1 = test_mcpr(location='ethiopia', do_plot=False)
+    # sims1 = test_mcpr(location='ethiopia', do_plot=False)
     sims2 = test_durations()
 
     print('Done.')
