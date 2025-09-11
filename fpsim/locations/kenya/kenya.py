@@ -14,7 +14,7 @@ def make_calib_pars():
     # FP parameters - move to csv?
     pars['exposure_age'] = np.array([
                 [0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
-                [1, 1, 1,  1 ,   .4, 1.3, 1.5 ,.8, .8, .5, .3, .5, .5]
+                [1, 1, 1,  1 ,   .4, 1, 1. ,.8, .8, .5, .3, .5, .5]
     ])
 
     pars['exposure_parity'] = np.array([
