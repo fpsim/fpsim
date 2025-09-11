@@ -238,22 +238,21 @@ class FPmod(ss.Module):
         self.rel_sus[active_uids] = 1  # Reset relative susceptibility
         self.rel_sus[:] *= 1 - method_eff
         self.rel_sus[lam_uids] *= 1 - lam_eff
-        raw_probs = np.minimum(fecundity * self.rel_sus[active_uids], 1.0)
-        preg_probs = ss.probperyear(raw_probs).to_prob(self.t.dt)
+        raw_probs = fecundity * self.rel_sus[active_uids]
 
         # Adjust for decreased likelihood of conception if nulliparous vs already gravid - from PRESTO data
         nullip = self.parity[active_uids] == 0
         nullip_uids = active_uids[nullip]
-        preg_probs[nullip] *= pars['fecundity_ratio_nullip'][ppl.int_age_clip(nullip_uids)]
+        raw_probs[nullip] *= pars['fecundity_ratio_nullip'][ppl.int_age_clip(nullip_uids)]
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity.
         # This encapsulates background factors and is experimental and tunable.
-        # TODO: This is fragile. Can't multiply probabilities by arbitrary scalars.
-        # preg_probs *= pars['exposure_factor']
-        # preg_probs *= pars['exposure_age'][ppl.int_age_clip(active_uids)]
-        # preg_probs *= pars['exposure_parity'][np.minimum(self.parity[active_uids], fpd.max_parity).astype(int)]
+        raw_probs *= pars['exposure_age'][ppl.int_age_clip(active_uids)]
+        raw_probs *= pars['exposure_parity'][np.minimum(self.parity[active_uids], fpd.max_parity).astype(int)]
 
         # Use a single binomial trial to check for conception successes this month
+        raw_probs = np.minimum(raw_probs, 1.0)
+        preg_probs = ss.probperyear(raw_probs).to_prob(self.t.dt)
         self._p_conceive.set(p=preg_probs)
         conceived = self._p_conceive.filter(active_uids)
         self.ti_conceived[conceived] = self.ti

@@ -7,21 +7,10 @@ import pandas as pd
 import sciris as sc
 import yaml
 import fpsim as fp
-from scipy import interpolate as si
 from fpsim import defaults as fpd
 import fpsim.shared_data as sd
 
 sd_dir = os.path.dirname(sd.__file__)  # path to the shared_data directory
-
-
-# %% Housekeeping and utility functions
-def data2interp(data, ages, normalize=False):
-    """ Convert unevenly spaced data into an even spline interpolation """
-    model = si.interp1d(data[0], data[1])
-    interp = model(ages)
-    if normalize:
-        interp = np.minimum(1, np.maximum(0, interp))
-    return interp
 
 
 # %% Main data loader
@@ -314,7 +303,7 @@ class DataLoader:
         """
         df = pd.read_csv(os.path.join(sd_dir, 'miscarriage.csv'))
         miscarriage_rates = np.array([df['age'].values, df['prob'].values])
-        miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
+        miscarriage_interp = fp.data2interp(miscarriage_rates, fpd.spline_preg_ages)
         return miscarriage_interp
 
     def stillbirth(self):
@@ -405,7 +394,7 @@ class DataLoader:
 
         # Extract data and interpolate
         fecundity_ratio_nullip = np.array([df['age'].values, df['prob'].values])
-        fecundity_nullip_interp = data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
+        fecundity_nullip_interp = fp.data2interp(fecundity_ratio_nullip, fpd.spline_preg_ages)
 
         return fecundity_nullip_interp
 

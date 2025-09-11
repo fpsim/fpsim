@@ -1,61 +1,27 @@
 """
-Set the parameters for FPsim, specifically for Senegal.
+Set the parameters for a location-specific FPsim model.
 """
 import numpy as np
-from pathlib import Path
-from ... import defaults as fpd
+from fpsim import defaults as fpd
+import fpsim as fp
 import fpsim.locations.data_utils as fpld
 
 
-# %% Parameters
+def make_calib_pars():
+    """ Make a dictionary of location-specific parameters """
+    pars = {}
 
-def filenames():
-    ''' Data files for use with calibration, etc -- not needed for running a sim '''
-    base_dir = Path(__file__).resolve().parent / 'data'
-    files = {
-        'base': base_dir,
-        'basic_wb': base_dir / 'basic_wb.yaml', # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT
-        'popsize': base_dir / 'popsize.csv', # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
-        'mcpr': base_dir / 'cpr.csv',  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
-        'tfr': base_dir / 'tfr.csv',   # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN
-        'asfr': base_dir / 'asfr.csv', # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
-        'ageparity': base_dir / 'ageparity.csv', # Choose from either DHS 2016 or PMA 2022
-        'spacing': base_dir / 'birth_spacing_dhs.csv', # From DHS
-        'methods': base_dir / 'mix.csv', # From PMA
-        'afb': base_dir / 'afb.table.csv', # From DHS
-        'use': base_dir / 'use.csv', # From PMA
-        'education': base_dir / 'edu_initialization.csv', # From DHS
-    }
-    return files
-
-
-# %% Pregnancy exposure
-
-def exposure_age():
-    """
-    Returns an array of experimental factors to be applied to account for
-    residual exposure to either pregnancy or live birth by age.  Exposure to pregnancy will
-    increase factor number and residual likelihood of avoiding live birth (mostly abortion,
-    also miscarriage), will decrease factor number
-    """
-    exposure_correction_age = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
+    exposure_age = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
                                         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])
-    exposure_age_interp = fpld.data2interp(exposure_correction_age, fpd.spline_preg_ages)
-    return exposure_age_interp
+    pars['exposure_age'] = fp.data2interp(exposure_age, fpd.spline_preg_ages)
 
-
-def exposure_parity():
-    """
-    Returns an array of experimental factors to be applied to account for residual exposure to either pregnancy
-    or live birth by parity.
-    """
     exposure_correction_parity = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
                                            [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])
-    exposure_parity_interp = fpld.data2interp(exposure_correction_parity, fpd.spline_parities)
+    pars['exposure_parity'] = fp.data2interp(exposure_correction_parity, fpd.spline_parities)
 
-    return exposure_parity_interp
+    return pars
 
 
-# %% Load data
 def dataloader(location='senegal'):
     return fpld.DataLoader(location=location)
+
