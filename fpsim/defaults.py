@@ -75,7 +75,7 @@ def get_calib_pars(location, verbose=1):
     if hasattr(fplocs, location):
         calib_pars = getattr(fplocs, location).make_calib_pars()
     else:
-        sc.printv(f'No calibration parameters found for {location}', thisverbose=0.001, verbose=verbose)
+        sc.printv(f'No calibration parameters found for {location}', thisverbose=0, verbose=verbose)
         return None
     return calib_pars
 
