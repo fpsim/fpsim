@@ -61,6 +61,18 @@ class FPmod(ss.Module):
         self.asfr = None  # Storing this separately from results as it has a different format
         self.method_mix = None
 
+        # Deal with exposure parameters
+        if isinstance(self.pars['exposure_age'], dict):
+            ea = np.array([v for v in self.pars['exposure_age'].values()])
+        else:
+            ea = np.array(self.pars['exposure_age'])
+        if isinstance(self.pars['exposure_parity'], dict):
+            ep = np.array([v for v in self.pars['exposure_parity'].values()])
+        else:
+            ep = np.array(self.pars['exposure_parity'])
+        self.pars['exposure_age'] = fp.data2interp(ea, fpd.spline_preg_ages)
+        self.pars['exposure_parity'] = fp.data2interp(ep, fpd.spline_parities)
+
         return
 
     def _get_uids(self, upper_age=None, female_only=True):
