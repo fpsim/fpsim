@@ -185,12 +185,13 @@ class Sim(ss.Sim):
         verbose = sim_pars.get('verbose', self.pars.verbose)
         veps = 0
         location = sim_pars.get('location', self.pars.location)
+        is_test = sim_pars.get('test', self.pars.test)
         if location is None:
             sc.printv(f'No location specified, checking for dataloader... ', veps)
 
         # Load data
         if self.dataloader is None:
-            self.dataloader = fpd.get_dataloader(location)
+            self.dataloader = fpd.get_dataloader(location, printwarn=not is_test)
         if self.pars.verbose > 0:
             print(f'Loading data from files in {self.dataloader.data_path}... ')
         data_dict = self.dataloader.load()  # Load all data and sort by module

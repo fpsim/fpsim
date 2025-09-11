@@ -36,7 +36,7 @@ def get_location(location):
     return location
 
 
-def get_dataloader(location):
+def get_dataloader(location, printwarn=True):
     """ Return the data loader module """
     from . import locations as fplocs
 
@@ -55,7 +55,7 @@ def get_dataloader(location):
             my_data = fp.DataLoader(data_path='path-to-my-data')
             sim = fp.Sim(dataloader=my_data)
             """
-        ss.warn(warnmsg)
+        if printwarn: ss.warn(warnmsg)
         location = 'senegal'
 
     location = get_location(location)
