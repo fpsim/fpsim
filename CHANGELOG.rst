@@ -9,7 +9,7 @@ All notable changes to the codebase are documented in this file. Changes that ma
    :depth: 1
 
 
-Version 3.4.0 (2025-09-08)
+Version 3.4.0 (2025-09-11)
 ---------------------------
 Refactors data storage within FPsim, so that new locations can reside in external directories. The existing syntax `sim = fp.Sim(location='kenya')` still works, but now it is additionally possible to add a new setting from any folder via:
 ```
