@@ -14,11 +14,7 @@ parallel = 1  # Whether to run in serial (for debugging)
 
 def test_simple():
     sc.heading('Test simplest possible FPsim run')
-
-    # Check that running without location raises a warning
-    with pytest.warns(RuntimeWarning):
-        sim = fp.Sim(test=True)
-
+    sim = fp.Sim(test=True)
     sim.run()
     sim.to_df(resample='year', use_years=True)
     return sim

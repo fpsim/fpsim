@@ -3,11 +3,10 @@ Test running tutorials
 """
 
 
-
 def run_t1():
     import fpsim as fp
 
-    sim = fp.Sim()
+    sim = fp.Sim(location=location)
     sim.run()
     fig = sim.plot()
     pars = dict(
@@ -29,6 +28,30 @@ def run_t1():
 
     sim.plot() # the default
     sim.plot('cpr')
+
+
+def run_t2():
+    # Import FPsim and define the baseline parameters
+    import fpsim as fp
+    location = 'kenya'
+    pars = dict(location=location, n_agents=500, start_year=1980, end_year=2020, seed=1)
+
+    # Define the contraceptive choice module and the education module.
+    choice = fp.StandardChoice(location=location)
+    edu = fp.Education(location=location)
+
+    # Make and run sim
+    s = fp.Sim(pars, contraception_module=choice, education_module=edu)
+    s.run()
+
+    method_choice = fp.SimpleChoice(location=location)
+    sim = fp.Sim(pars=pars, contraception_module=method_choice, analyzers=fp.lifeof_recorder())
+    sim.run()
+
+    _ = sim.plot(to_plot='cpr');
+    _ = sim.analyzers[0].plot(index=1); # plot the life events of one woman
+
+    return
 
 
 def run_t3():
@@ -257,7 +280,8 @@ def run_t6():
 
 if __name__ == '__main__':
 
-    run_t1()
+    # run_t1()
+    run_t2()
     # run_t3()
     # run_t4()
     # run_t5()
