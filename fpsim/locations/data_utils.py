@@ -34,7 +34,7 @@ class DataLoader:
             if location is None:
                 raise ValueError("Either data_path or location must be provided to read_data")
             loc_mod = getattr(fp.locations, location)
-            data_path = loc_mod.filenames()['base']  # Obtain base path from location filenames
+            data_path = sc.thisdir(loc_mod, 'data')
         self.data_path = sc.makepath(data_path)
         self.location = location
 
