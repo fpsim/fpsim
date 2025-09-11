@@ -180,16 +180,25 @@ class Sim(ss.Sim):
         for k in user_sim_pars: all_pars.pop(k)
         sim_pars = sc.mergedicts(user_sim_pars, sim_pars, _copy=True)
 
-        # Get location and load data
-        location = sim_pars.get('location', None)
+        # Get location
+        verbose = sim_pars.get('verbose', self.pars.verbose)
+        veps = 0.001
+        location = sim_pars.get('location', self.pars.location)
         if location is None:
-            print(f'No location specified, checking for dataloader... ')
-            location = self.pars.location
+            sc.printv(f'No location specified, checking for dataloader... ', veps)
+
+        # Load data
         if self.dataloader is None:
             self.dataloader = fpd.get_dataloader(location)
         if self.pars.verbose > 0:
             print(f'Loading data from files in {self.dataloader.data_path}... ')
         data_dict = self.dataloader.load()  # Load all data and sort by module
+
+        # Load calibration parameters
+        calib_pars = fpd.get_calib_pars(location, verbose=verbose)
+        if calib_pars is not None:
+            sc.printv(f'Applying calibration parameters for {location}...', veps)
+            all_pars = sc.mergedicts(calib_pars, all_pars)
 
         # Deal with all module pars in a loop
         module_par_map = {

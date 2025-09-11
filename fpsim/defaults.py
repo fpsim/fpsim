@@ -27,18 +27,12 @@ valid_region_locs = {
 
 
 # Parse locations
-def get_location(location, printmsg=False):
+def get_location(location):
     location = location.lower()  # Ensure it's lowercase
-
-    # External locations override internal ones
-    if location in location_registry:
-        return location
-
     # Define valid locations
     if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
-
     return location
 
 
@@ -65,15 +59,25 @@ def get_dataloader(location):
         location = 'senegal'
 
     location = get_location(location)
-
-    # Use external registry for locations first
-    if location in location_registry:
-        dataloader = location_registry[location]
-    elif hasattr(fplocs, location):
+    if hasattr(fplocs, location):
         dataloader = getattr(fplocs, location).dataloader()
     else:
         raise NotImplementedError(f'Could not find dataloader for {location}')
     return dataloader
+
+
+def get_calib_pars(location, verbose=1):
+    """ Return the calibration parameters """
+    from . import locations as fplocs
+    if location is None:
+        return
+    location = get_location(location)
+    if hasattr(fplocs, location):
+        calib_pars = getattr(fplocs, location).make_calib_pars()
+    else:
+        sc.printv(f'No calibration parameters found for {location}', thisverbose=0.001, verbose=verbose)
+        return None
+    return calib_pars
 
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy

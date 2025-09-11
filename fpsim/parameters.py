@@ -69,23 +69,25 @@ class FPPars(ss.Pars):
         self.end_first_tri = 3      # Months
         self.dur_pregnancy = ss.uniform(low=ss.months(9), high=ss.months(9))
         self.dur_breastfeeding = ss.normal(loc=ss.months(24), scale=ss.months(6))
-        self.dur_postpartum = None  # Updated by data
+        self.dur_postpartum = None      # Updated by data, do not modify
         self.max_lam_dur = 5            # Duration of lactational amenorrhea (months)
         self.short_int = ss.months(24)  # Duration of a short birth interval between live births (months)
 
-        # Pregnancy outcomes
-        self.abortion_prob = None   # CONTEXT-SPECIFIC ####
-        self.twins_prob = None   # CONTEXT-SPECIFIC ####
+        # Parameters related to the likelihood of conception
         self.LAM_efficacy = 0.98   # From Cochrane review: https://www.ncbi.nlm.nih.gov/pmc/articles/PMC6823189/
-        self.maternal_mortality_factor = 1
-
-        # Fecundity and infertility
-        self.fecundity = ss.uniform(low=0.7, high=1.1)  # Personal fecundity distribution
         self.primary_infertility = 0.05
+
+        # Parameters typically tuned during calibration
+        self.maternal_mortality_factor = 1
+        self.fecundity = ss.uniform(low=0.7, high=1.1)  # Personal fecundity distribution
+        self.exposure_age = None
+        self.exposure_parity = None
 
         ###################################
         # Context-specific data-derived parameters, all need to be loaded from data
         ###################################
+        self.abortion_prob = None
+        self.twins_prob = None
         self.maternal_mortality = None
         self.infant_mortality = None
         self.miscarriage_rates = None
@@ -98,7 +100,6 @@ class FPPars(ss.Pars):
         self.debut_age = None
         self.spacing_pref = None
         self.age_partnership = None
-        self.mcpr = None
         self.region = None
         self.regional = None
 
