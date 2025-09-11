@@ -27,9 +27,7 @@ def data2interp(data, ages, normalize=False):
 # %% Main data loader
 class DataLoader:
     """ Class to load and process data files for a given location """
-    def __init__(self, location):
-        self.location = location
-
+    def __init__(self, data_path=None, location=None):
         # Create a data dictionary keyed by module / purpose
         self.data = sc.objdict(
             fp=sc.objdict(),
@@ -38,6 +36,14 @@ class DataLoader:
             deaths=sc.objdict(),
             people=sc.objdict(),
         )
+
+        # Figure out the data path
+        if data_path is None:
+            if location is None:
+                raise ValueError("Either data_path or location must be provided to read_data")
+            loc_mod = getattr(fp.locations, location)
+            data_path = loc_mod.filenames()['base']  # Obtain base path from location filenames
+        self.data_path = sc.makepath(data_path)
 
         return
 
@@ -131,16 +137,14 @@ class DataLoader:
             self.data.people = people_data
             return
 
-    def read_data(self, location, filename, **kwargs):
-        # Obtain base path from location filenames
-        loc_mod = getattr(fp.locations, location)
-        data_path = loc_mod.filenames()['base']
+    def read_data(self, filename, **kwargs):
         try:
             # Read data from data_path
-            df = pd.read_csv(data_path / filename, **kwargs)
+            df = pd.read_csv(self.data_path / filename, **kwargs)
+
         except FileNotFoundError:
             # Try one level up; likely a regional location so pull from country data
-            fallback_path = data_path.parent.parent / 'data'
+            fallback_path = self.data_path.parent.parent / 'data'
             df = pd.read_csv(fallback_path / filename, **kwargs)
 
         # If data for location is region-level data, filter by location and remove 'region' column
@@ -158,14 +162,14 @@ class DataLoader:
     # %% Scalar pars
     def bf_stats(self):
         """ Load breastfeeding stats """
-        bf_data = self.read_data(self.location, 'bf_stats.csv')
+        bf_data = self.read_data('bf_stats.csv')
         bf_mean = bf_data.loc[0]['value']  # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
         bf_sd = bf_data.loc[1]['value']     # Location parameter of truncated norm distribution. Requires children's recode DHS file, see data_processing/breastfeeding_stats.R
         return [bf_mean, bf_sd]
 
     def scalar_probs(self):
         """ Load abortion and twins probabilities """
-        data = self.read_data(self.location, 'scalar_probs.csv')
+        data = self.read_data('scalar_probs.csv')
         abortion_prob = data.loc[data['param']=='abortion_prob', 'prob'].values[0]   # From https://bmcpregnancychildbirth.biomedcentral.com/articles/10.1186/s12884-015-0621-1, % of all pregnancies calculated
         twins_prob = data.loc[data['param']=='twins_prob', 'prob'].values[0]         # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
 
@@ -174,7 +178,7 @@ class DataLoader:
     # %% Demographics
     def age_partnership(self):
         """ Probabilities of being partnered at age X"""
-        age_partnership_data = self.read_data(self.location, 'age_partnership.csv')
+        age_partnership_data = self.read_data('age_partnership.csv')
         partnership_dict = {}
         partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
         partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
@@ -183,17 +187,17 @@ class DataLoader:
     def wealth(self):
         """ Process percent distribution of people in each wealth quintile"""
         cols = ["quintile", "percent"]
-        wealth_data = self.read_data(self.location, 'wealth.csv', header=0, names=cols)
+        wealth_data = self.read_data('wealth.csv', header=0, names=cols)
         return wealth_data
 
     def urban_proportion(self):
         """Load information about the proportion of people who live in an urban setting"""
-        urban_data = self.read_data(self.location, 'urban.csv')
+        urban_data = self.read_data('urban.csv')
         return urban_data["mean"][0]  # Return this value as a float
 
     def age_pyramid(self):
         """Load age pyramid data"""
-        df = self.read_data(self.location, 'age_pyramid.csv')
+        df = self.read_data('age_pyramid.csv')
         pyramid = df.to_numpy()
         return pyramid
 
@@ -208,8 +212,8 @@ class DataLoader:
         https://population.un.org/dataportal/data/indicators/59/locations/404/start/1950/end/2030/table/pivotbylocation
         Projections go out until 2030, but the csv file can be manually adjusted to remove any projections and stop at your desired year
         """
-        mortality_data = self.read_data(self.location, 'mortality_prob.csv')
-        mortality_trend = self.read_data(self.location, 'mortality_trend.csv')
+        mortality_data = self.read_data('mortality_prob.csv')
+        mortality_trend = self.read_data('mortality_trend.csv')
 
         if data_year is None:
             error_msg = "Please provide a data year to calculate mortality rates"
@@ -261,7 +265,7 @@ class DataLoader:
         From Report of the UN Inter-agency Group for Child Mortality Estimation, 2020
         https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
         """
-        df = self.read_data(self.location, 'stillbirths.csv')
+        df = self.read_data('stillbirths.csv')
         stillbirth_rate = {}
         stillbirth_rate['year'] = df['year'].values
         stillbirth_rate['probs'] =df['probs'].values / 1000  # Rate per 1000 total births
@@ -286,7 +290,7 @@ class DataLoader:
         42 days of termination of pregnancy, irrespective of the duration and site of the pregnancy,
         expressed per 100,000 live births, for a specified time period.
         """
-        df = self.read_data(self.location, 'maternal_mortality.csv')
+        df = self.read_data('maternal_mortality.csv')
         maternal_mortality = {
             'year': df['year'].values,
             'probs': df['probs'].values / 100000,
@@ -298,7 +302,7 @@ class DataLoader:
         From World Bank indicators for infant mortality (< 1 year) for Kenya, per 1000 live births
         From API_SP.DYN.IMRT.IN_DS2_en_excel_v2_1495452.numbers
         """
-        df = self.read_data(self.location, 'infant_mortality.csv')
+        df = self.read_data('infant_mortality.csv')
 
         infant_mortality = {
             'year': df['year'].values,
@@ -347,25 +351,6 @@ class DataLoader:
 
         return fecundity_nullip_interp
 
-    @staticmethod
-    def exposure_age():
-        """
-        Returns an array of experimental factors to be applied to account for residual exposure
-        to either pregnancy or live birth by age.  Exposure to pregnancy will increase factor number
-        and residual likelihood of avoiding live birth (mostly abortion, also miscarriage), will decrease
-        factor number.
-        To be implemented by derived classes
-        """
-        pass
-
-    @staticmethod
-    def exposure_parity():
-        """
-        Returns an array of experimental factors to be applied to account for residual exposure
-        to either pregnancy or live birth by parity. Immplemented by derived
-        """
-        pass
-
     def lactational_amenorrhea(self):
         """
         Returns an array of the percent of breastfeeding women by month postpartum 0-11 months who meet criteria for LAM:
@@ -375,7 +360,7 @@ class DataLoader:
         Ethiopia: From DHS Ethiopia 2016 calendar data
         Senegal: From DHS Senegal calendar data
         """
-        df = self.read_data(self.location, 'lam.csv')
+        df = self.read_data('lam.csv')
 
         lactational_amenorrhea = {}
         lactational_amenorrhea['month'] = df['month'].values
@@ -393,7 +378,7 @@ class DataLoader:
         Data taken from DHS, no trend over years for now
         Onset of sexual activity probabilities assumed to be linear from age 10 to first data point at age 15
         """
-        df = self.read_data(self.location, 'sexually_active.csv')
+        df = self.read_data('sexually_active.csv')
 
         sexually_active = df['probs'].values / 100  # Convert from percent to rate per woman
         activity_ages = df['age'].values
@@ -411,7 +396,7 @@ class DataLoader:
         Postpartum month 0 refers to the first month after delivery
         TODO-- Add code for processing this for other countries to data_processing
         """
-        df = self.read_data(self.location, 'sexually_active_pp.csv')
+        df = self.read_data('sexually_active_pp.csv')
 
         postpartum_activity = {}
         postpartum_activity['month'] = df['month'].values
@@ -424,7 +409,7 @@ class DataLoader:
         Data taken from DHS variable v531 (imputed age of sexual debut, imputed with data from age at first union)
         Use sexual_debut_age_probs.py under locations/data_processing to output for other DHS countries
         """
-        df = self.read_data(self.location, 'debut_age.csv')
+        df = self.read_data('debut_age.csv')
         debut_age = {
             'ages': df['age'].values,
             'probs': df['probs'].values,
@@ -438,7 +423,7 @@ class DataLoader:
         """
         # Try to read the CSV, fallback to dummy df if not found
         try:
-            df = self.read_data(self.location, 'birth_spacing_pref.csv')
+            df = self.read_data('birth_spacing_pref.csv')
         except FileNotFoundError:
             print(f"birth_spacing_pref.csv not found for {self.location}, using default weights of 1.")
             months = np.arange(0, 39, 3)  # 0 to 36 months in 3-month intervals
@@ -471,7 +456,7 @@ class DataLoader:
         is based on education completed by women over 20 with no children, stratified by urban/rural residence
         from the Demographic and Health Surveys (DHS).
         """
-        return self.read_data(self.location, "edu_objective.csv")
+        return self.read_data("edu_objective.csv")
 
     def education_attainment(self):
         """
@@ -481,7 +466,7 @@ class DataLoader:
         NOTE: The data in education_initialization.csv have been extrapolated to cover the age range
         [0, 99], inclusive range. Here we only interpolate data for the group 15-49 (inclusive range).
         """
-        df = self.read_data(self.location, "edu_initialization.csv")
+        df = self.read_data("edu_initialization.csv")
         return df.set_index('age')
 
     def education_dropout_probs(self):
@@ -504,7 +489,7 @@ class DataLoader:
                each with keys 'age' and 'percent'.
         """
         data = {}
-        df = self.read_data(self.location, "edu_stop.csv")
+        df = self.read_data("edu_stop.csv")
         for k in df["parity"].unique():
             data[k] = {"age": None, "percent": None}
             data[k]["age"] = df["age"].unique()
@@ -521,9 +506,9 @@ class DataLoader:
 
         # Read in data
         alldfs = [
-            self.read_data(self.location, f'contra_coef_{which}.csv'),
-            self.read_data(self.location, f'contra_coef_{which}_pp1.csv'),
-            self.read_data(self.location, f'contra_coef_{which}_pp6.csv'),
+            self.read_data(f'contra_coef_{which}.csv'),
+            self.read_data(f'contra_coef_{which}_pp1.csv'),
+            self.read_data(f'contra_coef_{which}_pp6.csv'),
         ]
 
         contra_use_pars = dict()
@@ -556,7 +541,7 @@ class DataLoader:
     def load_method_switching(self, methods=None):
         """ Choice of method is age and previous method """
 
-        df = self.read_data(self.location, 'method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
+        df = self.read_data('method_mix_matrix_switch.csv', keep_default_na=False, na_values=['NaN'])
 
         # Get default methods - TODO, think of something better
         if methods is None:
@@ -599,7 +584,7 @@ class DataLoader:
 
     def load_dur_use(self):
         """ Process duration of use parameters"""
-        df = self.read_data(self.location, 'method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
+        df = self.read_data('method_time_coefficients.csv', keep_default_na=False, na_values=['NaN'])
         return df
 
     @staticmethod

@@ -46,6 +46,24 @@ def get_dataloader(location):
     """ Return the data loader module """
     from . import locations as fplocs
 
+    if location is None:
+        warnmsg = """
+        No location specified, loading data for to "senegal" from default directory.
+        This can be changed by specifying the location when initializing the sim, 
+        or by passing in a dataloader with a path to where you are keeping your data.
+        Examples:
+            import fpsim as fp
+
+            # Use one of the built-in locations
+            sim = fp.Sim(location='kenya') 
+
+            # Load your own data
+            my_data = fp.DataLoader(data_path='path-to-my-data')
+            sim = fp.Sim(dataloader=my_data)
+            """
+        ss.warn(warnmsg)
+        location = 'senegal'
+
     location = get_location(location)
 
     # Use external registry for locations first
