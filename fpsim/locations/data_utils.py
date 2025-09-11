@@ -180,9 +180,10 @@ class DataLoader:
     def age_partnership(self):
         """ Probabilities of being partnered at age X"""
         age_partnership_data = self.read_data('age_partnership.csv')
-        partnership_dict = {}
-        partnership_dict["age"] = age_partnership_data["age_partner"].to_numpy()
-        partnership_dict["partnership_probs"] = age_partnership_data["percent"].to_numpy()
+        partnership_dict = {
+            "age": age_partnership_data["age_partner"].to_numpy(),
+            "partnership_probs": age_partnership_data["percent"].to_numpy(),
+        }
         return  partnership_dict
 
     def wealth(self):
@@ -223,11 +224,11 @@ class DataLoader:
         mortality = {
             'ages': mortality_data['age'].to_numpy(),
             'm': mortality_data['male'].to_numpy(),
-            'f': mortality_data['female'].to_numpy()
+            'f': mortality_data['female'].to_numpy(),
+            'year': mortality_trend['year'].to_numpy(),
+            'probs': mortality_trend['crude_death_rate'].to_numpy(),
         }
 
-        mortality['year'] = mortality_trend['year'].to_numpy()
-        mortality['probs'] = mortality_trend['crude_death_rate'].to_numpy()
         trend_ind = np.where(mortality['year'] == data_year)
         trend_val = mortality['probs'][trend_ind]
 
@@ -255,8 +256,6 @@ class DataLoader:
         Age 0 and 5 set at 100% likelihood.  Age 10 imputed to be symmetrical with probability at age 45 for a parabolic curve
         """
         df = pd.read_csv(os.path.join(sd_dir, 'miscarriage.csv'))
-
-        # Extract data and interpolate
         miscarriage_rates = np.array([df['age'].values, df['prob'].values])
         miscarriage_interp = data2interp(miscarriage_rates, fpd.spline_preg_ages)
         return miscarriage_interp
@@ -267,9 +266,10 @@ class DataLoader:
         https://childmortality.org/wp-content/uploads/2020/10/UN-IGME-2020-Stillbirth-Report.pdf
         """
         df = self.read_data('stillbirths.csv')
-        stillbirth_rate = {}
-        stillbirth_rate['year'] = df['year'].values
-        stillbirth_rate['probs'] =df['probs'].values / 1000  # Rate per 1000 total births
+        stillbirth_rate = {
+            'year': df['year'].values,
+            'probs': df['probs'].values / 1000,
+        }
 
         # Try to load age adjustments from YAML
         adjustments = self.load_age_adjustments()
@@ -362,10 +362,10 @@ class DataLoader:
         Senegal: From DHS Senegal calendar data
         """
         df = self.read_data('lam.csv')
-
-        lactational_amenorrhea = {}
-        lactational_amenorrhea['month'] = df['month'].values
-        lactational_amenorrhea['rate'] = df['rate'].values
+        lactational_amenorrhea = {
+            'month': df['month'].values,
+            'rate': df['rate'].values,
+        }
         return lactational_amenorrhea
 
     def sexual_activity(self):
@@ -398,10 +398,10 @@ class DataLoader:
         TODO-- Add code for processing this for other countries to data_processing
         """
         df = self.read_data('sexually_active_pp.csv')
-
-        postpartum_activity = {}
-        postpartum_activity['month'] = df['month'].values
-        postpartum_activity['percent_active'] = df['probs'].values
+        postpartum_activity = {
+            'month': df['month'].values,
+            'percent_active': df['probs'].values,
+        }
         return postpartum_activity
 
     def debut_age(self):
