@@ -112,7 +112,6 @@ def test_benchmark(do_save=do_save, repeats=1):
 
         # Time initialization
         t0 = sc.tic()
-        exp.extract_data()
         t_init = sc.toc(t0, output=True)
 
         # Time postprocessing
