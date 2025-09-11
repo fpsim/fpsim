@@ -11,12 +11,18 @@ All notable changes to the codebase are documented in this file. Changes that ma
 
 Version 3.4.0 (2025-09-08)
 ---------------------------
-TBC
+Refactors data storage within FPsim, so that new locations can reside in external directories. The existing syntax `sim = fp.Sim(location='kenya')` still works, but now it is additionally possible to add a new setting from any folder via:
+```
+import fpsim as fp
+my_data = fp.DataLoader(data_path='path-to-my-data')
+sim = fp.Sim(dataloader=my_data)
+```
+In addition to allowing extra flexibility for users creating new locations, this change also supported the ongoing modularization of FPsim into distinct modules. The `DataLoader` class processes all data in the folder provided and sorts it into the module that requires it: death rates for the `Deaths` module, contraceptive choice parameters for the `Contraception` module, etc.
 
 
-Version 3.3.1 (2025-08-28)
+Version 3.3.1 (2025-09-05)
 ---------------------------
-Minor release to add missing changelog.
+Minor bugfix in plotting.plot_calib(). Fixes x axis units for MCPR plot and reenables ASFR plot.
 
 
 Version 3.3.0 (2025-08-27)
@@ -26,7 +32,6 @@ Updates the FPsim code to be compatible with the most recent version of Starsim 
 - All of the logic of FPsim is now agnostic to the timestep. This means that everything will still work if you want to use a timestep of 3 months instead of 1, for instance.
 - There were previously many places in the code where random draws occured. These have all been replaced with Starsim distributions, so it is now possible to take advantage of Starsim's common random number generation.
 - The `archive` folder has been removed.
-
 
 
 Version 3.2.0 (2025-08-15)

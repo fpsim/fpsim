@@ -434,7 +434,7 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
 
     # Plot
     ax.plot(plot_data['year'], plot_data['cpr'], label='UN Data Portal', color='black')
-    ax.plot(res['timevec'][si:], res.contraception.mcpr[si:] * 100, label='FPsim', color='cornflowerblue')
+    ax.plot(res['timevec'][si:].years, res.contraception.mcpr[si:] * 100, label='FPsim', color='cornflowerblue')
     ax.set_xlabel('Year')
     ax.set_ylabel('Percent')
     if Config.show_rmse is True:
@@ -836,7 +836,7 @@ def plot_calib(sim, single_fig=False, fig_kwargs=None, legend_kwargs=None):
     plot_method_mix(sim, ax=ax_arg(3), legend_kwargs=legend_kwargs)
     plot_afb(sim, ax=ax_arg(4), legend_kwargs=legend_kwargs)
     plot_birth_spacing(sim, ax=ax_arg(5), legend_kwargs=legend_kwargs)
-    # plot_asfr(sim, ax=ax_arg(5))
+    plot_asfr(sim, ax=ax_arg(5))
 
     if single_fig:
         fig.tight_layout()
