@@ -138,8 +138,9 @@ def test_senegal():
 
 if __name__ == '__main__':
 
-    sim = test_simple()
-    # s1 = test_random_choice()
+    # sim = test_simple()
+    ss.options.warnings = 'error'
+    s1 = test_random_choice()
     # sims1 = test_simple_choice()
     # sims2 = test_mid_choice()
     # test_sim_creation()
