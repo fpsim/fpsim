@@ -12,7 +12,7 @@ par_kwargs = dict(test=True)
 parallel = 1  # Whether to run in serial (for debugging)
 
 
-def test_simple(location='kenya'):
+def test_simple():
     sc.heading('Test simplest possible FPsim run')
 
     # Check that running without location raises a warning
@@ -142,11 +142,11 @@ def test_senegal():
 
 if __name__ == '__main__':
 
-    # sim = test_simple('senegal')
+    sim = test_simple()
     # s1 = test_random_choice()
     # sims1 = test_simple_choice()
     # sims2 = test_mid_choice()
-    test_sim_creation()
+    # test_sim_creation()
     # exp = test_senegal()  # NOT WORKING - need to re-enable loading of calibration data
 
     print('Done.')

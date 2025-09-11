@@ -45,14 +45,16 @@ class Experiment(sc.prettyobj):
     Class for running a single sim and comparing it to data.
 
     Args:
-        pars (dict): dictionary of parameters
+        sim (Sim): the sim to run; if None, will be created when run_model is called
+        pars (dict): dictionary of parameters passed to Sim
         flags (dict): which analyses to run; see ``fp.experiment.default_flags`` for options
         label (str): label of experiment
         kwargs (dict): passed into pars
     """
 
-    def __init__(self, pars=None, flags=None, label=None, **kwargs):
+    def __init__(self, sim=None, pars=None, flags=None, label=None, **kwargs):
         self.flags = sc.mergedicts(default_flags, flags, _copy=True)  # Set flags for what gets run
+        self.sim = sim
         self.pars = pars
 
         if len(kwargs):
@@ -69,20 +71,7 @@ class Experiment(sc.prettyobj):
 
     def load_data(self, key, **kwargs):
         """ Load data from various formats """
-        files = self.sim.pars.fp['filenames']
-        path = Path(files['base']) / files[key]
-        if path.suffix == '.obj':
-            data = sc.load(path, **kwargs)
-        elif path.suffix == '.json':
-            data = sc.loadjson(path, **kwargs)
-        elif path.suffix == '.csv':
-            data = pd.read_csv(path, **kwargs)
-        elif path.suffix == '.yaml':
-            with open(path) as f:
-                data = yaml.safe_load(f, **kwargs)
-        else:
-            errormsg = f'Unrecognized file format for: {path}'
-            raise ValueError(errormsg)
+        data = self.sim.dataloader.load_calib_data(return_data=True)
         return data
 
     def extract_data(self):

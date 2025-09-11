@@ -37,6 +37,9 @@ class DataLoader:
             people=sc.objdict(),
         )
 
+        # For storing data used in calibration
+        self.calib_data = sc.objdict()
+
         # Figure out the data path
         if data_path is None:
             if location is None:
@@ -48,13 +51,15 @@ class DataLoader:
 
         return
 
-    def load(self, contra_mod='mid', return_data=True):
+    def load(self, contra_mod='mid', return_data=True, load_calib=False):
         """ Load all data """
         self.load_fp_data()
         self.load_edu_data()
         self.load_contra_data(contra_mod)
         self.load_death_data()
         self.load_people_data()
+        if load_calib:
+            self.load_calib_data()
         if return_data:
             return self.data
         else:
@@ -138,21 +143,62 @@ class DataLoader:
             self.data.people = people_data
             return
 
-    def read_data(self, filename, **kwargs):
-        try:
-            # Read data from data_path
-            df = pd.read_csv(self.data_path / filename, **kwargs)
+    def load_calib_data(self, return_data=False):
+        """ Load data used for calibration """
+        calib_data = sc.objdict()
+        calib_data.basic_wb = self.read_data('basic_wb.yaml')  # From World Bank https://data.worldbank.org/indicator/SH.STA.MMRT?locations=ET
+        calib_data.popsize = self.read_data('popsize.csv')  # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Population/
+        calib_data.mcpr = self.read_data('cpr.csv')  # From UN Population Division Data Portal, married women 1970-1986, all women 1990-2030
+        calib_data.tfr = self.read_data('tfr.csv')  # From World Bank https://data.worldbank.org/indicator/SP.DYN.TFRT.IN?locations=ET
+        calib_data.asfr = self.read_data('asfr.csv')  # From UN World Population Prospects 2022: https://population.un.org/wpp/Download/Standard/Fertility/
+        calib_data.ageparity = self.read_data('ageparity.csv')  # Choose from either DHS 2016 or PMA 2022
+        calib_data.spacing = self.read_data('birth_spacing_dhs.csv')  # From DHS
+        calib_data.methods = self.read_data('mix.csv')  # From PMA
+        calib_data.afb = self.read_data('afb.table.csv')  # From DHS
+        calib_data.use = self.read_data('use.csv')  # From PMA
+        calib_data.education = self.read_data('edu_initialization.csv')  # From DHS
+        if return_data:
+            return calib_data
+        else:
+            self.calib_data = calib_data
+            return
 
-        except FileNotFoundError:
-            # Try one level up; likely a regional location so pull from country data
-            fallback_path = self.data_path.parent.parent / 'data'
-            df = pd.read_csv(fallback_path / filename, **kwargs)
+    def read_data(self, filename, **kwargs):
+        """
+
+        :param filename:
+        :param kwargs:
+        :return:
+        """
+        filepath = self.data_path / filename
+        if not os.path.exists(filepath):
+            try:
+                # Try one level up; likely a regional location so pull from country data
+                fallback_path = self.data_path.parent.parent / 'data'
+                filepath = fallback_path / filename
+            except Exception:
+                errormsg = 'Could not find data file: ' + str(filename)
+                raise FileNotFoundError(errormsg)
+
+        # What kind of file is it
+        if filepath.suffix == '.obj':
+            data = sc.load(filepath, **kwargs)
+        elif filepath.suffix == '.json':
+            data = sc.loadjson(filepath, **kwargs)
+        elif filepath.suffix == '.csv':
+            data = pd.read_csv(filepath, **kwargs)
+        elif filepath.suffix == '.yaml':
+            with open(filepath) as f:
+                data = yaml.safe_load(f, **kwargs)
+        else:
+            errormsg = f'Unrecognized file format for: {filepath}'
+            raise ValueError(errormsg)
 
         # If data for location is region-level data, filter by location and remove 'region' column
-        if 'region' in df.columns:
-            df = df[df['region'] == self.location].reset_index(drop=True).drop('region', axis=1)
+        if isinstance(data, pd.DataFrame) and 'region' in data.columns:
+            data = data[data['region'] == self.location].reset_index(drop=True).drop('region', axis=1)
 
-        return df
+        return data
 
     @staticmethod
     def load_age_adjustments():
