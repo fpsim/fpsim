@@ -259,6 +259,7 @@ class FPmod(ss.Module):
 
         # Adjust for probability of exposure to pregnancy episode at this timestep based on age and parity.
         # This encapsulates background factors and is experimental and tunable.
+        raw_probs *= pars['exposure_factor']
         raw_probs *= pars['exposure_age'][ppl.int_age_clip(active_uids)]
         raw_probs *= pars['exposure_parity'][np.minimum(self.parity[active_uids], fpd.max_parity).astype(int)]
 

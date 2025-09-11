@@ -80,6 +80,7 @@ class FPPars(ss.Pars):
         # Parameters typically tuned during calibration
         self.maternal_mortality_factor = 1
         self.fecundity = ss.uniform(low=0.7, high=1.1)  # Personal fecundity distribution
+        self.exposure_factor = 1  # Overall exposure factor, to be calibrated
         self.exposure_age = dict(age    =[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
                                  rel_exp=[1, 1,  1,    1,  1,  1,  1,  1,  1,  1,  1,  1,  1])
         self.exposure_parity = dict(parity =[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
