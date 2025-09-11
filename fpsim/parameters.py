@@ -146,7 +146,7 @@ sim_par_keys = make_sim_pars().keys()
 
 
 # ALL PARS
-def all_pars():
+def all_pars(location=None):
     """
     Return a dictionary with all parameters used within an FPsim.
     This includes both simulation parameters and family planning parameters.
@@ -156,4 +156,11 @@ def all_pars():
     contra_pars = fp.ContraPars()
     edu_pars = fp.EduPars()
     death_pars = fp.DeathPars()
-    return mergepars(sim_pars, fp_pars, contra_pars, edu_pars, death_pars)
+    people_pars = fp.PeoplePars()
+    mergedpars = mergepars(sim_pars, fp_pars, contra_pars, edu_pars, death_pars, people_pars)
+    if location is not None:
+        data_pars = fp.DataLoader(location=location).load(return_data=True)
+        for modpars in data_pars.values():
+            mergedpars.update(modpars)
+    return mergedpars
+
