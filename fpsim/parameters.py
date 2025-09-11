@@ -84,9 +84,8 @@ class FPPars(ss.Pars):
         self.primary_infertility = 0.05
 
         ###################################
-        # Context-specific data-derived parameters, all defined within location files
+        # Context-specific data-derived parameters, all need to be loaded from data
         ###################################
-        self.filenames = None
         self.maternal_mortality = None
         self.infant_mortality = None
         self.miscarriage_rates = None
@@ -97,8 +96,6 @@ class FPPars(ss.Pars):
         self.sexual_activity = None
         self.sexual_activity_pp = None
         self.debut_age = None
-        self.exposure_age = None
-        self.exposure_parity = None
         self.spacing_pref = None
         self.age_partnership = None
         self.mcpr = None
