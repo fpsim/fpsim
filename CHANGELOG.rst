@@ -29,10 +29,15 @@ Version 3.4.1 (2025-09-22)
   * Added country/region imports to the fpsim/locations/__init__.py
 
 
-
-Version 3.4.0 (2025-09-08)
+Version 3.4.0 (2025-09-11)
 ---------------------------
-TBC
+Refactors data storage within FPsim, so that new locations can reside in external directories. The existing syntax `sim = fp.Sim(location='kenya')` still works, but now it is additionally possible to add a new setting from any folder via:
+```
+import fpsim as fp
+my_data = fp.DataLoader(data_path='path-to-my-data')
+sim = fp.Sim(dataloader=my_data)
+```
+In addition to allowing extra flexibility for users creating new locations, this change also supported the ongoing modularization of FPsim into distinct modules. The `DataLoader` class processes all data in the folder provided and sorts it into the module that requires it: death rates for the `Deaths` module, contraceptive choice parameters for the `Contraception` module, etc.
 
 
 Version 3.3.2 (2025-09-05)
