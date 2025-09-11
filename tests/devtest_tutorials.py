@@ -207,11 +207,11 @@ def run_t6():
     sim = fp.Sim(pars=pars, contraception_module=method_choice)
     sim.run()
 
-    # Plot sim
-    sim.plot()
-
-    # Plotting class function which plots the primary calibration targets (method mix, method use, cpr, total fertility rate, birth spacing, age at first birth, and age-specific fertility rate)
-    plt.plot_calib(sim)
+    # # Plot sim
+    # sim.plot()
+    #
+    # # Plotting class function which plots the primary calibration targets (method mix, method use, cpr, total fertility rate, birth spacing, age at first birth, and age-specific fertility rate)
+    # plt.plot_calib(sim)
 
     # Initial free parameters for calibration
     pars['exposure_factor'] = 2
@@ -227,7 +227,7 @@ def run_t6():
     method_choice = fp.SimpleChoice(pars=cm_pars, location=country)
     sim = fp.Sim(pars=pars, contraception_module=method_choice)
     sim.run()
-    plt.plot_calib(sim)
+    # plt.plot_calib(sim)
 
     # Initial free parameters for calibration
     pars['exposure_factor'] = 2.5
@@ -250,9 +250,8 @@ def run_t6():
 
     # Re-run the sim
     sim = fp.Sim(pars=pars, contraception_module=method_choice)
-    sim.run()
-    plt.plot_calib(sim)
-
+    # sim.run()
+    # plt.plot_calib(sim)
 
     pars = dict(location = country,
                 n_agents = 1000,  # Population size; set very small here only for the purpose of runtime
@@ -267,8 +266,8 @@ def run_t6():
     calibration.calibrate()
     calibration.summarize()
 
-    fig = calibration.plot_trend()
-    fig = calibration.plot_best()
+    # fig = calibration.plot_trend()
+    # fig = calibration.plot_best()
     return
 
 
