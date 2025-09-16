@@ -44,11 +44,17 @@ for (pkg in required_packages) {
 # -------------------------------
 
 # -- Load all the data -- #
-data.raw <- read_dta(dhs_path)
-data.raw.h <- read_dta("") # path to household DHS dataset here
+dhs_household_data <- read_dta(dhs_household_path)
+# Filter if region and region_code are defined
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path) %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path) 
+}
 
 # -- Make new columns with names that are more readable -- #
-data <- data.raw %>%
+data <- dhs_data %>%
   mutate(
     age = v012,
     parity = v220,
@@ -64,7 +70,7 @@ svydesign_obj_1 = svydesign(
 )
 
 # -- preprocess household data
-data.h <- data.raw.h %>%
+data.h <- dhs_household_data %>%
   select(starts_with("hv103"), starts_with("hv105"), starts_with("hv104"), starts_with("hv109"), 
          starts_with("hhid"), starts_with("hv001"), starts_with("hv023"), starts_with("hv005")) %>%
   gather(var, val, -c(hhid, hv001, hv023, hv005)) %>% mutate(num = substr(var,7,9), var = substr(var,1,5)) %>% spread(var, val) %>%
@@ -224,16 +230,44 @@ table.edu <- table.edu.ind %>%
 
 # Load multiple datasets and add a column wave to each of them
 data1 <- read_dta(pma1_path)
-data1 <- data1 %>% mutate(wave = 1, RE_ID = as.character(RE_ID), county = as.character(county))
+data1 <- data1 %>% mutate(wave = 1, RE_ID = as.character(RE_ID), country = as.character(country), strata = as.character(strata))
 
 data2 <- read_dta(pma2_path)
-data2 <- data2 %>% mutate(wave = 2, RE_ID = as.character(RE_ID), county = as.character(county))
+data2 <- data2 %>% mutate(wave = 2, RE_ID = as.character(RE_ID), country = as.character(country), strata = as.character(strata))
 
-data3 <- read_dta(pma3_path)
-data3 <- data3 %>% mutate(wave = 3, RE_ID = as.character(doi_corrected), county = as.character(county))
+# Added flexibility for if 2, 3, or 4 PMA stata files are available
+if (exists("pma3_path") && exists("pma4_path")){
+  data3 <- read_dta(pma3_path)
+  data3 <- data3 %>% mutate(wave = 3, RE_ID = as.character(doi_corrected), country = as.character(country), strata = as.character(strata))
+  data4 <- read_dta(pma4_path)
+  data4 <- data4 %>% mutate(wave = 4, RE_ID = as.character(doi_corrected), country = as.character(country), strata = as.character(strata))
+  df_list <- list(data1, data2, data3, data4)
+} else if (exists("pma3_path")){
+  data3 <- read_dta(pma3_path)
+  data3 <- data3 %>% mutate(wave = 3, RE_ID = as.character(doi_corrected), country = as.character(country), strata = as.character(strata))
+  df_list <- list(data1, data2, data3)
+} else {
+  df_list <- list(data1, data2)
+}
 
-data.raw.pma <- bind_rows(data1, data2, data3)
+# Found that columns with "doi_corrected" and "consent_obtained"
+# often were different data types, fixed with code below
+df_list <- lapply(df_list, function(x) {
+  cols_to_fix <- grep("doi_corrected", names(x), value = TRUE)
+  for (col in cols_to_fix) {
+    x[[col]] <- as.character(x[[col]])
+  }
+  return(x)
+})
+df_list <- lapply(df_list, function(x) {
+  cols_to_fix <- grep("consent_obtained", names(x), value = TRUE)
+  for (col in cols_to_fix) {
+    x[[col]] <- as.character(x[[col]])
+  }
+  return(x)
+})
 
+data.raw.pma <- bind_rows(df_list)
 
 # recode data for school and birth timing
 weeks_in_a_year <- 52
@@ -324,7 +358,13 @@ stop.school$parity <- as.factor(stop.school$parity)
 # 4. Save Output to Country Directory
 # -------------------------------
 
-output_dir <- file.path(output_dir, country)
+# Create country-based output directory if it doesn't exist
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
+
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
