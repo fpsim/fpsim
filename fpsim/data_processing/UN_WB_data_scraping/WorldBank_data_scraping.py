@@ -21,7 +21,7 @@ For more information about the World Bank database:
 import os
 import pandas as pd
 import requests
-import sciris as sc
+import sciris as sc # Need to install with either "pip install sciris" or "conda install -c conda-forge sciris"
 import json
 
 ######## VARIABLES TO MODIFY ########
@@ -29,11 +29,15 @@ import json
 # ISO2 COUNTRY CODES FOR REFERENCE
 # Senegal = SN
 # Kenya = KE
-# Ethiopia = ET
+# Ethiopia = ET, country name = 'ethiopia
+# Côte d'Ivoire (CI,CIV) ID = 384, country name = 'cotedivoire'
+# Niger (NE,NER) ID = 562
+# Nigeria (NG,NGA) ID = 566
+# Pakistan (PK,PAK) = 586 
 
 # Country name and location id(s); User must update these two variables prior to running.
-country = 'ethiopia'
-iso_code = 'ET'
+country = 'cotedivoire'
+iso_code = 'CI'
 
 # Default global variables
 startYear = 1960
@@ -48,17 +52,15 @@ get_basic_wb = True  # Includes maternal mortality, infant mortality, crude birt
 
 #####################################
 
-thisdir = sc.path(sc.thisdir())
-filesdir = thisdir / 'scraped_data'
+country_dir = '../../locations/' + country + '/data/' #relative path to country
 
 # API Base URL
 base_url = "https://api.worldbank.org/v2"
 url_suffix = 'format=json'
 
 # If country folder doesn't already exist, create it (location in which created data files will be stored)
-if not os.path.exists(f'{filesdir}/{country}'):
-    os.makedirs(f'{filesdir}/{country}')
-
+if not os.path.exists(f'{country_dir}'):
+    os.makedirs(f'{country_dir}')
 
 # Function that calls a GET request to the UN Data Portal API given the target/uri specified
 def get_data(target):
@@ -123,7 +125,7 @@ if get_pop:
     df = df.sort_values('year')
 
     # Write data to csv
-    df.to_csv(f'{filesdir}/{country}/popsize.csv', index=False)
+    df.to_csv(f'{country_dir}/popsize.csv', index=False)
 
 
 if get_tfr:
@@ -141,7 +143,7 @@ if get_tfr:
     df = df.sort_values('year')
 
     # Write data to csv
-    df.to_csv(f'{filesdir}/{country}/tfr.csv', index=False)
+    df.to_csv(f'{country_dir}/tfr.csv', index=False)
 
 
 if get_maternal_mortality:
@@ -160,7 +162,7 @@ if get_maternal_mortality:
     df = df.sort_values('year')
 
     # Write data to csv
-    df.to_csv(f'{filesdir}/{country}/maternal_mortality.csv', index=False)
+    df.to_csv(f'{country_dir}/maternal_mortality.csv', index=False)
 
 
 if get_infant_mortality:
@@ -178,7 +180,7 @@ if get_infant_mortality:
     df = df.sort_values('year')
 
     # Write data to csv
-    df.to_csv(f'{filesdir}/{country}/infant_mortality.csv', index=False)
+    df.to_csv(f'{country_dir}/infant_mortality.csv', index=False)
 
 
 if get_basic_wb:
@@ -220,5 +222,5 @@ if get_basic_wb:
     }
 
     # Write to yaml file
-    with open(f'{filesdir}/{country}/basic_wb.yaml', 'w') as file:
+    with open(f'{country_dir}/basic_wb.yaml', 'w') as file:
         file.write(json.dumps(basic_wb_data))

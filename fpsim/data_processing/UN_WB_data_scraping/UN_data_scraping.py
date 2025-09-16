@@ -45,9 +45,14 @@ logger = logging.getLogger(__name__)
 # Kenya ID = 404
 # Ethiopia ID = 231
 # India ID = 356
+# Côte d'Ivoire (CI,CIV) ID = 384, country = 'Côte d\'Ivoire'
+# Niger ID = 562 
+# Nigeria ID = 566 
+# Pakistan = 586 
 
 # Country name and location id(s) (per UN Data Portal); User must update these two variables prior to running.
 country = 'Côte d\'Ivoire'
+country_foldername = 'cotedivoire' # same as country variable (except country='Côte d\'Ivoire', country_foldername='cotedivoire')
 location_id = 384
 
 # Default global variables
@@ -76,17 +81,18 @@ male_mort_stem = 'WPP2024_Life_Table_Complete_Medium_Male_1950-2023'
 #####################################
 
 # Store local directories as variables
-thisdir = Path(sc.thisdir())
-filesdir = thisdir / 'scraped_data'
+country_dir = '../../locations/' + country_foldername + '/data/' #relative path to country
+filesdir = country_dir + '/scraped_data/'
 
 # API Base URLs
 base_url = "https://population.un.org/dataportalapi/api/v1"
 wpp_base_url = "https://population.un.org/wpp/assets/Excel%20Files/1_Indicator%20(Standard)/CSV_FILES/"
 
 # If country folder doesn't already exist, create it (location in which created data files will be stored)
-country_dir = filesdir / country
-country_dir.mkdir(parents=True, exist_ok=True)
-
+if not os.path.exists(f'{country_dir}'):
+    os.makedirs(f'{country_dir}')
+if not os.path.exists(f'{filesdir}'):
+    os.makedirs(f'{filesdir}')
 
 def get_UN_data(target):
     '''
@@ -107,7 +113,7 @@ def get_UN_data(target):
     # Loop until there are new pages with data
     while j['nextPage'] is not None:
         # call the API for the next page
-        next_page = f'{target}?pageNumber={j['pageNumber']+1}&pageSize=100' # NOTE: Currently using j['nextPage'] as target has issue; resolving with UN Pop Division
+        next_page = f'{target}?pageNumber={j["pageNumber"]+1}&pageSize=100' # NOTE: Currently using j['nextPage'] as target has issue; resolving with UN Pop Division
         response = requests.get(next_page, headers=headers)
         if response.status_code != 200:
             raise ValueError(f"Request failed: {response.status_code} for URL: {target}")
