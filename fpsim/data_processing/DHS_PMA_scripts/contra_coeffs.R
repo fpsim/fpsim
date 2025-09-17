@@ -9,9 +9,9 @@
 # - contra_coef_simple_pp6.csv
 #
 # For Standard Choice Model:
-# - contra_coef_standard.csv
-# - contra_coef_standard_pp1.csv
-# - contra_coef_standard_pp6.csv
+# - contra_coef_mid.csv
+# - contra_coef_mid_pp1.csv
+# - contra_coef_mid_pp6.csv
 # - splines_25_40.csv
 #
 ###############################################################################
@@ -133,9 +133,9 @@ if (model_type %in% c("simple", "both")) {
 }
 
 if (model_type %in% c("standard", "both")) {
-  write_csv(standard.function(svydes), file.path(output_dir, "contra_coef_standard.csv"))
-  write_csv(standard.function(svydes.pp1), file.path(output_dir, "contra_coef_standard_pp1.csv"))
-  write_csv(standard.function(svydes.pp6), file.path(output_dir, "contra_coef_standard_pp6.csv"))
+  write_csv(standard.function(svydes), file.path(output_dir, "contra_coef_mid.csv"))
+  write_csv(standard.function(svydes.pp1), file.path(output_dir, "contra_coef_mid_pp1.csv"))
+  write_csv(standard.function(svydes.pp6), file.path(output_dir, "contra_coef_mid_pp6.csv"))
 
   # Create and save natural spline basis for ages 15 to 49 with internal knots at 25 and 40
   age_range <- 15:49
