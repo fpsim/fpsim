@@ -129,7 +129,7 @@ table.edu.mean %>%
 
 # Generate education table for initialization of education parameters
 table.edu.inital <-
-  data.frame(age = c(1:dhs_min_age - 1, dhs_max_age:fpsim_max_age)) %>%
+  data.frame(age = c(1:dhs_min_age - 1, dhs_max_age+1:fpsim_max_age)) %>%
   mutate(edu = ifelse(
     age < dhs_min_age,
     pmax(
@@ -306,14 +306,29 @@ data.pma <- data.raw.pma %>% filter(!is.na(FQweight)) %>%
   ) %>% # was recent birth at age 22 or younger
   filter(birth_events > 0) # only use data for women who have had a birth
 
-svydesign_obj_3 <-
-  svydesign(
+
+# EA_ID is not present in Nigeria PMA files
+# Try using 'EA_ID' as the id, 
+# if errors out because not in the PMA file, then try 'Cluster_ID'
+if ("EA_ID" %in% names(data.pma)) {
+  svydesign_obj_3 <- svydesign(
     id = ~ EA_ID,
     strata = ~ strata,
-    weights =  ~ FQweight,
+    weights = ~ FQweight,
     data = data.pma,
-    nest = T
+    nest = TRUE
   )
+} else if ("Cluster_ID" %in% names(data.pma)) {
+  svydesign_obj_3 <- svydesign(
+    id = ~ Cluster_ID,
+    strata = ~ strata,
+    weights = ~ FQweight,
+    data = data.pma,
+    nest = TRUE
+  )
+} else {
+  stop("Neither EA_ID nor Cluster_ID found in data.pma")
+}
 
 # table of probability of stopping school by age and parity
 stop.school <-
