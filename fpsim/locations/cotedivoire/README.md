@@ -5,6 +5,7 @@ The fpsim/locations/data folder stores the location-specific files for FPsim mod
 ### Manual Edits after running DHS/PMA data scripts
 
 |file_path|missing_category|replacement_details|
+|---------|----------------|-------------------|
 |fpsim/fpsim/locations/cotedivoire/data/method_mix_matrix_switch.csv|Injectable_<18|Copied from nigeria/data/method_mix_matrix_switch.csv|
 |fpsim/fpsim/locations/cotedivoire/data/method_mix_matrix_switch.csv|Withdrawl_18-20|Copied from nigeria/data/method_mix_matrix_switch.csv|
 |fpsim/fpsim/locations/cotedivoire/data/method_mix_matrix_switch.csv|Withdrawl_>35|Copied from nigeria/data/method_mix_matrix_switch.csv|
