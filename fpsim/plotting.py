@@ -212,10 +212,10 @@ def plot_method_mix(sim, ax=None, legend_kwargs={}):
     ppl = sim.people
     cm = sim.connectors.contraception
     model_labels_all = [m.label for m in cm.methods.values()]
-    model_labels_methods = sc.dcp(model_labels_all)
     mm = ppl.fp.method[ppl.female & (ppl.age >= min_age) & (ppl.age < max_age)]
-    mm_counts, _ = np.histogram(mm, bins=len(model_labels_all))
-    mm_counts = mm_counts/mm_counts.sum()
+    unique_methods, counts = np.unique(mm, return_counts=True)
+    mm_counts = np.zeros(len(model_labels_all))
+    mm_counts[unique_methods] = counts
     model_method_counts = sc.odict(zip(model_labels_all, mm_counts))
 
     # Method mix from data - country PMA data (mix.csv)
