@@ -5,6 +5,7 @@ The fpsim/locations/data folder stores the location-specific files for FPsim mod
 ### Manual Edits after running DHS/PMA data scripts
 
 |file_path|missing_category|replacement_details|
+|---------|----------------|-------------------|
 |fpsim/fpsim/locations/nigeria_lagos/data/contra_coef_simple_pp1.csv|age_grp(18,20]|Copied from nigeria/data/contra_coef_simple_pp1.csv|
 |fpsim/fpsim/locations/nigeria_lagos/data/contra_coef_simple_pp1.csv|age_grp(20,25]|Copied from nigeria/data/contra_coef_simple_pp1.csv|
 |fpsim/fpsim/locations/nigeria_lagos/data/contra_coef_simple_pp1.csv|age_grp(18,20]:prior_userTRUE|Copied from nigeria/data/contra_coef_simple_pp1.csv|
