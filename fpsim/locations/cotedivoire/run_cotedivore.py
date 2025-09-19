@@ -39,15 +39,15 @@ def make_pars(country):
 
     # Modify individual fecundity and exposure parameters
     # These adjust each woman's probability of conception and exposure to pregnancy.
-    pars['fecundity_var_low'] = 1
-    pars['fecundity_var_high'] = 1
-    pars['exposure_factor'] = 1
+    pars['fecundity_var_low'] = 1.1
+    pars['fecundity_var_high'] = .7
+    pars['exposure_factor'] = 2
     
     # Adjust contraceptive choice parameters
     cm_pars = dict(prob_use_year = 2020,  # Base year
                    prob_use_trend_par = 0.01,  # Time trend in contraceptive use - adjust this to get steeper/slower trend
-                   prob_use_intercept = 0.1,  # Intercept for the probability of using contraception - shifts the mCPR level
-                   method_weights = np.array([10, 1, 5, 2, 1, 1, 1, 0.1, 0.1]))
+                   prob_use_intercept = 0.5,  # Intercept for the probability of using contraception - shifts the mCPR level
+                   method_weights = np.array([8, 1, 5, 35, 1, 2, 0.015, 0.015, 1]))
     #               method_weights = np.array([10, 1, 5, 2, 1, 1, 1, 0.1, 0.1]))
 
     # Postpartum sexual activity correction or 'birth spacing preference'. Pulls values from {location}/data/birth_spacing_pref.csv by default

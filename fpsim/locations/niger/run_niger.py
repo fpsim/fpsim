@@ -26,29 +26,29 @@ from fpsim import plotting as fpplt
 import os
 
 # Settings
-#country = 'cotedivoire'
+country = 'niger'
 fpplt.Config.set_figs_directory('calib_results/figures/')
 fpplt.Config.do_save = True
 fpplt.Config.do_show = False
 fpplt.Config.show_rmse = True
 
-def make_pars(country):
+def make_pars():
     print(country)
     pars = fp.make_fp_pars()  # For default pars
     pars.update_location(country)
 
     # Modify individual fecundity and exposure parameters
     # These adjust each woman's probability of conception and exposure to pregnancy.
-    pars['fecundity_var_low'] = 0.5
+    pars['fecundity_var_low'] = 0.8
     pars['fecundity_var_high'] = 1
-    pars['exposure_factor'] = 3
+    pars['exposure_factor'] = 1.7
     
     # Adjust contraceptive choice parameters
     cm_pars = dict(prob_use_year = 2020,  # Base year
-                   prob_use_trend_par = 0.0001,  # Time trend in contraceptive use - adjust this to get steeper/slower trend
-                   prob_use_intercept = -3.4,  # Intercept for the probability of using contraception - shifts the mCPR level
-                   method_weights = np.array([0.4, 0.3, 0.2, 0.3, 1, 0.9, 1, 30, 5]))
-                   #method_weights = np.array([0.5, 0.5, 0.5, 0.6, 1, 1, 1, 10, 2])) # best 9/18
+                   prob_use_trend_par = 0.001,  # Time trend in contraceptive use - adjust this to get steeper/slower trend
+                   prob_use_intercept = -0.5,  # Intercept for the probability of using contraception - shifts the mCPR level
+                   method_weights = np.array([0.003, 0.009, 7, 0.5, 1, 0.5, 0.001, 0.05, 50]))
+    #              method_weights = np.array([0.003, 0.015, 7, 0.5, 1, 1, 0.02, 0.1, 3]))
 
     # Postpartum sexual activity correction or 'birth spacing preference'. Pulls values from {location}/data/birth_spacing_pref.csv by default
     # Set all to 1 to reset. Option to use 'optimize-space-prefs.py' script in this directory to determine values
@@ -56,17 +56,17 @@ def make_pars(country):
     # The probability of sex --> very indirect, so need a larger term, 
     # when you are 2 years postpartum, dhs data sexual activity, probability of sex
     pars['spacing_pref']['preference'][:3] =  1  # Spacing of 0-6 months
-    pars['spacing_pref']['preference'][3:6] = 0.5  # Spacing of 9-15 months
-    pars['spacing_pref']['preference'][6:9] = 0.8  # Spacing of 18-24 months
-    pars['spacing_pref']['preference'][9:] =  2  # Spacing of 27-36 months
+    pars['spacing_pref']['preference'][3:6] = 1  # Spacing of 9-15 months
+    pars['spacing_pref']['preference'][6:9] = 2  # Spacing of 18-24 months
+    pars['spacing_pref']['preference'][9:] =  0.2  # Spacing of 27-36 months
  
     return pars, cm_pars
 
 
-def make_sim(country, pars=None, stop=2021):
+def make_sim(pars=None, stop=2021):
     if pars is None:
-        pars, cm_pars = make_pars(country)
-    pars.location = country
+        pars, cm_pars = make_pars()
+    pars.location = country    
 
     method_choice = fp.SimpleChoice(pars=cm_pars, location=country)  
 
@@ -91,11 +91,9 @@ def plot_calib(sim, single_fig=False, fig_kwargs=None, legend_kwargs=None):
 
 if __name__ == '__main__':
     do_run = True  # Whether to run the sim or load from file
-    country = 'nigeria_lagos'
-
     if do_run:
         # Create simulation with parameters
-        sim = make_sim(country)
+        sim = make_sim()
         sim.run()
 
         # Create directory in current directory if it doesn't exist

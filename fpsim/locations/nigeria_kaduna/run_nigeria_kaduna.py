@@ -26,7 +26,7 @@ from fpsim import plotting as fpplt
 import os
 
 # Settings
-#country = 'cotedivoire'
+#country = 'nigeria_kaduna'
 fpplt.Config.set_figs_directory('calib_results/figures/')
 fpplt.Config.do_save = True
 fpplt.Config.do_show = False
@@ -39,16 +39,16 @@ def make_pars(country):
 
     # Modify individual fecundity and exposure parameters
     # These adjust each woman's probability of conception and exposure to pregnancy.
-    pars['fecundity_var_low'] = 0.5
-    pars['fecundity_var_high'] = 1
-    pars['exposure_factor'] = 3
+    pars['fecundity_var_low'] = 0.01
+    pars['fecundity_var_high'] = 1.5
+    pars['exposure_factor'] = 1
     
     # Adjust contraceptive choice parameters
     cm_pars = dict(prob_use_year = 2020,  # Base year
-                   prob_use_trend_par = 0.0001,  # Time trend in contraceptive use - adjust this to get steeper/slower trend
-                   prob_use_intercept = -3.4,  # Intercept for the probability of using contraception - shifts the mCPR level
-                   method_weights = np.array([0.4, 0.3, 0.2, 0.3, 1, 0.9, 1, 30, 5]))
-                   #method_weights = np.array([0.5, 0.5, 0.5, 0.6, 1, 1, 1, 10, 2])) # best 9/18
+                   prob_use_trend_par = 0.01,  # Time trend in contraceptive use - adjust this to get steeper/slower trend
+                   prob_use_intercept = 0.1,  # Intercept for the probability of using contraception - shifts the mCPR level
+                   method_weights = np.array([0.005, 0.005, 200, 10, 1, 0.001, 0.003, 10, 100]))
+    #               method_weights = np.array([0.005, 0.005, 200, 2, 1, 0.001, 0.003, 10, 100]))
 
     # Postpartum sexual activity correction or 'birth spacing preference'. Pulls values from {location}/data/birth_spacing_pref.csv by default
     # Set all to 1 to reset. Option to use 'optimize-space-prefs.py' script in this directory to determine values
@@ -91,7 +91,7 @@ def plot_calib(sim, single_fig=False, fig_kwargs=None, legend_kwargs=None):
 
 if __name__ == '__main__':
     do_run = True  # Whether to run the sim or load from file
-    country = 'nigeria_lagos'
+    country = 'nigeria_kaduna'
 
     if do_run:
         # Create simulation with parameters
