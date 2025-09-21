@@ -56,7 +56,7 @@ def exposure_age():
     also miscarriage), will decrease factor number
     """
     exposure_correction_age = np.array([[0,     5,  10, 12.5, 15, 18, 20, 25,  30, 35,  40, 45,    50],
-                                        [0.1, 0.1, 0.5,  5,   5,  2,  1,  1,   1,   1, 0.5, 0.5, 0.5]])  # <<< USER-EDITABLE: Can be modified for calibration
+                                        [0.1, 0.1, 0.5,  3,   2,  0.5,0.5,1.5, 1.5, 1,   1,  1,   0.5]])  # <<< USER-EDITABLE: Can be modified for calibration
 
     exposure_age_interp = fpld.data2interp(exposure_correction_age, fpd.spline_preg_ages)
     return exposure_age_interp

@@ -41,13 +41,14 @@ def make_pars():
     # These adjust each woman's probability of conception and exposure to pregnancy.
     pars['fecundity_var_low'] = 0.35 #0.015
     pars['fecundity_var_high'] = 1.1 #1.5
-    pars['exposure_factor'] = 0.7
+    pars['exposure_factor'] = 0.75
     
     # Adjust contraceptive choice parameters
     cm_pars = dict(prob_use_year = 2020,  # Base year
                    prob_use_trend_par = 0.01,  # Time trend in contraceptive use - adjust this to get steeper/slower trend
                    prob_use_intercept = 1.2,  # Intercept for the probability of using contraception - shifts the mCPR level
-                   method_weights = np.array([0.001, 0.1, 4, 0.1, 0.5, 0.1, 300, 5, 1]))
+                   method_weights = np.array([0.0012, 0.07, 3.5, 0.4, 0.5, 0.1, 300, 7, 3]))
+    #               method_weights = np.array([0.0012, 0.07, 3.5, 0.4, 0.5, 0.1, 300, 5, 3]))
 
     # Postpartum sexual activity correction or 'birth spacing preference'. Pulls values from {location}/data/birth_spacing_pref.csv by default
     # Set all to 1 to reset. Option to use 'optimize-space-prefs.py' script in this directory to determine values

@@ -55,8 +55,8 @@ def exposure_age():
     increase factor number and residual likelihood of avoiding live birth (mostly abortion,
     also miscarriage), will decrease factor number
     """
-    exposure_correction_age = np.array([[0,     5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
-                                        [0.5, 0.5, 0.5, 0.5 , 1,  2,  2,  1, 1,   1, 0.5,0.5,0.5]])  # <<< USER-EDITABLE: Can be modified for calibration
+    exposure_correction_age = np.array([[0,     5, 10, 12.5,   15, 18, 20,  25, 30,   35, 40, 45, 50],
+                                        [0.5, 0.5, 0.5, 0.4 , 0.5,  1,  1,  1.1,1.7,  1.7, 0.8,0.5,0.5]])  # <<< USER-EDITABLE: Can be modified for calibration
 
     exposure_age_interp = fpld.data2interp(exposure_correction_age, fpd.spline_preg_ages)
     return exposure_age_interp

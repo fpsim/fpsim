@@ -47,8 +47,7 @@ def make_pars(country):
     cm_pars = dict(prob_use_year = 2020,  # Base year
                    prob_use_trend_par = 0.01,  # Time trend in contraceptive use - adjust this to get steeper/slower trend
                    prob_use_intercept = 0.5,  # Intercept for the probability of using contraception - shifts the mCPR level
-                   method_weights = np.array([8, 1, 5, 35, 1, 2, 0.015, 0.015, 1]))
-    #               method_weights = np.array([10, 1, 5, 2, 1, 1, 1, 0.1, 0.1]))
+                   method_weights = np.array([8, 5, 5, 20, 2, 2, 0.015, 0.015, 1]))
 
     # Postpartum sexual activity correction or 'birth spacing preference'. Pulls values from {location}/data/birth_spacing_pref.csv by default
     # Set all to 1 to reset. Option to use 'optimize-space-prefs.py' script in this directory to determine values
