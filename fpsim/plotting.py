@@ -82,12 +82,10 @@ class Config:
         loc_mod = getattr(fp.locations, location)
         file_paths = loc_mod.filenames()
         val_data = sc.objdict()
-
         for key, filename in val_data_mapping.items():
             file_path = file_paths.get(key, None)
             if file_path is None:
                 raise ValueError(f"No path defined for key '{key}' in filenames() for location '{location}'.")
-
             if not Path(file_path).exists():
                 raise FileNotFoundError(f"File not found: {file_path}")
 
@@ -103,7 +101,7 @@ class Config:
 def save_figure(filename):
     """Helper function to save a figure if saving is enabled."""
     if Config.do_save:
-        sc.savefig(f"{Config.get_figs_directory()}/{filename}")
+        sc.savefig(f"{Config.get_figs_directory()}/{filename}", bbox_inches='tight')
 
 def compute_rmse(model_vals, data_vals):
     """
@@ -161,7 +159,7 @@ def plot_asfr(sim, ax=None):
     """Plots age-specific fertility rate"""
 
     data = Config.load_validation_data(sim.pars['location'], keys='asfr')['asfr']
-
+    data_agerange_cols = list(data.columns.values[1:])
     x = [1, 2, 3, 4, 5, 6, 7, 8]
 
     # Extract ASFR from simulation results
@@ -169,11 +167,12 @@ def plot_asfr(sim, ax=None):
     asfr_data = year.drop(['year'], axis=1).values.tolist()[0]
 
     # Extract ASFR from simulation results
-    x_labels = []
+    x_labels = [int(i.split('-')[0]) for i in data_agerange_cols]
     asfr_model = sim.connectors.fp.asfr[2:-1, -1]
+    
     # Compute mean-normalized RMSE
     rmse_scores['asfr'] = compute_rmse(asfr_model, asfr_data)
-
+    
     # Determine axis setup
     save_individual = False
     if ax is None:
@@ -184,7 +183,8 @@ def plot_asfr(sim, ax=None):
     kw = dict(lw=3, alpha=0.7, markersize=10)
     ax.plot(x, asfr_data, marker='^', color='black', label="UN data", **kw)
     ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
-    ax.set_xticks(x, x_labels)
+    ax.set_xticks(x)
+    ax.set_xticklabels(x_labels)
     ax.set_ylim(bottom=-10)
     if Config.show_rmse is True:
         ax.set_title(f"Age specific fertility rate per 1000 woman years\n(RMSE: {rmse_scores['asfr']:.2f})")
@@ -422,31 +422,31 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     # Compute mean-normalized RMSE
     rmse_scores['cpr'] = compute_rmse(model_values, data_values)
 
-    # Data to plot
-    plot_data = data_cpr.loc[data_cpr.year >= start_year]
-    si = sc.findfirst(res['timevec'] >= start_year)
-
-    # Determine axis setup
-    save_individual = False
-    if ax is None:
-        fig, ax = pl.subplots()
-        save_individual = True
-
-    # Plot
-    ax.plot(plot_data['year'], plot_data['cpr'], label='UN Data Portal', color='black')
-    ax.plot(res['timevec'][si:], res.contraception.mcpr[si:] * 100, label='FPsim', color='cornflowerblue')
-    ax.set_xlabel('Year')
-    ax.set_ylabel('Percent')
+    # Normalize pandas datetime year data types
+    res['timevec'] = pd.Series(res['timevec'].to_numpy())
+    res['timevec'] = pd.to_datetime(res['timevec']).dt.date
+    data_cpr['year'] = pd.to_datetime(data_cpr['year'], format="%Y").dt.date
+    
+    # Plot 
+    fig, ax = pl.subplots()
+    pl.plot(data_cpr['year'], data_cpr['cpr'], label='UN Data Portal', color='black')
+    pl.plot(res['timevec'], res.contraception.cpr * 100, label='FPsim', color='cornflowerblue')
+    pl.xlabel('Year')
+    pl.ylabel('Percent')
+    pl.xticks(rotation=45)
     if Config.show_rmse is True:
-        ax.set_title(f"Modern contraceptive Prevalence Rate\n(RMSE: {rmse_scores['cpr']:.2f})")
+        pl.title(f"Contraceptive Prevalence Rate - Model vs Data\n(RMSE: {rmse_scores['cpr']:.2f})")
     else:
-        ax.set_title(f'Modern contraceptive prevalence rate')
-    ax.legend(**legend_kwargs)
+        pl.title(f'Contraceptive Prevalence Rate - Model vs Data')
+    pl.legend()
 
-    if save_individual: save_figure('cpr.png')
-    if Config.do_show: pl.show()
+    save_figure('cpr.png')
+    if Config.do_show:
+        pl.show()
+
     return ax
-
+    
+    
 
 def plot_tfr(sim, ax=None, start_year=1990, stop_year=2020, legend_kwargs={}):
     """
@@ -836,7 +836,7 @@ def plot_calib(sim, single_fig=False, fig_kwargs=None, legend_kwargs=None):
     plot_method_mix(sim, ax=ax_arg(3), legend_kwargs=legend_kwargs)
     plot_afb(sim, ax=ax_arg(4), legend_kwargs=legend_kwargs)
     plot_birth_spacing(sim, ax=ax_arg(5), legend_kwargs=legend_kwargs)
-    # plot_asfr(sim, ax=ax_arg(5))
+    plot_asfr(sim, ax=ax_arg(5))
 
     if single_fig:
         fig.tight_layout()
