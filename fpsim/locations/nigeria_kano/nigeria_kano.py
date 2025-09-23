@@ -1,7 +1,8 @@
 """
-This is a template configuration file for an FPsim model specific to a location.
-Users should update values marked as USER-EDITABLE to match the context
-they are modeling.
+This configuration file is for an FPsim model specific to Nigeria Kano.
+
+Users may update values marked as USER-EDITABLE to match the context
+they are modeling for a specific version of FPsim.
 """
 import numpy as np
 from pathlib import Path
