@@ -82,6 +82,8 @@ def make_pars(location='nigeria_lagos', seed=None):  # <<< USER-EDITABLE: Change
     Take all parameters and construct into a dictionary
     """
 
+    print("INFO: Currently FPsim-Sindh uses PMA data from Rajasthan India as a placeholder. This calibration is not externally validated, and users should proceed with caution in using and interpreting FPsim for Sindh.")
+
     # Scalar parameters and filenames
     pars = scalar_pars()
     pars['abortion_prob'], pars['twins_prob'] = fpld.scalar_probs(location)     # <<< USER-EDITABLE: **If setting up regional location and want to use params from country data rather than regional data,
