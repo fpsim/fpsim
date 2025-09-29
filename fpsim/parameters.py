@@ -45,6 +45,7 @@ class SimPars(ss.SimPars):
             print('Running in test mode, with smaller population and shorter time period.')
             self.n_agents = 500
             self.start = 2000
+            self.location= 'test'
         super().update(pars=pars, create=create, **kwargs)
         return
 

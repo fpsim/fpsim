@@ -5,6 +5,7 @@ Test running sims
 import fpsim as fp
 import sciris as sc
 import starsim as ss
+import pytest
 
 
 par_kwargs = dict(test=True)
@@ -119,6 +120,33 @@ def test_sim_creation():
 
     print('✓ (successfully created sims with different methods)')
 
+    return
+
+
+def test_location_validation():
+    sc.heading('Test location parameter validation')
+    
+    # Test 1: No location specified should raise ValueError
+    with pytest.raises(ValueError, match="Location must be specified"):
+        sim = fp.Sim(n_agents=100)
+    
+    # Test 2: location='default' should work
+    sim_default = fp.Sim(n_agents=100, location='default')
+    assert sim_default.pars.location == 'senegal'  # default location
+    print('✓ (location="default" works)')
+    
+    # Test 3: location='test' should work  
+    sim_test = fp.Sim(n_agents=100, location='test')
+    assert sim_test.pars.location == 'senegal'  # test location
+    print('✓ (location="test" works)')
+    
+    # Test 4: test=True should automatically set location
+    sim_test_param = fp.Sim(n_agents=100, test=True)
+    assert sim_test_param.pars.location == 'senegal'  # test mode location
+    print('✓ (test=True automatically sets location)')
+    
+    print('✓ (location validation works correctly)')
+    
     return
 
 
