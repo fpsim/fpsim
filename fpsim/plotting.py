@@ -56,8 +56,7 @@ class Config:
     @classmethod
     def load_validation_data(cls, location, val_data_mapping=None, keys=None):
         """
-        Load validation data for the specified country or region.
-        Falls back to country-level data if region-specific file is not found.
+        Load validation data for the specified country or region using DataLoader.
 
         Args:
             location (str): The name of the location folder (region or country).
@@ -79,22 +78,15 @@ class Config:
         if keys is not None:
             val_data_mapping = {k: v for k, v in val_data_mapping.items() if k in keys}
 
-        loc_mod = getattr(fp.locations, location)
-        file_paths = loc_mod.filenames()
+        # Use DataLoader to load the calibration data
+        dataloader = fp.locations.data_utils.DataLoader(location=location)
         val_data = sc.objdict()
+        
         for key, filename in val_data_mapping.items():
-            file_path = file_paths.get(key, None)
-            if file_path is None:
-                raise ValueError(f"No path defined for key '{key}' in filenames() for location '{location}'.")
-            if not Path(file_path).exists():
-                raise FileNotFoundError(f"File not found: {file_path}")
-
-            val_data[key] = pd.read_csv(file_path)
-
-            # Filter to region if 'region' column exists
-            if 'region' in val_data[key].columns:
-                val_data[key] = val_data[key][val_data[key]['region'] == location].copy()
-                val_data[key].drop(columns=['region'], inplace=True)
+            try:
+                val_data[key] = dataloader.read_data(filename)
+            except FileNotFoundError:
+                raise FileNotFoundError(f"Validation data file not found: {filename} for location '{location}'")
 
         return val_data
 
