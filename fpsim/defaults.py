@@ -27,12 +27,32 @@ valid_region_locs = {
 
 
 # Parse locations
-def get_location(location):
+def get_location(location, printmsg=False):
+    default_location = 'senegal'
+    print("No location specified. Available locations are: ")
+    print(", ".join(valid_country_locs))
+    print("To use model defaults, set location='default' or location='test'.")
+    print("To use a custom location, register it using fpsim.defaults.register_location(name, location_ref)")
+
+    if not location:
+        raise ValueError('Location must be specified. To use model defaults, set location="default" or location="test".')
     location = location.lower()  # Ensure it's lowercase
+    if location == 'test':
+        if printmsg: print('Running test simulation using parameters from Senegal')
+        location = default_location
+    if location == 'default':
+        if printmsg: print('Running default simulation using parameters from Senegal')
+        location = default_location
+
+    # External locations override internal ones
+    if location in location_registry:
+        return location
+
     # Define valid locations
     if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
+
     return location
 
 

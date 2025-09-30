@@ -6,6 +6,9 @@ import starsim as ss
 import fpsim.locations.data_utils as fpld
 
 def make_calib_pars():
+
+    print("INFO: Currently FPsim-Sindh uses PMA data from Rajasthan India as a placeholder. This calibration is not externally validated, and users should proceed with caution in using and interpreting FPsim for Sindh.")
+
     pars = {}
     pars['fecundity'] = ss.uniform(low=0.1, high=0.9)
     pars['exposure_factor'] = 4
@@ -20,7 +23,7 @@ def make_calib_pars():
     spacing_pref_array[3:6] = 1
     spacing_pref_array[6:9] = 5
     spacing_pref_array[9:] =  0.1
-    
+
     pars['spacing_pref'] = {
         'preference': spacing_pref_array
     }
