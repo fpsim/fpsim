@@ -7,35 +7,35 @@ import pandas as pd
 import starsim as ss
 import fpsim.locations.data_utils as fpld
 
-def birth_spacing_pref():
-    """
-    Returns an array of birth spacing preferences by closest postpartum month.
-    If the CSV file is missing, a default table with equal weights is used.
-    """
-    # Try to read the CSV, fallback to dummy df if not found
-    try:
-        df = fpld.read_data('birth_spacing_pref.csv', os.path.abspath(__file__) / 'data' )
-    except FileNotFoundError:
-        print(f"birth_spacing_pref.csv not found, using default weights of 1.")
-        months = np.arange(0, 39, 3)  # 0 to 36 months in 3-month intervals
-        weights = np.ones_like(months, dtype=float)
-        df = pd.DataFrame({'month': months, 'weights': weights})
-
-    # Check uniform intervals
-    intervals = np.diff(df['month'].values)
-    interval = intervals[0]
-    assert np.all(intervals == interval), (
-        f"In order to be computed in an array, birth spacing preference bins must be uniform. Got: {intervals}"
-    )
-
-    pref_spacing = {
-        'interval': interval,
-        'n_bins': len(intervals),
-        'months': df['month'].values,
-        'preference': df['weights'].values
-    }
-
-    return pref_spacing
+# def birth_spacing_pref():
+#     """
+#     Returns an array of birth spacing preferences by closest postpartum month.
+#     If the CSV file is missing, a default table with equal weights is used.
+#     """
+#     # Try to read the CSV, fallback to dummy df if not found
+#     try:
+#         df = fpld.read_data('birth_spacing_pref.csv', os.path.abspath(__file__) / 'data' )
+#     except FileNotFoundError:
+#         print(f"birth_spacing_pref.csv not found, using default weights of 1.")
+#         months = np.arange(0, 39, 3)  # 0 to 36 months in 3-month intervals
+#         weights = np.ones_like(months, dtype=float)
+#         df = pd.DataFrame({'month': months, 'weights': weights})
+#
+#     # Check uniform intervals
+#     intervals = np.diff(df['month'].values)
+#     interval = intervals[0]
+#     assert np.all(intervals == interval), (
+#         f"In order to be computed in an array, birth spacing preference bins must be uniform. Got: {intervals}"
+#     )
+#
+#     pref_spacing = {
+#         'interval': interval,
+#         'n_bins': len(intervals),
+#         'months': df['month'].values,
+#         'preference': df['weights'].values
+#     }
+#
+#     return pref_spacing
 
 def make_calib_pars():
     pars = {}
