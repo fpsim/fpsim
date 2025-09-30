@@ -200,7 +200,7 @@ class Sim(ss.Sim):
         calib_pars = fpd.get_calib_pars(location, verbose=verbose)
         if calib_pars is not None:
             sc.printv(f'Applying calibration parameters for {location}...', veps)
-            all_pars = sc.mergedicts(calib_pars, all_pars)
+            all_pars = fp.mergepars(all_pars, calib_pars)  # Use smart merging for calibration parameters
 
         # Deal with all module pars in a loop
         module_par_map = {
@@ -215,7 +215,7 @@ class Sim(ss.Sim):
             indirect_module_pars = {k: v for k, v in all_pars.items() if k in module_default_pars.keys()}  # From pars or kwargs
             for k in indirect_module_pars: all_pars.pop(k)
             data_module_pars = data_dict.get(module, {})
-            merged_pars = sc.mergedicts(data_module_pars, indirect_module_pars, direct_user_pars, _copy=True)
+            merged_pars = fp.mergepars(data_module_pars, indirect_module_pars, direct_user_pars, _copy=True)
             setattr(self, f'{module}_pars', merged_pars)
 
         # Raise an exception if there are any leftover pars
