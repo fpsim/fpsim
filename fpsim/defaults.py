@@ -9,6 +9,7 @@ import starsim as ss
 import fpsim.arrays as fpa
 
 
+
 #%% Global defaults
 useSI          = True
 mpy            = 12   # Months per year, to avoid magic numbers
@@ -21,7 +22,8 @@ max_parity_spline = 20   # Used for parity splines
 location_registry = {}  # Registry for external custom locations
 valid_country_locs = ['senegal', 'kenya', 'ethiopia', 'cotedivoire', 'niger', 'nigeria_kano', 'nigeria_kaduna', 'nigeria_lagos', 'pakistan_sindh']
 valid_region_locs = {
-    'ethiopia': ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
+    'ethiopia': ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'centra' 'dire_dawa', 'gambela', 
+                 'harari', 'oromia', 'sidama', 'somali', 'south', 'southwest', 'tigray']
 }
 
 # Parse locations
@@ -44,10 +46,12 @@ def get_location(location, printmsg=False):
 
     # Define valid locations
     if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
+    if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
 
     return location
+
 
 
 # Register custom location (for external users)
@@ -65,6 +69,7 @@ def register_location(name, location_ref):
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
 # or updated during the course of a simulation.
 fpmod_states = [
+fpmod_states = [
     # Contraception
     ss.BoolState('on_contra', default=False),  # whether she's on contraception
     ss.IntArr('method', default=0),  # Which method to use. 0 used for those on no method
@@ -73,6 +78,16 @@ fpmod_states = [
     ss.BoolState('ever_used_contra', default=False),  # Ever been on contraception. 0 for never having used
     ss.FloatArr('rel_sus', default=0),  # Relative susceptibility to pregnancy, set to 1 for active fecund women
 
+    # Sexual and reproductive states, all False by default and set during simulation
+    ss.BoolState('lam'),
+    ss.BoolState('pregnant'),
+    ss.BoolState('fertile'),
+    ss.BoolState('sexually_active'),
+    ss.BoolState('sexual_debut'),
+    ss.BoolState('lactating'),
+    ss.BoolState('postpartum'),
+
+    # Ages of key events
     # Sexual and reproductive states, all False by default and set during simulation
     ss.BoolState('lam'),
     ss.BoolState('pregnant'),
@@ -120,6 +135,39 @@ fpmod_states = [
     ss.FloatArr('ti_debut'),
     ss.FloatArr('ti_dead'),
 
+    # Counts of events
+    ss.FloatArr('parity', default=0),           # Number of births including stillbirths
+    ss.FloatArr('n_births', default=0),         # Number of live births
+    ss.FloatArr('n_stillbirths', default=0),    # Number of stillbirths
+    ss.FloatArr('n_miscarriages', default=0),   # Number of miscarriages
+    ss.FloatArr('n_abortions', default=0),      # Number of abortions
+    ss.FloatArr('n_pregnancies', default=0),    # Number of pregnancies, including miscarriages, stillbirths, abortions
+    ss.FloatArr('months_inactive', default=0),  # TODO, what does this store?
+    ss.FloatArr('short_interval', default=0),   # TODO, what does this store?
+
+    # Durations and counters
+    ss.FloatArr('gestation', default=0),  # TODO, remove?
+    ss.FloatArr('remainder_months', default=0),  # TODO, remove?
+    ss.FloatArr('dur_pregnancy', default=0),
+    ss.FloatArr('dur_postpartum', default=0),
+    ss.FloatArr('dur_breastfeed', default=0),
+    ss.FloatArr('dur_breastfeed_total', default=0),
+
+    # Timesteps of significant events
+    ss.FloatArr('ti_conceived'),
+    ss.FloatArr('ti_pregnant'),
+    ss.FloatArr('ti_delivery'),
+    ss.FloatArr('ti_last_delivery'),
+    ss.FloatArr('ti_live_birth'),
+    ss.FloatArr('ti_stillbirth'),
+    ss.FloatArr('ti_postpartum'),
+    ss.FloatArr('ti_miscarriage'),
+    ss.FloatArr('ti_abortion'),
+    ss.FloatArr('ti_stop_postpartum'),
+    ss.FloatArr('ti_stop_breastfeeding'),
+    ss.FloatArr('ti_debut'),
+    ss.FloatArr('ti_dead'),
+
     # Fecundity
     ss.FloatArr('personal_fecundity', default=0),
 
@@ -130,6 +178,11 @@ fpmod_states = [
     fpa.TwoDimensionalArr('stillborn_ages', ncols=max_parity),  # Ages at time of stillbirths
     fpa.TwoDimensionalArr('miscarriage_ages', ncols=max_parity),  # Ages at time of miscarriages
     fpa.TwoDimensionalArr('abortion_ages', ncols=max_parity),  # Ages at time of abortions
+
+    ss.BoolState('partnered', default=False),  # Will remain at these values if use_partnership is False
+    ss.FloatArr('partnership_age', default=-1),  # Will remain at these values if use_partnership is False
+    # ss.State('urban', default=True),  # Urban/rural
+    # ss.FloatArr('wealthquintile', default=3),  # Wealth quintile
 
     ss.BoolState('partnered', default=False),  # Will remain at these values if use_partnership is False
     ss.FloatArr('partnership_age', default=-1),  # Will remain at these values if use_partnership is False
@@ -194,6 +247,8 @@ method_youth_age_map = {
 
 # Counts - we compute number of new events each timestep, plus number of cumulative events
 event_counts = sc.autolist(
+# Counts - we compute number of new events each timestep, plus number of cumulative events
+event_counts = sc.autolist(
     'births',
     'stillbirths',
     'miscarriages',
@@ -208,10 +263,12 @@ event_counts = sc.autolist(
 )
 
 people_counts = sc.autolist(
+people_counts = sc.autolist(
     'contra_access',
     'new_users',
     'ever_used_contra',
     'switchers',
+    'n_fecund',
     'n_fecund',
     'pp0to5',
     'pp6to11',
@@ -221,6 +278,20 @@ people_counts = sc.autolist(
     'parity4to5',
     'parity6plus',
     'nonpostpartum',
+)
+
+sim_results = sc.autolist(
+    'n_urban',
+    'n_wq1',
+    'n_wq2',
+    'n_wq3',
+    'n_wq4',
+    'n_wq5',
+)
+
+# Rates and other results that aren't scaled
+rate_results = sc.autolist(
+    'tfr',
 )
 
 sim_results = sc.autolist(
