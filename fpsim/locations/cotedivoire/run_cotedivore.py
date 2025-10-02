@@ -43,7 +43,7 @@ def make_pars(country):
     cm_pars = dict(prob_use_year = 2020,  # Base year 
                    prob_use_trend_par = 0.01,  # Time trend in contraceptive use - adjust this to get steeper/slower trend
                    prob_use_intercept = 0.5,  # Intercept for the probability of using contraception - shifts the mCPR level
-                   method_weights = np.array([8, 5, 5, 20, 2, 2, 0.015, 0.015, 1]))
+                   method_weights = np.array([8, 4, 5, 20, 2, 2, 0.02, 0.015, 5]))
 
     # Postpartum sexual activity correction or 'birth spacing preference'. Pulls values from {location}/data/birth_spacing_pref.csv by default
     # Set all to 1 to reset. Option to use 'optimize-space-prefs.py' script in this directory to determine values
@@ -51,10 +51,11 @@ def make_pars(country):
     # The probability of sex --> very indirect, so need a larger term, 
     # when you are 2 years postpartum, dhs data sexual activity, probability of sex
     # <<< USER-EDITABLE: Adjust/override any parameters that are defined in fpsim/defaults.py  
-    pars['spacing_pref']['preference'][:3] =  1  # Spacing of 0-6 months
-    pars['spacing_pref']['preference'][3:6] = 0.5  # Spacing of 9-15 months
-    pars['spacing_pref']['preference'][6:9] = 0.8  # Spacing of 18-24 months
-    pars['spacing_pref']['preference'][9:] =  2  # Spacing of 27-36 months
+    pars['spacing_pref']['preference'][:3] =  1.0  # Spacing of 0-6 months
+    pars['spacing_pref']['preference'][3:4] = 1.0  # Spacing of 9 months
+    pars['spacing_pref']['preference'][4:9] = 0.3  # Spacing of 12-24 months
+    pars['spacing_pref']['preference'][9:17] =  1.1  # Spacing of 27-48 months
+    pars['spacing_pref']['preference'][17:] =  1.0  # Spacing of 51-56 months
  
     return pars, cm_pars
 
