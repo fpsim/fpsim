@@ -9,9 +9,9 @@
 # - contra_coef_simple_pp6.csv
 #
 # For Standard Choice Model:
-# - contra_coef_standard.csv
-# - contra_coef_standard_pp1.csv
-# - contra_coef_standard_pp6.csv
+# - contra_coef_mid.csv
+# - contra_coef_mid_pp1.csv
+# - contra_coef_mid_pp6.csv
 # - splines_25_40.csv
 #
 ###############################################################################
@@ -32,7 +32,7 @@ required_packages <- c(
 )
 installed <- rownames(installed.packages())
 for (pkg in required_packages) {
-  if (!pkg %in% installed) install.packages(pkg)
+  if (!pkg %in% installed) install.packages(pkg, repos = "https://cloud.r-project.org/")
   library(pkg, character.only = TRUE)
 }
 options(survey.lonely.psu = "adjust")
@@ -40,9 +40,16 @@ options(survey.lonely.psu = "adjust")
 # -------------------------------
 # 2. Load and Clean Data
 # -------------------------------
-data.raw <- read_dta(dhs_path)
+# Filter if region and region_code are defined
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path) %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path) 
+}
 
-All_data <- data.raw %>%
+
+All_data <- dhs_data %>%
   mutate(
     age = as.numeric(v012),
     age_grp = cut(age, c(0, 18, 20, 25, 35, 50)),
@@ -108,8 +115,16 @@ standard.function <- function(svychoice) {
 # -------------------------------
 # 5. Run and Save Models
 # -------------------------------
-output_dir <- file.path(output_dir, country)
-if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+# Create country-based output directory if it doesn't exist
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
+
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
 
 if (model_type %in% c("simple", "both")) {
   write_csv(simple.function(svydes), file.path(output_dir, "contra_coef_simple.csv"))
@@ -118,9 +133,9 @@ if (model_type %in% c("simple", "both")) {
 }
 
 if (model_type %in% c("standard", "both")) {
-  write_csv(standard.function(svydes), file.path(output_dir, "contra_coef_standard.csv"))
-  write_csv(standard.function(svydes.pp1), file.path(output_dir, "contra_coef_standard_pp1.csv"))
-  write_csv(standard.function(svydes.pp6), file.path(output_dir, "contra_coef_standard_pp6.csv"))
+  write_csv(standard.function(svydes), file.path(output_dir, "contra_coef_mid.csv"))
+  write_csv(standard.function(svydes.pp1), file.path(output_dir, "contra_coef_mid_pp1.csv"))
+  write_csv(standard.function(svydes.pp6), file.path(output_dir, "contra_coef_mid_pp6.csv"))
 
   # Create and save natural spline basis for ages 15 to 49 with internal knots at 25 and 40
   age_range <- 15:49
