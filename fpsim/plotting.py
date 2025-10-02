@@ -434,6 +434,21 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     pl.xlabel('Year')
     pl.ylabel('Percent')
     pl.xticks(rotation=45)
+    # Data to plot
+    plot_data = data_cpr.loc[data_cpr.year >= start_year]
+    si = sc.findfirst(res['timevec'] >= start_year)
+
+    # Determine axis setup
+    save_individual = False
+    if ax is None:
+        fig, ax = pl.subplots()
+        save_individual = True
+
+    # Plot
+    ax.plot(plot_data['year'], plot_data['cpr'], label='UN Data Portal', color='black')
+    ax.plot(res['timevec'][si:].years, res.contraception.mcpr[si:] * 100, label='FPsim', color='cornflowerblue')
+    ax.set_xlabel('Year')
+    ax.set_ylabel('Percent')
     if Config.show_rmse is True:
         pl.title(f"Contraceptive Prevalence Rate - Model vs Data\n(RMSE: {rmse_scores['cpr']:.2f})")
     else:
