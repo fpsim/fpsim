@@ -38,16 +38,6 @@ class SimPars(ss.SimPars):
         self.update(kwargs)
         return
 
-    def update(self, pars=None, create=False, **kwargs):
-        # Pull out test
-        if kwargs.get('test') or (pars is not None and pars.get('test')):
-            print('Running in test mode, with smaller population and shorter time period.')
-            self.n_agents = 500
-            self.start = 2000
-            self.location= 'test'
-        super().update(pars=pars, create=create, **kwargs)
-        return
-
 
 def make_sim_pars(**kwargs):
     """ Shortcut for making a new instance of SimPars """
@@ -144,9 +134,9 @@ def mergepars(*args, _copy=False, **kwargs):
         *args: dictionaries to merge
         **kwargs: additional parameters (for compatibility with sc.mergedicts)
     """
-    # Convert any Pars objects to plain dicts
+    # Convert any Pars objects to dicts while preserving types like sc.objdict
     if _copy:
-        dicts = [dict(sc.dcp(arg)) for arg in args if arg is not None]
+        dicts = [sc.dcp(arg) if arg is not None else {} for arg in args if arg is not None]
     else:
         dicts = [dict(arg) if arg is not None else {} for arg in args if arg is not None]
     
@@ -190,6 +180,8 @@ def all_pars(location=None):
     death_pars = fp.DeathPars()
     people_pars = fp.PeoplePars()
     mergedpars = mergepars(sim_pars, fp_pars, contra_pars, edu_pars, death_pars, people_pars)
+    mergedpars['location'] = location
+    # Load location-specific parameters if a location is provided
     if location is not None:
         data_pars = fp.DataLoader(location=location).load(return_data=True)
         for modpars in data_pars.values():

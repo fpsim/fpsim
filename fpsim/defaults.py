@@ -28,7 +28,6 @@ valid_region_locs = {
 
 # Parse locations
 def get_location(location, printmsg=False):
-    default_location = 'senegal'
 
     if not location:
         print("No location specified. Available locations are: ")
@@ -37,14 +36,7 @@ def get_location(location, printmsg=False):
         print("To use a custom location, register it using fpsim.defaults.register_location(name, location_ref)")
 
         raise ValueError('Location must be specified. To use model defaults, set location="default" or location="test".')
-
     location = location.lower()  # Ensure it's lowercase
-    if location == 'test':
-        if printmsg: print('Running test simulation using parameters from Senegal')
-        location = default_location
-    if location == 'default':
-        if printmsg: print('Running default simulation using parameters from Senegal')
-        location = default_location
 
     # External locations override internal ones
     if location in location_registry:
@@ -61,26 +53,8 @@ def get_location(location, printmsg=False):
 def get_dataloader(location, printwarn=True):
     """ Return the data loader module """
     from . import locations as fplocs
-
-    if location is None:
-        warnmsg = """
-        No location specified, loading data for to "senegal" from default directory.
-        This can be changed by specifying the location when initializing the sim, 
-        or by passing in a dataloader with a path to where you are keeping your data.
-        Examples:
-            import fpsim as fp
-
-            # Use one of the built-in locations
-            sim = fp.Sim(location='kenya') 
-
-            # Load your own data
-            my_data = fp.DataLoader(data_path='path-to-my-data')
-            sim = fp.Sim(dataloader=my_data)
-            """
-        if printwarn: ss.warn(warnmsg)
-        location = 'senegal'
-
     location = get_location(location)
+
     if hasattr(fplocs, location):
         dataloader = getattr(fplocs, location).dataloader()
     else:
@@ -100,6 +74,16 @@ def get_calib_pars(location, verbose=1):
         sc.printv(f'No calibration parameters found for {location}', thisverbose=0, verbose=verbose)
         return None
     return calib_pars
+
+def get_test_defaults():
+    """ Return the test defaults """
+    defaults = {
+        'n_agents': 500,
+        'start': 2000,
+        'stop': 2005,
+        'location': 'senegal',
+    }
+    return defaults
 
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
