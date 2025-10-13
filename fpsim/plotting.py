@@ -81,7 +81,7 @@ class Config:
         # Use DataLoader to load the calibration data
         dataloader = fp.locations.data_utils.DataLoader(location=location)
         val_data = sc.objdict()
-        
+
         for key, filename in val_data_mapping.items():
             try:
                 val_data[key] = dataloader.read_data(filename)
@@ -429,6 +429,7 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     ax.plot(res['timevec'][si:].years, res.contraception.mcpr[si:] * 100, label='FPsim', color='cornflowerblue')
     ax.set_xlabel('Year')
     ax.set_ylabel('Percent')
+    pl.xticks(rotation=45)
     if Config.show_rmse is True:
         pl.title(f"Contraceptive Prevalence Rate - Model vs Data\n(RMSE: {rmse_scores['cpr']:.2f})")
     else:

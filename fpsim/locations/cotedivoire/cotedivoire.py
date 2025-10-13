@@ -19,15 +19,15 @@ def make_calib_pars():
 
     spacing_pref_array = np.ones(13, dtype=float)  # Size based on n_bins from data files
     spacing_pref_array[:3] =  1     # Spacing of 0-6 months
-    spacing_pref_array[3:6] = 0.5   # Spacing of 9-15 months  
+    spacing_pref_array[3:6] = 0.5   # Spacing of 9-15 months
     spacing_pref_array[6:9] = 0.8   # Spacing of 18-24 months
     spacing_pref_array[9:] =  2     # Spacing of 27+ months
-    
+
     pars['spacing_pref'] = {
         'preference': spacing_pref_array
     }
     pars['exposure_age'] = np.array([[0,    5,  10, 12.5, 15, 18, 20, 25,  30,  35, 40, 45, 50],
-                                        [0.1, 0.1, 0.5,  0.1,0.1, 0.6,1.5,0.6,0.6,0.2,  0.3,0.5,0.2]])  # <<< USER-EDITABLE: Can be modified for calibration
+                                        [0.1, 0.1, 0.5,  0.1,0.1, 0.6,1.4,0.56,0.5,0.3,0.2,0.5,0.2]])  # <<< USER-EDITABLE: Can be modified for calibration
     pars['exposure_parity'] = np.array([[0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 20],
                                            [1, 1, 1, 1, 1, 1, 1, 0.8, 0.5, 0.3, 0.15, 0.10, 0.05, 0.01]])  # <<< USER-EDITABLE: Can be modified for calibration
 

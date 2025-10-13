@@ -58,6 +58,19 @@ Updates the FPsim code to be compatible with the most recent version of Starsim 
 - There were previously many places in the code where random draws occured. These have all been replaced with Starsim distributions, so it is now possible to take advantage of Starsim's common random number generation.
 - The `archive` folder has been removed.
 
+Version 3.3.1 (2025-09-05)
+---------------------------
+Minor bugfix in plotting.plot_calib(). Fixes x axis units for MCPR plot and reenables ASFR plot.
+
+
+Version 3.3.0 (2025-08-27)
+---------------------------
+Updates the FPsim code to be compatible with the most recent version of Starsim (v3.0.2). The most recent Starsim release included many improvements to the logic of time, probability, and rates. FPsim now benefits from these improvements; in particular:
+- fp.defaults.mpy has been removed
+- All of the logic of FPsim is now agnostic to the timestep. This means that everything will still work if you want to use a timestep of 3 months instead of 1, for instance.
+- There were previously many places in the code where random draws occured. These have all been replaced with Starsim distributions, so it is now possible to take advantage of Starsim's common random number generation.
+- The `archive` folder has been removed.
+
 
 Version 3.2.0 (2025-08-15)
 ---------------------------
