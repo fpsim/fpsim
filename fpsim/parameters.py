@@ -70,7 +70,8 @@ class FPPars(ss.Pars):
 
         # Parameters typically tuned during calibration
         self.maternal_mortality_factor = 1
-        self.fecundity = ss.uniform(low=0.7, high=1.1)  # Personal fecundity distribution
+        self.fecundity_low = 0.7
+        self.fecundity_high = 1.1  # Personal fecundity distribution
         self.exposure_factor = 1  # Overall exposure factor, to be calibrated
         self.exposure_age = dict(age    =[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
                                  rel_exp=[1, 1,  1,    1,  1,  1,  1,  1,  1,  1,  1,  1,  1])
@@ -101,6 +102,9 @@ class FPPars(ss.Pars):
 
         if location is not None:
             self.update_location(location=location)
+        else:
+            # Process parameters even when no location is specified
+            self.process_parameters()
 
         return
 
@@ -111,6 +115,20 @@ class FPPars(ss.Pars):
         location_module = fp.get_dataloader(location)
         location_pars = location_module.make_fp_pars()
         self.update(**location_pars)
+        self.process_parameters()
+        return
+    
+    def process_parameters(self):
+        """
+        Process parameters after all updates are complete.
+        Convert fecundity_low/fecundity_high to ss.uniform distribution.
+        """
+        # Convert fecundity bounds to distribution
+        if hasattr(self, 'fecundity_low') and hasattr(self, 'fecundity_high'):
+            self.fecundity = ss.uniform(low=self.fecundity_low, high=self.fecundity_high)
+        elif not hasattr(self, 'fecundity'):
+            # Fallback to default if no fecundity parameters are set
+            self.fecundity = ss.uniform(low=0.7, high=1.1)
         return
 
 

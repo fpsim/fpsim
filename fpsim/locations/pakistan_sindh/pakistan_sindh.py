@@ -10,7 +10,8 @@ def make_calib_pars():
     print("INFO: Currently FPsim-Sindh uses PMA data from Rajasthan India as a placeholder. This calibration is not externally validated, and users should proceed with caution in using and interpreting FPsim for Sindh.")
 
     pars = {}
-    pars['fecundity'] = ss.uniform(low=0.1, high=0.9)
+    pars['fecundity_low'] = 0.1
+    pars['fecundity_high'] = 0.9
     pars['exposure_factor'] = 4
     pars['prob_use_year'] = 2020
     pars['prob_use_trend_par'] = 0.01

@@ -12,7 +12,8 @@ import fpsim.locations.data_utils as fpld
 def make_calib_pars():
     pars = {}
 
-    pars['fecundity'] = ss.uniform(1.028, 1.178)
+    pars['fecundity_low'] = 1.028
+    pars['fecundity_high'] = 1.178
 
     pars['exposure_age'] = np.array([[0, 5, 10, 12.5, 15, 18, 20, 25, 30, 35, 40, 45, 50],
                                         [1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1]])

@@ -7,7 +7,8 @@ import fpsim.locations.data_utils as fpld
 
 def make_calib_pars():
     pars = {}
-    pars['fecundity'] = ss.uniform(low=0.01, high=1.5)
+    pars['fecundity_low'] = 0.01
+    pars['fecundity_high'] = 1.5
     pars['exposure_factor'] = 1
     pars['prob_use_year'] = 2020
     pars['prob_use_trend_par'] = 0.01
