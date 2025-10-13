@@ -14,14 +14,15 @@ def make_calib_pars():
     pars['prob_use_year'] = 2020
     pars['prob_use_trend_par'] = 0.01
     pars['prob_use_intercept'] = 0.5
-    pars['method_weights'] = np.array([8, 5, 5, 20, 2, 2, 0.015, 0.015, 1])
+    pars['method_weights'] = np.array([8, 4, 5, 20, 2, 2, 0.02, 0.015, 5])
     pars['dur_postpartum'] = 23
 
     spacing_pref_array = np.ones(13, dtype=float)  # Size based on n_bins from data files
-    spacing_pref_array[:3] =  1     # Spacing of 0-6 months
-    spacing_pref_array[3:6] = 0.5   # Spacing of 9-15 months
-    spacing_pref_array[6:9] = 0.8   # Spacing of 18-24 months
-    spacing_pref_array[9:] =  2     # Spacing of 27+ months
+    spacing_pref_array[:3] =  1.0  # Spacing of 0-6 months
+    spacing_pref_array[3:4] = 1.0  # Spacing of 9 months
+    spacing_pref_array[4:9] = 0.3  # Spacing of 12-24 months
+    spacing_pref_array[9:17] =  1.1  # Spacing of 27-48 months
+    spacing_pref_array[17:] =  1.0  # Spacing of 51-56 months
 
     pars['spacing_pref'] = {
         'preference': spacing_pref_array
