@@ -56,8 +56,7 @@ class Config:
     @classmethod
     def load_validation_data(cls, location, val_data_mapping=None, keys=None):
         """
-        Load validation data for the specified country or region.
-        Falls back to country-level data if region-specific file is not found.
+        Load validation data for the specified country or region using DataLoader.
 
         Args:
             location (str): The name of the location folder (region or country).
@@ -79,31 +78,22 @@ class Config:
         if keys is not None:
             val_data_mapping = {k: v for k, v in val_data_mapping.items() if k in keys}
 
-        loc_mod = getattr(fp.locations, location)
-        file_paths = loc_mod.filenames()
+        # Use DataLoader to load the calibration data
+        dataloader = fp.locations.data_utils.DataLoader(location=location)
         val_data = sc.objdict()
 
         for key, filename in val_data_mapping.items():
-            file_path = file_paths.get(key, None)
-            if file_path is None:
-                raise ValueError(f"No path defined for key '{key}' in filenames() for location '{location}'.")
-
-            if not Path(file_path).exists():
-                raise FileNotFoundError(f"File not found: {file_path}")
-
-            val_data[key] = pd.read_csv(file_path)
-
-            # Filter to region if 'region' column exists
-            if 'region' in val_data[key].columns:
-                val_data[key] = val_data[key][val_data[key]['region'] == location].copy()
-                val_data[key].drop(columns=['region'], inplace=True)
+            try:
+                val_data[key] = dataloader.read_data(filename)
+            except FileNotFoundError:
+                raise FileNotFoundError(f"Validation data file not found: {filename} for location '{location}'")
 
         return val_data
 
 def save_figure(filename):
     """Helper function to save a figure if saving is enabled."""
     if Config.do_save:
-        sc.savefig(f"{Config.get_figs_directory()}/{filename}")
+        sc.savefig(f"{Config.get_figs_directory()}/{filename}", bbox_inches='tight')
 
 def compute_rmse(model_vals, data_vals):
     """
@@ -161,7 +151,7 @@ def plot_asfr(sim, ax=None):
     """Plots age-specific fertility rate"""
 
     data = Config.load_validation_data(sim.pars['location'], keys='asfr')['asfr']
-
+    data_agerange_cols = list(data.columns.values[1:])
     x = [1, 2, 3, 4, 5, 6, 7, 8]
 
     # Extract ASFR from simulation results
@@ -169,8 +159,9 @@ def plot_asfr(sim, ax=None):
     asfr_data = year.drop(['year'], axis=1).values.tolist()[0]
 
     # Extract ASFR from simulation results
-    x_labels = []
+    x_labels = [int(i.split('-')[0]) for i in data_agerange_cols]
     asfr_model = sim.connectors.fp.asfr[2:-1, -1]
+
     # Compute mean-normalized RMSE
     rmse_scores['asfr'] = compute_rmse(asfr_model, asfr_data)
 
@@ -184,7 +175,8 @@ def plot_asfr(sim, ax=None):
     kw = dict(lw=3, alpha=0.7, markersize=10)
     ax.plot(x, asfr_data, marker='^', color='black', label="UN data", **kw)
     ax.plot(x, asfr_model, marker='*', color='cornflowerblue', label="FPsim", **kw)
-    ax.set_xticks(x, x_labels)
+    ax.set_xticks(x)
+    ax.set_xticklabels(x_labels)
     ax.set_ylim(bottom=-10)
     if Config.show_rmse is True:
         ax.set_title(f"Age specific fertility rate per 1000 woman years\n(RMSE: {rmse_scores['asfr']:.2f})")
@@ -212,10 +204,10 @@ def plot_method_mix(sim, ax=None, legend_kwargs={}):
     ppl = sim.people
     cm = sim.connectors.contraception
     model_labels_all = [m.label for m in cm.methods.values()]
-    model_labels_methods = sc.dcp(model_labels_all)
     mm = ppl.fp.method[ppl.female & (ppl.age >= min_age) & (ppl.age < max_age)]
-    mm_counts, _ = np.histogram(mm, bins=len(model_labels_all))
-    mm_counts = mm_counts/mm_counts.sum()
+    unique_methods, counts = np.unique(mm, return_counts=True)
+    mm_counts = np.zeros(len(model_labels_all))
+    mm_counts[unique_methods] = counts
     model_method_counts = sc.odict(zip(model_labels_all, mm_counts))
 
     # Method mix from data - country PMA data (mix.csv)
@@ -437,11 +429,12 @@ def plot_cpr(sim, start_year=2005, end_year=None, ax=None, legend_kwargs={}):
     ax.plot(res['timevec'][si:].years, res.contraception.mcpr[si:] * 100, label='FPsim', color='cornflowerblue')
     ax.set_xlabel('Year')
     ax.set_ylabel('Percent')
+    pl.xticks(rotation=45)
     if Config.show_rmse is True:
-        ax.set_title(f"Modern contraceptive Prevalence Rate\n(RMSE: {rmse_scores['cpr']:.2f})")
+        pl.title(f"Contraceptive Prevalence Rate - Model vs Data\n(RMSE: {rmse_scores['cpr']:.2f})")
     else:
-        ax.set_title(f'Modern contraceptive prevalence rate')
-    ax.legend(**legend_kwargs)
+        pl.title(f'Contraceptive Prevalence Rate - Model vs Data')
+    pl.legend()
 
     if save_individual: save_figure('cpr.png')
     if Config.do_show: pl.show()

@@ -3,8 +3,6 @@
 # Using Most Recent DHS IR Recode Data
 #
 # Creates: birth_spacing_dhs.csv
-# ---------------------------------------------------------------------------
-# January 2023
 ###############################################################################
 
 # -------------------------------
@@ -32,14 +30,27 @@ for (pkg in required_packages) {
 # 2. Load and Prepare DHS Data
 # -------------------------------
 
-dhs_data <- read_dta(
-  dhs_path,
-  col_select = c(
-    "v005", "v021", "v023", "v102", "caseid",
-    starts_with("b0"),  # multiple births
-    starts_with("b11")  # preceding birth intervals (in months)
-  )
-) %>%
+# multiple births = starts_with("b0")
+# preceding birth intervals (in months) = starts_with("b11") 
+#dhs_data <- read_dta(dhs_path,
+#  col_select = c("v005", "v021", "v023", "v102", "caseid", starts_with("b0"),  
+#    starts_with("b11")))
+
+# Filter if region and region_code are defined
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path,
+                       col_select = c("v005", "v021", "v023", "v102", "caseid", starts_with("b0"),  
+                                      starts_with("b11"), region_variable)) 
+  dhs_data <- dhs_data %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path,
+                       col_select = c("v005", "v021", "v023", "v102", "caseid", starts_with("b0"),  
+                                    starts_with("b11"))) 
+}
+
+# Apply gather and mutate after optional filtering
+dhs_data <- dhs_data %>%
   gather(var, val, -v005, -v021, -v023, -v102, -caseid) %>%
   separate(var, into = c("var", "num"), sep = "_") %>%
   spread(var, val) %>%
@@ -63,10 +74,19 @@ design <- svydesign(
 spacing <- svytable(~space_mo + urban_rural, design) %>%
   as.data.frame()
 
+# Ensure weights column is always a float
+spacing$Freq <- as.numeric(spacing$Freq)
+
 # -------------------------------
 # 4. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(output_dir, country)
+# Create country-based output directory if it doesn't exist
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
+
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }

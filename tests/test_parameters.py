@@ -35,7 +35,7 @@ def test_null(do_plot=do_plot):
     for key in ['age_mortality', 'maternal_mortality', 'infant_mortality']:
         pars[key]['probs'] *= 0
 
-    sim = fp.Sim(test=True, pars=pars)
+    sim = fp.Sim(pars=pars)
     sim.run()
 
     # Tests

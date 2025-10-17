@@ -34,33 +34,26 @@ def test_random_choice():
 def test_simple_choice():
     sc.heading('Method choice is based on age & previous method')
 
-    # Make & run sim
-    sims = sc.autolist()
-    for location in ['kenya', 'ethiopia', 'senegal', 'amhara']:
-        method_choice = fp.SimpleChoice(location=location)
-        sim = fp.Sim(pars=par_kwargs, location=location, contraception_module=method_choice, analyzers=fp.cpr_by_age())
-        sims += sim
-
-    m = ss.parallel(sims, parallel=parallel)
+    # Test SimpleChoice functionality with one location (kenya)
+    method_choice = fp.SimpleChoice(location='kenya')
+    sim = fp.Sim(pars=par_kwargs, location='kenya', contraception_module=method_choice, analyzers=fp.cpr_by_age())
+    sim.run()
     print(f'✓ (successfully ran SimpleChoice)')
 
-    return m.sims
+    return sim
 
 
 def test_mid_choice():
     sc.heading('Test sims with default contraceptive choice module')
 
-    sims = sc.autolist()
-    for location in ['kenya', 'ethiopia', 'senegal', 'amhara']:
-        ms = fp.StandardChoice(location=location)
-        edu = fp.Education(location=location)
-        s = fp.Sim(pars=par_kwargs, location=location, contraception_module=ms, education_module=edu)
-        sims += s
-
-    m = ss.parallel(sims, parallel=parallel)
+    # Test StandardChoice functionality with one location (kenya)
+    ms = fp.StandardChoice(location='kenya')
+    edu = fp.Education(location='kenya')
+    sim = fp.Sim(pars=par_kwargs, location='kenya', contraception_module=ms, education_module=edu)
+    sim.run()
     print(f'✓ (successfully ran StandardChoice)')
 
-    return m.sims
+    return sim
 
 
 def test_sim_creation():
@@ -120,6 +113,53 @@ def test_sim_creation():
 
     print('✓ (successfully created sims with different methods)')
 
+    return
+
+
+def test_location_validation():
+    sc.heading('Test location parameter validation')
+
+    # Test 1: No location specified should raise ValueError
+    with pytest.raises(ValueError, match="Location must be specified"):
+        sim = fp.Sim(n_agents=100)
+
+    # Test 2: Real location should work
+    sim_kenya = fp.Sim(n_agents=100, location='kenya')
+    assert sim_kenya.pars.location == 'kenya'
+    print('OK (real location works)')
+
+    # Test 3: test=True should automatically set location
+    sim_test_param = fp.Sim(n_agents=100, test=True)
+    assert sim_test_param.pars.location == 'senegal'  # test mode location
+    print('OK (test=True automatically sets location)')
+    
+    # Test 5: All available locations should load and initialize successfully
+    from fpsim.defaults import valid_country_locs, valid_region_locs
+    
+    # Get all valid locations (country + region locations)
+    all_locations = valid_country_locs.copy()
+    for region_list in valid_region_locs.values():
+        all_locations.extend(region_list)
+    
+    for location in all_locations:
+        try:
+            # Test that location can load data and modules
+            method_choice = fp.SimpleChoice(location=location)
+            edu = fp.Education(location=location)
+            
+            # Test that sim can be created and initialized (but not run)
+            sim = fp.Sim(n_agents=50, location=location, start=2010, stop=2011,
+                        contraception_module=method_choice, education_module=edu)
+            sim.init()  # Initialize but don't run
+            
+            print(f'✓ (location="{location}" loads and initializes)')
+            
+        except Exception as e:
+            print(f'✗ (location="{location}" failed: {e})')
+            raise AssertionError(f'Location "{location}" should load and initialize successfully') from e
+    
+    print('✓ (all location validation tests passed)')
+    
     return
 
 

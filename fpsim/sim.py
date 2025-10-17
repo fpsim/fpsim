@@ -181,6 +181,21 @@ class Sim(ss.Sim):
         for k in user_sim_pars: all_pars.pop(k)
         sim_pars = sc.mergedicts(user_sim_pars, sim_pars, _copy=True)
 
+        # Pull out test
+        if kwargs.get('test') or (pars is not None and pars.get('test')) or (sim_pars is not None and sim_pars.get('test')):
+            defaults = fpd.get_test_defaults()
+
+            # Only apply test defaults for parameters not explicitly provided by user
+            user_provided_keys = set()
+            if pars: user_provided_keys.update(pars.keys())
+            if sim_pars: user_provided_keys.update(sim_pars.keys())
+            if kwargs: user_provided_keys.update(kwargs.keys())
+
+            # Remove user-provided keys from defaults to avoid overriding them
+            filtered_defaults = {k: v for k, v in defaults.items() if k not in user_provided_keys}
+
+            sim_pars = sc.mergedicts(sim_pars, filtered_defaults, _copy=True)
+
         # Get location
         verbose = sim_pars.get('verbose', self.pars.verbose)
         veps = 0
@@ -200,7 +215,7 @@ class Sim(ss.Sim):
         calib_pars = fpd.get_calib_pars(location, verbose=verbose)
         if calib_pars is not None:
             sc.printv(f'Applying calibration parameters for {location}...', veps)
-            all_pars = sc.mergedicts(calib_pars, all_pars)
+            all_pars = fp.mergepars(all_pars, calib_pars)  # Use smart merging for calibration parameters
 
         # Deal with all module pars in a loop
         module_par_map = {
@@ -215,7 +230,7 @@ class Sim(ss.Sim):
             indirect_module_pars = {k: v for k, v in all_pars.items() if k in module_default_pars.keys()}  # From pars or kwargs
             for k in indirect_module_pars: all_pars.pop(k)
             data_module_pars = data_dict.get(module, {})
-            merged_pars = sc.mergedicts(data_module_pars, indirect_module_pars, direct_user_pars, _copy=True)
+            merged_pars = fp.mergepars(data_module_pars, indirect_module_pars, direct_user_pars, _copy=True)
             setattr(self, f'{module}_pars', merged_pars)
 
         # Raise an exception if there are any leftover pars

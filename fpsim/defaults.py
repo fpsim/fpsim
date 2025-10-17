@@ -20,15 +20,33 @@ max_age_preg   = 50   # Maximum age to become pregnant
 max_parity     = 20   # Maximum number of children to track - also applies to abortions, miscarriages, stillbirths
 max_parity_spline = 20   # Used for parity splines
 location_registry = {}  # Registry for external custom locations
-valid_country_locs = ['senegal', 'kenya', 'ethiopia']
+valid_country_locs = ['senegal', 'kenya', 'ethiopia', 'cotedivoire', 'niger', 'nigeria_kano', 'nigeria_kaduna', 'nigeria_lagos', 'pakistan_sindh']
 valid_region_locs = {
     'ethiopia': ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
 }
 
 
 # Parse locations
-def get_location(location):
+def get_location(location, printmsg=False):
+
+    if not location:
+        print("No location specified. Available locations are: ")
+        print(", ".join(valid_country_locs))
+        print("To use model defaults, set test=True.")
+        print(("To use a custom location, you can construct the sim by passing in a dataloader with a path to where you are keeping your data.\n"
+              "Example:\n"
+              "    import fpsim as fp\n"
+              "    # Load your own data\n"
+              "    my_data = fp.DataLoader(data_path='path-to-my-data')"
+              "    sim = fp.Sim(dataloader=my_data)"))
+
+        raise ValueError('Location must be specified. To use model defaults, set test=True.')
     location = location.lower()  # Ensure it's lowercase
+
+    # External locations override internal ones
+    if location in location_registry:
+        return location
+
     # Define valid locations
     if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
         errormsg = f'Location "{location}" is not currently supported'
@@ -39,26 +57,8 @@ def get_location(location):
 def get_dataloader(location, printwarn=True):
     """ Return the data loader module """
     from . import locations as fplocs
-
-    if location is None:
-        warnmsg = """
-        No location specified, loading data for to "senegal" from default directory.
-        This can be changed by specifying the location when initializing the sim, 
-        or by passing in a dataloader with a path to where you are keeping your data.
-        Examples:
-            import fpsim as fp
-
-            # Use one of the built-in locations
-            sim = fp.Sim(location='kenya') 
-
-            # Load your own data
-            my_data = fp.DataLoader(data_path='path-to-my-data')
-            sim = fp.Sim(dataloader=my_data)
-            """
-        if printwarn: ss.warn(warnmsg)
-        location = 'senegal'
-
     location = get_location(location)
+
     if hasattr(fplocs, location):
         dataloader = getattr(fplocs, location).dataloader()
     else:
@@ -78,6 +78,16 @@ def get_calib_pars(location, verbose=1):
         sc.printv(f'No calibration parameters found for {location}', thisverbose=0, verbose=verbose)
         return None
     return calib_pars
+
+def get_test_defaults():
+    """ Return the test defaults """
+    defaults = {
+        'n_agents': 500,
+        'start': 2000,
+        'stop': 2005,
+        'location': 'senegal',
+    }
+    return defaults
 
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy

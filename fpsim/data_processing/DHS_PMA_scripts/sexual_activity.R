@@ -25,8 +25,18 @@ for (pkg in required_packages) {
 # -------------------------------
 # 2. Load and Clean Data
 # -------------------------------
-dhs_data <- read_dta(dhs_path,
-                     col_select = c("v005", "v021", "v023", "v012", "v536")) %>%
+# Filter if region and region_code are defined
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path,
+                       col_select = c("v005", "v021", "v023", "v012", "v536", region_variable)) 
+  dhs_data <- dhs_data %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path,
+                       col_select = c("v005", "v021", "v023", "v012", "v536")) 
+}
+
+dhs_data <- dhs_data %>%
   mutate(
     active = case_when(
       is.na(v536) | v536 == 0 ~ NA_real_,  # never had sex or missing
@@ -71,7 +81,15 @@ if (!50 %in% activity_summary$age) {
 # -------------------------------
 # 4. Save Output to Country Directory
 # -------------------------------
-output_dir <- file.path(output_dir, country)
-if (!dir.exists(output_dir)) dir.create(output_dir, recursive = TRUE)
+# Create country-based output directory if it doesn't exist
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
+
+if (!dir.exists(output_dir)) {
+  dir.create(output_dir, recursive = TRUE)
+}
 
 write.csv(activity_summary, file.path(output_dir, "sexually_active.csv"), row.names = FALSE)

@@ -5,7 +5,6 @@
 # Creates: method_mix_matrix_switch.csv
 # ----------------------------------------------------------------
 # Author: Marita Zimmermann
-# Date: June 2022
 ###############################################################################
 
 # -------------------------------
@@ -31,16 +30,20 @@ for (pkg in required_packages) {
 # -------------------------------
 # 2. Load DHS Calendar Data
 # -------------------------------
-
-data.raw <- read_dta(dhs_path)
-
+# Filter if region and region_code are defined
+if (exists("region_variable") && exists("region") && exists("region_code")) {
+  dhs_data <- read_dta(dhs_path) %>% 
+    filter(.data[[region_variable]] == region_code)
+} else {
+  dhs_data <- read_dta(dhs_path) 
+}
 
 # -------------------------------
 # 3. Data Manipulation
 #      Keep only calendar data, age, and parity
 # -------------------------------
 
-data <- data.raw %>%
+data <- dhs_data %>%
   mutate(wt = v005/1000000,
          age = as.numeric(v012),                                                                            # convert age to numeric
          sex.active = v527,                                                                                 # Time since the last sexual relations as reported by the respondent.  The first digit gives the units in which the respondent gave her answer:  1 - Days ago, 2 - Weeks ago, 3 - Months ago, 4 - Years ago, with 9 meaning a special answer was given.  The last two digits give the time in the units given.
@@ -115,7 +118,12 @@ matrices_switch <- data %>%
 # -------------------------------
 
 # Create country-based output directory if it doesn't exist
-output_dir <- file.path(output_dir, country)
+if (exists("region") && exists("region_code")) {
+  output_dir <- file.path(output_dir, paste0(country, "_", region), 'data')
+} else {
+  output_dir <- file.path(output_dir, country, 'data')
+}
+
 if (!dir.exists(output_dir)) {
   dir.create(output_dir, recursive = TRUE)
 }
