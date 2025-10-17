@@ -117,7 +117,7 @@ class FPPars(ss.Pars):
         self.update(**location_pars)
         self.process_parameters()
         return
-    
+
     def process_parameters(self):
         """
         Process parameters after all updates are complete.
@@ -141,12 +141,12 @@ def mergepars(*args, _copy=False, **kwargs):
     """
     Merge all parameter dictionaries into a single dictionary with nested merging.
     This is used to initialize the SimPars class with all relevant parameters.
-    
+
     Unlike sc.mergedicts, this function recursively merges nested dictionaries instead
     of replacing them entirely. This allows partial dictionary specifications in
     calibration parameters (e.g., only specifying preference values in spacing_pref
     while preserving interval, n_bins, months from defaults).
-    
+
     Args:
         _copy (bool): whether to deep copy the input dictionaries (default False, same as sc.mergedicts)
         *args: dictionaries to merge
@@ -157,26 +157,26 @@ def mergepars(*args, _copy=False, **kwargs):
         dicts = [sc.dcp(arg) if arg is not None else {} for arg in args if arg is not None]
     else:
         dicts = [dict(arg) if arg is not None else {} for arg in args if arg is not None]
-    
+
     if len(dicts) < 2:
         # Single dict or empty - use standard merging
         return sc.mergedicts(*dicts, _copy=_copy, **kwargs) if dicts else {}
-    
+
     # Start with the first dictionary
     result = sc.dcp(dicts[0]) if _copy else dicts[0]
-    
+
     # Recursively merge each subsequent dictionary
     for next_dict in dicts[1:]:
         for key, value in next_dict.items():
-            if (key in result and 
-                isinstance(value, dict) and 
+            if (key in result and
+                isinstance(value, dict) and
                 isinstance(result[key], dict)):
                 # Both are dicts - recursively merge
                 result[key] = mergepars(result[key], value, _copy=_copy, **kwargs)
             else:
                 # Not both dicts - use the new value
                 result[key] = sc.dcp(value) if _copy else value
-    
+
     return result
 
 

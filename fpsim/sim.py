@@ -184,16 +184,16 @@ class Sim(ss.Sim):
         # Pull out test
         if kwargs.get('test') or (pars is not None and pars.get('test')) or (sim_pars is not None and sim_pars.get('test')):
             defaults = fpd.get_test_defaults()
-            
+
             # Only apply test defaults for parameters not explicitly provided by user
             user_provided_keys = set()
             if pars: user_provided_keys.update(pars.keys())
-            if sim_pars: user_provided_keys.update(sim_pars.keys()) 
+            if sim_pars: user_provided_keys.update(sim_pars.keys())
             if kwargs: user_provided_keys.update(kwargs.keys())
-            
+
             # Remove user-provided keys from defaults to avoid overriding them
             filtered_defaults = {k: v for k, v in defaults.items() if k not in user_provided_keys}
-            
+
             sim_pars = sc.mergedicts(sim_pars, filtered_defaults, _copy=True)
 
         # Get location
