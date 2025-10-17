@@ -32,10 +32,15 @@ def get_location(location, printmsg=False):
     if not location:
         print("No location specified. Available locations are: ")
         print(", ".join(valid_country_locs))
-        print("To use model defaults, set location='default' or location='test'.")
-        print("To use a custom location, register it using fpsim.defaults.register_location(name, location_ref)")
+        print("To use model defaults, set test=True.")
+        print(("To use a custom location, you can construct the sim by passing in a dataloader with a path to where you are keeping your data.\n"
+              "Example:\n"
+              "    import fpsim as fp\n"
+              "    # Load your own data\n"
+              "    my_data = fp.DataLoader(data_path='path-to-my-data')"
+              "    sim = fp.Sim(dataloader=my_data)"))
 
-        raise ValueError('Location must be specified. To use model defaults, set location="default" or location="test".')
+        raise ValueError('Location must be specified. To use model defaults, set test=True.')
     location = location.lower()  # Ensure it's lowercase
 
     # External locations override internal ones
