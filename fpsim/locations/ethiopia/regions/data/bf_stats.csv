@@ -1,29 +1,29 @@
 "region","parameter","value"
-"Addis Adaba","mean",20.4043715846988
-"Addis Adaba","sd",8.23161002320342
-"Afar","mean",19.1595294982536
-"Afar","sd",6.98093730081617
-"Amhara","mean",22.6892129304299
-"Amhara","sd",8.38205495319236
-"Benishangul-Gumuz","mean",22.6307418841795
-"Benishangul-Gumuz","sd",8.4159699149074
-"Central","mean",24.5461741424798
-"Central","sd",6.74074652008326
-"Dire Dawa","mean",21.5799487742409
-"Dire Dawa","sd",6.61559442082626
-"Gambela","mean",22.0282700421929
-"Gambela","sd",7.74872023116502
-"Harari","mean",18.2816850803915
-"Harari","sd",7.86184057031568
-"Oromia","mean",19.8135790321151
-"Oromia","sd",8.21544906811925
-"Sidama","mean",24.5461741424798
-"Sidama","sd",6.74074652008326
-"Somali","mean",16.9177117889796
-"Somali","sd",7.24448388516211
-"South","mean",24.5461741424798
-"South","sd",6.74074652008326
-"South West","mean",24.5461741424798
-"South West","sd",6.74074652008326
-"Tigray","mean",22.5598103574024
-"Tigray","sd",7.49652826492188
+"addis_ababa","mean",20.4043715846988
+"addis_ababa","sd",8.23161002320342
+"afar","mean",19.1595294982536
+"afar","sd",6.98093730081617
+"amhara","mean",22.6892129304299
+"amhara","sd",8.38205495319236
+"benishangul_gumuz","mean",22.6307418841795
+"benishangul_gumuz","sd",8.4159699149074
+"central","mean",24.5461741424798
+"central","sd",6.74074652008326
+"dire_dawa","mean",21.5799487742409
+"dire_dawa","sd",6.61559442082626
+"gambela","mean",22.0282700421929
+"gambela","sd",7.74872023116502
+"harari","mean",18.2816850803915
+"harari","sd",7.86184057031568
+"oromia","mean",19.8135790321151
+"oromia","sd",8.21544906811925
+"sidama","mean",24.5461741424798
+"sidama","sd",6.74074652008326
+"somali","mean",16.9177117889796
+"somali","sd",7.24448388516211
+"south","mean",24.5461741424798
+"south","sd",6.74074652008326
+"southwest","mean",24.5461741424798
+"southwest","sd",6.74074652008326
+"tigray","mean",22.5598103574024
+"tigray","sd",7.49652826492188
