@@ -6,6 +6,7 @@ Define defaults for use throughout FPsim
 import numpy as np
 import sciris as sc
 import starsim as ss
+import fpsim
 import fpsim.arrays as fpa
 
 
@@ -24,19 +25,23 @@ valid_region_locs = {
     'ethiopia': ['addis_ababa', 'afar', 'amhara', 'benishangul_gumuz', 'dire_dawa', 'gambela', 'harari', 'oromia', 'snnpr', 'somali', 'tigray']
 }
 
+
 # Parse locations
 def get_location(location, printmsg=False):
-    default_location = 'senegal'
+
     if not location:
-        if printmsg: print('Location not supplied: using parameters from Senegal')
-        location = default_location
+        print("No location specified. Available locations are: ")
+        print(", ".join(valid_country_locs))
+        print("To use model defaults, set test=True.")
+        print(("To use a custom location, you can construct the sim by passing in a dataloader with a path to where you are keeping your data.\n"
+              "Example:\n"
+              "    import fpsim as fp\n"
+              "    # Load your own data\n"
+              "    my_data = fp.DataLoader(data_path='path-to-my-data')"
+              "    sim = fp.Sim(dataloader=my_data)"))
+
+        raise ValueError('Location must be specified. To use model defaults, set test=True.')
     location = location.lower()  # Ensure it's lowercase
-    if location == 'test':
-        if printmsg: print('Running test simulation using parameters from Senegal')
-        location = default_location
-    if location == 'default':
-        if printmsg: print('Running default simulation using parameters from Senegal')
-        location = default_location
 
     # External locations override internal ones
     if location in location_registry:
@@ -46,20 +51,43 @@ def get_location(location, printmsg=False):
     if location not in valid_country_locs and not any(location in v for v in valid_region_locs.values()):
         errormsg = f'Location "{location}" is not currently supported'
         raise NotImplementedError(errormsg)
-
     return location
 
 
-# Register custom location (for external users)
-def register_location(name, location_ref):
-    """
-    Register a custom location, either a function (make_pars) or a module (with make_pars + data_utils).
-    """
-    if callable(location_ref):
-        # wrap into a fake module-like object with just make_pars
-        location_ref = type('LocationStub', (), {'make_pars': location_ref})()
+def get_dataloader(location, printwarn=True):
+    """ Return the data loader module """
+    from . import locations as fplocs
+    location = get_location(location)
 
-    location_registry[name.lower()] = location_ref
+    if hasattr(fplocs, location):
+        dataloader = getattr(fplocs, location).dataloader()
+    else:
+        raise NotImplementedError(f'Could not find dataloader for {location}')
+    return dataloader
+
+
+def get_calib_pars(location, verbose=1):
+    """ Return the calibration parameters """
+    from . import locations as fplocs
+    if location is None:
+        return
+    location = get_location(location)
+    if hasattr(fplocs, location):
+        calib_pars = getattr(fplocs, location).make_calib_pars()
+    else:
+        sc.printv(f'No calibration parameters found for {location}', thisverbose=0, verbose=verbose)
+        return None
+    return calib_pars
+
+def get_test_defaults():
+    """ Return the test defaults """
+    defaults = {
+        'n_agents': 500,
+        'start': 2000,
+        'stop': 2005,
+        'location': 'senegal',
+    }
+    return defaults
 
 
 # Defaults states and values of any new(born) agent unless initialized with data or other strategy
