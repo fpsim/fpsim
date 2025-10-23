@@ -30,10 +30,7 @@ def scalar_pars():
 
 def filenames():
     """ Data files for use with calibration, etc -- not needed for running a sim """
-    base_dir = Path(__file__).resolve().parent / 'data'
-    
-    # Regional data files - searching within regions directory
-    regions_dir = base_dir / 'regions'
+    base_dir = Path(__file__) / 'data'
     
     files = {} # <<< USER-EDITABLE: If setting a regional location and want to default
     # to using country data here where regional data may be unavailable, import the country module at the top of this
