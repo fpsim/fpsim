@@ -1,5 +1,5 @@
 """
-This configuration file is for an FPsim model specific to Ethiopia - Amhara.
+This configuration file is for an FPsim model specific to Ethiopia - Central Ethiopia Regional State.
 
 Users may update values marked as USER-EDITABLE to match the context
 they are modeling for a specific version of FPsim.
@@ -82,7 +82,7 @@ def exposure_parity():
 
 # %% Make and validate parameters
 
-def make_pars(location='amhara', seed=None):  # <<< USER-EDITABLE: Change name of location; country name if country, region name if region
+def make_pars(location='central', seed=None):  # <<< USER-EDITABLE: Change name of location; country name if country, region name if region
     """
     Take all parameters and construct into a dictionary
     """
@@ -114,10 +114,8 @@ def make_pars(location='amhara', seed=None):  # <<< USER-EDITABLE: Change name o
     pars['exposure_age'] = exposure_age()
     pars['exposure_parity'] = exposure_parity()
     pars['spacing_pref'] = fpld.birth_spacing_pref(location)
-    pars['spacing_pref'] = fpld.birth_spacing_pref(location)
 
     # Contraceptive methods
-    pars['mcpr'] = fpld.mcpr(location)
     pars['mcpr'] = fpld.mcpr(location)
 
     # Demographics: partnership and wealth status
