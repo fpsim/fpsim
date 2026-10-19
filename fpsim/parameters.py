@@ -90,6 +90,7 @@ class FPPars(ss.PregnancyPars):
         self.sexual_activity_pp = None
         self.debut_age = None
         self.spacing_pref = None
+        self.init_parity = None  # Parity at the start by age group: see DataLoader.init_parity()
         self.region = None
         self.regional = None
 

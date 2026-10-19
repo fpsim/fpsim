@@ -62,6 +62,13 @@ def tidy_up(fig, do_show=None, do_save=None, filename=None):
         return fig
 
 
+# Calibrated values that are not applied: the contraception parameters were calibrated for StandardChoice
+# (education, wealth, parity), not SimpleChoice, the default here; and fecundity_low/high never reached the
+# distribution in Starsim 3 FPsim (personal fecundity stayed uniform(0.7, 1.1)), so the calibration did not
+# depend on them and they are not applied (the mechanism now works: set them to change personal fecundity)
+uncalibrated_keys = ['prob_use_intercept', 'prob_use_trend_par', 'method_weights', 'fecundity_low', 'fecundity_high']
+
+
 # %% Sim class
 
 class Sim(ss.Sim):
@@ -131,20 +138,19 @@ class Sim(ss.Sim):
         all_sim_pars = self.process_pars(pars, sim_pars, people_pars, fp_pars, contra_pars, edu_pars, death_pars, sim_kwargs, **kwargs)
         self.pars.update(all_sim_pars)
 
-        # Process modules by adding them as Starsim connectors
-        default_contra = fp.StandardChoice(pars=self.contra_pars)
-        default_edu = fp.Education(pars=self.edu_pars)
-        contraception_module = contraception_module or sc.dcp(default_contra)
-        education_module = education_module or sc.dcp(default_edu)
-        connectors = sc.tolist(connectors) + [contraception_module, education_module]
-        self.pars['connectors'] = connectors
+        # The contraception module (a declared module, kept with the connectors) and any others
+        if contraception_module is None:
+            contraception_module = fp.SimpleChoice(pars=self.contra_pars)
+        if education_module is not None: # Not ported to Starsim 4: kept only if given
+            connectors = sc.tolist(connectors) + [education_module]
+        self.pars['connectors'] = sc.tolist(connectors) + [contraception_module]
 
-        # Process demographics
+        # The FP module, lactation (for LAM), and deaths
         if demographics is None and not len(self.pars['demographics']):
-            deaths = fp.Deaths(pars=self.deaths_pars)
-            default_fp = fp.FPmod(pars=self.fp_pars)
-            fp_module = fp_module or sc.dcp(default_fp)
-            self.pars['demographics'] = [fp_module, deaths]
+            fp_module = fp_module or fp.FPmod(pars=self.fp_pars)
+            P = fp_module.pars
+            lact = fp.Lactation(p_breastfeed=P.p_breastfeed, dur_breastfeed=P.dur_breastfeed)
+            self.pars['demographics'] = [fp_module, lact, fp.Deaths(pars=self.deaths_pars)]
 
         # Metadata and settings
         fpu.set_metadata(self)  # Set version, date, and git info
@@ -209,11 +215,13 @@ class Sim(ss.Sim):
             self.dataloader = fpd.get_dataloader(location, printwarn=not is_test)
         if self.pars.verbose > 0:
             print(f'Loading data from files in {self.dataloader.data_path}... ')
-        data_dict = self.dataloader.load()  # Load all data and sort by module
+        data_dict = self.dataloader.load(contra_mod='simple')  # Load all data and sort by module; SimpleChoice's coefficients
 
         # Load calibration parameters
         calib_pars = fpd.get_calib_pars(location, verbose=verbose)
         if calib_pars is not None:
+            for key in uncalibrated_keys: # See uncalibrated_keys
+                calib_pars.pop(key, None)
             sc.printv(f'Applying calibration parameters for {location}...', veps)
             start = all_pars.get('start', 2000)
             if start != 2000:

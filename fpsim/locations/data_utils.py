@@ -78,6 +78,7 @@ class DataLoader:
         fp_data.infant_mortality = self.infant_mortality()
         fp_data.miscarriage_rates = self.miscarriage()
         fp_data.stillbirth_rate = self.stillbirth()
+        fp_data.init_parity = self.init_parity()
         if return_data:
             return fp_data
         else:
@@ -234,6 +235,25 @@ class DataLoader:
         twins_prob = data.loc[data['param']=='twins_prob', 'prob'].values[0]         # From https://journals.plos.org/plosone/article?id=10.1371/journal.pone.0025239
 
         return abortion_prob, twins_prob
+
+    def init_parity(self):
+        """ Parity by 5-year age group (DHS, ageparity.csv), for setting parity at the start: a list of (age_low, age_high, probabilities by parity) """
+        try:
+            df = self.read_data('ageparity.csv')
+        except FileNotFoundError:
+            return None
+        df = df.copy()
+        df['par'] = df['parity'].astype(str).str.replace('+', '', regex=False).astype(int)
+        out = []
+        groups = sorted(df['age'].unique(), key=lambda a: int(str(a).split('-')[0]))
+        for i, grp in enumerate(groups):
+            lo, hi = [int(x) for x in str(grp).split('-')]
+            sub = df[df['age'] == grp]
+            probs = np.zeros(sub['par'].max() + 1)
+            np.add.at(probs, sub['par'].values, sub['Freq'].values.astype(float))
+            hi = hi + 1 if i < len(groups) - 1 else 200 # The last group also gives the parity of older women
+            out.append((lo, hi, probs/probs.sum()))
+        return out
 
     # %% Demographics
     def age_partnership(self):
