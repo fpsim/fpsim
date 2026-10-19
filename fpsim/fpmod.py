@@ -8,6 +8,7 @@ import sciris as sc
 import starsim as ss
 import fpsim as fp
 from . import defaults as fpd
+from . import arrays as fpa
 
 __all__ = ['FPmod', 'Lactation']
 
@@ -74,6 +75,7 @@ class FPmod(ss.Pregnancy):
             ss.FloatArr('first_birth_age', label='Age at first birth'),
             *[ss.FloatArr(f'ti_{k}', label=f'Time of the last {k}') for k in ['abortion', 'miscarriage', 'stillbirth']],
             ss.FloatArr('ti_last_interval', label='Interval between the last two live births (steps)'),
+            *[fpa.TwoDimensionalArr(k, ncols=fpd.max_parity) for k in ['birth_ages', 'stillborn_ages', 'miscarriage_ages', 'abortion_ages']], # Ages at each event, as in Starsim 3
         )
         self._p_inf_mort = ss.random() # Infant deaths at delivery
         self._init_parity = ss.random() # Parity at the start
@@ -281,9 +283,12 @@ class FPmod(ss.Pregnancy):
 
     def count_events(self):
         """ Per-woman counts of this step's conceptions and losses """
+        ages = dict(abortion='abortion_ages', miscarriage='miscarriage_ages', stillbirth='stillborn_ages')
         for tr, key in [('conception', 'n_pregnancies'), ('abortion', 'n_abortions'), ('miscarriage', 'n_miscarriages'), ('stillbirth', 'n_stillbirths')]:
             uids = self.engine.fresh(f'count_{key}', tr)
             if len(uids):
+                if tr in ages:
+                    self.record_age(ages[tr], uids, self[key].raw[uids])
                 self[key][uids] += 1
                 if tr != 'conception':
                     self[f'ti_{tr}'][uids] = self.ti
@@ -299,6 +304,7 @@ class FPmod(ss.Pregnancy):
         counts = np.bincount(ppl.parent.raw[new].astype(int), minlength=len(ppl.uid.raw))[parents]
         twins = parents[counts > 1]
         self.parity[twins] += counts[counts > 1] - 1
+        self.record_age('birth_ages', parents, self.n_births.raw[parents])
         self.n_births[parents] += 1
         self.n_twinbirths[twins] += 1
         first = parents[np.isnan(self.first_birth_age.raw[parents])]
@@ -317,6 +323,15 @@ class FPmod(ss.Pregnancy):
         self._infant_deaths = len(kids)
         return new
 
+    def record_age(self, key, uids, counts):
+        """ Each woman's age at her nth event (the nth column), up to max_parity """
+        ok = counts < fpd.max_parity
+        uids, counts = uids[ok], counts[ok].astype(int)
+        for c in np.unique(counts):
+            these = uids[counts == c]
+            self[key][these, c] = self.sim.people.age.raw[these]
+        return
+
     # %% Results
     def init_results(self):
         super().init_results()
@@ -331,6 +346,7 @@ class FPmod(ss.Pregnancy):
             ss.Result('total_births', label='Live births and stillbirths', summarize_by='sum', **kw),
             ss.Result('n_fecund', label='Women 15-49', summarize_by='mean', **kw),
         ]
+        results += [ss.Result(f'cum_{key}', label=f'Cumulative {key}', dtype=float, scale=False, summarize_by='last') for key in fpd.event_counts + fpd.inherited_counts]
         self.define_results(*[r for r in results if r.name not in self.results])
         self.parity_bins = np.arange(fpd.max_parity + 2)
         self.parity_dist = np.zeros((len(self.parity_bins) - 1, self.t.npts))
@@ -368,27 +384,26 @@ class FPmod(ss.Pregnancy):
         if cm is not None and 'fail' in cm.results:
             res.method_failures[:] = cm.results.fail[:] # Continuing pregnancies of women on a method
         for key in fpd.event_counts + fpd.inherited_counts:
-            if key in res and f'cum_{key}' not in res:
-                self.results += ss.Result(f'cum_{key}', label=key, values=np.cumsum(res[key][:]), dtype=float, scale=False, summarize_by='last')
+            if key in res:
+                res[f'cum_{key}'][:] = np.cumsum(res[key][:])
         return
 
     # %% Starsim 3 FPsim names
     @property
     def method(self):
-        cm = self.contraception
-        return cm.method if cm is not None else np.zeros(len(self.sim.people.uid.raw), dtype=int)
+        return self.contraception.method
 
     @property
     def on_contra(self):
-        return self.method > 0
+        return self.contraception.on_contra
 
     @property
     def ever_used_contra(self):
-        cm = self.contraception
-        return cm.ever_used_contra if cm is not None else np.zeros(len(self.sim.people.uid.raw), dtype=bool)
+        return self.contraception.ever_used_contra
 
     @property
     def postpartum(self):
         """ Women within dur_postpartum of a live birth, not pregnant """
         msb = self.months_since_birth()
-        return ~self.P.raw & np.isfinite(msb) & (msb <= self.pars.dur_postpartum.months)
+        pp = ~self.P.raw & np.isfinite(msb) & (msb <= self.pars.dur_postpartum.months)
+        return self.sim.people.age.asnew(pp, cls=ss.BoolArr)

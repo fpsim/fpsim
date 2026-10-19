@@ -402,7 +402,7 @@ class change_initiation(ss.Intervention):
         cm = sim.connectors.contraception
         f = sim.demographics.fp
         ppl = sim.people
-        ok = (cm['never'].raw | cm['none'].raw) & ppl.female.raw & ppl.alive.raw & (ppl.age.raw < fpd.max_age_preg) & ~f.postpartum
+        ok = (cm['never'].raw | cm['none'].raw) & ppl.female.raw & ppl.alive.raw & (ppl.age.raw < fpd.max_age_preg) & ~f.postpartum.raw
         if self.age_range is not None:
             ok &= (ppl.age.raw >= self.age_range[0]) & (ppl.age.raw < self.age_range[1])
         return ss.uids(np.flatnonzero(ok))
@@ -411,7 +411,7 @@ class change_initiation(ss.Intervention):
         sim = self.sim
         year = sim.t.now('year')
         cm = sim.connectors.contraception
-        users = lambda: int(np.sum(cm.on_contra & sim.people.alive.raw))
+        users = lambda: int(np.sum((cm.method_raw() > 0) & sim.people.alive.raw))
         if self.expected_women_oncontra is None and year >= self.years[0] - 1e-9: # The first step of the intervention (Starsim 3 compared years exactly)
             self.expected_women_oncontra = self.init_women_oncontra = users()
         if not (self.years[0] - 1e-9 <= year <= self.years[1] + 1e-9):

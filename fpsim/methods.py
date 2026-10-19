@@ -358,24 +358,32 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         return 0.0 if name == 'none' else self.value(f'eff_{name}')
 
     # %% Per-agent views (agents only)
-    @property
-    def method(self):
-        """ The index of each agent's method (0 if none), as in Starsim 3 FPsim """
+    def method_raw(self):
+        """ The index of each agent's method (0 if none), by UID """
         out = np.zeros(len(self.sim.people.uid.raw), dtype=int)
         for m in self.method_names:
             out[self[m].raw] = self.methods[m].idx
         return out
 
+    def as_arr(self, raw, cls):
+        """ A per-agent array (by UID) as an ss.Arr, so it can be indexed like a state """
+        return self.sim.people.age.asnew(raw, cls=cls)
+
+    @property
+    def method(self):
+        """ The index of each agent's method (0 if none), as in Starsim 3 FPsim """
+        return self.as_arr(self.method_raw(), ss.IntArr)
+
     @property
     def on_contra(self):
-        return self.method > 0
+        return self.as_arr(self.method_raw() > 0, ss.BoolArr)
 
     @property
     def ever_used_contra(self):
         out = np.ones(len(self.sim.people.uid.raw), dtype=bool)
         for k in ['pre', 'never', 'preg0', 'pp0', 'wait0']:
             out &= ~self[k].raw
-        return out
+        return self.as_arr(out, ss.BoolArr)
 
     def eff_array(self):
         """ Each agent's contraceptive efficacy """
@@ -410,7 +418,7 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         women = ppl.female.raw & ppl.alive.raw
         age = ppl.age.raw
         denom = women & (age >= fpd.min_age) & (age < fpd.max_age_preg)
-        method = self.method
+        method = self.method_raw()
         modern = np.isin(method, [m.idx for m in self.methods.values() if m.modern])
         scale = self.sim._current_scale
         n = denom.sum()
