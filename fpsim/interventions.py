@@ -254,7 +254,7 @@ def _modify(cm, key, start, name=None, **kwargs):
     return ss.modify(f'{cm}.pars.{key}', start=start, name=name, **kwargs)
 
 
-def update_methods(year, eff=None, dur_use=None, p_use=None, method_mix=None, method_choice_pars=None, name=None, contraception='contraception', methods=None, verbose=False):
+def update_methods(year, eff=None, dur_use=None, p_use=None, method_mix=None, method_choice_pars=None, name=None, contraception='contraception', methods=None, verbose=False, label=None):
     """
     Change methods from a year: efficacy, duration of use, the probability of use (RandomChoice), or the method mix
 
@@ -296,9 +296,7 @@ def update_methods(year, eff=None, dur_use=None, p_use=None, method_mix=None, me
         src = 'none' if m == 'none' else m
         mods.append(ss.modify(f'{contraception}.stop_{src}', multiply=1/float(v), start=year, name=f'dur_{m}{tag}'))
     if p_use is not None:
-        p0 = fpm.ContraPars().p_use
-        logit = lambda p: np.log(p/(1 - p))
-        mods.append(_modify(contraception, 'prob_use_intercept', year, set=float(logit(p_use) - logit(p0)), name=f'p_use{tag}'))
+        mods.append(_modify(contraception, 'p_use', year, set=float(p_use), name=f'p_use{tag}'))
     if method_mix is not None:
         names = [m for m in methods if m != 'none']
         mix = np.asarray(method_mix, dtype=float)

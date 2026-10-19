@@ -72,11 +72,11 @@ class FPmod(ss.Pregnancy):
             ss.FloatArr('personal_fecundity', default=ss.uniform(low=P['fecundity_low'], high=P['fecundity_high']), label='Personal fecundity'),
             *[ss.FloatArr(k, default=0, label=k) for k in ['n_pregnancies', 'n_births', 'n_twinbirths', 'n_stillbirths', 'n_miscarriages', 'n_abortions']],
             ss.FloatArr('first_birth_age', label='Age at first birth'),
+            *[ss.FloatArr(f'ti_{k}', label=f'Time of the last {k}') for k in ['abortion', 'miscarriage', 'stillbirth']],
             ss.FloatArr('ti_last_interval', label='Interval between the last two live births (steps)'),
         )
         self._p_inf_mort = ss.random() # Infant deaths at delivery
         self._init_parity = ss.random() # Parity at the start
-        self.asfr = None
         self.method_mix = None
         self.parity_dist = None
         return
@@ -285,6 +285,8 @@ class FPmod(ss.Pregnancy):
             uids = self.engine.fresh(f'count_{key}', tr)
             if len(uids):
                 self[key][uids] += 1
+                if tr != 'conception':
+                    self[f'ti_{tr}'][uids] = self.ti
                 if tr == 'stillbirth':
                     self.parity[uids] += 1 # Starsim 3 FPsim: stillbirths count in parity
         return
@@ -321,7 +323,6 @@ class FPmod(ss.Pregnancy):
         kw = dict(dtype=float, scale=True, auto_plot=False)
         nkw = dict(dtype=float, scale=False)
         results = [
-            ss.Result('tfr', label='Total fertility rate', summarize_by='sum', **nkw),
             ss.Result('infant_deaths', label='Infant deaths', summarize_by='sum', **kw),
             ss.Result('imr', label='Infant mortality rate', summarize_by='mean', **nkw),
             ss.Result('method_failures', label='Pregnancies on a method', summarize_by='sum', **kw),
@@ -331,15 +332,13 @@ class FPmod(ss.Pregnancy):
             ss.Result('n_fecund', label='Women 15-49', summarize_by='mean', **kw),
         ]
         self.define_results(*[r for r in results if r.name not in self.results])
-        self.asfr_bins = np.array([0, 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 100])
-        self.asfr = np.zeros((len(self.asfr_bins) - 1, self.t.npts))
         self.parity_bins = np.arange(fpd.max_parity + 2)
         self.parity_dist = np.zeros((len(self.parity_bins) - 1, self.t.npts))
         self._short = self._n_live = self._infant_deaths = 0
         return
 
     def update_results(self):
-        """ TFR and ASFR as in Starsim 3 (deliveries by the mother's age, per woman, each step), parity distribution, method mix """
+        """ Infant deaths, short intervals, women 15-49, the parity distribution, the method mix (TFR and ASFR: see ss.Pregnancy) """
         super().update_results()
         ti = self.ti
         ppl = self.sim.people
@@ -347,11 +346,6 @@ class FPmod(ss.Pregnancy):
         scale = self.sim._current_scale
         women = ppl.female.raw & ppl.alive.raw
         age = ppl.age.raw
-        moms = self.delivery.uids
-        births, _ = np.histogram(age[moms], bins=self.asfr_bins)
-        wom, _ = np.histogram(age[women], bins=self.asfr_bins)
-        self.asfr[:, ti] = sc.safedivide(births, wom)*1000
-        res.tfr[ti] = self.asfr[:, ti].sum()*5/1000
         res.infant_deaths[ti] = self._infant_deaths*scale
         res.short_intervals[ti] = self._short*scale
         res.p_short_interval[ti] = sc.safedivide(self._short, self._n_live)
@@ -370,11 +364,6 @@ class FPmod(ss.Pregnancy):
         res = self.results
         res.total_births[:] = res.births[:] + res.stillbirths[:]
         res.imr[:] = sc.safedivide(res.infant_deaths[:], res.births[:])*1e3
-        tdim = min(int(round(1/self.t.dt_year)), self.t.npts) # ASFR as rolling annual sums, as in Starsim 3
-        cs = np.cumsum(self.asfr, axis=1)
-        asfr = np.zeros_like(self.asfr)
-        asfr[:, tdim-1:] = cs[:, tdim-1:] - np.hstack([np.zeros((len(cs), 1)), cs[:, :-tdim]])
-        self.asfr = asfr
         cm = self.contraception
         if cm is not None and 'fail' in cm.results:
             res.method_failures[:] = cm.results.fail[:] # Continuing pregnancies of women on a method

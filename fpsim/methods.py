@@ -90,13 +90,13 @@ def method_bins(edges=None):
     return np.digitize(edges, choice_edges)
 
 
-def dur_use_dist(df, method, edges=None):
+def dur_use_pars(df, method, edges=None):
     """
-    A method's duration of use, from the fitted survival model, with the age factors on its location parameter.
-    Parameters are as reported by flexsurv's `res.t` (shapes, scales, rates and sdlog on the log scale; meanlog
-    as is), so the shape is exponentiated for every form. Starsim 3 FPsim matched 'lognorm' against the data's
-    'lnorm' (so these methods kept a 1 +/- 1 year lognormal), read sdlog as a standard deviation in months, and
-    used the Weibull shape unexponentiated.
+    A method's duration of use from the fitted survival model (months), with the age factors on its location
+    parameter: (form, parameters, each one per age group). Parameters are as reported by flexsurv's `res.t`
+    (shapes, scales, rates and sdlog on the log scale; meanlog as is), so the shape is exponentiated for every
+    form. Starsim 3 FPsim matched 'lognorm' against the data's 'lnorm' (so these methods kept a 1 +/- 1 year
+    lognormal), read sdlog as a standard deviation in months, and used the Weibull shape unexponentiated.
     """
     thisdf = df.loc[df.method == method.csv_name]
     if not len(thisdf):
@@ -108,21 +108,50 @@ def dur_use_dist(df, method, edges=None):
     if i0 is not None:
         vals = thisdf.estimate.values[i0:].astype(float)
         af[:len(vals)] = vals
-    af = af[method_bins(edges)] # One per age group of the module
-    months = lambda arr: ss.by(age=[ss.months(float(v)) for v in arr])
+    af = af[method_bins(edges)] # One per age group
+    n = len(af)
     if form in ['lognormal', 'lnorm']:
-        mu, sigma = coef('meanlog') + af, np.exp(coef('sdlog'))
-        mean = np.exp(mu + sigma**2/2)
-        return ss.lognorm_ex(mean=months(mean), std=months(mean*np.sqrt(np.exp(sigma**2) - 1)))
+        return 'lognormal', dict(meanlog=coef('meanlog') + af, sdlog=np.full(n, np.exp(coef('sdlog'))))
     elif form == 'gamma':
-        return ss.gamma(a=np.exp(coef('shape')), scale=months(1/np.exp(coef('rate') + af)))
+        return 'gamma', dict(a=np.full(n, np.exp(coef('shape'))), scale=1/np.exp(coef('rate') + af))
     elif form == 'llogis':
-        return Fisk(c=np.exp(coef('shape')), scale=months(np.exp(coef('scale') + af)))
+        return 'llogis', dict(c=np.full(n, np.exp(coef('shape'))), scale=np.exp(coef('scale') + af))
     elif form == 'weibull':
-        return ss.weibull(c=np.exp(coef('shape')), scale=months(np.exp(coef('scale') + af)))
+        return 'weibull', dict(c=np.full(n, np.exp(coef('shape'))), scale=np.exp(coef('scale') + af))
     elif form == 'exponential':
-        return ss.expon(scale=months(1/np.exp(coef('rate') + af)))
+        return 'exponential', dict(scale=1/np.exp(coef('rate') + af))
     raise ValueError(f'Duration of use distribution {form} not recognized')
+
+
+def dur_use_dist(df, method, edges=None):
+    """ A method's duration of use (see `dur_use_pars()`), as a distribution whose parameters are by age group """
+    form, p = dur_use_pars(df, method, edges)
+    months = lambda arr: ss.by(age=[ss.months(float(v)) for v in arr])
+    if form == 'lognormal':
+        mean = np.exp(p['meanlog'] + p['sdlog']**2/2)
+        return ss.lognorm_ex(mean=months(mean), std=months(mean*np.sqrt(np.exp(p['sdlog']**2) - 1)))
+    elif form == 'gamma':
+        return ss.gamma(a=p['a'][0], scale=months(p['scale']))
+    elif form == 'llogis':
+        return Fisk(c=p['c'][0], scale=months(p['scale']))
+    elif form == 'weibull':
+        return ss.weibull(c=p['c'][0], scale=months(p['scale']))
+    return ss.expon(scale=months(p['scale']))
+
+
+def dur_use_survival(df, method, t, edges=None):
+    """ The share still using a method `t` months after starting, by age group """
+    import scipy.stats as sps
+    form, p = dur_use_pars(df, method, edges)
+    if form == 'lognormal':
+        return sps.lognorm(s=p['sdlog'], scale=np.exp(p['meanlog'])).sf(t)
+    elif form == 'gamma':
+        return sps.gamma(a=p['a'], scale=p['scale']).sf(t)
+    elif form == 'llogis':
+        return sps.fisk(c=p['c'], scale=p['scale']).sf(t)
+    elif form == 'weibull':
+        return sps.weibull_min(c=p['c'], scale=p['scale']).sf(t)
+    return np.exp(-t/p['scale'])
 
 
 # %% Parameters
@@ -229,6 +258,10 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         """ The logit of the probability of use, by age group (bare numbers; subclasses) """
         raise NotImplementedError
 
+    def prob_use(self, event, ever, trend, intercept):
+        """ The probability of use at a decision: a logistic of the age-group table, the trend in time, and the intercept """
+        return 1/(1 + np.exp(-(ss.by(age=list(self.logit_use(event, ever))) + trend + intercept)))
+
     def shares(self, event, src):
         """ The switching shares of each method by age group, for a decision of `event` from method `src` (unweighted; subclasses) """
         raise NotImplementedError
@@ -261,7 +294,7 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         intercept = gp['prob_use_intercept']
 
         def p_use(event, ever):
-            return 1/(1 + np.exp(-(ss.by(age=list(self.logit_use(event, ever))) + trend + intercept)))
+            return self.prob_use(event, ever, trend, intercept)
 
         def split(event, src, ever, rest, base=None):
             """ [rest, method 1, ...]: not using w.p. 1 - p_use, else each method by its weighted share """
@@ -409,9 +442,11 @@ class RandomChoice(ContraceptiveChoice):
         super().__init__(pars=pars, **kwargs)
         return
 
-    def logit_use(self, event, ever):
-        p = float(self._data['p_use'])
-        return np.full(len(age_edges), np.log(p/(1 - p)))
+    def prob_use(self, event, ever, trend, intercept):
+        """ The same at every decision: `p_use`, a parameter (so update_methods(p_use=) is an ss.modify of it) """
+        if not hasattr(self, '_p_use'):
+            self._p_use = ss.par(float(self._data['p_use']), name='p_use', doc='Probability of use at each decision')
+        return self._p_use
 
     def shares(self, event, src):
         return {m: np.ones(len(age_edges)) for m in self.method_names}
@@ -464,31 +499,31 @@ class SimpleChoice(ContraceptiveChoice):
             pars['init_dist'] = sc.objdict({k: mcp[0][k]['none']/mcp[0][k]['none'].sum() for k in choice_keys})
         return
 
-    def logit_use(self, event, ever):
+    def logit_use(self, event, ever, edges=None):
         """ Starsim 3 SimpleChoice.get_prob_use, by age group, without the trend and intercept """
         p = self._data['contra_use_pars'][dict(pp0=0, pp1=1, pp6=2)[event]]
-        ab = method_bins()
+        ab = method_bins(edges)
         out = p.intercept + np.asarray(p.age_factors)[ab]
         if ever:
             aeuf = np.asarray(p.age_ever_user_factors)
             out = out + p.fp_ever_user + np.where(ab > 1, aeuf[np.maximum(ab - 1, 0)], 0)
         return out
 
-    def _rows(self, rows):
+    def _rows(self, rows, edges=None):
         """ Shares by method name, one per age group, with zeros jittered """
         out = {}
-        ab = method_bins()
+        ab = method_bins(edges)
         for j, m in enumerate(self._cols):
             vals = np.array([rows[choice_keys[b]][j] for b in ab], dtype=float)
             out[m] = np.where(vals > 0, vals, jitter)
         return out
 
-    def shares(self, event, src):
+    def shares(self, event, src, edges=None):
         mcp = self._data['method_choice_pars']
         if event == 'pp1':
-            return self._rows({k: mcp[1][k] for k in choice_keys})
+            return self._rows({k: mcp[1][k] for k in choice_keys}, edges)
         key = 0 if event == 'pp0' else 6
-        return self._rows({k: mcp[key][k][src] for k in choice_keys})
+        return self._rows({k: mcp[key][k][src] for k in choice_keys}, edges)
 
 
 class StandardChoice(SimpleChoice):
