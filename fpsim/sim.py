@@ -132,6 +132,8 @@ class Sim(ss.Sim):
         # combine copies of them in this order if copy_inputs
         # remap any as necessary
         # separate into sim and fp-specific pars
+        if interventions is not None: # update_methods() and friends give lists of modifiers
+            interventions = [x for item in sc.tolist(interventions) for x in sc.tolist(item)]
         sim_kwargs = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         sim_kwargs = {key: val for key, val in sim_kwargs.items() if val is not None}
