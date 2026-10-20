@@ -370,10 +370,10 @@ def update_methods(year, eff=None, dur_use=None, p_use=None, method_mix=None, me
         mods.append(_modify(contraception, f'eff_{m}', year, set=float(v), name=f'eff_{m}{tag}'))
     for k, v in (dur_use or {}).items():
         m = lookup(k)
-        if not sc.isnumber(v):
-            raise NotImplementedError('dur_use is a multiplier on the duration of use; a new distribution mid-run is not ported to Starsim 4')
-        src = 'none' if m == 'none' else m
-        mods.append(ss.modify(f'{contraception}.stop_{src}', multiply=1/float(v), start=year, name=f'dur_{m}{tag}'))
+        if not sc.isnumber(v): # UPSTREAM: ss.modify(par, set=<Dist>) on a dwell parameter whose distribution varies by age has no effect (or raises), so a number scales the duration instead of replacing it
+            raise NotImplementedError('dur_use is a multiplier on the duration of use for now; a new distribution mid-run is not supported yet')
+        for src in (['never', 'none'] if m == 'none' else [m]): # Non-use: never-users and past users
+            mods.append(ss.modify(f'{contraception}.stop_{src}', multiply=1/float(v), start=year, name=f'dur_{src}{tag}'))
     if p_use is not None:
         mods.append(_modify(contraception, 'p_use', year, set=float(p_use), name=f'p_use{tag}'))
     if method_mix is not None:
