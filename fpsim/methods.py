@@ -233,7 +233,9 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         effs = {k: v for k, v in graph_pars.items() if k.startswith('eff_')} # Read by the FP module, not by a transition
         super().__init__(*states, **trs, **effs, name=name, **kwargs)
         self.stratify(age=age_edges)
-        self.define_pars(**{k: v for k, v in pars.items() if k not in self.pars and k not in graph_pars})
+        own = {k: v for k, v in pars.items() if k not in self.pars and k not in graph_pars}
+        self.define_pars(**own)
+        self.code_pars = list(self.code_pars) + list(own) # Data read when the graph is built and by the code, not by the graph
         return
 
     # %% Building the graph
@@ -307,7 +309,7 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
             return [rest, *meth], [1 - pu, *[pu*w[m]*R[m]/total for m in names]]
 
         fpn = self.fp_name
-        age, female = ss.people.age, ss.people.female
+        age, female = ss.ppl.age, ss.ppl.female
         debuted = female & (age >= ss.conditions.Cond('array', fpn, 'fated_debut')) & (age < fpd.max_age_preg)
         pregnant = ss.state(f'{fpn}.P')
         trs = sc.objdict()

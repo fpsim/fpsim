@@ -64,14 +64,16 @@ class FPmod(ss.Pregnancy):
         preg = {k: v for k, v in allpars.items() if k in v3}
         preg['p_abortion'] = float(allpars['abortion_prob'] or 0)
         super().__init__(pars=preg, name=name, lactation=False, fetus=False)
-        self.define_pars(**{k: v for k, v in allpars.items() if k not in self.pars})
-        self.set_pars(mc_hazard=self.miscarriage_rate, sb_hazard=self.stillbirth_rate)
+        own = {k: v for k, v in allpars.items() if k not in self.pars}
+        self.define_pars(**own)
+        self.code_pars = list(self.code_pars) + list(own) # Read by FPmod's code, not by the graph
+        self.pars.update(mc_hazard=self.miscarriage_rate, sb_hazard=self.stillbirth_rate)
         P = self.pars
         db = P['debut_age']
         self.define_states(
             ss.FloatArr('fated_debut', default=ss.choice(a=db['ages'], p=db['probs']), label='Age of sexual debut'),
             ss.FloatArr('personal_fecundity', default=ss.uniform(low=P['fecundity_low'], high=P['fecundity_high']), label='Personal fecundity'),
-            *[ss.FloatArr(k, default=0, label=k) for k in ['n_pregnancies', 'n_births', 'n_twinbirths', 'n_stillbirths', 'n_miscarriages', 'n_abortions']],
+            *[ss.FloatArr(k, default=0, label=k) for k in ['n_births', 'n_twinbirths', 'n_stillbirths', 'n_miscarriages', 'n_abortions']],
             ss.FloatArr('first_birth_age', label='Age at first birth'),
             *[ss.FloatArr(f'ti_{k}', label=f'Time of the last {k}') for k in ['abortion', 'miscarriage', 'stillbirth']],
             ss.FloatArr('ti_last_interval', label='Interval between the last two live births (steps)'),
@@ -282,16 +284,14 @@ class FPmod(ss.Pregnancy):
         return
 
     def count_events(self):
-        """ Per-woman counts of this step's conceptions and losses """
+        """ Per-woman counts of this step's losses (ss.Pregnancy counts n_pregnancies) """
         ages = dict(abortion='abortion_ages', miscarriage='miscarriage_ages', stillbirth='stillborn_ages')
-        for tr, key in [('conception', 'n_pregnancies'), ('abortion', 'n_abortions'), ('miscarriage', 'n_miscarriages'), ('stillbirth', 'n_stillbirths')]:
+        for tr, key in [('abortion', 'n_abortions'), ('miscarriage', 'n_miscarriages'), ('stillbirth', 'n_stillbirths')]:
             uids = self.engine.fresh(f'count_{key}', tr)
             if len(uids):
-                if tr in ages:
-                    self.record_age(ages[tr], uids, self[key].raw[uids])
+                self.record_age(ages[tr], uids, self[key].raw[uids])
                 self[key][uids] += 1
-                if tr != 'conception':
-                    self[f'ti_{tr}'][uids] = self.ti
+                self[f'ti_{tr}'][uids] = self.ti
                 if tr == 'stillbirth':
                     self.parity[uids] += 1 # Starsim 3 FPsim: stillbirths count in parity
         return
