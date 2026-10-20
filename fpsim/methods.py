@@ -537,6 +537,60 @@ class SimpleChoice(ContraceptiveChoice):
 
 
 class StandardChoice(SimpleChoice):
-    """ Starsim 3 FPsim's default (age, education, wealth, parity and prior use): not ported to Starsim 4 yet; use SimpleChoice """
-    def __init__(self, *args, **kwargs):
-        raise NotImplementedError('StandardChoice (education, wealth, urban and parity in the probability of use) is not ported to Starsim 4 yet: use fp.SimpleChoice')
+    """
+    FPsim's default: the probability of use is a logistic regression on age (a spline, by single year of age), ever
+    use, education, urban residence, wealth quintile, parity and year; method choice and durations are as in
+    `SimpleChoice`, from the same location's fitted data (`contra_mod='mid'`)
+
+    The probability of use is a declared expression of the women's own arrays (`people.urban`,
+    `people.wealthquintile`, `fp.parity`, `edu.attainment`), so it needs an education module (`fp.Education`,
+    which `fp.Sim` adds by default).
+
+    Args:
+        pars (dict): parameters (see `ContraPars`)
+        location (str): location whose fitted coefficients to load, e.g. ``'kenya'``
+        data (dict): pre-loaded data, used instead of loading from ``location``
+        contra_mod (str): which fitted coefficient set to use ('mid')
+        edu_name (str): the name of the education module
+
+    **Example**::
+
+        sim = fp.Sim(location='kenya', contraception_module=fp.StandardChoice(location='kenya'))
+    """
+    def __init__(self, pars=None, location=None, data=None, contra_mod='mid', edu_name='edu', **kwargs):
+        self.edu_name = edu_name
+        super().__init__(pars=pars, location=location, data=data, contra_mod=contra_mod, **kwargs)
+        return
+
+    def prepare(self, pars):
+        super().prepare(pars)
+        if pars.get('age_spline') is None:
+            raise ValueError('StandardChoice needs age_spline: give a location or data')
+        return
+
+    def age_term(self, event, ever):
+        """
+        The age terms of the logit (the spline, and its interaction with ever use), by single year of age from 0 to 49
+        (ages are clipped to 15-49, as in Starsim 3 FPsim): a parameter for each decision and ever use
+        """
+        if not hasattr(self, '_age_terms'):
+            self._age_terms = {}
+        key = f'age_use_{event}_{ever}'
+        if key not in self._age_terms:
+            p = self._data['contra_use_pars'][dict(pp0=0, pp1=1, pp6=2)[event]]
+            ages = np.arange(fpd.max_age_preg)
+            knots = self._data['age_spline'].loc[np.clip(ages, fpd.min_age, fpd.max_age_preg - 1), ['knot_1', 'knot_2', 'knot_3']].values
+            coefs = np.asarray(p.age_factors, dtype=float) + ever*np.asarray(p.age_ever_user_factors, dtype=float)
+            self._age_terms[key] = ss.par(ss.by(dict(age=list(ages), value=knots @ coefs)), name=key, doc=f'Age terms of the logit of the probability of use ({event}, ever user: {bool(ever)})')
+        return self._age_terms[key]
+
+    def prob_use(self, event, ever, trend, intercept):
+        """ Starsim 3 StandardChoice.get_prob_use, as an expression; `ever` is known from the state the decision is made in """
+        p = self._data['contra_use_pars'][dict(pp0=0, pp1=1, pp6=2)[event]]
+        att = ss.state(f'{self.edu_name}.attainment')
+        logit = (p.intercept + ever*p.ever_used_contra
+                 + p.urban*ss.ppl.urban + p.wealthquintile*ss.ppl.wealthquintile + p.parity*ss.state(f'{self.fp_name}.parity')
+                 + self.age_term(event, ever)
+                 + p.edu_factors[0]*((att > 1) & (att <= 6)) + p.edu_factors[1]*(att > 6)
+                 + trend + intercept)
+        return 1/(1 + np.exp(-logit))

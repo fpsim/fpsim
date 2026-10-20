@@ -402,6 +402,13 @@ class FPmod(ss.Pregnancy):
         return self.contraception.ever_used_contra
 
     @property
+    def end_tri1_uids(self):
+        """ Women in the last step of their first trimester (read by fp.Education) """
+        ga = self.gestation.raw[self.P.uids] # Weeks
+        t1 = self.pars.trimesters[0].weeks
+        return self.P.uids[(ga <= t1) & (ga + self.t.dt.weeks > t1)]
+
+    @property
     def postpartum(self):
         """ Women within dur_postpartum of a live birth, not pregnant """
         msb = self.months_since_birth()

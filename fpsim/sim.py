@@ -62,11 +62,10 @@ def tidy_up(fig, do_show=None, do_save=None, filename=None):
         return fig
 
 
-# Calibrated values that are not applied: the contraception parameters were calibrated for StandardChoice
-# (education, wealth, parity), not SimpleChoice, the default here; and fecundity_low/high never reached the
-# distribution in Starsim 3 FPsim (personal fecundity stayed uniform(0.7, 1.1)), so the calibration did not
-# depend on them and they are not applied (the mechanism now works: set them to change personal fecundity)
-uncalibrated_keys = ['prob_use_intercept', 'prob_use_trend_par', 'method_weights', 'fecundity_low', 'fecundity_high']
+# Calibrated values that are not applied: fecundity_low/high never reached the distribution in Starsim 3 FPsim
+# (personal fecundity stayed uniform(0.7, 1.1)), so the calibration did not depend on them and they are not
+# applied (the mechanism now works: set them to change personal fecundity)
+uncalibrated_keys = ['fecundity_low', 'fecundity_high']
 
 
 # %% Sim class
@@ -141,11 +140,9 @@ class Sim(ss.Sim):
         self.pars.update(all_sim_pars)
 
         # The contraception module (a declared module, kept with the connectors) and any others
-        if contraception_module is None:
-            contraception_module = fp.SimpleChoice(pars=self.contra_pars)
-        if education_module is not None: # Not ported to Starsim 4: kept only if given
-            connectors = sc.tolist(connectors) + [education_module]
-        self.pars['connectors'] = sc.tolist(connectors) + [contraception_module]
+        contraception_module = contraception_module or fp.StandardChoice(pars=self.contra_pars)
+        education_module = education_module or fp.Education(pars=self.edu_pars)
+        self.pars['connectors'] = sc.tolist(connectors) + [education_module, contraception_module]
 
         # The FP module, lactation (for LAM), and deaths
         if demographics is None and not len(self.pars['demographics']):
@@ -217,7 +214,7 @@ class Sim(ss.Sim):
             self.dataloader = fpd.get_dataloader(location, printwarn=not is_test)
         if self.pars.verbose > 0:
             print(f'Loading data from files in {self.dataloader.data_path}... ')
-        data_dict = self.dataloader.load(contra_mod='simple')  # Load all data and sort by module; SimpleChoice's coefficients
+        data_dict = self.dataloader.load()  # Load all data and sort by module
 
         # Load calibration parameters
         calib_pars = fpd.get_calib_pars(location, verbose=verbose)
