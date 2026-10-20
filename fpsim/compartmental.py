@@ -78,7 +78,9 @@ class FPCompartmental(ss.Disease):
         sr = P['stillbirth_rate']
         sb_age = np.array([sr['age_probs'][np.argmin(np.abs(np.asarray(sr['ages']) - lo))] for lo in edges])
         dur = P['dur_pregnancy']
-        mean_preg = ss.weeks(float(np.sum(np.asarray(dur.pars.a.weeks)*np.asarray(dur.pars.p))))
+        a = dur.pars.a
+        weeks = a.weeks if hasattr(a, 'weeks') else (dur.unit(np.asarray(a, dtype=float)).weeks if dur.unit is not None else np.asarray(a, dtype=float)) # As ss.Pregnancy.preterm_risk() reads it
+        mean_preg = ss.weeks(float(np.sum(np.asarray(weeks)*np.asarray(dur.pars.p))))
         mean_p2 = ss.weeks(mean_preg.weeks - 13)
         tr.tri1 = ss.Transition(S.P1, S.P2, dur=ss.constant(ss.weeks(13)))
         for k, (pz, back) in enumerate([('pause0', 'never'), ('pause1', 'none')]):
@@ -86,8 +88,8 @@ class FPCompartmental(ss.Disease):
             tr[f'stillbirth_{k}'] = ss.Transition(S.P2, S.NP, rate=ss.by(age=-np.log1p(-sr['probs'][0]*sb_age)/mean_p2.years), move=dict(method=f'{pz} -> {back}'))
         tr.maternal = ss.Transition(S.P2, ss.null, rate=ss.peryear(-np.log1p(-P['maternal_mortality']['probs'][0])/mean_p2.years))
         twins = float(P['twins_prob'])
-        tr.deliver = ss.Transition(S.P2, S.PA, rate=ss.peryear((1 - twins)/mean_p2.years), move=dict(parity='+1'))
-        tr.deliver_twins = ss.Transition(S.P2, S.PA, rate=ss.peryear(twins/mean_p2.years), move=dict(parity='+2'))
+        tr.deliver = ss.Transition(S.P2, S.PA, rate=ss.peryear((1 - twins)/mean_p2.years), increment='parity')
+        tr.deliver_twins = ss.Transition(S.P2, S.PA, rate=ss.peryear(twins/mean_p2.years), increment=dict(parity=2))
 
         # Postpartum: the 1- and 6-month decisions are the transitions out of PA and PB, split by destination as competing hazards
         pu = {k: {e: 1/(1 + np.exp(-cm.logit_use(k, e, edges))) for e in [0, 1]} for k in ['pp0', 'pp1', 'pp6']}
