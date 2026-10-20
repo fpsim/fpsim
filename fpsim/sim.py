@@ -151,7 +151,7 @@ class Sim(ss.Sim):
         if demographics is None and not len(self.pars['demographics']):
             fp_module = fp_module or fp.FPmod(pars=self.fp_pars)
             P = fp_module.pars
-            lact = fp.Lactation(p_breastfeed=P.p_breastfeed, dur_breastfeed=P.dur_breastfeed)
+            lact = ss.Lactation(p_breastfeed=P.p_breastfeed, dur_breastfeed=P.dur_breastfeed)
             self.pars['demographics'] = [fp_module, lact, fp.Deaths(pars=self.deaths_pars)]
 
         # Metadata and settings
@@ -265,12 +265,6 @@ class Sim(ss.Sim):
             super().init(force=force)
 
         return self
-
-    def init_module_attrs(self, force=False):
-        super().init_module_attrs(force=force)
-        fp_mod = self.demographics.get('fp')
-        if fp_mod is not None and not hasattr(self.demographics, 'pregnancy'):
-            self.demographics.setattribute('pregnancy', fp_mod)
 
     def init_results(self):
         """

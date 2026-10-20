@@ -104,7 +104,7 @@ def test_method_changes():
     methods = fp.make_methods()
     for method in methods.values(): method.efficacy = 1  # Make all methods totally effective
     choice = fp.RandomChoice(pars=dict(p_use=1), methods=methods)
-    s3 = fp.Sim(test=True, contraception_module=choice)
+    s3 = fp.Sim(test=True, contraception_module=choice, burnin=False) # Nobody pregnant at the start
     s3.run()
     assert s3.results.fp.births.sum() == 0, f'Expecting births to be 0, not {n}'
     ok(f'No births with completely effective contraception, as expected')

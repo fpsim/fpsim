@@ -10,22 +10,9 @@ import fpsim as fp
 from . import defaults as fpd
 from . import arrays as fpa
 
-__all__ = ['FPmod', 'Lactation']
+__all__ = ['FPmod']
 
 P, NP = ss.Pregnancy.P, ss.Pregnancy.NP
-
-
-def _fp_event(name):
-    """ An event the FP module (named "fp") records on the mother """
-    return ss.conditions.Event('tr', ss.conditions.Named('fp', name))
-
-
-class Lactation(ss.Lactation):
-    """ ss.Lactation driven by the FP module's events (ss.Lactation listens to a module named "pregnancy") """
-    # TODO(v4-rs): ss.Lactation should find the sim's pregnancy module by type, not by the name "pregnancy"
-    start   = ss.Transition(ss.Lactation.N, [ss.Lactation.L, ss.stay], p=[ss.Lactation.p_breastfeed, None], on=_fp_event('live_birth'))
-    restart = ss.Transition(ss.Lactation.L, [ss.Lactation.L, ss.Lactation.N], p=[ss.Lactation.p_breastfeed, None], on=_fp_event('live_birth'))
-    stop    = ss.Transition(ss.Lactation.L, ss.Lactation.N, on=_fp_event('infant_death'))
 
 
 class FPmod(ss.Pregnancy):
@@ -64,9 +51,7 @@ class FPmod(ss.Pregnancy):
         preg = {k: v for k, v in allpars.items() if k in v3}
         preg['p_abortion'] = float(allpars['abortion_prob'] or 0)
         super().__init__(pars=preg, name=name, lactation=False, fetus=False)
-        own = {k: v for k, v in allpars.items() if k not in self.pars}
-        self.define_pars(**own)
-        self.code_pars = list(self.code_pars) + list(own) # Read by FPmod's code, not by the graph
+        self.define_pars(**{k: v for k, v in allpars.items() if k not in self.pars}) # Read by FPmod's code, not by the graph
         self.pars.update(mc_hazard=self.miscarriage_rate, sb_hazard=self.stillbirth_rate)
         P = self.pars
         db = P['debut_age']
@@ -189,6 +174,9 @@ class FPmod(ss.Pregnancy):
         spacing = np.asarray(pref['preference'])[np.minimum(msb0//int(pref['interval']), int(pref['n_bins']) - 1)]
         parous = np.where(pp, sa_pp[np.minimum(msb0, len(sa_pp) - 1)], sa)*spacing
         debuted = ppl.age.raw >= self.fated_debut.raw
+        cm = self.contraception
+        if cm is not None: # Active once she has made her first decision about contraception (it steps after this module), as in Starsim 3 FPsim, where she chose before conception in the step she debuted
+            debuted &= ~cm['pre'].raw
         out = np.where(parity > 0, np.where(has_birth, parous, sa), np.where(debuted & ~pp, sa, 0))
         return out
 

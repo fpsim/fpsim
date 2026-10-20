@@ -62,6 +62,19 @@ class Method:
     def __repr__(self):
         return f'Method({self.name}, eff={self.efficacy}, modern={self.modern})'
 
+    @property
+    def efficacy(self):
+        """ The efficacy: in a contraception module, its current value (with any modifiers, e.g. from update_methods()) """
+        mod = self.__dict__.get('_mod')
+        if mod is not None and mod.__dict__.get('pars') is not None and f'eff_{self.name}' in mod.pars:
+            return mod.value(f'eff_{self.name}')
+        return self.__dict__.get('_efficacy')
+
+    @efficacy.setter
+    def efficacy(self, value):
+        self.__dict__['_efficacy'] = value
+        return
+
     def __deepcopy__(self, memo):
         """ A copy of a method alone is not in a module; a copy of the module it is in is in the copy of the module """
         new = Method.__new__(Method)
@@ -259,9 +272,7 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         effs = {k: v for k, v in graph_pars.items() if k.startswith('eff_')} # Read by the FP module, not by a transition
         super().__init__(*states, **trs, **effs, name=name, **kwargs)
         self.stratify(age=age_edges)
-        own = {k: v for k, v in pars.items() if k not in self.pars and k not in graph_pars}
-        self.define_pars(**own)
-        self.code_pars = list(self.code_pars) + list(own) # Data read when the graph is built and by the code, not by the graph
+        self.define_pars(**{k: v for k, v in pars.items() if k not in self.pars and k not in graph_pars}) # Data read when the graph is built and by the code, not by the graph
         for method in self.methods.values():
             method._mod = self
         return
@@ -298,12 +309,12 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         if self.sim is not None and self.sim.initialized:
             raise RuntimeError(f'"{self.name}" can only be changed before the sim is initialized')
         pars['method_weights'] = np.array([self.value(f'weight_{m}') for m in self.method_names] + list(pars['method_weights'][self.n_methods:]))
-        for key in ['prob_use_intercept', 'prob_use_trend_par'] + [k for k in ['p_use'] if k in self.pars]:
+        for key in [k for k in ['prob_use_intercept', 'prob_use_trend_par', 'p_use'] if isinstance(self.pars.get(k), ss.par)]: # Their current values
             pars[key] = self.value(key)
         methods = list(pars.pop('_new_methods', None) or self.methods.values())
         for m in methods: # Their current efficacies
             if m.name != 'none' and f'eff_{m.name}' in self.pars:
-                m.__dict__['efficacy'] = self.value(f'eff_{m.name}')
+                m.__dict__['_efficacy'] = self.value(f'eff_{m.name}')
         self._lock_attrs = False # UPSTREAM: a declared module cannot add a state or parameter once made, so it is made again
         ContraceptiveChoice.__init__(self, pars=pars, methods=methods, **self._init_kwargs)
         return
@@ -505,10 +516,8 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
     # %% Per-agent views (agents only)
     def method_raw(self):
         """ The index of each agent's method (0 if none), by UID """
-        out = np.zeros(len(self.sim.people.uid.raw), dtype=int)
-        for m in self.method_names:
-            out[self[m].raw] = self.methods[m].idx
-        return out
+        idx = np.array([self.methods[m].idx for m in self.method_names] + [0]) # -1, in no method, is the last
+        return idx[self.current_state(self.method_names).raw]
 
     def as_arr(self, raw, cls):
         """ A per-agent array (by UID) as an ss.Arr, so it can be indexed like a state; read-only, since it is computed from the states (writing to it would change nothing) """

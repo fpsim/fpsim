@@ -278,7 +278,7 @@ class Education(ss.Connector):
         return
 
     def advance_education(self):
-        self.attainment[self.in_school] += self.t.dt_year
+        self.attainment[self.in_school & ~self.interrupted] += self.t.dt_year # An interruption (pregnancy) holds progress until it is resumed
         return
 
     def graduate(self):
