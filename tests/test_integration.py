@@ -51,9 +51,9 @@ class BirthOutcomes(ss.Analyzer):
     def step(self):
         mod = self.sim.people.fp
         ti = self.sim.ti
-        if ti <= self.max_ti:
+        if (ti - 1) <= self.max_ti:
             # Abortions clear ti_pregnant in the same step they conceive, so count them separately
-            self.cohort.update((mod.ti_pregnant == ti).uids.tolist() + (mod.ti_abortion == ti).uids.tolist())
+            self.cohort.update((mod.ti_pregnant == (ti - 1)).uids.tolist() + (mod.ti_abortion == (ti - 1)).uids.tolist())
 
         pending = self.cohort - self.resolved
         if pending:
@@ -61,7 +61,7 @@ class BirthOutcomes(ss.Analyzer):
             outcomes = [('live_birth', mod.ti_live_birth), ('stillbirth', mod.ti_stillbirth),
                         ('miscarriage', mod.ti_miscarriage), ('abortion', mod.ti_abortion)]
             for key, state in outcomes:
-                hit = uids[state[uids] == ti]
+                hit = uids[state[uids] == (ti - 1)]
                 self.counts[key] += len(hit)
                 self.resolved.update(np.asarray(hit).tolist())  # Only count each woman's first outcome
         return
@@ -194,7 +194,7 @@ def test_contraception():
     # Override fecundity to maximize pregnancies and minimize variation during test
     sim.people.fp.personal_fecundity[:] = 1
 
-    sim.run(verbose=1/12)
+    sim.run(verbose=1)
 
     print(f'Checking pregnancy and birth outcomes from {sim.pars.n_agents} women... ')
     assert sim.results.fp.pregnancies[0:12].sum() == 0, "Expected no pregnancies"

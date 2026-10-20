@@ -86,7 +86,7 @@ def test_change_people_state():
     """ Testing that change_people_state() modifies sim results in expected ways """
     sc.heading('Testing change_people_state()...')
 
-    pars = dict(n_agents=500, start=2000, stop=2010, rand_seed=1, verbose=-1, location='kenya')
+    pars = dict(n_agents=500, start=2000, stop=2010, rand_seed=1, verbose=0, location='kenya')
     ms = fp.SimpleChoice(location='kenya')
 
     # Change ever user

@@ -7,7 +7,7 @@ import fpsim as fp
 
 do_profile = 1
 location = 'kenya'
-pars = dict(location=location, n_agents=500, start_year=2000, end_year=2010, seed=1, verbose=1/12)
+pars = dict(location=location, n_agents=500, start_year=2000, end_year=2010, seed=1, verbose=1)
 
 
 def make_sim():

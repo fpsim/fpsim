@@ -1109,7 +1109,7 @@ class track_as(ss.Analyzer):
         ppl_uids = ppl.alive.uids
 
         # Pregnancies
-        preg_uids = (ppl.fp.ti_pregnant == self.sim.ti).uids
+        preg_uids = (ppl.fp.ti_pregnant == (self.sim.ti - 1)).uids
         pregnant_boolean = np.full(len(ppl), False)
         pregnant_boolean[np.searchsorted(ppl_uids, preg_uids)] = True
         pregnant_age_split = self.log_age_split(binned_ages_t=[self.age_by_group], channel='pregnancies',
@@ -1118,14 +1118,14 @@ class track_as(ss.Analyzer):
             self.results[key] = pregnant_age_split[key]
 
         # Stillborns
-        stillborn_uids = (ppl.fp.ti_stillbirth == self.sim.ti).uids
+        stillborn_uids = (ppl.fp.ti_stillbirth == (self.sim.ti - 1)).uids
         stillbirth_boolean = np.full(len(ppl), False)
         stillbirth_boolean[np.searchsorted(ppl_uids, stillborn_uids)] = True
         self.results['stillbirth_ages'] = self.age_by_group
         self.results['as_stillbirths'] = stillbirth_boolean
 
         # Live births
-        live_uids = (ppl.fp.ti_live_birth == self.sim.ti).uids
+        live_uids = (ppl.fp.ti_live_birth == (self.sim.ti - 1)).uids
         total_women_delivering = np.full(len(ppl), False)
         total_women_delivering[np.searchsorted(ppl_uids, live_uids)] = True
         self.results['mmr_age_by_group'] = self.age_by_group
