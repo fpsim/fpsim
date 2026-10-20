@@ -342,7 +342,7 @@ def update_methods(year, eff=None, dur_use=None, p_use=None, method_mix=None, me
     Args:
         year (float): the year of the change
         eff (dict): {method name or label: efficacy}
-        dur_use (dict): {method name or label: a multiplier on its duration of use}
+        dur_use (dict): {method name or label: its new duration of use, for women starting it from the year: a distribution, a duration, or a number of months (as in Starsim 3 FPsim)}
         p_use (float): the probability of use at every decision (RandomChoice only: SimpleChoice's depends on age and ever use)
         method_mix (array): weights on the share choosing each method (one per method, excluding none), renormalized among
             methods, so the probability of using some method is unchanged (Starsim 3 FPsim's method_weights)
@@ -370,10 +370,13 @@ def update_methods(year, eff=None, dur_use=None, p_use=None, method_mix=None, me
         mods.append(_modify(contraception, f'eff_{m}', year, set=float(v), name=f'eff_{m}{tag}'))
     for k, v in (dur_use or {}).items():
         m = lookup(k)
-        if not sc.isnumber(v): # UPSTREAM: ss.modify(par, set=<Dist>) on a dwell parameter whose distribution varies by age has no effect (or raises), so a number scales the duration instead of replacing it
-            raise NotImplementedError('dur_use is a multiplier on the duration of use for now; a new distribution mid-run is not supported yet')
-        for src in (['never', 'none'] if m == 'none' else [m]): # Non-use: never-users and past users
-            mods.append(ss.modify(f'{contraception}.stop_{src}', multiply=1/float(v), start=year, name=f'dur_{src}{tag}'))
+        if isinstance(v, ss.dur):
+            v = ss.constant(v)
+        elif sc.isnumber(v): # As Starsim 3 FPsim's SimpleChoice read a number: months
+            v = ss.constant(ss.months(float(v)))
+        elif not isinstance(v, ss.Dist):
+            raise TypeError(f'dur_use of {m} is its new duration of use: a distribution (e.g. ss.lognorm_ex(ss.years(3), ss.years(1))), a duration, or a number of months; not {v!r}')
+        mods.append(ss.modify(f'{contraception}.pars.dur_{m}', set=v, start=year, name=f'dur_{m}{tag}')) # For women starting it from the year (non-use: never-users and past users)
     if p_use is not None:
         mods.append(_modify(contraception, 'p_use', year, set=float(p_use), name=f'p_use{tag}'))
     if method_mix is not None:

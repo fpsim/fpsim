@@ -90,7 +90,7 @@ def test_update_methods():
     assert cm.value('p_use') == p_use
     weights = np.array([cm.value(f'weight_{m}') for m in cm.method_names])
     assert np.allclose(weights/weights.sum(), method_mix/method_mix.sum())
-    assert 'dur_iud' in msim.sims[1].interventions # dur_use multiplies the duration of use (a modifier of the end of the method)
+    assert 'dur_iud' in msim.sims[1].interventions # dur_use sets the duration of use (a modifier of its parameter)
     ok('Parameters updated correctly')
 
     # Test that there are fewer births with the new method parameters
