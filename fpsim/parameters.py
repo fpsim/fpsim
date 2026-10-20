@@ -29,7 +29,7 @@ class SimPars(ss.SimPars):
         self.dt = 1/12      # The simulation timestep in 'unit's
         self.unit = 'year'   # The unit of time for the simulation
         self.rand_seed = 1      # Random seed
-        self.verbose = 1/12   # Verbosity level
+        self.verbose = 1   # Verbosity level
         self.use_aging = True   # Whether to age the population
         self.location = None  # Default location
         self.test = False
@@ -90,6 +90,7 @@ class FPPars(ss.PregnancyPars):
         self.sexual_activity_pp = None
         self.debut_age = None
         self.spacing_pref = None
+        self.init_parity = None  # Parity at the start by age group: see DataLoader.init_parity()
         self.region = None
         self.regional = None
 

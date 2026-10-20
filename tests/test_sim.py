@@ -79,7 +79,7 @@ def test_sim_creation():
     sim2 = fp.Sim(pars=par_kwargs, p_infertile=0.1, contraception_module=contra_mod, education_module=edu_mod, location='kenya')
     sim2.init()
 
-    assert sim2.connectors.contraception.pars.prob_use_trend_par == 0.3, "Contraception par failed"
+    assert sim2.connectors.contraception.value('prob_use_trend_par') == 0.3, "Contraception par failed"
     assert sim2.connectors.edu.pars.init_dropout.pars.p == 0.1, "Education par failed"
     assert sim2.pars.fp.p_infertile.pars.p == 0.1, "FP par failed"
 
@@ -95,7 +95,7 @@ def test_sim_creation():
     sim3 = fp.Sim(**pars)
     sim3.init()
 
-    assert sim3.connectors.contraception.pars.prob_use_intercept == 0.5, "Contraception par failed"
+    assert sim3.connectors.contraception.value('prob_use_intercept') == 0.5, "Contraception par failed"
     assert sim3.connectors.edu.pars.init_dropout.pars.p == 0.15, "Education par failed"
     assert sim3.pars.fp.p_infertile.pars.p == 0.18, "FP par failed"
 
@@ -106,7 +106,7 @@ def test_sim_creation():
     sim4 = fp.Sim(pars, fp_pars=fp_pars, contra_pars=contra_pars, education_module=education_module)
     sim4.init()
 
-    assert sim4.connectors.contraception.pars.prob_use_intercept == 0.5, "Contraception par failed"
+    assert sim4.connectors.contraception.value('prob_use_intercept') == 0.5, "Contraception par failed"
     assert sim4.connectors.contraception.pars.prob_use_year == 2010, "Contraception par failed"
     assert sim4.connectors.edu.pars.age_start == 7, "Education par failed"
     assert sim4.pars.fp.short_int == 20, "FP par failed"
@@ -178,7 +178,9 @@ def test_senegal():
 
 
 def test_birth_outcomes():
-    sim = fp.Sim(test=True, twins_prob=0.3)
+    sim = fp.Sim(test=True, twins_prob=0.3, burnin=False) # Nobody pregnant at the start, so every outcome is of a pregnancy in the run
+    sim.init()
+    parity0 = sim.people.fp.parity.raw.copy() # Women start with their parity from the DHS
     sim.run()
 
     # Check that n_pregnancies matches sum of outcomes (with allowance for partial twin loss)
@@ -200,8 +202,9 @@ def test_birth_outcomes():
     sc.printgreen('✓ (Birth outcomes sum to pregnancies, with partial twin loss allowance)')
 
     # Check that parity increments correctly
-    expected_parity = fpmod.n_births + fpmod.n_twinbirths + fpmod.n_stillbirths
-    assert (fpmod.parity == expected_parity).all(), 'Parity does not match number of live/still births'
+    uids = sim.people.alive.uids[sim.people.alive.uids < len(parity0)] # Women there at the start
+    expected_parity = parity0[uids] + fpmod.n_births[uids] + fpmod.n_twinbirths[uids] + fpmod.n_stillbirths[uids]
+    assert (fpmod.parity[uids] == expected_parity).all(), 'Parity does not match number of live/still births'
     sc.printgreen('✓ (Parity increments correctly)')
 
     return sim

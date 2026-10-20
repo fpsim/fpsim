@@ -2,6 +2,7 @@
 Run tests on the multisim object.
 """
 
+import numpy as np
 import sciris as sc
 import fpsim as fp
 import starsim as ss
@@ -26,11 +27,11 @@ def test_multisim(do_plot=do_plot):
     msim = ss.MultiSim(sims)
     msim.run(parallel=parallel)  # Run sims in parallel
 
-    msim.reduce()
     msim.summarize()
 
-    births = msim.results.fp_births
-    assert sum(births.low) < sum(births.high), 'Expecting the higher bound of births to be higher than the lower bound'
+    births = msim.results.fp.births # A run axis first; each label is a scenario, so the runs are pooled from the values
+    low, high = np.quantile(births.values, [0.1, 0.9], axis=0)
+    assert sum(low) < sum(high), 'Expecting the higher bound of births to be higher than the lower bound'
 
     if do_plot:
         msim.plot()

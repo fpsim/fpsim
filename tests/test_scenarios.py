@@ -86,9 +86,11 @@ def test_update_methods():
     msim.run(parallel=parallel)
 
     # Test that all the parameters were correctly updated
-    assert msim.sims[1].connectors.contraception.pars['p_use'].pars.p == p_use
-    assert msim.sims[1].connectors.contraception.methods['iud'].dur_use == 10
-    assert np.allclose(msim.sims[1].connectors.contraception._method_choice_dist.pars.p, method_mix)
+    cm = msim.sims[1].connectors.contraception
+    assert cm.value('p_use') == p_use
+    weights = np.array([cm.value(f'weight_{m}') for m in cm.method_names])
+    assert np.allclose(weights/weights.sum(), method_mix/method_mix.sum())
+    assert 'dur_iud' in msim.sims[1].interventions # dur_use sets the duration of use (a modifier of its parameter)
     ok('Parameters updated correctly')
 
     # Test that there are fewer births with the new method parameters

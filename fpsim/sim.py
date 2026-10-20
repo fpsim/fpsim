@@ -62,6 +62,12 @@ def tidy_up(fig, do_show=None, do_save=None, filename=None):
         return fig
 
 
+# Calibrated values that are not applied: fecundity_low/high never reached the distribution in Starsim 3 FPsim
+# (personal fecundity stayed uniform(0.7, 1.1)), so the calibration did not depend on them and they are not
+# applied (the mechanism now works: set them to change personal fecundity)
+uncalibrated_keys = ['fecundity_low', 'fecundity_high']
+
+
 # %% Sim class
 
 class Sim(ss.Sim):
@@ -125,26 +131,28 @@ class Sim(ss.Sim):
         # combine copies of them in this order if copy_inputs
         # remap any as necessary
         # separate into sim and fp-specific pars
+        if interventions is not None: # update_methods() and friends give lists of modifiers
+            interventions = [x for item in sc.tolist(interventions) for x in sc.tolist(item)]
         sim_kwargs = dict(label=label, people=people, demographics=demographics, diseases=diseases, networks=networks,
                     interventions=interventions, analyzers=analyzers, connectors=connectors)
         sim_kwargs = {key: val for key, val in sim_kwargs.items() if val is not None}
         all_sim_pars = self.process_pars(pars, sim_pars, people_pars, fp_pars, contra_pars, edu_pars, death_pars, sim_kwargs, **kwargs)
         self.pars.update(all_sim_pars)
 
-        # Process modules by adding them as Starsim connectors
-        default_contra = fp.StandardChoice(pars=self.contra_pars)
-        default_edu = fp.Education(pars=self.edu_pars)
-        contraception_module = contraception_module or sc.dcp(default_contra)
-        education_module = education_module or sc.dcp(default_edu)
-        connectors = sc.tolist(connectors) + [contraception_module, education_module]
-        self.pars['connectors'] = connectors
+        # The contraception module (a declared module, kept with the connectors) and any others
+        contraception_module = contraception_module or fp.StandardChoice(pars=self.contra_pars)
+        education_module = education_module or fp.Education(pars=self.edu_pars)
+        self.pars['connectors'] = sc.tolist(connectors) + [education_module, contraception_module]
+        structural = [intv for intv in sc.tolist(self.pars['interventions']) if isinstance(intv, (fp.add_method, fp.method_switching))] # New states and parameters of the contraception module, so added now
+        if structural:
+            self.pars['interventions'] = sc.tolist(self.pars['interventions']) + [mod for intv in structural for mod in intv.apply(contraception_module, stop=self.pars.stop, dt=self.pars.dt)]
 
-        # Process demographics
+        # The FP module, lactation (for LAM), and deaths
         if demographics is None and not len(self.pars['demographics']):
-            deaths = fp.Deaths(pars=self.deaths_pars)
-            default_fp = fp.FPmod(pars=self.fp_pars)
-            fp_module = fp_module or sc.dcp(default_fp)
-            self.pars['demographics'] = [fp_module, deaths]
+            fp_module = fp_module or fp.FPmod(pars=self.fp_pars)
+            P = fp_module.pars
+            lact = ss.Lactation(p_breastfeed=P.p_breastfeed, dur_breastfeed=P.dur_breastfeed)
+            self.pars['demographics'] = [fp_module, lact, fp.Deaths(pars=self.deaths_pars)]
 
         # Metadata and settings
         fpu.set_metadata(self)  # Set version, date, and git info
@@ -214,6 +222,8 @@ class Sim(ss.Sim):
         # Load calibration parameters
         calib_pars = fpd.get_calib_pars(location, verbose=verbose)
         if calib_pars is not None:
+            for key in uncalibrated_keys: # See uncalibrated_keys
+                calib_pars.pop(key, None)
             sc.printv(f'Applying calibration parameters for {location}...', veps)
             start = all_pars.get('start', 2000)
             if start != 2000:
@@ -255,12 +265,6 @@ class Sim(ss.Sim):
             super().init(force=force)
 
         return self
-
-    def init_module_attrs(self, force=False):
-        super().init_module_attrs(force=force)
-        fp_mod = self.demographics.get('fp')
-        if fp_mod is not None and not hasattr(self.demographics, 'pregnancy'):
-            self.demographics.setattribute('pregnancy', fp_mod)
 
     def init_results(self):
         """

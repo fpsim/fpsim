@@ -60,7 +60,7 @@ class Deaths(ss.Deaths):
         death_rate[male] = m_spline[m_ages]
         death_rate[female] = f_spline[f_ages]
         death_rate *= self.pars.rate_units * self.pars.rel_death
-        death_rate = death_rate[ppl.alive.raw]  # Only apply to alive people
+        death_rate = death_rate[ppl.auids]  # Only the people filter() draws for (ppl.auids)
 
         # Scale from rate to probability
         death_rate = ss.peryear(death_rate)

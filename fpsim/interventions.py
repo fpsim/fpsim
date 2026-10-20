@@ -7,6 +7,8 @@ import sciris as sc
 import starsim as ss
 from . import utils as fpu
 from . import methods as fpm
+from . import defaults as fpd
+from .methods import choice_keys
 
 _make_repr = fpu.make_recreatable_intervention_repr
 #>> Generic intervention classes
@@ -128,46 +130,29 @@ class change_par(ss.Intervention):
 
 class add_method(ss.Intervention):
     """
-    Intervention to add a new contraceptive method to the simulation at a specified time.
+    Add a contraceptive method, available from a year
+
+    The method is a state of the contraception module from the start, with the switching shares (to it and from it)
+    of `copy_from` and a weight of 0, so nobody chooses it until the year. Then its weight becomes that of
+    `copy_from` (an `ss.modify`): with `split_shares`, it takes that share of those who would have chosen
+    `copy_from`, which keeps the rest; without, both are chosen as `copy_from` was, and the shares are renormalized.
+    `fp.Sim` adds the method to its contraception module when the sim is made.
 
     Args:
-        year (float): The year at which to activate the new method
-        method (Method, optional): A Method object defining the new contraceptive method.
-            If None, the method will be copied from the source method (specified by ``copy_from``).
-        method_pars (dict, optional): Dictionary of parameters to update the method attributes.
-            If provided, these values will override corresponding attributes in the method object
-            (whether it was provided directly or copied from source). If None, defaults to empty dict.
-        copy_from (str): Name of the existing method to copy switching probabilities from.
-            Also used as the source method when ``method=None``.
-        split_shares (float, optional): If provided, % who would have chosen the 'copy_from' method
-            and now choose the new method
-        verbose (bool): Whether to print messages when method is activated (default True)
+        year (float): the year the method becomes available
+        method (Method): the new method; if None, a copy of `copy_from` named `<copy_from>_copy`
+        method_pars (dict): attributes of the method to change (e.g. name, label, efficacy, rel_dur_use)
+        copy_from (str): the method whose switching shares it takes
+        split_shares (float): the share of those choosing `copy_from` who choose the new method instead
+        verbose (bool): whether to print when it is added and becomes available
 
     **Examples**::
 
-        # Using a Method object directly
-        new_method = fp.Method(name='new_impl', label='New Implant', efficacy=0.999,
-                               dur_use=ss.lognorm_ex(ss.years(3), ss.years(0.5)), modern=True)
-        intv = fp.add_method(year=2010, method=new_method, copy_from='impl')
-
-        # Copying from source method (method=None, method_pars=None)
-        # Creates a copy of 'impl' with name 'impl_copy'
-        intv = fp.add_method(year=2010, copy_from='impl')
-
-        # Copying from source and overriding properties
-        intv = fp.add_method(year=2010, method_pars={'name': 'new_inj', 'efficacy': 0.995},
-                            copy_from='inj')
-
-        # Using method object and overriding properties with method_pars
-        base_method = fp.Method(name='new_method', efficacy=0.90)
-        intv = fp.add_method(year=2010, method=base_method,
-                            method_pars={'efficacy': 0.998}, copy_from='impl')
+        intv = fp.add_method(year=2010, copy_from='impl', method_pars=dict(name='new_impl', efficacy=0.999), split_shares=0.5)
+        sim = fp.Sim(location='kenya', interventions=intv).run()
     """
-
     def __init__(self, year=None, method=None, method_pars=None, copy_from=None, split_shares=None, verbose=True, **kwargs):
         super().__init__(**kwargs)
-
-        # Validate inputs
         if year is None:
             raise ValueError('Year must be specified for add_method intervention')
         if copy_from is None:
@@ -179,119 +164,55 @@ class add_method(ss.Intervention):
                 raise TypeError(f'split_shares must be a number, not {type(split_shares)}')
             if not (0.0 <= split_shares <= 1.0):
                 raise ValueError(f'split_shares must be between 0 and 1, got {split_shares}')
-
         self.year = year
         self.method = method
-        self.method_pars = method_pars if method_pars is not None else {}
+        self.method_pars = method_pars or {}
         self.copy_from = copy_from
-        self.verbose = verbose
         self.split_shares = split_shares
+        self.verbose = verbose
         self.activated = False
-        self._method_idx = None  # Will be set after method is added
-
         return
 
-    def init_pre(self, sim):
-        """
-        Initialize the intervention before the simulation starts.
-        This registers the new method but does not activate it yet.
-        """
-        super().init_pre(sim)
+    def apply(self, cm, stop=None, dt=None):
+        """ Add the method to a contraception module (before the sim is initialized), and return the modifiers that make it available from the year (none if that is the end of the sim, `stop`) """
+        source = cm.get_method(self.copy_from)
+        self.copy_from = source.name
+        method = sc.dcp(source) if self.method is None else sc.dcp(self.method)
+        if self.method is None and 'name' not in self.method_pars:
+            method.name += '_copy'
+        for key, val in self.method_pars.items():
+            setattr(method, key, val)
+        self.method = cm.add_method(method, copy_from=source.name, weight=0.0)
+        name, w = self.method.name, cm.value(f'weight_{source.name}')
+        new, old = (w, None) if self.split_shares is None else (self.split_shares*w, (1 - self.split_shares)*w)
+        if stop is not None and self.year >= stop: # Available at the end, when no step starts
+            return []
+        mods = [ss.modify(f'{cm.name}.pars.weight_{name}', set=float(new), start=self.year, name=f'weight_{name}_from_{self.year}')]
+        if old is not None:
+            mods.append(ss.modify(f'{cm.name}.pars.weight_{source.name}', set=float(old), start=self.year, name=f'weight_{source.name}_from_{self.year}'))
+        if self.verbose:
+            print(f'Added method "{name}" (idx={self.method.idx}), available from {self.year}')
+        return mods
 
-        # Validate year is within simulation range
+    def init_pre(self, sim):
+        super().init_pre(sim)
         if not (sim.pars.start <= self.year <= sim.pars.stop):
             raise ValueError(f'Intervention year {self.year} must be between {sim.pars.start} and {sim.pars.stop}')
-
-        cm = sim.connectors.contraception
-        source_method = cm.get_method(self.copy_from)
-        self._copy_from_name = source_method.name  # Store resolved name for use in step()
-
-        if self.method is None:
-            # If the user didn't provide a Method object, clone the source method
-            # (e.g., copy_from='inj') so the new method inherits all defaults
-            # such as efficacy, modern/traditional flag, and duration-of-use distribution.
-            self.method = sc.dcp(source_method)
-            if 'name' not in self.method_pars:
-                # Ensure the copied method gets a unique internal name unless the
-                # user overrides it via method_pars.
-                self.method.name += '_copy'
-
-        for mp, mpar in self.method_pars.items():
-            # Apply user-specified overrides (e.g., rename, label, rel_dur_use, dur_use, etc.)
-            setattr(self.method, mp, mpar)
-
-        # Extra logic to handle copying of distributions, which isn't currently well-supported
-        self.method._source_dur = source_method.name
-
-        # Register the method in the contraception connector so it exists in `cm.methods`
-        # and can be referenced by name/index from other interventions.
-        cm.add_method(self.method)
-
-        # Cache the method index for later use (e.g., reporting and activation).
-        self._method_idx = cm.methods[self.method.name].idx
-
-        fp_mod = sim.people.fp
-        old_mix = fp_mod.method_mix
-        # The FP module tracks method mix as an array of shape (n_methods, n_timepoints).
-        # Adding a method increases the number of options, so we need to resize this array
-        # while preserving historical values.
-        new_mix = np.zeros((cm.n_options, sim.t.npts))
-        new_mix[:old_mix.shape[0], :] = old_mix
-        fp_mod.method_mix = new_mix
-
-        if self.verbose:
-            print(f'Registered new method "{self.method.name}" (idx={self._method_idx}), will activate in year {self.year}')
-
+        if not isinstance(self.method, fpm.Method) or self.method.name not in sim.connectors.contraception.methods:
+            raise RuntimeError('fp.add_method() adds its method when fp.Sim is made: give it to fp.Sim(interventions=...)')
         return
 
     def step(self):
-        """
-        At the specified year, copy switching probabilities to make the method available.
-        """
-        sim = self.sim
-
-        # Check if we've reached the activation year and haven't already activated
-        if not self.activated and sim.t.year >= self.year:
+        if not self.activated and self.t.now('year') >= self.year - 1e-9:
             self.activated = True
-
             if self.verbose:
-                print(f'Activating new contraceptive method "{self.method.name}" in year {sim.t.year:.1f}')
-
-            # Copy switching probabilities
-            cm = sim.connectors.contraception
-            cm.copy_switching_to_method(
-                source_to_method=self._copy_from_name,
-                dest_to_method=self.method.name,
-                split_shares=self.split_shares
-            )
-            cm.copy_switching_from_method(
-                source_from_method=self._copy_from_name,
-                dest_from_method=self.method.name,
-            )
-
-            # Renormalize all probabilities
-            cm.renormalize_method_choice_pars()
-
+                print(f'Method "{self.method.name}" available from {self.t.now("year"):.1f}')
         return
 
     def finalize(self):
-        """
-        Report summary statistics about the new method usage.
-        """
         super().finalize()
-
-        if self.verbose:
-            sim = self.sim
-            fp_mod = sim.people.fp
-
-            # Get final method usage for the new method
-            final_usage = fp_mod.method_mix[self._method_idx, -1] if self._method_idx < fp_mod.method_mix.shape[0] else 0
-
-            # Count current users
-            n_users = np.sum(fp_mod.method == self._method_idx)
-
-            print(f'add_method finalized: "{self.method.name}" has {n_users} users ({final_usage*100:.2f}% of method mix)')
-
+        if not self.activated and self.sim.t.now('year') >= self.year - 1e-9: # A year at the end of the sim
+            self.activated = True
         return
 
 
@@ -407,602 +328,291 @@ class change_people_state(ss.Intervention):
         return
 
 
-class update_methods(ss.Intervention):
+def _modify(cm, key, start, name=None, **kwargs):
+    """ A modifier of a parameter of the contraception module, from a year """
+    return ss.modify(f'{cm}.pars.{key}', start=start, name=name, **kwargs)
+
+
+def update_methods(year, eff=None, dur_use=None, p_use=None, method_mix=None, method_choice_pars=None, name=None, contraception='contraception', methods=None, verbose=False, label=None):
     """
-    Intervention to modify method efficacy and/or switching matrix.
+    Change methods from a year: efficacy, duration of use, the probability of use (RandomChoice), or the method mix
+
+    Returns a list of `ss.modify` (give it to `interventions=`), so it runs as agents and as compartments.
 
     Args:
-        year (float): The year we want to change the method.
-
-        eff (dict):
-            An optional key for changing efficacy; its value is a dictionary with the following schema:
-                {method: efficacy}
-                    Where method is the name of the contraceptive method to be changed,
-                    and efficacy is a number with the efficacy
-
-        dur_use (dict):
-            Optional key for changing the duration of use; its value is a dictionary with the following schema:
-                {method: dur_use}
-                    Where method is the method to be changed, and dur_use is a dict representing a distribution, e.g.
-                    dur_use = {'Injectables: dict(dist='lognormal', par1=a, par2=b)}
-
-        p_use (float): probability of using any form of contraception
-        method_mix (list/arr): probabilities of selecting each form of contraception
+        year (float): the year of the change
+        eff (dict): {method name or label: efficacy}
+        dur_use (dict): {method name or label: its new duration of use, for women starting it from the year: a distribution, a duration, or a number of months (as in Starsim 3 FPsim)}
+        p_use (float): the probability of use at every decision (RandomChoice only: SimpleChoice's depends on age and ever use)
+        method_mix (array): weights on the share choosing each method (one per method, excluding none), renormalized among
+            methods, so the probability of using some method is unchanged (Starsim 3 FPsim's method_weights)
+        methods (ndict): the methods, to look up labels (default: the standard methods)
 
     **Example**::
 
-        # Raise injectable efficacy from 2010; methods are named by label here
-        intv = fp.update_methods(year=2010, eff={'Injectables': 0.99})
+        intv = fp.update_methods(year=2010, eff={'Injectables': 0.99}, method_mix=[1, 1, 2, 1, 1, 1, 1, 1, 1])
         sim = fp.Sim(location='kenya', interventions=intv).run()
     """
-
-    def __init__(self, year, eff=None, dur_use=None, p_use=None, method_mix=None,
-                 method_choice_pars=None, verbose=False, **kwargs):
-        super().__init__(**kwargs)
-        self.define_pars(
-            year=year,
-            eff=eff,
-            dur_use=dur_use,
-            p_use=p_use,
-            method_mix=method_mix,
-            method_choice_pars=method_choice_pars,
-            verbose=verbose
-        )
-
-        self.applied = False
-        return
-
-
-    def init_pre(self, sim):
-        super().init_pre(sim)
-        self._validate()
-        par_name = None
-        if self.pars.p_use is not None and isinstance(sim.connectors.contraception, fpm.SimpleChoice):
-            par_name = 'p_use'
-        if self.pars.method_mix is not None and isinstance(sim.connectors.contraception, fpm.SimpleChoice):
-            par_name = 'method_mix'
-
-        if par_name is not None:
-            errormsg = (
-                f"Contraceptive module  {type(sim.connectors.contraception)} does not have `{par_name}` parameter. "
-                f"For this type of module, the probability of contraceptive use depends on people attributes and can't be reset using this intervention.")
-            print(errormsg)
-
-        return
-
-    def _validate(self):
-        # Validation
-        if self.pars.year is None:
-            errormsg = 'A year must be supplied'
-            raise ValueError(errormsg)
-        has_input = any([
-            self.pars.eff is not None,
-            self.pars.dur_use is not None,
-            self.pars.p_use is not None,
-            self.pars.method_mix is not None,
-            self.pars.method_choice_pars is not None,
-        ])
-        if not has_input:
-            errormsg = 'At least one of eff, dur_use, p_use, method_mix, or method_choice_pars must be supplied'
-            raise ValueError(errormsg)
-        return
-
-    def step(self):
-        """
-        Applies the efficacy or contraceptive uptake changes if it is the specified year
-        based on scenario specifications.
-        """
-        sim = self.sim
-        cm = sim.connectors.contraception
-        if not self.applied and sim.t.year >= self.pars.year:
-            self.applied = True # Ensure we don't apply this more than once
-
-            # Implement efficacy
-            if self.pars.eff is not None:
-                for k, rawval in self.pars.eff.items():
-                    cm.update_efficacy(method_label=k, new_efficacy=rawval)
-
-            # Implement changes in duration of use
-            if self.pars.dur_use is not None:
-                for k, rawval in self.pars.dur_use.items():
-                    cm.update_duration(method_label=k, new_duration=rawval)
-
-            # Change in probability of use
-            if self.pars.p_use is not None:
-                cm.pars['p_use'].set(self.pars.p_use)
-
-            # Change in method mix
-            if self.pars.method_mix is not None:
-                this_mix = self.pars.method_mix / np.sum(self.pars.method_mix) # Renormalize in case they are not adding up to 1
-                cm._method_choice_dist.set(p=this_mix)
-            
-            # Change in switching matrix
-            if self.pars.method_choice_pars is not None:
-                print(f'Changed contraceptive switching matrix in year {sim.t.year}')
-                cm.method_choice_pars = self.pars.method_choice_pars
-                
-        return
+    if all(x is None for x in [eff, dur_use, p_use, method_mix, method_choice_pars]):
+        raise ValueError('At least one of eff, dur_use, p_use, method_mix, or method_choice_pars must be supplied')
+    if method_choice_pars is not None:
+        raise NotImplementedError('A new switching matrix mid-run is not ported to Starsim 4 yet; use method_mix to reweight methods')
+    methods = methods if methods is not None else fpm.make_methods()
+    def lookup(key):
+        for m in methods.values():
+            if key in [m.name, m.label]:
+                return m.name
+        raise ValueError(f'Method "{key}" not found')
+    tag = f'_{name}' if name else ''
+    mods = []
+    for k, v in (eff or {}).items():
+        m = lookup(k)
+        mods.append(_modify(contraception, f'eff_{m}', year, set=float(v), name=f'eff_{m}{tag}'))
+    for k, v in (dur_use or {}).items():
+        m = lookup(k)
+        if isinstance(v, ss.dur):
+            v = ss.constant(v)
+        elif sc.isnumber(v): # As Starsim 3 FPsim's SimpleChoice read a number: months
+            v = ss.constant(ss.months(float(v)))
+        elif not isinstance(v, ss.Dist):
+            raise TypeError(f'dur_use of {m} is its new duration of use: a distribution (e.g. ss.lognorm_ex(ss.years(3), ss.years(1))), a duration, or a number of months; not {v!r}')
+        mods.append(ss.modify(f'{contraception}.pars.dur_{m}', set=v, start=year, name=f'dur_{m}{tag}')) # For women starting it from the year (non-use: never-users and past users)
+    if p_use is not None:
+        mods.append(_modify(contraception, 'p_use', year, set=float(p_use), name=f'p_use{tag}'))
+    if method_mix is not None:
+        names = [m for m in methods if m != 'none']
+        mix = np.asarray(method_mix, dtype=float)
+        if len(mix) != len(names):
+            raise ValueError(f'method_mix has {len(mix)} values, but there are {len(names)} methods ({names})')
+        mix = mix/mix.mean()
+        for m, w in zip(names, mix):
+            mods.append(_modify(contraception, f'weight_{m}', year, set=float(w), name=f'weight_{m}{tag}'))
+    return mods
 
 
-class change_initiation_prob(ss.Intervention):
+def change_initiation_prob(year=None, prob_use_intercept=0.0, contraception='contraception', name=None, verbose=False):
     """
-    Intervention to change the probabilty of contraception use trend parameter in
-    contraceptive choice modules that have a logistic regression model.
-
-    Args:
-        year (float): The year in which this intervention will be applied
-        prob_use_intercept (float): A number that changes the intercept in the logistic regression model
-        p_use = 1 / (1 + np.exp(-rhs + p_use_time_trend + p_use_intercept))
+    Set the intercept added to the logit of the probability of use, from a year (a list with one `ss.modify`)
 
     **Example**::
 
-        # Raise the contraceptive uptake intercept from 2010
         intv = fp.change_initiation_prob(year=2010, prob_use_intercept=0.5)
         sim = fp.Sim(location='kenya', interventions=intv).run()
     """
-
-    def __init__(self, year=None, prob_use_intercept=0.0, verbose=False, **kwargs):
-        super().__init__(**kwargs)
-        self.year = year
-        self.prob_use_intercept = prob_use_intercept
-        self.verbose = verbose
-        self.applied = False
-        self.par_name = None
-        return
-
-    def init_pre(self, sim=None):
-        super().init_pre(sim)
-        # self._validate()
-        if isinstance(sim.connectors.contraception, (fpm.SimpleChoice)):
-            self.par_name = 'prob_use_intercept'
-
-        if self.par_name is None:
-            errormsg = (
-                f"Contraceptive module {type(sim.connectors.contraception)} does not have `{self.par_name}` parameter.")
-            raise ValueError(errormsg)
-
-        return
-
-
-    def step(self):
-        """
-        Applies the changes to efficacy or contraceptive uptake changes if it is the specified year
-        based on scenario specifications.
-        """
-        sim = self.sim
-        if not self.applied and sim.t.year >= self.year:
-            self.applied = True # Ensure we don't apply this more than once
-            sim.connectors.contraception.pars[self.par_name] = self.prob_use_intercept
-
-        return
+    return [_modify(contraception, 'prob_use_intercept', year, set=float(prob_use_intercept), name=name or 'change_initiation_prob')]
 
 
 class change_initiation(ss.Intervention):
     """
-    Intervention that modifies the outcomes of whether women are on contraception or not
-    Select a proportion of women and sets them on a contraception method.
+    Start a share of non-users on contraception each step
+
+    Women not using contraception (past debut, not pregnant, not within `dur_postpartum` of a birth, under 50)
+    are chosen at random and start a method: `target_method`, or one drawn from the switching shares of
+    non-users by age (weighted by the current method weights). Their duration of use is drawn as for anyone
+    starting the method.
 
     Args:
-        years (list, float): The year we want to start the intervention.
-            if years is None, uses start and end years of sim as defaults
-            if years is a number or a list with a single element, eg, 2000.5, or [2000.5],
-            this is interpreted as the start year of the intervention, and the
-            end year of intervention will be the end of the simulation
-        eligibility (callable): callable that returns a filtered version of
-            people eligible to receive the intervention
-        perc (float): a value between 0 and 1 indicating the x% extra of women
-            who will be made to select a contraception method.
-            The proportion or % is with respect to the number of
-            women who were on contraception:
-             - the previous year (12 months earlier)?
-             - at the beginning of the intervention.
-        annual (bool): whether the increase, perc, represents a "per year"
-            increase.
-        age_range (tuple, optional): (min_age, max_age) to restrict eligibility.
-            If provided, only women in this age range are eligible. Use with perc_of_eligible=True.
-        perc_of_eligible (bool): If True, perc is percentage of eligible women (not of current users).
-            Use this with age_range for age-targeted scale-up scenarios.
-        target_method (str/int, optional): Method name or index for new users. If None, uses
-            natural method distribution.
-        final_perc (float, optional): If provided, perc will scale linearly from initial perc to
-            final_perc over the intervention period. Enables scale-up scenarios.
+        years (list, float): the start year (to the end of the sim), or [start, end]; default the whole sim
+        perc (float): the extra share of women to start, relative to the users at the start of the intervention (or of
+            the eligible women, with `perc_of_eligible`), per year if `annual`
+        annual (bool): whether `perc` is per year
+        force_theoretical (bool): also make up the shortfall from the expected number of users
+        age_range (tuple): (min_age, max_age) of the women eligible
+        perc_of_eligible (bool): whether `perc` is a share of the eligible women
+        target_method (str): the method new users start (default: drawn)
+        final_perc (float): if given, `perc` changes linearly to this by the end year
 
     **Example**::
 
-        # Increase initiation by 5% per year from 2010
         intv = fp.change_initiation(years=2010, perc=0.05)
         sim = fp.Sim(location='kenya', interventions=intv).run()
     """
-
     def __init__(self, years=None, eligibility=None, perc=0.0, annual=True, force_theoretical=False,
-                 age_range=None, perc_of_eligible=False, target_method=None, final_perc=None,
-                 verbose=False, **kwargs):
+                 age_range=None, perc_of_eligible=False, target_method=None, final_perc=None, verbose=False, **kwargs):
         super().__init__(**kwargs)
+        if eligibility is not None:
+            raise NotImplementedError('eligibility= is not ported: use age_range=')
         self.years = years
-        self.eligibility = eligibility
         self.perc = perc
         self.annual = annual
-        self.annual_perc = None
         self.force_theoretical = force_theoretical
-        self.current_women_oncontra = None
-        self.verbose = verbose
-
-        # New parameters for age-restricted, targeted initiation
         self.age_range = age_range
         self.perc_of_eligible = perc_of_eligible
         self.target_method = target_method
-        self.target_method_idx = None
         self.final_perc = final_perc
-        self.init_perc = perc  # Store initial perc for linear interpolation
-
-        # Initial value of women on contra at the start of the intervention. Tracked for validation.
+        self.verbose = verbose
         self.init_women_oncontra = None
-        # Theoretical number of women on contraception we should have by the end of the intervention period, if
-        # nothing else affected the dynamics of the contraception. Tracked for validation.
         self.expected_women_oncontra = None
-
-        # Bernoulli distribution for selecting women to initiate on contraception
-        self._p_selected = ss.bernoulli(p=0.0)
+        self.current_women_oncontra = None
+        self.n_started = 0
+        self._select = ss.random()
+        self._method = ss.random()
         return
 
-
-    def init_pre(self, sim=None):
+    def init_pre(self, sim):
         super().init_pre(sim)
-
-        # Validate years and values
-        if self.years is None:
-            # f'Intervention start and end years not provided. Will use sim start an end years'
-            self.years = [sim.pars['start'], sim.pars['stop']]
-        if sc.isnumber(self.years) or len(self.years) == 1:
-            self.years = sc.promotetolist(self.years)
-            # Assumes that start year has been specified, append end of the simulation as end year of the intervention
-            self.years.append(sim.pars['stop'])
-
-        min_year = min(self.years)
-        max_year = max(self.years)
-        if min_year < sim.pars['start']:
-            errormsg = f'Intervention start {min_year} is before the start of the simulation.'
-            raise ValueError(errormsg)
-        if max_year > sim.pars['stop']:
-            errormsg = f'Intervention end {max_year} is after the end of the simulation.'
-            raise ValueError(errormsg)
-        if self.years != sorted(self.years):
-            errormsg = f'Years {self.years} should be monotonically increasing'
-            raise ValueError(errormsg)
-
-        # Resolve target method if specified
-        if self.target_method is not None:
-            cm = sim.connectors.contraception
-            if isinstance(self.target_method, str):
-                if self.target_method not in cm.methods:
-                    errormsg = f'Target method "{self.target_method}" not found'
-                    raise ValueError(errormsg)
-                self.target_method_idx = cm.methods[self.target_method].idx
-            else:
-                self.target_method_idx = self.target_method
-
-        # Validate age_range if provided
-        if self.age_range is not None:
-            if len(self.age_range) != 2:
-                errormsg = 'age_range must be a tuple of (min_age, max_age)'
-                raise ValueError(errormsg)
-
-        # Convert final_perc if needed
-        if self.final_perc is not None and self.annual:
-            self.final_perc = ((1 + self.final_perc) ** sim.dt.years) - 1
-
-        # Adjust the probability by the sim's timestep, if it's an annual probability
-        if self.annual:
-            # per timestep/monthly growth rate or perc of eligible women who will be made to choose contraception
-            self.annual_perc = self.perc
-            self.perc = ((1 + self.annual_perc) ** sim.dt.years)-1
-
+        start, stop = float(sim.pars.start), float(sim.pars.stop)
+        years = [start, stop] if self.years is None else sc.tolist(self.years)
+        if len(years) == 1:
+            years.append(stop)
+        years = [float(y) for y in years]
+        if years[0] < start:
+            raise ValueError(f'Intervention start {years[0]} is before the start of the simulation.')
+        if years[1] > stop:
+            raise ValueError(f'Intervention end {years[1]} is after the end of the simulation.')
+        if years != sorted(years):
+            raise ValueError(f'Years {years} should be monotonically increasing')
+        if self.age_range is not None and len(self.age_range) != 2:
+            raise ValueError('age_range must be a tuple of (min_age, max_age)')
+        self.years = years
+        cm = sim.connectors.contraception
+        if self.target_method is not None and self.target_method not in cm.method_names:
+            raise ValueError(f'Target method "{self.target_method}" not found')
+        dt = sim.t.dt_year
+        self.step_perc = lambda p: ((1 + p)**dt - 1) if self.annual else p
         return
 
-    def check_eligibility(self):
-        """
-        Select eligible who is eligible
-        """
-        sim = self.sim
-        contra_choosers = []
-        if self.eligibility is None:
-            contra_choosers = self._default_contra_choosers()
-        return contra_choosers
-
-    def _default_contra_choosers(self):
-        # TODO: do we care whether women people have ti_contra > 0? For instance postpartum women could be made to choose earlier?
-        # Though it is trickier because we need to reset many postpartum-related attributes
-        ppl = self.sim.people
-
-        # Base eligibility criteria
-        eligible = (ppl.female & ppl.alive &                        # living women
-                    (ppl.age < self.sim.pars.fp['age_limit_fecundity']) &  # who are fecund
-                    ppl.fp.sexual_debut &                           # who already had their sexual debut
-                    (~ppl.fp.pregnant) &                            # who are not currently pregnant
-                    (~ppl.fp.postpartum) &                          # who are not in postpartum
-                    (~ppl.fp.on_contra)                             # who are not already on contra
-                    )
-
-        # Add age restriction if specified
-        if self.age_range is not None:
-            min_age, max_age = self.age_range
-            eligible = eligible & (ppl.age >= min_age) & (ppl.age < max_age)
-
-        return eligible.uids
-
-    def _get_current_perc(self, year):
-        """Calculate current perc based on linear interpolation if final_perc is specified."""
+    def current_perc(self, year):
         if self.final_perc is None:
-            return self.perc
+            return self.step_perc(self.perc)
+        y0, y1 = self.years
+        frac = np.clip((year - y0)/(y1 - y0), 0, 1) if y1 > y0 else 1
+        return self.step_perc(self.perc + frac*(self.final_perc - self.perc))
 
-        start_year, end_year = self.years[0], self.years[1]
-        if year <= start_year:
-            return self.perc
-        elif year >= end_year:
-            return self.final_perc
-        else:
-            # Linear interpolation
-            frac = (year - start_year) / (end_year - start_year)
-            return self.perc + frac * (self.final_perc - self.perc)
+    def eligible(self):
+        sim = self.sim
+        cm = sim.connectors.contraception
+        f = sim.demographics.fp
+        ppl = sim.people
+        ok = (cm['never'].raw | cm['none'].raw) & ppl.female.raw & ppl.alive.raw & (ppl.age.raw < fpd.max_age_preg) & ~f.postpartum.raw
+        if self.age_range is not None:
+            ok &= (ppl.age.raw >= self.age_range[0]) & (ppl.age.raw < self.age_range[1])
+        return ss.uids(np.flatnonzero(ok))
 
     def step(self):
         sim = self.sim
-        ti = sim.ti
-        year = sim.t.year
-
-        # Calculate current perc (may vary over time)
-        current_perc = self._get_current_perc(year)
-
-        # Save theoretical number based on the value of women on contraception at start of intervention
-        if self.years[0] == year:
-            self.expected_women_oncontra = (sim.people.alive & sim.people.fp.on_contra).sum()
-            self.init_women_oncontra = self.expected_women_oncontra
-
-        # Apply intervention within this time range
-        if self.years[0] <= year <= self.years[1]:  # Inclusive range
-            self.current_women_oncontra = (sim.people.alive & sim.people.fp.on_contra).sum()
-
-            # Eligible population
-            can_choose_contra_uids = self.check_eligibility()
-            n_eligible = len(can_choose_contra_uids)
-
-            if n_eligible == 0:
-                return
-
-            # Calculate number of new users
-            if self.perc_of_eligible:
-                # Percentage of eligible women (for age-targeted scenarios)
-                new_on_contra = current_perc * n_eligible
-            else:
-                # Traditional behavior: percentage based on current users
-                nnew_on_contra = current_perc * self.expected_women_oncontra
-
-                # NOTE: TEMPORARY: force specified increase
-                # how many more women should be added per time step
-                # However, if the current number of women on contraception is >> than the expected value, this
-                # intervention does nothing. The forcing ocurrs in one particular direction, making it incomplete.
-                # If the forcing had to be fully function, when there are more women than the expected value
-                # this intervention should additionaly 'reset' the contraceptive state and related attributes (ie, like the duration on the method)
-                if self.force_theoretical:
-                    additional_women_on_contra = self.expected_women_oncontra - self.current_women_oncontra
-                    if additional_women_on_contra < 0:
-                        additional_women_on_contra = 0
-                    new_on_contra = nnew_on_contra + additional_women_on_contra
-                else:
-                    new_on_contra = current_perc * self.current_women_oncontra
-
-                self.expected_women_oncontra += nnew_on_contra
-
-            if new_on_contra == 0:
-                return
-
-            if n_eligible < new_on_contra:
-                if not self.perc_of_eligible:  # Only warn for non-eligible mode
-                    print(f"There are fewer eligible women ({n_eligible}) than "
-                          f"the number of women who should be initiated on contraception ({new_on_contra}).")
-                new_on_contra = n_eligible
-
-            # Of eligible women, select who will be asked to choose contraception
-            p_selected = new_on_contra * np.ones(n_eligible) / n_eligible
-            selected = np.random.random(n_eligible) < p_selected
-            sim.people.fp.on_contra[can_choose_contra_uids[selected]] = True
-            new_users_uids = can_choose_contra_uids[selected]
-
-            # Assign method
-            if self.target_method_idx is not None:
-                # Use specified target method
-                sim.people.fp.method[new_users_uids] = self.target_method_idx
-            else:
-                # Use natural method distribution
-                sim.people.fp.method[new_users_uids] = sim.connectors.contraception.init_method_dist(new_users_uids)
-
-            sim.people.fp.ever_used_contra[new_users_uids] = 1
-            method_dur = sim.connectors.contraception.set_dur_method(new_users_uids)
-            sim.people.fp.ti_contra[new_users_uids] = ti + method_dur
-
+        year = sim.t.now('year')
+        cm = sim.connectors.contraception
+        users = lambda: int(np.sum((cm.method_raw() > 0) & sim.people.alive.raw))
+        if self.expected_women_oncontra is None and year >= self.years[0] - 1e-9: # The first step of the intervention (Starsim 3 compared years exactly)
+            self.expected_women_oncontra = self.init_women_oncontra = users()
+        if not (self.years[0] - 1e-9 <= year <= self.years[1] + 1e-9):
+            return
+        self.current_women_oncontra = users()
+        uids = self.eligible()
+        if not len(uids):
+            return
+        perc = self.current_perc(year)
+        if self.perc_of_eligible:
+            n_new = perc*len(uids)
+        else:
+            step_new = perc*self.expected_women_oncontra
+            n_new = step_new + max(self.expected_women_oncontra - self.current_women_oncontra, 0) if self.force_theoretical else perc*self.current_women_oncontra
+            self.expected_women_oncontra += step_new
+        n_new = min(n_new, len(uids))
+        chosen = uids[self._select.rvs(uids) < n_new/len(uids)]
+        if not len(chosen):
+            return
+        self.start_methods(chosen)
+        self.n_started += len(chosen)
         return
 
-
-# Note: age_restricted_initiation functionality has been integrated into change_initiation
-# Use change_initiation with age_range, perc_of_eligible, target_method, and final_perc parameters
+    def start_methods(self, uids):
+        """ Move women from non-use to a method, as if they had chosen it now """
+        sim = self.sim
+        cm = sim.connectors.contraception
+        names = cm.method_names
+        if self.target_method is not None:
+            method = np.full(len(uids), names.index(self.target_method))
+        else:
+            age = sim.people.age.raw[uids]
+            groups = np.clip(np.digitize(age, fpm.age_edges) - 1, 0, len(fpm.age_edges) - 1)
+            shares = cm.shares('pp0', 'none')
+            w = np.array([cm.value(f'weight_{m}') for m in names])
+            table = np.array([shares[m] for m in names]).T*w # Age groups by methods
+            cdf = np.cumsum(table/table.sum(1, keepdims=True), axis=1)[groups]
+            method = np.minimum((cdf < self._method.rvs(uids)[:, None]).sum(1), len(names) - 1)
+        cm.set_method(uids, [cm.methods[names[j]].idx for j in method])
+        return
 
 
 class method_switching(ss.Intervention):
     """
-    Intervention that causes women to switch from specific contraceptive methods to a target method.
+    From a year, a share of the women choosing a method after one method choose another instead
 
-    This intervention modifies the switching probabilities in the contraception module's switching
-    matrix to induce transitions from one or more source methods to a destination method.
+    For each source method, a parameter of the contraception module, `switch_<from>_<to>` (0 until the year), is the
+    share of women leaving `from` who would choose a method and choose `to_method` instead; the other methods' shares
+    are scaled down to make room (the probability of using some method is unchanged). With postpartum 1 (included by
+    default, as in Starsim 3 FPsim), the choice 1 month after a birth is changed the same way, for every woman.
+    `fp.Sim` adds the parameters when the sim is made.
 
     Args:
-        year (float): Year when switching intervention begins
-        from_methods (str/list): Method name(s) or index(es) to switch from
-        to_method (str/int): Method name or index to switch to
-        switch_prob (float/dict): Probability of switching. Can be:
-            - float: Same probability for all source methods
-            - dict: {method_name: probability} for different rates per source
-        age_groups (list): Age group names to apply switching. If None, applies to all age groups.
-            Use None for all, or list like ['<18', '18-20', '20-25', '25-35', '>35']
-        postpartum (int/list): Postpartum states to modify (0, 1, 6). If None, modifies all states.
-        annual (bool): If True, switch_prob is annual and converted to per-timestep
-        verbose (bool): Print detailed information
+        year (float): the year the switching starts
+        from_methods (str/list): the method(s) women switch from
+        to_method (str): the method they switch to
+        switch_prob (float/dict): the share, or {method: share}
+        age_groups (list): method-choice age groups it applies to ('<18', '18-20', '20-25', '25-35', '>35'); default all
+        postpartum (int/list): the decisions it applies to: 0 (at the end of a method) and 1 (1 month after a birth); default both
+        annual (bool): whether switch_prob is per year (converted to per step)
+        verbose (bool): whether to print details
 
     **Example**::
 
-        # 10% of injectable users switch to DMPA-SC starting in 2025
-        intv1 = fp.method_switching(
-            year=2025,
-            from_methods='inj',
-            to_method='dmpasc',
-            switch_prob=0.10,
-        )
-
-        # Different rates for different methods
-        intv2 = fp.method_switching(
-            year=2030,
-            from_methods=['dmpasc3', 'withdrawal', 'other_trad'],
-            to_method='dmpasc6',
-            switch_prob={'dmpasc3': 0.26, 'withdrawal': 0.20, 'other_trad': 0.20},
-        )
+        intv = fp.method_switching(year=2025, from_methods='inj', to_method='dmpasc', switch_prob=0.10)
     """
-
-    def __init__(self, year=None, from_methods=None, to_method=None, switch_prob=None,
-                 age_groups=None, postpartum=None, annual=False, verbose=False, **kwargs):
+    def __init__(self, year=None, from_methods=None, to_method=None, switch_prob=None, age_groups=None, postpartum=None, annual=False, verbose=False, **kwargs):
         super().__init__(**kwargs)
+        if year is None:
+            raise ValueError('year must be specified')
+        if from_methods is None or to_method is None:
+            raise ValueError('Both from_methods and to_method must be specified')
+        if switch_prob is None:
+            raise ValueError('switch_prob must be specified')
         self.year = year
-        self.from_methods = sc.promotetolist(from_methods)
+        self.from_methods = sc.tolist(from_methods)
         self.to_method = to_method
         self.switch_prob = switch_prob
         self.age_groups = age_groups
-        self.postpartum = postpartum if postpartum is not None else [0, 1, 6]
-        self.postpartum = sc.promotetolist(self.postpartum)
+        self.postpartum = sc.tolist(postpartum if postpartum is not None else [0, 1, 6])
         self.annual = annual
         self.verbose = verbose
         self.applied = False
+        self.keys = None
         return
 
-    def init_pre(self, sim=None):
-        super().init_pre(sim)
-
-        # Validate year
-        if self.year is None:
-            errormsg = 'year must be specified'
-            raise ValueError(errormsg)
-
-        if self.year < sim.pars['start'] or self.year > sim.pars['stop']:
-            errormsg = f'Intervention year {self.year} must be within simulation [{sim.pars["start"]}, {sim.pars["stop"]}]'
-            raise ValueError(errormsg)
-
-        # Validate methods
-        if self.from_methods is None or self.to_method is None:
-            errormsg = 'Both from_methods and to_method must be specified'
-            raise ValueError(errormsg)
-
-        if self.switch_prob is None:
-            errormsg = 'switch_prob must be specified'
-            raise ValueError(errormsg)
-
-        # Resolve method names to indices
-        cm = sim.connectors.contraception
-        self.from_method_names = []
-        self.from_method_indices = []
-
-        for method in self.from_methods:
-            if isinstance(method, str):
-                if method not in cm.methods:
-                    errormsg = f'Source method "{method}" not found'
-                    raise ValueError(errormsg)
-                self.from_method_names.append(method)
-                self.from_method_indices.append(cm.methods[method].idx)
-            else:
-                self.from_method_indices.append(method)
-                # Find name from index
-                for name, m in cm.methods.items():
-                    if m.idx == method:
-                        self.from_method_names.append(name)
-                        break
-
-        if isinstance(self.to_method, str):
-            if self.to_method not in cm.methods:
-                errormsg = f'Target method "{self.to_method}" not found'
-                raise ValueError(errormsg)
-            self.to_method_idx = cm.methods[self.to_method].idx
-            self.to_method_name = self.to_method
-        else:
-            self.to_method_idx = self.to_method
-            for name, m in cm.methods.items():
-                if m.idx == self.to_method:
-                    self.to_method_name = name
-                    break
-
-        # Convert switch_prob to dict format
-        if not isinstance(self.switch_prob, dict):
-            # Same probability for all source methods
-            self.switch_prob_dict = {name: self.switch_prob for name in self.from_method_names}
-        else:
-            self.switch_prob_dict = self.switch_prob
-
-        # Convert annual to per-timestep if needed
+    def apply(self, cm, stop=None, dt=None):
+        """ Add the switching parameters to a contraception module (before the sim is initialized), and return the modifiers that set them from the year """
+        to = cm.get_method(self.to_method).name
+        names = [cm.get_method(m).name for m in self.from_methods]
+        probs = self.switch_prob if isinstance(self.switch_prob, dict) else {m: self.switch_prob for m in self.from_methods}
+        probs = {cm.get_method(k).name: float(v) for k, v in probs.items()}
         if self.annual:
-            for key in self.switch_prob_dict:
-                annual_prob = self.switch_prob_dict[key]
-                self.switch_prob_dict[key] = ((1 + annual_prob) ** sim.dt.years) - 1
+            probs = {k: (1 + v)**float(dt) - 1 for k, v in probs.items()}
+        groups = choice_keys if self.age_groups is None else sc.tolist(self.age_groups)
+        unknown = [g for g in groups if g not in choice_keys]
+        if unknown:
+            raise ValueError(f'Age groups {unknown} not recognized: they are {choice_keys}')
+        in_groups = np.array([choice_keys[b] in groups for b in fpm.method_bins()], dtype=float) # One per age group of the module
+        sources = {frm: probs.get(frm, 0.0) for frm in names if 0 in self.postpartum}
+        if 1 in self.postpartum: # Every woman's choice after a birth, by each source in turn
+            sources['birth'] = 1 - np.prod([1 - probs.get(frm, 0.0) for frm in names])
+        self.keys = [cm.add_switching(frm, to) for frm in sources]
+        if stop is not None and self.year >= stop:
+            return []
+        return [ss.modify(f'{cm.name}.pars.{key}', set=ss.by(age=list(val*in_groups)), start=self.year, name=f'{key}_from_{self.year}')
+                for key, val in zip(self.keys, sources.values()) if val > 0]
 
-        # Determine age groups to modify
-        if self.age_groups is None:
-            # Get all age groups from method_choice_pars
-            sample_pp = self.postpartum[0]
-            if sample_pp in cm.pars.method_choice_pars:
-                self.age_groups = [k for k in cm.pars.method_choice_pars[sample_pp].keys() if k != 'method_idx']
-
-        if self.verbose:
-            print(f'Method switching intervention initialized:')
-            print(f'  Year: {self.year}')
-            print(f'  From methods: {self.from_method_names}')
-            print(f'  To method: {self.to_method_name}')
-            print(f'  Switch probabilities: {self.switch_prob_dict}')
-            print(f'  Age groups: {self.age_groups}')
-            print(f'  Postpartum states: {self.postpartum}')
-
+    def init_pre(self, sim):
+        super().init_pre(sim)
+        if not (sim.pars.start <= self.year <= sim.pars.stop):
+            raise ValueError(f'Intervention year {self.year} must be within simulation [{sim.pars.start}, {sim.pars.stop}]')
+        if self.keys is None:
+            raise RuntimeError('fp.method_switching() adds its parameters when fp.Sim is made: give it to fp.Sim(interventions=...)')
         return
 
     def step(self):
-        sim = self.sim
-
-        # Apply once when year is reached
-        if self.applied or sim.t.year < self.year:
-            return
-
-        self.applied = True
-        cm = sim.connectors.contraception
-
-        # Use the existing set_switching_prob method for each source method
-        for from_name in self.from_method_names:
-            switch_prob = self.switch_prob_dict.get(from_name, 0)
-            if switch_prob == 0:
-                continue
-
-            for pp in self.postpartum:
-                for age_grp in self.age_groups:
-                    # Get current probability of switching from source to target
-                    try:
-                        from_method_key = 'birth' if pp == 1 else from_name
-                        current_prob = cm.get_switching_prob(from_method_key, self.to_method_name, pp, age_grp)
-
-                        # Increase the switching probability
-                        # This represents: "X% of people who would have stayed on from_method now switch to to_method"
-                        new_prob = current_prob + (1.0 - current_prob) * switch_prob
-
-                        # Set the new probability (with renormalization)
-                        cm.set_switching_prob(from_method_key, self.to_method_name, new_prob,
-                                            postpartum=pp, age_grp=age_grp, renormalize=True)
-                    except (ValueError, KeyError) as e:
-                        # Skip combinations that don't exist in the data
-                        if self.verbose:
-                            print(f'  Skipping {from_name}->{self.to_method_name} for pp={pp}, age={age_grp}: {e}')
-                        continue
-
-        if self.verbose:
-            print(f'Year {sim.t.year}: Applied method switching intervention')
-
+        if not self.applied and self.t.now('year') >= self.year - 1e-9:
+            self.applied = True
+            if self.verbose:
+                print(f'Method switching to {self.to_method} from {self.t.now("year"):.1f}')
         return

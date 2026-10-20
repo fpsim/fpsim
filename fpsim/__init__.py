@@ -9,6 +9,7 @@ from .parameters import *
 from .people import *
 from .methods import *
 from .sim import *
+from .compartmental import *
 from .interventions import *
 from .analyzers import *
 from .experiment import *

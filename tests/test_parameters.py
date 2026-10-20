@@ -104,7 +104,7 @@ def test_method_changes():
     methods = fp.make_methods()
     for method in methods.values(): method.efficacy = 1  # Make all methods totally effective
     choice = fp.RandomChoice(pars=dict(p_use=1), methods=methods)
-    s3 = fp.Sim(test=True, contraception_module=choice)
+    s3 = fp.Sim(test=True, contraception_module=choice, burnin=False) # Nobody pregnant at the start
     s3.run()
     assert s3.results.fp.births.sum() == 0, f'Expecting births to be 0, not {n}'
     ok(f'No births with completely effective contraception, as expected')
@@ -118,6 +118,7 @@ consumed_at_init = {
     'fecundity_high',   # Combined into pars.fecundity (ss.uniform)
     'debut_age',        # Consumed by _fated_debut distribution in __init__
     'twins_prob',       # Consumed by embryos_per_pregnancy in __init__
+    'init_parity',      # Parity at the start, set in init_post()
 }
 
 # Parameters that may be None for some locations (optional)
@@ -138,6 +139,7 @@ tracking_blind_spots = {
     'sexual_activity_pp',  # Accessed in _set_parous_active (needs parous PP women)
     'short_int',           # Accessed in record_ages (needs women with 2+ births)
     'spacing_pref',        # Accessed in _set_parous_active (needs parous women)
+    'method_age',          # Read by the analyzers (e.g. cpr_by_age), not by the modules
 }
 
 # Parameters inherited from PregnancyPars used by the parent Pregnancy class
@@ -306,6 +308,8 @@ def test_calib_pars_applied(location='kenya'):
 
     mismatches = []
     for key, calib_val in calib_pars.items():
+        if key in fp.sim.uncalibrated_keys: # Not applied on purpose: see fp.sim.uncalibrated_keys
+            continue
         eff_val = fp_pars.get(key, None)
         if eff_val is None:
             eff_val = contra_pars.get(key, None)

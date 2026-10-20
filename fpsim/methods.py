@@ -1,62 +1,52 @@
 """
-Contraceptive methods
+Contraceptive methods and method choice, as a declared module
 
-Idea:
-    A method selector should be a generic class (an intervention?). We want the existing matrix-based
-    method and the new duration-based method to both be instances of this.
-
+Each method is a state. A woman leaves it at the end of her duration of use (drawn on entry, by method and age)
+and decides then, with her age at that moment, whether to keep using contraception and which method: one
+transition per method with several destinations. Pregnancy pauses contraception, and the decisions after a
+birth (at 1 and 6 months) and after a loss are transitions triggered by the pregnancy module's events.
 """
 
 # %% Imports
+import copy
 import numpy as np
 import sciris as sc
 import starsim as ss
-from scipy.special import expit
+import pandas as pd
 from scipy.stats import fisk
 from . import defaults as fpd
 import fpsim.locations.data_utils as fpld
-import pandas as pd
 
-__all__ = ['Method', 'make_method_list', 'ContraPars', 'make_contra_pars', 'make_methods', 'ContraceptiveChoice', 'RandomChoice', 'SimpleChoice', 'StandardChoice']
+__all__ = ['Method', 'make_method_list', 'ContraPars', 'make_contra_pars', 'make_methods', 'ContraceptiveChoice',
+           'RandomChoice', 'SimpleChoice', 'StandardChoice', 'age_edges']
+
+age_edges = [0, 10, 15, 18, 20, 25, 30, 35, 40, 45, 50] # Age groups of the contraception module: contain the method-choice edges and 15-49
+choice_edges = [18, 20, 25, 35] # FPsim's method-choice age groups: <18, 18-20, 20-25, 25-35, >35
+choice_keys = ['<18', '18-20', '20-25', '25-35', '>35']
+jitter = 1e-4 # Zero switching probabilities are given this weight (Starsim 3 FPsim: |N(0, 1e-4)|, drawn each time)
 
 
-# %% Base definition of contraceptive methods -- can be overwritten by locations
+# %% Methods
 class Method:
     """
-    A contraceptive method.
+    A contraceptive method
 
-    Methods are held by a contraceptive choice module, which decides who uses which one.
-    A woman re-chooses when her current method's ``dur_use`` elapses, so ``dur_use``
-    shapes the long-run method mix as much as ``efficacy`` does.
-
-    Note that ``name`` and ``label`` are not interchangeable: code indexes the method
-    dictionary by ``name`` (``cm.methods['inj']``), while interventions that take method
-    identifiers look them up by ``label`` (``'Injectables'``).
+    Each method is a state of the contraception module. A woman leaves it after ``dur_use`` (drawn when she
+    starts, by her age), and chooses again then.
 
     Args:
-        name (str): short identifier used in code, e.g. ``'inj'``
-        label (str): display name used in plots and interventions, e.g. ``'Injectables'``
-        idx (int): position in the method list; set automatically when added to a module
-        efficacy (float): proportional reduction in conception probability while using
+        name (str): short identifier used in code, e.g. ``'inj'``; the name of the method's state
+        label (str): display name, e.g. ``'Injectables'``
+        idx (int): position in the method list; set automatically
+        efficacy (float): proportional reduction in the annual probability of conception while using
         modern (bool): whether this counts towards modern contraceptive prevalence (mCPR)
-        dur_use (Dist): distribution of duration of use before re-choosing
-        rel_dur_use (float): multiplier on ``dur_use``, for scaling a copied method
+        dur_use (Dist): distribution of duration of use (typed, e.g. in months); a parameter may be an ``ss.by(age=...)``
+        rel_dur_use (float): multiplier on ``dur_use``
         csv_name (str): name used for this method in the input data files
 
-    **Example**:
+    **Example**::
 
-        ```python
-        import starsim as ss
-        import fpsim.methods as fpm
-
-        dmpasc = fpm.Method(name='dmpasc', label='DMPA-SC', efficacy=0.983, modern=True,
-                            dur_use=ss.lognorm_ex(ss.years(2), ss.years(1)))
-        ```
-
-    Note:
-        To introduce a method partway through a simulation, use the
-        [add_method](`fpsim.interventions.add_method`) intervention rather than building
-        the method list by hand.
+        dmpasc = fp.Method(name='dmpasc', label='DMPA-SC', efficacy=0.983, modern=True, dur_use=ss.lognorm_ex(ss.years(2), ss.years(1)))
     """
     def __init__(self, name=None, label=None, idx=None, efficacy=None, modern=None, dur_use=None, rel_dur_use=1, csv_name=None, _source_dur=None):
         self.name = name
@@ -69,136 +59,139 @@ class Method:
         self.rel_dur_use = rel_dur_use
         self._source_dur = _source_dur
 
-    def gamma_scale_callback(self, sim, uids):
-        """ Sample from gamma distribution with age factors """
-        ppl = sim.people
-        if sim.connectors.contraception.age_bins is not None:
-            age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
-            scale = 1 / np.exp(self.dur_use.base_scale + self.dur_use.age_factors[age_bins])
-        else:
-            scale = 1 / np.exp(self.dur_use.base_scale)
-        return scale
+    def __repr__(self):
+        return f'Method({self.name}, eff={self.efficacy}, modern={self.modern})'
 
-    def expon_scale_callback(self, sim, uids):
-        """ Sample from exponential distribution with age factors """
-        ppl = sim.people
-        if sim.connectors.contraception.age_bins is not None:
-            age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
-            scale = 1 / np.exp(self.dur_use.base_scale + self.dur_use.age_factors[age_bins])
-        else:
-            scale = 1 / np.exp(self.dur_use.base_scale)
-        return scale
+    @property
+    def efficacy(self):
+        """ The efficacy: in a contraception module, its current value (with any modifiers, e.g. from update_methods()) """
+        mod = self.__dict__.get('_mod')
+        if mod is not None and mod.__dict__.get('pars') is not None and f'eff_{self.name}' in mod.pars:
+            return mod.value(f'eff_{self.name}')
+        return self.__dict__.get('_efficacy')
 
-    def lognorm_mean_callback(self, sim, uids):
-        """ Sample from lognormal distribution with age factors """
-        ppl = sim.people
-        if sim.connectors.contraception.age_bins is not None:
-            # Use age bins to apply age factors
-            age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
-            age_factors = self.dur_use.age_factors[age_bins]
-            mean = np.exp(self.dur_use.base_mean + age_factors[age_bins])
-        else:
-            # If no age bins, just use the base mean
-            mean = np.exp(self.dur_use.base_mean)
-        return mean
+    @efficacy.setter
+    def efficacy(self, value):
+        self.__dict__['_efficacy'] = value
+        return
 
-    def llogis_scale_callback(self, sim, uids):
-        """ Sample from log-logistic distribution with age factors """
-        ppl = sim.people
-        if sim.connectors.contraception.age_bins is not None:
-            age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
-            scale = np.exp(self.dur_use.base_scale + self.dur_use.age_factors[age_bins])
-        else:
-            scale = np.exp(self.dur_use.base_scale)
-        return scale
+    def __deepcopy__(self, memo):
+        """ A copy of a method alone is not in a module; a copy of the module it is in is in the copy of the module """
+        new = Method.__new__(Method)
+        memo[id(self)] = new
+        for key, val in self.__dict__.items():
+            if key != '_mod':
+                new.__dict__[key] = copy.deepcopy(val, memo)
+        mod = self.__dict__.get('_mod')
+        if mod is not None and id(mod) in memo:
+            new.__dict__['_mod'] = memo[id(mod)]
+        return new
 
-    def weibull_scale_callback(self, sim, uids):
-        """ Sample from Weibull distribution with age factors """
-        ppl = sim.people
-        if sim.connectors.contraception.age_bins is not None:
-            age_bins = np.digitize(ppl.age[uids], sim.connectors.contraception.age_bins)
-            scale = np.exp(self.dur_use.base_scale + self.dur_use.age_factors[age_bins])
-        else:
-            scale = np.exp(self.dur_use.base_scale)
-        return scale
-
-    def set_dur_use(self, dist_type, par1=None, par2=None, age_factors=None, **kwargs):
-        """
-        Set the duration of use for this method.
-        Args:
-            dist_type: Type of distribution to use (e.g., 'lognorm', 'gamma', etc.)
-            par1: First parameter for the distribution (e.g., mean for lognorm, shape for gamma)
-            par2: Second parameter for the distribution (e.g., std for lognorm, scale for gamma)
-            age_factors: Optional age factors to apply to the duration
-            kwargs: Additional parameters for the distribution
-        """
-
-        if dist_type == 'lognorm':
-            # Lognormal distribution
-            self.dur_use = ss.lognorm_ex(mean=self.lognorm_mean_callback, std=np.exp(par2))
-            self.dur_use.base_mean = par1
-            self.dur_use.base_std = par2
-
-        elif dist_type == 'gamma':
-            # Gamma distribution
-            self.dur_use = ss.gamma(a=np.exp(par1), scale=self.gamma_scale_callback)
-            self.dur_use.base_a = par1
-            self.dur_use.base_scale = par2
-
-        elif dist_type == 'llogis':
-
-            self.dur_use = Fisk(c=np.exp(par1), scale=self.llogis_scale_callback)
-            self.dur_use.base_c = par1  # This is the scale parameter for the log-logistic distribution
-            self.dur_use.base_scale = par2
-
-        elif dist_type == 'weibull':
-
-            self.dur_use = ss.weibull(c=par1, scale=self.weibull_scale_callback)
-            self.dur_use.base_c = par1
-            self.dur_use.base_scale = par2  # This is the scale parameter for the Weibull distribution
-
-        elif dist_type == 'exponential':
-            # Exponential distribution
-
-            self.dur_use = ss.expon(scale=self.expon_scale_callback)
-            self.dur_use.base_scale = par1
-
-        if age_factors is not None:
-            self.dur_use.age_factors = age_factors
+    def __setattr__(self, key, value):
+        """ Once in a contraception module, changing the efficacy or duration of use changes its parameters, as in Starsim 3 FPsim """
+        super().__setattr__(key, value)
+        mod = self.__dict__.get('_mod')
+        if mod is not None and key in ['efficacy', 'dur_use', 'rel_dur_use']:
+            mod.method_changed(self, key)
+        return
 
 
 def make_method_list(methods_df):
-    """
-    Create methods from a DataFrame.
-    Args:
-        methods_df: DataFrame with columns: name, label, csv_name, efficacy, modern,
-    Returns:
-        method_list: List of Method objects
-    """
-    method_list = []
+    """ Create methods from a DataFrame with columns name, label, csv_name, efficacy, modern """
+    return [Method(name=row['name'], label=row['label'], csv_name=row['csv_name'], idx=idx, efficacy=float(row['efficacy']), modern=bool(row['modern']))
+            for idx, row in methods_df.iterrows()]
 
-    for idx, row in methods_df.iterrows():
-        method = Method(
-            name=row['name'],
-            label=row['label'],
-            csv_name=row['csv_name'],
-            idx=idx,  # Use DataFrame index as method index
-            efficacy=float(row['efficacy']),
-            modern=bool(row['modern']),
-        )
-        method_list.append(method)
 
-    return method_list
+def make_methods(method_list=None, method_df=None):
+    """ The default method list (an ndict keyed by name), or one built from a list or a dataframe """
+    if method_list is None:
+        if method_df is None:
+            method_df = make_contra_pars().methods_df
+        method_list = make_method_list(method_df)
+    for i, method in enumerate(method_list): # Methods made by hand get their position
+        if method.idx is None:
+            method.idx = i
+    return ss.ndict(method_list, type=Method)
 
 
 class Fisk(ss.Dist):
-    """ Wrapper for scipy's fisk distribution to make it compatible with starsim """
+    """ The log-logistic distribution (scipy's fisk) """
     def __init__(self, c=0.0, scale=1.0, **kwargs):
         super().__init__(distname='fisk', dist=fisk, c=c, scale=scale, **kwargs)
         return
 
 
-# %% Define parameters
+def method_bins(edges=None):
+    """ The method-choice age group (0-4) of each age group of the module """
+    edges = age_edges if edges is None else edges
+    return np.digitize(edges, choice_edges)
+
+
+def dur_use_pars(df, method, edges=None):
+    """
+    A method's duration of use from the fitted survival model (months), with the age factors on its location
+    parameter: (form, parameters, each one per age group). Parameters are as reported by flexsurv's `res.t`
+    (shapes, scales, rates and sdlog on the log scale; meanlog as is), so the shape is exponentiated for every
+    form. Starsim 3 FPsim matched 'lognorm' against the data's 'lnorm' (so these methods kept a 1 +/- 1 year
+    lognormal), read sdlog as a standard deviation in months, and used the Weibull shape unexponentiated.
+    """
+    thisdf = df.loc[df.method == method.csv_name]
+    if not len(thisdf):
+        raise ValueError(f'No duration of use for {method.csv_name}')
+    form = thisdf.functionform.iloc[0]
+    coef = lambda key: float(thisdf.estimate[thisdf.coef == key].values[0])
+    af = np.zeros(5)
+    i0 = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
+    if i0 is not None:
+        vals = thisdf.estimate.values[i0:].astype(float)
+        af[:len(vals)] = vals
+    af = af[method_bins(edges)] # One per age group
+    n = len(af)
+    if form in ['lognormal', 'lnorm']:
+        return 'lognormal', dict(meanlog=coef('meanlog') + af, sdlog=np.full(n, np.exp(coef('sdlog'))))
+    elif form == 'gamma':
+        return 'gamma', dict(a=np.full(n, np.exp(coef('shape'))), scale=1/np.exp(coef('rate') + af))
+    elif form == 'llogis':
+        return 'llogis', dict(c=np.full(n, np.exp(coef('shape'))), scale=np.exp(coef('scale') + af))
+    elif form == 'weibull':
+        return 'weibull', dict(c=np.full(n, np.exp(coef('shape'))), scale=np.exp(coef('scale') + af))
+    elif form == 'exponential':
+        return 'exponential', dict(scale=1/np.exp(coef('rate') + af))
+    raise ValueError(f'Duration of use distribution {form} not recognized')
+
+
+def dur_use_dist(df, method, edges=None):
+    """ A method's duration of use (see `dur_use_pars()`), as a distribution whose parameters are by age group """
+    form, p = dur_use_pars(df, method, edges)
+    months = lambda arr: ss.by(age=[ss.months(float(v)) for v in arr])
+    if form == 'lognormal':
+        mean = np.exp(p['meanlog'] + p['sdlog']**2/2)
+        return ss.lognorm_ex(mean=months(mean), std=months(mean*np.sqrt(np.exp(p['sdlog']**2) - 1)))
+    elif form == 'gamma':
+        return ss.gamma(a=p['a'][0], scale=months(p['scale']))
+    elif form == 'llogis':
+        return Fisk(c=p['c'][0], scale=months(p['scale']))
+    elif form == 'weibull':
+        return ss.weibull(c=p['c'][0], scale=months(p['scale']))
+    return ss.expon(scale=months(p['scale']))
+
+
+def dur_use_survival(df, method, t, edges=None):
+    """ The share still using a method `t` months after starting, by age group """
+    import scipy.stats as sps
+    form, p = dur_use_pars(df, method, edges)
+    if form == 'lognormal':
+        return sps.lognorm(s=p['sdlog'], scale=np.exp(p['meanlog'])).sf(t)
+    elif form == 'gamma':
+        return sps.gamma(a=p['a'], scale=p['scale']).sf(t)
+    elif form == 'llogis':
+        return sps.fisk(c=p['c'], scale=p['scale']).sf(t)
+    elif form == 'weibull':
+        return sps.weibull_min(c=p['c'], scale=p['scale']).sf(t)
+    return np.exp(-t/p['scale'])
+
+
+# %% Parameters
 class ContraPars(ss.Pars):
     def __init__(self, **kwargs):
         super().__init__()
@@ -206,16 +199,15 @@ class ContraPars(ss.Pars):
         # Methods
         self.methods = None  # Will be populated from methods_df
         self.methods_file = sc.makepath('methods.csv', fpld.sd_dir)  # Store the provenance
-        self.methods_df = pd.read_csv(self.methods_file, keep_default_na=False, na_values=['NaN'])  # Store DataFrame
-        self.method_column_order = None  # Store column order from CSV for validation
+        self.methods_df = pd.read_csv(self.methods_file, keep_default_na=False, na_values=['NaN'])
+        self.method_column_order = None
 
         # Probabilities and choices
-        self.p_intent = ss.bernoulli(p=1)
-        self.p_use = ss.bernoulli(p=0.5)
-        self.force_choose = False  # Whether to force non-users to choose a method
-        self.method_weights = None  #np.ones(n_methods)
+        self.p_use = 0.5  # RandomChoice: probability of use at each decision
+        self.method_weights = None  # Weights on each method's share when choosing; renormalized among methods
+        self.switches = None  # Pairs (from, to) with a switching parameter: see ContraceptiveChoice.add_switching()
 
-        # mCPR trend
+        # mCPR trend: added to the logit of the probability of use
         self.prob_use_year = 2000
         self.prob_use_intercept = 0.0
         self.prob_use_trend_par = 0.0
@@ -227,8 +219,7 @@ class ContraPars(ss.Pars):
         self.contra_use_pars = None
         self.method_choice_pars = None
         self.intent_pars = None
-        # Settings and other misc
-        self.max_dur = ss.years(100)  # Maximum duration of use in years
+        self.max_dur = ss.years(100)
         self.update(kwargs)
         return
 
@@ -238,1380 +229,613 @@ def make_contra_pars():
     return ContraPars()
 
 
-def make_methods(method_list=None, method_df=None):
-    """
-    Build the default method list as an ndict keyed by method name.
+def _fp_event(name, fp_name='fp'):
+    """ An event of the sim's FP module, by name, for a module made before it """
+    return ss.conditions.Event('tr', ss.conditions.Named(fp_name, name))
 
-    Call this when you want to start from the standard ten methods and add your own, rather
-    than constructing the full list by hand.
+
+# %% The contraception module
+class ContraceptiveChoice(ss.Connector, ss.Disease):
+    """
+    Contraceptive use and method choice, as declared states and transitions
+
+    States: `pre` (before sexual debut; everyone starts here), `never` (never used),
+    `none` (not using, has used), one state per method, `preg0`/`preg1` (pregnant, by ever use), `pp0`/`pp1` (the
+    first month after a birth) and `wait0`/`wait1` (months 1-6 after a birth, not using). Leaving a method or
+    non-use at the end of its duration is one transition per state that splits between not using and each method,
+    by the probability of use (a logistic by age, ever use and year) and the switching shares (by age and the
+    method left, weighted by `method_weights`, renormalized among methods). Debut, pregnancy, delivery and losses
+    come from the FP module (`fp`).
+
+    Subclasses give the probability of use and the switching shares: see `SimpleChoice` and `RandomChoice`.
 
     Args:
-        method_list (list): explicit list of [Method](`fpsim.methods.Method`) objects
-        method_df (DataFrame): method definitions to build from, instead of the defaults
-
-    Returns:
-        ndict: methods keyed by name
-
-    **Example**:
-
-        ```python
-        import fpsim.methods as fpm
-
-        methods = fpm.make_methods()
-        print(list(methods.keys()))  # ['none', 'pill', 'iud', 'inj', ...]
-        ```
+        pars (dict): parameters (see `ContraPars`)
+        methods (list): the methods (default from `methods.csv`)
+        fp_name (str): the name of the FP module whose events drive pauses and postpartum decisions
     """
-    if method_list is None:
-        if method_df is None:
-            cpars = make_contra_pars()
-            method_df = cpars.methods_df
-        method_list = make_method_list(method_df)
-    return ss.ndict(method_list, type=Method)
-
-
-# %% Define classes to contain information about the way women choose contraception
-
-class ContraceptiveChoice(ss.Connector):
-    """
-    Base class for contraceptive choice modules.
-
-    A choice module owns the list of available methods and decides, for each woman at each
-    decision point, whether she uses contraception and which method. Subclasses differ only
-    in how that probability is computed; see [RandomChoice](`fpsim.methods.RandomChoice`),
-    [SimpleChoice](`fpsim.methods.SimpleChoice`) and
-    [StandardChoice](`fpsim.methods.StandardChoice`).
-
-    The module is reached at ``sim.connectors.contraception`` during and after a run. Note
-    this is distinct from the FP module itself, which lives at ``sim.people.fp``.
-
-    Args:
-        pars (dict): parameters for the choice module
-        kwargs (dict): passed to ``ss.Connector``
-    """
-    def __init__(self, pars=None, **kwargs):
-        """
-        Base contraceptive choice module
-        """
-        super().__init__(name='contraception')
-
-        # Handle parameters
-        default_pars = ContraPars()
-        self.define_pars(**default_pars)
-        self.update_pars(pars, **kwargs)
-
-        # Create methods. Use directly if supplied, otherwise create from DataFrame or use default
-        if self.pars.methods is not None:
-            method_list = self.pars.methods
-        elif self.pars.methods_df is not None:
-            method_list = make_method_list(self.pars.methods_df)
-        else:
-            raise ValueError('Methods must be provided to define contraceptive methods.')
-
-        # Store methods. Note that these can be updated over the course of a simulation, in which case
-        # self.methods will change but self.pars.methods_df will not. Always refer to self.methods for
-        # the current methods.
-        self.methods = make_methods(method_list)
-
-        # Process pars
-        if self.pars.method_weights is None:
-            self.pars.method_weights = np.ones(self.n_methods)
-
-        # Initialize choice distributions for method selection
-        self._method_choice_dist = ss.choice(a=self.n_methods, p=np.ones(self.n_methods)/self.n_methods)
-        self._jitter_dist = ss.normal(loc=0, scale=1e-4)
-
+    def __init__(self, pars=None, methods=None, fp_name='fp', name='contraception', **kwargs):
+        defaults = dict(ContraPars())
+        pars = sc.mergedicts(defaults, dict(pars or {}), {k: kwargs.pop(k) for k in list(kwargs) if k in defaults})
+        if methods is not None:
+            pars['methods'] = methods
+        method_list = pars['methods'] if pars['methods'] is not None else make_method_list(pars['methods_df'])
+        self.methods = make_methods(sc.dcp(list(method_list.values()) if isinstance(method_list, dict) else method_list))
+        self.fp_name = fp_name
+        self._init_kwargs = dict(fp_name=fp_name, name=name, **kwargs) # To build the module again with another method: see add_method()
+        self._data = pars
+        n = self.n_methods
+        if pars['method_weights'] is None:
+            pars['method_weights'] = np.ones(n)
+        self.prepare(pars)
+        states, trs, graph_pars = self.make_graph(pars)
+        effs = {k: v for k, v in graph_pars.items() if k.startswith('eff_')} # Read by the FP module, not by a transition
+        super().__init__(*states, **trs, **effs, name=name, **kwargs)
+        self.stratify(age=age_edges)
+        self.define_pars(**{k: v for k, v in pars.items() if k not in self.pars and k not in graph_pars}) # Data read when the graph is built and by the code, not by the graph
+        for method in self.methods.values():
+            method._mod = self
         return
 
-    # ==================================================================================
-    # PROPERTIES
-    # ==================================================================================
+    def add_method(self, method, copy_from=None, weight=1.0):
+        """
+        Add a method, before the sim is initialized: each method is a state, so the module is built again with it
+
+        Args:
+            method (Method): the method
+            copy_from (str): the method whose switching shares it takes (to it and from it); SimpleChoice needs one
+            weight (float): its weight (`weight_<name>`); 0 makes it available only once an `ss.modify` raises it (see `fp.add_method`)
+        """
+        if self.sim is not None and self.sim.initialized:
+            raise RuntimeError(f'A method can only be added to "{self.name}" before the sim is initialized: use fp.add_method(year=...) to make it available from a year')
+        if method.name in self.methods:
+            raise ValueError(f'There is already a method named "{method.name}"')
+        method = sc.dcp(method)
+        method.idx = max(m.idx for m in self.methods.values()) + 1
+        source = self.get_method(copy_from) if copy_from is not None else None
+        pars = self._data
+        self.extend_data(pars, method, source)
+        pars['method_weights'] = np.append(pars['method_weights'][:self.n_methods], weight)
+        pars['_new_methods'] = list(self.methods.values()) + [method]
+        self.rebuild(pars)
+        return self.methods[method.name]
+
+    def extend_data(self, pars, method, source):
+        """ The data for a new method (subclasses: see SimpleChoice) """
+        return
+
+    def rebuild(self, pars):
+        """ Make the module again with changed data (before the sim is initialized), keeping the current values of its parameters """
+        if self.sim is not None and self.sim.initialized:
+            raise RuntimeError(f'"{self.name}" can only be changed before the sim is initialized')
+        pars['method_weights'] = np.array([self.value(f'weight_{m}') for m in self.method_names] + list(pars['method_weights'][self.n_methods:]))
+        for key in [k for k in ['prob_use_intercept', 'prob_use_trend_par', 'p_use'] if isinstance(self.pars.get(k), ss.par)]: # Their current values
+            pars[key] = self.value(key)
+        methods = list(pars.pop('_new_methods', None) or self.methods.values())
+        for m in methods: # Their current efficacies
+            if m.name != 'none' and f'eff_{m.name}' in self.pars:
+                m.__dict__['_efficacy'] = self.value(f'eff_{m.name}')
+        self._lock_attrs = False # UPSTREAM: a declared module cannot add a state or parameter once made, so it is made again
+        ContraceptiveChoice.__init__(self, pars=pars, methods=methods, **self._init_kwargs)
+        return
+
+    def add_switching(self, from_method, to_method):
+        """
+        Add a parameter, `switch_<from>_<to>` (0 by default), for the share of women choosing a method after `from_method`
+        (a method name, or 'birth' for the choice 1 month after a birth) who choose `to_method` instead; before the sim is
+        initialized. See `fp.method_switching`.
+        """
+        frm = 'birth' if from_method == 'birth' else self.get_method(from_method).name
+        to = self.get_method(to_method).name
+        key = f'switch_{frm}_{to}'
+        if key not in self.pars:
+            pars = self._data
+            pars['switches'] = list(pars.get('switches') or []) + [(frm, to)]
+            self.rebuild(pars)
+        return key
+
+    def switching_row(self, postpartum, from_method=None):
+        """ The current shares of each method (weighted, renormalized among methods) by method-choice age group, for a decision after `postpartum` months (0, 1, or 6) from a method """
+        event = {0: 'pp0', 1: 'pp1', 6: 'pp6'}[postpartum]
+        src = None if event == 'pp1' else self.get_method(from_method or 'none').name
+        edges = [0] + choice_edges # One per method-choice age group
+        sh = self.shares(event, src, edges=edges) if 'edges' in self.shares.__code__.co_varnames else self.shares(event, src)
+        w = {m: self.value(f'weight_{m}') for m in self.method_names}
+        total = sum(w[m]*np.asarray(sh[m], dtype=float)[:len(edges)] for m in self.method_names)
+        out = {key: {m: float(w[m]*sh[m][i]/total[i]) if total[i] > 0 else 0.0 for m in self.method_names} for i, key in enumerate(choice_keys)}
+        for frm, to in self._data.get('switches') or []: # See add_switching()
+            if frm == ('birth' if event == 'pp1' else src):
+                sw = self.group_value(f'switch_{frm}_{to}')
+                out = {key: {m: (1 - sw[i])*v + (sw[i] if m == to else 0) for m, v in row.items()} for i, (key, row) in enumerate(out.items())}
+        return out
+
+    def group_value(self, key):
+        """ The current value of a parameter in each method-choice age group """
+        val = self.value(key)
+        if np.ndim(val) == 0:
+            return np.full(len(choice_keys), float(val))
+        ppl = self.sim.people # As agents, one value per agent (by UID): that of the agents in each group, who all have the same
+        age, auids = ppl.age.raw, ppl.auids
+        bins = np.digitize(age[auids], choice_edges)
+        return np.array([val[auids[bins == i][0]] if np.any(bins == i) else 0.0 for i in range(len(choice_keys))]) # UPSTREAM: no value of a parameter by level of a stratification, only by agent
+
+    def get_switching_prob(self, from_method, to_method, postpartum, age_grp):
+        """ The current probability of choosing `to_method`, among those choosing a method, for a woman in an age group (e.g. '18-20') leaving `from_method` """
+        return self.switching_row(postpartum, from_method)[age_grp][self.get_method(to_method).name]
+
+    def get_switching_matrix(self, postpartum, from_method=None):
+        """ The current shares by age group: {age group: array over the methods (excluding none)} """
+        row = self.switching_row(postpartum, from_method)
+        return {key: np.array([vals[m] for m in self.method_names]) for key, vals in row.items()}
+
+    def method_changed(self, method, key):
+        """ A method's efficacy or duration of use was changed: update its parameter """
+        if key == 'efficacy' and method.name != 'none':
+            self.pars.update({f'eff_{method.name}': float(method.efficacy)})
+        elif key in ['dur_use', 'rel_dur_use'] and f'dur_{method.name}' in self.pars:
+            self.pars.update({f'dur_{method.name}': self.dur_use(method)})
+        return
+
+    # %% Building the graph
     @property
     def n_options(self):
-        """ Number of contraceptive methods defined """
+        """ Number of options, including none """
         return len(self.methods)
 
     @property
     def n_methods(self):
-        return len([m for m in self.methods if m != 'none'])
+        return len(self.method_names)
 
     @property
-    def average_dur_use(self):
-        av = 0
-        for m in self.methods.values():
-            if sc.isnumber(m.dur_use):
-                av += m.dur_use
-            elif hasattr(m.dur_use, 'mean'):
-                # Starsim distribution object
-                av += m.dur_use.mean()
-            elif hasattr(m.dur_use, 'scale'):
-                # For distributions that use scale parameter as approximation of mean
-                av += m.dur_use.scale
-        return av / len(self.methods)
+    def method_names(self):
+        return [m for m in self.methods if m != 'none']
 
-    # ==================================================================================
-    # VALIDATION METHODS
-    # ==================================================================================
-    def _validate_methods(self):
-        """
-        Validate that methods are consistent with method_choice_pars.
-        1. All methods in method_choice_pars must exist in self.methods
-        2. Method indices match between methods and method_choice_pars.method_idx
-        3. The ordering is consistent
-        Raises ValueError with detailed message if validation fails.
-        """
-        mcp = self.pars.method_choice_pars
-
-        # Get method_idx from method_choice_pars
-        mcp_method_idx = None
-        for pp in sorted(mcp.keys()):
-            if hasattr(mcp[pp], 'method_idx'):
-                mcp_method_idx = mcp[pp].method_idx
-                break
-
-        if mcp_method_idx is None:
-            errormsg = 'method_choice_pars does not contain method_idx array'
-            raise ValueError(errormsg)
-
-        # Get methods (excluding 'none' which isn't in switching)
-        method_indices = {m.idx: m for m in self.methods.values() if m.name != 'none'}
-
-        # Check that all indices in method_choice_pars exist in methods
-        missing_indices = set(mcp_method_idx) - set(method_indices.keys())
-        if missing_indices:
-            errormsg = (f'Method indices in method_choice_pars not found in methods: {missing_indices}\n'
-                       f'Available method indices: {sorted(method_indices.keys())}')
-            raise ValueError(errormsg)
-
-        # Check that counts match
-        if len(mcp_method_idx) != len(method_indices):
-            errormsg = (f'Method count mismatch:\n'
-                       f'  method_choice_pars has {len(mcp_method_idx)} methods: {mcp_method_idx}\n'
-                       f'  methods has {len(method_indices)} methods (excluding "none"): {sorted(method_indices.keys())}')
-            raise ValueError(errormsg)
-
-        # Validate that 'none' has index 0
-        if 'none' in self.methods and self.methods['none'].idx != 0:
-            errormsg = f'Method "none" must have index 0, got {self.methods["none"].idx}'
-            raise ValueError(errormsg)
-
-        # Check for duplicate indices
-        all_indices = [m.idx for m in self.methods.values()]
-        if len(all_indices) != len(set(all_indices)):
-            errormsg = f'Duplicate method indices found'
-            raise ValueError(errormsg)
-
-        # Store column order if available for future validation
-        if self.pars.method_column_order is not None:
-            self._method_column_order = self.pars.method_column_order
-
+    def prepare(self, pars):
+        """ Process data into the tables the graph needs (subclasses) """
         return
 
-    def set_init_dist(self):
-        """
-        If no initial distribution has been provided, use the method_choice_pars to set one.
-        The initial distribution will be the probabilities of switching from no method
-        """
-        init_dist = sc.objdict()
+    def logit_use(self, event, ever):
+        """ The logit of the probability of use, by age group (bare numbers; subclasses) """
+        raise NotImplementedError
 
-        # Use case 1 - we have age bins
-        if getattr(self, 'age_bins', None) is not None:
-            age_bins = [k for k in self.pars.method_choice_pars[0].keys() if k != 'method_idx']
-            mcp = self.pars.method_choice_pars[0]
-            for age_grp in age_bins:
-                init_dist[age_grp] = mcp[age_grp]['none'].copy()
-                init_dist[age_grp] /= init_dist[age_grp].sum()
+    def prob_use(self, event, ever, trend, intercept):
+        """ The probability of use at a decision: a logistic of the age-group table, the trend in time, and the intercept """
+        return 1/(1 + np.exp(-(ss.by(age=list(self.logit_use(event, ever))) + trend + intercept)))
 
-        # Use case 2 - no age bins
-        else:
-            mcp = self.pars.method_choice_pars[0]
-            init_dist = mcp['none'].copy()
-            init_dist /= init_dist.sum()
+    def shares(self, event, src):
+        """ The switching shares of each method by age group, for a decision of `event` from method `src` (unweighted; subclasses) """
+        raise NotImplementedError
 
-        self.pars.init_dist = init_dist
+    def dur_use(self, method):
+        """ The distribution of duration of use of a method """
+        dist = method.dur_use if method.dur_use is not None else ss.lognorm_ex(mean=ss.years(1), std=ss.years(1))
+        if method.rel_dur_use != 1:
+            dist = sc.dcp(dist)
+            for k, v in dist.pars.items():
+                if k in ['mean', 'std', 'scale'] and v is not None:
+                    dist.pars[k] = v*method.rel_dur_use if not isinstance(v, ss.by) else v.map(lambda x: x*method.rel_dur_use)
+        return dist
+
+    def make_graph(self, pars):
+        """ The states and transitions """
+        names = self.method_names
+        S = sc.objdict({k: ss.State(k) for k in ['pre', 'never', 'none'] + names + ['preg0', 'preg1', 'pp0', 'pp1', 'wait0', 'wait1']})
+        meth = [S[m] for m in names]
+        gp = dict(prob_use_intercept=ss.par(float(pars['prob_use_intercept']), name='prob_use_intercept', doc='Added to the logit of the probability of use'),
+                  prob_use_trend_par=ss.par(float(pars['prob_use_trend_par']), name='prob_use_trend_par', doc='Change in the logit of the probability of use per year'))
+        w = {m: ss.par(float(pars['method_weights'][i]), name=f'weight_{m}', doc=f'Weight on the share choosing {m} (renormalized among methods)') for i, m in enumerate(names)}
+        eff = {m: ss.par(float(self.methods[m].efficacy), name=f'eff_{m}', doc=f'Efficacy of {m} against conception') for m in names}
+        gp.update({f'weight_{m}': w[m] for m in names})
+        gp.update({f'eff_{m}': eff[m] for m in names})
+        self._weights = w
+        self._effs = eff
+        year0 = float(pars['prob_use_year'])
+        trend = gp['prob_use_trend_par']*ss.timeseries({1800: 1800 - year0, 2300: 2300 - year0}, mode='linear') # (year - prob_use_year), exact
+        intercept = gp['prob_use_intercept']
+
+        def p_use(event, ever):
+            return self.prob_use(event, ever, trend, intercept)
+
+        switches = {}
+        for frm, to in pars.get('switches') or []: # See add_switching()
+            switches[(frm, to)] = gp[f'switch_{frm}_{to}'] = ss.par(0.0, name=f'switch_{frm}_{to}', doc=f'Share of those choosing a method after {frm} who choose {to} instead (by age group)')
+
+        def split(event, src, ever, rest, base=None):
+            """ [rest, method 1, ...]: not using w.p. 1 - p_use, else each method by its weighted share (and the switches to a method, see add_switching()) """
+            pu = p_use(event, ever)
+            sh = base if base is not None else self.shares(event, src)
+            R = {m: ss.by(age=list(sh[m])) for m in names}
+            total = None
+            for m in names:
+                total = w[m]*R[m] if total is None else total + w[m]*R[m]
+            share = {m: w[m]*R[m]/total for m in names}
+            for (frm, to), sw in switches.items():
+                if frm == ('birth' if event == 'pp1' else src):
+                    share = {m: (1 - sw)*share[m] + (sw if m == to else 0) for m in names}
+            return [rest, *meth], [1 - pu, *[pu*share[m] for m in names]]
+
+        fpn = self.fp_name
+        age, female = ss.ppl.age, ss.ppl.female
+        debuted = female & (age >= ss.state(f'{fpn}.fated_debut')) & (age < fpd.max_age_preg)
+        pregnant = ss.state(f'{fpn}.P')
+        trs = sc.objdict()
+        durs = {}
+        dst, p = split('pp0', 'none', 0, S.never)
+        trs.debut = ss.Transition(S.pre, dst, p=p, on=debuted) # Everyone starts in pre, so women past their debut decide at the start (as in Starsim 3 FPsim)
+        for src in ['never', 'none'] + names:
+            if src == 'btl':
+                continue # Permanent
+            ever = int(src != 'never')
+            dst, p = split('pp0', 'none' if src == 'never' else src, ever, S.never if src == 'never' else S.none)
+            method = self.methods['none'] if src in ['never', 'none'] else self.methods[src]
+            if method.name not in durs:
+                durs[method.name] = ss.par(self.dur_use(method), name=f'dur_{method.name}', doc=f'Duration of use of {method.name}' if method.name != 'none' else 'Duration of non-use')
+            trs[f'stop_{src}'] = ss.Transition(S[src], dst, p=p, dur=durs[method.name])
+        losses = ss.conditions.Event('tr', ss.conditions.Named(fpn, ('miscarriage', 'stillbirth')))
+        for e, srcs in [(0, [S.pre, S.never, S.pp0, S.wait0]), (1, [S.none, S.pp1, S.wait1])]:
+            rest = S.never if e == 0 else S.none
+            trs[f'pause{e}'] = ss.Transition(srcs, S[f'preg{e}'], on=pregnant) # Starsim 3: method = 0 at conception (not for abortions)
+            if e == 1:
+                trs.fail = ss.Transition(meth, S.preg1, on=pregnant) # A continuing pregnancy on a method
+            trs[f'deliver{e}'] = ss.Transition(S[f'preg{e}'], S[f'pp{e}'], on=_fp_event('delivery', fpn))
+            dst, p = split('pp0', 'none', e, rest)
+            trs[f'loss{e}'] = ss.Transition(S[f'preg{e}'], dst, p=p, on=losses) # Starsim 3: the next step
+            dst, p = split('pp1', None, e, S[f'wait{e}'])
+            trs[f'pp1_{e}'] = ss.Transition(S[f'pp{e}'], dst, p=p, dur=ss.constant(ss.months(1))) # Starsim 3: the step after delivery
+            dst, p = split('pp6', 'none', e, rest)
+            trs[f'pp6_{e}'] = ss.Transition(S[f'wait{e}'], dst, p=p, dur=ss.constant(ss.months(5)))
+        return list(S.values()), dict(trs), gp
+
+    @property
+    def decisions(self):
+        """ The transitions that are decisions about contraception (the end of a method or of non-use, a loss, and 1 and 6 months after a birth) """
+        return [k for k in self.graph.transitions if k == 'debut' or k.startswith(('stop_', 'loss', 'pp1_', 'pp6_'))]
+
+    def step(self):
+        ss.Disease.step_state(self)
+        ss.Disease.step(self)
         return
 
-    # ==================================================================================
-    # METHOD MANAGEMENT (add_method, get_method, update methods)
-    # ==================================================================================
-    def get_method_by_label(self, method_label):
-        """ Extract method according to its label / long name """
-        return_val = None
-        for method_name, method in self.methods.items():
-            if method.label == method_label:
-                return_val = method
-        if return_val is None:
-            errormsg = f'No method matching {method_label} found.'
-            raise ValueError(errormsg)
-        return return_val
-
+    # %% Methods and parameters
     def get_method(self, identifier):
-        """
-        Get a method by name (first) or label (second).
-        Args:
-            identifier (str): Method name (e.g., 'impl') or label (e.g., 'Implants')
-        Returns:
-            Method: The matching method object
-        """
-        # Try by name first
+        """ A method by name (first) or label """
         if identifier in self.methods:
             return self.methods[identifier]
-
-        # Try by label
         for method in self.methods.values():
             if method.label == identifier:
                 return method
+        raise ValueError(f'Method "{identifier}" not found. Available names: {list(self.methods.keys())}, labels: {[m.label for m in self.methods.values()]}')
 
-        # Not found
-        available_names = list(self.methods.keys())
-        available_labels = [m.label for m in self.methods.values()]
-        raise ValueError(f'Method "{identifier}" not found. Available names: {available_names}, labels: {available_labels}')
+    def get_method_by_label(self, method_label):
+        return self.get_method(method_label)
 
-    def update_efficacy(self, method_label=None, new_efficacy=None):
-        method = self.get_method_by_label(method_label)
-        method.efficacy = new_efficacy
+    def efficacy(self, name):
+        """ The current efficacy of a method (with modifiers) """
+        return 0.0 if name == 'none' else self.value(f'eff_{name}')
 
-    def update_duration(self, method_label=None, new_duration=None):
-        method = self.get_method_by_label(method_label)
-        method.dur_use = new_duration
+    # %% Per-agent views (agents only)
+    def method_raw(self):
+        """ The index of each agent's method (0 if none), by UID """
+        idx = np.array([self.methods[m].idx for m in self.method_names] + [0]) # -1, in no method, is the last
+        return idx[self.current_state(self.method_names).raw]
 
-    def add_method(self, method, copy_from=None):
-        """
-        Add a new contraceptive method to the simulation.
+    def as_arr(self, raw, cls):
+        """ A per-agent array (by UID) as an ss.Arr, so it can be indexed like a state; read-only, since it is computed from the states (writing to it would change nothing) """
+        out = self.sim.people.age.asnew(raw, cls=cls)
+        out.raw.flags.writeable = False
+        return out
 
-        Args:
-            method: Method object to add (must have name, label, csv_name, efficacy, modern, dur_use)
-            copy_from: Optional method name/label to copy switching probabilities from
-        """
-        # Assign next available index
-        max_idx = max(m.idx for m in self.methods.values())
-        method.idx = max_idx + 1
+    @property
+    def method(self):
+        """ The index of each agent's method (0 if none), as in Starsim 3 FPsim; setting it moves women to that method (see set_method()) """
+        out = self.as_arr(self.method_raw(), MethodArr)
+        out.cm = self
+        return out
 
-        # Add to methods
-        method_list = list(self.methods.values()) + [method]
-        self.methods = ss.ndict(method_list, type=Method)
+    def to_uids(self, key):
+        """ The UIDs that an index of a per-agent array selects """
+        auids = self.sim.people.auids
+        if isinstance(key, ss.uids):
+            return key
+        if isinstance(key, ss.BoolArr):
+            return key.uids
+        if isinstance(key, slice):
+            return auids[key]
+        key = np.asarray(key)
+        if key.dtype == bool:
+            return auids[key] if len(key) == len(auids) else ss.uids(np.flatnonzero(key))
+        return ss.uids(key)
 
-        # Extend method_choice_pars
-        if self.pars.method_choice_pars is not None:
-            if copy_from:
-                copy_from_method = self.get_method(copy_from)
-                self.extend_method_choice_pars(method.name, copy_from_method.name)
+    def set_method(self, uids, idx):
+        """ Move women who are deciding about contraception (never-users, non-users, and users) to a method by its index (0: not using), as if they had chosen it now """
+        uids = ss.uids(uids)
+        idx = np.broadcast_to(np.asarray(idx, dtype=int), (len(uids),))
+        by_idx = {m.idx: m.name for m in self.methods.values()}
+        src = ['never', 'none'] + self.method_names
+        moved = []
+        for i in np.unique(idx):
+            these = uids[idx == i]
+            if by_idx.get(i) in [None, 'none']: # Stopping: never-users stay never-users
+                moved.append(self.move_to(these, 'none', src=self.method_names))
             else:
-                self.extend_method_choice_pars(method.name, None)
+                moved.append(self.move_to(these, by_idx[i], src=[s for s in src if s != by_idx[i]]))
+        return ss.uids.concatenate(moved) if moved else ss.uids()
 
-        # Extend init_dist
-        if self.pars.init_dist is not None:
-            self.set_init_dist()
-
-        # Extend method_weights
-        if self.pars.method_weights is not None:
-            self.pars.method_weights = np.append(self.pars.method_weights, 1.0)
-
-        # Re-validate after adding
-        if self.pars.method_choice_pars is not None:
-            self._validate_methods()
-
+    def set_ever_used(self, uids, value=True):
+        """ Make women ever-users (or never-users), in whatever state of contraception or pregnancy they are in """
+        pairs = [('never', 'none'), ('preg0', 'preg1'), ('pp0', 'pp1'), ('wait0', 'wait1')]
+        uids = ss.uids(uids)
+        for a, b in pairs:
+            frm, to = (a, b) if value else (b, a)
+            self.move_to(uids, to, src=frm)
         return
 
-    def remove_method(self, method_label):
-        errormsg = ('remove_method is not currently functional. See example in test_parameters.py if you want to run a '
-                    'simulation with a subset of the standard set of methods. The remove_method logic needs to be'
-                    'replaced with something that can remove a method partway through a simulation.')
-        raise ValueError(errormsg)
+    @property
+    def on_contra(self):
+        return self.as_arr(self.method_raw() > 0, ss.BoolArr)
 
-    # ==================================================================================
-    # METHOD_CHOICE_PARS MANAGEMENT
-    # ==================================================================================
-    def _get_pp_keys(self):
-        """Get all postpartum keys from method_choice_pars."""
-        if self.pars.method_choice_pars is None:
-            return []
-        return sorted([k for k in self.pars.method_choice_pars.keys()])
+    @property
+    def ti_contra(self):
+        """ The step of each agent's next decision about contraception (the scheduled end of her method or of non-use; NaN if none is scheduled), as in Starsim 3 FPsim """
+        out = np.full(len(self.sim.people.uid.raw), np.nan)
+        for name in self.graph.states:
+            key = f'ti_exit_{name}'
+            if hasattr(self, key): # A state with a scheduled exit
+                inside = self[name].raw
+                out[inside] = np.ceil(self[key].raw[inside])
+        return self.as_arr(out, ss.FloatArr)
 
-    def _get_age_groups(self):
-        """Get all age groups from method_choice_pars."""
-        if self.pars.method_choice_pars is None:
-            return []
-        for pp in self._get_pp_keys():
-            return [k for k in self.pars.method_choice_pars[pp].keys() if k != 'method_idx']
-        return []
+    @property
+    def ever_used_contra(self):
+        """ Whether each woman has ever used contraception; setting it moves women between the states of never and ever users (see set_ever_used()) """
+        out = np.ones(len(self.sim.people.uid.raw), dtype=bool)
+        for k in ['pre', 'never', 'preg0', 'pp0', 'wait0']:
+            out &= ~self[k].raw
+        out = self.as_arr(out, EverUsedArr)
+        out.cm = self
+        return out
 
-    def _to_list(self, value, all_values):
-        """Convert None, single value, or list to list."""
-        if value is None:
-            return all_values
-        elif isinstance(value, (list, tuple)):
-            return value
-        else:
-            return [value]
+    def eff_array(self):
+        """ Each agent's contraceptive efficacy """
+        out = np.zeros(len(self.sim.people.uid.raw))
+        for m in self.method_names:
+            out[self[m].raw] = self.efficacy(m)
+        return out
 
-    def make_empty_method_choice_pars(self):
-        """
-        Create an empty method_choice_pars structure with zero entries.
-        Useful for creating new simulations without location data.
-        """
-        mc = dict()
-        for pp in [0, 1, 6]:
-            mc[pp] = sc.objdict()
-            mc[pp].method_idx = np.array(self.method_idx)
-
-            for age_grp in fpd.method_age_map.keys():
-                if pp == 1:  # Postpartum = 1 has direct array (no from_method level)
-                    mc[pp][age_grp] = np.zeros(len(self.method_idx))
-                else:  # pp = 0 or 6, has from_method level
-                    mc[pp][age_grp] = sc.objdict()
-                    for from_method in self.methods.keys():
-                        mc[pp][age_grp][from_method] = np.zeros(len(self.method_idx))
-
-        self.pars.method_choice_pars = mc
-        return mc
-
-    def extend_method_choice_pars(self, new_method_name, copy_from_method=None):
-        """
-        Extend method_choice_pars to include a new method.
-
-        Args:
-            new_method_name (str): Name of the new method being added
-            copy_from_method (str or None): Name of existing method to copy probabilities from.
-                                            If None, initialize with zeros.
-        """
-        mcp = self.pars.method_choice_pars
-        if mcp is None:
-            return
-
-        # Get the new method's index
-        new_method = self.methods[new_method_name]
-        new_method_idx = new_method.idx
-
-        # Get source method info if copying
-        source_idx_in_array = None
-        if copy_from_method:
-            source_method = self.methods[copy_from_method]
-            # Find position of source method in the arrays
-            for i, idx in enumerate(mcp[0].method_idx):
-                if idx == source_method.idx:
-                    source_idx_in_array = i
-                    break
-
-            if source_idx_in_array is None:
-                errormsg = f'Source method {copy_from_method} not found in method_choice_pars'
-                raise ValueError(errormsg)
-
-        # Process each postpartum state
-        for pp in mcp.keys():
-            pp_dict = mcp[pp]
-
-            # Add new method to method_idx
-            pp_dict.method_idx = np.append(pp_dict.method_idx, new_method_idx)
-
-            # Process each age group
-            for age_grp in pp_dict.keys():
-                if age_grp == 'method_idx':
-                    continue
-
-                if pp == 1:
-                    # For pp=1, age groups have direct arrays
-                    old_probs = pp_dict[age_grp]
-
-                    if copy_from_method:
-                        new_prob = old_probs[source_idx_in_array]
-                    else:
-                        new_prob = 0.0
-
-                    pp_dict[age_grp] = np.append(old_probs, new_prob)
-                else:
-                    # For pp=0 and pp=6, age groups have from_method dicts
-                    age_dict = pp_dict[age_grp]
-
-                    # For each existing from_method, add probability to switch TO the new method
-                    for from_method in list(age_dict.keys()):
-                        old_probs = age_dict[from_method]
-
-                        if copy_from_method:
-                            new_prob = old_probs[source_idx_in_array]
-                        else:
-                            new_prob = 0.0
-
-                        age_dict[from_method] = np.append(old_probs, new_prob)
-
-                    # Add the new method as a from_method
-                    if copy_from_method and copy_from_method in age_dict:
-                        # Copy entire switching behavior from source
-                        source_probs = age_dict[copy_from_method].copy()
-                        # Extend array to include slot for new method
-                        source_probs = np.append(source_probs, 0.0)
-                        age_dict[new_method_name] = source_probs
-                    else:
-                        # Initialize with zeros
-                        n_methods = len(pp_dict.method_idx)
-                        age_dict[new_method_name] = np.zeros(n_methods)
-
-        # Renormalize after extending
-        self.renormalize_method_choice_pars()
-
-        return
-
-    def renormalize_method_choice_pars(self):
-        """
-        Renormalize all probability arrays in method_choice_pars to sum to 1.
-        Replaces Switching.renormalize_all()
-        """
-        mcp = self.pars.method_choice_pars
-        if mcp is None:
-            return
-
-        for pp in mcp.keys():
-            pp_dict = mcp[pp]
-
-            for age_grp in pp_dict.keys():
-                if age_grp == 'method_idx':
-                    continue
-
-                if pp == 1:
-                    probs = pp_dict[age_grp]
-                    if probs.sum() > 0:
-                        pp_dict[age_grp] = probs / probs.sum()
-                else:
-                    for from_method in pp_dict[age_grp].keys():
-                        probs = pp_dict[age_grp][from_method]
-                        if probs.sum() > 0:
-                            pp_dict[age_grp][from_method] = probs / probs.sum()
-        return
-
-    def set_switching_prob(self, from_method, to_method, value, postpartum=None,
-                          age_grp=None, renormalize=False):
-        """
-        Set switching probability from one method to another.
-        Args:
-            from_method (str): Method name to switch from
-            to_method (str): Method name to switch to
-            value (float): Probability value
-            postpartum (int or list or None): Postpartum state(s) (0, 1, or 6). None = all.
-            age_grp (str or list or None): Age group(s). None = all.
-            renormalize (bool): Whether to renormalize after setting
-        """
-        mcp = self.pars.method_choice_pars
-        if mcp is None:
-            errormsg = 'method_choice_pars is None, cannot set switching probabilities'
-            raise ValueError(errormsg)
-
-        if to_method not in self.methods:
-            raise ValueError(f"to_method '{to_method}' not found")
-
-        # Get index of to_method in the arrays
-        to_method_obj = self.methods[to_method]
-        to_idx = None
-        for i, idx in enumerate(mcp[0].method_idx):
-            if idx == to_method_obj.idx:
-                to_idx = i
-                break
-
-        if to_idx is None:
-            raise ValueError(f"to_method '{to_method}' not found in method_choice_pars")
-
-        # Convert to lists for iteration
-        pp_list = self._to_list(postpartum, self._get_pp_keys())
-        age_list = self._to_list(age_grp, self._get_age_groups())
-
-        for pp in pp_list:
-            for age in age_list:
-                if pp == 1:
-                    # Direct array access for postpartum=1
-                    if from_method != 'birth':
-                        raise ValueError(f"For postpartum=1, from_method must be 'birth', got '{from_method}'")
-                    mcp[pp][age][to_idx] = value
-                    if renormalize:
-                        self._renormalize_row(pp, age, from_method)
-                else:
-                    # Need from_method for pp=0 or 6
-                    if from_method not in self.methods:
-                        raise ValueError(f"from_method '{from_method}' not found")
-                    mcp[pp][age][from_method][to_idx] = value
-                    if renormalize:
-                        self._renormalize_row(pp, age, from_method)
-
-    def get_switching_prob(self, from_method, to_method, postpartum, age_grp):
-        """
-        Get switching probability from one method to another.
-        Args:
-            from_method (str): Method name to switch from
-            to_method (str): Method name to switch to
-            postpartum (int): Postpartum state (0, 1, or 6)
-            age_grp (str): Age group
-
-        Returns:
-            float: Probability value
-        """
-        mcp = self.pars.method_choice_pars
-        if mcp is None:
-            return 0.0
-
-        if to_method not in self.methods:
-            raise ValueError(f"to_method '{to_method}' not found")
-
-        # Get index of to_method in the arrays
-        to_method_obj = self.methods[to_method]
-        to_idx = None
-        for i, idx in enumerate(mcp[postpartum].method_idx):
-            if idx == to_method_obj.idx:
-                to_idx = i
-                break
-
-        if to_idx is None:
-            raise ValueError(f"to_method '{to_method}' not found in method_choice_pars")
-
-        if postpartum == 1:
-            if from_method != 'birth':
-                raise ValueError(f"For postpartum=1, from_method must be 'birth', got '{from_method}'")
-            return mcp[postpartum][age_grp][to_idx]
-        else:
-            if from_method not in self.methods:
-                raise ValueError(f"from_method '{from_method}' not found")
-            return mcp[postpartum][age_grp][from_method][to_idx]
-
-    def copy_switching_probs(self, from_method_source, to_method_source,
-                            from_method_dest, to_method_dest,
-                            postpartum=None, age_grp=None, renormalize=False):
-        """
-        Copy switching probability from one method pair to another.
-        Example: Copy the probability of switching from pill->iud
-                 to the probability of switching from condom->implant
-        """
-        pp_list = self._to_list(postpartum, self._get_pp_keys())
-        age_list = self._to_list(age_grp, self._get_age_groups())
-
-        for pp in pp_list:
-            for age in age_list:
-                value = self.get_switching_prob(from_method_source, to_method_source, pp, age)
-                self.set_switching_prob(from_method_dest, to_method_dest, value, pp, age,
-                                       renormalize=renormalize)
-
-    def copy_switching_to_method(self, source_to_method, dest_to_method, split_shares=None,
-                                 postpartum=None, age_grp=None, renormalize=False):
-        """
-        Copy all switching probabilities TO a method (entire column).
-        Example: Copy all probabilities of switching to IUD
-                 to be the probabilities of switching to implant.
-        """
-        pp_list = self._to_list(postpartum, self._get_pp_keys())
-        age_list = self._to_list(age_grp, self._get_age_groups())
-
-        for pp in pp_list:
-            for age in age_list:
-                if pp == 1:
-                    # Copy from birth
-                    value = self.get_switching_prob('birth', source_to_method, pp, age)
-                    if split_shares is not None:
-                        new_value = value*split_shares
-                        old_value = value*(1 - split_shares)
-                        self.set_switching_prob('birth', source_to_method, old_value, pp, age, renormalize=renormalize)
-                        self.set_switching_prob('birth', dest_to_method, new_value, pp, age, renormalize=renormalize)
-                    else:
-                        self.set_switching_prob('birth', dest_to_method, value, pp, age, renormalize=renormalize)
-                else:
-                    # Copy from all methods (excluding permanent methods like btl that can't switch)
-                    mcp = self.pars.method_choice_pars
-                    for from_method in self.methods.keys():
-                        # Check if this method can switch (has a row in the matrix)
-                        if from_method in mcp[pp][age]:
-                            value = self.get_switching_prob(from_method, source_to_method, pp, age)
-                            if split_shares is not None:
-                                new_value = value*split_shares
-                                old_value = value*(1 - split_shares)
-                                self.set_switching_prob(from_method, source_to_method, old_value, pp, age, renormalize=renormalize)
-                                self.set_switching_prob(from_method, dest_to_method, new_value, pp, age, renormalize=renormalize)
-                            else:
-                                self.set_switching_prob(from_method, dest_to_method, value, pp, age, renormalize=renormalize)
-
-    def copy_switching_from_method(self, source_from_method, dest_from_method,
-                                   postpartum=None, age_grp=None, renormalize=False):
-        """
-        Copy all switching probabilities FROM a method (entire row block).
-        Example: Copy all probabilities of switching from pill to other methods
-                 to be the probabilities of switching from implant to other methods.
-                 This makes implant users switch like pill users.
-        """
-        # Handle postpartum
-        # If it's none, set to 0. If's it's anything other than None or 0, raise an error
-        # because if someone is postpartum (1 or 6m) then they are coming from no method
-        if postpartum is None:
-            postpartum = 0
-        if postpartum != 0:
-            raise ValueError('copy_switching_from_method can only be used for postpartum=0')
-
-        age_list = self._to_list(age_grp, self._get_age_groups())
-
-        for age in age_list:
-            for to_method in self.methods.keys():
-                if to_method != 'none':
-                    value = self.get_switching_prob(source_from_method, to_method, postpartum, age)
-                    self.set_switching_prob(dest_from_method, to_method, value, postpartum, age, renormalize=False)
-
-            # Renormalize once after all values are set
-            if renormalize:
-                self._renormalize_row(postpartum, age, dest_from_method)
-
-    def get_switching_matrix(self, postpartum, from_method=None):
-        """
-        Get switching matrix for a particular postpartum status across all age groups.
-        Args:
-            postpartum (int): Postpartum state (0, 1, or 6)
-            from_method (str or None): Method name for pp=0 or 6
-
-        Returns:
-            dict: Dictionary keyed by age group with probability arrays
-        """
-        mcp = self.pars.method_choice_pars
-        if mcp is None:
-            return {}
-
-        if postpartum not in self._get_pp_keys():
-            raise ValueError(f"postpartum={postpartum} not found. "
-                           f"Available: {self._get_pp_keys()}")
-
-        if postpartum == 1:
-            # For postpartum=1, return direct arrays for all age groups
-            result = {}
-            for age_grp in self._get_age_groups():
-                result[age_grp] = mcp[postpartum][age_grp]
-            return result
-        else:
-            # For postpartum=0 or 6, need from_method
-            if from_method is None:
-                raise ValueError(f"from_method is required when postpartum={postpartum}")
-
-            if from_method not in self.methods:
-                raise ValueError(f"from_method '{from_method}' not found. "
-                               f"Available: {list(self.methods.keys())}")
-
-            result = {}
-            for age_grp in self._get_age_groups():
-                if from_method in mcp[postpartum][age_grp]:
-                    result[age_grp] = mcp[postpartum][age_grp][from_method]
-                else:
-                    # Method doesn't have a row (e.g., btl can't switch)
-                    result[age_grp] = None
-
-            return result
-
-    def _renormalize_row(self, pp, age_grp, from_method):
-        """
-        Renormalize a row to sum to 1.
-        Helper for switching probability operations.
-        """
-        mcp = self.pars.method_choice_pars
-        if mcp is None:
-            return
-
-        if pp == 1:
-            row = mcp[pp][age_grp]
-        else:
-            if from_method not in mcp[pp][age_grp]:
-                return  # Method can't switch (e.g., btl)
-            row = mcp[pp][age_grp][from_method]
-
-        row_sum = row.sum()
-        if row_sum > 0:
-            row /= row_sum
-
-    # ==================================================================================
-    # CORE STARSIM MODULE METHODS, called directly within the Starsim loop
-    # ==================================================================================
+    # %% Results
     def init_results(self):
-        """
-        Initialize results for this module
-        """
         super().init_results()
-
+        kw = dict(scale=False, dtype=float)
         self.define_results(
-            ss.Result('n_at_risk_non_users', scale=True, label="Number of non-users at risk of pregnancy (aCPR)"),
-            ss.Result('n_at_risk_users', scale=True, label="Number of users at risk of pregnancy (aCPR)"),
-            ss.Result('n_non_users', scale=True, label="Number of non-users (CPR)"),
-            ss.Result('n_mod_users', scale=True, label="Number of modern contraceptive users (mCPR)"),
-            ss.Result('n_users', scale=True, label="Number of contraceptive users (CPR)"),
-            ss.Result('mcpr', scale=False, label="Modern contraceptive prevalence rate (mCPR)"),
-            ss.Result('cpr', scale=False, label="Contraceptive prevalence rate (CPR)"),
-            ss.Result('acpr', scale=False, label="Active contraceptive prevalence rate (aCPR)"),
+            ss.Result('n_at_risk_non_users', scale=True, label='Non-users at risk of pregnancy (aCPR, expected)'),
+            ss.Result('n_at_risk_users', scale=True, label='Users at risk of pregnancy (aCPR, expected)'),
+            ss.Result('n_non_users', scale=True, label='Non-users (CPR)'),
+            ss.Result('n_mod_users', scale=True, label='Modern contraceptive users (mCPR)'),
+            ss.Result('n_users', scale=True, label='Contraceptive users (CPR)'),
+            ss.Result('mcpr', label='Modern contraceptive prevalence rate (mCPR)', **kw),
+            ss.Result('cpr', label='Contraceptive prevalence rate (CPR)', **kw),
+            ss.Result('acpr', label='Active contraceptive prevalence rate (aCPR, expected)', **kw),
         )
+        self.method_mix = np.zeros((self.n_options, self.t.npts))
         return
-
-    def init_post(self):
-        """
-         Decide who will start using contraception, when, which contraception method and the
-         duration on that method. This method is called by the simulation to initialize the
-         people object at the beginning of the simulation and new people born during the simulation.
-         """
-        super().init_post()
-        fpppl = self.sim.people.fp
-        
-        # Get people who might use contraception
-        eligible_contra = fpppl.fecund & ~fpppl.pregnant & (fpppl.ti_contra == self.ti)
-        self.init_contraception(eligible_contra.uids)
-
-        return
-
-    def init_contraception(self, uids):
-        """
-        Used for all agents at the start of a sim and for newly active agents throughout
-        """
-        contra_users, _ = self.get_contra_users(uids)
-        self.start_contra(contra_users)
-        self.init_methods(contra_users)
-        return
-
-    def start_contra(self, uids):
-        """ Wrapper method to start contraception for a set of users """
-        self.sim.people.fp.on_contra[uids] = True
-        self.sim.people.fp.ever_used_contra[uids] = 1
-        return
-
-    def init_methods(self, uids):
-        # Set initial distribution of methods
-        self.sim.people.fp.method[uids] = self.init_method_dist(uids)
-        method_dur = self.set_dur_method(uids)
-        self.sim.people.fp.ti_contra[uids] = self.ti + method_dur
-        return
-
-    def get_prob_use(self, uids, event=None):
-        pass
-
-    def get_contra_users(self, uids, event=None):
-        """ Select contraception users, return boolean array """
-        self.get_prob_use(uids, event=event)  # Call this to reset p_use parameter
-        users, non_users = self.pars.p_use.split(uids)
-        return users, non_users
-
-    def update_contra(self, uids):
-        """ Update contraceptive choices for a set of users. """
-        sim = self.sim
-        ti = self.ti
-        ppl = sim.people
-        fpppl = ppl.fp  # Shorter name for people.fp
-
-        # If people are 1 or 6m postpartum, we use different parameters for updating their contraceptive decisions.
-        # In both windows, exclude women who are already on contraception -- e.g. because an external
-        # intervention started them during the postpartum window, or because a prior contra choice's
-        # ti_contra happens to land inside pp1/pp6 -- and let those women flow into the pp0 (non-postpartum)
-        # path, which handles on_contra state correctly. Symmetric filtering between pp1 and pp6.
-        is_pp1 = ((self.ti - fpppl.ti_delivery[uids]) == 1) & ~fpppl.on_contra[uids]  # Delivered last timestep
-        is_pp6 = ((self.ti - fpppl.ti_delivery[uids]) == 6) & ~fpppl.on_contra[uids]  # They may have decided to use contraception after 1m
-        pp0 = uids[~(is_pp1 | is_pp6)]
-        pp1 = uids[is_pp1]
-        pp6 = uids[is_pp6]
-
-        # Update choices for people who aren't postpartum
-        if len(pp0):
-
-            # If force_choose is True, then all non-users will be made to pick a method
-            if self.pars['force_choose']:
-                must_use = pp0[~fpppl.on_contra[pp0]]
-                choosers = pp0[fpppl.on_contra[pp0]]
-
-                if len(must_use):
-                    self.start_contra(must_use)  # Start contraception for those who must use
-                    fpppl.method[must_use] = self.choose_method(must_use)
-
-            else:
-                choosers = pp0
-
-            # Get previous users and see whether they will switch methods or stop using
-            if len(choosers):
-
-                users, non_users = self.get_contra_users(choosers)
-
-                if len(non_users):
-                    fpppl.on_contra[non_users] = False  # Set non-users to not using contraception
-                    fpppl.method[non_users] = 0  # Set method to zero for non-users
-
-                # For those who keep using, choose their next method
-                if len(users):
-                    self.start_contra(users)
-                    fpppl.method[users] = self.choose_method(users)
-
-            # Validate
-            n_methods = len(self.methods)
-            invalid_vals = (fpppl.method[pp0] >= n_methods) * (fpppl.method[pp0] < 0) * (np.isnan(fpppl.method[pp0]))
-            if invalid_vals.any():
-                errormsg = f'Invalid method set: ti={pp0.ti}, inds={invalid_vals.nonzero()[-1]}'
-                raise ValueError(errormsg)
-
-        # Now update choices for postpartum people. Logic here is simpler because none of these
-        # people should be using contraception currently. We first check that's the case, then
-        # have them choose their contraception options.
-        ppdict = {'pp1': pp1, 'pp6': pp6}
-        for event, pp in ppdict.items():
-            if len(pp):
-                # is_pp1 and is_pp6 filter out on_contra women, so this branch should
-                # only ever see off-contra women. Assertion retained as a defensive check.
-                if fpppl.on_contra[pp].any():
-                    errormsg = 'Postpartum women should not currently be using contraception.'
-                    raise ValueError(errormsg)
-                users, _ = self.get_contra_users(pp, event=event)
-                self.start_contra(users)
-                on_contra = pp[fpppl.on_contra[pp]]
-                off_contra = pp[~fpppl.on_contra[pp]]
-
-                # Set method for those who use contraception
-                if len(on_contra):
-                    method_used = self.choose_method(on_contra, event=event)
-                    fpppl.method[on_contra] = method_used
-
-                if len(off_contra):
-                    fpppl.method[off_contra] = 0
-                    if event == 'pp1':  # For women 1m postpartum, choose again when they are 6 months pp
-                        fpppl.ti_contra[off_contra] = ti + 5
-
-        # Set duration of use for everyone, and reset the time they'll next update
-        durs_fixed = ((self.ti - fpppl.ti_delivery[uids]) == 1) & (fpppl.method[uids] == 0)
-        update_durs = uids[~durs_fixed]
-        dur_methods = self.set_dur_method(update_durs)
-
-        # Check validity
-        if (dur_methods < 0).any():
-            raise ValueError('Negative duration of method use')
-
-        fpppl.ti_contra[update_durs] = ti + dur_methods
-
-        return
-
-    def set_dur_method(self, uids, method_used=None):
-        dt = self.t.dt_year
-        timesteps_til_update = np.full(len(uids), np.round(self.average_dur_use/dt), dtype=int)
-        return timesteps_til_update
-
-    def set_method(self, uids):
-        """ Wrapper for choosing method and assigning duration of use """
-        ppl = self.sim.people.fp
-        method_used = self.choose_method(uids)
-        ppl.method[uids] = method_used
-
-        # Set the duration of use
-        dur_method = self.set_dur_method(uids)
-        ppl.ti_contra[uids] = self.ti + dur_method
-
-        return
-
-    def step(self):
-        # TODO, could move all update logic to here...
-        pass
 
     def update_results(self):
-        """
-        Note that we are not including LAM users in mCPR as this model counts
-        all women passively using LAM but DHS data records only women who self-report
-        LAM which is much lower. Follows the DHS definition of mCPR.
-        """
+        """ mCPR, CPR and aCPR among women 15-49 (DHS definition: LAM not counted); method mix among women 15-50 """
         super().update_results()
         ppl = self.sim.people
-        method_age = self.sim.pars.fp['method_age'] <= ppl.age
-        fecund_age = ppl.age < self.sim.pars.fp['age_limit_fecundity']
-        denominator = method_age * fecund_age * ppl.female * ppl.alive
-
-        # Track mCPR
-        modern_methods_num = [idx for idx, m in enumerate(self.methods.values()) if m.modern]
-        numerator = np.isin(ppl.fp.method, modern_methods_num)
-        n_no_method = np.sum((ppl.fp.method == 0) * denominator)
-        n_mod_users = np.sum(numerator * denominator)
-        self.results['n_non_users'][self.ti] += n_no_method
-        self.results['n_mod_users'][self.ti] += n_mod_users
-        self.results['mcpr'][self.ti] += sc.safedivide(n_mod_users, sum(denominator))
-
-        # Track CPR: includes newer ways to conceptualize contraceptive prevalence.
-        # Includes women using any method of contraception, including LAM
-        numerator = ppl.fp.method != 0
-        cpr = np.sum(numerator * denominator)
-        self.results['n_users'][self.ti] += cpr
-        self.results['cpr'][self.ti] += sc.safedivide(cpr, sum(denominator))
-
-        # Track aCPR
-        # Denominator of possible users excludes pregnant women and those not sexually active in the last 4 weeks
-        # Used to compare new metrics of contraceptive prevalence and eventually unmet need to traditional mCPR definitions
-        denominator = method_age * fecund_age * ppl.female * ~ppl.fp.pregnant * ppl.fp.sexually_active
-        numerator = ppl.fp.method != 0
-        n_at_risk_non_users = np.sum((ppl.fp.method == 0) * denominator)
-        n_at_risk_users = np.sum(numerator * denominator)
-        self.results['n_at_risk_non_users'][self.ti] += n_at_risk_non_users
-        self.results['n_at_risk_users'][self.ti] += n_at_risk_users
-        self.results['acpr'][self.ti] = sc.safedivide(n_at_risk_users, sum(denominator))
-
+        ti = self.ti
+        res = self.results
+        women = ppl.female.raw & ppl.alive.raw
+        age = ppl.age.raw
+        denom = women & (age >= fpd.min_age) & (age < fpd.max_age_preg)
+        method = self.method_raw()
+        modern = np.isin(method, [m.idx for m in self.methods.values() if m.modern])
+        scale = self.sim._current_scale
+        n = denom.sum()
+        res.n_non_users[ti] = np.sum(denom & (method == 0))*scale
+        res.n_mod_users[ti] = np.sum(denom & modern)*scale
+        res.n_users[ti] = np.sum(denom & (method > 0))*scale
+        res.mcpr[ti] = sc.safedivide(np.sum(denom & modern), n)
+        res.cpr[ti] = sc.safedivide(np.sum(denom & (method > 0)), n)
+        fpm = self.sim.demographics.get(self.fp_name) if self.sim.demographics else None
+        active = fpm.p_sexually_active() if hasattr(fpm, 'p_sexually_active') else None
+        if active is not None: # Expected values, since activity is not drawn per woman: the chance each woman is active
+            at_risk = denom & ~fpm.P.raw
+            a = np.where(at_risk, active, 0)
+            res.n_at_risk_users[ti] = np.sum(a*(method > 0))*scale
+            res.n_at_risk_non_users[ti] = np.sum(a*(method == 0))*scale
+            res.acpr[ti] = sc.safedivide(np.sum(a*(method > 0)), a.sum())
+        mix = women & (age >= fpd.min_age) & (age <= fpd.max_age_preg)
+        counts = np.bincount(method[mix], minlength=self.n_options)[:self.n_options]
+        self.method_mix[:, ti] = counts/counts.sum() if counts.sum() else 0
         return
 
-    def update_intent_to_use(self, uids):
-        """Intent is optional, so pass if not implemented for a given ContraceptiveChoice"""
-        pass
+
+class MethodArr(ss.IntArr):
+    """ Each woman's method (`ContraceptiveChoice.method`): setting some moves them to that method """
+    def __setitem__(self, key, value):
+        self.cm.set_method(self.cm.to_uids(key), value)
+        return
+
+
+class EverUsedArr(ss.BoolArr):
+    """ Whether each woman has ever used contraception (`ContraceptiveChoice.ever_used_contra`): setting some moves them between never and ever users """
+    def __setitem__(self, key, value):
+        uids = self.cm.to_uids(key)
+        value = np.broadcast_to(np.asarray(value, dtype=bool), (len(uids),))
+        self.cm.set_ever_used(uids[value], True)
+        self.cm.set_ever_used(uids[~value], False)
+        return
 
 
 class RandomChoice(ContraceptiveChoice):
     """
-    Choose a method uniformly at random.
-
-    Intended for testing model mechanics, not for producing realistic method mix. Because
-    it needs no fitted data, it is the only choice module that accepts a method list
-    containing methods with no per-method data -- useful when checking that a new method
-    behaves sensibly before wiring up its uptake.
-
-    Args:
-        pars (dict): parameters for the choice module
-        kwargs (dict): passed to [ContraceptiveChoice](`fpsim.methods.ContraceptiveChoice`)
-
-    **Example**:
-
-        ```python
-        import fpsim as fp
-        import fpsim.methods as fpm
-
-        methods = fpm.make_methods()
-        methods += fpm.Method(name='dmpasc', label='DMPA-SC', efficacy=0.983, modern=True,
-                              dur_use=ss.lognorm_ex(ss.years(2), ss.years(1)))
-        sim = fp.Sim(location='kenya', contraception_module=fpm.RandomChoice(methods=methods))
-        ```
+    Choose a method uniformly at random, with a probability of use of `p_use` (0.5) at every decision, and durations
+    of use of 1 +/- 1 year: for testing model mechanics, not for realistic method mix
     """
     def __init__(self, pars=None, **kwargs):
         super().__init__(pars=pars, **kwargs)
-        self._method_choice_dist = ss.choice(a=np.arange(1, self.n_methods+1))
-
-        # Set durations
-        for method in self.methods.values():
-            method.dur_use = ss.lognorm_ex(mean=ss.years(1), std=ss.years(1))
         return
 
-    def init_method_dist(self, uids):
-        return self.choose_method(uids)
+    def prob_use(self, event, ever, trend, intercept):
+        """ The same at every decision: `p_use`, a parameter (so update_methods(p_use=) is an ss.modify of it) """
+        if not hasattr(self, '_p_use'):
+            self._p_use = ss.par(float(self._data['p_use']), name='p_use', doc='Probability of use at each decision')
+        return self._p_use
 
-    def choose_method(self, uids, event=None):
-        choice_arr = self._method_choice_dist.rvs(uids)
-        return choice_arr.astype(int)
+    def shares(self, event, src):
+        return {m: np.ones(len(age_edges)) for m in self.method_names}
+
+    def dur_use(self, method):
+        return ss.lognorm_ex(mean=ss.years(1), std=ss.years(1))
 
 
-class SimpleChoice(RandomChoice):
+class SimpleChoice(ContraceptiveChoice):
     """
-    Choose a method based on age and previous method.
+    Choose a method based on age and previous method, from location-specific fitted data
 
-    Uses location-specific fitted data, so it must be initialized with either a location
-    string or a data dictionary. Because the fit is per method, passing a method list that
-    contains a method with no fitted duration data raises an ``IndexError``; to introduce a
-    new method use the [add_method](`fpsim.interventions.add_method`) intervention with
-    ``copy_from``, which inherits an existing method's behavior.
+    The probability of use is a logistic regression on age group, ever use and year (`contra_use_pars`; one set
+    each for decisions at the end of a method, 1 month after a birth, and 6 months after it); the method chosen
+    follows the switching matrix (`method_choice_pars`) for the method left and the age group; durations of use
+    follow each method's fitted distribution by age group (`dur_use_df`).
 
     Args:
-        pars (dict): parameters for the choice module
+        pars (dict): parameters (see `ContraPars`)
         location (str): location whose fitted coefficients to load, e.g. ``'kenya'``
         data (dict): pre-loaded data, used instead of loading from ``location``
-        contra_mod (str): which fitted coefficient set to use
-        kwargs (dict): passed to [RandomChoice](`fpsim.methods.RandomChoice`)
+        contra_mod (str): which fitted coefficient set to use ('simple')
 
-    **Example**:
+    **Example**::
 
-        ```python
-        import fpsim as fp
-        import fpsim.methods as fpm
-
-        sim = fp.Sim(location='kenya', contraception_module=fpm.SimpleChoice(location='kenya'))
-        ```
+        sim = fp.Sim(location='kenya', contraception_module=fp.SimpleChoice(location='kenya'))
     """
     def __init__(self, pars=None, location=None, data=None, contra_mod='simple', **kwargs):
-        """
-        This module can be initialized in several different ways. The pars dictionary includes
-        all the parameters needed to run the model, some of which are location-specific and created
-        from uploaded csv files. The following options are all valid:
-        1. Provide a location string, in which case the relevant data will be loaded automatically
-        2. Provide a data dict, which will be used to update the pars dict with the data-derived pars
-        3. Provide all parameters directly in the pars dict, including the data-derived ones
-        Args:
-            pars: ContraPars object or dictionary of parameters
-            location: Location string (e.g., 'senegal') to load data from
-            data: Data dictionary, if not using location
-            contra_mod: Which contraception model to use. Default is 'simple'.
-            kwargs: Additional keyword arguments passed to the parent class
-
-        Examples:
-            # Initialize with location string
-            mod = SimpleChoice(location='senegal')
-
-            # Initialize with data dictionary
-            dataloader = fpd.get_dataloader('senegal')
-            data = dataloader.load_contra_data('simple')
-            mod = SimpleChoice(data=data)
-
-            # Initialize with all parameters directly
-            dataloader = fpd.get_dataloader('senegal')
-            data = dataloader.load_contra_data('simple')
-            pars = fp.ContraPars()
-            pars.update(data)
-            mod = SimpleChoice(pars=pars)
-
-            # Initialize implicitly within a Sim
-            sim = fp.Sim(location='senegal', contra_pars=dict(contra_mod='simple'))
-            sim.init()
-            mod = sim.connectors.contraception
-        """
-
-        super().__init__(pars=pars, **kwargs)
-
-        # Get data if not provided
         if data is None and location is not None:
-            dataloader = fpd.get_dataloader(location)
-            data = dataloader.load_contra_data(contra_mod, return_data=True)
-        self.update_pars(data)
-        if self.pars.dur_use_df is not None: self.process_durations()
-
-        # Set age bins
-        self.age_bins = np.sort([fpd.method_age_map[k][1] for k in self.pars.method_choice_pars[0].keys() if k != 'method_idx'])
-
-        # Validate methods against method_choice_pars, and set initial distribution
-        if self.pars.method_choice_pars is not None:
-            self._validate_methods()
-            if self.pars.init_dist is None:
-                self.set_init_dist()
-
+            data = fpd.get_dataloader(location).load_contra_data(contra_mod, return_data=True)
+        self.location = location
+        pars = sc.mergedicts(data, pars)
+        super().__init__(pars=pars, **kwargs)
         return
 
-    @property
-    def method_idx(self):
-        """ Return list of method indices from the method choice pars"""
-        return self.pars.method_choice_pars[0]['method_idx']
+    def prepare(self, pars):
+        mcp = pars.get('method_choice_pars')
+        if mcp is None or pars.get('contra_use_pars') is None:
+            raise ValueError('SimpleChoice needs method_choice_pars and contra_use_pars: give a location or data')
+        names = self.method_names
+        idx = {m.idx: m.name for m in self.methods.values()}
+        self._cols = [idx[i] for i in mcp[0]['method_idx']] # Method of each column of the switching rows
+        if sorted(self._cols) != sorted(names):
+            raise ValueError(f'The switching data have methods {self._cols}, but the methods are {names}')
+        if pars.get('dur_use_df') is not None:
+            for m in self.methods.values():
+                if m.name != 'btl' and m.dur_use is None:
+                    m.dur_use = dur_use_dist(pars['dur_use_df'], m)
+        if pars.get('init_dist') is None:
+            pars['init_dist'] = sc.objdict({k: mcp[0][k]['none']/mcp[0][k]['none'].sum() for k in choice_keys})
+        return
 
-    def process_durations(self):
-        df = self.pars.dur_use_df
-        for method in self.methods.values():
-            if method.name == 'btl':
-                method.dur_use = ss.uniform(low=1000, high=1200)
-            else:
-                mlabel = method.csv_name
-
-                thisdf = df.loc[df.method == mlabel]
-                dist = thisdf.functionform.iloc[0]
-                age_ind = sc.findfirst(thisdf.coef.values, 'age_grp_fact(0,18]')
-
-                # Get age factors if they exist for this distribution
-                age_factors = None
-                if age_ind is not None and age_ind < len(thisdf.estimate.values):
-                    age_factors = thisdf.estimate.values[age_ind:]
-
-                if dist in ['lognormal', 'lnorm']:
-                    par1 = thisdf.estimate[thisdf.coef == 'meanlog'].values[0]
-                    par2 = thisdf.estimate[thisdf.coef == 'sdlog'].values[0]
-
-                elif dist in ['gamma']:
-                    par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
-                    par2 = thisdf.estimate[thisdf.coef == 'rate'].values[0]   # rate parameter (log space)
-
-                elif dist == 'llogis':
-                    par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
-                    par2 = thisdf.estimate[thisdf.coef == 'scale'].values[0]  # scale parameter (log space)
-
-                elif dist == 'weibull':
-                    par1 = thisdf.estimate[thisdf.coef == 'shape'].values[0]  # shape parameter (log space)
-                    par2 = thisdf.estimate[thisdf.coef == 'scale'].values[0]  # scale parameter (log space)
-
-                elif dist == 'exponential':
-                    par1 = thisdf.estimate[thisdf.coef == 'rate'].values[0]   # rate parameter (log space)
-
+    def extend_data(self, pars, method, source):
+        """ A new method's column (its share as a destination) and row (its shares as a source) are copies of `source`'s """
+        if source is None:
+            raise ValueError(f'{type(self).__name__} needs copy_from= to add a method: the method whose switching shares it takes')
+        mcp = sc.dcp(pars['method_choice_pars'])
+        for key, rows in mcp.items():
+            col = list(rows['method_idx']).index(source.idx)
+            rows['method_idx'] = np.append(rows['method_idx'], method.idx)
+            for age in choice_keys:
+                if key == 1:
+                    rows[age] = np.append(rows[age], rows[age][col])
                 else:
-                    errormsg = f"Duration of use distribution {dist} not recognized"
-                    raise ValueError(errormsg)
-
-                method.set_dur_use(dist_type=dist,
-                                   par1=par1, par2=par2,
-                                   age_factors=age_factors)
+                    for frm in list(rows[age].keys()):
+                        rows[age][frm] = np.append(rows[age][frm], rows[age][frm][col])
+                    if source.name in rows[age]:
+                        rows[age][method.name] = np.append(rows[age][source.name][:-1], 0.0) # Not to itself
+        pars['method_choice_pars'] = mcp
+        pars['init_dist'] = None # Made again from the switching shares
         return
 
-    def init_method_dist(self, uids):
-        ppl = self.sim.people
-        if self.pars.init_dist is not None:
-            choice_array = np.zeros(len(uids))
+    def logit_use(self, event, ever, edges=None):
+        """ Starsim 3 SimpleChoice.get_prob_use, by age group, without the trend and intercept """
+        p = self._data['contra_use_pars'][dict(pp0=0, pp1=1, pp6=2)[event]]
+        ab = method_bins(edges)
+        out = p.intercept + np.asarray(p.age_factors)[ab]
+        if ever:
+            aeuf = np.asarray(p.age_ever_user_factors)
+            out = out + p.fp_ever_user + np.where(ab > 1, aeuf[np.maximum(ab - 1, 0)], 0)
+        return out
 
-            # Loop over age groups and methods
-            for key, (age_low, age_high) in fpd.method_age_map.items():
-                this_age_bools = (ppl.age[uids] >= age_low) & (ppl.age[uids] < age_high)
-                ppl_this_age = this_age_bools.nonzero()[-1]
-                if len(ppl_this_age) > 0:
-                    these_probs = self.pars.init_dist[key]
-                    these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
-                    these_probs = these_probs/np.sum(these_probs)  # Renormalize
-                    self._method_choice_dist.set(a=len(these_probs), p=these_probs)
-                    these_choices = self._method_choice_dist.rvs(len(ppl_this_age))  # Choose
-                    # Adjust method indexing to correspond to datafile
-                    choice_array[this_age_bools] = np.array(list(self.method_idx))[these_choices]
-            return choice_array.astype(int)
-        else:
-            errormsg = f'Distribution of contraceptive choices has not been provided.'
-            raise ValueError(errormsg)
+    def _rows(self, rows, edges=None):
+        """ Shares by method name, one per age group, with zeros jittered """
+        out = {}
+        ab = method_bins(edges)
+        for j, m in enumerate(self._cols):
+            vals = np.array([rows[choice_keys[b]][j] for b in ab], dtype=float)
+            out[m] = np.where(vals > 0, vals, jitter)
+        return out
 
-    def get_prob_use(self, uids, event=None):
-        """
-        Return an array of probabilities that each woman will use contraception.
-        """
-        ppl = self.sim.people
-        year = self.t.year
-
-        # Figure out which coefficients to use
-        if event is None : p = self.pars.contra_use_pars[0]
-        if event == 'pp1': p = self.pars.contra_use_pars[1]
-        if event == 'pp6': p = self.pars.contra_use_pars[2]
-
-        # Initialize probability of use
-        rhs = np.full_like(ppl.age[uids], fill_value=p.intercept)
-        age_bins = np.digitize(ppl.age[uids], self.age_bins)
-        for ai, ab in enumerate(self.age_bins):
-            rhs[age_bins == ai] += p.age_factors[ai]
-            if ai > 1:
-                rhs[(age_bins == ai) & ppl.ever_used_contra[uids]] += p.age_ever_user_factors[ai-1]
-        rhs[ppl.ever_used_contra[uids]] += p.fp_ever_user
-
-        # The yearly trend
-        rhs += (year - self.pars['prob_use_year']) * self.pars['prob_use_trend_par']
-        # This parameter can be positive or negative
-        rhs += self.pars['prob_use_intercept']
-        prob_use = 1 / (1+np.exp(-rhs))
-
-        # Set
-        self.pars.p_use.set(p=prob_use)  # Set the probability of use parameter
-        return
-
-    def set_dur_method(self, uids, method_used=None):
-        """ Time on method depends on age and method """
-        ppl = self.sim.people
-
-        dur_method = np.zeros(len(uids), dtype=float)
-        if method_used is None: method_used = ppl.fp.method[uids]
-
-        for method in self.methods.values():
-            if method._source_dur is None: dur_use = method.dur_use
-            else: dur_use = self.methods[method._source_dur].dur_use
-            user_idxs = np.nonzero(method_used == method.idx)[-1]
-            users = uids[user_idxs]  # Get the users of this method
-            n_users = len(users)
-
-            if n_users:
-                if hasattr(dur_use, 'rvs'):
-                    # Starsim distribution object
-                    dur_method[user_idxs] = dur_use.rvs(users)
-                elif sc.isnumber(dur_use):
-                    dur_method[user_idxs] = dur_use
-                else:
-                    errormsg = 'Unrecognized type for duration of use: expecting a Starsim distribution or a number'
-                    raise ValueError(errormsg)
-
-                dur_method[user_idxs] *= method.rel_dur_use  # Scale if needed
-
-        dt = self.t.dt.months
-        timesteps_til_update = np.clip(np.round(dur_method/dt), 1, self.pars['max_dur'].months)  # Include a maximum. Durs seem way too high
-
-        return timesteps_til_update.astype(int)
-
-    def choose_method(self, uids, event=None, jitter=1e-4):
-        ppl = self.sim.people
-        if event == 'pp1': return self.choose_method_post_birth(uids)
-
-        else:
-            if event is None:  mcp = self.pars.method_choice_pars[0]
-            if event == 'pp6': mcp = self.pars.method_choice_pars[6]
-
-            # Initialize arrays and get parameters
-            choice_array = np.zeros(len(uids))
-
-            # Loop over age groups and methods
-            for key, (age_low, age_high) in fpd.method_age_map.items():
-                match_low_high = (ppl.age[uids] >= age_low) & (ppl.age[uids] < age_high)
-
-                for mname, method in self.methods.items():
-                    # Get people of this age who are using this method
-                    using_this_method = match_low_high & (ppl.fp.method[uids] == method.idx)
-                    switch_iinds = using_this_method.nonzero()[-1]
-
-                    if len(switch_iinds):
-
-                        # Get probability of choosing each method
-                        if mname == 'btl':
-                            choice_array[switch_iinds] = method.idx  # Continue, can't actually stop this method
-                        else:
-                            try:
-                                these_probs = mcp[key][mname]  # Cannot stay on method
-                            except:
-                                errormsg = f'Cannot find {key} in method switch for {mname}!'
-                                raise ValueError(errormsg)
-                            self._jitter_dist.set(scale=jitter)
-                            these_probs = [p if p > 0 else p+abs(self._jitter_dist.rvs(1)[0]) for p in these_probs]  # No 0s
-                            these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
-                            these_probs = these_probs/sum(these_probs)  # Renormalize
-                            self._method_choice_dist.set(a=len(these_probs), p=these_probs)
-                            these_choices = self._method_choice_dist.rvs(len(switch_iinds))  # Choose
-
-                            # Adjust method indexing to correspond to datafile (removing None: Marita to confirm)
-                            choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
-
-        return choice_array.astype(int)
-
-    def choose_method_post_birth(self, uids, jitter=1e-4):
-        ppl = self.sim.people
-        mcp = self.pars.method_choice_pars[1]
-        choice_array = np.zeros(len(uids))
-
-        # Loop over age groups and methods
-        for key, (age_low, age_high) in fpd.method_age_map.items():
-            match_low_high = (ppl.age[uids] >= age_low) & (ppl.age[uids] < age_high)
-            switch_iinds = match_low_high.nonzero()[-1]
-
-            if len(switch_iinds):
-                these_probs = mcp[key]
-                self._jitter_dist.set(scale=jitter)
-                these_probs = [p if p > 0 else p+abs(self._jitter_dist.rvs(1)[0]) for p in these_probs]  # No 0s
-                these_probs = np.array(these_probs) * self.pars['method_weights']  # Scale by weights
-                these_probs = these_probs/sum(these_probs)  # Renormalize
-                self._method_choice_dist.set(a=len(these_probs), p=these_probs)
-                these_choices = self._method_choice_dist.rvs(len(switch_iinds))  # Choose
-                choice_array[switch_iinds] = np.array(list(mcp.method_idx))[these_choices]
-
-        return choice_array
+    def shares(self, event, src, edges=None):
+        mcp = self._data['method_choice_pars']
+        if event == 'pp1':
+            return self._rows({k: mcp[1][k] for k in choice_keys}, edges)
+        key = 0 if event == 'pp0' else 6
+        return self._rows({k: mcp[key][k][src] for k in choice_keys}, edges)
 
 
 class StandardChoice(SimpleChoice):
     """
-    Choose a method based on age, education, wealth, parity and prior use.
+    FPsim's default: the probability of use is a logistic regression on age (a spline, by single year of age), ever
+    use, education, urban residence, wealth quintile, parity and year; method choice and durations are as in
+    `SimpleChoice`, from the same location's fitted data (`contra_mod='mid'`)
 
-    This is the default choice module, used when no ``contraception_module`` is passed to
-    [Sim](`fpsim.sim.Sim`). It extends [SimpleChoice](`fpsim.methods.SimpleChoice`) with
-    education and wealth, and carries the same requirement for per-method fitted data.
+    The probability of use is a declared expression of the women's own arrays (`people.urban`,
+    `people.wealthquintile`, `fp.parity`, `edu.attainment`), so it needs an education module (`fp.Education`,
+    which `fp.Sim` adds by default).
 
     Args:
-        pars (dict): parameters for the choice module
+        pars (dict): parameters (see `ContraPars`)
         location (str): location whose fitted coefficients to load, e.g. ``'kenya'``
         data (dict): pre-loaded data, used instead of loading from ``location``
-        contra_mod (str): which fitted coefficient set to use
-        kwargs (dict): passed to [SimpleChoice](`fpsim.methods.SimpleChoice`)
+        contra_mod (str): which fitted coefficient set to use ('mid')
+        edu_name (str): the name of the education module
 
-    **Example**:
+    **Example**::
 
-        ```python
-        import fpsim as fp
-
-        # Used automatically, so these are equivalent
-        sim = fp.Sim(location='kenya')
-        sim = fp.Sim(location='kenya',
-                     contraception_module=fp.StandardChoice(location='kenya'))
-        ```
+        sim = fp.Sim(location='kenya', contraception_module=fp.StandardChoice(location='kenya'))
     """
-    def __init__(self, pars=None, location=None, data=None, contra_mod='mid', **kwargs):
+    def __init__(self, pars=None, location=None, data=None, contra_mod='mid', edu_name='edu', **kwargs):
+        self.edu_name = edu_name
         super().__init__(pars=pars, location=location, data=data, contra_mod=contra_mod, **kwargs)
         return
 
-    def get_prob_use(self, uids, event=None):
-        """
-        Return an array of probabilities that each woman will use contraception.
-        """
-        ppl = self.sim.people
-        year = self.t.year
-        fppars = self.sim.pars.fp
-
-        # Figure out which coefficients to use
-        if event is None : p = self.pars.contra_use_pars[0]
-        if event == 'pp1': p = self.pars.contra_use_pars[1]
-        if event == 'pp6': p = self.pars.contra_use_pars[2]
-
-        # Initialize with intercept
-        rhs = np.full_like(ppl.age[uids], fill_value=p.intercept)
-
-        # Add all terms that don't involve age/education level factors
-        for term in ['ever_used_contra', 'urban', 'parity', 'wealthquintile']:
-            rhs += p[term] * ppl[term][uids]
-
-        # Add age
-        int_age = ppl.int_age(uids)
-        int_age[int_age < fppars.method_age] = fppars.method_age
-        int_age[int_age >= fppars.max_age] = fppars.max_age-1
-        dfa = self.pars.age_spline.loc[int_age]
-        rhs += p.age_factors[0] * dfa['knot_1'].values + p.age_factors[1] * dfa['knot_2'].values + p.age_factors[2] * dfa['knot_3'].values
-        rhs += (p.age_ever_user_factors[0] * dfa['knot_1'].values * ppl.ever_used_contra[uids]
-                + p.age_ever_user_factors[1] * dfa['knot_2'].values * ppl.ever_used_contra[uids]
-                + p.age_ever_user_factors[2] * dfa['knot_3'].values * ppl.ever_used_contra[uids])
-
-        # Add education levels
-        primary = (ppl.edu.attainment[uids] > 1) & (ppl.edu.attainment[uids] <= 6)
-        secondary = ppl.edu.attainment[uids] > 6
-        rhs += p.edu_factors[0] * primary + p.edu_factors[1] * secondary
-
-        # Add time trend
-        rhs += (year - self.pars['prob_use_year'])*self.pars['prob_use_trend_par']
-        # This parameter can be positive or negative
-        rhs += self.pars['prob_use_intercept']
-
-        # Finish
-        prob_use = expit(rhs)
-        self.pars.p_use.set(p=prob_use)
+    def prepare(self, pars):
+        super().prepare(pars)
+        if pars.get('age_spline') is None:
+            raise ValueError('StandardChoice needs age_spline: give a location or data')
         return
 
-    def update_intent_to_use(self, uids):
+    def age_term(self, event, ever):
         """
-        Update intent to use contraception based on regression coefficients
+        The age terms of the logit (the spline, and its interaction with ever use), by single year of age from 0 to 49
+        (ages are clipped to 15-49, as in Starsim 3 FPsim): a parameter for each decision and ever use
         """
-        # Check if we have the necessary data
-        if not self.pars.get('intent_pars'):
-            return  # Skip if no coefficients available
-        
-        ppl = self.sim.people
+        if not hasattr(self, '_age_terms'):
+            self._age_terms = {}
+        key = f'age_use_{event}_{ever}'
+        if key not in self._age_terms:
+            p = self._data['contra_use_pars'][dict(pp0=0, pp1=1, pp6=2)[event]]
+            ages = np.arange(fpd.max_age_preg)
+            knots = self._data['age_spline'].loc[np.clip(ages, fpd.min_age, fpd.max_age_preg - 1), ['knot_1', 'knot_2', 'knot_3']].values
+            coefs = np.asarray(p.age_factors, dtype=float) + ever*np.asarray(p.age_ever_user_factors, dtype=float)
+            self._age_terms[key] = ss.par(ss.by(dict(age=list(ages), value=knots @ coefs)), name=key, doc=f'Age terms of the logit of the probability of use ({event}, ever user: {bool(ever)})')
+        return self._age_terms[key]
 
-        pp1 = self.ti - ppl.fp.ti_delivery <= 1
-        nonpp1 = ~pp1  # Delivered last timestep
-        bday = (ppl.age - ppl.int_age()) <= self.t.dt_year
-        
-        # Filter to eligible women (15-49, alive, female, not on contraception)
-        eligible_mask = ((ppl.age >= fpd.min_age) & 
-                        (ppl.age < fpd.max_age_preg) & 
-                        ppl.female & 
-                        ppl.alive &
-                        nonpp1 &
-                        bday &
-                        ~ppl.fp.on_contra)  # Only update for women not currently on contraception
-        eligible_uids = uids[eligible_mask[uids]] if len(uids) > 0 else eligible_mask.uids
-        
-        if len(eligible_uids) == 0:
-            return
-        
-        # Get coefficients for intent_to_use
-        lhs = "intent_to_use"
-        if lhs not in self.pars.intent_pars['contra_intent_coefs']:
-            return  # Skip if no coefficients for intent_to_use
-            
-        p = self.pars.intent_pars['contra_intent_coefs'][lhs]
-        
-        # Initialize with intercept
-        rhs = np.full(len(eligible_uids), fill_value=p.get('intercept', 0.0))
-        
-        # Add predictor terms
-        for predictor, beta_p in p.items():
-            if predictor == 'intercept':
-                continue
-            elif predictor == "edu_attainment":
-                # Education data is in the education connector
-                rhs += beta_p * ppl.edu.attainment[eligible_uids]
-            elif predictor in ["parity", "urban", "wealthquintile"]:
-                rhs += beta_p * ppl[predictor][eligible_uids]
-        
-        # Handle fertility intent predictor (3-category: "yes", "no", "cannot-get-pregnant")
-        # Reference category is "cannot-get-pregnant" (coefficient = 0)
-        # fertility_intent_cat: 0=cannot-get-pregnant, 1=no, 2=yes
-        if "fertility_intentno" in p and "fertility_intentyes" in p:
-            cat_intent = ppl.fp.fertility_intent_cat[eligible_uids]
-            fi_contrib = np.zeros(len(eligible_uids))
-            fi_contrib[cat_intent == 1] = p["fertility_intentno"]
-            fi_contrib[cat_intent == 2] = p["fertility_intentyes"]
-            rhs += fi_contrib
-        
-        # Apply logistic transformation
-        prob_t = expit(rhs)
-        
-        # Sample new values using the p_intent distribution
-        self.pars.p_intent.set(p=prob_t)
-        new_vals = self.pars.p_intent.rvs(eligible_uids)
-        
-        # Update the intent_to_use state
-        old_vals = ppl.fp.intent_to_use[eligible_uids]
-        changers = eligible_uids[new_vals != old_vals]  # People whose intent changes
-
-        if len(changers) > 0:
-            # Trigger update to contraceptive choices if intent changes
-            ppl.fp.ti_contra[changers] = self.t.ti
-
-        # Update the state
-        ppl.fp.intent_to_use[eligible_uids] = new_vals
-        return
+    def prob_use(self, event, ever, trend, intercept):
+        """ Starsim 3 StandardChoice.get_prob_use, as an expression; `ever` is known from the state the decision is made in """
+        p = self._data['contra_use_pars'][dict(pp0=0, pp1=1, pp6=2)[event]]
+        att = ss.state(f'{self.edu_name}.attainment')
+        logit = (p.intercept + ever*p.ever_used_contra
+                 + p.urban*ss.ppl.urban + p.wealthquintile*ss.ppl.wealthquintile + p.parity*ss.state(f'{self.fp_name}.parity')
+                 + self.age_term(event, ever)
+                 + p.edu_factors[0]*((att > 1) & (att <= 6)) + p.edu_factors[1]*(att > 6)
+                 + trend + intercept)
+        return 1/(1 + np.exp(-logit))
