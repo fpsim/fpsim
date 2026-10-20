@@ -143,6 +143,9 @@ class Sim(ss.Sim):
         contraception_module = contraception_module or fp.StandardChoice(pars=self.contra_pars)
         education_module = education_module or fp.Education(pars=self.edu_pars)
         self.pars['connectors'] = sc.tolist(connectors) + [education_module, contraception_module]
+        structural = [intv for intv in sc.tolist(self.pars['interventions']) if isinstance(intv, (fp.add_method, fp.method_switching))] # New states and parameters of the contraception module, so added now
+        if structural:
+            self.pars['interventions'] = sc.tolist(self.pars['interventions']) + [mod for intv in structural for mod in intv.apply(contraception_module, stop=self.pars.stop, dt=self.pars.dt)]
 
         # The FP module, lactation (for LAM), and deaths
         if demographics is None and not len(self.pars['demographics']):

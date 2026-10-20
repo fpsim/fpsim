@@ -178,7 +178,9 @@ def test_senegal():
 
 
 def test_birth_outcomes():
-    sim = fp.Sim(test=True, twins_prob=0.3)
+    sim = fp.Sim(test=True, twins_prob=0.3, burnin=False) # Nobody pregnant at the start, so every outcome is of a pregnancy in the run
+    sim.init()
+    parity0 = sim.people.fp.parity.raw.copy() # Women start with their parity from the DHS
     sim.run()
 
     # Check that n_pregnancies matches sum of outcomes (with allowance for partial twin loss)
@@ -200,8 +202,9 @@ def test_birth_outcomes():
     sc.printgreen('✓ (Birth outcomes sum to pregnancies, with partial twin loss allowance)')
 
     # Check that parity increments correctly
-    expected_parity = fpmod.n_births + fpmod.n_twinbirths + fpmod.n_stillbirths
-    assert (fpmod.parity == expected_parity).all(), 'Parity does not match number of live/still births'
+    uids = sim.people.alive.uids[sim.people.alive.uids < len(parity0)] # Women there at the start
+    expected_parity = parity0[uids] + fpmod.n_births[uids] + fpmod.n_twinbirths[uids] + fpmod.n_stillbirths[uids]
+    assert (fpmod.parity[uids] == expected_parity).all(), 'Parity does not match number of live/still births'
     sc.printgreen('✓ (Parity increments correctly)')
 
     return sim

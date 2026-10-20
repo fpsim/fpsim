@@ -81,7 +81,6 @@ class FPmod(ss.Pregnancy):
         )
         self._p_inf_mort = ss.random() # Infant deaths at delivery
         self._init_parity = ss.random() # Parity at the start
-        self.method_mix = None
         self.parity_dist = None
         return
 
@@ -216,7 +215,7 @@ class FPmod(ss.Pregnancy):
         age = ppl.age.raw
         ia = self.int_age()
         parity = self.parity.raw
-        fecund = ppl.female.raw & ppl.alive.raw & (age >= pars.min_age) & (age < pars.max_age) & ~self.infertile.raw
+        fecund = ppl.female.raw & ppl.alive.raw & (age >= pars.min_age) & (age < pars.age_limit_fecundity) & ~self.infertile.raw
         cm = self.contraception
         eff = cm.eff_array() if cm is not None else 0
         raw = np.asarray(pars['age_fecundity'])[ia]*self.personal_fecundity.raw*(1 - eff)
@@ -372,7 +371,7 @@ class FPmod(ss.Pregnancy):
         res.p_short_interval[ti] = sc.safedivide(self._short, self._n_live)
         self._short = self._n_live = self._infant_deaths = 0
         cm = self.contraception
-        fecund = women & (age >= fpd.min_age) & (age < fpd.max_age_preg)
+        fecund = women & (age >= fpd.min_age) & (age < self.pars.age_limit_fecundity)
         res.n_fecund[ti] = fecund.sum()*scale
         counts = np.bincount(np.minimum(self.parity.raw[fecund], len(self.parity_bins) - 2).astype(int), minlength=len(self.parity_bins) - 1)
         self.parity_dist[:, ti] = counts/max(counts.sum(), 1)
@@ -386,8 +385,6 @@ class FPmod(ss.Pregnancy):
         res.nonpostpartum[ti] = 100 - res.pp0to5[ti] - res.pp6to11[ti] - res.pp12to23[ti]
         if cm is not None:
             res.ever_used_contra[ti] = pct(cm.ever_used_contra.raw, women)
-        if cm is not None:
-            self.method_mix = cm.method_mix
         return
 
     def finalize_results(self):
@@ -413,6 +410,12 @@ class FPmod(ss.Pregnancy):
     @property
     def on_contra(self):
         return self.contraception.on_contra
+
+    @property
+    def method_mix(self):
+        """ The share of women 15-50 on each method (including none) at each time point: see the contraception module """
+        cm = self.contraception
+        return getattr(cm, 'method_mix', None) if cm is not None else None
 
     @property
     def ti_contra(self):

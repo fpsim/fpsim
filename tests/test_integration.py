@@ -249,6 +249,7 @@ def test_method_selection_dependencies():
     pars['age_pyramid'] = f15_age_pyramid
     sim1 = fp.Sim(location="kenya", pars=pars, contraception_module=method, analyzers=[cpr, snapshots])
     sim1.init()
+    sim1.people.fp.ever_used_contra[:] = True
 
     # custom init forces age, sex and other person defaults
     # p_use by age: <18: ~.18, 18-20: ~.49, 20-25: ~.54, 25-35: ~.52, 35-50: ~.32

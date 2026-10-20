@@ -8,6 +8,7 @@ birth (at 1 and 6 months) and after a loss are transitions triggered by the preg
 """
 
 # %% Imports
+import copy
 import numpy as np
 import sciris as sc
 import starsim as ss
@@ -60,6 +61,18 @@ class Method:
 
     def __repr__(self):
         return f'Method({self.name}, eff={self.efficacy}, modern={self.modern})'
+
+    def __deepcopy__(self, memo):
+        """ A copy of a method alone is not in a module; a copy of the module it is in is in the copy of the module """
+        new = Method.__new__(Method)
+        memo[id(self)] = new
+        for key, val in self.__dict__.items():
+            if key != '_mod':
+                new.__dict__[key] = copy.deepcopy(val, memo)
+        mod = self.__dict__.get('_mod')
+        if mod is not None and id(mod) in memo:
+            new.__dict__['_mod'] = memo[id(mod)]
+        return new
 
     def __setattr__(self, key, value):
         """ Once in a contraception module, changing the efficacy or duration of use changes its parameters, as in Starsim 3 FPsim """
@@ -179,6 +192,7 @@ class ContraPars(ss.Pars):
         # Probabilities and choices
         self.p_use = 0.5  # RandomChoice: probability of use at each decision
         self.method_weights = None  # Weights on each method's share when choosing; renormalized among methods
+        self.switches = None  # Pairs (from, to) with a switching parameter: see ContraceptiveChoice.add_switching()
 
         # mCPR trend: added to the logit of the probability of use
         self.prob_use_year = 2000
@@ -235,6 +249,7 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         method_list = pars['methods'] if pars['methods'] is not None else make_method_list(pars['methods_df'])
         self.methods = make_methods(sc.dcp(list(method_list.values()) if isinstance(method_list, dict) else method_list))
         self.fp_name = fp_name
+        self._init_kwargs = dict(fp_name=fp_name, name=name, **kwargs) # To build the module again with another method: see add_method()
         self._data = pars
         n = self.n_methods
         if pars['method_weights'] is None:
@@ -250,6 +265,97 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         for method in self.methods.values():
             method._mod = self
         return
+
+    def add_method(self, method, copy_from=None, weight=1.0):
+        """
+        Add a method, before the sim is initialized: each method is a state, so the module is built again with it
+
+        Args:
+            method (Method): the method
+            copy_from (str): the method whose switching shares it takes (to it and from it); SimpleChoice needs one
+            weight (float): its weight (`weight_<name>`); 0 makes it available only once an `ss.modify` raises it (see `fp.add_method`)
+        """
+        if self.sim is not None and self.sim.initialized:
+            raise RuntimeError(f'A method can only be added to "{self.name}" before the sim is initialized: use fp.add_method(year=...) to make it available from a year')
+        if method.name in self.methods:
+            raise ValueError(f'There is already a method named "{method.name}"')
+        method = sc.dcp(method)
+        method.idx = max(m.idx for m in self.methods.values()) + 1
+        source = self.get_method(copy_from) if copy_from is not None else None
+        pars = self._data
+        self.extend_data(pars, method, source)
+        pars['method_weights'] = np.append(pars['method_weights'][:self.n_methods], weight)
+        pars['_new_methods'] = list(self.methods.values()) + [method]
+        self.rebuild(pars)
+        return self.methods[method.name]
+
+    def extend_data(self, pars, method, source):
+        """ The data for a new method (subclasses: see SimpleChoice) """
+        return
+
+    def rebuild(self, pars):
+        """ Make the module again with changed data (before the sim is initialized), keeping the current values of its parameters """
+        if self.sim is not None and self.sim.initialized:
+            raise RuntimeError(f'"{self.name}" can only be changed before the sim is initialized')
+        pars['method_weights'] = np.array([self.value(f'weight_{m}') for m in self.method_names] + list(pars['method_weights'][self.n_methods:]))
+        for key in ['prob_use_intercept', 'prob_use_trend_par'] + [k for k in ['p_use'] if k in self.pars]:
+            pars[key] = self.value(key)
+        methods = list(pars.pop('_new_methods', None) or self.methods.values())
+        for m in methods: # Their current efficacies
+            if m.name != 'none' and f'eff_{m.name}' in self.pars:
+                m.__dict__['efficacy'] = self.value(f'eff_{m.name}')
+        self._lock_attrs = False # UPSTREAM: a declared module cannot add a state or parameter once made, so it is made again
+        ContraceptiveChoice.__init__(self, pars=pars, methods=methods, **self._init_kwargs)
+        return
+
+    def add_switching(self, from_method, to_method):
+        """
+        Add a parameter, `switch_<from>_<to>` (0 by default), for the share of women choosing a method after `from_method`
+        (a method name, or 'birth' for the choice 1 month after a birth) who choose `to_method` instead; before the sim is
+        initialized. See `fp.method_switching`.
+        """
+        frm = 'birth' if from_method == 'birth' else self.get_method(from_method).name
+        to = self.get_method(to_method).name
+        key = f'switch_{frm}_{to}'
+        if key not in self.pars:
+            pars = self._data
+            pars['switches'] = list(pars.get('switches') or []) + [(frm, to)]
+            self.rebuild(pars)
+        return key
+
+    def switching_row(self, postpartum, from_method=None):
+        """ The current shares of each method (weighted, renormalized among methods) by method-choice age group, for a decision after `postpartum` months (0, 1, or 6) from a method """
+        event = {0: 'pp0', 1: 'pp1', 6: 'pp6'}[postpartum]
+        src = None if event == 'pp1' else self.get_method(from_method or 'none').name
+        edges = [0] + choice_edges # One per method-choice age group
+        sh = self.shares(event, src, edges=edges) if 'edges' in self.shares.__code__.co_varnames else self.shares(event, src)
+        w = {m: self.value(f'weight_{m}') for m in self.method_names}
+        total = sum(w[m]*np.asarray(sh[m], dtype=float)[:len(edges)] for m in self.method_names)
+        out = {key: {m: float(w[m]*sh[m][i]/total[i]) if total[i] > 0 else 0.0 for m in self.method_names} for i, key in enumerate(choice_keys)}
+        for frm, to in self._data.get('switches') or []: # See add_switching()
+            if frm == ('birth' if event == 'pp1' else src):
+                sw = self.group_value(f'switch_{frm}_{to}')
+                out = {key: {m: (1 - sw[i])*v + (sw[i] if m == to else 0) for m, v in row.items()} for i, (key, row) in enumerate(out.items())}
+        return out
+
+    def group_value(self, key):
+        """ The current value of a parameter in each method-choice age group """
+        val = self.value(key)
+        if np.ndim(val) == 0:
+            return np.full(len(choice_keys), float(val))
+        ppl = self.sim.people # As agents, one value per agent (by UID): that of the agents in each group, who all have the same
+        age, auids = ppl.age.raw, ppl.auids
+        bins = np.digitize(age[auids], choice_edges)
+        return np.array([val[auids[bins == i][0]] if np.any(bins == i) else 0.0 for i in range(len(choice_keys))]) # UPSTREAM: no value of a parameter by level of a stratification, only by agent
+
+    def get_switching_prob(self, from_method, to_method, postpartum, age_grp):
+        """ The current probability of choosing `to_method`, among those choosing a method, for a woman in an age group (e.g. '18-20') leaving `from_method` """
+        return self.switching_row(postpartum, from_method)[age_grp][self.get_method(to_method).name]
+
+    def get_switching_matrix(self, postpartum, from_method=None):
+        """ The current shares by age group: {age group: array over the methods (excluding none)} """
+        row = self.switching_row(postpartum, from_method)
+        return {key: np.array([vals[m] for m in self.method_names]) for key, vals in row.items()}
 
     def method_changed(self, method, key):
         """ A method's efficacy or duration of use was changed: update its parameter """
@@ -319,19 +425,27 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         def p_use(event, ever):
             return self.prob_use(event, ever, trend, intercept)
 
+        switches = {}
+        for frm, to in pars.get('switches') or []: # See add_switching()
+            switches[(frm, to)] = gp[f'switch_{frm}_{to}'] = ss.par(0.0, name=f'switch_{frm}_{to}', doc=f'Share of those choosing a method after {frm} who choose {to} instead (by age group)')
+
         def split(event, src, ever, rest, base=None):
-            """ [rest, method 1, ...]: not using w.p. 1 - p_use, else each method by its weighted share """
+            """ [rest, method 1, ...]: not using w.p. 1 - p_use, else each method by its weighted share (and the switches to a method, see add_switching()) """
             pu = p_use(event, ever)
             sh = base if base is not None else self.shares(event, src)
             R = {m: ss.by(age=list(sh[m])) for m in names}
             total = None
             for m in names:
                 total = w[m]*R[m] if total is None else total + w[m]*R[m]
-            return [rest, *meth], [1 - pu, *[pu*w[m]*R[m]/total for m in names]]
+            share = {m: w[m]*R[m]/total for m in names}
+            for (frm, to), sw in switches.items():
+                if frm == ('birth' if event == 'pp1' else src):
+                    share = {m: (1 - sw)*share[m] + (sw if m == to else 0) for m in names}
+            return [rest, *meth], [1 - pu, *[pu*share[m] for m in names]]
 
         fpn = self.fp_name
         age, female = ss.ppl.age, ss.ppl.female
-        debuted = female & (age >= ss.conditions.Cond('array', fpn, 'fated_debut')) & (age < fpd.max_age_preg)
+        debuted = female & (age >= ss.state(f'{fpn}.fated_debut')) & (age < fpd.max_age_preg)
         pregnant = ss.state(f'{fpn}.P')
         trs = sc.objdict()
         durs = {}
@@ -404,8 +518,48 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
 
     @property
     def method(self):
-        """ The index of each agent's method (0 if none), as in Starsim 3 FPsim """
-        return self.as_arr(self.method_raw(), ss.IntArr)
+        """ The index of each agent's method (0 if none), as in Starsim 3 FPsim; setting it moves women to that method (see set_method()) """
+        out = self.as_arr(self.method_raw(), MethodArr)
+        out.cm = self
+        return out
+
+    def to_uids(self, key):
+        """ The UIDs that an index of a per-agent array selects """
+        auids = self.sim.people.auids
+        if isinstance(key, ss.uids):
+            return key
+        if isinstance(key, ss.BoolArr):
+            return key.uids
+        if isinstance(key, slice):
+            return auids[key]
+        key = np.asarray(key)
+        if key.dtype == bool:
+            return auids[key] if len(key) == len(auids) else ss.uids(np.flatnonzero(key))
+        return ss.uids(key)
+
+    def set_method(self, uids, idx):
+        """ Move women who are deciding about contraception (never-users, non-users, and users) to a method by its index (0: not using), as if they had chosen it now """
+        uids = ss.uids(uids)
+        idx = np.broadcast_to(np.asarray(idx, dtype=int), (len(uids),))
+        by_idx = {m.idx: m.name for m in self.methods.values()}
+        src = ['never', 'none'] + self.method_names
+        moved = []
+        for i in np.unique(idx):
+            these = uids[idx == i]
+            if by_idx.get(i) in [None, 'none']: # Stopping: never-users stay never-users
+                moved.append(self.move_to(these, 'none', src=self.method_names))
+            else:
+                moved.append(self.move_to(these, by_idx[i], src=[s for s in src if s != by_idx[i]]))
+        return ss.uids.concatenate(moved) if moved else ss.uids()
+
+    def set_ever_used(self, uids, value=True):
+        """ Make women ever-users (or never-users), in whatever state of contraception or pregnancy they are in """
+        pairs = [('never', 'none'), ('preg0', 'preg1'), ('pp0', 'pp1'), ('wait0', 'wait1')]
+        uids = ss.uids(uids)
+        for a, b in pairs:
+            frm, to = (a, b) if value else (b, a)
+            self.move_to(uids, to, src=frm)
+        return
 
     @property
     def on_contra(self):
@@ -424,10 +578,13 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
 
     @property
     def ever_used_contra(self):
+        """ Whether each woman has ever used contraception; setting it moves women between the states of never and ever users (see set_ever_used()) """
         out = np.ones(len(self.sim.people.uid.raw), dtype=bool)
         for k in ['pre', 'never', 'preg0', 'pp0', 'wait0']:
             out &= ~self[k].raw
-        return self.as_arr(out, ss.BoolArr)
+        out = self.as_arr(out, EverUsedArr)
+        out.cm = self
+        return out
 
     def eff_array(self):
         """ Each agent's contraceptive efficacy """
@@ -482,6 +639,23 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         mix = women & (age >= fpd.min_age) & (age <= fpd.max_age_preg)
         counts = np.bincount(method[mix], minlength=self.n_options)[:self.n_options]
         self.method_mix[:, ti] = counts/counts.sum() if counts.sum() else 0
+        return
+
+
+class MethodArr(ss.IntArr):
+    """ Each woman's method (`ContraceptiveChoice.method`): setting some moves them to that method """
+    def __setitem__(self, key, value):
+        self.cm.set_method(self.cm.to_uids(key), value)
+        return
+
+
+class EverUsedArr(ss.BoolArr):
+    """ Whether each woman has ever used contraception (`ContraceptiveChoice.ever_used_contra`): setting some moves them between never and ever users """
+    def __setitem__(self, key, value):
+        uids = self.cm.to_uids(key)
+        value = np.broadcast_to(np.asarray(value, dtype=bool), (len(uids),))
+        self.cm.set_ever_used(uids[value], True)
+        self.cm.set_ever_used(uids[~value], False)
         return
 
 
@@ -549,6 +723,26 @@ class SimpleChoice(ContraceptiveChoice):
                     m.dur_use = dur_use_dist(pars['dur_use_df'], m)
         if pars.get('init_dist') is None:
             pars['init_dist'] = sc.objdict({k: mcp[0][k]['none']/mcp[0][k]['none'].sum() for k in choice_keys})
+        return
+
+    def extend_data(self, pars, method, source):
+        """ A new method's column (its share as a destination) and row (its shares as a source) are copies of `source`'s """
+        if source is None:
+            raise ValueError(f'{type(self).__name__} needs copy_from= to add a method: the method whose switching shares it takes')
+        mcp = sc.dcp(pars['method_choice_pars'])
+        for key, rows in mcp.items():
+            col = list(rows['method_idx']).index(source.idx)
+            rows['method_idx'] = np.append(rows['method_idx'], method.idx)
+            for age in choice_keys:
+                if key == 1:
+                    rows[age] = np.append(rows[age], rows[age][col])
+                else:
+                    for frm in list(rows[age].keys()):
+                        rows[age][frm] = np.append(rows[age][frm], rows[age][frm][col])
+                    if source.name in rows[age]:
+                        rows[age][method.name] = np.append(rows[age][source.name][:-1], 0.0) # Not to itself
+        pars['method_choice_pars'] = mcp
+        pars['init_dist'] = None # Made again from the switching shares
         return
 
     def logit_use(self, event, ever, edges=None):

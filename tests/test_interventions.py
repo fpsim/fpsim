@@ -76,7 +76,7 @@ def test_update_methods():
     cp = fp.change_par(par='exposure_factor', years=2002, vals=2.0) # Reduce exposure factor
     um1 = fp.update_methods(year=2005, eff={'Injectables': 1.0}, name='um1')
     um2 = fp.update_methods(year=2008, p_use=0.5, name='um2')
-    um3 = fp.update_methods(year=2010, method_mix=[0.9, 0.1, 0, 0, 0, 0, 0, 0, 0], name='um3')
+    um3 = fp.update_methods(year=2009, method_mix=[0.9, 0.1, 0, 0, 0, 0, 0, 0, 0], name='um3')
     sim = make_sim(contraception_module=fp.RandomChoice(), interventions=[cp, um1, um2, um3]).run()
 
     return sim
@@ -91,7 +91,8 @@ def test_change_people_state():
 
     # Change ever user
     prior_use_lift = fp.change_people_state('fp.ever_used_contra', years=2009, new_val=True, eligibility=np.arange(500), prop=1, annual=False)
-    prior_use_gone = fp.change_people_state('fp.ever_used_contra', years=2010, new_val=False, eligibility=np.arange(500), prop=1, annual=False)
+    prior_use_gone = fp.change_people_state('fp.ever_used_contra', years=2009.9, # The last step (2010 is the end of the run, where no step starts)
+                                             new_val=False, eligibility=np.arange(500), prop=1, annual=False)
 
     # Make and run sim
     s0 = fp.Sim(pars=pars, contraception_module=sc.dcp(ms), label="Baseline")
@@ -106,6 +107,7 @@ def test_change_people_state():
 
     s2auids = s2.people.fp.ever_used_contra.auids
     s2subset = s2auids[s2auids < 500]
+    s2subset = s2subset[~s2.people.fp.on_contra[s2subset]] # Women using a method now have used one
     s2_500_used_contra = np.sum(s2.people.fp.ever_used_contra[s2subset])
 
     print(f"Checking change_state CPR trends ... ")
@@ -179,7 +181,7 @@ def test_add_method_pars():
     # Check that any values for the method that weren't specified have been copied from the source method
     src = cm.get_method('impl')
     assert m.modern == src.modern
-    assert np.array_equal(m.dur_use.pars.scale(sim, sim.people.uid), src.dur_use.pars.scale(sim, sim.people.uid))
+    assert repr(m.dur_use) == repr(src.dur_use) # The same distribution (rel_dur_use multiplies it in the module)
 
     return sim
 

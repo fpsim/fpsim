@@ -8,6 +8,7 @@ import starsim as ss
 from . import utils as fpu
 from . import methods as fpm
 from . import defaults as fpd
+from .methods import choice_keys
 
 _make_repr = fpu.make_recreatable_intervention_repr
 #>> Generic intervention classes
@@ -127,14 +128,92 @@ class change_par(ss.Intervention):
         return
 
 
-def add_method(*args, **kwargs):
+class add_method(ss.Intervention):
     """
-    Not ported to Starsim 4 yet: a method's state has to be declared when the contraception module is made. The
-    declared form is a method present from the start with `weight_<method>` 0 until the year, then the share of
-    `copy_from` split between them (an `ss.modify` of the two weights), with the new method's switching rows and
-    column copied from `copy_from`.
+    Add a contraceptive method, available from a year
+
+    The method is a state of the contraception module from the start, with the switching shares (to it and from it)
+    of `copy_from` and a weight of 0, so nobody chooses it until the year. Then its weight becomes that of
+    `copy_from` (an `ss.modify`): with `split_shares`, it takes that share of those who would have chosen
+    `copy_from`, which keeps the rest; without, both are chosen as `copy_from` was, and the shares are renormalized.
+    `fp.Sim` adds the method to its contraception module when the sim is made.
+
+    Args:
+        year (float): the year the method becomes available
+        method (Method): the new method; if None, a copy of `copy_from` named `<copy_from>_copy`
+        method_pars (dict): attributes of the method to change (e.g. name, label, efficacy, rel_dur_use)
+        copy_from (str): the method whose switching shares it takes
+        split_shares (float): the share of those choosing `copy_from` who choose the new method instead
+        verbose (bool): whether to print when it is added and becomes available
+
+    **Examples**::
+
+        intv = fp.add_method(year=2010, copy_from='impl', method_pars=dict(name='new_impl', efficacy=0.999), split_shares=0.5)
+        sim = fp.Sim(location='kenya', interventions=intv).run()
     """
-    raise NotImplementedError('add_method() is not ported to Starsim 4 yet: declare the method on the contraception module and give it weight 0 until the year (see the docstring)')
+    def __init__(self, year=None, method=None, method_pars=None, copy_from=None, split_shares=None, verbose=True, **kwargs):
+        super().__init__(**kwargs)
+        if year is None:
+            raise ValueError('Year must be specified for add_method intervention')
+        if copy_from is None:
+            raise ValueError('copy_from must specify an existing method name to copy switching behavior from')
+        if method_pars is not None and not isinstance(method_pars, dict):
+            raise TypeError(f'method_pars must be a dict, not {type(method_pars)}')
+        if split_shares is not None:
+            if not sc.isnumber(split_shares):
+                raise TypeError(f'split_shares must be a number, not {type(split_shares)}')
+            if not (0.0 <= split_shares <= 1.0):
+                raise ValueError(f'split_shares must be between 0 and 1, got {split_shares}')
+        self.year = year
+        self.method = method
+        self.method_pars = method_pars or {}
+        self.copy_from = copy_from
+        self.split_shares = split_shares
+        self.verbose = verbose
+        self.activated = False
+        return
+
+    def apply(self, cm, stop=None, dt=None):
+        """ Add the method to a contraception module (before the sim is initialized), and return the modifiers that make it available from the year (none if that is the end of the sim, `stop`) """
+        source = cm.get_method(self.copy_from)
+        self.copy_from = source.name
+        method = sc.dcp(source) if self.method is None else sc.dcp(self.method)
+        if self.method is None and 'name' not in self.method_pars:
+            method.name += '_copy'
+        for key, val in self.method_pars.items():
+            setattr(method, key, val)
+        self.method = cm.add_method(method, copy_from=source.name, weight=0.0)
+        name, w = self.method.name, cm.value(f'weight_{source.name}')
+        new, old = (w, None) if self.split_shares is None else (self.split_shares*w, (1 - self.split_shares)*w)
+        if stop is not None and self.year >= stop: # Available at the end, when no step starts
+            return []
+        mods = [ss.modify(f'{cm.name}.pars.weight_{name}', set=float(new), start=self.year, name=f'weight_{name}_from_{self.year}')]
+        if old is not None:
+            mods.append(ss.modify(f'{cm.name}.pars.weight_{source.name}', set=float(old), start=self.year, name=f'weight_{source.name}_from_{self.year}'))
+        if self.verbose:
+            print(f'Added method "{name}" (idx={self.method.idx}), available from {self.year}')
+        return mods
+
+    def init_pre(self, sim):
+        super().init_pre(sim)
+        if not (sim.pars.start <= self.year <= sim.pars.stop):
+            raise ValueError(f'Intervention year {self.year} must be between {sim.pars.start} and {sim.pars.stop}')
+        if not isinstance(self.method, fpm.Method) or self.method.name not in sim.connectors.contraception.methods:
+            raise RuntimeError('fp.add_method() adds its method when fp.Sim is made: give it to fp.Sim(interventions=...)')
+        return
+
+    def step(self):
+        if not self.activated and self.t.now('year') >= self.year - 1e-9:
+            self.activated = True
+            if self.verbose:
+                print(f'Method "{self.method.name}" available from {self.t.now("year"):.1f}')
+        return
+
+    def finalize(self):
+        super().finalize()
+        if not self.activated and self.sim.t.now('year') >= self.year - 1e-9: # A year at the end of the sim
+            self.activated = True
+        return
 
 
 class change_people_state(ss.Intervention):
@@ -436,7 +515,7 @@ class change_initiation(ss.Intervention):
         return
 
     def start_methods(self, uids):
-        """ Move women from non-use to a method, as an early end of non-use (TODO(v4-rs): a delivery moving people along a branch chosen by the split) """
+        """ Move women from non-use to a method, as if they had chosen it now """
         sim = self.sim
         cm = sim.connectors.contraception
         names = cm.method_names
@@ -450,14 +529,87 @@ class change_initiation(ss.Intervention):
             table = np.array([shares[m] for m in names]).T*w # Age groups by methods
             cdf = np.cumsum(table/table.sum(1, keepdims=True), axis=1)[groups]
             method = np.minimum((cdf < self._method.rvs(uids)[:, None]).sum(1), len(names) - 1)
-        graph = cm.graph
-        moves = [(src, j, uids[cm[src].raw[uids] & (method == j)]) for src in ['never', 'none'] for j in range(len(names))] # Before anyone moves
-        for src, j, sel in moves:
-            if len(sel):
-                cm.engine.force(sel, graph.transitions[f'stop_{src}'], graph.states[names[j]])
+        cm.set_method(uids, [cm.methods[names[j]].idx for j in method])
         return
 
 
-def method_switching(*args, **kwargs):
-    """ Not ported to Starsim 4 yet: the switching shares are tables in the declared transitions; use update_methods(method_mix=) to reweight methods """
-    raise NotImplementedError('method_switching() is not ported to Starsim 4 yet; use update_methods(method_mix=...) to reweight methods')
+class method_switching(ss.Intervention):
+    """
+    From a year, a share of the women choosing a method after one method choose another instead
+
+    For each source method, a parameter of the contraception module, `switch_<from>_<to>` (0 until the year), is the
+    share of women leaving `from` who would choose a method and choose `to_method` instead; the other methods' shares
+    are scaled down to make room (the probability of using some method is unchanged). With postpartum 1 (included by
+    default, as in Starsim 3 FPsim), the choice 1 month after a birth is changed the same way, for every woman.
+    `fp.Sim` adds the parameters when the sim is made.
+
+    Args:
+        year (float): the year the switching starts
+        from_methods (str/list): the method(s) women switch from
+        to_method (str): the method they switch to
+        switch_prob (float/dict): the share, or {method: share}
+        age_groups (list): method-choice age groups it applies to ('<18', '18-20', '20-25', '25-35', '>35'); default all
+        postpartum (int/list): the decisions it applies to: 0 (at the end of a method) and 1 (1 month after a birth); default both
+        annual (bool): whether switch_prob is per year (converted to per step)
+        verbose (bool): whether to print details
+
+    **Example**::
+
+        intv = fp.method_switching(year=2025, from_methods='inj', to_method='dmpasc', switch_prob=0.10)
+    """
+    def __init__(self, year=None, from_methods=None, to_method=None, switch_prob=None, age_groups=None, postpartum=None, annual=False, verbose=False, **kwargs):
+        super().__init__(**kwargs)
+        if year is None:
+            raise ValueError('year must be specified')
+        if from_methods is None or to_method is None:
+            raise ValueError('Both from_methods and to_method must be specified')
+        if switch_prob is None:
+            raise ValueError('switch_prob must be specified')
+        self.year = year
+        self.from_methods = sc.tolist(from_methods)
+        self.to_method = to_method
+        self.switch_prob = switch_prob
+        self.age_groups = age_groups
+        self.postpartum = sc.tolist(postpartum if postpartum is not None else [0, 1, 6])
+        self.annual = annual
+        self.verbose = verbose
+        self.applied = False
+        self.keys = None
+        return
+
+    def apply(self, cm, stop=None, dt=None):
+        """ Add the switching parameters to a contraception module (before the sim is initialized), and return the modifiers that set them from the year """
+        to = cm.get_method(self.to_method).name
+        names = [cm.get_method(m).name for m in self.from_methods]
+        probs = self.switch_prob if isinstance(self.switch_prob, dict) else {m: self.switch_prob for m in self.from_methods}
+        probs = {cm.get_method(k).name: float(v) for k, v in probs.items()}
+        if self.annual:
+            probs = {k: (1 + v)**float(dt) - 1 for k, v in probs.items()}
+        groups = choice_keys if self.age_groups is None else sc.tolist(self.age_groups)
+        unknown = [g for g in groups if g not in choice_keys]
+        if unknown:
+            raise ValueError(f'Age groups {unknown} not recognized: they are {choice_keys}')
+        in_groups = np.array([choice_keys[b] in groups for b in fpm.method_bins()], dtype=float) # One per age group of the module
+        sources = {frm: probs.get(frm, 0.0) for frm in names if 0 in self.postpartum}
+        if 1 in self.postpartum: # Every woman's choice after a birth, by each source in turn
+            sources['birth'] = 1 - np.prod([1 - probs.get(frm, 0.0) for frm in names])
+        self.keys = [cm.add_switching(frm, to) for frm in sources]
+        if stop is not None and self.year >= stop:
+            return []
+        return [ss.modify(f'{cm.name}.pars.{key}', set=ss.by(age=list(val*in_groups)), start=self.year, name=f'{key}_from_{self.year}')
+                for key, val in zip(self.keys, sources.values()) if val > 0]
+
+    def init_pre(self, sim):
+        super().init_pre(sim)
+        if not (sim.pars.start <= self.year <= sim.pars.stop):
+            raise ValueError(f'Intervention year {self.year} must be within simulation [{sim.pars.start}, {sim.pars.stop}]')
+        if self.keys is None:
+            raise RuntimeError('fp.method_switching() adds its parameters when fp.Sim is made: give it to fp.Sim(interventions=...)')
+        return
+
+    def step(self):
+        if not self.applied and self.t.now('year') >= self.year - 1e-9:
+            self.applied = True
+            if self.verbose:
+                print(f'Method switching to {self.to_method} from {self.t.now("year"):.1f}')
+        return
