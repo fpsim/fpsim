@@ -74,6 +74,9 @@ def make_methods(method_list=None, method_df=None):
         if method_df is None:
             method_df = make_contra_pars().methods_df
         method_list = make_method_list(method_df)
+    for i, method in enumerate(method_list): # Methods made by hand get their position
+        if method.idx is None:
+            method.idx = i
     return ss.ndict(method_list, type=Method)
 
 
@@ -368,8 +371,10 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         return out
 
     def as_arr(self, raw, cls):
-        """ A per-agent array (by UID) as an ss.Arr, so it can be indexed like a state """
-        return self.sim.people.age.asnew(raw, cls=cls)
+        """ A per-agent array (by UID) as an ss.Arr, so it can be indexed like a state; read-only, since it is computed from the states (writing to it would change nothing) """
+        out = self.sim.people.age.asnew(raw, cls=cls)
+        out.raw.flags.writeable = False
+        return out
 
     @property
     def method(self):
@@ -379,6 +384,17 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
     @property
     def on_contra(self):
         return self.as_arr(self.method_raw() > 0, ss.BoolArr)
+
+    @property
+    def ti_contra(self):
+        """ The step of each agent's next decision about contraception (the scheduled end of her method or of non-use; NaN if none is scheduled), as in Starsim 3 FPsim """
+        out = np.full(len(self.sim.people.uid.raw), np.nan)
+        for name in self.graph.states:
+            key = f'ti_exit_{name}'
+            if hasattr(self, key): # A state with a scheduled exit
+                inside = self[name].raw
+                out[inside] = np.ceil(self[key].raw[inside])
+        return self.as_arr(out, ss.FloatArr)
 
     @property
     def ever_used_contra(self):

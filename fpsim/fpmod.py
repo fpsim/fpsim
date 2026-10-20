@@ -398,6 +398,10 @@ class FPmod(ss.Pregnancy):
         return self.contraception.on_contra
 
     @property
+    def ti_contra(self):
+        return self.contraception.ti_contra
+
+    @property
     def ever_used_contra(self):
         return self.contraception.ever_used_contra
 

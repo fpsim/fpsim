@@ -62,6 +62,7 @@ class BirthOutcomes(ss.Analyzer):
                         ('miscarriage', mod.ti_miscarriage), ('abortion', mod.ti_abortion)]
             for key, state in outcomes:
                 hit = uids[state[uids] == (ti - 1)]
+                hit = hit[~np.isin(hit, list(self.resolved))] # A new pregnancy can end in an abortion on the step the cohort's ended
                 self.counts[key] += len(hit)
                 self.resolved.update(np.asarray(hit).tolist())  # Only count each woman's first outcome
         return
@@ -187,6 +188,7 @@ def test_contraception():
         'debut_age': debut_age,
         'p_infertile': 0,
         'sexual_activity': sexual_activity,
+        'burnin': False, # Nobody pregnant at the start, so nobody is postpartum (and off contraception) in the first year
     }
 
     sim = fp.Sim(pars=custom_pars, contraception_module=contra_mod, interventions=[p_use_change, p_use_change2])
@@ -230,7 +232,7 @@ def test_method_selection_dependencies():
     method = fpm.SimpleChoice(pars=cm_pars, location="kenya")
 
     cpr = fp.cpr_by_age()
-    snapshots = fp.snapshot([1,2])
+    snapshots = fp.snapshot([2,3]) # Time points 2 and 3: before and after the step at ti=2
 
     # force all to have debuted and sexually active
     debut_age = {
@@ -247,15 +249,14 @@ def test_method_selection_dependencies():
     pars['age_pyramid'] = f15_age_pyramid
     sim1 = fp.Sim(location="kenya", pars=pars, contraception_module=method, analyzers=[cpr, snapshots])
     sim1.init()
-    sim1.people.fp.ever_used_contra[:] = True
 
     # custom init forces age, sex and other person defaults
     # p_use by age: <18: ~.18, 18-20: ~.49, 20-25: ~.54, 25-35: ~.52, 35-50: ~.32
     sim1.run()
 
-    contra_ending_t2 = sim1['analyzers'][1].snapshots['1'].fp.ti_contra == 2
-    ending_contra_type = sim1['analyzers'][1].snapshots['1'].fp.method[contra_ending_t2]
-    new_contra_type = sim1['analyzers'][1].snapshots['2'].fp.method[contra_ending_t2]
+    contra_ending_t2 = sim1['analyzers'][1].snapshots['2'].fp.ti_contra == 2
+    ending_contra_type = sim1['analyzers'][1].snapshots['2'].fp.method[contra_ending_t2]
+    new_contra_type = sim1['analyzers'][1].snapshots['3'].fp.method[contra_ending_t2]
 
     # Compare methods. All should have changed.
     print(f"Checking agents change methods at ti_contra ... ")
@@ -270,15 +271,11 @@ def test_education_preg():
 
     def make_sim(pregnant=False):
         pars = dict(start=2000, stop=2001, n_agents=1000, test=True, burnin=False)
-        sim = fp.Sim(pars=pars)
+        conceive = ss.Delivery(move='NP -> P', disease='fp', at=[2000], where=ss.ppl.female) if pregnant else None # Every woman pregnant at the start
+        sim = fp.Sim(pars=pars, interventions=conceive)
         sim.init()
         sim.people.age[:] = 15
         sim.people.female[:] = True
-        uids = sim.people.female.uids
-        if pregnant:
-            embryo_counts = np.ones(len(uids))
-            sim.demographics.fp.make_pregnancies(uids)
-            sim.demographics.fp.make_embryos(uids, embryo_counts)
         return sim
 
     sim_base = make_sim()
