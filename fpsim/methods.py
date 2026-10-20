@@ -61,6 +61,14 @@ class Method:
     def __repr__(self):
         return f'Method({self.name}, eff={self.efficacy}, modern={self.modern})'
 
+    def __setattr__(self, key, value):
+        """ Once in a contraception module, changing the efficacy or duration of use changes its parameters, as in Starsim 3 FPsim """
+        super().__setattr__(key, value)
+        mod = self.__dict__.get('_mod')
+        if mod is not None and key in ['efficacy', 'dur_use', 'rel_dur_use']:
+            mod.method_changed(self, key)
+        return
+
 
 def make_method_list(methods_df):
     """ Create methods from a DataFrame with columns name, label, csv_name, efficacy, modern """
@@ -239,6 +247,16 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         own = {k: v for k, v in pars.items() if k not in self.pars and k not in graph_pars}
         self.define_pars(**own)
         self.code_pars = list(self.code_pars) + list(own) # Data read when the graph is built and by the code, not by the graph
+        for method in self.methods.values():
+            method._mod = self
+        return
+
+    def method_changed(self, method, key):
+        """ A method's efficacy or duration of use was changed: update its parameter """
+        if key == 'efficacy' and method.name != 'none':
+            self.pars.update({f'eff_{method.name}': float(method.efficacy)})
+        elif key in ['dur_use', 'rel_dur_use'] and f'dur_{method.name}' in self.pars:
+            self.pars.update({f'dur_{method.name}': self.dur_use(method)})
         return
 
     # %% Building the graph
@@ -316,6 +334,7 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
         debuted = female & (age >= ss.conditions.Cond('array', fpn, 'fated_debut')) & (age < fpd.max_age_preg)
         pregnant = ss.state(f'{fpn}.P')
         trs = sc.objdict()
+        durs = {}
         dst, p = split('pp0', 'none', 0, S.never)
         trs.debut = ss.Transition(S.pre, dst, p=p, on=debuted) # Everyone starts in pre, so women past their debut decide at the start (as in Starsim 3 FPsim)
         for src in ['never', 'none'] + names:
@@ -324,7 +343,9 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
             ever = int(src != 'never')
             dst, p = split('pp0', 'none' if src == 'never' else src, ever, S.never if src == 'never' else S.none)
             method = self.methods['none'] if src in ['never', 'none'] else self.methods[src]
-            trs[f'stop_{src}'] = ss.Transition(S[src], dst, p=p, dur=self.dur_use(method))
+            if method.name not in durs:
+                durs[method.name] = ss.par(self.dur_use(method), name=f'dur_{method.name}', doc=f'Duration of use of {method.name}' if method.name != 'none' else 'Duration of non-use')
+            trs[f'stop_{src}'] = ss.Transition(S[src], dst, p=p, dur=durs[method.name])
         losses = ss.conditions.Event('tr', ss.conditions.Named(fpn, ('miscarriage', 'stillbirth')))
         for e, srcs in [(0, [S.pre, S.never, S.pp0, S.wait0]), (1, [S.none, S.pp1, S.wait1])]:
             rest = S.never if e == 0 else S.none
@@ -339,6 +360,11 @@ class ContraceptiveChoice(ss.Connector, ss.Disease):
             dst, p = split('pp6', 'none', e, rest)
             trs[f'pp6_{e}'] = ss.Transition(S[f'wait{e}'], dst, p=p, dur=ss.constant(ss.months(5)))
         return list(S.values()), dict(trs), gp
+
+    @property
+    def decisions(self):
+        """ The transitions that are decisions about contraception (the end of a method or of non-use, a loss, and 1 and 6 months after a birth) """
+        return [k for k in self.graph.transitions if k == 'debut' or k.startswith(('stop_', 'loss', 'pp1_', 'pp6_'))]
 
     def step(self):
         ss.Disease.step_state(self)

@@ -59,7 +59,7 @@ def test_mcpr(location='senegal', do_plot=False):
         # Covar('urban', False, True, 'n_urban'),
         # Covar('parity', 2, 'parity2to3'),  # Unfortunately this will not work
         Covar('wealthquintile', 1, 5, 'n_wq5'),
-        Covar('fp.ever_used_contra', False, True, 'fp.ever_used_contra'),
+        # Ever use is a state of the contraception module (never vs none), not an array to set: ss.Delivery(move='never -> none', disease='contraception') moves women between them
         ]
 
     # Create interventions and sims

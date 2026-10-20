@@ -345,6 +345,11 @@ class FPmod(ss.Pregnancy):
             ss.Result('p_short_interval', label='Proportion of short interval births', summarize_by='mean', **nkw),
             ss.Result('total_births', label='Live births and stillbirths', summarize_by='sum', **kw),
             ss.Result('n_fecund', label='Women 15-49', summarize_by='mean', **kw),
+            ss.Result('switchers', label='Decisions about contraception (including to keep not using)', summarize_by='sum', **kw),
+            ss.Result('ever_used_contra', label='Women who have ever used contraception (%)', summarize_by='mean', **nkw),
+            *[ss.Result(k, label=f'Women by parity: {k[6:]} (%)', summarize_by='mean', **nkw) for k in ['parity0to1', 'parity2to3', 'parity4to5', 'parity6plus']],
+            *[ss.Result(k, label=f'Women 15-49 {k[2:]} months after a live birth (%)', summarize_by='mean', **nkw) for k in ['pp0to5', 'pp6to11', 'pp12to23']],
+            ss.Result('nonpostpartum', label='Women 15-49 not within 24 months of a live birth (%)', summarize_by='mean', **nkw),
         ]
         results += [ss.Result(f'cum_{key}', label=f'Cumulative {key}', dtype=float, scale=False, summarize_by='last') for key in fpd.event_counts + fpd.inherited_counts]
         self.define_results(*[r for r in results if r.name not in self.results])
@@ -371,6 +376,16 @@ class FPmod(ss.Pregnancy):
         res.n_fecund[ti] = fecund.sum()*scale
         counts = np.bincount(np.minimum(self.parity.raw[fecund], len(self.parity_bins) - 2).astype(int), minlength=len(self.parity_bins) - 1)
         self.parity_dist[:, ti] = counts/max(counts.sum(), 1)
+        pct = lambda x, among: sc.safedivide(np.count_nonzero(x & among), np.count_nonzero(among))*100
+        parity = self.parity.raw
+        for key, (lo, hi) in dict(parity0to1=(0, 1), parity2to3=(2, 3), parity4to5=(4, 5), parity6plus=(6, np.inf)).items():
+            res[key][ti] = pct((parity >= lo) & (parity <= hi), women)
+        msb = self.months_since_birth()
+        for key, (lo, hi) in dict(pp0to5=(0, 5), pp6to11=(6, 11), pp12to23=(12, 23)).items():
+            res[key][ti] = pct((msb >= lo) & (msb <= hi), fecund)
+        res.nonpostpartum[ti] = 100 - res.pp0to5[ti] - res.pp6to11[ti] - res.pp12to23[ti]
+        if cm is not None:
+            res.ever_used_contra[ti] = pct(cm.ever_used_contra.raw, women)
         if cm is not None:
             self.method_mix = cm.method_mix
         return
@@ -383,6 +398,8 @@ class FPmod(ss.Pregnancy):
         cm = self.contraception
         if cm is not None and 'fail' in cm.results:
             res.method_failures[:] = cm.results.fail[:] # Continuing pregnancies of women on a method
+        if cm is not None: # Every decision: at the end of a method or of non-use, after a loss, and 1 and 6 months after a birth
+            res.switchers[:] = sum(cm.results[k][:] for k in cm.decisions)
         for key in fpd.event_counts + fpd.inherited_counts:
             if key in res:
                 res[f'cum_{key}'][:] = np.cumsum(res[key][:])
