@@ -51,7 +51,7 @@ def test_to_df(sim=None):
     df = sim.to_df(resample='year', use_years=True)
     births = df.fp_births.sum()
     last = df.timevec.values[-1]
-    assert last == sim.pars.stop, 'Last years do not match'
+    assert last == sim.pars.stop - 1, 'Last years do not match' # Whole years: the last runs to the stop
     assert births > 0, 'Expected births'
     ok(f'to_df() worked to capture {births} births and final year {last}')
 

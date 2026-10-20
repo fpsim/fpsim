@@ -413,6 +413,22 @@ class FPmod(ss.Pregnancy):
     def ever_used_contra(self):
         return self.contraception.ever_used_contra
 
+    def view(self, raw, cls):
+        """ A read-only per-agent array (by UID), computed from the states """
+        out = self.sim.people.age.asnew(raw, cls=cls)
+        out.raw.flags.writeable = False
+        return out
+
+    @property
+    def lam(self):
+        """ Whether each woman can have lactational amenorrhea now (breastfeeding, within max_lam_dur months of a birth); its chance is lactational_amenorrhea, an expected value in the conception hazard """
+        return self.view(self.p_lam() > 0, ss.BoolArr)
+
+    @property
+    def sexually_active(self):
+        """ The chance each woman is sexually active this step (an expected value in the conception hazard, not drawn per woman) """
+        return self.view(self.p_sexually_active(), ss.FloatArr)
+
     @property
     def end_tri1_uids(self):
         """ Women in the last step of their first trimester (read by fp.Education) """
